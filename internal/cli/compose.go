@@ -55,13 +55,13 @@ If multiple compose entries exist, the first argument must be the entry name.`,
 
 		if len(composeEntries) == 1 {
 			// Single entry: name can be omitted, pass all args through
-			return execComposePassthroughForEntry(e, c, composeEntries[0], nil, args)
+			return execComposePassthroughForEntry(e, c, composeEntries[0], nil /* no stack profiles */, args)
 		}
 
 		// Multiple entries: first arg must be entry name
 		if len(args) > 0 {
 			if entry := c.FindStackEntry(args[0]); entry != nil && entry.ComposeConfig() != nil {
-				return execComposePassthroughForEntry(e, c, entry, nil, args[1:])
+				return execComposePassthroughForEntry(e, c, entry, nil /* no stack profiles */, args[1:])
 			}
 		}
 

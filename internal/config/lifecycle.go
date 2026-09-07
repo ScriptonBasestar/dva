@@ -774,6 +774,11 @@ func (e *LifecycleEntry) runnerPluginName() string {
 // ===== Tier 1: Core =====
 
 // ComposePluginConfig holds Docker Compose plugin settings.
+//
+// No profiles field: profiles are execution intent, so they live on config.PlanEntry. This path
+// is not profile-blind — `dva compose infra --profile rust logs` passes them through — only
+// profile-undeclarable; a field here would also have to be read at the two
+// execComposePassthroughForEntry call sites in internal/cli/compose.go, which pass nil today.
 type ComposePluginConfig struct {
 	Files       []string                    `yaml:"files"`
 	ProjectName string                      `yaml:"project_name"`
