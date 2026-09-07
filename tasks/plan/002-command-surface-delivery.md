@@ -3,9 +3,9 @@ id: PLAN-002
 title: "Deliver the command-surface proposal through evidence-gated tasks"
 type: plan
 scope: "D6/D7 diagnostics, secure env bridge, required-env and interaction env-file policy, capability-driven init, and optional env promotion"
-progress: 88
+progress: 100
 total-tasks: 16
-completed-tasks: 14
+completed-tasks: 16
 children: [TASK-244, TASK-245, TASK-246, TASK-247, TASK-248, TASK-249, TASK-250, TASK-251, TASK-252, TASK-265, TASK-266, TASK-281, TASK-282, TASK-284, TASK-285, TASK-286]
 target-date: "2026-12-31"
 created: 2026-09-01
