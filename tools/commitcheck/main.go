@@ -76,6 +76,14 @@ const baseline = "c100ba06de0e64ebe6079908b8681b993e674a58"
 // from separate agent sessions, while this gate existed and passed for none of them. That is
 // the shape of a check nothing runs before the thing it checks. The commit-msg hook installed
 // by `make install-hooks` is the answer to that, and it is why this table should stop growing.
+//
+// It grew anyway, and the two 2026-09-07 entries say why: in the clone that produced them
+// `git config core.hooksPath` was empty. `make install-hooks` had never been run there, so
+// `.githooks/commit-msg` -- the one thing standing between a long subject and published
+// history -- was never consulted for a single commit. The hook is opt-in per clone and
+// nothing reports that it is off, which makes "install the hook" a defence that silently
+// defaults to absent. Until something surfaces an unset `core.hooksPath`, this table will
+// keep growing one published subject at a time. TASK-341 owns that gap.
 var grandfatheredCommits = []struct {
 	sha     string
 	subject string
@@ -85,6 +93,11 @@ var grandfatheredCommits = []struct {
 		sha:     "47d91889d8e3f1386e0fb5433a96ba502120ea93",
 		subject: "docs(tasks): move TASK-249's decision record into docs/58-60 and shrink the card",
 		reason:  "80-char subject pushed to master 2026-09-07 without the commit-msg hook; the object is published, so the subject is no longer rewritable",
+	},
+	{
+		sha:     "a11668b683f30b336707bf25f57a5b4ead4ea416",
+		subject: "docs(tasks): file two cards from the batch-2 review and the PLAN-002 archive",
+		reason:  "76-char subject pushed to master 2026-09-07 from a task worktree where `make install-hooks` had never been run, so the commit-msg hook that exists precisely to stop this was absent; the object is published, so the subject is no longer rewritable",
 	},
 	{
 		sha:     "d7976538a9f68dad0c7873ce8c256fb7c60212a0",
