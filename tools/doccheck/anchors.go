@@ -2,6 +2,7 @@ package main
 
 import (
 	"regexp"
+	"slices"
 	"strings"
 	"unicode"
 )
@@ -82,21 +83,36 @@ func stripHeadingInline(s string) string {
 
 // stripUnderscoreEmphasis removes `_` delimiters only where GitHub would render
 // emphasis, keeping intraword underscores (`sops_source`, `snake_case`)
-// literal so heading slugs match GitHub anchors. Flanking rules follow
-// CommonMark: `_` opens emphasis only when left-flanking and not intraword,
-// and closes only when right-flanking and not intraword. `__strong__` runs
-// match the same way, delimiter by delimiter.
+// literal so heading slugs match GitHub anchors. CommonMark computes flanking
+// per delimiter run, not per character: it reads the characters just
+// outside a run to compute its left/right flanking, so the `__` in `a __ b`
+// is a pure closer and the inner `__` of `x__y__z` is neither (an intraword
+// `_` run can neither open nor close). Pairing walks a simplified delimiter
+// stack: a closer run matches the nearest openable run above it and consumes
+// min length of 2 (strong, when both runs still hold >= 2) or 1 (em)
+// delimiters from each run's inner side; a match is vetoed when either run
+// can both open and close and (openerLen+closerLen)%3 == 0 (the
+// multiple-of-3 rule). Unlike full CommonMark there is no delimiter-stack
+// pruning (no openers_bottom): after a multiple-of-3 veto this implementation
+// keeps walking to lower openers where cmark would bound the search, so a
+// few pathological punctuation-flanked headings can pair that cmark leaves
+// literal. Fine for the heading slugs checked here.
 func stripUnderscoreEmphasis(s string) string {
 	rs := []rune(s)
-	type delim struct {
-		idx               int
+	isPunct := func(r rune) bool { return unicode.IsPunct(r) || unicode.IsSymbol(r) }
+	type run struct {
+		start, length     int
 		canOpen, canClose bool
 	}
-	isPunct := func(r rune) bool { return unicode.IsPunct(r) || unicode.IsSymbol(r) }
-	var delims []delim
-	for i, r := range rs {
-		if r != '_' {
+	var runs []run
+	for i := 0; i < len(rs); {
+		if rs[i] != '_' {
+			i++
 			continue
+		}
+		j := i
+		for j < len(rs) && rs[j] == '_' {
+			j++
 		}
 		prevWS, nextWS := true, true
 		prevPunct, nextPunct := false, false
@@ -104,29 +120,53 @@ func stripUnderscoreEmphasis(s string) string {
 			prevWS = unicode.IsSpace(rs[i-1])
 			prevPunct = isPunct(rs[i-1])
 		}
-		if i+1 < len(rs) {
-			nextWS = unicode.IsSpace(rs[i+1])
-			nextPunct = isPunct(rs[i+1])
+		if j < len(rs) {
+			nextWS = unicode.IsSpace(rs[j])
+			nextPunct = isPunct(rs[j])
 		}
 		leftFlanking := !nextWS && (!nextPunct || prevWS || prevPunct)
 		rightFlanking := !prevWS && (!prevPunct || nextWS || nextPunct)
-		d := delim{idx: i}
-		d.canOpen = leftFlanking && (!rightFlanking || prevPunct)
-		d.canClose = rightFlanking && (!leftFlanking || nextPunct)
-		delims = append(delims, d)
+		r := run{start: i, length: j - i}
+		r.canOpen = leftFlanking && (!rightFlanking || prevPunct)
+		r.canClose = rightFlanking && (!leftFlanking || nextPunct)
+		runs = append(runs, r)
+		i = j
 	}
-	var openers []*delim
-	removed := make(map[int]bool, len(delims))
-	for i := range delims {
-		d := &delims[i]
-		if d.canClose && len(openers) > 0 {
-			o := openers[len(openers)-1]
-			openers = openers[:len(openers)-1]
-			removed[o.idx] = true
-			removed[d.idx] = true
+	removed := make([]bool, len(rs))
+	var openers []int // indexes into runs, most recent last
+	for c := range runs {
+		cr := &runs[c]
+		for cr.canClose && cr.length > 0 {
+			oi := -1
+			for i, ri := range slices.Backward(openers) {
+				o := &runs[ri]
+				bothSide := (o.canOpen && o.canClose) || (cr.canOpen && cr.canClose)
+				if bothSide && (o.length+cr.length)%3 == 0 {
+					continue // multiple-of-3 veto; keep looking below
+				}
+				oi = i
+				break
+			}
+			if oi < 0 {
+				break
+			}
+			o := &runs[openers[oi]]
+			use := 1
+			if o.length >= 2 && cr.length >= 2 {
+				use = 2
+			}
+			for n := 0; n < use; n++ { // consume each run from its inner side
+				removed[o.start+o.length-1-n] = true
+				removed[cr.start+n] = true
+			}
+			o.length -= use
+			cr.length -= use
+			if o.length == 0 {
+				openers = append(openers[:oi], openers[oi+1:]...)
+			}
 		}
-		if d.canOpen {
-			openers = append(openers, d)
+		if cr.canOpen {
+			openers = append(openers, c)
 		}
 	}
 	var b strings.Builder

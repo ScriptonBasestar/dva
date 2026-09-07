@@ -56,7 +56,10 @@ func TestExtractLinks_skipsCode(t *testing.T) {
 
 // Given headings carrying underscores, When inline markup is stripped, Then
 // only paired `_..._` emphasis is removed and intraword identifiers like
-// `sops_source` survive exactly as GitHub renders them (TASK-326).
+// `sops_source` survive exactly as GitHub renders them (TASK-326). Multi-
+// underscore runs pair per delimiter run with outside-the-run flanking, so
+// `a __ b`, `x__y__z` and friends stay literal the way GitHub renders them
+// (TASK-330, cross-checked against goldmark and markdown-it-py).
 func TestStripHeadingInline_keepsIntrawordUnderscore(t *testing.T) {
 	cases := map[string]string{
 		"sops_source":              "sops_source",
@@ -65,6 +68,12 @@ func TestStripHeadingInline_keepsIntrawordUnderscore(t *testing.T) {
 		"_a_b_":                    "a_b",
 		"trailing_":                "trailing_",
 		"env_file Handling":        "env_file Handling",
+		"a __ b":                   "a __ b",
+		"x__y__z":                  "x__y__z",
+		"__foo__bar":               "__foo__bar",
+		"_foo__bar_":               "foo__bar",
+		"___a_":                    "__a",
+		"___foo__ bar_":            "foo bar",
 	}
 	for in, want := range cases {
 		if got := stripHeadingInline(in); got != want {
@@ -83,6 +92,10 @@ func TestCollectAnchors_githubSlugForUnderscoreHeading(t *testing.T) {
 	}
 	if _, ok := collectAnchors("## snake_case\n")["snake_case"]; !ok {
 		t.Fatal("expected snake_case anchor")
+	}
+	spaced := collectAnchors("## a __ b\n")
+	if _, ok := spaced["a-__-b"]; !ok {
+		t.Fatalf("expected a-__-b anchor in %v", spaced)
 	}
 }
 

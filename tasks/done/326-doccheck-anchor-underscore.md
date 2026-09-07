@@ -8,7 +8,7 @@ exec-tier: standard
 created-at: 2026-09-05T15:10:00+09:00
 source: "TASK-246 done-review: named a follow-up card target, none existed"
 parent: PLAN-007
-status: todo
+status: done
 ---
 
 # Task 326: doccheck가 제목의 `_`를 지워 앵커가 GitHub와 어긋난다
