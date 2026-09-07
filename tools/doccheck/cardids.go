@@ -18,8 +18,22 @@ import (
 // master. Both failures are the same missing invariant.
 //
 // planprogress already collects the paths per id (its taskRecord.paths) but deliberately does
-// not judge uniqueness — its stated scope is plan/child consistency. Card hygiene lives here,
-// beside the zone/status sweep, which is why the check is in doccheck rather than there.
+// not judge uniqueness — its stated scope is plan/child consistency. The deciding reason is
+// narrower than that, though: the two tools key on different things. planprogress indexes by
+// the leading filename digits off a filesystem walk; this indexes by the frontmatter id off the
+// git inventory. Putting the check there would have built a filename-collision check, which is
+// a different check — and one that is still missing (TASK-343). The bug being fixed here is
+// that doccheck's own link resolution keys on the frontmatter id, so doccheck owns that space.
+//
+// Note what this does *not* separate: PLAN-00n and TASK-00n never collide even where their
+// filename numbers match, because the key is the id string. tasks/plan/'s skip is a second,
+// independent reason for those — the namespaces would stay distinct without it.
+//
+// The inventory (inventory.go:82-85) merges tracked files with untracked non-ignored ones, so
+// an unstaged scratch copy of a card fails the gate repo-wide with no waiver path. That reach
+// is inherited, not new — checkCardStatus already fails on an untracked malformed card through
+// the same inventory — and it is kept deliberately: a duplicate that only appears once staged
+// is a duplicate someone has already started building on.
 //
 // Only files under a declared card zone are considered, and tasks/plan/ is excluded, matching
 // checkCardStatus. Cards whose frontmatter declares no id are skipped: a missing id: is not a
