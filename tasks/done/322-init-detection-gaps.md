@@ -33,10 +33,17 @@ tool-version 핀(`mise.toml`/`.mise.toml`/`.tool-versions`)을 language 증거�
 `python`을 핀한 Rust 저장소가 native-only python으로 분류되어 python 문구가 붙은
 dva.yml을 받는다.
 
-**오탐의 한계**: native-only 출력은 `stack:` 엔트리를 만들지 않는다(TASK-249/250 계약).
-따라서 최악의 경우도 "언어 이름이 틀린 주석 전용 dva.yml"이고, 사용자가 지우거나 고치면
-된다. 이전 동작인 exit 1(아무것도 생성 안 함)보다 낫다고 판단해 채택했다.
-핀에서 run/build 커맨드를 유추하는 것은 계약 위반이며 하지 않는다.
+**한계(bound)**: 핀에서 나온 증거는 **분류와 문구에만** 닿고 생성된 커맨드에는 절대
+닿지 않는다. 근거 두 가지 —
+- `detectTemplateIn`은 direct 증거(`detectDirectManifestLangIn`: 패키지 manifest와
+  `go.work`)만 받는다. 핀은 템플릿을 고를 수 없으므로, compose가 함께 있는
+  hybrid 경로에서도 핀만 있는 루트는 종전대로 `minimal`이다.
+- native-only 출력은 `stack:` 엔트리 자체를 만들지 않는다(TASK-249/250 계약).
+
+따라서 최악의 경우는 "언어 이름이 틀린 주석 전용 dva.yml"이고, 사용자가 지우거나
+고치면 된다. 이전 동작인 exit 1(아무것도 생성 안 함)보다 낫다고 판단해 채택했다.
+핀이 템플릿을 고르게 두면 이 한계가 깨진다 — python 템플릿은 실제 compose 서비스에
+대고 `python manage.py`·`python -m pytest`·`pip`을 쓴다.
 
 ## Troubleshooting Log
 
@@ -52,3 +59,10 @@ dva.yml을 받는다.
   전자에만 추가해 두 사본이 어긋남. 신규 테스트가 전부 native-only라 hybrid를
   건드리지 않아 놓쳤다. 해결: `detectTemplateIn`이 `detectNativeMarkerIn`에 위임하고
   미탐지 시에만 "minimal"로 폴백 — 테이블을 하나로 합침. 걸린시간: 20분.
+- (2026-09-07) 증상: 위 desync 수정(`detectTemplateIn` → `detectNativeMarkerIn` 위임)이
+  tool-pin 오탐의 피해 범위를 넓힘 — pre-commit용으로 `python`만 핀한 저장소에
+  compose가 있으면 hybrid 경로에서 python 템플릿(`python manage.py`, `pip`)이
+  생성된다. 원인: 증거 등급을 구분하지 않고 두 함수를 같은 소스에 묶음.
+  해결: `detectDirectManifestLangIn`(패키지 manifest + `go.work`)을 분리해
+  `detectTemplateIn`은 direct 증거만, `detectNativeMarkerIn`은 direct + 핀을 읽는다.
+  걸린시간: 25분.

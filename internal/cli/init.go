@@ -260,15 +260,22 @@ func filterEnv(env []string, key string) []string {
 // detectTemplateIn inspects the given directory to auto-detect project type,
 // falling back to "minimal" when nothing is recognized.
 //
-// It reads the same evidence as detectNativeMarkerIn on purpose. The two used to
-// carry separate copies of the manifest table, and TASK-322 desynchronized them:
-// a root with go.work (or a mise.toml) plus a Compose file classified as
-// outcomeHybrid and announced "a go project manifest", then generated the
-// "minimal" template, because only the classifier's copy knew the new markers.
-// One table, one answer — every language detectNativeMarkerIn can name is also a
-// template name, and a directory with no manifest still yields "minimal".
+// It reads detectDirectManifestLangIn's table rather than keeping a copy. The
+// two used to carry separate copies, and TASK-322 desynchronized them: a root
+// with go.work plus a Compose file classified as outcomeHybrid and announced
+// "a go project manifest", then generated the "minimal" template, because only
+// the classifier's copy knew about go.work. One table, one answer — every
+// language it can name is also a template name.
+//
+// It deliberately reads only *direct* evidence, not detectNativeMarkerIn's
+// broader set. A tool-version pin may classify a directory as native-only,
+// whose output is comment-only, but it must not pick a template: a template
+// authors real commands (the python one writes `python manage.py`, `python -m
+// pytest`, `pip`), and a repository that pins `python` for its pre-commit hooks
+// would get them generated against its compose service. Such a root stays
+// "minimal", exactly as it was before TASK-322.
 func detectTemplateIn(dir string) string {
-	if lang, ok := detectNativeMarkerIn(dir); ok && lang != "" {
+	if lang, ok := detectDirectManifestLangIn(dir); ok && lang != "" {
 		return lang
 	}
 	return "minimal"

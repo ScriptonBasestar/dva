@@ -339,42 +339,65 @@ func TestInitRecursive_ScansSubprojectsWithoutRootEvidence(t *testing.T) {
 	}
 }
 
-// TestHybridTemplateMatchesAnnouncedManifest guards the desync TASK-322's first
-// round introduced: classifyDiscovery and detectTemplateIn each carried their
-// own copy of the manifest table, so a root whose only manifest was one of the
-// newly recognized markers was announced as "a go project manifest" and then
-// generated the "minimal" template. What init says it detected and what it
-// generates must be the same language.
-func TestHybridTemplateMatchesAnnouncedManifest(t *testing.T) {
+// TestHybridTemplateSelection covers what the hybrid path generates, and pins
+// the evidence grade that is allowed to decide it.
+//
+// Two defects live here. classifyDiscovery and detectTemplateIn once carried
+// separate copies of the manifest table, so a go.work root was announced as
+// "a go project manifest" and then generated the "minimal" template. Closing
+// that by sharing detectNativeMarkerIn then over-corrected: it let a mise /
+// .tool-versions pin pick a template, so a repo pinning python only for its
+// pre-commit hooks would get `python manage.py` and `pip` generated against its
+// compose service. Direct manifests and go.work select a template; a tool pin
+// classifies and words the output but must never select one.
+func TestHybridTemplateSelection(t *testing.T) {
 	tests := []struct {
-		name         string
-		files        map[string]string
-		wantLang     string
-		wantContains string
+		name  string
+		files map[string]string
+		// wantLang is what classifyDiscovery announces to the user.
+		wantLang string
+		// wantTmpl is what the generator is allowed to author from it.
+		wantTmpl  string
+		wantHas   string
+		wantLacks string
 	}{
 		{
-			name:         "go.work workspace root with a Compose file",
-			files:        map[string]string{"go.work": "go 1.25\n", "docker-compose.yml": "services: {}\n"},
-			wantLang:     "go",
-			wantContains: "go test ./...",
+			name:     "go.work workspace root with a Compose file selects the go template",
+			files:    map[string]string{"go.work": "go 1.25\n", "docker-compose.yml": "services: {}\n"},
+			wantLang: "go",
+			wantTmpl: "go",
+			wantHas:  "go test ./...",
 		},
 		{
-			name:         "mise.toml node root with a Compose file",
-			files:        map[string]string{"mise.toml": "[tools]\nnode = \"24\"\n", "docker-compose.yml": "services: {}\n"},
-			wantLang:     "node",
-			wantContains: "npm run dev",
+			name:     "a direct manifest is unaffected",
+			files:    map[string]string{"Gemfile": "source 'x'\n", "docker-compose.yml": "services: {}\n"},
+			wantLang: "rails",
+			wantTmpl: "rails",
+			wantHas:  "bundle exec rspec",
 		},
 		{
-			name:         "classic manifest is unaffected",
-			files:        map[string]string{"Gemfile": "source 'x'\n", "docker-compose.yml": "services: {}\n"},
-			wantLang:     "rails",
-			wantContains: "bundle exec rspec",
+			// The reviewer's case: python pinned for pre-commit hooks only.
+			name:      "a .tool-versions pin must not select a template",
+			files:     map[string]string{".tool-versions": "python 3.12.0\n", "docker-compose.yml": "services: {}\n"},
+			wantLang:  "python",
+			wantTmpl:  "minimal",
+			wantHas:   "/bin/bash",
+			wantLacks: "python manage.py",
 		},
 		{
-			name:         "a Compose file with no manifest at all is still minimal",
-			files:        map[string]string{"docker-compose.yml": "services: {}\n"},
-			wantLang:     "",
-			wantContains: "/bin/bash",
+			name:      "a mise.toml pin must not select a template",
+			files:     map[string]string{"mise.toml": "[tools]\nnode = \"24\"\n", "docker-compose.yml": "services: {}\n"},
+			wantLang:  "node",
+			wantTmpl:  "minimal",
+			wantHas:   "/bin/bash",
+			wantLacks: "npm run dev",
+		},
+		{
+			name:     "a Compose file with no manifest at all is still minimal",
+			files:    map[string]string{"docker-compose.yml": "services: {}\n"},
+			wantLang: "",
+			wantTmpl: "minimal",
+			wantHas:  "/bin/bash",
 		},
 	}
 
@@ -395,13 +418,8 @@ func TestHybridTemplateMatchesAnnouncedManifest(t *testing.T) {
 				t.Fatalf("classifyDiscovery() lang = %q, want %q", nativeLang, tc.wantLang)
 			}
 
-			// The template init picks must name the same language it announced.
-			wantTmpl := tc.wantLang
-			if wantTmpl == "" {
-				wantTmpl = "minimal"
-			}
-			if tmpl := detectTemplateIn(dir); tmpl != wantTmpl {
-				t.Fatalf("detectTemplateIn() = %q, want %q — announced %q", tmpl, wantTmpl, nativeLang)
+			if tmpl := detectTemplateIn(dir); tmpl != tc.wantTmpl {
+				t.Fatalf("detectTemplateIn() = %q, want %q (announced %q)", tmpl, tc.wantTmpl, nativeLang)
 			}
 
 			created, err := scaffoldDvaYml(dir, "")
@@ -412,8 +430,11 @@ func TestHybridTemplateMatchesAnnouncedManifest(t *testing.T) {
 			if err != nil {
 				t.Fatalf("read generated config: %v", err)
 			}
-			if !strings.Contains(string(data), tc.wantContains) {
-				t.Errorf("generated config should carry the %q template (%q), got:\n%s", wantTmpl, tc.wantContains, data)
+			if !strings.Contains(string(data), tc.wantHas) {
+				t.Errorf("generated config should carry the %q template (%q), got:\n%s", tc.wantTmpl, tc.wantHas, data)
+			}
+			if tc.wantLacks != "" && strings.Contains(string(data), tc.wantLacks) {
+				t.Errorf("a tool pin must not author %q — it says a runtime is available, not that the repo is written in it. Got:\n%s", tc.wantLacks, data)
 			}
 			if !strings.Contains(string(data), "stack:") {
 				t.Errorf("hybrid output must still generate the verified Compose stack, got:\n%s", data)

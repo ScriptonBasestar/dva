@@ -49,7 +49,29 @@ func classifyDiscovery(dir string) (outcome discoveryOutcome, composeFiles []str
 // detectNativeMarkerIn reports a verified language manifest in dir, if any.
 // Unlike detectTemplateIn it never falls back to "minimal" — absence of
 // evidence must be reported as absence, not silently coerced into a guess.
+//
+// It accepts two grades of evidence, and callers must not treat them alike.
+// detectDirectManifestLangIn is a statement that the repository *is* a project
+// in that language; a tool-version pin only says a runtime is available. The
+// weaker grade is enough to classify a directory as native-only — whose output
+// is comment-only — and detectTemplateIn deliberately does not accept it,
+// because a template authors real commands. See detectToolManifestLangIn.
 func detectNativeMarkerIn(dir string) (lang string, ok bool) {
+	if lang, ok := detectDirectManifestLangIn(dir); ok {
+		return lang, true
+	}
+	// Weaker, but still verified and self-contained: a tool-version manifest
+	// names the language outright. TASK-322 — a workspace root that keeps every
+	// package manifest one level down (scripton-dashboard: dashboard-webui/
+	// package.json) declares its language only here, so without this the whole
+	// repository looked manifest-less.
+	return detectToolManifestLangIn(dir)
+}
+
+// detectDirectManifestLangIn reports a language declared by a manifest whose
+// mere existence identifies the project: a package manifest, or a Go workspace
+// file. This is the only evidence strong enough to pick a template.
+func detectDirectManifestLangIn(dir string) (lang string, ok bool) {
 	indicators := []struct {
 		file string
 		lang string
@@ -62,7 +84,8 @@ func detectNativeMarkerIn(dir string) (lang string, ok bool) {
 		{"go.mod", "go"},
 		// TASK-322 gap 3: a Go workspace root carries go.work and delegates
 		// every go.mod to a member directory, so the root of such a repository
-		// read as "no recognized language manifest".
+		// read as "no recognized language manifest". go.work is direct
+		// evidence — nothing but a Go workspace has one.
 		{"go.work", "go"},
 	}
 	for _, ind := range indicators {
@@ -70,12 +93,7 @@ func detectNativeMarkerIn(dir string) (lang string, ok bool) {
 			return ind.lang, true
 		}
 	}
-	// Weaker, but still verified and self-contained: a tool-version manifest
-	// names the language outright. TASK-322 — a workspace root that keeps every
-	// package manifest one level down (scripton-dashboard: dashboard-webui/
-	// package.json) declares its language only here, so without this the whole
-	// repository looked manifest-less.
-	return detectToolManifestLangIn(dir)
+	return "", false
 }
 
 // toolManifestLangs maps a tool-version manifest entry to the template language
@@ -97,13 +115,18 @@ var toolManifestLangs = map[string]string{
 // runtime, so those keys are skipped.
 //
 // Trade-off (TASK-322, deliberate): a tool pin is weaker evidence than a package
-// manifest. A repository that pins `python` only for its pre-commit hooks now
-// classifies as native-only python and gets python-worded output. The bound on
-// that misfire is narrow — a native-only result never authors a stack entry, so
-// the worst case is a comment-only dva.yml naming the wrong language, which the
-// user edits or deletes, instead of the exit-1 refusal that produced nothing at
-// all. Widening it (guessing a run command from the pin) is what the contract
-// forbids, and this does not do that.
+// manifest — it says a runtime is available, not that the repository is written
+// in it. A repository that pins `python` only for its pre-commit hooks does
+// classify as native-only python and gets python-worded output.
+//
+// The bound is that pin-derived evidence reaches classification and wording
+// only, never a generated command. detectTemplateIn refuses it, so a pin can
+// never select a template; and a native-only result authors no stack entry at
+// all. The worst case is therefore a comment-only dva.yml naming the wrong
+// language — which the user edits or deletes — in place of the exit-1 refusal
+// that produced nothing. Letting a pin choose a template would break that bound:
+// the python template writes `python manage.py`, `python -m pytest` and `pip`
+// against a real compose service.
 func detectToolManifestLangIn(dir string) (string, bool) {
 	for _, name := range []string{"mise.toml", ".mise.toml", ".tool-versions"} {
 		data, err := os.ReadFile(filepath.Join(dir, name))
