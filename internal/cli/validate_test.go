@@ -113,6 +113,150 @@ stack:
 	}
 }
 
+// TestDetectConfigDriftWarnings_DetectsUnregisteredDashNamedComposeFile is TASK-316 Finding 2:
+// autodiscovery previously only recognized the dotted overlay style (compose.tools.yaml), so
+// a dashed file like compose-ha.yaml sat beside dva.yml completely invisible to drift
+// detection. It must now be detected and, being unregistered, warned about.
+func TestDetectConfigDriftWarnings_DetectsUnregisteredDashNamedComposeFile(t *testing.T) {
+	tmpDir := t.TempDir()
+	for _, name := range []string{"compose.yaml", "compose-ha.yaml"} {
+		if err := os.WriteFile(filepath.Join(tmpDir, name), []byte("services: {}\n"), 0644); err != nil {
+			t.Fatalf("write %s: %v", name, err)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, config.FileName), []byte(`version: "0.1.44"
+stack:
+  compose:
+    default_runner: compose
+    runners:
+      compose:
+        files: [compose.yaml]
+`), 0644); err != nil {
+		t.Fatalf("write dva.yml: %v", err)
+	}
+
+	c, err := config.Load(tmpDir)
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	warnings := detectConfigDriftWarnings(c)
+	joined := strings.Join(warnings, "\n")
+	if !strings.Contains(joined, "compose-ha.yaml") || !strings.Contains(joined, "beside dva.yml") || !strings.Contains(joined, "compose.files") {
+		t.Fatalf("expected unregistered compose-ha.yaml warning, got %v", warnings)
+	}
+}
+
+// TestDetectConfigDriftWarnings_RegisteredDashNamedComposeFileNoWarning is the other half of
+// Finding 2: once compose-ha.yaml is registered under runners.compose.files, it must not
+// produce a warning either — the old symmetric sameStringSlice comparison flagged exactly this
+// case (declared but, before the prefix fix, never autodiscovered) as drift.
+func TestDetectConfigDriftWarnings_RegisteredDashNamedComposeFileNoWarning(t *testing.T) {
+	tmpDir := t.TempDir()
+	for _, name := range []string{"compose.yaml", "compose-ha.yaml"} {
+		if err := os.WriteFile(filepath.Join(tmpDir, name), []byte("services: {}\n"), 0644); err != nil {
+			t.Fatalf("write %s: %v", name, err)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, config.FileName), []byte(`version: "0.1.44"
+stack:
+  compose:
+    default_runner: compose
+    runners:
+      compose:
+        files: [compose.yaml, compose-ha.yaml]
+`), 0644); err != nil {
+		t.Fatalf("write dva.yml: %v", err)
+	}
+
+	c, err := config.Load(tmpDir)
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if warnings := detectConfigDriftWarnings(c); len(warnings) != 0 {
+		t.Fatalf("expected registered compose-ha.yaml to produce no drift warning, got %v", warnings)
+	}
+}
+
+// TestDetectConfigDriftWarnings_DetectsUnregisteredSubdirectoryComposeFile is TASK-316 Finding
+// 3: the scan set previously never left the dva.yml directory, so a project keeping its
+// compose corpus under a subdirectory (env/docker-compose/, as in the primeno1 dogfood
+// evidence) never had that subdirectory's other files checked. Registering one file there
+// must widen the scan to that directory, surfacing an unregistered sibling.
+func TestDetectConfigDriftWarnings_DetectsUnregisteredSubdirectoryComposeFile(t *testing.T) {
+	tmpDir := t.TempDir()
+	composeDir := filepath.Join(tmpDir, "env", "docker-compose")
+	if err := os.MkdirAll(composeDir, 0755); err != nil {
+		t.Fatalf("mkdir env/docker-compose: %v", err)
+	}
+	for _, name := range []string{"docker-compose.yml", "docker-compose.verify.yml"} {
+		if err := os.WriteFile(filepath.Join(composeDir, name), []byte("services: {}\n"), 0644); err != nil {
+			t.Fatalf("write %s: %v", name, err)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, config.FileName), []byte(`version: "0.1.44"
+stack:
+  compose:
+    default_runner: compose
+    runners:
+      compose:
+        files: [env/docker-compose/docker-compose.yml]
+`), 0644); err != nil {
+		t.Fatalf("write dva.yml: %v", err)
+	}
+
+	c, err := config.Load(tmpDir)
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	warnings := detectConfigDriftWarnings(c)
+	joined := strings.Join(warnings, "\n")
+	if !strings.Contains(joined, "docker-compose.verify.yml") || !strings.Contains(joined, "in env/docker-compose/") {
+		t.Fatalf("expected unregistered subdirectory compose file warning, got %v", warnings)
+	}
+}
+
+func TestDetectConfigDriftWarnings_DetectsUnregisteredComposeFileBesideIncludedFile(t *testing.T) {
+	// flow-pipechain shape: the root compose file is a shim that only `include:`s the real
+	// file from a subdirectory. That subdirectory is in scan scope because the include chain
+	// reaches it, so an unregistered sibling there is drift (TASK-316 Finding 3).
+	tmpDir := t.TempDir()
+	deployDir := filepath.Join(tmpDir, "deploy", "local")
+	if err := os.MkdirAll(deployDir, 0755); err != nil {
+		t.Fatalf("mkdir deploy/local: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, "compose.yaml"), []byte("include:\n  - deploy/local/docker-compose.yml\n"), 0644); err != nil {
+		t.Fatalf("write root shim: %v", err)
+	}
+	for _, name := range []string{"docker-compose.yml", "docker-compose.extra.yml"} {
+		if err := os.WriteFile(filepath.Join(deployDir, name), []byte("services: {}\n"), 0644); err != nil {
+			t.Fatalf("write %s: %v", name, err)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, config.FileName), []byte(`version: "0.1.44"
+stack:
+  compose:
+    default_runner: compose
+    runners:
+      compose:
+        files: [compose.yaml]
+`), 0644); err != nil {
+		t.Fatalf("write dva.yml: %v", err)
+	}
+
+	c, err := config.Load(tmpDir)
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	warnings := detectConfigDriftWarnings(c)
+	joined := strings.Join(warnings, "\n")
+	if !strings.Contains(joined, "docker-compose.extra.yml") || !strings.Contains(joined, "in deploy/local/") {
+		t.Fatalf("expected unregistered compose file warning beside the included file, got %v", warnings)
+	}
+	if strings.Contains(joined, "docker-compose.yml,") || strings.Contains(joined, " docker-compose.yml ") {
+		t.Fatalf("include-reached file must not be reported as unregistered, got %v", warnings)
+	}
+}
+
 func TestDetectConfigDriftWarnings_IgnoresConfiguredSubdirectoryComposeFiles(t *testing.T) {
 	tmpDir := t.TempDir()
 	if err := os.Mkdir(filepath.Join(tmpDir, "compose"), 0755); err != nil {
@@ -172,8 +316,11 @@ stack:
 	if err != nil {
 		t.Fatalf("load config: %v", err)
 	}
+	// Finding 2 (TASK-316): a configured file that does not exist is not "unregistered" —
+	// missingConfiguredComposeFiles already reports it below, and detectUnregisteredComposeFileWarnings
+	// has nothing to report since autodiscovery finds nothing in an empty directory.
 	warnings := detectConfigDriftWarnings(c)
-	if len(warnings) != 2 || !strings.Contains(warnings[0], "compose.files is compose.yaml but detected root compose files are (none)") || !strings.Contains(warnings[1], `compose file "compose.yaml" is configured by dva.yml but does not exist`) {
+	if len(warnings) != 1 || !strings.Contains(warnings[0], `compose file "compose.yaml" is configured by dva.yml but does not exist`) {
 		t.Fatalf("expected missing root compose drift warning, got %v", warnings)
 	}
 }

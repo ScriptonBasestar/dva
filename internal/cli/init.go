@@ -440,7 +440,7 @@ func detectComposeFilesIn(dir string) []string {
 				continue
 			}
 			name := e.Name()
-			if strings.HasPrefix(name, "docker-compose.") &&
+			if hasComposeFileNamePrefix(name) &&
 				(strings.HasSuffix(name, ".yml") || strings.HasSuffix(name, ".yaml")) &&
 				!contains(found, name) {
 				found = append(found, name)
@@ -469,6 +469,17 @@ func detectComposeFilesIn(dir string) []string {
 
 func contains(slice []string, item string) bool {
 	return slices.Contains(slice, item)
+}
+
+// hasComposeFileNamePrefix reports whether name uses one of the naming conventions DVA's
+// compose autodiscovery recognizes for an additional/overlay file: the dotted style
+// (compose.tools.yaml, docker-compose.override.yml) and the dashed style
+// (compose-ha.yaml, docker-compose-prod.yml). TASK-316 Finding 2: the dashed style was
+// previously invisible to autodiscovery, so a project using it looked driftless with zero
+// registered files and drift-warned the moment any of them were registered.
+func hasComposeFileNamePrefix(name string) bool {
+	return strings.HasPrefix(name, "docker-compose.") || strings.HasPrefix(name, "docker-compose-") ||
+		strings.HasPrefix(name, "compose.") || strings.HasPrefix(name, "compose-")
 }
 
 // detectInfraComposeFiles finds compose files in common infrastructure subdirectories.

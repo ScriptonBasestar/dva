@@ -720,6 +720,16 @@ dva config validate --fix    # compose 파일 project name 불일치 자동 수�
 dva config validate --strict # drift 경고 시에도 검증 실패 처리
 ```
 
+compose 파일에 대한 config drift 경고는 두 방향을 따로 검사합니다. 등록됐지만 디스크에
+없는 파일은 `compose file "..." is configured by dva.yml but does not exist`로 보고합니다.
+반대로 디스크에는 있지만 어떤 `runners.compose.files`에도 등록되지 않은 파일은
+`... no stack entry lists them under runners.compose.files`로 보고합니다 — 등록된 파일이
+실제로 존재하면 그것만으로 drift가 아닙니다. 후자의 스캔 범위는 dva.yml이 있는 루트
+디렉터리 + (`source:`가 없는) root stack 엔트리가 참조하는 compose 파일들의 디렉터리 +
+그 파일들이 `include:`로 도달하는 하위 파일들의 디렉터리이며, `source:`로 선언된 외부
+코퍼스는 dva.yml이 전체를 알 필요가 없으므로 스캔 대상에서 제외됩니다. 의도적으로 등록하지
+않은 파일을 억제하는 선언 수단은 아직 없습니다 (TASK-309).
+
 hard error(스키마 위반, legacy compose 선언, 실행 불가능한 훅 위치, 잘못된
 `default_plan` 등)가 하나 있어도 거기서 멈추지 않습니다. 가능한 진단을 끝까지 수행한 뒤
 경고를 먼저, hard error를 번호 목록으로 한 번에 출력하고 exit 1로 종료합니다. YAML 자체를

@@ -200,14 +200,17 @@ func strictValidateBinary(t *testing.T) string {
 	return strictBinaryPath
 }
 
-// composeAbsenceWarningRE matches the two config-drift warnings TASK-276's ruling exempts
-// for this corpus: no example under examples/ has ever shipped the compose file it
-// references, and examples/README.md documents that the reader supplies it, so the warning
-// is a property of a fragment corpus rather than a defect in one. Any other [warn] line
-// fails the test.
+// composeAbsenceWarningRE matches the config-drift warning TASK-276's ruling exempts for this
+// corpus: no example under examples/ has ever shipped the compose file it references, and
+// examples/README.md documents that the reader supplies it, so the warning is a property of a
+// fragment corpus rather than a defect in one. Any other [warn] line fails the test.
+//
+// TASK-316 Finding 2 replaced the symmetric "compose.files is X but detected root compose
+// files are (none)" comparison with an asymmetric unregistered-file scan, so a fragment with
+// no shipped compose file no longer produces that warning at all — only the "does not exist"
+// half below still fires, and this regex's first alternative is now unreachable dead weight.
 var composeAbsenceWarningRE = regexp.MustCompile(
-	`compose\.files is .* but detected root compose files are \(none\)` +
-		`|compose file ".*" is configured by dva\.yml but does not exist`,
+	`compose file ".*" is configured by dva\.yml but does not exist`,
 )
 
 // TestExamplesStrictCleanExceptComposeAbsence proves every examples/*.yml file is clean

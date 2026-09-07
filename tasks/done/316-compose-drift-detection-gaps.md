@@ -7,7 +7,13 @@ effort: M
 exec-tier: standard
 created-at: 2026-09-05T10:30:00+09:00
 source: "docs/dogfood/{gizzahub,sigdock-pass,sigdock-idp,primeno1,flow-knowchain}.md"
-status: todo
+status: done
+quality-review: conditional
+quality-reviewed-at: 2026-09-07T17:15:00+09:00
+quality-review-evidence:
+  - "main-thread diff review found the include-reached scanDirs gap and a symlink path-rendering defect; both fixed with a new failing-first test (TestDetectConfigDriftWarnings_DetectsUnregisteredComposeFileBesideIncludedFile)"
+  - "task-validator: criteria_gate PASS, score 100, make test 1525/1525"
+  - "no independent review session; implementer (subagent) and reviewer (main thread) were separate"
 ---
 
 # Task 316: compose drift 감지 결함
@@ -68,4 +74,34 @@ USAGE.md `dva config validate --strict` 부근(720행)에 drift 범위 한 단�
 
 ## Completion Criteria
 
-- [ ] 감지 패턴 확장 + include 추적 + 등록 파일 비대칭 경고 제거, 픽스처 테스트 | verify: `make test`
+- [x] 감지 패턴 확장 + include 추적 + 등록 파일 비대칭 경고 제거, 픽스처 테스트 | verify: `make test`
+
+## Troubleshooting Log
+
+- `internal/cli/init.go`의 `detectComposeFilesIn` 서브디렉터리(ReadDir) 추가 스캔 루프는
+  원래 `docker-compose.` 접두어만 인정하고 `compose.`는 전혀 인정하지 않아
+  `internal/cli/validate.go`의 `detectComposeFilesInDir`(둘 다 인정)와 이미 불일치했다.
+  카드는 "두 함수 모두 `compose.`/`docker-compose.`만 인정한다"고 전제했지만 실제로는
+  init.go 쪽이 더 좁았다. 새 공용 헬퍼 `hasComposeFileNamePrefix`(internal/cli/init.go)로
+  두 함수를 통일하면서 이 불일치도 함께 해소했다 — `init.go`의 동작이 넓어졌지만
+  `TestDetectComposeFiles`는 `compose.*` 픽스처를 쓰지 않아 영향 없음을 확인.
+- 개인 정책 훅(`ce-validate-filesize.sh`)이 `internal/cli/validate.go`,
+  `internal/cli/validate_test.go`, `USAGE.md`에 대해 파일 크기 초과를 매 편집마다
+  경고했다. 세 파일 모두 이 작업 이전부터(예: validate.go 924줄 vs 이번 세션 이전 커밋
+  기준) 임계치를 크게 넘어선 상태였고, 이번 작업 범위(TASK-316)는 리팩터링 대상이
+  아니므로 분리하지 않았다 — 별도 정리 태스크로 남겨두는 편을 권장.
+- Finding 2/3 재작성 전, 세 개의 새 테스트(`TestDetectConfigDriftWarnings_DetectsUnregisteredDashNamedComposeFile`,
+  `..._RegisteredDashNamedComposeFileNoWarning`, `..._DetectsUnregisteredSubdirectoryComposeFile`)를
+  구현 파일을 HEAD 상태로 되돌린 채로 실행해 모두 실패함을 확인했다(첫 번째·세 번째는
+  빈 경고 슬라이스, 두 번째는 구 대칭 비교가 만드는 거짓 drift 경고). 이후 구현을
+  복원하고 재실행해 전부 통과함을 확인.
+- 메인 스레드 리뷰에서 flow-pipechain 형태(루트 shim이 `include:`로 서브디렉터리 파일만
+  끌어오는 경우)를 덮는 테스트가 없어 추가했다
+  (`TestDetectConfigDriftWarnings_DetectsUnregisteredComposeFileBesideIncludedFile`).
+  `detectUnregisteredComposeFileWarnings`에서 `scanDirs[filepath.Dir(reachable)]` 한 줄을
+  빼면 경고가 사라지는 것으로 이 테스트가 실제 게이트임을 확인했다.
+- 그 테스트가 드러낸 부수 결함: include로 도달한 디렉터리는 `canonicalComposePath`로
+  symlink가 풀린 경로라, 설정 디렉터리 자체가 symlink 뒤에 있는 환경(macOS `/tmp` →
+  `/private/tmp`)에서는 `filepath.Rel(c.FileDir(), dir)`이 `../../../..` 사슬을 만들어
+  경고 문구가 읽을 수 없게 됐다. `composeScanDirLocation` 헬퍼가 원본과 canonical 두
+  기준으로 상대 경로를 시도하고 둘 다 벗어나면 절대 경로를 그대로 쓰도록 고쳤다.

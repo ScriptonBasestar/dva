@@ -385,14 +385,13 @@ func printConfigDriftWarnings(w io.Writer, warnings []string) {
 func detectConfigDriftWarnings(c *config.Config) []string {
 	var warnings []string
 
-	detectedCompose := detectComposeFilesInDir(c.FileDir())
-	configuredRootCompose, deferredRootCompose := configuredRootComposeFiles(c)
-	if !deferredRootCompose && (len(detectedCompose) > 0 || len(configuredRootCompose) > 0) {
-		if !sameStringSlice(configuredRootCompose, detectedCompose) {
-			warnings = append(warnings,
-				fmt.Sprintf("compose.files is %s but detected root compose files are %s; review whether dva.yml is tracking the current project layout",
-					formatList(configuredRootCompose), formatList(detectedCompose)))
-		}
+	// configuredRootComposeFiles' file list is unused here (Finding 2/3 replaced the symmetric
+	// comparison it fed); its deferredRootCompose flag is still authoritative for "a root
+	// entry's compose path needs plan/site/entry vars that validation cannot resolve yet" and
+	// gates the unregistered-file scan the same way it gated the old comparison — comparing
+	// against an incomplete configured corpus produces false positives, not signal.
+	if _, deferredRootCompose := configuredRootComposeFiles(c); !deferredRootCompose {
+		warnings = append(warnings, detectUnregisteredComposeFileWarnings(c)...)
 	}
 	for _, file := range missingConfiguredComposeFiles(c) {
 		warnings = append(warnings, fmt.Sprintf("compose file %q is configured by dva.yml but does not exist", file))
@@ -570,6 +569,82 @@ func configuredComposeFiles(c *config.Config) ([]configuredComposeFile, bool, bo
 	return files, deferredRootCompose, complete
 }
 
+// detectUnregisteredComposeFileWarnings reports compose files that autodiscovery finds in a
+// scanned directory but no stack entry lists under runners.compose.files (TASK-316 Finding 2)
+// — the mirror image of missingConfiguredComposeFiles, which already reports the opposite
+// direction (registered but absent). A registered file that exists is never drift here: the
+// two warnings are deliberately asymmetric because they answer different questions.
+//
+// The scan set is root + the directory of every root-entry configured compose file + every
+// directory reached by following those files' `include:` chains (Finding 3), so overlays and
+// subdirectory compose corpora that dva.yml only partially declares are visible instead of
+// invisible outside the root directory. `source:` entries are excluded — they own an
+// externally-managed corpus dva.yml is not expected to fully enumerate. The registered set
+// tracked per scanned directory is configured files ∪ include-reached files, compared by
+// canonicalComposePath so a symlink alias (e.g. docker-compose.yml -> compose.yaml) still
+// counts as the one file it is (TestDetectConfigDriftWarnings_SymlinkAliasRepresentsOneComposeFile).
+// composeScanDirLocation renders a scanned directory for a drift warning, relative to the
+// dva.yml directory when it sits underneath it. Directories reached through `include:` are
+// symlink-resolved (canonicalComposePath), so on platforms where the config directory itself
+// is behind a symlink — macOS /tmp → /private/tmp — a plain Rel against baseDir escapes with
+// a long `../..` chain; comparing against the canonical base too keeps those readable.
+func composeScanDirLocation(baseDir, dir string) string {
+	for _, base := range []string{baseDir, canonicalComposePath(baseDir)} {
+		rel, err := filepath.Rel(base, dir)
+		if err != nil || strings.HasPrefix(rel, "..") {
+			continue
+		}
+		if rel == "." || rel == "" {
+			return "beside dva.yml"
+		}
+		return fmt.Sprintf("in %s/", filepath.ToSlash(rel))
+	}
+	return fmt.Sprintf("in %s/", filepath.ToSlash(dir))
+}
+
+func detectUnregisteredComposeFileWarnings(c *config.Config) []string {
+	configured, _, _ := configuredComposeFiles(c)
+
+	registered := map[string]bool{}
+	scanDirs := map[string]bool{c.FileDir(): true}
+	for _, file := range configured {
+		if !file.root {
+			continue
+		}
+		scanDirs[filepath.Dir(file.path)] = true
+		for _, reachable := range composeReachablePaths(file.path) {
+			registered[reachable] = true
+			scanDirs[filepath.Dir(reachable)] = true
+		}
+	}
+
+	dirs := make([]string, 0, len(scanDirs))
+	for dir := range scanDirs {
+		dirs = append(dirs, dir)
+	}
+	sort.Strings(dirs)
+
+	var warnings []string
+	for _, dir := range dirs {
+		var unregistered []string
+		for _, name := range detectComposeFilesInDir(dir) {
+			if !registered[canonicalComposePath(filepath.Join(dir, name))] {
+				unregistered = append(unregistered, name)
+			}
+		}
+		if len(unregistered) == 0 {
+			continue
+		}
+		sort.Strings(unregistered)
+
+		location := composeScanDirLocation(c.FileDir(), dir)
+		warnings = append(warnings, fmt.Sprintf(
+			"compose files %s exist %s but no stack entry lists them under runners.compose.files; add them to an entry or leave them out on purpose (suppression: TASK-309)",
+			formatList(unregistered), location))
+	}
+	return warnings
+}
+
 func printConfigSuggestionWarnings(w io.Writer, warnings []string) {
 	for _, warning := range warnings {
 		_, _ = fmt.Fprintf(w, "[warn] config suggestion: %s\n", warning)
@@ -678,7 +753,7 @@ func detectComposeFilesInDir(dir string) []string {
 			continue
 		}
 		name := entry.Name()
-		if (strings.HasPrefix(name, "docker-compose.") || strings.HasPrefix(name, "compose.")) &&
+		if hasComposeFileNamePrefix(name) &&
 			(strings.HasSuffix(name, ".yml") || strings.HasSuffix(name, ".yaml")) &&
 			!contains(found, name) {
 			found = append(found, name)
@@ -702,17 +777,19 @@ func detectComposeFilesInDir(dir string) []string {
 	return deduplicateComposeFiles(dir, found)
 }
 
-// configuredComposeServices returns the services declared directly in the configured
-// compose files.
+// configuredComposeServices returns the services declared in the configured compose files,
+// following compose `include:` (composeServiceCollector.collect recurses into it, cycle-safe
+// via a visited-path set — see TestDetectConfigDriftWarnings_InteractionServiceFromIncludedComposeMatches).
+// TASK-068 originally left `include:` unresolved; TASK-316 Finding 1 found it had since been
+// fixed and only this comment still described the old gap.
 //
-// It does NOT resolve compose `include:`, so a file that only pulls services in via
-// `include:` contributes nothing. That is a real gap — 14 configs in the measured corpus
-// declare services this function cannot see — and TASK-068 chose to leave it rather than
-// paper over it. What keeps the gap from becoming a false positive is the empty-set early
-// return in detectConfigDriftWarnings, not anything here: when `include:` is all a project
-// uses, this returns an empty map and the interaction-service comparison is skipped
-// wholesale. Stated because that is a load-bearing dependency between two functions that
-// neither of them declared, and it survives only as long as nobody refactors either half.
+// A file built entirely out of `include:` with no top-level `services:` of its own still
+// contributes nothing on its own line, but its included files are visited and do contribute.
+// What keeps an incomplete configured corpus from becoming a false positive is the empty-set
+// early return in detectConfigDriftWarnings, not anything here: when the configured files
+// yield no services at all, this returns an empty map and the interaction-service comparison
+// is skipped wholesale. Stated because that is a load-bearing dependency between two functions
+// that neither of them declared, and it survives only as long as nobody refactors either half.
 func configuredComposeServices(c *config.Config) (map[string]bool, bool) {
 	services := map[string]bool{}
 	configured, _, complete := configuredComposeFiles(c)
@@ -734,22 +811,6 @@ func composeFileReadable(path string) bool {
 		return false
 	}
 	return f.Close() == nil
-}
-
-func sameStringSlice(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	left := append([]string(nil), a...)
-	right := append([]string(nil), b...)
-	sort.Strings(left)
-	sort.Strings(right)
-	for i := range left {
-		if left[i] != right[i] {
-			return false
-		}
-	}
-	return true
 }
 
 func sortedSetKeys(m map[string]bool) []string {

@@ -52,11 +52,26 @@ func extractComposeServices(path string) []string {
 }
 
 type composeServiceCollector struct {
-	seen       map[string]bool
-	serviceSet map[string]bool
-	services   []string
-	buildable  map[string]bool // service → declares build: (TASK-314)
-	readAny    bool
+	seen         map[string]bool
+	serviceSet   map[string]bool
+	services     []string
+	buildable    map[string]bool // service → declares build: (TASK-314)
+	readAny      bool
+	visitedPaths []string // canonical path of every file visited, root + include chain (TASK-316)
+}
+
+// composeReachablePaths returns the canonical path of composePath and every file reachable
+// from it through `include:`, cycle-safe via the same visited-path set collect() uses for
+// service discovery. detectUnregisteredComposeFileWarnings (TASK-316 Finding 3) uses this to
+// build the "registered" file set a scanned directory's autodiscovered files are compared
+// against, so a service split across `include:` files does not look unregistered.
+func composeReachablePaths(composePath string) []string {
+	collector := composeServiceCollector{
+		seen:       map[string]bool{},
+		serviceSet: map[string]bool{},
+	}
+	collector.collect(composePath)
+	return collector.visitedPaths
 }
 
 // extractComposeBuildable reports, for every service the file (and its includes) declares,
@@ -77,6 +92,7 @@ func (collector *composeServiceCollector) collect(path string) {
 		return
 	}
 	collector.seen[canonicalPath] = true
+	collector.visitedPaths = append(collector.visitedPaths, canonicalPath)
 
 	data, err := os.ReadFile(path)
 	if err != nil {
