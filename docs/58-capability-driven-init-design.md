@@ -5,8 +5,8 @@
 > 완료했다. 이 문서는 채택된 계약과 기각된 대안을 소유한다. 그 계약이 TASK-250 구현·TASK-233
 > 결정과 충돌하지 않음을 검증한 기록은 [docs/59](59-capability-driven-init-verification.md)가,
 > label/증거 인벤토리는 [docs/60](60-capability-driven-init-label-inventory.md)이 각각 소유한다.
-> 남은 실행 항목(census 소유권/주기)은
-> [TASK-249](../tasks/todo/249-redesign-capability-driven-init.md)가 계속 추적한다.
+> Census 거버넌스(owner/IDs·revisions/inventory/cadence/threshold) 결정은
+> [docs/61](61-capability-driven-init-census-governance.md)이 소유한다.
 
 ## 1. 문제 — 고정 3-plan scaffold는 D8과 충돌
 
@@ -102,9 +102,16 @@ the preferred generated default...")은 `am` 프리셋 코퍼스 표면에 대�
 그대로 유효하다. 두 카드는 서로 다른 생성기(Go init 바이너리 vs. `am` flow 기반 preset)를
 가리키므로 같은 이름이 한쪽에서 배제되고 다른 쪽에서 허용되는 것은 모순이 아니다.
 
-## 6. 관련 문서
+## 6. Census 거버넌스 (2026-09-07)
+
+TASK-249의 마지막 완료기준(census owner, canonical repository IDs/revisions, input inventory,
+cadence, change threshold)에 대한 Decision Record는 크기 상한을 지키기 위해 별도 문서
+[docs/61](61-capability-driven-init-census-governance.md)에 있다.
+
+## 7. 관련 문서
 
 - 구현·label 증거·TASK-250 대조 검증, 완료기준 매핑: [docs/59](59-capability-driven-init-verification.md)
 - Label/증거 인벤토리(완료기준 3): [docs/60](60-capability-driven-init-label-inventory.md)
+- Census 거버넌스 Decision Record(완료기준 10): [docs/61](61-capability-driven-init-census-governance.md)
 - Implementation: [TASK-250](../tasks/done/250-implement-capability-driven-init.md)
 - Parent plan: [PLAN-002](../tasks/plan/002-command-surface-delivery.md)

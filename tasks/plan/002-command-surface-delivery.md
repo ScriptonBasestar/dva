@@ -32,7 +32,7 @@ compatibility가 미정인 부분은 evidence gate가 닫히기 전까지 구현
 | required env 오류 전파 | owner 복구 완료·env_file 결정 필요 | [TASK-247](../_archive/done/247-freeze-required-env-command-policy.md) → [TASK-264](../_archive/done/264-restore-imported-command-ownership.md) → [TASK-248](../done/248-enforce-required-env-command-policy.md) |
 | interaction-level `env_file` | versioned rejection 결정됨 | [TASK-265](../done/265-decide-interaction-env-file-contract.md) → [TASK-266](../todo/266-deprecate-and-reject-interaction-env-file.md) |
 | migrate/validate 커버리지 차이 + Stage A exit-code 서술 | 리뷰에서 확인, 재현됨 | [TASK-285](../done/285-close-migrate-validate-coverage-gap.md) |
-| 고정 3-plan `init` | 거부·재설계 | [TASK-249](../todo/249-redesign-capability-driven-init.md) → [TASK-250](../todo/250-implement-capability-driven-init.md) |
+| 고정 3-plan `init` | 거부·재설계 | [TASK-249](../done/249-redesign-capability-driven-init.md) → [TASK-250](../todo/250-implement-capability-driven-init.md) |
 | migration gate | **N/A 종료** — TASK-252가 승격을 기각해 소비처가 사라짐 | [TASK-251](../_archive/251-build-env-migration-evidence-gate.md) |
 | top-level `env` 예약 | **거부 확정 (2026-09-03)** — `config env`가 영구 canonical surface | [TASK-252](../done/252-decide-top-level-env-promotion.md) |
 
@@ -60,6 +60,15 @@ TASK-250 구현으로 검증까지 끝난 상태였다. 그 서술 전체를 doc
 것은 존재하지 않는 작업을 만드는 것이므로, 위 세 문서에 근거와 함께 기록하고 이 카드의
 `## Non-goals`에서 각 항목이 어느 문서 어느 절에 있는지만 가리킨다. children 목록과 아래 총계는
 변경하지 않는다 — 카드 수가 늘지 않았다.
+
+**TASK-249의 남은 완료기준(census 거버넌스)이 2026-09-07에 결정됐다.** owner(ce-workbook
+포트폴리오 카탈로그), canonical repository IDs/revisions(dva-adopter 집합을 실행 시점 commit
+SHA에 pin), input inventory(docs/60의 label 어휘), cadence(release 직전 1회), change threshold
+(승격 >50%, 강등 <25%, 진동 방지용 비대칭 문턱) 다섯 가지 모두를 근거와 함께
+[docs/61](../../docs/61-capability-driven-init-census-governance.md)에 기록했다. docs/58도
+10,240바이트 상한에 근접해 있었으므로 이 결정 기록은 docs/58에 잇지 않고 별도 문서로 냈다.
+이로써 TASK-249의 완료기준 10개가 모두 결정·기록됐다 — 카드 자체를 `done/`으로 옮기는 것은
+검증 후 별도로 처리한다.
 
 **TASK-252가 이 계획의 최대 분기를 닫았다.** top-level `env` 승격을 거부하고 `config env`를
 영구 canonical surface로 확정했다. 되돌리기 비대칭성이 근거다 — `config env`는 나중에 승격할

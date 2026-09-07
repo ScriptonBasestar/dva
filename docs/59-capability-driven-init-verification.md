@@ -42,11 +42,11 @@ TASK-250(`tasks/done/250-implement-capability-driven-init.md`, `status: done`, c
   `build-app:` 개명)은 TASK-250 Decision Record의 "Byproduct bug fix" 절에 기록돼 있고,
   `internal/cli/init.go`에서 실제 개명을 grep으로 확인했다. TASK-233과의 표면 분리도 docs/58 §5에
   이미 기록돼 있다.
-- **기준 9 (미충족, 열어둠 — TASK-249가 추적)** — TASK-250 Decision Record가 "Census owner/cadence/
+- **기준 9 (충족 — 2026-09-07 별도 결정)** — TASK-250 Decision Record가 "Census owner/cadence/
   change-threshold... Left untouched... flagging for a separate, explicit human decision"라고
-  명시적으로 이 기준을 미해결로 남긴다. 이 세션이 대신 판단할 권한도 근거도 없다. census 소유권/
-  cadence/revision 임계값 정의는 [TASK-249](../tasks/todo/249-redesign-capability-driven-init.md)의
-  유일한 남은 완료기준이다.
+  이 기준을 명시적으로 자기 범위 밖에 남겼고, 그 별도 결정이
+  [docs/61](61-capability-driven-init-census-governance.md)로 내려졌다. 이 검증 문서 작성 시점
+  (2026-09-03)에는 미충족이었다는 사실 자체는 기록으로 남긴다.
 - **기준 10 (충족)** — TASK-249의 Decision Record(docs/58 §5)와 docs/58 §3의 기각된 baseline이
   채택된 계약과 기각된 대안(고정 3-plan 템플릿)을 기록한다. `make doc-check`는 이 문서들을 포함해
   통과해야 한다.
@@ -65,7 +65,7 @@ TASK-249 원본의 완료기준 10개는 모두 이 문서들 또는 TASK-249 �
 | 6 | no-overwrite/preview/idempotence/불완전 discovery | 충족 | §1 기준 6 — TASK-250 완료기준 4 |
 | 7 | 사람/에이전트가 같은 canonical generator 사용 | 충족 | §1 기준 7 — TASK-250 완료기준 6 |
 | 8 | 호환성 매트릭스 동결 + TASK-233 표면 분리 기록 | 충족 | §1 기준 8 — `TestInitPublicSurfaceCompatibility` |
-| 9 | census owner/cadence/change-threshold 정의 | **미충족** | TASK-250 범위 밖으로 명시적으로 남김 — [TASK-249](../tasks/todo/249-redesign-capability-driven-init.md)가 유일한 남은 완료기준으로 추적 |
+| 9 | census owner/cadence/change-threshold 정의 | 충족(2026-09-07) | TASK-250 범위 밖으로 남겼고 [docs/61](61-capability-driven-init-census-governance.md)이 owner·IDs/revisions·inventory·cadence·threshold를 결정 |
 | 10 | 채택된 계약과 기각된 대안을 기록 | 충족 | [docs/58](58-capability-driven-init-design.md) 전체(§2, §3, §5) |
 
 기준 9만 아직 열려 있다. 나머지 9개는 결정되었거나([docs/58](58-capability-driven-init-design.md) §5)
