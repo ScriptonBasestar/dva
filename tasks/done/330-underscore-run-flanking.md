@@ -9,6 +9,9 @@ created-at: 2026-09-07T12:30:00+09:00
 source: "TASK-326 session review: divergences verified against goldmark and markdown-it-py"
 parent: PLAN-007
 status: done
+quality-review: conditional
+quality-review-evidence:
+  - "verified by task-validator (mechanical criteria_gate 3/3 PASS, score 95) plus a main-thread diff read; no separate independent review session was run"
 ---
 
 # Task 330: doccheck가 `_` 강조를 문자 단위가 아닌 run 단위로 페어링하게 한다

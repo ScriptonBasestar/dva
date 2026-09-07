@@ -3,10 +3,10 @@ id: PLAN-007
 title: "Retire the unreviewed done backlog and move quality review to card close"
 type: plan
 scope: "tasks/done/ 58장의 일회성 트리아지, done-disposition 루프에서 발견된 소유자 없는 결함 3건, 닫기 시점 독립 리뷰 전환의 외부 의존"
-progress: 0
-total-tasks: 3
-completed-tasks: 0
-children: [TASK-325, TASK-326, TASK-327]
+progress: 50
+total-tasks: 4
+completed-tasks: 2
+children: [TASK-325, TASK-326, TASK-327, TASK-330]
 target-date: "2026-09-30"
 created: 2026-09-05
 ---
@@ -78,6 +78,7 @@ PLAN-006 자식. 그 계획을 진행하는 세션이 닫는 시점에 리뷰하
 | # | 작업 | 조건 |
 |---|---|---|
 | 1 | TASK-325, 326, 327 처리 | 독립. 지금 가능 |
+| 1a | TASK-326 완료 후 세션 리뷰가 발견한 P2 결함을 TASK-330으로 분리 | TASK-326의 후속. 완료 및 통합됨 |
 | 2 | §External의 엔진 정책 변경 | ce 소스 체크아웃 필요. 별도 태스크 |
 | 3 | Tier B 일괄 아카이브 | 2가 `waived` 값을 주면 그 값으로, 아니면 `conditional` 대체 표기 |
 | 4 | Tier A 13장 done-review | 3과 병행 가능. P0 결정 카드부터 |
@@ -106,3 +107,4 @@ DVA 쪽 문서는 이 계획이 끝난 뒤 `AGENTS.md`에 "카드를 닫으려�
 - TASK-325 — docs/51 flowcheck 예시 출력 갱신
 - TASK-326 — doccheck 앵커 슬러그가 `_`를 버려 GitHub와 어긋남
 - TASK-327 — PLAN-002에 TASK-284 temp-name supersession 기록
+- TASK-330 — doccheck 언더스코어 강조가 문자 단위가 아닌 run 단위로 페어링하도록 수정 (TASK-326 세션 리뷰가 발견한 후속 결함)
