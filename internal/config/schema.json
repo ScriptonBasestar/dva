@@ -1515,6 +1515,11 @@
                 "timeout": { "type": "string", "description": "Positive Go duration for the whole profile" },
                 "warn_after": { "type": "string", "description": "Positive Go duration after which the profile warns" },
                 "max_parallel": { "type": "integer", "minimum": 1, "maximum": 32 },
+                "locks": {
+                  "type": "array",
+                  "description": "Named shared resources that must be exclusive across local CI runs",
+                  "items": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$" }
+                },
                 "steps": {
                   "type": "array",
                   "items": {

@@ -66,9 +66,11 @@ Config Loader → Schema/Semantic Validation → effective config
 
 ### CI verification
 
-`internal/cirun/`은 `ci.profiles`의 DAG를 감독하며 머신 실행 슬롯, deadline,
-process-group 취소, 로컬 결과 기록을 소유한다. CLI는 프로필과 owning config를
-선택한다. 계약과 실행 규약은 [CI 프로필](docs/53-ci-profiles.md)을 따른다.
+`internal/cirun/`은 `ci.profiles`의 DAG를 감독하며, owning config의 canonical root 락과
+명시적 공유 자원 락, deadline, process-group 취소, 로컬 결과 기록을 소유한다. CLI는
+프로필과 owning config를 선택한다. 같은 root는 항상 배타적이고, 다른 root는 같은
+`locks` 키를 선언했을 때만 충돌한다. 계약과 실행 규약은
+[CI 프로필](docs/53-ci-profiles.md)을 따른다.
 
 ### Skill distribution
 

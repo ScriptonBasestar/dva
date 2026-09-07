@@ -196,13 +196,13 @@ func TestRunDetectsInputMutationAndCleansBackgroundGroup(t *testing.T) {
 
 func TestLockReportsActiveRun(t *testing.T) {
 	state, root := t.TempDir(), t.TempDir()
-	h, err := acquire(state, root, "aabb")
+	h, err := acquire(state, root, strings.Repeat("a", 32))
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer h.release()
-	_, err = acquire(state, root, "ccdd")
-	if !errors.Is(err, ErrBusy) || !strings.Contains(err.Error(), "aabb") {
+	_, err = acquire(state, root, strings.Repeat("c", 32))
+	if !errors.Is(err, ErrBusy) || !strings.Contains(err.Error(), strings.Repeat("a", 32)) {
 		t.Fatalf("lock err %v", err)
 	}
 }

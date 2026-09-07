@@ -5,7 +5,7 @@
 > 빠른 시작은 [README.md](README.md), 설계 배경은 [docs/40-declarative-stack-and-plans.md](docs/40-declarative-stack-and-plans.md) 참조.
 
 커밋·전체 검증은 `dva ci commit` / `dva ci full`을 사용합니다. 선언과 시간 예산,
-중복 실행 방지, 상태 조회는 [CI 프로필](docs/53-ci-profiles.md)을 참조하세요.
+root·공유 자원별 중복 실행 방지, 상태 조회는 [CI 프로필](docs/53-ci-profiles.md)을 참조하세요.
 
 ## 설치
 

@@ -15,15 +15,25 @@
 Supervised CI currently requires a supported Unix host (macOS, Linux, or BSD).
 Windows builds expose the command but fail explicitly before executing checks.
 
-DVA admits one supervised CI run per user on a machine, across repositories and
-worktrees. A canonical work-directory lock also protects output ownership.
-Contention returns an error immediately with the active run identifier; there
-is no invisible queue and no default repeated retry. Another OS user or an
-unmanaged direct tool invocation is outside this cooperative admission scheme.
+DVA locks the physical configuration directory that owns a profile. It resolves
+symbolic links and uses the absolute path, so different profiles, invocation
+paths, or a parent's `--project` invocation and the child's direct invocation
+conflict when they have the same owner. Different repositories and worktrees can
+therefore run independently.
 
-Do not delete lock files or kill another session's processes. A child `dva ci`
-cannot obtain its parent's slot. Keep profile steps as leaf tool invocations,
-not nested CI orchestrators.
+Use `ci.profiles.<name>.locks` for a resource shared across otherwise independent
+roots, such as a development database. Equal keys conflict for the same user and
+machine; names, product relationships, and directory ancestry never imply a
+shared resource. Contention returns `busy` immediately, with the conflict kind,
+key, and an occupant run ID only when that ID can be verified. There is no
+invisible queue or default retry.
+
+Do not delete lock files or kill another session's processes. The files are
+durable lock locations, not evidence that a lock is held. A CI step cannot start
+a nested `dva ci`: DVA passes protected parent-run metadata and accepts it only
+when the parent root lock and run ID are live. Malformed parent metadata and lock
+lookup errors fail clearly; stale, well-formed metadata is ignored. Keep profile
+steps as leaf tool invocations, not nested CI orchestrators.
 
 ## Parallel work
 
@@ -49,6 +59,11 @@ a non-Git directory has no Git attestation. Historical results are not reusable
 solely because HEAD matches: dirty input, configuration and tool versions matter.
 
 The runtime supervises process groups and cancels remaining work on failure or
-deadline. Tools that escape process groups, or start external Docker/remote
-resources, need their own lifecycle ownership; do not assume killing a local
-client tears down those resources.
+deadline before releasing its locks. A forcibly killed supervisor releases its
+OS locks, but lock recovery does not guarantee cleanup of surviving child
+processes, including those still in its process group. Surviving workloads and
+external Docker/remote resources need separate ownership and cleanup.
+
+Old `machine.lock` files are ignored and never deleted automatically. Finish
+existing runs and replace the binaries in use before switching; mixed old/new
+supervisors are not supported.

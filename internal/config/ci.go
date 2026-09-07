@@ -19,6 +19,10 @@ const (
 
 var ciNamePattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_.-]*$`)
 
+// CIParentRunEnv carries the parent CI run identity to a child process. CI
+// steps may not set it: the supervisor owns its value for nested-run checks.
+const CIParentRunEnv = "DVA_CI_PARENT_RUN"
+
 // CIConfig declares named CI gate profiles.
 type CIConfig struct {
 	Profiles map[string]CIProfile `yaml:"profiles" json:"profiles"`
@@ -30,6 +34,7 @@ type CIProfile struct {
 	Timeout     string   `yaml:"timeout" json:"timeout"`
 	WarnAfter   string   `yaml:"warn_after" json:"warn_after"`
 	MaxParallel int      `yaml:"max_parallel" json:"max_parallel"`
+	Locks       []string `yaml:"locks" json:"locks"`
 	Steps       []CIStep `yaml:"steps" json:"steps"`
 }
 
@@ -73,6 +78,11 @@ func (c *Config) ResolveCIProfile(name string) (CIProfile, error) {
 	if profile.MaxParallel == 0 {
 		profile.MaxParallel = defaultCIMaxParallel
 	}
+	if profile.Locks == nil {
+		// Keep the effective manifest and dry-run contract an array when the
+		// declaration omits optional shared-resource locks.
+		profile.Locks = []string{}
+	}
 	if err := validateCIProfile(name, profile); err != nil {
 		return CIProfile{}, err
 	}
@@ -102,6 +112,16 @@ func validateCIProfile(name string, profile CIProfile) error {
 	}
 	if name == "status" || name == "logs" {
 		return fmt.Errorf("ci profile %q: name is reserved", name)
+	}
+	seenLocks := make(map[string]struct{}, len(profile.Locks))
+	for _, lock := range profile.Locks {
+		if !validCIName(lock) {
+			return fmt.Errorf("ci profile %q: lock %q must match %s", name, lock, ciNamePattern.String())
+		}
+		if _, duplicate := seenLocks[lock]; duplicate {
+			return fmt.Errorf("ci profile %q: duplicate lock %q", name, lock)
+		}
+		seenLocks[lock] = struct{}{}
 	}
 	if profile.MaxParallel < 1 || profile.MaxParallel > maxCIMaxParallel {
 		return fmt.Errorf("ci profile %q: max_parallel must be between 1 and %d", name, maxCIMaxParallel)
@@ -139,6 +159,9 @@ func validateCIProfile(name string, profile CIProfile) error {
 		}
 		if strings.TrimSpace(step.Run) == "" {
 			return fmt.Errorf("ci profile %q step %q: run must not be empty", name, step.Name)
+		}
+		if _, reserved := step.Environment[CIParentRunEnv]; reserved {
+			return fmt.Errorf("ci profile %q step %q: environment must not set reserved %s", name, step.Name, CIParentRunEnv)
 		}
 		if step.Timeout != "" {
 			stepTimeout, err := parsePositiveCIDuration(name+" step "+fmt.Sprintf("%q", step.Name), "timeout", step.Timeout)
@@ -224,6 +247,9 @@ func mergeCIProfile(base, other CIProfile) CIProfile {
 	}
 	if other.MaxParallel != 0 {
 		base.MaxParallel = other.MaxParallel
+	}
+	if other.Locks != nil {
+		base.Locks = other.Locks
 	}
 	if other.Steps != nil {
 		base.Steps = other.Steps

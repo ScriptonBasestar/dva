@@ -16,7 +16,6 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
-	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -25,11 +24,27 @@ import (
 	"github.com/ScriptonBasestar/dva/internal/config"
 )
 
-var ErrBusy = errors.New("another dva ci run is active")
+var ErrBusy = errors.New("a conflicting dva ci run is active")
 
-type BusyError struct{ ActiveRunID string }
+// Conflict identifies the lock preventing admission. RunID is omitted when unknown.
+type Conflict struct {
+	Kind  string `json:"kind"`
+	Key   string `json:"key"`
+	RunID string `json:"run_id,omitempty"`
+}
 
-func (e *BusyError) Error() string { return fmt.Sprintf("%s (active run %s)", ErrBusy, e.ActiveRunID) }
+type BusyError struct {
+	ActiveRunID string
+	Conflict    Conflict
+}
+
+func (e *BusyError) Error() string {
+	message := fmt.Sprintf("%s (%s %q)", ErrBusy, e.Conflict.Kind, e.Conflict.Key)
+	if e.ActiveRunID != "" {
+		message += fmt.Sprintf(" (active run %s)", e.ActiveRunID)
+	}
+	return message
+}
 func (e *BusyError) Unwrap() error { return ErrBusy }
 
 type Options struct {
@@ -62,6 +77,7 @@ type Report struct {
 	Duration                           time.Duration
 	Steps                              []StepReport
 	Attestation                        Attestation
+	Conflict                           *Conflict
 }
 
 func (r Report) MarshalJSON() ([]byte, error) {
@@ -77,8 +93,9 @@ func (r Report) MarshalJSON() ([]byte, error) {
 		Duration    string       `json:"duration"`
 		Steps       []StepReport `json:"steps"`
 		Attestation Attestation  `json:"attestation"`
+		Conflict    *Conflict    `json:"conflict,omitempty"`
 	}
-	return json.Marshal(wire{r.ID, r.Root, r.Profile, r.Status, r.LogPath, r.Error, r.StartedAt, r.FinishedAt, r.Duration.String(), r.Steps, r.Attestation})
+	return json.Marshal(wire{r.ID, r.Root, r.Profile, r.Status, r.LogPath, r.Error, r.StartedAt, r.FinishedAt, r.Duration.String(), r.Steps, r.Attestation, r.Conflict})
 }
 
 func (r *Report) UnmarshalJSON(data []byte) error {
@@ -94,6 +111,7 @@ func (r *Report) UnmarshalJSON(data []byte) error {
 		Duration    string       `json:"duration"`
 		Steps       []StepReport `json:"steps"`
 		Attestation Attestation  `json:"attestation"`
+		Conflict    *Conflict    `json:"conflict,omitempty"`
 	}
 	var in wire
 	if err := json.Unmarshal(data, &in); err != nil {
@@ -103,7 +121,7 @@ func (r *Report) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
-	*r = Report{ID: in.ID, Root: in.Root, Profile: in.Profile, Status: in.Status, LogPath: in.LogPath, Error: in.Error, StartedAt: in.StartedAt, FinishedAt: in.FinishedAt, Duration: d, Steps: in.Steps, Attestation: in.Attestation}
+	*r = Report{ID: in.ID, Root: in.Root, Profile: in.Profile, Status: in.Status, LogPath: in.LogPath, Error: in.Error, StartedAt: in.StartedAt, FinishedAt: in.FinishedAt, Duration: d, Steps: in.Steps, Attestation: in.Attestation, Conflict: in.Conflict}
 	return nil
 }
 
@@ -115,7 +133,7 @@ func stateDirectory(dir string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	// Do not use HOME/XDG_CACHE_HOME: nested sessions must share one UID-owned lock.
+	// Do not use HOME/XDG_CACHE_HOME: sessions must share UID-owned resource locks.
 	return filepath.Join(u.HomeDir, ".local", "state", "dva", "ci"), nil
 }
 
@@ -176,9 +194,7 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 	if err := os.MkdirAll(filepath.Dir(report.LogPath), 0o700); err != nil {
 		return report, err
 	}
-	// Locks deliberately live in the shared user state even when a caller chooses
-	// a separate report directory (for example, a test). This makes nested dva ci
-	// invocations fail busy instead of bypassing the machine-wide guard.
+	// Lock state is shared even when receipts use a custom directory.
 	lockState, err := stateDirectory("")
 	if err != nil {
 		return report, err
@@ -186,11 +202,19 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 	if opts.lockDirectory != "" {
 		lockState = opts.lockDirectory
 	}
-	locks, err := acquire(lockState, root, id)
+	parentValue, present := os.LookupEnv(parentRunEnv)
+	if !present {
+		parentValue = environmentValue(opts.Env, parentRunEnv)
+	}
+	err = checkParent(lockState, parentValue)
+	var locks heldLocks
+	if err == nil {
+		locks, err = acquire(lockState, root, id, opts.Profile.Locks...)
+	}
 	if err != nil {
 		if busy, ok := errors.AsType[*BusyError](err); ok {
 			// This identifies an existing owner, not a new execution of this profile.
-			report = Report{ID: busy.ActiveRunID, Status: "busy", Error: err.Error()}
+			report = Report{ID: busy.ActiveRunID, Status: "busy", Error: err.Error(), Conflict: &busy.Conflict}
 		}
 		return report, err
 	}
@@ -223,7 +247,12 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 	}
 	report.Attestation, retErr = fingerprint(ctx, root)
 	if retErr == nil {
-		report.Steps, retErr = execute(ctx, root, opts.Profile, opts.Env, writer)
+		parentInfo, marshalErr := json.Marshal(parentRun{ID: id, Root: root})
+		if marshalErr != nil {
+			return report, marshalErr
+		}
+		env := append(append([]string(nil), opts.Env...), parentRunEnv+"="+string(parentInfo))
+		report.Steps, retErr = execute(ctx, root, opts.Profile, env, writer)
 	}
 	after, attestErr := fingerprint(ctx, root)
 	retErr = errors.Join(retErr, attestErr)
@@ -498,7 +527,7 @@ func ciEnv(base []string, add map[string]string) []string {
 		m["GOFLAGS"] = strings.TrimSpace(m["GOFLAGS"] + " -p=1")
 	}
 	for k, v := range add {
-		if k == "DVA_CI_JOBS" {
+		if k == "DVA_CI_JOBS" || k == parentRunEnv {
 			continue
 		}
 		m[k] = v
@@ -515,58 +544,6 @@ func ciEnv(base []string, add map[string]string) []string {
 	return out
 }
 
-type heldLocks struct{ files []*os.File }
-
-func acquire(state, root, id string) (heldLocks, error) {
-	h := heldLocks{}
-	hash := sha256.Sum256([]byte(root))
-	for _, name := range []string{"machine.lock", "root-" + hex.EncodeToString(hash[:]) + ".lock"} {
-		p := filepath.Join(state, "locks", name)
-		if err := os.MkdirAll(filepath.Dir(p), 0o700); err != nil {
-			h.release()
-			return h, err
-		}
-		f, err := os.OpenFile(p, os.O_CREATE|os.O_RDWR, 0o600)
-		if err != nil {
-			h.release()
-			return h, err
-		}
-		if err = tryLock(f); err != nil {
-			if !lockContended(err) {
-				_ = f.Close()
-				h.release()
-				return h, fmt.Errorf("acquire CI lock: %w", err)
-			}
-			active := readLockID(f)
-			_ = f.Close()
-			h.release()
-			return h, &BusyError{ActiveRunID: active}
-		}
-		if err := f.Truncate(0); err != nil {
-			_ = f.Close()
-			h.release()
-			return h, err
-		}
-		if _, err := f.WriteAt([]byte(id+"\n"), 0); err != nil {
-			_ = f.Close()
-			h.release()
-			return h, err
-		}
-		h.files = append(h.files, f)
-	}
-	return h, nil
-}
-func readLockID(f *os.File) string {
-	_, _ = f.Seek(0, 0)
-	b, _ := io.ReadAll(f)
-	return strings.TrimSpace(string(b))
-}
-func (h heldLocks) release() {
-	for _, f := range slices.Backward(h.files) {
-		_ = unlock(f)
-		_ = f.Close()
-	}
-}
 func runID() (string, error) {
 	b := make([]byte, 16)
 	if _, e := rand.Read(b); e != nil {
@@ -622,9 +599,15 @@ func Status(dir string) ([]Report, error) {
 		if e = json.Unmarshal(b, &r); e != nil {
 			return nil, e
 		}
-		if r.Status == "running" && !receiptActive(state, r.Root, r.ID) {
-			r.Status = "stale"
-			r.Error = "running receipt has no active lock"
+		if r.Status == "running" {
+			active, err := receiptActive(state, r.Root, r.ID)
+			if err != nil {
+				return nil, fmt.Errorf("inspect CI receipt %s: %w", r.ID, err)
+			}
+			if !active {
+				r.Status = "stale"
+				r.Error = "running receipt has no active lock"
+			}
 		}
 		if r.Status == "running" {
 			r.Duration = time.Since(r.StartedAt)
@@ -634,31 +617,25 @@ func Status(dir string) ([]Report, error) {
 	sort.Slice(out, func(i, j int) bool { return out[i].StartedAt.After(out[j].StartedAt) })
 	return out, nil
 }
-func receiptActive(state, root, id string) bool {
-	hash := sha256.Sum256([]byte(root))
+func receiptActive(state, root, id string) (bool, error) {
 	dirs := []string{state}
-	if shared, err := stateDirectory(""); err == nil && shared != state {
+	shared, err := stateDirectory("")
+	if err != nil {
+		return false, err
+	}
+	if shared != state {
 		dirs = append(dirs, shared)
 	}
 	for _, dir := range dirs {
-		f, err := os.OpenFile(filepath.Join(dir, "locks", "root-"+hex.EncodeToString(hash[:])+".lock"), os.O_RDWR, 0o600)
+		active, err := lockOwner(dir, "root", root)
 		if err != nil {
-			continue
+			return false, err
 		}
-		err = tryLock(f)
-		if lockContended(err) {
-			active := readLockID(f)
-			_ = f.Close()
-			return active == id
+		if active != "" && active == id {
+			return true, nil
 		}
-		if err != nil {
-			_ = f.Close()
-			continue
-		}
-		_ = unlock(f)
-		_ = f.Close()
 	}
-	return false
+	return false, nil
 }
 func ReadLog(dir, id string) ([]byte, error) {
 	if !safeID(id) {

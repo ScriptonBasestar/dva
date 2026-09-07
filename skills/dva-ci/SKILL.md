@@ -15,8 +15,10 @@ read [language profiles](references/languages.md) when composing or tuning check
 1. Run `dva version` and `dva manifest -f json`. Select an entry from
    `ci_profiles`; do not infer a profile from a Make target name. Older DVA
    versions without `ci` need an upgrade before these guarantees apply.
-2. Use `dva ci status` before starting expensive work. If a run is active, inspect
-   `dva ci logs <run-id>`. Do not launch a second tool invocation to evade `busy`.
+2. Use `dva ci status` before starting expensive work. When a conflict provides
+   a run ID, inspect it with `dva ci logs <run-id>`. Independent roots and different
+   declared resource locks may run concurrently. Do not launch a second
+   invocation to evade `busy`.
 3. Default to `dva ci commit` for local commit verification. Use `dva ci full`
    for the declared exhaustive validation. Neither command authorizes deployment.
 4. `dva ci --dry-run <profile>` shows the resolved profile without running checks.
