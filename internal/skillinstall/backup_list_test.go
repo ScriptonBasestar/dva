@@ -10,6 +10,8 @@ import (
 	"sort"
 	"strings"
 	"testing"
+
+	bundled "github.com/ScriptonBasestar/dva/skills"
 )
 
 func TestListTakeoverBackupsFiltersAndDeduplicatesSharedDestination(t *testing.T) {
@@ -19,7 +21,7 @@ func TestListTakeoverBackupsFiltersAndDeduplicatesSharedDestination(t *testing.T
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, name := range []string{"dva", "dva-config"} {
+	for _, name := range bundled.Names {
 		path := filepath.Join(destinations[0].path, name)
 		if err := os.MkdirAll(path, 0o755); err != nil {
 			t.Fatal(err)
@@ -57,8 +59,10 @@ func TestListTakeoverBackupsFiltersAndDeduplicatesSharedDestination(t *testing.T
 	if !sameRuntimes(backup.Runtimes, []Runtime{RuntimeAntigravity, RuntimeCodex}) {
 		t.Fatalf("runtimes = %v", backup.Runtimes)
 	}
-	if !sameStrings(backup.Skills, []string{"dva", "dva-config"}) {
-		t.Fatalf("skills = %v", backup.Skills)
+	wantSkills := append([]string(nil), bundled.Names...)
+	sort.Strings(wantSkills)
+	if !sameStrings(backup.Skills, wantSkills) {
+		t.Fatalf("skills = %v, want %v", backup.Skills, wantSkills)
 	}
 
 	codexOnly := options

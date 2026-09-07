@@ -286,5 +286,6 @@ thirteen files on day one.
 Generated from `skills/` by `tools/skillgen` — do not edit this block; edit the canonical skill and run `make generate`. Open the linked `SKILL.md` on demand for full guidance.
 
 - **dva** — This skill should be used when the user asks to "build the project", "run tests", "start services", "stop containers", "check logs", "use kubectl", or manage dev infrastructure. Enforces DVA CLI discovery and safe plan-based execution; use raw tools only for configuration validation or when DVA has no equivalent. See `skills/dva/SKILL.md`.
+- **dva-ci** — Configure and run DVA CI profiles for commit/full checks, make ci migration, time budgets, and duplicate AI-session checks. Does not deploy or publish releases. See `skills/dva-ci/SKILL.md`.
 - **dva-config** — Use when creating, auditing, repairing, or migrating a dva.yml configuration; diagnosing `dva config validate`, `dva show`, or `dva doctor` warnings; separating DVA CLI defects from project configuration and environment issues; or applying DVA across a devbox root and active subprojects. See `skills/dva-config/SKILL.md`.
 <!-- skills:auto:end -->

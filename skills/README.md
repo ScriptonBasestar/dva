@@ -130,10 +130,10 @@ dva skill backup list
 dva skill uninstall
 ```
 
-The installer copies `dva` and `dva-config` to native runtime discovery paths, records hashes
+The installer copies `dva`, `dva-ci`, and `dva-config` to native runtime discovery paths, records hashes
 under the user's XDG state directory, refuses unmanaged collisions, and removes only unchanged
 DVA-owned files. Agent Mesh is supported by the same `dva skill install` command: it renders
-`dva.md` and `dva-config.md` into its dedicated `skills/dva` namespace, strips frontmatter, and
+`dva.md`, `dva-ci.md`, and `dva-config.md` into its dedicated `skills/dva` namespace, strips frontmatter, and
 inlines Markdown references and text assets in deterministic order. Relative bundle support is
 not assumed, so local paths link to their inlined content. DVA owns file installation and receipt
 verification only; `am skill sync` and its interaction with other targets are outside this

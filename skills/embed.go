@@ -5,8 +5,8 @@ import "embed"
 
 // Files contains the portable skill directories shipped by DVA.
 //
-//go:embed dva dva-config
+//go:embed dva dva-config dva-ci
 var Files embed.FS
 
 // Names is the deterministic installation order for bundled skills.
-var Names = []string{"dva", "dva-config"}
+var Names = []string{"dva", "dva-ci", "dva-config"}

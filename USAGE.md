@@ -4,6 +4,9 @@
 > 현재 권장 모델은 `stack`을 선언 저장소로 두고, 실제 실행은 `plans`의 이름을 대상으로 수행하는 구조입니다.
 > 빠른 시작은 [README.md](README.md), 설계 배경은 [docs/40-declarative-stack-and-plans.md](docs/40-declarative-stack-and-plans.md) 참조.
 
+커밋·전체 검증은 `dva ci commit` / `dva ci full`을 사용합니다. 선언과 시간 예산,
+중복 실행 방지, 상태 조회는 [CI 프로필](docs/53-ci-profiles.md)을 참조하세요.
+
 ## 설치
 
 재현 가능한 기본 설치는 공개 버전을 고정한 Go module 설치입니다.
@@ -92,7 +95,7 @@ Linux에서도 같은 절차로 해당 archive를 선택하고 `sha256sum -c`를
 
 ### AI 스킬 설치
 
-`make install`은 바이너리만 설치합니다. 바이너리에 포함된 정본 스킬 `dva`와
+`make install`은 바이너리만 설치합니다. 바이너리에 포함된 정본 스킬 `dva`, `dva-ci`,
 `dva-config`는 AI 에이전트 없이 다음 명령으로 복사 설치합니다. 기본 scope는 `user`,
 기본 runtime은 지원 대상 전체입니다.
 
@@ -176,7 +179,7 @@ atomic commit으로 보장하지는 않으며, 실패 시 보존된 stage/claim�
 - `uninstall`은 receipt와 현재 SHA-256이 모두 일치하는 DVA 소유 파일만 제거합니다.
 - 과거 이름 `config`는 이름만 보고 삭제하지 않습니다.
 
-Agent Mesh는 DVA namespace 아래에 `dva.md`, `dva-config.md`만 설치합니다. 이 파일은
+Agent Mesh는 DVA namespace 아래에 `dva.md`, `dva-ci.md`, `dva-config.md`를 설치합니다. 이 파일은
 frontmatter를 제거하고 canonical body, `references/*`, text `assets/*`를 경로순으로 inline한 생성물입니다.
 Agent Mesh가 local bundle을 해석한다고 가정하지 않으므로 local path는 해당 inline anchor로 바꿉니다.
 DVA의 책임은 파일 설치와 receipt 검증까지이며,

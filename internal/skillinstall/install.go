@@ -1187,10 +1187,31 @@ func hasForeignCollision(destination string, files []fileHash) bool {
 }
 
 func skillNames(bundle skillBundle) []string {
-	if len(bundle.files) > 0 && !strings.Contains(bundle.files[0].Path, "/") {
-		return []string{"dva.md", "dva-config.md"}
+	if len(bundle.files) == 0 {
+		return nil
 	}
-	return append([]string(nil), bundled.Names...)
+	flat := !strings.Contains(bundle.files[0].Path, "/")
+	present := make(map[string]bool, len(bundle.files))
+	for _, file := range bundle.files {
+		name := file.Path
+		if flat {
+			name = strings.TrimSuffix(name, ".md")
+		} else if first, _, found := strings.Cut(name, "/"); found {
+			name = first
+		}
+		present[name] = true
+	}
+	names := make([]string, 0, len(present))
+	for _, name := range bundled.Names {
+		if present[name] {
+			if flat {
+				names = append(names, name+".md")
+			} else {
+				names = append(names, name)
+			}
+		}
+	}
+	return names
 }
 
 func claimDestination(target destination, name string) string {
@@ -1261,7 +1282,7 @@ func installedFiles(destination string, expected []fileHash) ([]fileHash, error)
 		return installedFlatFiles(destination, expected)
 	}
 	var files []fileHash
-	for _, name := range bundled.Names {
+	for _, name := range skillNames(skillBundle{files: expected}) {
 		root := filepath.Join(destination, name)
 		info, err := os.Lstat(root)
 		if err != nil {
@@ -1494,7 +1515,8 @@ func replaceSkillDirectoriesWithRename(destination string, files []fileHash, rep
 		}
 	}
 	type move struct{ final, backup string }
-	moves := make([]move, 0, len(bundled.Names))
+	names := skillNames(skillBundle{files: files})
+	moves := make([]move, 0, len(names))
 	rollback := func() error {
 		var rollbackErr error
 		for index := range slices.Backward(moves) {
@@ -1523,7 +1545,7 @@ func replaceSkillDirectoriesWithRename(destination string, files []fileHash, rep
 		}
 		return nil, nil, cause
 	}
-	for _, name := range bundled.Names {
+	for _, name := range names {
 		final := filepath.Join(destination, name)
 		backup := filepath.Join(stage, name+".backup")
 		if _, err := os.Lstat(final); err == nil {
@@ -1714,7 +1736,7 @@ func receiptFormatForFiles(files []fileHash) string {
 	flat := true
 	native := true
 	for _, file := range files {
-		flat = flat && (file.Path == "dva.md" || file.Path == "dva-config.md")
+		flat = flat && validFlatReceiptPath(file.Path)
 		native = native && validNativeReceiptPath(file.Path)
 	}
 	switch {
@@ -1728,7 +1750,14 @@ func receiptFormatForFiles(files []fileHash) string {
 }
 
 func validReceiptPath(value string) bool {
-	return (value == "dva.md" || value == "dva-config.md") || validNativeReceiptPath(value)
+	return validFlatReceiptPath(value) || validNativeReceiptPath(value)
+}
+
+func validFlatReceiptPath(value string) bool {
+	if !strings.HasSuffix(value, ".md") {
+		return false
+	}
+	return isBundledSkillName(strings.TrimSuffix(value, ".md"))
 }
 
 func validNativeReceiptPath(value string) bool {
@@ -1736,7 +1765,7 @@ func validNativeReceiptPath(value string) bool {
 		return false
 	}
 	parts := strings.Split(value, "/")
-	if len(parts) < 2 || (parts[0] != "dva" && parts[0] != "dva-config") {
+	if len(parts) < 2 || !isBundledSkillName(parts[0]) {
 		return false
 	}
 	for _, part := range parts {
@@ -1745,6 +1774,10 @@ func validNativeReceiptPath(value string) bool {
 		}
 	}
 	return true
+}
+
+func isBundledSkillName(value string) bool {
+	return slices.Contains(bundled.Names, value)
 }
 
 func validSHA(value string) bool {

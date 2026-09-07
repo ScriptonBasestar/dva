@@ -64,6 +64,12 @@ Config Loader → Schema/Semantic Validation → effective config
 - `internal/exec/`는 외부 프로세스 실행과 process replacement를 담당한다.
 - 외부 도구의 리소스 의미를 DVA가 다시 구현하지 않는다.
 
+### CI verification
+
+`internal/cirun/`은 `ci.profiles`의 DAG를 감독하며 머신 실행 슬롯, deadline,
+process-group 취소, 로컬 결과 기록을 소유한다. CLI는 프로필과 owning config를
+선택한다. 계약과 실행 규약은 [CI 프로필](docs/53-ci-profiles.md)을 따른다.
+
 ### Skill distribution
 
 - `internal/skillinstall/`은 번들된 DVA 스킬의 설치·상태·제거·백업을 담당한다

@@ -95,6 +95,10 @@ dva manifest -f json
 
 ### Execute Commands
 
+For CI profiles, commit/full verification, time budgets, or duplicate AI-session
+checks, use the bundled `dva-ci` skill. Discover `ci_profiles` in the manifest;
+`dva ci` defaults to `commit`, while `dva ci status` inspects existing runs.
+
 Run project-defined interaction commands directly. The `run` prefix is optional:
 
 ```bash

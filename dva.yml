@@ -92,3 +92,60 @@ provision:
       run: "make clean"
     - step: "Rebuild"
       run: "make build"
+
+# CI orchestration is native; Make aliases only enter these profiles.
+ci:
+  profiles:
+    commit:
+      description: Local commit gates (all core checks, no platform matrix)
+      warn_after: 5m
+      timeout: 10m
+      max_parallel: 2
+      steps:
+        - &ci-format
+          name: format
+          run: 'bad=$(gofmt -s -l .); test -z "$bad" || { printf "%s\n" "$bad"; exit 1; }'
+        - &ci-docs
+          name: docs
+          run: go run ./tools/doccheck && go run ./tools/cilabels && go run ./tools/flowcheck && go run ./tools/planprogress
+          depends_on: [format]
+        - &ci-vet
+          name: vet
+          run: go vet ./...
+          depends_on: [format]
+        - &ci-lint
+          name: lint
+          run: sh scripts/ci-lint.sh
+          depends_on: [vet]
+        - &ci-test
+          name: test
+          run: go test -timeout 5m -race -cover ./...
+          environment:
+            GOMAXPROCS: "2"
+            GOFLAGS: "-p=2"
+          depends_on: [docs, lint]
+        - &ci-build
+          name: build
+          run: go build -trimpath -o bin/dva ./cmd/dva
+          depends_on: [test]
+    full:
+      description: Core gates plus integration and built-binary skill dogfood; hosted platform/release matrix remains in CI
+      timeout: 30m
+      warn_after: 15m
+      max_parallel: 2
+      steps:
+        - *ci-format
+        - *ci-docs
+        - *ci-vet
+        - *ci-lint
+        - *ci-test
+        - *ci-build
+        - name: integration
+          run: go test -tags=integration -race -timeout 10m ./internal/integration/...
+          depends_on: [build]
+        - name: skill-dogfood
+          run: 'DVA_DOGFOOD_BIN="$PWD/bin/dva" go test -run "^TestBuiltExecutableDogfood$" ./tools/skilldogfood'
+          depends_on: [integration]
+        - name: commit-subjects
+          run: go run ./tools/commitcheck
+          depends_on: [skill-dogfood]

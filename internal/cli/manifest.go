@@ -68,6 +68,7 @@ type Manifest struct {
 	Plans           map[string]ManifestPlan        `json:"plans,omitempty" yaml:"plans,omitempty"`
 	Subprojects     map[string]ManifestSubproject  `json:"subprojects,omitempty" yaml:"subprojects,omitempty"`
 	HealthChecks    map[string]ManifestHealthCheck `json:"health_checks,omitempty" yaml:"health_checks,omitempty"`
+	CIProfiles      map[string]config.CIProfile    `json:"ci_profiles,omitempty" yaml:"ci_profiles,omitempty"`
 }
 
 // ManifestFlag is one flag: name + type + description. Per-command options stay a
@@ -333,7 +334,7 @@ func fillCommandDescriptions(command *cobra.Command, entry ManifestCmd) Manifest
 func buildManifest(c *config.Config) *Manifest {
 	m := &Manifest{
 		DvaVersion:        config.Version,
-		SchemaVersion:     "1.5",
+		SchemaVersion:     "1.6",
 		GeneratedAt:       time.Now().Format(time.RFC3339),
 		ConfigFile:        c.FilePath(),
 		ProjectDir:        c.FileDir(),
@@ -355,6 +356,10 @@ func buildManifest(c *config.Config) *Manifest {
 		// remains is the hand-parsed set, which has no cobra flag to derive from. See both
 		// functions for why (TASK-105).
 		StaticCommands: map[string]ManifestCmd{
+			"ci": {Type: "config", Subcommands: map[string]ManifestCmd{
+				"status": {Type: "query"},
+				"logs":   {Type: "query"},
+			}},
 			"run": {Type: "dynamic_router"},
 			"ls":  {Type: "query"},
 			// compose, ktl and logs take no flags of their own; their --help Flags: block is
@@ -490,6 +495,14 @@ func buildManifest(c *config.Config) *Manifest {
 				Description: "Executes commands directly on the host",
 			},
 		},
+	}
+	if c.CI != nil {
+		m.CIProfiles = make(map[string]config.CIProfile, len(c.CI.Profiles))
+		for name := range c.CI.Profiles {
+			if profile, err := c.ResolveCIProfile(name); err == nil {
+				m.CIProfiles[name] = profile
+			}
+		}
 	}
 	fillStaticCommandDescriptions(m.StaticCommands)
 	fillStaticCommandOptions(m.StaticCommands)

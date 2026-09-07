@@ -81,13 +81,13 @@ func TestAgentMeshInstallsFlatRenderedSkills(t *testing.T) {
 	if strings.HasPrefix(string(dva), "---\n") {
 		t.Fatal("rendered Agent Mesh skill retained YAML frontmatter")
 	}
-	if _, err := os.Stat(filepath.Join(result.Destinations[0].Destination, "dva-config.md")); err != nil {
+	if _, err := os.Stat(filepath.Join(result.Destinations[0].Destination, "dva-ci.md")); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := os.Stat(filepath.Join(result.Destinations[0].Destination, "dva", "SKILL.md")); !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("Agent Mesh install created native skill directory: %v", err)
 	}
-	for _, name := range []string{"dva", "dva-config"} {
+	for _, name := range bundled.Names {
 		claim, found, err := skillclaim.Read(filepath.Dir(options.StateRoot), filepath.Join(result.Destinations[0].Destination, name+".md"))
 		if err != nil || !found {
 			t.Fatalf("Agent Mesh claim %s = (%#v, %t, %v)", name, claim, found, err)
@@ -682,6 +682,18 @@ func TestLegacyNativeReceiptRemainsReadable(t *testing.T) {
 		t.Fatalf("read current receipt = (%v, %t, %v)", record, found, err)
 	}
 	record.Schema, record.Format = 1, ""
+	record.Files = withoutCISkill(record.Files)
+	record.BundleSHA = sourceBundleSHA(record.Files)
+	if err := os.RemoveAll(filepath.Join(target.path, "dva-ci")); err != nil {
+		t.Fatal(err)
+	}
+	ciClaimDestination, err := skillclaim.CanonicalDestination(filepath.Join(target.path, "dva-ci"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(skillclaim.Path(filepath.Dir(options.StateRoot), ciClaimDestination)); err != nil {
+		t.Fatal(err)
+	}
 	if err := writeReceipt(receiptFile, record); err != nil {
 		t.Fatal(err)
 	}
@@ -703,6 +715,9 @@ func TestLegacyNativeReceiptRemainsReadable(t *testing.T) {
 	}
 	if _, err := Install(options); err != nil {
 		t.Fatalf("migrate legacy receipt during install: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(target.path, "dva-ci", "SKILL.md")); err != nil {
+		t.Fatalf("migration did not add bundled CI skill: %v", err)
 	}
 	migrated, found, err := readReceipt(receiptFile)
 	if err != nil || !found || migrated.Schema != receiptSchemaCurrent || migrated.Installation != "active" {
@@ -966,6 +981,9 @@ func TestInstallStatusAndUninstallSharedDestination(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(destination, "dva-config", "references", "diagnosis.md")); err != nil {
 		t.Fatal(err)
 	}
+	if _, err := os.Stat(filepath.Join(destination, "dva-ci", "SKILL.md")); err != nil {
+		t.Fatal(err)
+	}
 	result, err = Install(options)
 	if err != nil {
 		t.Fatal(err)
@@ -1006,6 +1024,9 @@ func TestInstallStatusAndUninstallSharedDestination(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(destination, "dva")); !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("skill remains after uninstall: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(destination, "dva-ci")); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("CI skill remains after uninstall: %v", err)
 	}
 }
 
@@ -1245,12 +1266,12 @@ func TestStatusIdentifiesForeignCollisionAndReceiptPaths(t *testing.T) {
 	if status.Destinations[0].Status != "foreign-conflict" {
 		t.Fatalf("status = %s", status.Destinations[0].Status)
 	}
-	for _, value := range []string{"dva/SKILL.md", "dva-config/references/a.md"} {
+	for _, value := range []string{"dva/SKILL.md", "dva-config/references/a.md", "dva-ci/references/execution.md", "dva-ci.md"} {
 		if !validReceiptPath(value) {
 			t.Fatalf("valid receipt path rejected: %q", value)
 		}
 	}
-	for _, value := range []string{"../dva/SKILL.md", "dva/../x", "dva-config/../../x", "/dva/SKILL.md", "other/SKILL.md"} {
+	for _, value := range []string{"../dva/SKILL.md", "dva/../x", "dva-config/../../x", "/dva/SKILL.md", "other/SKILL.md", "dva-ci/../x", "other.md"} {
 		if validReceiptPath(value) {
 			t.Fatalf("invalid receipt path accepted: %q", value)
 		}
@@ -1383,6 +1404,16 @@ func testOptions(t *testing.T, scope Scope, runtimes ...Runtime) Options {
 		ProjectRoot: filepath.Join(root, "project"),
 		StateRoot:   filepath.Join(root, "state"),
 	}
+}
+
+func withoutCISkill(files []fileHash) []fileHash {
+	result := make([]fileHash, 0, len(files))
+	for _, file := range files {
+		if !strings.HasPrefix(file.Path, "dva-ci/") {
+			result = append(result, file)
+		}
+	}
+	return result
 }
 
 func sameRuntimes(left, right []Runtime) bool {

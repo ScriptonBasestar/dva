@@ -187,7 +187,10 @@ func validBackupID(value string) bool {
 }
 
 func validTakeoverSkill(value string) bool {
-	return value == "dva" || value == "dva-config" || value == "dva.md" || value == "dva-config.md"
+	if base, ok := strings.CutSuffix(value, ".md"); ok {
+		return isBundledSkillName(base)
+	}
+	return isBundledSkillName(value)
 }
 
 func copyBackupTree(source, destination string) (string, []backupEntry, error) {

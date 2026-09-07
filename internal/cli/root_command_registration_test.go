@@ -174,8 +174,8 @@ func TestCommandHelpGroupsAndDiscoveryDescriptions(t *testing.T) {
 	// marker); TestValidateRouteCompatibilityContract owns that change, this test only keeps the
 	// value pinned so a future presentation-only change does not drift it again unnoticed.
 	manifest := buildManifest(&config.Config{})
-	if manifest.SchemaVersion != "1.5" {
-		t.Errorf("manifest schema version = %q, want unchanged 1.5", manifest.SchemaVersion)
+	if manifest.SchemaVersion != "1.6" {
+		t.Errorf("manifest schema version = %q, want 1.6 (CI profile discovery)", manifest.SchemaVersion)
 	}
 	for _, name := range []string{"manifest", "show", "status"} {
 		entry, ok := manifest.StaticCommands[name]

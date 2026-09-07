@@ -22,6 +22,7 @@ type Config struct {
 	EnvFile          any                            `yaml:"env_file"`
 	EnvBridge        *EnvBridgeConfig               `yaml:"env_bridge"`
 	Interaction      map[string]*InteractionCommand `yaml:"interaction"`
+	CI               *CIConfig                      `yaml:"ci" json:"ci"`
 	Provision        ProvisionConfig                `yaml:"provision"`
 	Infra            map[string]InfraConfig         `yaml:"infra"`
 	Modules          []string                       `yaml:"modules"`
@@ -847,6 +848,9 @@ func applyConfigDefaults(cfg *Config) {
 	if cfg.Interaction == nil {
 		cfg.Interaction = make(map[string]*InteractionCommand)
 	}
+	if cfg.CI != nil && cfg.CI.Profiles == nil {
+		cfg.CI.Profiles = make(map[string]CIProfile)
+	}
 	if cfg.Provision.Profiles == nil {
 		cfg.Provision.Profiles = make(map[string][]ProvisionItem)
 	}
@@ -899,6 +903,10 @@ func finalizeLoadedConfig(cfg *Config) ([]string, error) {
 	}
 
 	if err := validateEnvSourceDeclarations(cfg); err != nil {
+		return nil, err
+	}
+
+	if err := cfg.validateCIProfiles(); err != nil {
 		return nil, err
 	}
 
@@ -1042,6 +1050,26 @@ func (c *Config) mergeFrom(other *Config) error {
 				c.Interaction[k] = merged
 			} else {
 				c.Interaction[k] = v
+			}
+		}
+	}
+
+	// ci: profiles deep-merge by name; profile scalars replace when non-zero,
+	// maps merge, and dependency/step lists replace as a whole.
+	if other.CI != nil {
+		if c.CI == nil {
+			c.CI = &CIConfig{Profiles: make(map[string]CIProfile)}
+		}
+		if other.CI.Profiles != nil {
+			if c.CI.Profiles == nil {
+				c.CI.Profiles = make(map[string]CIProfile)
+			}
+			for name, profile := range other.CI.Profiles {
+				if existing, ok := c.CI.Profiles[name]; ok {
+					c.CI.Profiles[name] = mergeCIProfile(existing, profile)
+				} else {
+					c.CI.Profiles[name] = profile
+				}
 			}
 		}
 	}
