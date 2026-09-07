@@ -1,7 +1,6 @@
 // Package cirun runs a CI profile without changing the caller's process state.
-// It limits Go's own parallelism through environment variables; tools which do
-// not honour DVA_CI_JOBS, GOMAXPROCS, or GOFLAGS remain responsible for their
-// own concurrency.
+// It provides conservative Go and Rust worker defaults through environment
+// variables. Tools which ignore these variables own their internal concurrency.
 package cirun
 
 import (
@@ -490,8 +489,10 @@ func ciEnv(base []string, add map[string]string) []string {
 		}
 	}
 	m["DVA_CI_JOBS"] = "1" // each concurrently scheduled step gets one tool budget.
-	if m["GOMAXPROCS"] == "" {
-		m["GOMAXPROCS"] = "1"
+	for _, key := range []string{"GOMAXPROCS", "CARGO_BUILD_JOBS", "RUST_TEST_THREADS"} {
+		if m[key] == "" {
+			m[key] = "1"
+		}
 	}
 	if !strings.Contains(" "+m["GOFLAGS"]+" ", " -p=") {
 		m["GOFLAGS"] = strings.TrimSpace(m["GOFLAGS"] + " -p=1")

@@ -17,6 +17,28 @@ func profile(steps ...config.CIStep) config.CIProfile {
 	return config.CIProfile{Timeout: "5s", MaxParallel: 2, Steps: steps}
 }
 
+func TestRustWorkerEnvironment(t *testing.T) {
+	for _, test := range []struct {
+		name string
+		base []string
+		step map[string]string
+		want string
+	}{
+		{name: "defaults", want: "1"},
+		{name: "inherited", base: []string{"CARGO_BUILD_JOBS=2", "RUST_TEST_THREADS=2"}, want: "2"},
+		{name: "step override", base: []string{"CARGO_BUILD_JOBS=2", "RUST_TEST_THREADS=2"}, step: map[string]string{"CARGO_BUILD_JOBS": "3", "RUST_TEST_THREADS": "3"}, want: "3"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			env := "\n" + strings.Join(ciEnv(test.base, test.step), "\n") + "\n"
+			for _, key := range []string{"CARGO_BUILD_JOBS", "RUST_TEST_THREADS"} {
+				if !strings.Contains(env, "\n"+key+"="+test.want+"\n") {
+					t.Fatalf("missing %s=%s in %s", key, test.want, env)
+				}
+			}
+		})
+	}
+}
+
 func TestCanceledPreparationHasTruthfulStatus(t *testing.T) {
 	for _, deadline := range []bool{false, true} {
 		ctx, cancel := context.WithCancel(context.Background())

@@ -15,9 +15,12 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"sort"
 	"strings"
 	"time"
+
+	bundled "github.com/ScriptonBasestar/dva/skills"
 )
 
 const allSkillRuntimes = "claude-code,codex,opencode,grok,antigravity,agent-mesh"
@@ -475,7 +478,7 @@ func verifyTakeoverLifecycle(inv invocation, project string) error {
 		return errors.New("takeover without an explicit runtime unexpectedly succeeded")
 	}
 	writeForeign := func() error {
-		for _, name := range []string{"dva", "dva-config"} {
+		for _, name := range bundled.Names {
 			root := filepath.Join(project, ".grok", "skills", name)
 			if err := os.MkdirAll(filepath.Join(root, "empty"), 0o750); err != nil {
 				return err
@@ -487,7 +490,7 @@ func verifyTakeoverLifecycle(inv invocation, project string) error {
 		return nil
 	}
 	verifyForeign := func() error {
-		for _, name := range []string{"dva", "dva-config"} {
+		for _, name := range bundled.Names {
 			root := filepath.Join(project, ".grok", "skills", name)
 			contents, err := os.ReadFile(filepath.Join(root, "original.txt"))
 			if err != nil || string(contents) != "foreign-"+name {
@@ -693,7 +696,7 @@ func requireReceiptContract(destination string, record receiptRecord, runtimes [
 
 func requireClaimContract(neutralRoot, destination string, runtimes []string, installed []fileHash, format string) error {
 	flat := format == "agent-mesh-flat-markdown"
-	for _, name := range []string{"dva", "dva-config"} {
+	for _, name := range bundled.Names {
 		installedName := name
 		kind := "directory"
 		var files []fileHash
@@ -739,14 +742,15 @@ func requireClaimContract(neutralRoot, destination string, runtimes []string, in
 func verifyArtifactsAbsent(project, stateRoot string) error {
 	for suffix := range runtimeDestinations {
 		if suffix == ".agent-mesh/skills/dva" {
-			for _, file := range []string{"dva.md", "dva-config.md"} {
+			for _, skill := range bundled.Names {
+				file := skill + ".md"
 				if _, err := os.Lstat(filepath.Join(project, filepath.FromSlash(suffix), file)); !errors.Is(err, os.ErrNotExist) {
 					return fmt.Errorf("flat skill artifact remains at %s", filepath.Join(suffix, file))
 				}
 			}
 			continue
 		}
-		for _, skill := range []string{"dva", "dva-config"} {
+		for _, skill := range bundled.Names {
 			if _, err := os.Lstat(filepath.Join(project, filepath.FromSlash(suffix), skill)); !errors.Is(err, os.ErrNotExist) {
 				return fmt.Errorf("skill artifact remains at %s", filepath.Join(suffix, skill))
 			}
@@ -774,7 +778,7 @@ func readReceipt(stateRoot, destination string) (receiptRecord, error) {
 
 func installedSkillFiles(destination string) ([]fileHash, error) {
 	var files []fileHash
-	for _, skill := range []string{"dva", "dva-config"} {
+	for _, skill := range bundled.Names {
 		root := filepath.Join(destination, skill)
 		info, err := os.Lstat(root)
 		if err != nil {
@@ -816,8 +820,9 @@ func installedFilesFor(destination string, flat bool) ([]fileHash, error) {
 	if !flat {
 		return installedSkillFiles(destination)
 	}
-	files := make([]fileHash, 0, 2)
-	for _, name := range []string{"dva.md", "dva-config.md"} {
+	files := make([]fileHash, 0, len(bundled.Names))
+	for _, skill := range bundled.Names {
+		name := skill + ".md"
 		path := filepath.Join(destination, name)
 		info, err := os.Lstat(path)
 		if err != nil {
@@ -1015,7 +1020,7 @@ func snapshotRuntimePaths(root string) ([]treeEntry, error) {
 					return err
 				}
 				managed, _, _ := strings.Cut(filepath.ToSlash(relativeToRuntime), "/")
-				if managed == "dva" || managed == "dva-config" || managed == "dva.md" || managed == "dva-config.md" {
+				if slices.Contains(bundled.Names, strings.TrimSuffix(managed, ".md")) {
 					return fmt.Errorf("refusing symlink managed skill target %s", current)
 				}
 				target, err := os.Readlink(current)

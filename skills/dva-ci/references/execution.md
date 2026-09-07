@@ -33,6 +33,11 @@ steps; each tool must also honor an explicit worker budget. DVA exports
 require isolation or explicit dependency edges. Do not parallelize clean with
 build, or generated-file writers with checks of those files.
 
+Go and Rust receive conservative worker defaults: `GOMAXPROCS=1`, Go `-p=1`,
+`CARGO_BUILD_JOBS=1`, and `RUST_TEST_THREADS=1`. Explicit environment settings can
+tune these; `DVA_CI_JOBS` remains the default adapter hint of one. Build scripts
+and custom test runners may ignore these variables and need their own limits.
+
 ## Evidence
 
 Receipts and logs are local and may contain tool output. Do not publish them
