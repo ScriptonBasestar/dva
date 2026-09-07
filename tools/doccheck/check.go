@@ -39,6 +39,8 @@ type Result struct {
 	CardsSeen              int
 	CardsChecked           int
 	StatusMismatches       int
+	CardIDsSeen            int
+	DuplicateCardIDs       int
 	Errors                 []string
 	BrokenDetail           []string
 	OversizedDetail        []string
@@ -46,6 +48,7 @@ type Result struct {
 	PortabilityDetail      []string
 	ArchiveDetail          []string
 	CardStatusDetail       []string
+	DuplicateIDDetail      []string
 }
 
 // Check validates repository-wide relative markdown links against the git
@@ -204,6 +207,12 @@ func Check(in CheckInput) Result {
 	res.CardStatusDetail = statusMsgs
 	res.Errors = append(res.Errors, statusErrs...)
 
+	idsSeen, dupes, dupMsgs, dupErrs := checkDuplicateCardIDs(in.Root, in.Inventory)
+	res.CardIDsSeen = idsSeen
+	res.DuplicateCardIDs = dupes
+	res.DuplicateIDDetail = dupMsgs
+	res.Errors = append(res.Errors, dupErrs...)
+
 	if res.LinksChecked == 0 {
 		res.Errors = append(res.Errors, "vacuous: zero links checked")
 	}
@@ -260,6 +269,12 @@ func Check(in CheckInput) Result {
 	}
 	if res.StatusMismatches > 0 {
 		res.Errors = append(res.Errors, fmt.Sprintf("%d task card(s) with status: not permitted in their zone", res.StatusMismatches))
+	}
+	// A duplicate id is an error, not a warning: links resolve by id, so the tree is already
+	// ambiguous by the time this fires, and the next card numbered from the highest visible id
+	// inherits the collision.
+	if res.DuplicateCardIDs > 0 {
+		res.Errors = append(res.Errors, fmt.Sprintf("%d task id(s) claimed by more than one card", res.DuplicateCardIDs))
 	}
 
 	res.OK = len(res.Errors) == 0

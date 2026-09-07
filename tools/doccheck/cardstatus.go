@@ -48,10 +48,10 @@ func resolveCardZone(path string) (zone cardZone, ok bool) {
 	return zone, ok
 }
 
-// cardStatus reads the top-level `status:` value out of frontmatter. Only a top-level key
-// counts — an indented status: belongs to the mapping above it, the same reasoning
+// frontmatterField reads a top-level scalar value out of frontmatter. Only a top-level key
+// counts — an indented key belongs to the mapping above it, the same reasoning
 // hasCanonicalField applies to id:/type: in archive.go.
-func cardStatus(frontmatter string) (value string, found bool) {
+func frontmatterField(frontmatter, want string) (value string, found bool) {
 	for line := range strings.SplitSeq(stripFencedRegions(frontmatter), "\n") {
 		if line == "" || line[0] == ' ' || line[0] == '\t' || line[0] == '#' || line[0] == '-' {
 			continue
@@ -60,13 +60,18 @@ func cardStatus(frontmatter string) (value string, found bool) {
 		if !ok {
 			continue
 		}
-		if unquoteKey(strings.TrimSpace(key)) != "status" {
+		if unquoteKey(strings.TrimSpace(key)) != want {
 			continue
 		}
 		v := strings.TrimSpace(val)
 		return strings.Trim(v, `"'`), true
 	}
 	return "", false
+}
+
+// cardStatus reads the top-level `status:` value out of frontmatter.
+func cardStatus(frontmatter string) (value string, found bool) {
+	return frontmatterField(frontmatter, "status")
 }
 
 // checkCardStatus reports every task card whose status: is not permitted in the zone it sits in.

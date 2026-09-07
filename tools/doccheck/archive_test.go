@@ -276,8 +276,8 @@ func TestArchiveFrontmatter_reportsAnUnreadableCard(t *testing.T) {
 			n++
 		}
 	}
-	if n != 3 {
-		t.Errorf("%d error(s) name the read failure on %s, want 3 — the link scan, the archive guard, and the card zone/status guard each report it; if one stopped, this gate has less coverage than it reads as having", n, broken)
+	if n != 4 {
+		t.Errorf("%d error(s) name the read failure on %s, want 4 — the link scan, the archive guard, the card zone/status guard, and the duplicate-id guard each read the file and each report it; if one stopped, this gate has less coverage than it reads as having", n, broken)
 	}
 	if res.OK {
 		t.Error("Check reported OK over an archive holding an unreadable card")
