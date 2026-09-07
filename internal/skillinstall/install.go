@@ -199,17 +199,33 @@ func preflightInstall(options Options, target destination) error {
 		return err
 	}
 	if record.Schema < receiptSchemaCurrent {
-		return ensureClaimsAbsentUnlocked(options.ClaimRoot, oldProjection)
+		if err := ensureClaimsAbsentUnlocked(options.ClaimRoot, oldProjection); err != nil {
+			return err
+		}
+	} else if err := verifyClaimsUnlocked(options.ClaimRoot, oldProjection); err != nil {
+		return err
 	}
-	return verifyClaimsUnlocked(options.ClaimRoot, oldProjection)
+	runtimes := unionRuntimes(record.Runtimes, target.runtimes)
+	desired, err := projectedClaims(target, options.Scope, runtimes, bundle, skillclaim.StateActive, operationID)
+	if err != nil {
+		return err
+	}
+	_, added, err := additiveClaimUpdate(oldProjection, desired)
+	if err != nil {
+		return err
+	}
+	if err := ensureClaimsAbsentUnlocked(options.ClaimRoot, added); err != nil {
+		return err
+	}
+	return ensureClaimDestinationsAbsent(added)
 }
 
-func installDestination(options Options, target destination) (DestinationResult, error) {
+func installDestination(options Options, target destination) (entry DestinationResult, err error) {
 	bundle, err := bundleFor(target)
 	if err != nil {
 		return DestinationResult{}, err
 	}
-	entry := resultEntry(target, options.Version, sourceBundleSHA(bundle.files))
+	entry = resultEntry(target, options.Version, sourceBundleSHA(bundle.files))
 	record, found, err := readReceipt(receiptPath(options.StateRoot, target.path))
 	if err != nil {
 		return DestinationResult{}, err
@@ -230,11 +246,30 @@ func installDestination(options Options, target destination) (DestinationResult,
 	if err != nil {
 		return DestinationResult{}, err
 	}
+	if found && record.Schema == receiptSchemaCurrent && record.Installation == "active" {
+		if err := validateReceipt(record, options.Scope, target); err != nil {
+			return DestinationResult{}, err
+		}
+		oldDestinations, err := claimDestinations(target, skillBundle{files: record.Files})
+		if err != nil {
+			return DestinationResult{}, err
+		}
+		destinations = unionClaimDestinations(destinations, oldDestinations)
+	}
 	store, err := skillclaim.Begin(options.ClaimRoot, destinations)
 	if err != nil {
 		return DestinationResult{}, err
 	}
-	defer func() { _ = store.Close() }()
+	defer func() {
+		if closeErr := store.Close(); closeErr != nil {
+			if err != nil {
+				err = errors.Join(err, fmt.Errorf("close claim store: %w", closeErr))
+			} else {
+				entry = DestinationResult{}
+				err = fmt.Errorf("close claim store: %w", closeErr)
+			}
+		}
+	}()
 
 	// Repeat receipt and file checks while the per-skill claim locks are held.
 	record, found, err = readReceipt(receiptPath(options.StateRoot, target.path))
@@ -325,7 +360,7 @@ func installWithReservations(options Options, target destination, bundle skillBu
 		}
 	}
 	replaceExisting := receiptFound && previousReceipt.Installation != "absent"
-	undo, finalize, err := replaceBundle(target.path, bundle, replaceExisting)
+	undo, finalize, err := replaceBundle(target.path, bundle, replaceExisting, ownedSkillNames(previousReceipt.Files))
 	if err != nil {
 		originalErr := rollbackTakeover()
 		cleanupErr := error(nil)
@@ -412,16 +447,33 @@ func updateClaimedInstall(options Options, target destination, bundle skillBundl
 	if err != nil {
 		return DestinationResult{}, err
 	}
-	updating, err := transitionActiveClaims(store, current, desired, skillclaim.StateUpdating, operationID)
+	matched, added, err := additiveClaimUpdate(current, desired)
 	if err != nil {
 		return DestinationResult{}, err
 	}
+	if err := ensureClaimsAbsent(store, added); err != nil {
+		return DestinationResult{}, err
+	}
+	if err := ensureClaimDestinationsAbsent(added); err != nil {
+		return DestinationResult{}, err
+	}
+	reserved, err := reserveClaims(store, added)
+	if err != nil {
+		rollbackErr := rollbackClaimsToAbsent(store, reserved)
+		return DestinationResult{}, fmt.Errorf("reserve added claims: %w (added claim rollback: %v)", err, rollbackErr)
+	}
+	updating, err := transitionActiveClaims(store, current, matched, skillclaim.StateUpdating, operationID)
+	if err != nil {
+		rollbackErr := rollbackClaimsToAbsent(store, reserved)
+		return DestinationResult{}, fmt.Errorf("transition existing claims: %w (added claim rollback: %v)", err, rollbackErr)
+	}
 	undo, finalize := func() error { return nil }, func() error { return nil }
 	if !equalFiles(record.Files, bundle.files) {
-		undo, finalize, err = replaceBundle(target.path, bundle, true)
+		undo, finalize, err = replaceBundle(target.path, bundle, true, ownedSkillNames(record.Files))
 		if err != nil {
 			claimErr := rollbackClaimsToActive(store, current)
-			return DestinationResult{}, fmt.Errorf("replace managed skills after claim reservation: %w (claim rollback: %v)", err, claimErr)
+			reserveErr := rollbackClaimsToAbsent(store, reserved)
+			return DestinationResult{}, fmt.Errorf("replace managed skills after claim reservation: %w (claim rollback: %v; added claim rollback: %v)", err, claimErr, reserveErr)
 		}
 	}
 	updated := receipt{
@@ -433,13 +485,22 @@ func updateClaimedInstall(options Options, target destination, bundle skillBundl
 	if err := writeReceipt(receiptFile, updated); err != nil {
 		fileErr := undo()
 		claimErr := rollbackClaimsToActive(store, current)
-		return DestinationResult{}, fmt.Errorf("update receipt: %w (file rollback: %v; claim rollback: %v)", err, fileErr, claimErr)
+		reserveErr := rollbackClaimsToAbsent(store, reserved)
+		return DestinationResult{}, fmt.Errorf("update receipt: %w (file rollback: %v; claim rollback: %v; added claim rollback: %v)", err, fileErr, claimErr, reserveErr)
 	}
 	if err := activateUpdatedClaims(store, updating); err != nil {
 		fileErr := undo()
 		receiptErr := writeReceipt(receiptFile, record)
 		claimErr := rollbackClaimsToActive(store, current)
-		return DestinationResult{}, fmt.Errorf("activate updated claims: %w (file rollback: %v; receipt rollback: %v; claim rollback: %v)", err, fileErr, receiptErr, claimErr)
+		reserveErr := rollbackClaimsToAbsent(store, reserved)
+		return DestinationResult{}, fmt.Errorf("activate updated claims: %w (file rollback: %v; receipt rollback: %v; claim rollback: %v; added claim rollback: %v)", err, fileErr, receiptErr, claimErr, reserveErr)
+	}
+	if _, err := activateReservedClaims(store, reserved); err != nil {
+		fileErr := undo()
+		receiptErr := writeReceipt(receiptFile, record)
+		claimErr := rollbackClaimsToActive(store, current)
+		reserveErr := rollbackClaimsToAbsent(store, reserved)
+		return DestinationResult{}, fmt.Errorf("activate added claims: %w (file rollback: %v; receipt rollback: %v; claim rollback: %v; added claim rollback: %v)", err, fileErr, receiptErr, claimErr, reserveErr)
 	}
 	if err := finalize(); err != nil {
 		return DestinationResult{}, err
@@ -450,6 +511,17 @@ func updateClaimedInstall(options Options, target destination, bundle skillBundl
 		entry.BackupStatus, entry.TakeoverBackup = verifyTakeoverBackups(options.StateRoot, updated)
 	}
 	return entry, nil
+}
+
+func ensureClaimDestinationsAbsent(claims []skillclaim.Claim) error {
+	for _, claim := range claims {
+		if _, err := os.Lstat(claim.Destination); err == nil {
+			return fmt.Errorf("refusing collision at %s; newly bundled DVA skill has no matching receipt", claim.Destination)
+		} else if !errors.Is(err, os.ErrNotExist) {
+			return err
+		}
+	}
+	return nil
 }
 
 func restoreReceipt(path string, previous receipt, found bool) error {
@@ -1214,7 +1286,18 @@ func skillNames(bundle skillBundle) []string {
 	return names
 }
 
+func ownedSkillNames(files []fileHash) map[string]bool {
+	owned := make(map[string]bool)
+	for _, name := range skillNames(skillBundle{files: files}) {
+		owned[name] = true
+	}
+	return owned
+}
+
 func claimDestination(target destination, name string) string {
+	if targetReceiptFormat(target) == receiptFormatFlat && !strings.HasSuffix(name, ".md") {
+		name += ".md"
+	}
 	return filepath.Join(target.path, name)
 }
 
@@ -1425,17 +1508,17 @@ func intersectRuntimes(left, right []Runtime) []Runtime {
 }
 
 func replaceSkillDirectories(destination string, files []fileHash, replaceExisting bool) (func() error, func() error, error) {
-	return replaceSkillDirectoriesWithRename(destination, files, replaceExisting, os.Rename)
+	return replaceSkillDirectoriesWithRename(destination, files, replaceExisting, ownedSkillNames(files), os.Rename)
 }
 
-func replaceBundle(destination string, bundle skillBundle, replaceExisting bool) (func() error, func() error, error) {
+func replaceBundle(destination string, bundle skillBundle, replaceExisting bool, owned map[string]bool) (func() error, func() error, error) {
 	if len(bundle.files) > 0 && !strings.Contains(bundle.files[0].Path, "/") {
-		return replaceFlatFiles(destination, bundle, replaceExisting)
+		return replaceFlatFiles(destination, bundle, replaceExisting, owned)
 	}
-	return replaceSkillDirectories(destination, bundle.files, replaceExisting)
+	return replaceSkillDirectoriesWithRename(destination, bundle.files, replaceExisting, owned, os.Rename)
 }
 
-func replaceFlatFiles(destination string, bundle skillBundle, replaceExisting bool) (func() error, func() error, error) {
+func replaceFlatFiles(destination string, bundle skillBundle, replaceExisting bool, owned map[string]bool) (func() error, func() error, error) {
 	stage, err := os.MkdirTemp(destination, ".dva-skill-stage-")
 	if err != nil {
 		return nil, nil, err
@@ -1481,7 +1564,7 @@ func replaceFlatFiles(destination string, bundle skillBundle, replaceExisting bo
 		final := filepath.Join(destination, filepath.FromSlash(file.Path))
 		backup := filepath.Join(stage, filepath.FromSlash(file.Path)+".backup")
 		if _, err := os.Lstat(final); err == nil {
-			if !replaceExisting {
+			if !replaceExisting || !owned[file.Path] {
 				return fail(fmt.Errorf("refusing collision at %s; no DVA receipt exists", final))
 			}
 			if err := os.Rename(final, backup); err != nil {
@@ -1503,7 +1586,7 @@ func replaceFlatFiles(destination string, bundle skillBundle, replaceExisting bo
 	return rollback, func() error { return os.RemoveAll(stage) }, nil
 }
 
-func replaceSkillDirectoriesWithRename(destination string, files []fileHash, replaceExisting bool, rename func(string, string) error) (func() error, func() error, error) {
+func replaceSkillDirectoriesWithRename(destination string, files []fileHash, replaceExisting bool, owned map[string]bool, rename func(string, string) error) (func() error, func() error, error) {
 	stage, err := os.MkdirTemp(destination, ".dva-skill-stage-")
 	if err != nil {
 		return nil, nil, err
@@ -1549,7 +1632,7 @@ func replaceSkillDirectoriesWithRename(destination string, files []fileHash, rep
 		final := filepath.Join(destination, name)
 		backup := filepath.Join(stage, name+".backup")
 		if _, err := os.Lstat(final); err == nil {
-			if !replaceExisting {
+			if !replaceExisting || !owned[name] {
 				return fail(fmt.Errorf("refusing collision at %s; no DVA receipt exists", final))
 			}
 			if err := rename(final, backup); err != nil {

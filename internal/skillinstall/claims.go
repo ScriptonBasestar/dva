@@ -36,6 +36,19 @@ func claimDestinations(target destination, bundle skillBundle) ([]string, error)
 	return result, nil
 }
 
+func unionClaimDestinations(left, right []string) []string {
+	set := make(map[string]bool, len(left)+len(right))
+	for _, destination := range append(append([]string(nil), left...), right...) {
+		set[destination] = true
+	}
+	result := make([]string, 0, len(set))
+	for destination := range set {
+		result = append(result, destination)
+	}
+	sort.Strings(result)
+	return result
+}
+
 func projectedClaims(target destination, scope Scope, runtimes []Runtime, bundle skillBundle, state, operationID string) ([]skillclaim.Claim, error) {
 	consumers := make([]string, len(runtimes))
 	for index, runtime := range runtimes {
@@ -244,6 +257,39 @@ func transitionActiveClaims(store *skillclaim.LockedStore, current, desired []sk
 		transitioned = append(transitioned, next)
 	}
 	return transitioned, nil
+}
+
+// additiveClaimUpdate matches the existing claims to their replacement by
+// destination and returns the newly introduced claims separately.  A bundled
+// skill may be inserted before existing names in lexical order, so callers
+// must not pair the two inventories by slice index.
+//
+// Removing a claimed skill is deliberately not an install upgrade: it needs a
+// separate release protocol so an interrupted upgrade cannot silently discard
+// an ownership record.
+func additiveClaimUpdate(current, desired []skillclaim.Claim) ([]skillclaim.Claim, []skillclaim.Claim, error) {
+	desiredByDestination := make(map[string]skillclaim.Claim, len(desired))
+	for _, claim := range desired {
+		desiredByDestination[claim.Destination] = claim
+	}
+	matched := make([]skillclaim.Claim, 0, len(current))
+	existing := make(map[string]bool, len(current))
+	for _, claim := range current {
+		next, found := desiredByDestination[claim.Destination]
+		if !found {
+			return nil, nil, fmt.Errorf("refusing install upgrade that removes claimed skill %s", claim.Destination)
+		}
+		matched = append(matched, next)
+		existing[claim.Destination] = true
+	}
+	added := make([]skillclaim.Claim, 0, len(desired)-len(current))
+	for _, claim := range desired {
+		if !existing[claim.Destination] {
+			added = append(added, claim)
+		}
+	}
+	sort.Slice(added, func(i, j int) bool { return added[i].Destination < added[j].Destination })
+	return matched, added, nil
 }
 
 func activateUpdatedClaims(store *skillclaim.LockedStore, updating []skillclaim.Claim) error {

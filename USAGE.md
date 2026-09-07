@@ -162,7 +162,7 @@ snapshot에서 durable backup을 만듭니다. 따라서 복사 도중 바뀌는
 않습니다. 실패 복원 여부가 불확실하면 capture stage와 durable backup을 삭제하지 않고 오류에
 recovery artifact 경로를 남깁니다.
 
-Claim 생성·갱신·삭제는 두 DVA 이름을 정렬해 잠근 뒤 reservation/generation CAS로 수행합니다.
+Claim 생성·갱신·삭제는 대상 DVA 스킬 이름을 정렬해 잠근 뒤 reservation/generation CAS로 수행합니다.
 중간에 남은 non-active claim, claim/receipt 불일치, malformed claim은 자동 추론하지 않고
 `recovery-required`로 중단합니다. 포맷과 digest vector는
 [Agent Skills claim protocol](internal/skillclaim/PROTOCOL.md)에 고정되어 다른 producer도 같은

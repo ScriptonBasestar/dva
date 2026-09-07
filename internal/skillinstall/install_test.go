@@ -726,6 +726,116 @@ func TestLegacyNativeReceiptRemainsReadable(t *testing.T) {
 	assertClaimConsumers(t, options, target.path, []string{"grok"})
 }
 
+func TestClaimedBundleUpgradeAddsNewSkill(t *testing.T) {
+	t.Parallel()
+	options := testOptions(t, ScopeUser, RuntimeGrok)
+	target, oldReceipt := reduceClaimedBundleToTwoSkills(t, options)
+
+	result, err := Install(options)
+	if err != nil {
+		t.Fatalf("expand claimed bundle: %v", err)
+	}
+	if result.Destinations[0].Status != "installed" {
+		t.Fatalf("expanded bundle status = %s", result.Destinations[0].Status)
+	}
+	if _, err := os.Stat(filepath.Join(target.path, "dva-ci", "SKILL.md")); err != nil {
+		t.Fatalf("expanded bundle did not install dva-ci: %v", err)
+	}
+	updated, found, err := readReceipt(receiptPath(options.StateRoot, target.path))
+	if err != nil || !found {
+		t.Fatalf("read expanded receipt = (%#v, %t, %v)", updated, found, err)
+	}
+	if len(updated.Files) <= len(oldReceipt.Files) || !containsSkillFiles(updated.Files, "dva-ci") {
+		t.Fatalf("expanded receipt files do not include dva-ci: %v", updated.Files)
+	}
+	assertClaimConsumers(t, options, target.path, []string{"grok"})
+}
+
+func TestClaimedFlatBundleUpgradeAddsNewSkill(t *testing.T) {
+	t.Parallel()
+	options := testOptions(t, ScopeUser, RuntimeAgentMesh)
+	target, oldReceipt := reduceClaimedBundleToTwoSkills(t, options)
+
+	if _, err := Install(options); err != nil {
+		t.Fatalf("expand claimed flat bundle: %v", err)
+	}
+	if _, err := os.Stat(claimDestination(target, "dva-ci")); err != nil {
+		t.Fatalf("expanded flat bundle did not install dva-ci: %v", err)
+	}
+	updated, found, err := readReceipt(receiptPath(options.StateRoot, target.path))
+	if err != nil || !found {
+		t.Fatalf("read expanded flat receipt = (%#v, %t, %v)", updated, found, err)
+	}
+	if len(updated.Files) <= len(oldReceipt.Files) || !containsSkillFiles(updated.Files, "dva-ci") {
+		t.Fatalf("expanded flat receipt files do not include dva-ci: %v", updated.Files)
+	}
+	bundle, err := bundleFor(target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	claims, err := projectedClaims(target, options.Scope, options.Runtimes, bundle, skillclaim.StateActive, "flat-upgrade-check")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := verifyClaimsUnlocked(filepath.Dir(options.StateRoot), claims); err != nil {
+		t.Fatalf("expanded flat bundle claims: %v", err)
+	}
+}
+
+func TestClaimedBundleUpgradeRefusesForeignNewSkillCollision(t *testing.T) {
+	t.Parallel()
+	options := testOptions(t, ScopeUser, RuntimeGrok)
+	target, oldReceipt := reduceClaimedBundleToTwoSkills(t, options)
+	foreign := filepath.Join(target.path, "dva-ci", "foreign-marker")
+	if err := os.MkdirAll(filepath.Dir(foreign), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(foreign, []byte("foreign"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := Install(options); err == nil || !strings.Contains(err.Error(), "newly bundled DVA skill") {
+		t.Fatalf("claimed expansion accepted foreign dva-ci collision: %v", err)
+	}
+	contents, err := os.ReadFile(foreign)
+	if err != nil || string(contents) != "foreign" {
+		t.Fatalf("foreign collision changed = %q, %v", contents, err)
+	}
+	assertClaimedBundleState(t, options, target, oldReceipt)
+}
+
+func TestClaimedBundleUpgradeRollsBackAfterReceiptFailure(t *testing.T) {
+	t.Parallel()
+	if runtime.GOOS == "windows" {
+		t.Skip("directory permission failure injection is not portable to Windows")
+	}
+	options := testOptions(t, ScopeUser, RuntimeGrok)
+	target, oldReceipt := reduceClaimedBundleToTwoSkills(t, options)
+	receiptDir := filepath.Dir(receiptPath(options.StateRoot, target.path))
+	if err := os.Chmod(receiptDir, 0o500); err != nil {
+		t.Skipf("cannot make receipt directory read-only: %v", err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(receiptDir, 0o755) })
+	probe, probeErr := os.CreateTemp(receiptDir, ".permission-probe-")
+	if probeErr == nil {
+		_ = probe.Close()
+		_ = os.Remove(probe.Name())
+		_ = os.Chmod(receiptDir, 0o755)
+		t.Skip("cannot enforce receipt directory write failure in this environment")
+	}
+	_, err := Install(options)
+	if restoreErr := os.Chmod(receiptDir, 0o755); restoreErr != nil {
+		t.Fatal(restoreErr)
+	}
+	if err == nil || !strings.Contains(err.Error(), "update receipt") {
+		t.Fatalf("claimed expansion succeeded despite receipt failure: %v", err)
+	}
+	assertClaimedBundleState(t, options, target, oldReceipt)
+	if _, err := os.Stat(filepath.Join(target.path, "dva-ci")); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("rollback left new skill behind: %v", err)
+	}
+}
+
 func TestLegacyAbsentRuntimeUninstallDoesNotCreateClaims(t *testing.T) {
 	t.Parallel()
 	options := testOptions(t, ScopeProject, RuntimeCodex)
@@ -1221,6 +1331,81 @@ func TestMultiDestinationOperationsPreflightBeforeMutation(t *testing.T) {
 			t.Fatalf("earlier destination removed before drift was found: %v", err)
 		}
 	})
+
+	t.Run("claimed bundle expansion collision", func(t *testing.T) {
+		options := testOptions(t, ScopeProject, RuntimeClaudeCode, RuntimeGrok)
+		_, destinations, err := resolve(options)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(destinations) != 2 {
+			t.Fatalf("destinations = %v", destinations)
+		}
+		if _, err := Install(options); err != nil {
+			t.Fatal(err)
+		}
+		records := make(map[string]receipt, len(destinations))
+		for _, target := range destinations {
+			records[target.path] = reduceClaimedBundleAtTarget(t, options, target)
+		}
+		laterCollision := filepath.Join(claimDestination(destinations[1], "dva-ci"), "foreign-marker")
+		if err := os.MkdirAll(filepath.Dir(laterCollision), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(laterCollision, []byte("foreign"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := Install(options); err == nil || !strings.Contains(err.Error(), "newly bundled DVA skill") {
+			t.Fatalf("multi-destination claimed expansion ignored later collision: %v", err)
+		}
+		assertClaimedBundleState(t, options, destinations[0], records[destinations[0].path])
+		if _, err := os.Stat(claimDestination(destinations[0], "dva-ci")); !errors.Is(err, os.ErrNotExist) {
+			t.Fatalf("earlier claimed destination upgraded before later collision: %v", err)
+		}
+	})
+
+	t.Run("legacy bundle expansion collision", func(t *testing.T) {
+		options := testOptions(t, ScopeProject, RuntimeClaudeCode, RuntimeGrok)
+		_, destinations, err := resolve(options)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(destinations) != 2 {
+			t.Fatalf("destinations = %v", destinations)
+		}
+		if _, err := Install(options); err != nil {
+			t.Fatal(err)
+		}
+		for _, target := range destinations {
+			record := reduceClaimedBundleAtTarget(t, options, target)
+			record.Schema, record.Format = 1, ""
+			if err := writeReceipt(receiptPath(options.StateRoot, target.path), record); err != nil {
+				t.Fatal(err)
+			}
+			claims, err := projectedClaims(target, options.Scope, record.Runtimes, skillBundle{files: record.Files}, skillclaim.StateActive, "legacy-preflight")
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, claim := range claims {
+				if err := os.Remove(skillclaim.Path(filepath.Dir(options.StateRoot), claim.Destination)); err != nil {
+					t.Fatal(err)
+				}
+			}
+		}
+		laterCollision := filepath.Join(claimDestination(destinations[1], "dva-ci"), "foreign-marker")
+		if err := os.MkdirAll(filepath.Dir(laterCollision), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(laterCollision, []byte("foreign"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := Install(options); err == nil || !strings.Contains(err.Error(), "newly bundled DVA skill") {
+			t.Fatalf("multi-destination legacy expansion ignored later collision: %v", err)
+		}
+		if _, err := os.Stat(claimDestination(destinations[0], "dva-ci")); !errors.Is(err, os.ErrNotExist) {
+			t.Fatalf("earlier legacy destination migrated before later collision: %v", err)
+		}
+	})
 }
 
 func TestInvalidReceiptReportedAndRefused(t *testing.T) {
@@ -1346,7 +1531,7 @@ func TestReplaceSkillDirectoriesRollsBackEarlierMove(t *testing.T) {
 		}
 		return os.Rename(oldPath, newPath)
 	}
-	if _, _, err := replaceSkillDirectoriesWithRename(destination, files, true, failingRename); err == nil {
+	if _, _, err := replaceSkillDirectoriesWithRename(destination, files, true, ownedSkillNames(files), failingRename); err == nil {
 		t.Fatal("replacement succeeded despite injected failure")
 	}
 	for _, name := range bundled.Names {
@@ -1364,6 +1549,52 @@ func TestReplaceSkillDirectoriesRollsBackEarlierMove(t *testing.T) {
 	}
 	if len(stages) != 0 {
 		t.Fatalf("staging directories remain: %v", stages)
+	}
+}
+
+func TestClaimedReplacementRefusesLateAddedSkillCollision(t *testing.T) {
+	t.Parallel()
+	destination := t.TempDir()
+	for _, name := range []string{"dva", "dva-config"} {
+		root := filepath.Join(destination, name)
+		if err := os.MkdirAll(root, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(root, "old-marker"), []byte(name), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	files, err := bundledFiles()
+	if err != nil {
+		t.Fatal(err)
+	}
+	oldFiles := withoutCISkill(files)
+	foreign := filepath.Join(destination, "dva-ci", "foreign-marker")
+	injected := false
+	rename := func(oldPath, newPath string) error {
+		if !injected && oldPath == filepath.Join(destination, "dva") {
+			injected = true
+			if err := os.MkdirAll(filepath.Dir(foreign), 0o755); err != nil {
+				return err
+			}
+			if err := os.WriteFile(foreign, []byte("foreign"), 0o644); err != nil {
+				return err
+			}
+		}
+		return os.Rename(oldPath, newPath)
+	}
+	if _, _, err := replaceSkillDirectoriesWithRename(destination, files, true, ownedSkillNames(oldFiles), rename); err == nil || !strings.Contains(err.Error(), "refusing collision") {
+		t.Fatalf("replacement accepted late foreign added-skill collision: %v", err)
+	}
+	contents, err := os.ReadFile(foreign)
+	if err != nil || string(contents) != "foreign" {
+		t.Fatalf("late foreign collision changed = %q, %v", contents, err)
+	}
+	for _, name := range []string{"dva", "dva-config"} {
+		contents, err := os.ReadFile(filepath.Join(destination, name, "old-marker"))
+		if err != nil || string(contents) != name {
+			t.Fatalf("%s old directory was not restored = %q, %v", name, contents, err)
+		}
 	}
 }
 
@@ -1409,11 +1640,86 @@ func testOptions(t *testing.T, scope Scope, runtimes ...Runtime) Options {
 func withoutCISkill(files []fileHash) []fileHash {
 	result := make([]fileHash, 0, len(files))
 	for _, file := range files {
-		if !strings.HasPrefix(file.Path, "dva-ci/") {
+		if !strings.HasPrefix(file.Path, "dva-ci/") && file.Path != "dva-ci.md" {
 			result = append(result, file)
 		}
 	}
 	return result
+}
+
+func containsSkillFiles(files []fileHash, skill string) bool {
+	for _, file := range files {
+		if strings.HasPrefix(file.Path, skill+"/") || file.Path == skill+".md" {
+			return true
+		}
+	}
+	return false
+}
+
+// reduceClaimedBundleToTwoSkills models a pre-dva-ci current-schema install:
+// it retains the two active DVA claims, receipt, and installed directories.
+func reduceClaimedBundleToTwoSkills(t *testing.T, options Options) (destination, receipt) {
+	t.Helper()
+	installed, err := Install(options)
+	if err != nil {
+		t.Fatal(err)
+	}
+	target := destination{path: installed.Destinations[0].Destination, runtimes: options.Runtimes}
+	return target, reduceClaimedBundleAtTarget(t, options, target)
+}
+
+func reduceClaimedBundleAtTarget(t *testing.T, options Options, target destination) receipt {
+	t.Helper()
+	receiptFile := receiptPath(options.StateRoot, target.path)
+	record, found, err := readReceipt(receiptFile)
+	if err != nil || !found {
+		t.Fatalf("read claimed receipt = (%#v, %t, %v)", record, found, err)
+	}
+	record.Files = withoutCISkill(record.Files)
+	record.BundleSHA = sourceBundleSHA(record.Files)
+	ciPath := claimDestination(target, "dva-ci")
+	if err := os.RemoveAll(ciPath); err != nil {
+		t.Fatal(err)
+	}
+	ciClaimDestination, err := skillclaim.CanonicalDestination(ciPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(skillclaim.Path(filepath.Dir(options.StateRoot), ciClaimDestination)); err != nil {
+		t.Fatal(err)
+	}
+	if err := writeReceipt(receiptFile, record); err != nil {
+		t.Fatal(err)
+	}
+	return record
+}
+
+func assertClaimedBundleState(t *testing.T, options Options, target destination, record receipt) {
+	t.Helper()
+	current, found, err := readReceipt(receiptPath(options.StateRoot, target.path))
+	if err != nil || !found {
+		t.Fatalf("read retained receipt = (%#v, %t, %v)", current, found, err)
+	}
+	if !equalFiles(current.Files, record.Files) || current.BundleSHA != record.BundleSHA || !sameRuntimes(current.Runtimes, record.Runtimes) {
+		t.Fatalf("receipt changed after failed expansion = %#v, want %#v", current, record)
+	}
+	if err := verifyInstalled(target.path, record.Files); err != nil {
+		t.Fatalf("old installed bundle changed after failed expansion: %v", err)
+	}
+	claims, err := projectedClaims(target, options.Scope, record.Runtimes, skillBundle{files: record.Files}, skillclaim.StateActive, "rollback-check")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := verifyClaimsUnlocked(filepath.Dir(options.StateRoot), claims); err != nil {
+		t.Fatalf("old claims changed after failed expansion: %v", err)
+	}
+	ciClaimDestination, err := skillclaim.CanonicalDestination(claimDestination(target, "dva-ci"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, found, err := skillclaim.Read(filepath.Dir(options.StateRoot), ciClaimDestination); err != nil || found {
+		t.Fatalf("new dva-ci claim survived failed expansion = (%t, %v)", found, err)
+	}
 }
 
 func sameRuntimes(left, right []Runtime) bool {
