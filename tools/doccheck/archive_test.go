@@ -236,6 +236,10 @@ func TestArchiveFrontmatter_reportsAnUnreadableCard(t *testing.T) {
 	)
 	root := t.TempDir()
 	writeFile(t, root, "docs/a.md", "# A\n\nSee [self](a.md).\n")
+	// Both cards deliberately claim TASK-206. The duplicate-id check stays silent only
+	// because the unreadable one bails at the read error before its id is ever collected.
+	// Making this fixture readable to test something else will therefore trip DUP-ID, and
+	// the failure will look unrelated to whoever made that edit.
 	writeFile(t, root, intact, "---\nid: TASK-206\nstatus: done\n---\n\n# Readable\n")
 	writeFile(t, root, broken, "---\nid: TASK-206\nstatus: done\n---\n\n# Unreadable\n")
 
