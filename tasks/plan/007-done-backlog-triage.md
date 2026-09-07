@@ -3,9 +3,9 @@ id: PLAN-007
 title: "Retire the unreviewed done backlog and move quality review to card close"
 type: plan
 scope: "tasks/done/ 58장의 일회성 트리아지, done-disposition 루프에서 발견된 소유자 없는 결함 3건, 닫기 시점 독립 리뷰 전환의 외부 의존"
-progress: 50
+progress: 75
 total-tasks: 4
-completed-tasks: 2
+completed-tasks: 3
 children: [TASK-325, TASK-326, TASK-327, TASK-330]
 target-date: "2026-09-30"
 created: 2026-09-05

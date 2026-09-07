@@ -2,6 +2,7 @@
 id: PLAN-002
 title: "Deliver the command-surface proposal through evidence-gated tasks"
 type: plan
+status: done
 scope: "D6/D7 diagnostics, secure env bridge, required-env and interaction env-file policy, capability-driven init, and optional env promotion"
 progress: 100
 total-tasks: 16
@@ -26,17 +27,30 @@ compatibility가 미정인 부분은 evidence gate가 닫히기 전까지 구현
 | Workstream | 판정 | 작업 |
 | --- | --- | --- |
 | lifecycle 7동사, plan 위치 인자 | 유지 | 변경 없음 |
-| D6/D7 validate 경고 | 구현 가능 | [TASK-244](../_archive/done/244-validate-plan-declaration-drift.md) |
-| `config env` bridge | Option A 확정 | [TASK-245](../_archive/done/245-freeze-env-bridge-contract.md) → [TASK-246](../_archive/done/246-implement-secure-config-env-bridge.md) |
-| env bridge safe write가 target 디렉토리에 고정되지 않음 | 리뷰에서 확인, 재현됨 | [TASK-284](../_archive/done/284-anchor-env-safewrite-to-target-directory.md) |
-| required env 오류 전파 | owner 복구 완료·env_file 결정 필요 | [TASK-247](../_archive/done/247-freeze-required-env-command-policy.md) → [TASK-264](../_archive/done/264-restore-imported-command-ownership.md) → [TASK-248](../done/248-enforce-required-env-command-policy.md) |
-| interaction-level `env_file` | versioned rejection 결정됨 | [TASK-265](../done/265-decide-interaction-env-file-contract.md) → [TASK-266](../todo/266-deprecate-and-reject-interaction-env-file.md) |
-| migrate/validate 커버리지 차이 + Stage A exit-code 서술 | 리뷰에서 확인, 재현됨 | [TASK-285](../done/285-close-migrate-validate-coverage-gap.md) |
-| 고정 3-plan `init` | 거부·재설계 | [TASK-249](../done/249-redesign-capability-driven-init.md) → [TASK-250](../todo/250-implement-capability-driven-init.md) |
-| migration gate | **N/A 종료** — TASK-252가 승격을 기각해 소비처가 사라짐 | [TASK-251](../_archive/251-build-env-migration-evidence-gate.md) |
-| top-level `env` 예약 | **거부 확정 (2026-09-03)** — `config env`가 영구 canonical surface | [TASK-252](../done/252-decide-top-level-env-promotion.md) |
+| D6/D7 validate 경고 | 구현 가능 | [TASK-244](../../_archive/done/244-validate-plan-declaration-drift.md) |
+| `config env` bridge | Option A 확정 | [TASK-245](../../_archive/done/245-freeze-env-bridge-contract.md) → [TASK-246](../../_archive/done/246-implement-secure-config-env-bridge.md) |
+| env bridge safe write가 target 디렉토리에 고정되지 않음 | 리뷰에서 확인, 재현됨 | [TASK-284](../../_archive/done/284-anchor-env-safewrite-to-target-directory.md) |
+| required env 오류 전파 | owner 복구 완료·env_file 결정 필요 | [TASK-247](../../_archive/done/247-freeze-required-env-command-policy.md) → [TASK-264](../../_archive/done/264-restore-imported-command-ownership.md) → [TASK-248](../../done/248-enforce-required-env-command-policy.md) |
+| interaction-level `env_file` | versioned rejection 결정됨 | [TASK-265](../../done/265-decide-interaction-env-file-contract.md) → [TASK-266](../../todo/266-deprecate-and-reject-interaction-env-file.md) |
+| migrate/validate 커버리지 차이 + Stage A exit-code 서술 | 리뷰에서 확인, 재현됨 | [TASK-285](../../done/285-close-migrate-validate-coverage-gap.md) |
+| 고정 3-plan `init` | 거부·재설계 | [TASK-249](../../done/249-redesign-capability-driven-init.md) → [TASK-250](../../todo/250-implement-capability-driven-init.md) |
+| migration gate | **N/A 종료** — TASK-252가 승격을 기각해 소비처가 사라짐 | [TASK-251](../../_archive/251-build-env-migration-evidence-gate.md) |
+| top-level `env` 예약 | **거부 확정 (2026-09-03)** — `config env`가 영구 canonical surface | [TASK-252](../../done/252-decide-top-level-env-promotion.md) |
+
+**env bridge 임시 파일 이름은 245 계약이 아니라 284가 정한다.**
+[TASK-245](../../_archive/done/245-freeze-env-bridge-contract.md) §7-4/§8-5는 임시 파일을 config
+root에 `.dva-env-` **접두사**로 만드는 형태로 동결했지만,
+[TASK-284](../../_archive/done/284-anchor-env-safewrite-to-target-directory.md)(`bbe3db1`)가 temp를
+target 옆에 만들면서 이름이 `<leaf>.dva-env-<pid>-<token>.tmp`로 바뀌었다 — 마커가 접두사에서
+중간으로 옮겨간 것이라 245 §8-5의 판정 강도는 그대로이고 위치만 다르다.
+TASK-284가 245 §7-4/§8-5를 그만큼 supersede한다. 현재 형태의 정본은 `internal/cli/config_env_safewrite.go`의
+`tempName`/`isOwnedTemp` 주석이다.
 
 ## Current status and recommended order (2026-09-04)
+
+> 이 절은 2026-09-04 시점의 스냅숏이다. 그 뒤 TASK-266과 TASK-249가 닫혀 16장 전부가
+> 완료됐다 — 최신 상태는 아래 **완료 (2026-09-07)** 노트이고, 이 절의 "14장"·"남은 1장"·
+> "TASK-249는 `todo/`에 남는다"는 그 시점 기록으로만 읽는다.
 
 16장 중 14장이 닫혔다: TASK-244(`cb4d598`), TASK-245, TASK-246(`cccb310`), TASK-247,
 TASK-248(`b23780e`), TASK-250(`4cc0fdc`), TASK-265, TASK-282(`70ad560`), TASK-284(`bbe3db1`),
@@ -52,9 +66,9 @@ front-matter에서 읽는다.
 결정 기록·TASK-233 충돌 분석·완료기준 대조 서술이었다 — 완료기준 10개 중 9개는 이미 결정되고
 TASK-250 구현으로 검증까지 끝난 상태였다. 그 서술 전체를 docs/ 3개 문서로 옮겼다(`docs/` 자체도
 문서당 10,240바이트 한도가 있어 하나로는 못 담았다): 설계·결정 기록은
-[docs/58](../../docs/58-capability-driven-init-design.md), TASK-250 대조 검증과 완료기준 매핑은
-[docs/59](../../docs/59-capability-driven-init-verification.md), label/증거 인벤토리는
-[docs/60](../../docs/60-capability-driven-init-label-inventory.md). TASK-249는 id를 유지한 채
+[docs/58](../../../docs/58-capability-driven-init-design.md), TASK-250 대조 검증과 완료기준 매핑은
+[docs/59](../../../docs/59-capability-driven-init-verification.md), label/증거 인벤토리는
+[docs/60](../../../docs/60-capability-driven-init-label-inventory.md). TASK-249는 id를 유지한 채
 남은 유일한 완료기준(census owner/cadence/change-threshold 정의)만 추적하도록 줄였다. 완료된
 9개 항목은 새 sibling 카드로 옮기지 않았다 — 이미 결정되고 검증된 항목을 새 실행 카드로 만드는
 것은 존재하지 않는 작업을 만드는 것이므로, 위 세 문서에 근거와 함께 기록하고 이 카드의
@@ -65,7 +79,7 @@ TASK-250 구현으로 검증까지 끝난 상태였다. 그 서술 전체를 doc
 포트폴리오 카탈로그), canonical repository IDs/revisions(dva-adopter 집합을 실행 시점 commit
 SHA에 pin), input inventory(docs/60의 label 어휘), cadence(release 직전 1회), change threshold
 (승격 >50%, 강등 <25%, 진동 방지용 비대칭 문턱) 다섯 가지 모두를 근거와 함께
-[docs/61](../../docs/61-capability-driven-init-census-governance.md)에 기록했다. docs/58도
+[docs/61](../../../docs/61-capability-driven-init-census-governance.md)에 기록했다. docs/58도
 10,240바이트 상한에 근접해 있었으므로 이 결정 기록은 docs/58에 잇지 않고 별도 문서로 냈다.
 이로써 TASK-249의 완료기준 10개가 모두 결정·기록됐다 — 카드 자체를 `done/`으로 옮기는 것은
 검증 후 별도로 처리한다.
@@ -104,9 +118,10 @@ TASK-251(P0/L)이 코드 한 줄 없이 N/A로 닫혔다. 승격 재개는 이 �
 - D6: 합의된 plan 선언 필드의 equality-only non-fatal warning
 - D7: 다중 plan + `default_plan` 부재의 non-fatal warning, 단일 plan 제외
 - sops/age 소유권 유지, DVA는 호출만 함
-- 복호값 stdout 금지, lifecycle auto-unseal 금지 — 앞 절반은 [TASK-281](../done/281-freeze-gated-env-bridge-commands.md)의
-  `env_bridge.allow_show` 게이트가 켜졌을 때 `show`의 stdout 하나에 대해서만 열린다. 게이트가 없거나
-  꺼진 상태, 그리고 log/error/JSON/temp filename은 예외 없이 금지다. lifecycle auto-unseal 금지는 불변
+- 복호값 stdout 금지, lifecycle auto-unseal 금지 — 앞 절반은 [TASK-281](../../done/281-freeze-gated-env-bridge-commands.md)의
+  `env_bridge.allow_show` 게이트가 켜졌을 때 `show`가 `/dev/tty`로 내보내는 스트림 하나에 대해서만
+  열린다 — TASK-281 §3-4가 그 스트림을 동결하면서 stdout도 금지 대상에 넣었다. 게이트가 없거나
+  꺼진 상태, 그리고 stdout/log/error/JSON/temp filename은 예외 없이 금지다. lifecycle auto-unseal 금지는 불변
 - sops 미발견·복호 실패 exit 1
 
 D6 fingerprint는 plan의 `environment`, `site`, `vars`, `endpoint_tags`와 각 entry의 `name`,
@@ -313,7 +328,7 @@ TASK-245가 여러 OS를 지원한다고 결정했다면 TASK-246이 그 OS를 �
 그대로 유효하다.
 
 세션 경계, 모델 라우팅, 서브에이전트 역할과 재사용 시작 프롬프트는
-[Command Surface 작업의 에이전트 실행 런북](../../docs/53-command-surface-agent-execution.md)이 소유한다.
+[Command Surface 작업의 에이전트 실행 런북](../../../docs/53-command-surface-agent-execution.md)이 소유한다.
 
 ## 7. 하지 않는 것
 
@@ -321,8 +336,8 @@ TASK-245가 여러 OS를 지원한다고 결정했다면 TASK-246이 그 OS를 �
 - 닫힌 plan vocabulary와 plan key 강제
 - D6 warning의 canonical name/삭제 대상 권고
 - 게이트 없는 `config env show`, top-level `dva env show`, lifecycle auto-unseal
-  (기본 비활성 + `env_bridge` opt-in은 [TASK-281](../done/281-freeze-gated-env-bridge-commands.md)이 소유하며,
-  [TASK-245](../_archive/done/245-freeze-env-bridge-contract.md) §11의 무조건 기각을 그만큼 supersede한다)
+  (기본 비활성 + `env_bridge` opt-in은 [TASK-281](../../done/281-freeze-gated-env-bridge-commands.md)이 소유하며,
+  [TASK-245](../../_archive/done/245-freeze-env-bridge-contract.md) §11의 무조건 기각을 그만큼 supersede한다)
 - DVA의 age/provider/key management 재구현
 - fixed archetype/3-plan scaffold
 - `--force`의 tracked/symlink/path safety 우회

@@ -60,4 +60,4 @@ Label이 census 집합의 과반(50% 초과)에서 관측되면 init 기본값�
 - 구현·label 증거·TASK-250 대조 검증: [docs/59](59-capability-driven-init-verification.md)
 - Label/증거 인벤토리: [docs/60](60-capability-driven-init-label-inventory.md)
 - 완료기준을 마감한 카드: [TASK-249](../tasks/done/249-redesign-capability-driven-init.md)
-- Parent plan: [PLAN-002](../tasks/plan/002-command-surface-delivery.md)
+- Parent plan: [PLAN-002](../tasks/_archive/plan/002-command-surface-delivery.md)

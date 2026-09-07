@@ -114,4 +114,4 @@ cadence, change threshold)에 대한 Decision Record는 크기 상한을 지키�
 - Label/증거 인벤토리(완료기준 3): [docs/60](60-capability-driven-init-label-inventory.md)
 - Census 거버넌스 Decision Record(완료기준 10): [docs/61](61-capability-driven-init-census-governance.md)
 - Implementation: [TASK-250](../tasks/done/250-implement-capability-driven-init.md)
-- Parent plan: [PLAN-002](../tasks/plan/002-command-surface-delivery.md)
+- Parent plan: [PLAN-002](../tasks/_archive/plan/002-command-surface-delivery.md)

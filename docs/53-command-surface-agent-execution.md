@@ -1,6 +1,6 @@
 # Command Surface 작업의 에이전트 실행 런북
 
-이 문서는 [PLAN-002](../tasks/plan/002-command-surface-delivery.md)를 새 Codex 세션에서
+이 문서는 [PLAN-002](../tasks/_archive/plan/002-command-surface-delivery.md)를 새 Codex 세션에서
 실행할 때의 세션 경계, 모델 라우팅, 서브에이전트 역할, 중단 조건과 시작 프롬프트를 소유한다.
 제품·보안 계약과 task acceptance criteria는 PLAN-002와 각 task card가 정본이며 여기서 반복하지
 않는다. 이 런북은 **어떻게 실행할지**만 정한다.
@@ -99,8 +99,8 @@ registration을 변경하지 않는다. 선택 후 같은 session을 이어서 d
 
 ## 6. 변하지 않는 guardrail
 
-세부 계약은 [PLAN-002 §4](../tasks/plan/002-command-surface-delivery.md#4-env-bridge의-비협상-수용-조건),
-[§5](../tasks/plan/002-command-surface-delivery.md#5-promotion-evidence-contract)와 target task card가 소유한다.
+세부 계약은 [PLAN-002 §4](../tasks/_archive/plan/002-command-surface-delivery.md#4-env-bridge의-비협상-수용-조건),
+[§5](../tasks/_archive/plan/002-command-surface-delivery.md#5-promotion-evidence-contract)와 target task card가 소유한다.
 Root는 변경 전에 해당 조항을 확인하고, 완화·선행·우회가 필요해지면 scope를 넓히지 말고 멈춘다.
 
 ## 7. 검증과 Git 완료 조건
@@ -122,7 +122,7 @@ configured source branch direct integration과 push, task worktree·local branch
 
 ```text
 TARGET_TASK: TASK-248
-PLAN: tasks/plan/002-command-surface-delivery.md
+PLAN: tasks/_archive/plan/002-command-surface-delivery.md
 RUNBOOK: docs/53-command-surface-agent-execution.md
 
 이 세션은 TARGET_TASK 하나만 소유한다. PLAN 전체나 다음 task를 선행 구현하지 마라.
