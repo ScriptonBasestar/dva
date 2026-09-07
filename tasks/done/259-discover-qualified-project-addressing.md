@@ -10,6 +10,13 @@ source: "PLAN-003 cross-project discovery"
 scope: "current routing grammar, namespace identity, reachability options, corpus evidence, and decision dossier"
 status: done
 closed-at: 2026-09-03T00:33:44+09:00
+quality-review: conditional
+quality-reviewed-at: 2026-09-07T17:56:04+09:00
+quality-review-evidence:
+  - "re-ran criterion 2's `go test ./internal/config ./internal/cli -count=1`: exit 0 (ok internal/config 8.224s, ok internal/cli 54.362s)"
+  - "re-ran criterion 5's `make doc-check`: exit 0"
+  - "spot-checked the §1 grammar table against the tree: all four addressing mechanisms still exist (root interaction lookup, `--project` flag in internal/cli/run.go, `:` shorthand split, resolveSubprojectImports canonical names in internal/config/subproject.go). Line numbers have drifted from the pinned revision 41995a87, which the card explicitly pins, so this is expected drift and not a defect"
+  - "caveat: §5 leaves two exposure repairs open (owner field + canonical/alias markers on imported items in `ls --json`/manifest; completion for all three of `:`, `/`, `--project`). Neither is owned by any card in tasks/todo or tasks/doing today -- TASK-320 covers a different manifest defect (usage_example). They remain observations without an owner"
 ---
 
 # Task 259: discover qualified project addressing

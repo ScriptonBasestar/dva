@@ -10,6 +10,13 @@ source: "PLAN-002 and TASK-247 current-loader safety decision"
 scope: "loadEnv result model, all CLI callers, doctor hints, text/JSON fixtures, child-start guards"
 status: done
 depends-on: [TASK-247, TASK-264, TASK-265]
+quality-review: conditional
+quality-reviewed-at: 2026-09-07T17:56:04+09:00
+quality-review-evidence:
+  - "re-ran `go test ./internal/config ./internal/cli -count=1` (criteria 1-5): ok internal/config 8.224s, ok internal/cli 54.362s, exit 0"
+  - "re-ran `make doc-check` (criterion 6): exit 0, doc-check OK, cards_checked 331, status_mismatches 0, flowcheck OK"
+  - "re-ran criterion 7's gate chain `make lint && make test && make test-integration && make commit-check`: lint/test/test-integration exit 0, but commit-check exits 1 today -- `47d91889 [length] subject is 80 chars, limit is 72`. 47d91889 (2026-09-07, docs(tasks): move TASK-249's decision record...) is an ancestor of master and unrelated to this card, so the criterion-7 binding no longer runs clean on the current tree through no fault of this change"
+  - "read the closing commit b23780e (36 files, +1729/-271): internal/config/envinput.go still owns the inspect-then-apply model (InspectEnvFiles/ApplyEnvFiles/EnvInputReport.Err), USAGE.md still carries the '환경 입력이 불완전할 때' section at L998 with live anchors from L694 and L1094; the card's own note that its frozen loadEnv-call inventory (21) is a record and not an invariant is confirmed -- today loadEnv(/rootEnvLoad(/newOwnedConfigEnvironment( count 13/22/4 after later cards"
 ---
 
 # Task 248: enforce required env behavior by command

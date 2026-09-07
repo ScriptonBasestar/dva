@@ -14,6 +14,13 @@ decision-status: decided
 decided-at: 2026-09-03T21:10:00+09:00
 closed-at: 2026-09-03T21:10:00+09:00
 depends-on: [TASK-246, TASK-248]
+quality-review: pass
+quality-reviewed-at: 2026-09-07T17:56:04+09:00
+quality-review-evidence:
+  - "re-ran criterion 7's `make doc-check`: exit 0 (doc-check OK, cilabels OK, flowcheck OK)"
+  - "verified the decision against the tree: internal/config/reserved.go reservedCommands has 26 entries and no `env`, so top-level env was in fact never reserved; internal/cli/config_env.go registers `Use: \"env\"` under config as the canonical surface with seal/unseal/show"
+  - "verified the recorded TASK-251 disposition is real: tasks/_archive/251-build-env-migration-evidence-gate.md carries status: superseded, superseded-by: TASK-252, closed-at/archived-at 2026-09-03T21:10:00+09:00 -- matches this card's §3 exactly"
+  - "human bindings 1/3 re-read: the comparison table, the asymmetry argument, the rejected alternative and the fail-closed default are all present in the card; N/A markings on criteria 2/4/5/6 are each justified by the non-selection of promotion"
 ---
 
 # Task 252: decide top-level env promotion

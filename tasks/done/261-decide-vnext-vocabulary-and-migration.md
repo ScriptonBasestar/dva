@@ -12,6 +12,13 @@ status: done
 needs-human: true
 decision-status: decided
 depends-on: [TASK-254, TASK-256, TASK-258, TASK-260]
+quality-review: pass
+quality-reviewed-at: 2026-09-07T17:56:04+09:00
+quality-review-evidence:
+  - "re-ran criterion 5's `make doc-check`: exit 0"
+  - "verified every frozen invariant against the tree: internal/config/reserved.go hookableCommands is still exactly {up, down, stop, restart, build, logs} as §완료기준4 froze it; reservedCommands contains no `plan`/`exec`/`tool` namespace and still carries both `kubectl`/`ktl` and `validate` as the compatibility routes the card promised not to remove"
+  - "verified the frozen configuration keys still exist under their current names: stack, plans, subprojects, interaction, env_file as top-level schema properties; composes as a plan-level property (schema.json:537, config.go:85 Composes) -- no noun was renamed, which is what current-compatible evolution committed to"
+  - "the decision is a no-op-by-design contract, so there is no shipped diff to contradict; the only shipped artefacts are the record itself and PLAN-003's row, which agree"
 ---
 
 # Task 261: decide vNext vocabulary and migration

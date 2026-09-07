@@ -13,6 +13,13 @@ needs-human: true
 decision-status: decided
 decided-at: 2026-09-04T09:10:00+09:00
 depends-on: [TASK-262, TASK-263]
+quality-review: conditional
+quality-reviewed-at: 2026-09-07T17:56:04+09:00
+quality-review-evidence:
+  - "re-ran criterion 6's `make doc-check`: exit 0"
+  - "read the criterion-6 completion evidence: the independent review was performed by a separate session against origin/master 5243573 and its 7 findings were dispositioned -- F1/F2/F4/F5 became TASK-296/297/298 (all three cards exist today: tasks/done/296-..., tasks/_archive/done/297-..., tasks/_archive/done/298-...), F3 and F7 were corrected in-card and in internal/cli/composition_flags.go"
+  - "verified the frozen model is implemented, not merely decided: internal/config/config.go:85 Composes []CompositionEntry with `yaml:\"composes\"` and schema.json:537 composes under the plan definition, with depends_on -- matching §3's root-aggregation contract"
+  - "caveat: F6 (INFORMATIONAL -- `dva manifest` renders a composition plan as an empty leaf plan) was deliberately left as an observation with no card, so it has no owner today; PLAN-007's own rule treats an observation left as only an observation as a loss. I did not re-verify F6 behaviour against a built binary"
 ---
 
 # Task 260: freeze cross-project plan composition

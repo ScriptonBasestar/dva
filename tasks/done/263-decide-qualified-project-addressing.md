@@ -12,6 +12,13 @@ status: done
 needs-human: true
 decision-status: decided
 depends-on: [TASK-259, TASK-264]
+quality-review: conditional
+quality-reviewed-at: 2026-09-07T17:56:04+09:00
+quality-review-evidence:
+  - "re-ran criterion 6's `make doc-check`: exit 0"
+  - "DEFECT: §3 freezes two NEW rejection rules as decided -- (a) `config validate` must reject a subproject name that collides with a reserved built-in command, and (b) a key the child's own validator rejects must also be unreachable through the parent's qualified route. Neither is implemented: internal/config/reserved.go ValidateReservedCommands takes only map[string]*InteractionCommand and never sees Subprojects; internal/config/validate.go has no Subprojects reference at all. §8 of the card itself says the two follow-up implementation cards '존재하지 않는다' and leaves them to a future groom, and PLAN-003's row repeats it -- but no such card exists in tasks/todo, tasks/done or tasks/_archive today. A P0 decision is recorded as frozen while the tree contradicts it, with no owner"
+  - "verified the parts that ARE current: §5's claim that TASK-267 closed three of TASK-259's six exposure repairs holds -- internal/cli/manifest.go subprojectUsage and internal/cli/list.go's --project/-p registration are present"
+  - "caveat: §5's two remaining exposure items (owner/canonical-alias markers in ls --json and manifest; completion for all three address forms) are also unowned, same as recorded on TASK-259"
 ---
 
 # Task 263: decide qualified-project addressing

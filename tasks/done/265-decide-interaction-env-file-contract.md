@@ -13,6 +13,13 @@ closed-at: 2026-09-03T00:33:44+09:00
 needs-human: true
 decision-status: decided
 depends-on: [TASK-247]
+quality-review: conditional
+quality-reviewed-at: 2026-09-07T17:56:04+09:00
+quality-review-evidence:
+  - "re-ran criterion 6's `make doc-check`: exit 0"
+  - "verified both frozen stages actually shipped through TASK-266: Stage B is complete -- schema.json definitions.interaction_command has no env_file property (additionalProperties is false), InteractionCommand in internal/config/config.go has no EnvFile field, and the path-scoped guidance map §4 demanded exists next to removedSchemaKeys with the exact frozen wording 'removed from interaction: ...' (internal/config/validate.go:70). Stage A's example cleanup also shipped: examples/env-file-priority.yml now declares env_file only at the root and examples/README.md no longer teaches 'Command-specific env_file'"
+  - "DEFECT: §4 Stage B explicitly requires 'Stage A의 semantic warning은 제거한다', but internal/config/config.go:591-605 still defines the exported const InteractionEnvFileMessage (\"'env_file' is inert and will be rejected in 0.1.49 ...\") with a 14-line doc comment. It is emitted from nowhere -- grep finds only the definition and a naming reference in a migrate_report.go comment -- and its doc comment states the field is 'schema-valid, decoded, merged and carried through subproject import', every clause of which is false after Stage B. It is dead exported API whose documentation asserts the opposite of the shipped contract"
+  - "read §1's inventory claims that are still checkable: the producer/consumer split it recorded is now moot because Stage B removed the producers, which is the expected end state -- the residue above is the only inconsistency"
 ---
 
 # Task 265: decide the interaction env_file contract
