@@ -40,6 +40,12 @@ func TestScaffoldDvaYml_ReturnsErrorWithoutCreatingConfig_whenComposeFileIsMissi
 // whose only package.json lives in dashboard-webui/, so the root carries no
 // classic language manifest at all. Before TASK-322 this classified as
 // outcomeNoDiscovery and `dva init` exited 1 without writing anything.
+//
+// Only mise.toml is read today — it is what makes this root classify at all.
+// PORT_MAPPINGS.yaml, .gz-git.yaml and the Makefile are carried here because
+// they are part of the observed shape, but nothing reads them yet and the test
+// below asserts len(cfg.Stack) == 0 precisely because of that. Deriving native
+// entries from those three is TASK-332, not a gap in this test.
 var scriptonDashboardRootFiles = map[string]string{
 	"mise.toml": `[tools]
 node = "24"

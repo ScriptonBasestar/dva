@@ -15,11 +15,20 @@ status: done
 1. compose 없는 6개 프로젝트 모두 `dva init --dry-run` → "no Docker Compose file detected … no recognized language manifest" exit 1.
 2. `--recursive`가 루트 compose 부재에서 즉시 종료 — 하위 go.mod 12개(gzh-cli), dashboard-webui/package.json 미탐색. help 문구와 불일치.
 3. 루트 `go.work`를 language manifest로 인식하지 않음.
-4. `PORT_MAPPINGS.yaml`(소문자 변형 포함), `.gz-git.yaml` workspaces, Makefile `dev-*`/`build`/`test` 타깃을 읽지 않음 —
-   scripton-dashboard는 이 세 소스만으로 native 엔트리 2개 + plan + endpoints 기계 유도 가능 (리포트에 골격 있음).
-5. `--dry-run`이 탐지 실패만 출력하고 "생성됐을 내용" preview 없음.
+4. **[이월 → TASK-332]** `PORT_MAPPINGS.yaml`(소문자 변형 포함), `.gz-git.yaml` workspaces,
+   Makefile `dev-*`/`build`/`test` 타깃을 읽지 않음 — scripton-dashboard는 이 세 소스만으로
+   native 엔트리 2개 + plan + endpoints 기계 유도 가능 (리포트에 골격 있음).
+   이 카드에서 **미착수**. `tasks/todo/332-init-workspace-and-port-manifest-detection.md`가 소유한다.
+5. **[이월 → TASK-333]** `--dry-run`이 탐지 실패만 출력하고 "생성됐을 내용" preview 없음.
+   실제로는 `dva init`에 preview 플래그가 없다(전제 자체가 틀림). 이 카드에서 **미착수**.
+   `tasks/todo/333-init-dry-run-preview-decision.md`가 소유한다.
 
 TASK-249의 capability-driven 생성기 설계에 위 fixture를 반영한다.
+
+## Scope closed here
+
+body item 1·2·3만 이 카드에서 닫혔다(native-only 탐지, `--recursive` 하위 탐색, `go.work`).
+item 4·5는 위 표기대로 TASK-332/TASK-333으로 이월했으며 이 카드는 그 범위를 주장하지 않는다.
 
 ## Completion Criteria
 
