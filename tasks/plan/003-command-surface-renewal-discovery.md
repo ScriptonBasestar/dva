@@ -3,9 +3,9 @@ id: PLAN-003
 title: "Renew command discovery and prepare composition contracts"
 type: plan
 scope: "help and machine discovery, kubectl and validate route compatibility, project addressing, cross-project composition, and vNext vocabulary decisions"
-progress: 43
+progress: 100
 total-tasks: 14
-completed-tasks: 6
+completed-tasks: 14
 children: [TASK-253, TASK-254, TASK-255, TASK-256, TASK-257, TASK-258, TASK-259, TASK-260, TASK-261, TASK-262, TASK-263, TASK-264, TASK-267, TASK-272]
 target-date: "2027-03-31"
 created: 2026-09-02
@@ -196,6 +196,8 @@ incremental compatibility 구현이 source branch에서 검증되며, project ad
 vocabulary의 선택과 기각 근거가 기록됐을 때 완료한다.
 vNext 구현을 선택한 경우 새 plan과 child cards를 만드는 것까지가 이 계획의 완료 범위이며, 그 구현
 자체는 새 계획의 완료 조건이다.
+
+**완료 (2026-09-07):** 위 child 14장 전부 닫혔다 (`tasks/done/` 또는 `tasks/_archive/`).
 
 ## Children
 

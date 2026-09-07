@@ -3,9 +3,9 @@ id: PLAN-004
 title: "Restore documentation truth across skills, flows, and the example corpus"
 type: plan
 scope: "CLI advice strings, agent-mesh flow prompt claims, skill reference fictions, example corpus defects, and the markdown-YAML validation gap"
-progress: 83
+progress: 100
 total-tasks: 6
-completed-tasks: 5
+completed-tasks: 6
 children: [TASK-273, TASK-274, TASK-275, TASK-276, TASK-283, TASK-288]
 target-date: "2026-11-30"
 created: 2026-09-03
@@ -44,6 +44,8 @@ question 2가 소유한다.
 | skill reference가 존재하지 않는 동작을 서술 | **완료** | [TASK-275](../done/275-correct-skill-reference-fictions.md) |
 | example corpus 결함 + markdown-YAML 게이트 공백 | **범위 판정 완료 (2026-09-03)** — examples는 fragment corpus | [TASK-276](../done/276-correct-example-corpus-and-close-md-yaml-gap.md) |
 | `service-orchestration.yml` overlay 모델링 경고 | **완료 (2026-09-03)** — reading 2(경고 판정식이 틀림) 확정, `plansPartitionComposeServices` 추가 | [TASK-288](../done/288-model-compose-overlays-in-service-orchestration-example.md) |
+
+**완료 (2026-09-07):** 위 child 6장 전부 닫혔다.
 
 ## 권장 순서 (2026-09-03)
 
