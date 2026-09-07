@@ -89,6 +89,12 @@ Four places where the literal criterion text meets this card's own non-goals, re
    readiness is reported `failed` and is not itself rolled back, matching §5.2, which rolls back the
    children that *succeeded*.
 
+   > **이 서술은 [TASK-296](296-fix-composition-readiness-gate-rollback-gap.md)이 supersede했다.**
+   > 카드 시점에는 정확했지만, `dropIndex`가 이미 기동된 자식을 롤백 목록에서 누락시키던 것이
+   > P1 결함으로 밝혀져 TASK-296이 `dropIndex`를 제거했다. 지금은 readiness에 실패한 자식도
+   > 형제와 함께 LIFO로 롤백된다. 현재 동작의 정본은 `composition_orchestrator_readiness_test.go`가
+   > 단언하는 호출 순서(`up:a, up:b, wait:a, wait:b, down:b, down:a`)다.
+
 ## Review findings (follow-ups, not blocking)
 
 Independent review (opus, adversarial) confirmed READY TO INTEGRATE, with two findings:
@@ -136,7 +142,9 @@ volume/purge 경로가 없다. 원본 오류 보존은 `CompositionError.Err`가
 - 그 결과 **Implementation notes 4번("readiness 실패 자식은 롤백되지 않는다")은 현재 코드와
   반대**다. TASK-296 이후 해당 자식도 형제와 함께 LIFO 롤백된다. 카드 시점에는 정확했으므로
   결함이 아니라 후행 카드에 의해 낡은 서술이며, 읽는 사람이 현재 동작으로 오독할 수 있다.
-- 기준 7의 `make commit-check`은 현재 red다. 원인은 `origin/master`에 이미 있는 무관한 커밋
-  `47d9188`(subject 80자, TASK-249 문서 이동)로, 이 카드와 무관한 baseline 실패다.
+- 기준 7의 `make commit-check`은 리뷰 시점에 red였다. 원인은 `origin/master`에 이미 있는 무관한
+  커밋 `47d9188`(subject 80자, TASK-249 문서 이동)로, 이 카드와 무관한 baseline 실패였다.
+  그 커밋은 이미 push된 객체라 subject를 다시 쓸 수 없어 `tools/commitcheck`의 grandfather
+  waiver로 처리했고, master의 `make commit-check`은 현재 OK다.
 
 **판정: conditional.**
