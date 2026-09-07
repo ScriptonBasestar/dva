@@ -75,3 +75,10 @@ dva.yml을 받는다.
   해결: `detectDirectManifestLangIn`(패키지 manifest + `go.work`)을 분리해
   `detectTemplateIn`은 direct 증거만, `detectNativeMarkerIn`은 direct + 핀을 읽는다.
   걸린시간: 25분.
+- (2026-09-07) 증상: `make commit-check`가 이 브랜치에서 실패 — `ecc1621`의 subject가
+  73자로 한도 72자를 1자 초과. 원인: 게이트 목록에서 `commit-check`가 빠져 있어
+  커밋 시점에 한 번도 돌리지 않았다. 이 검사는 워킹트리가 아니라 git history를
+  읽으므로, 잘못된 subject는 리워드하기 전까지 영구히 실패로 남는다.
+  해결: `git reset --hard` + `--amend` + cherry-pick으로 subject를 56자로 리워드
+  (트리 동일성 확인). 남은 1건 `47d91889`는 이미 origin/master에 있는 기존 실패.
+  걸린시간: 15분.
