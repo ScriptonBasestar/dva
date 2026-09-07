@@ -30,20 +30,44 @@ const (
 // classifyDiscovery inspects dir for verified, self-contained evidence: Compose
 // files (sufficient to generate a compose stack entry) and language manifests
 // (identity evidence only — never a source for a guessed native runner).
-func classifyDiscovery(dir string) (outcome discoveryOutcome, composeFiles []string, nativeLang string) {
+func classifyDiscovery(dir string) (outcome discoveryOutcome, composeFiles []string, nativeLang string, nativeEvidence langEvidence) {
 	composeFiles = detectComposeFilesIn(dir)
-	nativeLang, nativeFound := detectNativeMarkerIn(dir)
+	nativeLang, nativeEvidence = detectNativeMarkerIn(dir)
 
 	switch {
-	case len(composeFiles) > 0 && nativeFound:
-		return outcomeHybrid, composeFiles, nativeLang
+	case len(composeFiles) > 0 && nativeEvidence != evidenceNone:
+		return outcomeHybrid, composeFiles, nativeLang, nativeEvidence
 	case len(composeFiles) > 0:
-		return outcomeComposeOnly, composeFiles, ""
-	case nativeFound:
-		return outcomeNativeOnly, nil, nativeLang
+		return outcomeComposeOnly, composeFiles, "", evidenceNone
+	case nativeEvidence != evidenceNone:
+		return outcomeNativeOnly, nil, nativeLang, nativeEvidence
 	default:
-		return outcomeNoDiscovery, nil, ""
+		return outcomeNoDiscovery, nil, "", evidenceNone
 	}
+}
+
+// langEvidence grades how a directory's language was identified. The grade is
+// not an implementation detail: it decides what DVA is entitled to *say*. A
+// package manifest is a statement that the repository is a project in that
+// language; a tool-version pin only says that runtime is installed, which a
+// repository may pin for a lint hook in a language it is not written in.
+// Calling the latter a "project manifest" asserts something DVA did not
+// observe, so the two grades carry different nouns. See phrase.
+type langEvidence int
+
+const (
+	evidenceNone langEvidence = iota
+	evidenceDirectManifest
+	evidenceToolPin
+)
+
+// phrase renders the noun the user-facing announcements interpolate, so the
+// wording cannot drift from the grade that produced it.
+func (e langEvidence) phrase(lang string) string {
+	if e == evidenceToolPin {
+		return lang + " runtime pin"
+	}
+	return lang + " project manifest"
 }
 
 // detectNativeMarkerIn reports a verified language manifest in dir, if any.
@@ -56,16 +80,19 @@ func classifyDiscovery(dir string) (outcome discoveryOutcome, composeFiles []str
 // weaker grade is enough to classify a directory as native-only — whose output
 // is comment-only — and detectTemplateIn deliberately does not accept it,
 // because a template authors real commands. See detectToolManifestLangIn.
-func detectNativeMarkerIn(dir string) (lang string, ok bool) {
+func detectNativeMarkerIn(dir string) (lang string, evidence langEvidence) {
 	if lang, ok := detectDirectManifestLangIn(dir); ok {
-		return lang, true
+		return lang, evidenceDirectManifest
 	}
 	// Weaker, but still verified and self-contained: a tool-version manifest
 	// names the language outright. TASK-322 — a workspace root that keeps every
 	// package manifest one level down (scripton-dashboard: dashboard-webui/
 	// package.json) declares its language only here, so without this the whole
 	// repository looked manifest-less.
-	return detectToolManifestLangIn(dir)
+	if lang, ok := detectToolManifestLangIn(dir); ok {
+		return lang, evidenceToolPin
+	}
+	return "", evidenceNone
 }
 
 // detectDirectManifestLangIn reports a language declared by a manifest whose
@@ -196,7 +223,7 @@ func scaffoldDvaYml(dir, tmpl string) (bool, error) {
 		return false, nil
 	}
 
-	outcome, _, nativeLang := classifyDiscovery(dir)
+	outcome, _, nativeLang, nativeEvidence := classifyDiscovery(dir)
 
 	if outcome == outcomeNoDiscovery {
 		return false, fmt.Errorf(`%w in %s; dva.yml was not created
@@ -215,11 +242,11 @@ func scaffoldDvaYml(dir, tmpl string) (bool, error) {
 		if effectiveTmpl == "" {
 			effectiveTmpl = nativeLang
 		}
-		content := generateNativeOnlyConfigIn(effectiveTmpl)
+		content := generateNativeOnlyConfigIn(effectiveTmpl, nativeEvidence)
 		if err := os.WriteFile(target, []byte(content), 0644); err != nil {
 			return false, fmt.Errorf("failed to write %s: %w", target, err)
 		}
-		fmt.Printf("✅ Created %s (no Compose file; %s manifest detected, no stack entry generated — DVA does not guess native run/build commands)\n", target, nativeLang)
+		fmt.Printf("✅ Created %s (no Compose file; %s detected, no stack entry generated — DVA does not guess native run/build commands)\n", target, nativeEvidence.phrase(nativeLang))
 		if updated, err := ensureGitignore(dir); err == nil && updated {
 			fmt.Printf("📎 Updated .gitignore to ignore %s/\n", config.DotDirName)
 		}
@@ -227,7 +254,7 @@ func scaffoldDvaYml(dir, tmpl string) (bool, error) {
 	}
 
 	if outcome == outcomeHybrid {
-		fmt.Printf("ℹ️  Detected both a Compose file and a %s project manifest in %s; using the Compose stack (add a native runner manually if you also want one)\n", nativeLang, dir)
+		fmt.Printf("ℹ️  Detected both a Compose file and a %s in %s; using the Compose stack (add a native runner manually if you also want one)\n", nativeEvidence.phrase(nativeLang), dir)
 	}
 
 	if tmpl == "" {
@@ -254,12 +281,12 @@ func scaffoldDvaYml(dir, tmpl string) (bool, error) {
 // so a stack entry without verified evidence would be an unverified placeholder,
 // which the decided TASK-249 contract forbids. The comment tells a human exactly
 // what evidence was insufficient and how to add a native runner by hand.
-func generateNativeOnlyConfigIn(tmpl string) string {
+func generateNativeOnlyConfigIn(tmpl string, evidence langEvidence) string {
 	var b strings.Builder
 	_, _ = fmt.Fprintf(&b, "version: \"%s\"\n\n", config.MinScaffoldVersion)
 	b.WriteString("# No Compose file was found, so no `stack:` entry was generated.\n")
 	if tmpl != "" {
-		_, _ = fmt.Fprintf(&b, "# A %s project manifest was detected, but DVA does not guess a native\n", tmpl)
+		_, _ = fmt.Fprintf(&b, "# A %s was detected, but DVA does not guess a native\n", evidence.phrase(tmpl))
 	} else {
 		b.WriteString("# DVA does not guess a native\n")
 	}

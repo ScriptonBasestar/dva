@@ -1,5 +1,5 @@
 ---
-id: TASK-332
+id: TASK-339
 title: "init: derive native entries from PORT_MAPPINGS.yaml, .gz-git.yaml workspaces, and Makefile dev targets"
 type: feature
 priority: P2

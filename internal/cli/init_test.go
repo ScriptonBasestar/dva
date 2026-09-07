@@ -455,7 +455,7 @@ func TestInitPublicSurfaceCompatibility(t *testing.T) {
 		tmpDir := t.TempDir()
 		os.WriteFile(filepath.Join(tmpDir, "docker-compose.yml"), []byte(""), 0644)
 
-		outcome, composeFiles, nativeLang := classifyDiscovery(tmpDir)
+		outcome, composeFiles, nativeLang, _ := classifyDiscovery(tmpDir)
 		if outcome != outcomeComposeOnly {
 			t.Fatalf("expected outcomeComposeOnly, got %v", outcome)
 		}
@@ -468,7 +468,7 @@ func TestInitPublicSurfaceCompatibility(t *testing.T) {
 		tmpDir := t.TempDir()
 		os.WriteFile(filepath.Join(tmpDir, "go.mod"), []byte("module example.com/x\n"), 0644)
 
-		outcome, composeFiles, nativeLang := classifyDiscovery(tmpDir)
+		outcome, composeFiles, nativeLang, _ := classifyDiscovery(tmpDir)
 		if outcome != outcomeNativeOnly {
 			t.Fatalf("expected outcomeNativeOnly, got %v", outcome)
 		}
@@ -503,7 +503,7 @@ func TestInitPublicSurfaceCompatibility(t *testing.T) {
 		os.WriteFile(filepath.Join(tmpDir, "docker-compose.yml"), []byte(""), 0644)
 		os.WriteFile(filepath.Join(tmpDir, "package.json"), []byte("{}"), 0644)
 
-		outcome, composeFiles, nativeLang := classifyDiscovery(tmpDir)
+		outcome, composeFiles, nativeLang, _ := classifyDiscovery(tmpDir)
 		if outcome != outcomeHybrid {
 			t.Fatalf("expected outcomeHybrid, got %v", outcome)
 		}
@@ -524,7 +524,7 @@ func TestInitPublicSurfaceCompatibility(t *testing.T) {
 	t.Run("no-discovery: neither Compose file nor language manifest rejects and writes nothing", func(t *testing.T) {
 		tmpDir := t.TempDir()
 
-		outcome, _, _ := classifyDiscovery(tmpDir)
+		outcome, _, _, _ := classifyDiscovery(tmpDir)
 		if outcome != outcomeNoDiscovery {
 			t.Fatalf("expected outcomeNoDiscovery, got %v", outcome)
 		}
@@ -596,7 +596,7 @@ func TestInitDoesNotAuthorRejectedPlanLabels(t *testing.T) {
 	}
 
 	for _, lang := range []string{"", "go", "node", "python", "rails"} {
-		content := generateNativeOnlyConfigIn(lang)
+		content := generateNativeOnlyConfigIn(lang, evidenceDirectManifest)
 		check(t, "native-only lang="+lang, content)
 	}
 }

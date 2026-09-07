@@ -15,20 +15,20 @@ status: done
 1. compose 없는 6개 프로젝트 모두 `dva init --dry-run` → "no Docker Compose file detected … no recognized language manifest" exit 1.
 2. `--recursive`가 루트 compose 부재에서 즉시 종료 — 하위 go.mod 12개(gzh-cli), dashboard-webui/package.json 미탐색. help 문구와 불일치.
 3. 루트 `go.work`를 language manifest로 인식하지 않음.
-4. **[이월 → TASK-332]** `PORT_MAPPINGS.yaml`(소문자 변형 포함), `.gz-git.yaml` workspaces,
+4. **[이월 → TASK-339]** `PORT_MAPPINGS.yaml`(소문자 변형 포함), `.gz-git.yaml` workspaces,
    Makefile `dev-*`/`build`/`test` 타깃을 읽지 않음 — scripton-dashboard는 이 세 소스만으로
    native 엔트리 2개 + plan + endpoints 기계 유도 가능 (리포트에 골격 있음).
-   이 카드에서 **미착수**. `tasks/todo/332-init-workspace-and-port-manifest-detection.md`가 소유한다.
-5. **[이월 → TASK-333]** `--dry-run`이 탐지 실패만 출력하고 "생성됐을 내용" preview 없음.
+   이 카드에서 **미착수**. `tasks/todo/339-init-workspace-and-port-manifest-detection.md`가 소유한다.
+5. **[이월 → TASK-340]** `--dry-run`이 탐지 실패만 출력하고 "생성됐을 내용" preview 없음.
    실제로는 `dva init`에 preview 플래그가 없다(전제 자체가 틀림). 이 카드에서 **미착수**.
-   `tasks/todo/333-init-dry-run-preview-decision.md`가 소유한다.
+   `tasks/todo/340-init-dry-run-preview-decision.md`가 소유한다.
 
 TASK-249의 capability-driven 생성기 설계에 위 fixture를 반영한다.
 
 ## Scope closed here
 
 body item 1·2·3만 이 카드에서 닫혔다(native-only 탐지, `--recursive` 하위 탐색, `go.work`).
-item 4·5는 위 표기대로 TASK-332/TASK-333으로 이월했으며 이 카드는 그 범위를 주장하지 않는다.
+item 4·5는 위 표기대로 TASK-339/TASK-340으로 이월했으며 이 카드는 그 범위를 주장하지 않는다.
 
 ## Completion Criteria
 
@@ -82,3 +82,16 @@ dva.yml을 받는다.
   해결: `git reset --hard` + `--amend` + cherry-pick으로 subject를 56자로 리워드
   (트리 동일성 확인). 남은 1건 `47d91889`는 이미 origin/master에 있는 기존 실패.
   걸린시간: 15분.
+- (2026-09-07) 증상: 새로 만든 카드 id 332·333이 master에 이미 있는 카드와 충돌.
+  원인: 브랜치가 낡은 base 위에 있어서 `ls tasks/`로 구한 "최대 id 331"이 내 워킹트리
+  기준으로만 참이었다. id는 저장소 전역 자원인데 로컬 트리에서 유도했다. 해결:
+  `origin/master`(c7cd146)로 rebase한 뒤 최대 id를 다시 유도(338)해 339·340으로 개번.
+  교훈: id를 발급하기 전에 반드시 먼저 rebase한다. 걸린시간: 20분.
+- (2026-09-07) 증상: tool-version 핀만 있는 저장소에 `"%s project manifest"`가 출력되고
+  같은 문구가 사용자 저장소의 `dva.yml` 주석으로 커밋됨 — rust 저장소가 pre-commit용으로
+  `python`을 핀하면 "a python project manifest"라고 주장한다. 원인: 코드에서는 증거
+  등급을 나눴지만 사용자에게 보이는 문구는 등급을 구분하지 않아, 방금 제거한 범주
+  오류가 표면에 남아 있었다. 해결: `langEvidence` 등급을 `classifyDiscovery`에서
+  스캐폴드까지 관통시키고 `phrase()`가 direct → "project manifest",
+  pin → "runtime pin"을 렌더. 세 지점(native-only 알림/hybrid 알림/생성 파일 주석)
+  모두 적용하고 문구 자체를 테스트로 고정. 걸린시간: 40분.

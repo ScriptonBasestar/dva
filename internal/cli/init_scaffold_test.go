@@ -45,7 +45,7 @@ func TestScaffoldDvaYml_ReturnsErrorWithoutCreatingConfig_whenComposeFileIsMissi
 // PORT_MAPPINGS.yaml, .gz-git.yaml and the Makefile are carried here because
 // they are part of the observed shape, but nothing reads them yet and the test
 // below asserts len(cfg.Stack) == 0 precisely because of that. Deriving native
-// entries from those three is TASK-332, not a gap in this test.
+// entries from those three is TASK-339, not a gap in this test.
 var scriptonDashboardRootFiles = map[string]string{
 	"mise.toml": `[tools]
 node = "24"
@@ -99,9 +99,12 @@ func TestClassifyDiscovery_ScriptonDashboardRootIsNativeOnly(t *testing.T) {
 	writeFixture(t, dir, scriptonDashboardRootFiles)
 
 	// When
-	outcome, composeFiles, nativeLang := classifyDiscovery(dir)
+	outcome, composeFiles, nativeLang, evidence := classifyDiscovery(dir)
 
 	// Then
+	if evidence != evidenceToolPin {
+		t.Fatalf("classifyDiscovery() evidence = %v, want evidenceToolPin (mise.toml is a pin, not a package manifest)", evidence)
+	}
 	if outcome != outcomeNativeOnly {
 		t.Fatalf("classifyDiscovery() outcome = %v, want outcomeNativeOnly", outcome)
 	}
@@ -112,9 +115,30 @@ func TestClassifyDiscovery_ScriptonDashboardRootIsNativeOnly(t *testing.T) {
 		t.Fatalf("classifyDiscovery() lang = %q, want %q (mise.toml [tools] node)", nativeLang, "node")
 	}
 
-	created, err := scaffoldDvaYml(dir, "")
+	var created bool
+	var err error
+	stdout := captureStdout(t, func() {
+		created, err = scaffoldDvaYml(dir, "")
+	})
 	if err != nil || !created {
 		t.Fatalf("scaffoldDvaYml() = (%v, %v), want (true, nil)", created, err)
+	}
+	// The announcement and the generated file must both name a pin as a pin.
+	// This root has no package manifest anywhere in it, so "project manifest"
+	// would be a claim about a file that does not exist — and the generated
+	// text is committed into the user's repository, where nothing corrects it.
+	if !strings.Contains(stdout, "node runtime pin") {
+		t.Errorf("announcement must call a mise pin a runtime pin, got:\n%s", stdout)
+	}
+	generated, err := os.ReadFile(filepath.Join(dir, config.FileName))
+	if err != nil {
+		t.Fatalf("read generated config: %v", err)
+	}
+	if strings.Contains(string(generated), "project manifest") {
+		t.Errorf("generated dva.yml must not claim a project manifest for a pin, got:\n%s", generated)
+	}
+	if !strings.Contains(string(generated), "node runtime pin") {
+		t.Errorf("generated dva.yml should say what was actually found, got:\n%s", generated)
 	}
 	cfg, err := config.Load(dir)
 	if err != nil {
@@ -208,7 +232,8 @@ func TestDetectNativeMarkerIn(t *testing.T) {
 			dir := t.TempDir()
 			writeFixture(t, dir, tc.files)
 
-			lang, ok := detectNativeMarkerIn(dir)
+			lang, evidence := detectNativeMarkerIn(dir)
+			ok := evidence != evidenceNone
 
 			if lang != tc.wantLang || ok != tc.wantOK {
 				t.Fatalf("detectNativeMarkerIn() = (%q, %v), want (%q, %v)", lang, ok, tc.wantLang, tc.wantOK)
@@ -366,37 +391,45 @@ func TestHybridTemplateSelection(t *testing.T) {
 		wantTmpl  string
 		wantHas   string
 		wantLacks string
+		// wantPhrase is the noun the announcement must use for this evidence.
+		// The language token alone is not enough: calling a runtime pin a
+		// "project manifest" asserts something DVA never observed.
+		wantPhrase string
 	}{
 		{
-			name:     "go.work workspace root with a Compose file selects the go template",
-			files:    map[string]string{"go.work": "go 1.25\n", "docker-compose.yml": "services: {}\n"},
-			wantLang: "go",
-			wantTmpl: "go",
-			wantHas:  "go test ./...",
+			name:       "go.work workspace root with a Compose file selects the go template",
+			files:      map[string]string{"go.work": "go 1.25\n", "docker-compose.yml": "services: {}\n"},
+			wantLang:   "go",
+			wantTmpl:   "go",
+			wantHas:    "go test ./...",
+			wantPhrase: "a go project manifest",
 		},
 		{
-			name:     "a direct manifest is unaffected",
-			files:    map[string]string{"Gemfile": "source 'x'\n", "docker-compose.yml": "services: {}\n"},
-			wantLang: "rails",
-			wantTmpl: "rails",
-			wantHas:  "bundle exec rspec",
+			name:       "a direct manifest is unaffected",
+			files:      map[string]string{"Gemfile": "source 'x'\n", "docker-compose.yml": "services: {}\n"},
+			wantLang:   "rails",
+			wantTmpl:   "rails",
+			wantHas:    "bundle exec rspec",
+			wantPhrase: "a rails project manifest",
 		},
 		{
 			// The reviewer's case: python pinned for pre-commit hooks only.
-			name:      "a .tool-versions pin must not select a template",
-			files:     map[string]string{".tool-versions": "python 3.12.0\n", "docker-compose.yml": "services: {}\n"},
-			wantLang:  "python",
-			wantTmpl:  "minimal",
-			wantHas:   "/bin/bash",
-			wantLacks: "python manage.py",
+			name:       "a .tool-versions pin must not select a template",
+			files:      map[string]string{".tool-versions": "python 3.12.0\n", "docker-compose.yml": "services: {}\n"},
+			wantLang:   "python",
+			wantTmpl:   "minimal",
+			wantHas:    "/bin/bash",
+			wantLacks:  "python manage.py",
+			wantPhrase: "a python runtime pin",
 		},
 		{
-			name:      "a mise.toml pin must not select a template",
-			files:     map[string]string{"mise.toml": "[tools]\nnode = \"24\"\n", "docker-compose.yml": "services: {}\n"},
-			wantLang:  "node",
-			wantTmpl:  "minimal",
-			wantHas:   "/bin/bash",
-			wantLacks: "npm run dev",
+			name:       "a mise.toml pin must not select a template",
+			files:      map[string]string{"mise.toml": "[tools]\nnode = \"24\"\n", "docker-compose.yml": "services: {}\n"},
+			wantLang:   "node",
+			wantTmpl:   "minimal",
+			wantHas:    "/bin/bash",
+			wantLacks:  "npm run dev",
+			wantPhrase: "a node runtime pin",
 		},
 		{
 			name:     "a Compose file with no manifest at all is still minimal",
@@ -412,7 +445,7 @@ func TestHybridTemplateSelection(t *testing.T) {
 			dir := t.TempDir()
 			writeFixture(t, dir, tc.files)
 
-			outcome, _, nativeLang := classifyDiscovery(dir)
+			outcome, _, nativeLang, _ := classifyDiscovery(dir)
 			wantOutcome := outcomeHybrid
 			if tc.wantLang == "" {
 				wantOutcome = outcomeComposeOnly
@@ -428,9 +461,19 @@ func TestHybridTemplateSelection(t *testing.T) {
 				t.Fatalf("detectTemplateIn() = %q, want %q (announced %q)", tmpl, tc.wantTmpl, nativeLang)
 			}
 
-			created, err := scaffoldDvaYml(dir, "")
+			var created bool
+			var err error
+			stdout := captureStdout(t, func() {
+				created, err = scaffoldDvaYml(dir, "")
+			})
 			if err != nil || !created {
 				t.Fatalf("scaffoldDvaYml() = (%v, %v), want (true, nil)", created, err)
+			}
+			if tc.wantPhrase != "" && !strings.Contains(stdout, tc.wantPhrase) {
+				t.Errorf("announcement must name the evidence grade %q, got:\n%s", tc.wantPhrase, stdout)
+			}
+			if tc.wantLacks != "" && strings.Contains(stdout, "project manifest") {
+				t.Errorf("a tool pin is not a project manifest; the announcement must not say so. Got:\n%s", stdout)
 			}
 			data, err := os.ReadFile(filepath.Join(dir, config.FileName))
 			if err != nil {
