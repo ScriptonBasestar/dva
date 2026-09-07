@@ -38,6 +38,7 @@ type ResolvedEntry struct {
 	RunnerConfig any
 	Order        int
 	DependsOn    []string
+	Profiles     []string
 	Services     []string
 	Wave         int
 	WorkingDir   string
@@ -231,6 +232,7 @@ func ResolvePlan(cfg *config.Config, planName string, cliVars map[string]string)
 			RunnerConfig: runnerConfig,
 			Order:        planEntry.Order,
 			DependsOn:    copyStringSlice(planEntry.DependsOn),
+			Profiles:     copyStringSlice(planEntry.Profiles),
 			Services:     copyStringSlice(planEntry.Services),
 			Wave:         0,
 			Vars:         make(map[string]string),

@@ -254,6 +254,9 @@ func cloneImportedPlan(plan *PlanConfig, owner *Config, subprojectPath string) *
 			if clone.Entries[i].DependsOn != nil {
 				clone.Entries[i].DependsOn = append([]string(nil), clone.Entries[i].DependsOn...)
 			}
+			if clone.Entries[i].Profiles != nil {
+				clone.Entries[i].Profiles = append([]string(nil), clone.Entries[i].Profiles...)
+			}
 			if clone.Entries[i].Services != nil {
 				clone.Entries[i].Services = append([]string(nil), clone.Entries[i].Services...)
 			}

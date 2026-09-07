@@ -382,8 +382,8 @@ func compositionEntriesEqual(a, b CompositionEntry) bool {
 }
 
 // planEntriesEqual compares one PlanEntry pair on the fields D6 freezes: Name,
-// Runner, Order, DependsOn, Services, Vars. Entries are compared positionally by
-// plansHaveEqualDeclaration (list order in Entries is itself part of the
+// Runner, Order, DependsOn, Profiles, Services, Vars. Entries are compared
+// positionally by plansHaveEqualDeclaration (list order in Entries is itself part of the
 // declaration), so this only judges whether the entries at matching positions
 // agree.
 func planEntriesEqual(a, b PlanEntry) bool {
@@ -391,6 +391,7 @@ func planEntriesEqual(a, b PlanEntry) bool {
 		a.Runner == b.Runner &&
 		a.Order == b.Order &&
 		slices.Equal(a.DependsOn, b.DependsOn) &&
+		slices.Equal(a.Profiles, b.Profiles) &&
 		slices.Equal(a.Services, b.Services) &&
 		maps.Equal(a.Vars, b.Vars)
 }

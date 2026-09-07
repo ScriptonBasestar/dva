@@ -105,11 +105,20 @@ func (p *PlanConfig) OwnerConfig(fallback *Config) *Config {
 }
 
 // PlanEntry is a single entry in a plan, referencing a stack declaration.
+//
+// Profiles and Services are both compose-only selections and they compose in one
+// direction: profiles decide which services compose *considers* at all (a service
+// behind `profiles:` in the compose file is invisible until one of its profiles is
+// active), and Services then narrows that set to the ones this entry starts. Naming
+// a gated service in Services also activates it — that is docker's own rule — so the
+// two are not alternatives: profiles are how a plan turns on a group without having
+// to track its membership, which is what stack.<entry>.runners.compose declares.
 type PlanEntry struct {
 	Name      string            `yaml:"name"`
 	Runner    string            `yaml:"runner"`
 	Order     int               `yaml:"order"`
 	DependsOn []string          `yaml:"depends_on"`
+	Profiles  []string          `yaml:"profiles"`
 	Services  []string          `yaml:"services"`
 	Vars      map[string]string `yaml:"vars"`
 }

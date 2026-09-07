@@ -76,6 +76,14 @@ If you're new to DVA, start with [`basic.yml`](basic.yml) - it contains the esse
 
 ## Examples by Feature
 
+### 🐳 Compose Profiles
+
+- **[compose-profiles.yml](compose-profiles.yml)** - Plans select Docker Compose profiles
+  - `plans.<plan>.entries[].profiles` becomes `--profile` on the compose invocation
+  - `profiles` opens a gated group, `services` narrows what starts inside it
+  - Use when: The compose file gates optional service groups behind `profiles:`
+  - Guide: [`../docs/40-declarative-stack-and-plans.md`](../docs/40-declarative-stack-and-plans.md) §5-1
+
 ### 📦 Provision Profiles
 
 - **[provision-profiles.yml](provision-profiles.yml)** - Comprehensive provision examples

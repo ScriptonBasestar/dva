@@ -216,6 +216,49 @@ stack:
 실제 어떤 서비스만 띄울지는 실행 계획에서 선택할 수 있어야 합니다.
 즉 compose 서비스 선택은 선언이 아니라 계획 쪽 책임입니다.
 
+### 5-1. profile 선택
+
+compose 파일이 서비스를 `profiles:`로 게이트하면 그 서비스는 profile이 켜지기
+전까지 compose 에게 아예 보이지 않습니다. 따라서 profile 선택도 서비스 선택과
+같은 축이며, 같은 이유로 `plans` 쪽 책임입니다.
+
+```yaml
+plans:
+  docker-dev:
+    entries:
+      - name: core-compose
+        runner: compose
+        order: 10
+        profiles: [rust, dev, monitoring]
+```
+
+`plans.<plan>.entries[].profiles`는 선언 순서대로 `--profile` 플래그가 되어
+서브커맨드 앞에 놓입니다 (docker 가 top-level 플래그로만 받기 때문입니다).
+
+```
+docker compose -f compose.yaml --profile rust --profile dev --profile monitoring up -d --wait
+```
+
+`profiles`와 `services`는 서로를 대체하지 않고 한 방향으로 합성됩니다.
+
+- `profiles`는 compose 가 **고려할 대상**을 정합니다 (게이트 해제).
+- `services`는 그 안에서 이 엔트리가 **실제로 띄울 대상**을 좁힙니다.
+
+즉 `profiles: [rust]` + `services: [dns-bridge-migrate]`는 rust 그룹을 열고 그
+중 마이그레이션 잡 하나만 실행합니다. 게이트된 서비스 이름을 `services`에 직접
+적어도 compose 는 그 서비스를 활성화하지만(도커 자체 규칙), 그렇게 하면 plan 이
+compose 파일의 profile 멤버십을 손으로 복제하게 됩니다 — compose.yaml 에 서비스를
+추가할 때 plan 목록이 조용히 낡습니다. 그룹 단위로 켜는 일은 `profiles`가,
+그룹 안에서 골라내는 일은 `services`가 맡습니다.
+
+`profiles`는 compose runner 로 해석된 plan 엔트리에서만 의미가 있습니다. 다른
+runner 로 해석된 엔트리에는 전달되지 않습니다. 선언하지 않거나 빈 목록(`[]`)이면
+`--profile`은 하나도 생성되지 않으며, 필드가 없던 시절과 동일한 argv 가 됩니다.
+
+`profiles`는 stack 선언이 아니라 plan 에만 둡니다. stack 엔트리는 "compose
+프로젝트 선언"이고, 어떤 profile 을 켤지는 그때그때의 실행 의도이기 때문입니다
+(§5 원칙과 동일). 예시: [`examples/compose-profiles.yml`](../examples/compose-profiles.yml).
+
 ## 이어서 읽기
 
 - [41-execution-plans-and-cli.md](41-execution-plans-and-cli.md) — 실행 계획 구조, CLI, 권장 YAML, 해석 순서 (§6–10)

@@ -524,6 +524,7 @@
                   "runner": { "type": "string", "description": "Runner to use from the stack entry's runners map" },
                   "order": { "type": "integer", "description": "Execution order within this plan" },
                   "depends_on": { "type": "array", "items": { "type": "string" }, "description": "Names of other plan entries that must complete first" },
+                  "profiles": { "type": "array", "items": { "type": "string" }, "description": "Compose profiles to activate for this entry, passed as --profile flags (compose runner only). Profiles decide which services compose considers; 'services' then narrows that set. Omit to leave every profile off, which is docker's default.", "examples": [["rust"], ["rust", "monitoring"]] },
                   "services": { "type": "array", "items": { "type": "string" }, "description": "Compose service subset to start (compose runner only)" },
                   "vars": {
                     "type": "object",
@@ -561,7 +562,7 @@
               "site": "local",
               "vars": { "LOG_LEVEL": "debug" },
               "entries": [
-                { "name": "core-compose", "runner": "compose", "order": 10, "services": ["postgres", "redis"] },
+                { "name": "core-compose", "runner": "compose", "order": 10, "profiles": ["monitoring"], "services": ["postgres", "redis"] },
                 { "name": "api", "runner": "native", "order": 20, "depends_on": ["core-compose"] }
               ]
             }

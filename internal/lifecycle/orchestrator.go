@@ -52,6 +52,7 @@ type StopOptions struct {
 // Orchestrator coordinates lifecycle plugin execution in order.
 type Orchestrator struct {
 	entries         []config.LifecycleEntry
+	composeProfiles map[string][]string
 	composeServices map[string][]string
 	cfg             *config.Config
 	env             *config.Environment
@@ -109,6 +110,16 @@ func (o *Orchestrator) Up(ctx context.Context, opts UpOptions) error {
 			entryComposeServices = &selected
 		}
 
+		// A plan entry's profiles: replaces the mode-derived list rather than adding to
+		// it. --mode and plans are two generations of the same selection mechanism (see
+		// migrate_report.go), never combined in one config that a migration produced, and
+		// a union would make the effective profile set depend on a flag the plan cannot
+		// see. Replacement keeps the plan's declaration readable as written.
+		entryComposeProfiles := modeProfiles
+		if profiles, ok := o.composeProfiles[entry.Name]; ok {
+			entryComposeProfiles = append([]string(nil), profiles...)
+		}
+
 		entryEnv := envClone.Clone()
 		entryEnv.MergeVars(entry.Vars)
 		pctx := &PluginContext{
@@ -118,7 +129,7 @@ func (o *Orchestrator) Up(ctx context.Context, opts UpOptions) error {
 			DryRun:          opts.DryRun,
 			Force:           opts.Force,
 			Wait:            opts.Wait,
-			ComposeProfiles: modeProfiles,
+			ComposeProfiles: entryComposeProfiles,
 			ComposeServices: entryComposeServices,
 			Logger:          o.logger.With("entry", entry.Name, "plugin", pluginType),
 		}

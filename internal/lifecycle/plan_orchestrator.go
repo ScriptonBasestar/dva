@@ -27,6 +27,7 @@ func NewPlanOrchestrator(cfg *config.Config, env *config.Environment, plan *Exec
 	}
 
 	entries := make([]config.LifecycleEntry, 0, len(plan.Entries))
+	composeProfiles := make(map[string][]string)
 	composeServices := make(map[string][]string)
 	for _, resolved := range plan.Entries {
 		entry, err := materializeResolvedEntry(resolved)
@@ -37,10 +38,19 @@ func NewPlanOrchestrator(cfg *config.Config, env *config.Environment, plan *Exec
 		if resolved.Runner == "compose" && resolved.Services != nil {
 			composeServices[resolved.Name] = append([]string(nil), resolved.Services...)
 		}
+		// Registered only for the compose runner, exactly as Services is: --profile is a
+		// docker compose flag, and an entry a plan or site pointed at another runner has
+		// nowhere to put it. len > 0 rather than != nil normalizes `profiles: []` — the
+		// shape a template renders for an empty list — to "no selection" here, so the map
+		// only ever holds entries that actually select something.
+		if resolved.Runner == "compose" && len(resolved.Profiles) > 0 {
+			composeProfiles[resolved.Name] = append([]string(nil), resolved.Profiles...)
+		}
 	}
 
 	return &Orchestrator{
 		entries:         entries,
+		composeProfiles: composeProfiles,
 		composeServices: composeServices,
 		cfg:             owner,
 		env:             env,

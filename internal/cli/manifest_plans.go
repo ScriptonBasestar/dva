@@ -19,6 +19,7 @@ type ManifestPlanEntry struct {
 	Runner    string   `json:"runner" yaml:"runner"`
 	Order     int      `json:"order" yaml:"order"`
 	DependsOn []string `json:"depends_on,omitempty" yaml:"depends_on,omitempty"`
+	Profiles  []string `json:"profiles,omitempty" yaml:"profiles,omitempty"`
 	Services  []string `json:"services,omitempty" yaml:"services,omitempty"`
 	Wave      int      `json:"wave" yaml:"wave"`
 }
@@ -59,6 +60,7 @@ func buildManifestPlans(c *config.Config) map[string]ManifestPlan {
 				Runner:    entry.Runner,
 				Order:     entry.Order,
 				DependsOn: entry.DependsOn,
+				Profiles:  entry.Profiles,
 				Services:  entry.Services,
 				Wave:      entry.Wave,
 			})

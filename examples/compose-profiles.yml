@@ -1,0 +1,84 @@
+# yaml-language-server: $schema=../internal/config/schema.json
+#
+# Example: Compose profiles selected from a plan
+# Use Case: scripton-dns-bridge — one compose project whose optional service groups
+#           (Kafka pipeline, DNS nameserver stack, Rust services, observability) sit
+#           behind Docker Compose `profiles:`
+# Features: plans[].entries[].profiles, profiles + services narrowing
+#
+# Usage:
+#   dva ls
+#   dva up infra
+#   dva up kafka
+#   dva up docker-dev
+#
+# Why profiles and not a service list: a profile-gated service is invisible to compose
+# until one of its profiles is active, so before `profiles:` existed on a plan entry the
+# only way to start such a group was to name every member under `services:`. That made the
+# plan a second, hand-maintained copy of the compose file's profile membership — adding a
+# service to compose.yaml silently left it out of every plan.
+
+version: "0.1.44"
+
+vars:
+  RUST_LOG: info
+
+stack:
+  core-compose:
+    description: dns-bridge compose project (base services plus profile-gated groups)
+    default_runner: compose
+    runners:
+      compose:
+        files:
+          - compose.yaml
+        project_name: dns-bridge
+
+plans:
+  # No profiles: only the ungated base services, narrowed to the two this plan wants.
+  infra:
+    description: PostgreSQL and Redis only
+    entries:
+      - name: core-compose
+        runner: compose
+        order: 10
+        services: [postgres, redis]
+
+  # Profiles alone: compose starts every service the `kafka` profile gates, plus the
+  # ungated base services. The plan never has to know the group's membership.
+  kafka:
+    description: Base services plus the Kafka pipeline
+    entries:
+      - name: core-compose
+        runner: compose
+        order: 10
+        profiles: [kafka]
+
+  nameserver:
+    description: Base services plus the PowerDNS/etcd/CoreDNS nameserver group
+    entries:
+      - name: core-compose
+        runner: compose
+        order: 10
+        profiles: [nameserver]
+
+  # Several profiles at once: each becomes its own --profile flag, in this order.
+  docker-dev:
+    description: Rust services and observability, all in containers
+    entries:
+      - name: core-compose
+        runner: compose
+        order: 10
+        profiles: [rust, dev, monitoring]
+
+  # Profiles select what compose considers; services narrows what this entry starts.
+  # Here the rust profile makes the migration job visible and services runs only it.
+  migrate:
+    description: Run the schema migration job and nothing else
+    entries:
+      - name: core-compose
+        runner: compose
+        order: 10
+        profiles: [rust]
+        services: [dns-bridge-migrate]
+
+default_plan: infra
