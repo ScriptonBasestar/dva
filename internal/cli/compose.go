@@ -55,13 +55,13 @@ If multiple compose entries exist, the first argument must be the entry name.`,
 
 		if len(composeEntries) == 1 {
 			// Single entry: name can be omitted, pass all args through
-			return execComposePassthroughForEntry(e, c, composeEntries[0], args)
+			return execComposePassthroughForEntry(e, c, composeEntries[0], nil, args)
 		}
 
 		// Multiple entries: first arg must be entry name
 		if len(args) > 0 {
 			if entry := c.FindStackEntry(args[0]); entry != nil && entry.ComposeConfig() != nil {
-				return execComposePassthroughForEntry(e, c, entry, args[1:])
+				return execComposePassthroughForEntry(e, c, entry, nil, args[1:])
 			}
 		}
 
@@ -1294,8 +1294,11 @@ func execComposePassthrough(e *config.Environment, c *config.Config, args []stri
 }
 
 // execComposePassthroughForEntry runs docker compose against a specific stack entry.
-func execComposePassthroughForEntry(e *config.Environment, c *config.Config, entry *config.LifecycleEntry, args []string) error {
-	composeCmd, composeArgs, err := buildComposeArgsForEntry(e, c, entry, args)
+//
+// profiles is nil on the stack path and the plan entry's profiles on the plan path; see
+// buildComposeArgsForEntry for where they land in the argv.
+func execComposePassthroughForEntry(e *config.Environment, c *config.Config, entry *config.LifecycleEntry, profiles, args []string) error {
+	composeCmd, composeArgs, err := buildComposeArgsForEntry(e, c, entry, profiles, args)
 	if err != nil {
 		return err
 	}
@@ -1314,10 +1317,21 @@ func execComposePassthroughForEntry(e *config.Environment, c *config.Config, ent
 }
 
 // buildComposeArgsForEntry builds docker compose arguments from a specific lifecycle entry.
-func buildComposeArgsForEntry(e *config.Environment, c *config.Config, entry *config.LifecycleEntry, args []string) (string, []string, error) {
+//
+// profiles are the plan entry's compose profiles and go on as `--profile` flags between the
+// -f/--project-name prefix and the subcommand, which is the one position docker accepts:
+// --profile is a top-level flag, so after the subcommand it belongs to the subcommand and
+// is rejected. That is the same shape and the same reason as the mode-derived injection in
+// internal/lifecycle/compose.go, deliberately mirrored rather than re-invented — the two
+// paths address the same compose project and must agree on which services exist. nil for
+// the stack path, which has no plan and therefore no plan profiles.
+func buildComposeArgsForEntry(e *config.Environment, c *config.Config, entry *config.LifecycleEntry, profiles, args []string) (string, []string, error) {
 	composeCmd, composeArgs, err := dvaexec.ComposeArgv(e, entry.ComposeConfig(), c.FileDir())
 	if err != nil {
 		return "", nil, fmt.Errorf("entry %q: %w", entry.Name, err)
+	}
+	for _, profile := range profiles {
+		composeArgs = append(composeArgs, "--profile", profile)
 	}
 	return composeCmd, append(composeArgs, args...), nil
 }

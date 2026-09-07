@@ -255,6 +255,12 @@ compose 파일의 profile 멤버십을 손으로 복제하게 됩니다 — comp
 runner 로 해석된 엔트리에는 전달되지 않습니다. 선언하지 않거나 빈 목록(`[]`)이면
 `--profile`은 하나도 생성되지 않으며, 필드가 없던 시절과 동일한 argv 가 됩니다.
 
+`profiles`는 lifecycle 동사뿐 아니라 plan 을 대상으로 하는 `dva build <plan>` 과
+`dva logs <plan>` 에도 같은 위치로 전달됩니다. plan 의 선택은 `services`와
+`profiles`를 합친 것이므로, profile 로만 고르는 plan 에서 `services`만 전달하면
+compose 가 게이트된 서비스를 아예 보지 못해 `build` 는 아무것도 만들지 않고
+`logs` 는 plan 이 시작한 적 없는 파일 전체를 대상으로 삼습니다.
+
 `profiles`는 stack 선언이 아니라 plan 에만 둡니다. stack 엔트리는 "compose
 프로젝트 선언"이고, 어떤 profile 을 켤지는 그때그때의 실행 의도이기 때문입니다
 (§5 원칙과 동일). 예시: [`examples/compose-profiles.yml`](../examples/compose-profiles.yml).

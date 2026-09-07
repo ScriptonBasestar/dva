@@ -276,7 +276,7 @@ func mustComposeArgs(t *testing.T, e *config.Environment, c *config.Config, args
 
 func mustComposeArgsForEntry(t *testing.T, e *config.Environment, c *config.Config, entry *config.LifecycleEntry, args []string) (string, []string) {
 	t.Helper()
-	cmd, argv, err := buildComposeArgsForEntry(e, c, entry, args)
+	cmd, argv, err := buildComposeArgsForEntry(e, c, entry, nil, args)
 	if err != nil {
 		t.Fatalf("buildComposeArgsForEntry returned an error: %v", err)
 	}

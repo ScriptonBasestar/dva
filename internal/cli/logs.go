@@ -48,6 +48,7 @@ type planLogTarget struct {
 	name     string
 	runner   string
 	compose  *config.ComposePluginConfig // nil unless the plan runs this entry under compose
+	profiles []string                    // compose profiles the plan activates for this entry, if any
 	services []string                    // compose service subset the plan selected, if any
 }
 
@@ -63,8 +64,14 @@ func planLogTargets(plan *lifecycle.ExecutionPlan) []planLogTarget {
 	for _, entry := range plan.Entries {
 		switch cfg := entry.RunnerConfig.(type) {
 		case *config.ComposePluginConfig:
+			// Carried for the same reason as in planBuildTargets: profiles and services are
+			// one selection. `compose logs` happens to print a profile-gated service today
+			// without the flag, but that is a property of the docker version installed, not
+			// a guarantee — and a profiles-only plan has no service positionals to fall back
+			// on, so the unscoped form would be the whole file rather than the plan.
 			targets = append(targets, planLogTarget{
-				name: entry.Name, runner: entry.Runner, compose: cfg, services: entry.Services,
+				name: entry.Name, runner: entry.Runner, compose: cfg,
+				profiles: entry.Profiles, services: entry.Services,
 			})
 		case *config.NativeRunnerConfig, *config.ProcessPluginConfig, *config.ScriptPluginConfig:
 			targets = append(targets, planLogTarget{name: entry.Name, runner: entry.Runner})
@@ -89,7 +96,7 @@ func showPlanEntryLogs(e *config.Environment, c *config.Config, target planLogTa
 	}
 
 	entry := &config.LifecycleEntry{Name: target.name, Compose: target.compose}
-	return execComposePassthroughForEntry(e, c, entry, planComposeLogArgs(target, passthrough))
+	return execComposePassthroughForEntry(e, c, entry, target.profiles, planComposeLogArgs(target, passthrough))
 }
 
 // planComposeLogArgs builds the compose argv for one target.

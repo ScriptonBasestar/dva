@@ -69,6 +69,13 @@ argv 위치도 이 규칙 그대로다: `--profile`은 서브커맨드 앞(docke
   플래그에 의존하게 된다.
 - **compose runner 전용**: `--profile`은 docker compose 플래그이므로 plan이나 site가
   다른 runner를 가리킨 엔트리에는 등록하지 않는다 (`Services`와 동일한 게이트).
+- **build/logs에도 전달한다**: plan을 대상으로 하는 `dva build <plan>`과
+  `dva logs <plan>`도 같은 위치(`-f`/`--project-name` 뒤, 서브커맨드 앞)로 profiles를
+  넘긴다. plan의 선택은 `services` + `profiles`이므로 `services`만 넘기면 TASK-314가
+  닫은 구멍이 다시 열린다 — profile로만 고르는 plan은 서비스 위치인자가 없어서
+  `build`는 아무것도 만들지 않고 rc 0으로 끝난다. `logs`는 지금 쓰는 compose(5.5.0)가
+  플래그 없이도 게이트된 컨테이너 로그를 보여주는 덕에 깨져 보이지 않을 뿐이며,
+  그건 인터페이스 보장이 아니라 특정 구현의 성질이다.
 - **teardown에는 넣지 않았다**: `dva down`은 프로젝트 전체(`down --remove-orphans`)
   이거나 이미 서비스 이름이 명시된 `rm`이라 `--profile`이 바꿀 것이 없다. up 경로에만
   전달한다.
@@ -124,6 +131,27 @@ args="[compose -f .../compose.yaml --project-name dns-bridge --profile rust up -
 | `lifecycle.TestPlanProfilesRegisteredOnlyForComposeRunner` | runner 게이트 제거 | `non-compose runner registered compose profiles: [rust]` |
 | `lifecycle.TestPlanWithoutProfilesArgvUnchanged` | profiles 없을 때 빈 `--profile` 방출 | `argv = [... --profile  up ...], want [... up ...]` |
 | `cli.TestManifestPlanEntryCarriesProfiles` | manifest가 Profiles 복사를 멈추도록 | `manifest entry profiles = "", want "rust,monitoring"` |
+| `cli.TestPlanBuildArgvActivatesThePlanProfiles` | `planBuildTargets`가 `profiles`를 복사하지 않도록 | `got "... --project-name profiles-demo build"` (프로필 플래그 없음) |
+| `cli.TestPlanBuildArgvActivatesThePlanProfiles` | `buildComposeArgsForEntry`의 `--profile` 주입 제거 | 동일 argv 누락 실패 |
+| `cli.TestPlanLogsArgvActivatesThePlanProfiles` | `planLogTargets`가 `profiles`를 복사하지 않도록 | `got "... --project-name profiles-demo logs"` (프로필 플래그 없음) |
+| `cli.TestPlanLogsArgvActivatesThePlanProfiles` | `showPlanEntryLogs`가 `nil`을 넘기도록 | 동일 argv 누락 실패 |
+
+### build/logs argv (수정 전 → 후)
+
+profile로만 고르는 plan(`gated`) 기준:
+
+```
+build 전: docker compose -f .../compose.yml --project-name profiles-demo build
+build 후: docker compose -f .../compose.yml --project-name profiles-demo --profile rust --profile monitoring build
+
+logs  전: docker compose -f .../compose.yml --project-name profiles-demo logs
+logs  후: docker compose -f .../compose.yml --project-name profiles-demo --profile rust --profile monitoring logs
+```
+
+profiles 없는 plan(`plain`)의 argv는 두 경로 모두 바뀌지 않는다
+(`... --project-name profiles-demo build db`, `... logs db`) —
+`TestPlanBuildArgvUnchangedWhenThePlanDeclaresNoProfiles`와
+`TestPlanLogsArgvUnchangedWhenThePlanDeclaresNoProfiles`가 argv 전체를 통째로 비교한다.
 
 ## 후속 관찰 (범위 밖)
 

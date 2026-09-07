@@ -20,6 +20,7 @@ type planBuildTarget struct {
 	name     string
 	runner   string
 	compose  *config.ComposePluginConfig // nil unless the plan runs this entry under compose
+	profiles []string                    // compose profiles the plan activates for this entry, if any
 	services []string                    // compose service subset the plan selected, if any
 	command  string                      // native: runners.native.build, run by a shell
 	dir      string                      // native: runners.native.dir, before resolution
@@ -41,8 +42,14 @@ func planBuildTargets(plan *lifecycle.ExecutionPlan) []planBuildTarget {
 	for _, entry := range plan.Entries {
 		switch cfg := entry.RunnerConfig.(type) {
 		case *config.ComposePluginConfig:
+			// Profiles travel with services because together they are the plan's selection.
+			// Taking only services reopens the hole TASK-314 closed: a plan that selects by
+			// profile alone has no services, and without --profile compose does not consider
+			// the profile-gated services at all, so `dva build <plan>` builds nothing while
+			// `dva up <plan>` starts them.
 			targets = append(targets, planBuildTarget{
-				name: entry.Name, runner: entry.Runner, compose: cfg, services: entry.Services,
+				name: entry.Name, runner: entry.Runner, compose: cfg,
+				profiles: entry.Profiles, services: entry.Services,
 			})
 		case *config.NativeRunnerConfig:
 			if cfg.Build == "" {
@@ -131,7 +138,7 @@ func buildComposeTarget(e *config.Environment, c *config.Config, target planBuil
 			target.name, strings.Join(target.services, ", "))
 		return nil
 	}
-	composeCmd, composeArgs, err := buildComposeArgsForEntry(e, c, entry, args)
+	composeCmd, composeArgs, err := buildComposeArgsForEntry(e, c, entry, target.profiles, args)
 	if err != nil {
 		return err
 	}
