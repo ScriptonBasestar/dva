@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -28,7 +29,9 @@ var initCmd = &cobra.Command{
 	Short: "Scaffold a new 'dva.yml' configuration in the current directory",
 	Long: `Scaffold a new dva.yml in the current directory. Auto-detects docker-compose.yml and Dockerfile.
 
-Use --recursive to also scaffold dva.yml in detected sub-projects.
+Use --recursive to also scaffold dva.yml in detected sub-projects. The sub-project
+scan runs even when the current directory itself has no Compose file and no
+recognized language manifest.
 After scaffolding, run 'am run dva-discover' to inspect the project, then
 'am run dva-improve' to let an AI agent optimize the existing configuration.
 Use 'am run dva-improve -p mode=rewrite' only when a full rewrite is intentional.`,
@@ -39,7 +42,16 @@ Use 'am run dva-improve -p mode=rewrite' only when a full rewrite is intentional
 	RunE: func(cmd *cobra.Command, args []string) error {
 		created, err := scaffoldDvaYml(".", initTemplate)
 		if err != nil {
-			return err
+			// TASK-322 gap 2: --recursive advertises a sub-project scan, but an
+			// evidence-less root aborted before the scan ever ran — so a
+			// workspace whose manifests all live one level down (gzh-cli's 12
+			// go.mod, scripton-dashboard's dashboard-webui/package.json) got
+			// nothing at all. Keep the root refusal visible and let the scan
+			// decide whether the run produced anything.
+			if !initRecursive || !errors.Is(err, errComposeFileNotFound) {
+				return err
+			}
+			fmt.Fprintf(os.Stderr, "⚠️  %v\n", err)
 		}
 
 		if created {
@@ -67,7 +79,11 @@ Use 'am run dva-improve -p mode=rewrite' only when a full rewrite is intentional
 		}
 
 		if initRecursive {
-			scaffoldSubprojects()
+			// A failed root plus an empty scan means the run produced nothing;
+			// report the original refusal rather than exiting 0 on a warning.
+			if scaffoldSubprojects() == 0 && err != nil {
+				return err
+			}
 		}
 
 		fmt.Println()
@@ -106,23 +122,28 @@ func init() {
 	rootCmd.AddCommand(initAliasCmd)
 }
 
-// scaffoldSubprojects detects sub-projects and scaffolds dva.yml in each.
-func scaffoldSubprojects() {
+// scaffoldSubprojects detects sub-projects and scaffolds dva.yml in each,
+// returning how many were handled without error (created, or already present).
+func scaffoldSubprojects() int {
 	var subs []subInfo
 	scanForSubprojects(".", 0, 3, &subs)
 
 	if len(subs) == 0 {
 		fmt.Println("No sub-projects detected.")
-		return
+		return 0
 	}
 
 	fmt.Printf("\n📂 Found %d sub-project(s):\n", len(subs))
+	handled := 0
 	for _, sp := range subs {
 		tmpl := languageToTemplate(sp.language)
 		if _, err := scaffoldDvaYml(sp.path, tmpl); err != nil {
 			fmt.Fprintf(os.Stderr, "⚠️  %s: %v\n", sp.path, err)
+			continue
 		}
+		handled++
 	}
+	return handled
 }
 
 type subInfo struct {
@@ -172,7 +193,7 @@ func scanForSubprojects(dir string, depth, maxDepth int, result *[]subInfo) {
 			file string
 			lang string
 		}{
-			{"go.mod", "go"}, {"package.json", "node"}, {"pyproject.toml", "python"},
+			{"go.mod", "go"}, {"go.work", "go"}, {"package.json", "node"}, {"pyproject.toml", "python"},
 			{"requirements.txt", "python"}, {"Gemfile", "rails"}, {"Cargo.toml", ""},
 		}
 		for _, bi := range buildIndicators {

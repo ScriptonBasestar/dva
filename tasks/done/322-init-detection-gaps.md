@@ -7,7 +7,7 @@ effort: M
 exec-tier: strong
 created-at: 2026-09-05T10:30:00+09:00
 source: "docs/dogfood/{scripton-dashboard,gzh-cli,flow-station,mansero,lottomaster,scripton-code}.md — TASK-249 evidence"
-status: todo
+status: done
 ---
 
 # Task 322: init 탐지 결함 (TASK-249 후속 증거)
@@ -23,5 +23,14 @@ TASK-249의 capability-driven 생성기 설계에 위 fixture를 반영한다.
 
 ## Completion Criteria
 
-- [ ] scripton-dashboard 루트 파일을 fixture로 한 native-only 탐지 테스트 | verify: `make test`
-- [ ] --recursive가 루트 compose 없이도 하위 탐색 | verify: `make test`
+- [x] scripton-dashboard 루트 파일을 fixture로 한 native-only 탐지 테스트 | verify: `make test`
+- [x] --recursive가 루트 compose 없이도 하위 탐색 | verify: `make test`
+
+## Troubleshooting Log
+
+- (2026-09-07) 증상: `make lint`가 새 `strings.Split(string(data), "\n")` 루프에서만
+  `stringsseq: Ranging over SplitSeq is more efficient (modernize)`로 exit 1.
+  원인: 저장소 golangci-lint가 `modernize` 분석기를 에러로 켜 두어, 기존 코드가 쓰는
+  `strings.Split` 관용구도 신규 코드에는 허용되지 않는다 (`make test`는 통과하므로
+  lint 단계까지 가야 드러남). 해결: `strings.SplitSeq`로 교체.
+  걸린시간: 5분.

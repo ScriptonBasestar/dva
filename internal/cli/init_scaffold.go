@@ -60,10 +60,73 @@ func detectNativeMarkerIn(dir string) (lang string, ok bool) {
 		{"Pipfile", "python"},
 		{"pyproject.toml", "python"},
 		{"go.mod", "go"},
+		// TASK-322 gap 3: a Go workspace root carries go.work and delegates
+		// every go.mod to a member directory, so the root of such a repository
+		// read as "no recognized language manifest".
+		{"go.work", "go"},
 	}
 	for _, ind := range indicators {
 		if _, err := os.Stat(filepath.Join(dir, ind.file)); err == nil {
 			return ind.lang, true
+		}
+	}
+	// Weaker, but still verified and self-contained: a tool-version manifest
+	// names the language outright. TASK-322 — a workspace root that keeps every
+	// package manifest one level down (scripton-dashboard: dashboard-webui/
+	// package.json) declares its language only here, so without this the whole
+	// repository looked manifest-less.
+	return detectToolManifestLangIn(dir)
+}
+
+// toolManifestLangs maps a tool-version manifest entry to the template language
+// it evidences. Only tools DVA actually has a template for are listed; every
+// other entry (linters, LSP servers, package managers) is not language
+// evidence and must not classify a directory.
+var toolManifestLangs = map[string]string{
+	"node":   "node",
+	"nodejs": "node",
+	"python": "python",
+	"go":     "go",
+	"golang": "go",
+	"ruby":   "rails",
+}
+
+// detectToolManifestLangIn reads a mise or asdf tool-version manifest in dir and
+// reports the first language it declares. It reads only the [tools] table of a
+// mise.toml — a tool pinned through a backend prefix ("npm:typescript") names a
+// package, not a runtime, so those keys are skipped.
+func detectToolManifestLangIn(dir string) (string, bool) {
+	for _, name := range []string{"mise.toml", ".mise.toml", ".tool-versions"} {
+		data, err := os.ReadFile(filepath.Join(dir, name))
+		if err != nil {
+			continue
+		}
+		// .tool-versions has no sections; every line is a tool entry.
+		inTools := name == ".tool-versions"
+		for line := range strings.SplitSeq(string(data), "\n") {
+			line = strings.TrimSpace(line)
+			if line == "" || strings.HasPrefix(line, "#") {
+				continue
+			}
+			if strings.HasPrefix(line, "[") {
+				inTools = line == "[tools]"
+				continue
+			}
+			if !inTools {
+				continue
+			}
+			key, _, _ := strings.Cut(line, "=")
+			fields := strings.Fields(key)
+			if len(fields) == 0 {
+				continue
+			}
+			key = strings.Trim(fields[0], `"'`)
+			if key == "" || strings.Contains(key, ":") {
+				continue
+			}
+			if lang, found := toolManifestLangs[key]; found {
+				return lang, true
+			}
 		}
 	}
 	return "", false
