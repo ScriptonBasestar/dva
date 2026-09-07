@@ -92,27 +92,35 @@ var toolManifestLangs = map[string]string{
 }
 
 // detectToolManifestLangIn reads a mise or asdf tool-version manifest in dir and
-// reports the first language it declares. It reads only the [tools] table of a
-// mise.toml — a tool pinned through a backend prefix ("npm:typescript") names a
-// package, not a runtime, so those keys are skipped.
+// reports the first language it declares. It reads only mise's tools table — a
+// tool pinned through a backend prefix ("npm:typescript") names a package, not a
+// runtime, so those keys are skipped.
+//
+// Trade-off (TASK-322, deliberate): a tool pin is weaker evidence than a package
+// manifest. A repository that pins `python` only for its pre-commit hooks now
+// classifies as native-only python and gets python-worded output. The bound on
+// that misfire is narrow — a native-only result never authors a stack entry, so
+// the worst case is a comment-only dva.yml naming the wrong language, which the
+// user edits or deletes, instead of the exit-1 refusal that produced nothing at
+// all. Widening it (guessing a run command from the pin) is what the contract
+// forbids, and this does not do that.
 func detectToolManifestLangIn(dir string) (string, bool) {
 	for _, name := range []string{"mise.toml", ".mise.toml", ".tool-versions"} {
 		data, err := os.ReadFile(filepath.Join(dir, name))
 		if err != nil {
 			continue
 		}
-		// .tool-versions has no sections; every line is a tool entry.
+		// .tool-versions has no tables; every line is a tool entry.
 		inTools := name == ".tool-versions"
+		tableSeen := false
 		for line := range strings.SplitSeq(string(data), "\n") {
 			line = strings.TrimSpace(line)
 			if line == "" || strings.HasPrefix(line, "#") {
 				continue
 			}
 			if strings.HasPrefix(line, "[") {
-				inTools = line == "[tools]"
-				continue
-			}
-			if !inTools {
+				inTools = isToolsTableHeader(line)
+				tableSeen = true
 				continue
 			}
 			key, _, _ := strings.Cut(line, "=")
@@ -121,6 +129,15 @@ func detectToolManifestLangIn(dir string) (string, bool) {
 				continue
 			}
 			key = strings.Trim(fields[0], `"'`)
+			// A TOML dotted key names its table inline: `tools.node = "24"` at
+			// the top of the file is the same pin as `node = "24"` under
+			// [tools], and mise accepts both. It only means that before any
+			// table header — inside [settings] it would be settings.tools.node.
+			if rest, dotted := strings.CutPrefix(key, "tools."); dotted && !tableSeen {
+				key = strings.Trim(rest, `"'`)
+			} else if !inTools {
+				continue
+			}
 			if key == "" || strings.Contains(key, ":") {
 				continue
 			}
@@ -130,6 +147,19 @@ func detectToolManifestLangIn(dir string) (string, bool) {
 		}
 	}
 	return "", false
+}
+
+// isToolsTableHeader reports whether a TOML table header names mise's tools
+// table. Exact-string matching on "[tools]" gave false negatives on the spacing
+// and trailing comments real files carry, and a false negative here is not
+// cosmetic: it puts the directory back to "no recognized language manifest".
+func isToolsTableHeader(line string) bool {
+	if idx := strings.Index(line, "#"); idx >= 0 {
+		line = line[:idx]
+	}
+	line = strings.TrimSpace(line)
+	line = strings.TrimSuffix(strings.TrimPrefix(line, "["), "]")
+	return strings.Trim(strings.TrimSpace(line), `"'`) == "tools"
 }
 
 // scaffoldDvaYml creates a dva.yml in the given directory if one doesn't exist.

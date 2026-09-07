@@ -166,6 +166,30 @@ func TestDetectNativeMarkerIn(t *testing.T) {
 			wantOK:   true,
 		},
 		{
+			name:     "[tools] header with a trailing comment",
+			files:    map[string]string{"mise.toml": "[tools] # runtimes\nnode = \"24\"\n"},
+			wantLang: "node",
+			wantOK:   true,
+		},
+		{
+			name:     "[tools] header with inner spacing",
+			files:    map[string]string{"mise.toml": "[ tools ]\nruby = \"3.4\"\n"},
+			wantLang: "rails",
+			wantOK:   true,
+		},
+		{
+			name:     "TOML dotted key before any table header",
+			files:    map[string]string{"mise.toml": "tools.node = \"24\"\n"},
+			wantLang: "node",
+			wantOK:   true,
+		},
+		{
+			name:     "a dotted key inside another table is not a tools pin",
+			files:    map[string]string{"mise.toml": "[settings]\ntools.node = \"24\"\n"},
+			wantLang: "",
+			wantOK:   false,
+		},
+		{
 			name:     "no evidence at all",
 			files:    map[string]string{"README.md": "# x\n"},
 			wantLang: "",
@@ -231,6 +255,20 @@ func TestInitRecursive_ScansSubprojectsWithoutRootEvidence(t *testing.T) {
 			wantAbsent: []string{"dva.yml"},
 		},
 		{
+			// Regression: counting "no error" instead of "created" let a
+			// leftover sub-project dva.yml from an earlier run stand in for
+			// progress, so a still-unusable root exited 0.
+			name: "a pre-existing sub-project dva.yml is not progress",
+			files: map[string]string{
+				"README.md":          "# workspace\n",
+				"webui/package.json": `{"name":"webui"}`,
+				"webui/dva.yml":      "version: \"0.1.0\"\n",
+			},
+			recursive:  true,
+			wantErr:    true,
+			wantAbsent: []string{"dva.yml"},
+		},
+		{
 			name:       "an evidence-less tree still fails, with nothing written",
 			files:      map[string]string{"README.md": "# empty\n"},
 			recursive:  true,
@@ -265,7 +303,21 @@ func TestInitRecursive_ScansSubprojectsWithoutRootEvidence(t *testing.T) {
 
 			initTemplate, initRecursive, initDevcontainer, initAll = "", tc.recursive, false, false
 
-			runErr := initCmd.RunE(initCmd, nil)
+			stderr, runErr := captureCommandStderr(t, func() error {
+				return initCmd.RunE(initCmd, nil)
+			})
+
+			// The refusal body is emitted exactly once. When RunE returns the
+			// error, root.go prints it, so RunE must not have printed it too —
+			// otherwise the user sees the same multi-line block twice.
+			const refusalBody = "dva.yml was not created"
+			if runErr != nil && strings.Contains(stderr, refusalBody) {
+				t.Errorf("RunE returned an error and also printed its body; root.go prints it again.\nstderr:\n%s", stderr)
+			}
+			if runErr == nil && tc.recursive && !tc.wantErr && len(tc.wantCreate) > 0 &&
+				!strings.Contains(stderr, refusalBody) {
+				t.Errorf("a refused root that the scan rescued should still explain itself once.\nstderr:\n%s", stderr)
+			}
 
 			if tc.wantErr && runErr == nil {
 				t.Fatal("initCmd.RunE() = nil, want an error")
@@ -282,6 +334,89 @@ func TestInitRecursive_ScansSubprojectsWithoutRootEvidence(t *testing.T) {
 				if _, statErr := os.Stat(filepath.Join(dir, rel)); !os.IsNotExist(statErr) {
 					t.Errorf("%s must not be written, stat err = %v", rel, statErr)
 				}
+			}
+		})
+	}
+}
+
+// TestHybridTemplateMatchesAnnouncedManifest guards the desync TASK-322's first
+// round introduced: classifyDiscovery and detectTemplateIn each carried their
+// own copy of the manifest table, so a root whose only manifest was one of the
+// newly recognized markers was announced as "a go project manifest" and then
+// generated the "minimal" template. What init says it detected and what it
+// generates must be the same language.
+func TestHybridTemplateMatchesAnnouncedManifest(t *testing.T) {
+	tests := []struct {
+		name         string
+		files        map[string]string
+		wantLang     string
+		wantContains string
+	}{
+		{
+			name:         "go.work workspace root with a Compose file",
+			files:        map[string]string{"go.work": "go 1.25\n", "docker-compose.yml": "services: {}\n"},
+			wantLang:     "go",
+			wantContains: "go test ./...",
+		},
+		{
+			name:         "mise.toml node root with a Compose file",
+			files:        map[string]string{"mise.toml": "[tools]\nnode = \"24\"\n", "docker-compose.yml": "services: {}\n"},
+			wantLang:     "node",
+			wantContains: "npm run dev",
+		},
+		{
+			name:         "classic manifest is unaffected",
+			files:        map[string]string{"Gemfile": "source 'x'\n", "docker-compose.yml": "services: {}\n"},
+			wantLang:     "rails",
+			wantContains: "bundle exec rspec",
+		},
+		{
+			name:         "a Compose file with no manifest at all is still minimal",
+			files:        map[string]string{"docker-compose.yml": "services: {}\n"},
+			wantLang:     "",
+			wantContains: "/bin/bash",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			writeFixture(t, dir, tc.files)
+
+			outcome, _, nativeLang := classifyDiscovery(dir)
+			wantOutcome := outcomeHybrid
+			if tc.wantLang == "" {
+				wantOutcome = outcomeComposeOnly
+			}
+			if outcome != wantOutcome {
+				t.Fatalf("classifyDiscovery() outcome = %v, want %v", outcome, wantOutcome)
+			}
+			if nativeLang != tc.wantLang {
+				t.Fatalf("classifyDiscovery() lang = %q, want %q", nativeLang, tc.wantLang)
+			}
+
+			// The template init picks must name the same language it announced.
+			wantTmpl := tc.wantLang
+			if wantTmpl == "" {
+				wantTmpl = "minimal"
+			}
+			if tmpl := detectTemplateIn(dir); tmpl != wantTmpl {
+				t.Fatalf("detectTemplateIn() = %q, want %q — announced %q", tmpl, wantTmpl, nativeLang)
+			}
+
+			created, err := scaffoldDvaYml(dir, "")
+			if err != nil || !created {
+				t.Fatalf("scaffoldDvaYml() = (%v, %v), want (true, nil)", created, err)
+			}
+			data, err := os.ReadFile(filepath.Join(dir, config.FileName))
+			if err != nil {
+				t.Fatalf("read generated config: %v", err)
+			}
+			if !strings.Contains(string(data), tc.wantContains) {
+				t.Errorf("generated config should carry the %q template (%q), got:\n%s", wantTmpl, tc.wantContains, data)
+			}
+			if !strings.Contains(string(data), "stack:") {
+				t.Errorf("hybrid output must still generate the verified Compose stack, got:\n%s", data)
 			}
 		})
 	}

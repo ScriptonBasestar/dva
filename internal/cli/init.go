@@ -46,12 +46,15 @@ Use 'am run dva-improve -p mode=rewrite' only when a full rewrite is intentional
 			// evidence-less root aborted before the scan ever ran — so a
 			// workspace whose manifests all live one level down (gzh-cli's 12
 			// go.mod, scripton-dashboard's dashboard-webui/package.json) got
-			// nothing at all. Keep the root refusal visible and let the scan
-			// decide whether the run produced anything.
+			// nothing at all. Defer the root refusal instead: the scan below
+			// decides whether it becomes a warning or the command's error.
 			if !initRecursive || !errors.Is(err, errComposeFileNotFound) {
 				return err
 			}
-			fmt.Fprintf(os.Stderr, "⚠️  %v\n", err)
+			// Only a one-line lead-in here. The refusal body is emitted exactly
+			// once, either by the warning below or by root.go printing the error
+			// this function returns — never by both.
+			fmt.Fprintf(os.Stderr, "⚠️  %s in .; continuing with the --recursive sub-project scan\n", errComposeFileNotFound)
 		}
 
 		if created {
@@ -79,10 +82,15 @@ Use 'am run dva-improve -p mode=rewrite' only when a full rewrite is intentional
 		}
 
 		if initRecursive {
-			// A failed root plus an empty scan means the run produced nothing;
-			// report the original refusal rather than exiting 0 on a warning.
-			if scaffoldSubprojects() == 0 && err != nil {
-				return err
+			// A failed root plus a scan that created nothing means the run
+			// produced nothing; report the original refusal rather than exiting
+			// 0 on a warning.
+			scaffolded := scaffoldSubprojects()
+			if err != nil {
+				if scaffolded == 0 {
+					return err
+				}
+				fmt.Fprintf(os.Stderr, "\n⚠️  %v\n", err)
 			}
 		}
 
@@ -123,7 +131,10 @@ func init() {
 }
 
 // scaffoldSubprojects detects sub-projects and scaffolds dva.yml in each,
-// returning how many were handled without error (created, or already present).
+// returning how many dva.yml files it actually created. A sub-project that
+// already had one is deliberately not counted: the caller uses this to decide
+// whether a run whose root was refused still produced something, and a leftover
+// dva.yml from an earlier run is not something this run produced.
 func scaffoldSubprojects() int {
 	var subs []subInfo
 	scanForSubprojects(".", 0, 3, &subs)
@@ -134,16 +145,19 @@ func scaffoldSubprojects() int {
 	}
 
 	fmt.Printf("\n📂 Found %d sub-project(s):\n", len(subs))
-	handled := 0
+	createdCount := 0
 	for _, sp := range subs {
 		tmpl := languageToTemplate(sp.language)
-		if _, err := scaffoldDvaYml(sp.path, tmpl); err != nil {
+		subCreated, err := scaffoldDvaYml(sp.path, tmpl)
+		if err != nil {
 			fmt.Fprintf(os.Stderr, "⚠️  %s: %v\n", sp.path, err)
 			continue
 		}
-		handled++
+		if subCreated {
+			createdCount++
+		}
 	}
-	return handled
+	return createdCount
 }
 
 type subInfo struct {
@@ -243,26 +257,20 @@ func filterEnv(env []string, key string) []string {
 	return filtered
 }
 
-// detectTemplateIn inspects the given directory to auto-detect project type.
+// detectTemplateIn inspects the given directory to auto-detect project type,
+// falling back to "minimal" when nothing is recognized.
+//
+// It reads the same evidence as detectNativeMarkerIn on purpose. The two used to
+// carry separate copies of the manifest table, and TASK-322 desynchronized them:
+// a root with go.work (or a mise.toml) plus a Compose file classified as
+// outcomeHybrid and announced "a go project manifest", then generated the
+// "minimal" template, because only the classifier's copy knew the new markers.
+// One table, one answer — every language detectNativeMarkerIn can name is also a
+// template name, and a directory with no manifest still yields "minimal".
 func detectTemplateIn(dir string) string {
-	indicators := []struct {
-		file     string
-		template string
-	}{
-		{"Gemfile", "rails"},
-		{"package.json", "node"},
-		{"requirements.txt", "python"},
-		{"Pipfile", "python"},
-		{"pyproject.toml", "python"},
-		{"go.mod", "go"},
+	if lang, ok := detectNativeMarkerIn(dir); ok && lang != "" {
+		return lang
 	}
-
-	for _, ind := range indicators {
-		if _, err := os.Stat(filepath.Join(dir, ind.file)); err == nil {
-			return ind.template
-		}
-	}
-
 	return "minimal"
 }
 
