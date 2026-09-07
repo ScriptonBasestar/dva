@@ -228,11 +228,12 @@ func TestZoneFromPath(t *testing.T) {
 func TestBuildTaskIndexWalksNestedArchiveAndSkipsPlanDir(t *testing.T) {
 	root := t.TempDir()
 	files := map[string]string{
-		"tasks/todo/249-open.md":              "open card",
-		"tasks/done/248-closed.md":            "closed card",
-		"tasks/_archive/251-flat.md":          "archived directly under _archive/, not nested",
-		"tasks/_archive/done/244-nested.md":   "archived under _archive/done/",
-		"tasks/plan/006-should-be-ignored.md": "plan cards are not task cards",
+		"tasks/todo/249-open.md":                   "open card",
+		"tasks/done/248-closed.md":                 "closed card",
+		"tasks/_archive/251-flat.md":               "archived directly under _archive/, not nested",
+		"tasks/_archive/done/244-nested.md":        "archived under _archive/done/",
+		"tasks/plan/006-should-be-ignored.md":      "plan cards are not task cards",
+		"tasks/_archive/plan/003-archived-plan.md": "an archived plan is still a plan, not TASK-3",
 	}
 	for rel, content := range files {
 		full := filepath.Join(root, filepath.FromSlash(rel))
@@ -251,6 +252,9 @@ func TestBuildTaskIndexWalksNestedArchiveAndSkipsPlanDir(t *testing.T) {
 
 	if _, ok := idx["TASK-6"]; ok {
 		t.Error("buildTaskIndex() indexed a card under tasks/plan/, which is not a task zone")
+	}
+	if _, ok := idx["TASK-3"]; ok {
+		t.Error("buildTaskIndex() indexed a card under tasks/_archive/plan/; an archived plan would then satisfy a real TASK-3 child")
 	}
 	if rec, ok := idx["TASK-249"]; !ok || rec.closed {
 		t.Errorf("TASK-249 = %+v, ok=%v; want open (not closed)", idx["TASK-249"], ok)

@@ -2,6 +2,7 @@
 id: PLAN-004
 title: "Restore documentation truth across skills, flows, and the example corpus"
 type: plan
+status: done
 scope: "CLI advice strings, agent-mesh flow prompt claims, skill reference fictions, example corpus defects, and the markdown-YAML validation gap"
 progress: 100
 total-tasks: 6
@@ -39,11 +40,11 @@ question 2가 소유한다.
 
 | Workstream | 판정 | 작업 |
 | --- | --- | --- |
-| CLI 조언 문자열이 실행 불가능한 명령을 제안 | **완료 (`206918a` → `20d0f67`)** — 잔존 다섯 입력을 TASK-283이 닫음 | [TASK-273](../done/273-repair-misleading-cli-guidance.md) → [TASK-283](../done/283-repair-plan-route-flag-guidance.md) |
-| flow 프롬프트가 유효한 config를 거부하거나 무효한 config를 생성 | **완료 (`159bf1b`)** | [TASK-274](../done/274-repair-flow-prompt-config-claims.md) |
-| skill reference가 존재하지 않는 동작을 서술 | **완료** | [TASK-275](../done/275-correct-skill-reference-fictions.md) |
-| example corpus 결함 + markdown-YAML 게이트 공백 | **범위 판정 완료 (2026-09-03)** — examples는 fragment corpus | [TASK-276](../done/276-correct-example-corpus-and-close-md-yaml-gap.md) |
-| `service-orchestration.yml` overlay 모델링 경고 | **완료 (2026-09-03)** — reading 2(경고 판정식이 틀림) 확정, `plansPartitionComposeServices` 추가 | [TASK-288](../done/288-model-compose-overlays-in-service-orchestration-example.md) |
+| CLI 조언 문자열이 실행 불가능한 명령을 제안 | **완료 (`206918a` → `20d0f67`)** — 잔존 다섯 입력을 TASK-283이 닫음 | [TASK-273](../../done/273-repair-misleading-cli-guidance.md) → [TASK-283](../../done/283-repair-plan-route-flag-guidance.md) |
+| flow 프롬프트가 유효한 config를 거부하거나 무효한 config를 생성 | **완료 (`159bf1b`)** | [TASK-274](../../done/274-repair-flow-prompt-config-claims.md) |
+| skill reference가 존재하지 않는 동작을 서술 | **완료** | [TASK-275](../../done/275-correct-skill-reference-fictions.md) |
+| example corpus 결함 + markdown-YAML 게이트 공백 | **범위 판정 완료 (2026-09-03)** — examples는 fragment corpus | [TASK-276](../../done/276-correct-example-corpus-and-close-md-yaml-gap.md) |
+| `service-orchestration.yml` overlay 모델링 경고 | **완료 (2026-09-03)** — reading 2(경고 판정식이 틀림) 확정, `plansPartitionComposeServices` 추가 | [TASK-288](../../done/288-model-compose-overlays-in-service-orchestration-example.md) |
 
 **완료 (2026-09-07):** 위 child 6장 전부 닫혔다.
 
@@ -51,7 +52,7 @@ question 2가 소유한다.
 
 카드 간 코드 의존은 없지만 아래 순서가 재작업을 최소화한다.
 
-1. **[TASK-267](../done/267-repair-subproject-exposure-defects.md) — 완료 (`517dd11`).**
+1. **[TASK-267](../../done/267-repair-subproject-exposure-defects.md) — 완료 (`517dd11`).**
    PLAN-003 소속이지만 `internal/cli`의 같은 영역(오류·힌트 문자열)을 건드리므로 TASK-273보다
    먼저 끝내도록 배치했고, 그대로 처리됐다. 두 카드가 같은 파일에서 충돌할 위험은 해소됐다.
 2. **TASK-273 — 완료 (`206918a`).** 코드 전용이라 나머지 세 장(문서 전용)과 여기서 분리됐다.
@@ -61,7 +62,7 @@ question 2가 소유한다.
    이 카드는 조언 문자열만 고쳤고 그 아래 **동작** 결함 — `restart`가 `--force`를 버리고,
    `stop`/`down`이 `--no-wait`를 흡수하며, `build`가 `--env`/`--tag`/`--exclude-tag`를
    파싱 지점에서 버리는 것 — 은 의도적으로 남겨
-   [TASK-279](../done/279-repair-plan-flag-behaviour-defects.md)로 분리했다. TASK-279는
+   [TASK-279](../../done/279-repair-plan-flag-behaviour-defects.md)로 분리했다. TASK-279는
    PLAN-004 소속이 아니며(문서가 아니라 런타임을 바꾼다) 이 계획의 자식 수에 포함되지 않는다.
 
    **`206918a` 이후 재개된 항목.** 이 카드를 쓰지 않은 리뷰어의 독립 검토에서 조언 문자열
@@ -69,7 +70,7 @@ question 2가 소유한다.
    재현했다. 그중 하나는 개선이 아니라 **후퇴**다 — `dva up --tag app --dry-run`의 제안에서
    `--dry-run`이 사라져, 미리보기를 요청한 사용자가 실제로 실행되는 명령을 안내받는다.
    수정 전에는 같은 입력이 rc=1로 실패하며 아무것도 실행하지 않았다. 후속은
-   [TASK-283](../done/283-repair-plan-route-flag-guidance.md)이며, TASK-279와 달리 조언
+   [TASK-283](../../done/283-repair-plan-route-flag-guidance.md)이며, TASK-279와 달리 조언
    문자열을 고치는 카드이므로 PLAN-004의 자식으로 둔다.
 
    **닫힘 (`20d0f67`).** TASK-283이 다섯 입력을 모두 처리했고 후퇴했던 `--dry-run` 보존도
@@ -87,11 +88,11 @@ question 2가 소유한다.
    셋이므로 TASK-274에서 확인한 generate 경로를 그대로 재사용했다.
 5. **TASK-276.** 게이트를 추가하는 카드이므로 앞의 세 장이 남긴 결함이 없는 상태에서
    켜야 새 게이트가 기존 부채로 즉시 빨간불이 되지 않는다. 이 카드가 켜는 `validate --strict`
-   게이트는 [TASK-277](../done/277-repair-nondeterministic-env-interpolation.md)의 `MergeVars`
+   게이트는 [TASK-277](../../done/277-repair-nondeterministic-env-interpolation.md)의 `MergeVars`
    비결정성 위에서는 간헐 실패했을 것이므로 선행 조건이었으나, 해당 카드가 `e9ce4e6`으로
    완료되어 더 이상 막지 않는다.
 
-TASK-276은 [TASK-266](../todo/266-deprecate-and-reject-interaction-env-file.md)과 `examples/`
+TASK-276은 [TASK-266](../../todo/266-deprecate-and-reject-interaction-env-file.md)과 `examples/`
 파일을 공유하므로 처음에 `depends-on: [TASK-266]`을 선언했다. **2026-09-03에 해제했다.**
 TASK-266은 Stage B가 0.1.48 릴리스 게이트에 걸려 열려 있지만, 공유하던 파일은 이미 끝난
 Stage A(`c6aa64b`)가 정리했다 — `examples/env-file-priority.yml`에는 root `env_file:`만 남았고
@@ -117,12 +118,12 @@ TASK-276의 기준 5는 "`examples/*.yml` 16개 전부 `--strict` 무경고"였�
 검증기를 바꾸게 두지 않는다.
 
 남은 한 경고(`service-orchestration.yml` overlay)는 파일 부재와 무관한 별개 결함이라
-[TASK-288](../done/288-model-compose-overlays-in-service-orchestration-example.md)로 분리했고
+[TASK-288](../../done/288-model-compose-overlays-in-service-orchestration-example.md)로 분리했고
 이 계획의 자식으로 편입했다.
 
 ## 계획 밖으로 분리한 카드
 
-[TASK-287](../done/287-gate-task-card-status-against-its-zone.md) — `tasks/done/` 여덟 장이
+[TASK-287](../../done/287-gate-task-card-status-against-its-zone.md) — `tasks/done/` 여덟 장이
 `status: todo`로 남아 있던 드리프트를 잡는 게이트 카드다. 이 계획의 근본 원인 절이 지적한
 것과 **같은 종류의 사각지대**(게이트가 형식은 보고 사실은 묻지 않는다)이지만, 대상이
 사용자·에이전트가 읽는 출시 표면이 아니라 task 큐 메타데이터라 이 계획의 선언된 scope 밖이다.
@@ -136,7 +137,7 @@ TASK-279와 같은 방식으로 참조만 하고 자식으로 편입하지 않�
    **273~276 완료 전에는 발행하지 않는다** — 남는 블록의 수와 위치가 그때 결정된다.
    ID는 발행 시점에 미사용 번호를 취한다: 이 계획을 열 때 잠정적으로 적어둔 277번은 예약된
    번호가 아니며, 무관한 결함을 다루는
-   [TASK-277](../done/277-repair-nondeterministic-env-interpolation.md)이 이미 그 번호를
+   [TASK-277](../../done/277-repair-nondeterministic-env-interpolation.md)이 이미 그 번호를
    사용했다.
 
    **사전 조사 완료 (2026-09-03).** 발행 조건은 그대로지만 — 275가 닫히기 전에는 발행하지
@@ -168,7 +169,7 @@ TASK-279와 같은 방식으로 참조만 하고 자식으로 편입하지 않�
    실제 작업의 대부분이다. TASK-275가 값을 먼저 고쳐야 하는 이유도 여기 있다 — 마커를 먼저
    설치하면 낡은 값이 생성물로 덮여 사라지고, 무엇이 왜 틀렸는지 기록이 남지 않는다.
 
-   *(4) 선례:* [TASK-280](../done/280-name-the-live-hookable-set-in-the-schema.md)은 같은
+   *(4) 선례:* [TASK-280](../../done/280-name-the-live-hookable-set-in-the-schema.md)은 같은
    hookable 목록의 네 번째 사본을 `internal/config/schema.json`에서 찾아 고쳤다. JSON은 Go
    헬퍼를 호출할 수 없어 AUTOGEN 대신 **파생 테스트**를 썼다 —
    `TestSchemaDescriptionNamesTheLiveHookableCommands`가 기대값을 `HookableCommandList()`에서
@@ -196,5 +197,5 @@ TASK-279와 같은 방식으로 참조만 하고 자식으로 편입하지 않�
 댄 plan 밖까지 건드린다.
 
 따라서 `confirmDestruction`의 게이트 조건은 정확하며 코드 변경 대상이 아니다. 실제 결함은
-README가 `-v`도 프롬프트를 거친다고 서술한 문장 하나뿐이고, [TASK-276](../done/276-correct-example-corpus-and-close-md-yaml-gap.md)이
+README가 `-v`도 프롬프트를 거친다고 서술한 문장 하나뿐이고, [TASK-276](../../done/276-correct-example-corpus-and-close-md-yaml-gap.md)이
 그것을 소유한다. **`-v` 경로에 프롬프트를 추가하는 후속 카드는 발행하지 않는다.**

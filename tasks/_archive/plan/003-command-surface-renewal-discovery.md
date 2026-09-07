@@ -2,6 +2,7 @@
 id: PLAN-003
 title: "Renew command discovery and prepare composition contracts"
 type: plan
+status: done
 scope: "help and machine discovery, kubectl and validate route compatibility, project addressing, cross-project composition, and vNext vocabulary decisions"
 progress: 100
 total-tasks: 14
@@ -25,16 +26,16 @@ Ignore된 `tmp/` 자료는 역사적 입력일 뿐 clean checkout에서 필요�
 
 | Workstream | 판정 | 작업 |
 | --- | --- | --- |
-| help group과 discovery 설명 | 기존 contract 안에서 개선 완료 | [TASK-253](../_archive/done/253-align-help-groups-and-discovery-descriptions.md) |
-| command metadata 중복 | 구현 전 소유권 조사 | [TASK-254](../done/254-discover-command-metadata-registry.md) |
-| `ktl`/`kubectl` route | evidence decision 후 구현 | [TASK-255](../todo/255-decide-kubectl-route-compatibility.md) → [TASK-256](../todo/256-implement-kubectl-route-decision.md) |
-| `validate` route | evidence decision 후 구현 | [TASK-257](../done/257-decide-validate-route-compatibility.md) → [TASK-258](../todo/258-implement-validate-route-decision.md) |
-| manifest route identity | TASK-254 증거로 조건 발생, 구현 전 사람 결정 | [TASK-272](../done/272-freeze-manifest-route-identity.md) |
-| imported plan 실행 | advertised contract 복구 완료 | [TASK-262](../_archive/done/262-restore-imported-plan-execution.md) |
-| imported interaction/provision 실행 | owner 복구 완료 | [TASK-264](../_archive/done/264-restore-imported-command-ownership.md) |
-| qualified project addressing | discovery와 사람 결정을 분리 | [TASK-259](../done/259-discover-qualified-project-addressing.md) → [TASK-263](../done/263-decide-qualified-project-addressing.md) |
-| cross-project composition | 기존 import와 address contract 이후 판단 | [TASK-260](../todo/260-freeze-cross-project-plan-composition.md) |
-| vNext vocabulary | 앞선 evidence를 모은 최종 결정 | [TASK-261](../todo/261-decide-vnext-vocabulary-and-migration.md) |
+| help group과 discovery 설명 | 기존 contract 안에서 개선 완료 | [TASK-253](../../_archive/done/253-align-help-groups-and-discovery-descriptions.md) |
+| command metadata 중복 | 구현 전 소유권 조사 | [TASK-254](../../done/254-discover-command-metadata-registry.md) |
+| `ktl`/`kubectl` route | evidence decision 후 구현 | [TASK-255](../../todo/255-decide-kubectl-route-compatibility.md) → [TASK-256](../../todo/256-implement-kubectl-route-decision.md) |
+| `validate` route | evidence decision 후 구현 | [TASK-257](../../done/257-decide-validate-route-compatibility.md) → [TASK-258](../../todo/258-implement-validate-route-decision.md) |
+| manifest route identity | TASK-254 증거로 조건 발생, 구현 전 사람 결정 | [TASK-272](../../done/272-freeze-manifest-route-identity.md) |
+| imported plan 실행 | advertised contract 복구 완료 | [TASK-262](../../_archive/done/262-restore-imported-plan-execution.md) |
+| imported interaction/provision 실행 | owner 복구 완료 | [TASK-264](../../_archive/done/264-restore-imported-command-ownership.md) |
+| qualified project addressing | discovery와 사람 결정을 분리 | [TASK-259](../../done/259-discover-qualified-project-addressing.md) → [TASK-263](../../done/263-decide-qualified-project-addressing.md) |
+| cross-project composition | 기존 import와 address contract 이후 판단 | [TASK-260](../../todo/260-freeze-cross-project-plan-composition.md) |
+| vNext vocabulary | 앞선 evidence를 모은 최종 결정 | [TASK-261](../../todo/261-decide-vnext-vocabulary-and-migration.md) |
 
 ## Current status and review corrections (2026-09-02)
 
@@ -56,7 +57,7 @@ bounded child를 먼저 만들며 TASK-256·258 안에서 ad-hoc schema를 추�
 이 조건을 판정했고, TASK-255가 2026-09-03에 `kubectl` canonical 승격을 확정하면서 두 이름 공존이 실제로 발생해 이 조건이 가정이 아니라 현실이 됐다. `ManifestCmd`는 `description`/`type`/`options`/`subcommands` 네 필드뿐이고
 `static_commands`는 이름 하나로 keying되므로 두 route가 같은 command라는 사실을 표현할 수단이 없으며,
 측정된 manifest는 `subcommands`를 `skill`에만 채워서 TASK-257이 선택 대상으로 삼는 `config validate`
-자체가 문서에 없다. 따라서 [TASK-272](../todo/272-freeze-manifest-route-identity.md)을 만들고 같은
+자체가 문서에 없다. 따라서 [TASK-272](../../todo/272-freeze-manifest-route-identity.md)을 만들고 같은
 변경에서 PLAN-003의 `children`, `total-tasks`, `progress`, graph, 완료 정의와 TASK-256·258의
 `depends-on`을 갱신했다. TASK-272이 닫히기 전에는 PLAN-003이나 해당 구현 task를 완료할 수 없다.
 
@@ -184,8 +185,8 @@ TASK-256은 TASK-255가 완료기준 1(pinned consumer 호출 corpus)을 닫기 
   변경이 manifest contract child의 생성과 PLAN/task dependency 현행화까지 함께 소유한다.
 
 세션 경계, 모델 라우팅, 서브에이전트 역할, task별 stop condition과 시작 프롬프트는
-[Command Surface Renewal 작업의 에이전트 실행 런북](../../docs/54-command-surface-renewal-agent-execution.md)을
-따른다. PLAN-002 전용 [기존 런북](../../docs/53-command-surface-agent-execution.md)의 wave, prompt와
+[Command Surface Renewal 작업의 에이전트 실행 런북](../../../docs/54-command-surface-renewal-agent-execution.md)을
+따른다. PLAN-002 전용 [기존 런북](../../../docs/53-command-surface-agent-execution.md)의 wave, prompt와
 guardrail은 PLAN-003에 적용하지 않는다.
 
 ## 5. 완료 정의

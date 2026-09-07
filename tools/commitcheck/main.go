@@ -82,6 +82,11 @@ var grandfatheredCommits = []struct {
 	reason  string
 }{
 	{
+		sha:     "47d91889d8e3f1386e0fb5433a96ba502120ea93",
+		subject: "docs(tasks): move TASK-249's decision record into docs/58-60 and shrink the card",
+		reason:  "80-char subject pushed to master 2026-09-07 without the commit-msg hook; the object is published, so the subject is no longer rewritable",
+	},
+	{
 		sha:     "d7976538a9f68dad0c7873ce8c256fb7c60212a0",
 		subject: "feat: add deterministic skill installer",
 		reason:  "scope-less installer commit predating the scope rule's enforcement",

@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -53,7 +54,7 @@ func buildTaskIndex(root string) (taskIndex, error) {
 			return err
 		}
 		rel = filepath.ToSlash(rel)
-		if rel == "plan" || strings.HasPrefix(rel, "plan/") {
+		if isPlanPath(rel) {
 			return nil
 		}
 		m := cardFilenameRE.FindStringSubmatch(filepath.Base(rel))
@@ -77,6 +78,15 @@ func buildTaskIndex(root string) (taskIndex, error) {
 		return nil, fmt.Errorf("walk %s: %w", tasksDir, err)
 	}
 	return idx, nil
+}
+
+// isPlanPath reports whether a tasks/-relative path is a plan card rather than a task card.
+// Plans live in tasks/plan/ and, once complete, in tasks/_archive/plan/ — both have to be
+// excluded from the task index. A plan filename ("003-command-surface-renewal-discovery.md")
+// is indistinguishable from a task filename, so an archived plan would otherwise be indexed
+// as TASK-3 and silently satisfy a real child of that id.
+func isPlanPath(rel string) bool {
+	return slices.Contains(strings.Split(rel, "/"), "plan")
 }
 
 func zoneFromPath(rel string) zone {

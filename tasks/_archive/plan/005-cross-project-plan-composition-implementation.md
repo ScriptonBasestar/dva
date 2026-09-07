@@ -2,6 +2,7 @@
 id: PLAN-005
 title: "Implement cross-project plan composition"
 type: plan
+status: done
 scope: "composition plan schema and validation, cross-project resolver identity, wave-sequential runtime with LIFO rollback, CLI flag-scope enforcement and aggregate output, and compatibility fixtures"
 progress: 100
 total-tasks: 5
@@ -13,7 +14,7 @@ created: 2026-09-04
 
 ## Goal
 
-[TASK-260](../todo/260-freeze-cross-project-plan-composition.md)가 완료기준 1-5로 얼린 단방향
+[TASK-260](../../todo/260-freeze-cross-project-plan-composition.md)가 완료기준 1-5로 얼린 단방향
 root-aggregation 계약(§2-§6, `decided-at: 2026-09-04`)을 정확히 그 경계 안에서 구현한다. 이 계획은
 PLAN-003의 자식이 아니다 — PLAN-003 §4 실행 규칙이 "vNext foundational schema/runtime
 implementation은 이 계획에 넣지 않는다... 별도 plan과 bounded child cards를 만든다"고 이미
@@ -26,11 +27,11 @@ Non-goals나 아래 "## Open questions" 절에 기록하고 조용히 다르게 
 
 | Workstream | TASK-260 근거 | 작업 |
 | --- | --- | --- |
-| Composition plan schema | §3 (identity·cycle·duplicate·merge·override·depends_on·order·immutability) | [TASK-289](../done/289-implement-composition-plan-schema.md) — 완료 (`1420ed4`) |
-| Cross-project resolver | §3.2·3.5·3.8·3.9 (identity 참조·default 선택·wave 계산·불변성) | [TASK-290](../done/290-implement-composition-plan-resolver.md) — 완료 (`0e14d4b`) |
-| Wave 실행과 rollback runtime | §4·§5 (verb별 동작·flag 전파·LIFO rollback·`--no-rollback`·partial-state·exit code) | [TASK-291](../done/291-implement-composition-runtime-and-rollback.md) — 완료 (`ce34746`) |
-| CLI flag-scope와 aggregate 출력 | §4.4(flag 표)·§4.3(logs/status/build)·§5.3(JSON) | [TASK-292](../done/292-implement-composition-cli-and-flag-scope.md) — 완료 (`566c711`) |
-| Fixture와 호환성 회귀 | §3 fixture·§5 4개 시나리오·§6(호환성) | [TASK-293](../done/293-verify-composition-fixtures-and-compatibility.md) — 완료 (`5ebd07d`, `2ebc358`) |
+| Composition plan schema | §3 (identity·cycle·duplicate·merge·override·depends_on·order·immutability) | [TASK-289](../../done/289-implement-composition-plan-schema.md) — 완료 (`1420ed4`) |
+| Cross-project resolver | §3.2·3.5·3.8·3.9 (identity 참조·default 선택·wave 계산·불변성) | [TASK-290](../../done/290-implement-composition-plan-resolver.md) — 완료 (`0e14d4b`) |
+| Wave 실행과 rollback runtime | §4·§5 (verb별 동작·flag 전파·LIFO rollback·`--no-rollback`·partial-state·exit code) | [TASK-291](../../done/291-implement-composition-runtime-and-rollback.md) — 완료 (`ce34746`) |
+| CLI flag-scope와 aggregate 출력 | §4.4(flag 표)·§4.3(logs/status/build)·§5.3(JSON) | [TASK-292](../../done/292-implement-composition-cli-and-flag-scope.md) — 완료 (`566c711`) |
+| Fixture와 호환성 회귀 | §3 fixture·§5 4개 시나리오·§6(호환성) | [TASK-293](../../done/293-verify-composition-fixtures-and-compatibility.md) — 완료 (`5ebd07d`, `2ebc358`) |
 
 ## 작업 순서와 의존성
 

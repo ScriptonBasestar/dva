@@ -104,6 +104,7 @@ func TestGrandfatheredCommitsAreTheExactHistoricalObjects(t *testing.T) {
 		sha     string
 		subject string
 	}{
+		{"47d91889d8e3f1386e0fb5433a96ba502120ea93", "docs(tasks): move TASK-249's decision record into docs/58-60 and shrink the card"},
 		{"d7976538a9f68dad0c7873ce8c256fb7c60212a0", "feat: add deterministic skill installer"},
 		{"c6ed4eab2750ec4e6aca3e130dfcad61abc3fc6f", "fix: harden skill installation transactions"},
 		{"095f525ba1c71624b9ad4b7198b1f33013d229ad", "docs: repair drift across core documents"},
