@@ -47,6 +47,20 @@ TASK-249는 결정만 끝났고 (`decision-status: decided`, 2026-09-03) 카드 
 basename으로 해소하므로(TASK-143) 링크는 유효하며, 상태 판정은 링크 경로가 아니라 카드
 front-matter에서 읽는다.
 
+**TASK-249는 2026-09-07에 분할됐다.** 25,828바이트(`ce task preflight` 기본 20,000바이트 한도
+초과)로 `oversized` advisory가 걸려 있었지만, 원인은 미완료 작업이 아니라 누적된 설계 근거·
+결정 기록·TASK-233 충돌 분석·완료기준 대조 서술이었다 — 완료기준 10개 중 9개는 이미 결정되고
+TASK-250 구현으로 검증까지 끝난 상태였다. 그 서술 전체를 docs/ 3개 문서로 옮겼다(`docs/` 자체도
+문서당 10,240바이트 한도가 있어 하나로는 못 담았다): 설계·결정 기록은
+[docs/58](../../docs/58-capability-driven-init-design.md), TASK-250 대조 검증과 완료기준 매핑은
+[docs/59](../../docs/59-capability-driven-init-verification.md), label/증거 인벤토리는
+[docs/60](../../docs/60-capability-driven-init-label-inventory.md). TASK-249는 id를 유지한 채
+남은 유일한 완료기준(census owner/cadence/change-threshold 정의)만 추적하도록 줄였다. 완료된
+9개 항목은 새 sibling 카드로 옮기지 않았다 — 이미 결정되고 검증된 항목을 새 실행 카드로 만드는
+것은 존재하지 않는 작업을 만드는 것이므로, 위 세 문서에 근거와 함께 기록하고 이 카드의
+`## Non-goals`에서 각 항목이 어느 문서 어느 절에 있는지만 가리킨다. children 목록과 아래 총계는
+변경하지 않는다 — 카드 수가 늘지 않았다.
+
 **TASK-252가 이 계획의 최대 분기를 닫았다.** top-level `env` 승격을 거부하고 `config env`를
 영구 canonical surface로 확정했다. 되돌리기 비대칭성이 근거다 — `config env`는 나중에 승격할
 수 있지만 예약한 reserved name은 남의 config를 깨지 않고 회수할 수 없다. 이 결정 하나로
