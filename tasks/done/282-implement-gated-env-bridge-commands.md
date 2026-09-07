@@ -9,6 +9,8 @@ created-at: 2026-09-03T18:10:00+09:00
 source: "TASK-281 frozen contract"
 scope: "env_bridge schema and config plumbing, dva config env seal, dva config env show, gate preflight, error codes, fixtures, USAGE/CHANGELOG"
 status: done
+quality-review: fail
+quality-reviewed-at: 2026-09-07T17:50:00+09:00
 depends-on: [TASK-281]
 ---
 
@@ -72,3 +74,34 @@ TASK-281이 동결한 계약대로 `env_bridge` 게이트와 `dva config env sea
   - USAGE.md: Command Quick Reference row, Project Management rows, and new `##### 게이트된 seal/show` subsection. CHANGELOG.md: new `### Added` bullet linking to `USAGE.md#게이트된-sealshow`. `make doc-check` passes (`oversized_docs: 0`, `broken_links: 0`).
 - [x] Pass the repository's full mechanical gate before integration | verify: `make lint && make test && make doc-check && make check-generate`
   - `make lint`'s `unparam` finding on `reclaimStaleTemps` was a real regression from this card, not a pre-existing baseline issue: `config_env_safewrite.go` itself was byte-identical to `master`, but this card's new `config_env_seal.go` call site gave the whole-package `unparam` check a second caller that also discards the `int` return, which is what tripped it. Fixed by dropping the unused return value from `reclaimStaleTemps` entirely (`internal/cli/config_env_safewrite.go`) — nothing anywhere, including tests, used it; both call sites (`config_env.go`, `config_env_seal.go`) were already bare statements and needed no edit. `make lint` now reports `0 issues` end to end, confirmed via a fresh full run (`go vet`, `golangci-lint` incl. `unparam`/`modernize`, and the `gopls check` cross-platform stage all clean, exit 0).
+
+## Review Log
+
+독립 리뷰 (2026-09-07, 구현자 아님). 재실행한 것:
+
+- `make test` (exit 0), `make test-integration` (exit 0), `make doc-check` (`doc-check: OK`),
+  `make check-generate` (exit 0). `make lint`은 다른 워크트리의 golangci-lint와 경합.
+- `go test -tags=integration ./internal/integration/... -run TestConfigEnvSealRealSOPSRoundTrip -v`
+  → `--- PASS` (skip 아님, 실제 `sops` 3.13.1 / `age` 1.3.1로 실행됨).
+- 비밀 누출 표면 직접 감사: `realSops.Decrypt/Encrypt`는 자식 stderr를 `limitedWriter`로 캡처만
+  하고 절대 echo하지 않으며, 복호 바이트는 자식 stdout → tty/temp fd로 직행해 프로세스 안에서
+  문자열이 되지 않는다. `config.DotenvKeyNames`는 키 이름만 반환하고 오류 메시지도 라인 번호만
+  담는다. `runEnvShow`의 판정 순서는 §3-4-1과 일치한다.
+
+발견:
+
+1. **완료기준 "Cover the real-sops path for both commands"가 실제로는 성립하지 않는다.**
+   `internal/integration/config_env_test.go`에는 `TestConfigEnvRealSOPS`,
+   `TestConfigEnvGatedCommandsRealBinary`, `TestConfigEnvSealRealSOPSRoundTrip` 셋뿐이고
+   `show`의 real-sops 경로를 타는 테스트는 없다. 카드의 evidence 자체가 "`show`: still not
+   covered"라고 적으면서 체크박스는 `[x]`다. 사유(pty 미할당)는 타당하고 은폐도 없지만,
+   기준이 충족되지 않은 채 완료로 표기된 것은 사실이다.
+2. **`seal`의 create-only 보장에 TOCTOU 창이 있다.** `source_exists`(행 16)는 `sealPreflight`
+   에서만 검사되고, 그 뒤에 (a) TTY 확인 프롬프트(사람 입력을 무한정 대기), (b) `sops encrypt`
+   실행이 온다. 최종 쓰기인 `safeWriter.Commit`은 `stillAnchored()` 뒤 평범한 `Rename`이라
+   기존 파일을 덮어쓴다 — `Commit`에는 대상 부재 재확인이 없다. 그 창 동안 source가 생기면
+   (동시 `seal`, `git pull`, `edit`) seal이 조용히 덮어쓴다. TASK-281 §2-1이 "발생 자체가
+   불가능"이라고 적은 lost update가 좁은 레이스로 되살아난다. 기준 문구
+   "an existing source is never opened for write"는 글자로는 참(열지 않고 rename한다)이다.
+
+**판정: fail** — 결함 1이 완료기준 미충족에 해당한다. 결함 2는 별도 카드 권고.

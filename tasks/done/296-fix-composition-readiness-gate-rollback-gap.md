@@ -9,6 +9,8 @@ created-at: 2026-09-04T00:00:00+09:00
 source: "Independent review of TASK-260 composition rollback implementation (reviewer finding, rated MEDIUM)"
 scope: "internal/lifecycle/composition_orchestrator.go CompositionOrchestrator.Up wave-boundary readiness gate only"
 status: done
+quality-review: pass
+quality-reviewed-at: 2026-09-07T18:05:00+09:00
 depends-on: []
 ---
 
@@ -117,3 +119,28 @@ longer needs it to justify anything.
   succeeded child today.
 - Not touching `Orchestrator.Down`'s per-entry error swallowing — that's TASK-295, a separate defect in a
   different function.
+
+## Review Log
+
+독립 리뷰 (2026-09-07, 구현자 아님). 재실행한 것:
+
+- 기준 1/3의 grep 바인딩 exit 0, `go test ./internal/lifecycle -count=1` 통과.
+- 기준 2: `go test ./internal/lifecycle -run
+  'TestCompositionRollback|TestCompositionUpRollsBackSucceededChildrenOnFailure' -count=1 -v`
+  → 두 테스트 모두 PASS, 즉 `exec.Up` 실패 경로의 기존 동작이 변하지 않았다.
+- `make test` / `make test-integration` / `make doc-check` 전부 exit 0.
+
+diff가 실제로 한 일: `dropIndex`는 코드베이스에서 완전히 사라졌다
+(`grep -n dropIndex internal/lifecycle/*.go` 0건) — "Recommended direction"의 첫 번째 안,
+즉 더 단순한 쪽이 채택됐고 새 `ChildState`는 도입되지 않아 non-goal을 지킨다.
+`composition_orchestrator_readiness_test.go`는 코드가 돌았다는 확인이 아니라 실제 동작을
+단언한다: 호출 순서(`up:a,up:b,wait:a,wait:b,down:b,down:a`)로 readiness 실패 자식 b가 형제
+a와 함께 LIFO로 내려가는 것을, 상태 맵으로 b가 `failed`→`rolled_back`으로 전이하며 원본
+readiness 오류가 `child.Error`에 보존되는 것을, `errors.Is`로 primary 오류가 그대로 반환되는
+것을 각각 잡는다. c-plan이 `not_started`로 남아 후속 wave 미기동도 확인된다.
+
+적대적으로 확인한 것: `NoRollback` 경로는 롤백 루프 이전에 return하므로 readiness 실패 자식도
+그대로 살려 두며, 이는 카드의 non-goal과 일치한다. 그때 상태가 `failed`로 남아 실제로는 기동된
+자식을 가리키는 표기 격차는 TASK-291의 F2로 이미 별도 기록돼 있다.
+
+**판정: pass.**

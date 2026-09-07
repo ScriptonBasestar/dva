@@ -9,6 +9,8 @@ created-at: 2026-09-03T00:00:00+09:00
 source: "TASK-246 gate run: TestLoadEnvFileKeepsSuccessfulPrecedence flakes on clean master"
 scope: "internal/config/envinput.go parse->merge path, internal/config/environment.go MergeVars"
 status: done
+quality-review: pass
+quality-reviewed-at: 2026-09-07T17:40:00+09:00
 ---
 
 # Task 277: repair nondeterministic env_file interpolation order
@@ -213,3 +215,26 @@ Owner coordination: the parse/merge path in `envinput.go` arrived with TASK-248
 (`b23780e`, "feat(cli): enforce required env policy per command route"). This card does not
 change the failure-reporting behavior that card froze — only the order in which loaded
 values are applied.
+
+## Review Log
+
+독립 리뷰 (2026-09-07, 구현자 아님). 재실행한 것:
+
+- 완료기준 6개 바인딩 전부 직접 실행 — `! grep -q 'e.Vars[k] = e.Interpolate(v)'` (exit 0),
+  `go test ./internal/config -count=1`, `-run TestLoadEnvFileKeepsSuccessfulPrecedence -count=50`,
+  `-count=20`, `go test -race ./internal/config -count=1`. 전부 통과, 실패 0.
+- 구현 diff `e9ce4e6` 및 후속 `d7636a3`를 읽고 현재 `internal/config/environment.go`와 대조.
+
+diff가 실제로 한 일: `MergeVars`가 map range 중 보간하던 것을 memoized dependency 해석으로
+교체했고, in-progress guard가 cycle을 pre-merge 스코프로 떨어뜨린다. `e.Vars`는 배치 전체가
+해석된 뒤 `maps.Copy`로 한 번에 쓰므로 half-applied 배치를 읽는 경로가 없다. 최상위 walk가
+`slices.Sorted`인 것은 상호 cycle의 답을 고정하기 위한 것으로 카드 설명과 일치한다.
+`environment_merge_order_test.go`의 7개 테스트는 실제 동작(200회 반복, OS env shadow, 자기참조,
+배치 간 (A) 시맨틱)을 단언하며, 코드가 돌았다는 것만 확인하는 형태가 아니다.
+
+적대적으로 확인한 것: (a) cycle에서 memo가 pre-merge 값을 캐싱하는 것은 cycle 고유의 성질이며
+카드가 명시함, (b) OS env가 정의한 키를 형제 대신 해석하지 않음 —
+`TestMergeVarsOSEnvShadowsSelfReferentialDeclaration`이 핀으로 잡고 있음, (c) 배치에 없는 이름은
+`e.lookup`으로 떨어져 기존 동작 유지. 결함 없음.
+
+**판정: pass.**

@@ -9,6 +9,8 @@ created-at: 2026-09-04T10:00:00+09:00
 source: "PLAN-005 implementation of TASK-260's frozen composition contract"
 scope: "wave-sequential cross-project execution for every lifecycle verb, automatic LIFO rollback with original-error preservation, the --no-rollback opt-out, and partial-state reporting"
 status: done
+quality-review: conditional
+quality-reviewed-at: 2026-09-07T18:00:00+09:00
 depends-on: [TASK-290]
 ---
 
@@ -109,3 +111,32 @@ Independent review (opus, adversarial) confirmed READY TO INTEGRATE, with two fi
   implements the orchestrator-level behavior and report data those layers will call).
 - No persisted partial-state file and no `--retry` flag (TASK-260 §5.4).
 - No change to single-project `Up`'s existing no-automatic-rollback behavior.
+
+## Review Log
+
+독립 리뷰 (2026-09-07, 구현자 아님). 재실행한 것:
+
+- 완료기준 1-6의 grep 바인딩 6개 전부 exit 0 (함수 6개 모두 실재), `go test ./internal/lifecycle
+  -count=1` 통과. `make test` / `make test-integration` / `make doc-check` 전부 exit 0.
+- `internal/lifecycle/composition_orchestrator.go`의 `Up`/`teardown`을 읽고 카드 주장과 대조.
+
+diff가 실제로 한 일: wave는 순차 실행이고 `maxInFlight != 1`을 테스트가 단언하므로 동시성 없음이
+실측된다. 롤백은 `slices.Backward(succeeded)` LIFO이며 `ChildDownOptions{}` 제로값이라
+volume/purge 경로가 없다. 원본 오류 보존은 `CompositionError.Err`가 primary를 그대로 들고
+롤백 실패는 `Diagnostics`로만 붙는 구조로 실현돼 있다. F1 수정(`context.WithoutCancel`)도
+코드에 실재하며 취소 시나리오 서브테스트가 이를 잡는다. `orchestrator.go`는 미변경이라
+단일 프로젝트 `Up`의 무롤백 동작이 보존된다.
+
+발견 (conditional 사유):
+
+- **readiness 실패 분기가 이 카드 시점에 테스트가 전혀 없었다.** `fakeChildExecutor.readyErr`
+  훅은 있었으나 어떤 테스트도 이를 설정하지 않았고, 바로 그 미검증 분기에서 P1 결함
+  (`dropIndex`가 이미 기동된 자식을 롤백에서 누락)이 나와 TASK-296이 별도로 고쳐야 했다.
+  완료기준 1은 `--no-wait` 유무의 순서만 단언할 뿐 readiness **실패** 경로를 요구하지 않는다.
+- 그 결과 **Implementation notes 4번("readiness 실패 자식은 롤백되지 않는다")은 현재 코드와
+  반대**다. TASK-296 이후 해당 자식도 형제와 함께 LIFO 롤백된다. 카드 시점에는 정확했으므로
+  결함이 아니라 후행 카드에 의해 낡은 서술이며, 읽는 사람이 현재 동작으로 오독할 수 있다.
+- 기준 7의 `make commit-check`은 현재 red다. 원인은 `origin/master`에 이미 있는 무관한 커밋
+  `47d9188`(subject 80자, TASK-249 문서 이동)로, 이 카드와 무관한 baseline 실패다.
+
+**판정: conditional.**

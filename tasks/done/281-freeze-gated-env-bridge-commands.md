@@ -10,6 +10,8 @@ source: "사용자 결정 2026-09-03 — 명령 표면을 모두 갖추되 기�
 decided-at: 2026-09-03T19:40:00+09:00
 scope: "env_bridge gate schema and merge rules, seal contract, show contract, disabled-state behaviour, new error codes, superseded PLAN-002/TASK-245 rulings"
 status: done
+quality-review: conditional
+quality-reviewed-at: 2026-09-07T17:45:00+09:00
 needs-human: true
 decision-status: decided
 depends-on: [TASK-246]
@@ -359,3 +361,28 @@ temp fd → sops stdout 수용 → rename → 부모 fsync. create-only이므로
 
 판정되지 않은 항목이 하나라도 남으면 그 명령은 게이트가 켜져도 **등록되지 않는다.**
 계약 없이 구현된 secret write 표면을 내보내지 않는다.
+
+## Review Log
+
+독립 리뷰 (2026-09-07, 구현자 아님). 재실행/확인한 것:
+
+- 기계 바인딩 `make doc-check` — `doc-check: OK`, `status_mismatches: 0`, `broken_links: 0`.
+- human 바인딩 8개는 명시된 산출물을 직접 열어 확인: PLAN-002 §1-1(105-107행)과 §7(318-320행)의
+  개정 문구, `tasks/_archive/done/245-freeze-env-bridge-contract.md`가 편집되지 않고 §11이
+  그대로 남아 있는 것, 자식 카드 TASK-282의 존재.
+- 계약 문서를 실제 구현(`internal/cli/config_env_gate.go`, `config_env_show.go`,
+  `config_env_seal.go`)과 대조 — §3-1/3-2/3-3-1/3-4-1/3-5/3-6/3-7의 코드·순서·code 이름이
+  구현과 일치한다. `bridgeAgentEnvVars`는 동결된 3개 신호 그대로이고 우회 플래그는 없다.
+
+발견 (conditional 사유):
+
+- **PLAN-002 §1-1의 개정 문구가 이 카드 §3-4와 모순된다.** 현재 문구는 게이트가
+  "`show`의 **stdout** 하나에 대해서만" 열린다고 적었지만, §3-4는 `show`의 출력을
+  `/dev/tty` 전용으로 동결하고 stdout을 명시적으로 금지한다(구현도 `bridgeOpenTTY()`만 쓴다).
+  완료기준 9("narrowed wording")가 잘못된 스트림 이름으로 반영됐다. 문구 수정 필요 —
+  이 리뷰는 결함을 고치지 않는다.
+- 경미: §3-3-1 매트릭스 행 26(사용자 거절)은 code가 `—`이고 행 27은 code가 2개다. 완료기준 4의
+  "one code per branch"와 문자 그대로는 어긋나지만, 카드가 두 경우 모두 의도적으로 판정했고
+  구현(`confirmSealKeys`의 codeless error)이 그 판정을 따른다. 결함으로 보지 않는다.
+
+**판정: conditional** — 계약 자체는 완결적이고 구현과 일치하나, PLAN-002 §1-1 문구가 틀렸다.

@@ -9,6 +9,8 @@ created-at: 2026-09-03T19:40:00+09:00
 source: "TASK-281 §3-6 — the runtime layer is the only one that knows its caller is an LLM"
 scope: "canonical deny list, per-runtime projection targets, install/status/uninstall ownership model, drift verification, init integration boundary"
 status: done
+quality-review: conditional
+quality-reviewed-at: 2026-09-07T17:55:00+09:00
 depends-on: [TASK-281]
 ---
 
@@ -161,3 +163,36 @@ consistency tests: `TestAllCommandsHaveLongHelp`, `TestStaticCommandsCoverEveryR
 required adding `agent-deny`'s `Long` help text, its `StaticCommands` manifest entry, and its
 entry in `internal/config/reserved.go`'s `reservedCommands` — all three are pre-existing
 repo-quality gates that fire on any new root command, not TASK-286-specific work.
+
+## Review Log
+
+독립 리뷰 (2026-09-07, 구현자 아님). 재실행한 것:
+
+- `make check-generate` (exit 0, `docs/agent-deny-rules.md` diff 0), `make test` (exit 0),
+  `make doc-check` (`doc-check: OK`).
+- **단위 테스트를 믿지 않고 온디스크 재현**: 사용자가 이미 소유한 settings 파일
+  (`permissions.allow`, 사용자가 직접 쓴 `Bash(dva config env show *)`, 최상위 `model` 키)을
+  만들어 놓고 `dva agent-deny install --scope project` → deny에 `Bash(dva config env seal *)`만
+  추가되고 나머지 전부 보존. 이어서 `uninstall` → 이번 호출이 추가한 seal 패턴만 제거되고
+  사용자가 미리 쓴 show 패턴은 살아남았다. 즉 delta 기반 receipt 소유권 주장이 실제로 참이다.
+- human 바인딩 2개 확인: 런타임 커버리지 표에 미지원 런타임이 Status와 함께 전부 명시돼 있고,
+  `grep -rn "skillinstall\|agentdeny" internal/cli/init.go internal/cli/init_scaffold.go`는
+  0건 — `init`은 이 카드에서 에이전트 설정 파일을 쓰지 않는다.
+- 우회 가능성 점검: `matchDenyPattern`은 `Bash(<argv> *)` 형태만 모델링하며, 경로 한정 호출
+  (`./bin/dva ...`), env-runner 래퍼(`mise exec --` 등), `dva run` 우회는 커버되지 않는다.
+  전부 카드와 생성 문서가 이미 명시적으로 "커버 안 됨"으로 기록하고 있어 은폐가 아니다.
+
+발견 (conditional 사유):
+
+- **완료기준 1의 "so a new gated command cannot ship without a rule"이 실제로 강제되지 않는다.**
+  `make check-generate`는 `docs/agent-deny-rules.md`가 `GatedCommands`와 일치하는지만 본다.
+  `GatedCommands`를 cobra 명령 트리나 `env_bridge` 게이트 집합과 대조하는 테스트는 없다
+  (`grep -rn agentdeny --include='*.go'` 결과 소비자는 `tools/agentdenygen`과 `internal/cli/agentdeny.go`뿐).
+  카드는 "TASK-282가 아직 안 들어와서 대조할 명령 트리가 없다"고 유예했는데, TASK-282는 이후
+  통합됐으므로 그 유예 조건은 해소됐다. 후속 카드로 닫을 것을 권고한다.
+- 경미: 카드 §"Decisions and work"가 열거한 `dva  config env show`(중복 공백) 변형은 "Claude
+  Code가 명령 텍스트를 정규화한다"는 가정 위에 드롭됐다. 이 저장소가 검증할 수 없는 외부
+  런타임 동작에 대한 가정이며, 문서에 그렇게 적혀 있다.
+
+**판정: conditional** — 구현·소유권 모델은 온디스크로 검증됐고, 기준 1의 드리프트 방지 결속이
+아직 없다.
