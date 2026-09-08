@@ -677,6 +677,10 @@ func fingerprint(ctx context.Context, root string) (Attestation, error) {
 	if e != nil {
 		return Attestation{}, fmt.Errorf("list git inputs: %w", e)
 	}
+	index, e := gitIndexEntries(ctx, root)
+	if e != nil {
+		return Attestation{}, e
+	}
 	h := sha256.New()
 	for name := range strings.SplitSeq(string(b), "\x00") {
 		if name == "" {
@@ -685,9 +689,19 @@ func fingerprint(ctx context.Context, root string) (Attestation, error) {
 		if e := ctx.Err(); e != nil {
 			return Attestation{}, e
 		}
+		_, _ = fmt.Fprintf(h, "%d:%s\x00", len(name), name)
+		entry, tracked := index[name]
+		if tracked {
+			_, _ = fmt.Fprintf(h, "index:%s:%s\x00", entry.mode, entry.object)
+		}
+		if tracked && entry.mode == "160000" {
+			if e := fingerprintGitlink(ctx, root, name, entry.object, h); e != nil {
+				return Attestation{}, e
+			}
+			continue
+		}
 		path := filepath.Join(root, filepath.FromSlash(name))
 		info, e := os.Lstat(path)
-		_, _ = fmt.Fprintf(h, "%d:%s\x00", len(name), name)
 		if os.IsNotExist(e) {
 			_, _ = io.WriteString(h, "missing\x00")
 			continue
@@ -720,6 +734,91 @@ func fingerprint(ctx context.Context, root string) (Attestation, error) {
 
 	}
 	return Attestation{Available: true, Before: hex.EncodeToString(h.Sum(nil))}, nil
+}
+
+type gitIndexEntry struct {
+	mode, object string
+}
+
+// gitIndexEntries returns stage-zero index entries. An unmerged entry has no
+// single revision to attest, so CI refuses to run until it is resolved.
+func gitIndexEntries(ctx context.Context, root string) (map[string]gitIndexEntry, error) {
+	b, err := gitOutput(ctx, root, "ls-files", "--cached", "--stage", "-z")
+	if err != nil {
+		return nil, fmt.Errorf("list git index inputs: %w", err)
+	}
+	entries := make(map[string]gitIndexEntry)
+	for record := range strings.SplitSeq(string(b), "\x00") {
+		if record == "" {
+			continue
+		}
+		header, name, ok := strings.Cut(record, "\t")
+		fields := strings.Fields(header)
+		if !ok || len(fields) != 3 {
+			return nil, fmt.Errorf("parse git index input %q", record)
+		}
+		if fields[2] != "0" {
+			return nil, fmt.Errorf("cannot attest unmerged git input %s", name)
+		}
+		if _, exists := entries[name]; exists {
+			return nil, fmt.Errorf("duplicate git index input %s", name)
+		}
+		entries[name] = gitIndexEntry{mode: fields[0], object: fields[1]}
+	}
+	return entries, nil
+}
+
+// fingerprintGitlink records the superproject's indexed submodule revision.
+// If the submodule is initialized, it also recursively attests its checked-out
+// HEAD and working tree. A non-empty non-repository directory is ambiguous and
+// therefore fails closed rather than being silently omitted from CI inputs.
+func fingerprintGitlink(ctx context.Context, root, name, object string, h io.Writer) error {
+	path := filepath.Join(root, filepath.FromSlash(name))
+	info, err := os.Lstat(path)
+	if os.IsNotExist(err) {
+		_, _ = fmt.Fprintf(h, "gitlink:%s:uninitialized\x00", object)
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("gitlink %s is not a directory", name)
+	}
+	top, probeErr := gitOutput(ctx, path, "rev-parse", "--show-toplevel")
+	initialized := false
+	if probeErr == nil {
+		resolvedPath, pathErr := filepath.EvalSymlinks(path)
+		resolvedTop, topErr := filepath.EvalSymlinks(strings.TrimSpace(string(top)))
+		initialized = pathErr == nil && topErr == nil && resolvedPath == resolvedTop
+	}
+	if !initialized {
+		contents, readErr := os.ReadDir(path)
+		if readErr != nil {
+			return readErr
+		}
+		if len(contents) == 0 {
+			_, _ = fmt.Fprintf(h, "gitlink:%s:uninitialized\x00", object)
+			return nil
+		}
+		if probeErr != nil {
+			return fmt.Errorf("inspect gitlink %s: %w", name, probeErr)
+		}
+		return fmt.Errorf("gitlink %s is not an initialized Git working tree", name)
+	}
+	head, err := gitOutput(ctx, path, "rev-parse", "HEAD")
+	if err != nil {
+		return fmt.Errorf("read gitlink %s HEAD: %w", name, err)
+	}
+	nested, err := fingerprint(ctx, path)
+	if err != nil {
+		return fmt.Errorf("fingerprint gitlink %s: %w", name, err)
+	}
+	if !nested.Available {
+		return fmt.Errorf("gitlink %s has no Git attestation", name)
+	}
+	_, _ = fmt.Fprintf(h, "gitlink:%s:head:%s:worktree:%s\x00", object, strings.TrimSpace(string(head)), nested.Before)
+	return nil
 }
 
 // Git sees the owning working tree, not an index/worktree override inherited from a caller.

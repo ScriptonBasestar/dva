@@ -194,6 +194,360 @@ func TestRunDetectsInputMutationAndCleansBackgroundGroup(t *testing.T) {
 	}
 }
 
+func TestFingerprintAttestsUninitializedGitlinkIndexRevision(t *testing.T) {
+	root := t.TempDir()
+	if err := runGit(root, "init"); err != nil {
+		t.Skipf("git unavailable: %v", err)
+	}
+	if err := os.Mkdir(filepath.Join(root, "module"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := runGit(root, "update-index", "--add", "--cacheinfo", "160000,"+strings.Repeat("1", 40)+",module"); err != nil {
+		t.Fatal(err)
+	}
+	before, err := fingerprint(context.Background(), root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := runGit(root, "update-index", "--cacheinfo", "160000,"+strings.Repeat("2", 40)+",module"); err != nil {
+		t.Fatal(err)
+	}
+	after, err := fingerprint(context.Background(), root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !before.Available || before.Before == after.Before {
+		t.Fatalf("gitlink index revision was not attested: before=%#v after=%#v", before, after)
+	}
+}
+
+func TestFingerprintRejectsAmbiguousGitlinkDirectory(t *testing.T) {
+	root := t.TempDir()
+	if err := runGit(root, "init"); err != nil {
+		t.Skipf("git unavailable: %v", err)
+	}
+	module := filepath.Join(root, "module")
+	if err := os.Mkdir(module, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(module, "not-a-repository"), []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := runGit(root, "update-index", "--add", "--cacheinfo", "160000,"+strings.Repeat("1", 40)+",module"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := fingerprint(context.Background(), root); err == nil || !strings.Contains(err.Error(), "gitlink module is not an initialized Git working tree") {
+		t.Fatalf("ambiguous gitlink directory err=%v", err)
+	}
+}
+
+func TestFingerprintPreservesRegularAndSymlinkInputs(t *testing.T) {
+	root := t.TempDir()
+	if err := runGit(root, "init"); err != nil {
+		t.Skipf("git unavailable: %v", err)
+	}
+	regular := filepath.Join(root, "regular")
+	link := filepath.Join(root, "link")
+	if err := os.WriteFile(regular, []byte("one"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink("regular", link); err != nil {
+		t.Fatal(err)
+	}
+	if err := runGit(root, "add", "regular", "link"); err != nil {
+		t.Fatal(err)
+	}
+	before, err := fingerprint(context.Background(), root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(regular, []byte("two"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	regularChanged, err := fingerprint(context.Background(), root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if before.Before == regularChanged.Before {
+		t.Fatal("regular file mutation was not attested")
+	}
+	if err := os.WriteFile(regular, []byte("one"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(link); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink("other", link); err != nil {
+		t.Fatal(err)
+	}
+	linkChanged, err := fingerprint(context.Background(), root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if before.Before == linkChanged.Before {
+		t.Fatal("symlink target mutation was not attested")
+	}
+}
+
+func TestFingerprintAttestsIndexOnlyTrackedMutation(t *testing.T) {
+	root := t.TempDir()
+	if err := runGit(root, "init"); err != nil {
+		t.Skipf("git unavailable: %v", err)
+	}
+	input := filepath.Join(root, "input")
+	if err := os.WriteFile(input, []byte("one"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := runGit(root, "add", "input"); err != nil {
+		t.Fatal(err)
+	}
+	before, err := fingerprint(context.Background(), root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(input, []byte("staged-only"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := runGit(root, "add", "input"); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(input, []byte("one"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	after, err := fingerprint(context.Background(), root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if before.Before == after.Before {
+		t.Fatal("index-only tracked mutation was not attested")
+	}
+}
+
+func TestFingerprintAttestsTabAndNewlinePath(t *testing.T) {
+	root := t.TempDir()
+	if err := runGit(root, "init"); err != nil {
+		t.Skipf("git unavailable: %v", err)
+	}
+	name := "tab\tand\nnewline"
+	input := filepath.Join(root, name)
+	if err := os.WriteFile(input, []byte("one"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := runGit(root, "add", "--", name); err != nil {
+		t.Fatal(err)
+	}
+	before, err := fingerprint(context.Background(), root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(input, []byte("two"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	after, err := fingerprint(context.Background(), root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if before.Before == after.Before {
+		t.Fatal("tab/newline path mutation was not attested")
+	}
+}
+
+func TestFingerprintRejectsUnmergedIndexInput(t *testing.T) {
+	root := t.TempDir()
+	if err := runGit(root, "init"); err != nil {
+		t.Skipf("git unavailable: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "input"), []byte("one"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := runGit(root, "add", "input"); err != nil {
+		t.Fatal(err)
+	}
+	object, err := gitOutput(context.Background(), root, "rev-parse", ":input")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := runGit(root, "update-index", "--force-remove", "input"); err != nil {
+		t.Fatal(err)
+	}
+	cmd := exec.Command("git", "-C", root, "update-index", "--index-info")
+	cmd.Stdin = strings.NewReader("100644 " + strings.TrimSpace(string(object)) + " 1\tinput\n100644 " + strings.TrimSpace(string(object)) + " 2\tinput\n")
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("create unmerged index: %v: %s", err, output)
+	}
+	if _, err := fingerprint(context.Background(), root); err == nil || !strings.Contains(err.Error(), "cannot attest unmerged git input input") {
+		t.Fatalf("unmerged index err=%v", err)
+	}
+}
+
+func TestFingerprintAttestsMissingAndDeletedTrackedInput(t *testing.T) {
+	root := t.TempDir()
+	if err := runGit(root, "init"); err != nil {
+		t.Skipf("git unavailable: %v", err)
+	}
+	input := filepath.Join(root, "input")
+	if err := os.WriteFile(input, []byte("one"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := runGit(root, "add", "input"); err != nil {
+		t.Fatal(err)
+	}
+	before, err := fingerprint(context.Background(), root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(input); err != nil {
+		t.Fatal(err)
+	}
+	missing, err := fingerprint(context.Background(), root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if before.Before == missing.Before {
+		t.Fatal("missing tracked input was not attested")
+	}
+	if err := runGit(root, "rm", "--cached", "--force", "input"); err != nil {
+		t.Fatal(err)
+	}
+	deleted, err := fingerprint(context.Background(), root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if missing.Before == deleted.Before {
+		t.Fatal("deleted tracked input was not attested")
+	}
+}
+
+func TestFingerprintAttestsInitializedGitlinkHeadAndWorkingTree(t *testing.T) {
+	root := t.TempDir()
+	if err := runGit(root, "init"); err != nil {
+		t.Skipf("git unavailable: %v", err)
+	}
+	module := filepath.Join(root, "module")
+	if err := os.Mkdir(module, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := runGit(module, "init"); err != nil {
+		t.Fatal(err)
+	}
+	input := filepath.Join(module, "input")
+	if err := os.WriteFile(input, []byte("one"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := runGit(module, "add", "input"); err != nil {
+		t.Fatal(err)
+	}
+	if err := runGit(module, "-c", "user.name=test", "-c", "user.email=test@example.invalid", "commit", "-m", "initial"); err != nil {
+		t.Fatal(err)
+	}
+	head, err := gitOutput(context.Background(), module, "rev-parse", "HEAD")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := runGit(root, "update-index", "--add", "--cacheinfo", "160000,"+strings.TrimSpace(string(head))+",module"); err != nil {
+		t.Fatal(err)
+	}
+	before, err := fingerprint(context.Background(), root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := runGit(root, "update-index", "--cacheinfo", "160000,"+strings.Repeat("3", 40)+",module"); err != nil {
+		t.Fatal(err)
+	}
+	indexOnly, err := fingerprint(context.Background(), root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if before.Before == indexOnly.Before {
+		t.Fatal("initialized gitlink index-only mutation was not attested")
+	}
+	if err := runGit(root, "update-index", "--cacheinfo", "160000,"+strings.TrimSpace(string(head))+",module"); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(input, []byte("changed"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	changed, err := fingerprint(context.Background(), root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if before.Before == changed.Before {
+		t.Fatal("gitlink working tree mutation was not attested")
+	}
+	if err := runGit(module, "add", "input"); err != nil {
+		t.Fatal(err)
+	}
+	if err := runGit(module, "-c", "user.name=test", "-c", "user.email=test@example.invalid", "commit", "-m", "changed"); err != nil {
+		t.Fatal(err)
+	}
+	committed, err := fingerprint(context.Background(), root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if changed.Before == committed.Before {
+		t.Fatal("gitlink HEAD mutation was not attested")
+	}
+}
+
+func TestFingerprintAttestsNestedGitlinkWorkingTree(t *testing.T) {
+	root := t.TempDir()
+	if err := runGit(root, "init"); err != nil {
+		t.Skipf("git unavailable: %v", err)
+	}
+	outer := filepath.Join(root, "outer")
+	inner := filepath.Join(outer, "inner")
+	if err := os.MkdirAll(inner, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := runGit(inner, "init"); err != nil {
+		t.Fatal(err)
+	}
+	innerInput := filepath.Join(inner, "input")
+	if err := os.WriteFile(innerInput, []byte("one"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := runGit(inner, "add", "input"); err != nil {
+		t.Fatal(err)
+	}
+	if err := runGit(inner, "-c", "user.name=test", "-c", "user.email=test@example.invalid", "commit", "-m", "initial"); err != nil {
+		t.Fatal(err)
+	}
+	innerHead, err := gitOutput(context.Background(), inner, "rev-parse", "HEAD")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := runGit(outer, "init"); err != nil {
+		t.Fatal(err)
+	}
+	if err := runGit(outer, "update-index", "--add", "--cacheinfo", "160000,"+strings.TrimSpace(string(innerHead))+",inner"); err != nil {
+		t.Fatal(err)
+	}
+	if err := runGit(outer, "-c", "user.name=test", "-c", "user.email=test@example.invalid", "commit", "-m", "nested"); err != nil {
+		t.Fatal(err)
+	}
+	outerHead, err := gitOutput(context.Background(), outer, "rev-parse", "HEAD")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := runGit(root, "update-index", "--add", "--cacheinfo", "160000,"+strings.TrimSpace(string(outerHead))+",outer"); err != nil {
+		t.Fatal(err)
+	}
+	before, err := fingerprint(context.Background(), root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(innerInput, []byte("changed"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	after, err := fingerprint(context.Background(), root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if before.Before == after.Before {
+		t.Fatal("nested gitlink working tree mutation was not attested")
+	}
+}
+
 func TestLockReportsActiveRun(t *testing.T) {
 	state, root := t.TempDir(), t.TempDir()
 	h, err := acquire(state, root, strings.Repeat("a", 32))
