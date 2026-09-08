@@ -8,6 +8,29 @@ exec-tier: strong
 created-at: 2026-09-05T09:00:00+09:00
 source: "docs/dogfood/gorisa.md (dogfood sweep 2026-09-05)"
 status: done
+completed-at: 2026-09-05T07:29:44+09:00
+completion-summary: "Replaced the optional-brace regex expander with interpolateWith/parseBracedRef so ${VAR:-default} and ${VAR-default} follow POSIX empty-vs-unset semantics."
+verification-status: verified
+verification-evidence:
+  - kind: automated
+    command-or-step: "go test ./internal/config/ -count=1 -run 'TestInterpolateDefaultSyntax|TestMergeVarsDefaultSyntax'"
+    result: "ok github.com/ScriptonBasestar/dva/internal/config 0.392s"
+  - kind: automated
+    command-or-step: "make test"
+    result: "exit 0 on 58474b1; config 78.1% 7.288s, cli 80.1% 24.126s"
+  - kind: automated
+    command-or-step: "POSTGRES_USER=gorisa ./bin/dva run echo-env against a scratch dva.yml with PSQL_USER=${POSTGRES_USER:-fallback} and nested DB_URL"
+    result: "PSQL_USER=gorisa DB_URL=postgres://gorisa@localhost:5432/app (not gorisa:-fallback} / gorisa:-u})"
+quality-review: pass
+quality-reviewed-at: 2026-09-08T16:33:18+09:00
+quality-review-evidence:
+  - "independent re-review. AC1 binding re-ran on current tree: go test ./internal/config -count=1 -run TestInterpolateDefaultSyntax|TestMergeVarsDefaultSyntax -> ok 0.392s. The table includes the original corruption (${SET:-fallback} -> gorisa, not gorisa:-fallback}), empty-vs-unset, nested ${HOST}:5432, adjacent refs, and malformed leftover-literal cases."
+  - "AC2 binding make test -> exit 0 (config 78.1%, cli 80.1%)."
+  - "AC1 source: interpolateWith/parseBracedRef in environment.go replace the old optional-brace regex; :- treats unset-or-empty, - treats unset only; defaults re-enter interpolateWith so nesting works; unsupported :+ := :? stay literal. USAGE.md 변수 참조 문법 table matches."
+  - "AC3: did not re-run ~/mydevbox/gorisa-devbox (outside this checkout). Reproduced the card's scratch binary check with ./bin/dva run echo-env: PSQL_USER=gorisa DB_URL=postgres://gorisa@localhost:5432/app. dva config show prints unexpanded environment: source text, so show is not the interpolated surface; run is. The card already notes gorisa itself avoids the form."
+archived-at: 2026-09-08T16:33:18+09:00
+verified-at: 2026-09-08T16:33:18+09:00
+verification-summary: "AC1/AC2 re-ran clean. Scratch binary check on current ./bin/dva reproduces POSIX ${VAR:-default} values. gorisa-devbox itself was not re-run; that config avoids the form."
 ---
 
 # Task 303: `${VAR:-default}` 확장기 오염 버그 수정
