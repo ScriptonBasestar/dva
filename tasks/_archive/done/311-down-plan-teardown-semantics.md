@@ -8,6 +8,30 @@ exec-tier: strong
 created-at: 2026-09-05T10:30:00+09:00
 source: "docs/dogfood/{sadawiki,scripton-signalhub,scripton-db-orchestrator,scripton-dns-bridge}.md (dogfood 2026-09-05)"
 status: done
+parent: PLAN-006
+completed-at: 2026-09-05T10:17:04+09:00
+completion-summary: "--purge on a services-selected plan now runs compose down --remove-orphans --volumes --rmi local for the whole project; plain down and --volumes stay on rm and print leftovers."
+verification-status: verified
+verification-evidence:
+  - kind: automated
+    command-or-step: "go test ./internal/lifecycle -count=1 -run TestComposeDownArgsPurgeWidensToProject"
+    result: "ok github.com/ScriptonBasestar/dva/internal/lifecycle 0.567s"
+  - kind: automated
+    command-or-step: "go test ./internal/cli -count=1 -run 'TestPlanDownPurgeTearsDownWholeProject|TestPlanDownPurgeAsksBeforeDestroying|TestPlanDownPurgeEOFIsNotADecline|TestPlanDownPurgeDryRunSkipsThePromptAndPreviewsMarkers|TestPlanDownPurgeForceRemovesMarkers|TestPlanDownPurgeRemovesVolumesAndImages'"
+    result: "ok github.com/ScriptonBasestar/dva/internal/cli 0.455s"
+  - kind: automated
+    command-or-step: "make test"
+    result: "exit 0 on e1dbc39; cli 80.1%, lifecycle 68.0%, config 78.1%"
+quality-review: conditional
+quality-reviewed-at: 2026-09-08T16:24:10+09:00
+quality-review-evidence:
+  - "independent re-review on master e1dbc39. AC1 machine binding `make test` re-ran to exit 0 (cli 80.1% 83.672s, lifecycle 68.0% 37.216s). Targeted tests TestComposeDownArgsPurgeWidensToProject (5 shapes) and TestPlanDownPurgeTearsDownWholeProject (purge/volumes/plain dry-run) both exit 0."
+  - "AC1 source check: composeDownArgs widens to `down --remove-orphans --volumes --rmi local` when Purge is set even with ComposeServices selected; plain/volumes keep `rm --force --stop [--volumes] <svc…>` and composeDownLeftovers names what stays and points at --purge. Purge is plumbed from plan_lifecycle.go and compositionDestructiveOptions. Prompt/EOF-fail-closed/--force/dry-run tests still pass."
+  - "AC2 is the condition: the criterion names sadawiki/signalhub dry-run, but the closing session substituted a same-shape CLI fixture and deferred real-repo interaction removal to a later dogfood round. This review did not dry-run those repos. TASK-328 is the live verification child. Command-shape replaceability holds; the named human subjects were not re-observed."
+  - "USAGE.md --purge section and docs/43 Tier 1 comment match the implemented split. docs/dogfood/{sadawiki,signalhub,dns-bridge,db-orchestrator}.md still describe the pre-fix gap as current; they are dated 2026-09-05 round reports, not living contracts."
+archived-at: 2026-09-08T16:24:10+09:00
+verified-at: 2026-09-08T16:24:10+09:00
+verification-summary: "AC1 holds on re-run (make test + targeted compose/cli tests + source). AC2 accepted as equivalent fixture dry-run; named sadawiki/signalhub subjects were not re-observed and live replacement is TASK-328."
 ---
 
 # Task 311: `dva down <plan>` teardown 의미론 수정
