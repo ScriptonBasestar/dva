@@ -34,9 +34,11 @@ provision → subprojects → endpoints`)를 적었지만 실제 `canonicalSecti
 
 경계 규칙 두 가지:
 
-- 블록은 자기 키 줄에서 시작해 **연속된 컬럼 0** 주석 줄만큼 위로 확장된다. 빈 줄이 걸리면
-  멈추므로 빈 줄로 떨어진 주석은 위 블록 소유다 (yaml.v3의 HeadComment 부착과 같은 규칙).
-  들여쓰기된 `#`는 주석이 아닐 수 있어(리터럴 블록 스칼라 안의 스크립트) 제외한다.
+- 블록은 자기 키 줄에서 시작해 **yaml.v3가 그 키에 붙인 HeadComment 만큼** 위로 확장된다.
+  "컬럼 0에서 `#`로 시작하는 줄"과 "주석 줄"은 같은 질문이 아니고, 그 차이는 텍스트를 더
+  자세히 봐서는 닿을 수 없다 — 여러 줄 인용 스칼라의 연속행이 컬럼 0에서 `#`로 시작할 수
+  있기 때문이다. HeadComment가 비어 있으면 확장하지 않고, 비어 있지 않으면 **그 줄 수만큼만**
+  걷는다. 빈 줄과 컬럼 0 검사는 walk 안에 백스톱으로 남는다.
 - **문서의 양 끝은 고정이다.** 첫 블록 위의 `---`나 파일 헤더 주석은 문서 서두지 그 키의 섹션
   배너가 아니다. 대칭으로 마지막 블록은 EOF가 아니라 **문서 경계(`---`/`...`)나 빈 줄로 떨어진
   꼬리 주석**에서 멈춘다.
@@ -79,6 +81,33 @@ M4는 이전 버전 카드가 "알려진 결과(결함 아님)"로 적었던 항
 다섯 건 모두 **overlay로 수정 전 소스에 대해 실행해 FAIL을 확인**했다(`go test -overlay`).
 통과만으로는 회귀 테스트임이 증명되지 않는다.
 
+## 재리뷰 BLOCK 및 수정 (2026-09-08, 2차)
+
+위 다섯 건을 고친 커밋(`e353318`)에 대해 **다른 리뷰어**가 다시 BLOCK을 냈다. 두 건 모두
+통합 세션이 독립적으로 재현한 뒤 고쳤다.
+
+| # | 증상 | 재현 결과 | 수정 |
+|---|------|-----------|------|
+| M6 | **M3이 LF 파일에서만 성립했다.** `strings.Split(text, "\n")`이 CRLF 파일의 모든 줄에 `\r`을 남기므로 `isDocumentBoundary`가 `"...\r"`을 `"..."`와 비교해 항상 false — 경계를 못 찾아 M3 버그가 그대로 재현 | `dva config migrate --write` rc 0, `dva validate` 통과, 사라진 interaction은 `dva run`에서 "not recognized" | `isDocumentBoundary` 첫 줄에서 `strings.TrimRight(line, "\r")`. split 시점이 아니라 여기서 떼는 이유는 split 출력이 곧 출력 파일이라 거기서 떼면 CRLF 파일이 조용히 LF로 바뀌기 때문이다 |
+| M7 | 컬럼 0 규칙(M1)은 **필요조건이지 충분조건이 아니었다.** 여러 줄 큰따옴표 스칼라의 연속행이 컬럼 0에서 `#`로 시작할 수 있고, 그것을 배너로 읽으면 스칼라가 찢어져 출력이 아예 파싱되지 않는다 | `VerifyMigrated`가 잡아 `migration produced a config DVA cannot load` — 데이터 손실이 아니라 유효한 파일에 대한 하드 실패 | 확장 여부와 범위를 yaml.v3의 `HeadComment`에 위임. 비어 있으면 확장 없음, 아니면 **그 줄 수까지만** 걷는다 |
+
+M7의 "줄 수까지만"이 별도로 필요한 이유는 측정으로 확인했다. 아래 입력에서
+`version.HeadComment`는 `# real banner` **한 줄**이지만, 빈 검사만 두고 walk를 풀어두면 두
+줄을 가져가 스칼라 꼬리를 함께 끌고 온다:
+
+```yaml
+stack: "x
+#not a comment"
+# real banner
+version: "1"
+```
+
+네 개 신규 단언 전부 `go test -overlay`로 `e353318`에 대해 실행해 FAIL을 확인했다.
+
+**범위 밖으로 남긴 관찰 하나**: CRLF 파일이 *다른* Migrate 단계(예: legacy compose 변환)도
+함께 타면 그 단계는 yaml.v3 라운드트립으로 LF를 뱉어 파일이 섞인 개행으로 끝난다. 이
+카드의 섹션 정렬 단계는 CRLF를 보존하지만, 파이프라인 전체는 보존하지 않는다. 별개 결함이다.
+
 ## Completion Criteria
 
 - [x] 주석 보존 재배열 구현 + 테스트 | verify: `/usr/bin/grep -rq 'func TestCanonicalSectionOrderPreservesComments(' internal tools`
@@ -91,4 +120,6 @@ M4는 이전 버전 카드가 "알려진 결과(결함 아님)"로 적었던 항
 - [x] M3 — 마지막 블록이 `---`/`...` 문서 경계에서 멈춰 설정이 두 번째 문서로 밀려나지 않는다 | verify: `go test ./internal/config/ -run TestMigrateSectionOrderStopsAtDocumentBoundary`
 - [x] M4 — 빈 줄 구분자가 슬롯에 남아 재배열이 줄 수를 바꾸지 않는다 | verify: `go test ./internal/config/ -run TestMigrateSectionOrderKeepsSlotSeparators`
 - [x] M5 — EOF 꼬리 주석이 파일 끝에 남는다 | verify: `go test ./internal/config/ -run TestMigrateSectionOrderKeepsFooterCommentAtEOF`
+- [x] M6 — CRLF 파일에서도 문서 경계에서 멈춘다 | verify: `go test ./internal/config/ -run TestMigrateSectionOrderStopsAtDocumentBoundary`
+- [x] M7 — 컬럼 0 `#`가 인용 스칼라의 일부일 때 배너로 오인하지 않고, 배너 walk가 HeadComment 줄 수를 넘지 않는다 | verify: `go test ./internal/config/ -run TestMigrateSectionOrderTrustsHeadCommentOverColumnZero`
 - [x] 게이트 통과 | verify: `make doc-check`

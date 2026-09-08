@@ -24,10 +24,12 @@ import (
 // — position and content both — so this command never has to guess where such a key
 // belongs. The canonical keys then fill the remaining slots in canonical order.
 //
-// Block boundaries: a block starts at its key's own line, extended upward across
-// *contiguous* comment lines — a comment separated from the key by a blank line
-// belongs to the previous block instead, which matches yaml.v3's own HeadComment
-// attachment. A block ends the line before the next block starts (after that
+// Block boundaries: a block starts at its key's own line, extended upward across the
+// comment lines yaml.v3 attached to that key as its HeadComment — which is the
+// authority here rather than an approximation of it, because a column-0 line beginning
+// with `#` is not always a comment (see commentExtendedStart). A comment separated from
+// the key by a blank line is not in that HeadComment and belongs to the previous block
+// instead. A block ends the line before the next block starts (after that
 // extension), and the blank lines at that seam are then split back off as the slot's
 // separator rather than moved as the block's content — see slotSeparator below.
 //
@@ -56,9 +58,11 @@ func MigrateSectionOrder(src []byte) ([]byte, MigrationReport, error) {
 
 	keys := make([]string, n)
 	keyLines := make([]int, n)
+	headComments := make([]string, n)
 	for i := range n {
 		keys[i] = root.Content[2*i].Value
 		keyLines[i] = root.Content[2*i].Line
+		headComments[i] = root.Content[2*i].HeadComment
 	}
 
 	// Two shapes this line-range partition cannot represent. Both return the source
@@ -123,7 +127,7 @@ func MigrateSectionOrder(src []byte) ([]byte, MigrationReport, error) {
 	start := make([]int, n)
 	start[0] = keyLines[0]
 	for i := 1; i < n; i++ {
-		start[i] = commentExtendedStart(lines, keyLines[i])
+		start[i] = commentExtendedStart(lines, keyLines[i], headComments[i])
 	}
 	end := make([]int, n)
 	for i := 0; i < n-1; i++ {
@@ -234,20 +238,48 @@ func MigrateSectionOrder(src []byte) ([]byte, MigrationReport, error) {
 	return []byte(out), report, nil
 }
 
-// commentExtendedStart returns the first line of the comment block directly above
-// keyLine, or keyLine itself if there is none. "Directly above" means contiguous: a
-// blank line stops the walk, so a comment separated from the key by one belongs to
-// whatever block precedes it instead.
+// commentExtendedStart returns the first line of the banner comment attached to the
+// key on keyLine, or keyLine itself when the key has no banner.
 //
-// Only a `#` in column 0 counts. A top-level key sits in column 0, so its banner does
-// too; an indented `#` is inside the previous block — most dangerously the last line
-// of a literal block scalar, where it is script text and not a comment at all. Left
-// indented-tolerant, this walk tears `# TODO: ...` out of an `interaction.*.command: |`
-// body and files it above the next key, and the result still loads as valid YAML, so
-// VerifyMigrated and `dva validate` both pass while the user's script is a line short.
-func commentExtendedStart(lines []string, keyLine int) int {
+// headComment is the authority on *whether* there is one, and on how many lines it
+// spans; the text walk only locates them. That division matters because "a line that
+// starts with #" is not the same question as "a comment line", and the difference is
+// not reachable by looking harder at the text:
+//
+//	stack: "x
+//	#y"
+//	version: "1"
+//
+// Line 2 is column-0 and starts with `#`, and it is the second line of a double-quoted
+// scalar. Read as version's banner it is torn out of the middle of that scalar, and the
+// result does not parse at all — VerifyMigrated then refuses the whole migration of a
+// file that was valid going in. yaml.v3 already answered this correctly while parsing:
+// version.HeadComment is empty, because there is no comment there.
+//
+// The line count is load-bearing too, not just the empty check. Given
+//
+//	stack: "x
+//	#not a comment"
+//	# real banner
+//	version: "1"
+//
+// version.HeadComment is `# real banner` — one line — while an unbounded walk takes two
+// and drags the scalar's tail along with it. Walking at most as far as the comment yaml
+// reported keeps the two in agreement.
+//
+// Both guards survive inside the walk. A blank line still stops it, so a comment
+// separated from the key by one belongs to the preceding block (which is also how
+// yaml.v3 attaches it — as that key's FootComment). Column 0 still bounds it, since a
+// top-level key's banner is in column 0 and an indented `#` is inside the previous
+// block — most dangerously the last line of a literal block scalar, where it is script
+// text. That case is now caught by the empty check first, and the walk is the backstop.
+func commentExtendedStart(lines []string, keyLine int, headComment string) int {
+	if headComment == "" {
+		return keyLine
+	}
+	limit := strings.Count(headComment, "\n") + 1
 	start := keyLine
-	for i := keyLine - 1; i >= 1; i-- {
+	for i := keyLine - 1; i >= 1 && keyLine-i <= limit; i-- {
 		line := lines[i-1]
 		if strings.TrimSpace(line) == "" {
 			break
@@ -262,7 +294,15 @@ func commentExtendedStart(lines []string, keyLine int) int {
 
 // isDocumentBoundary reports whether line opens or closes a YAML document at the top
 // level: `---`, `...`, or either followed by content on the same line.
+//
+// The `\r` comes off here rather than at the split above, because the split's output is
+// also the output file: stripping it there would silently rewrite a CRLF config to LF.
+// This predicate is the only place in the walk that compares a whole line, so it is the
+// only place the carriage return changes an answer — and the answer it changed was this
+// one, which meant a CRLF file's terminator was never found and the section below it was
+// hoisted into a second document and lost.
 func isDocumentBoundary(line string) bool {
+	line = strings.TrimRight(line, "\r")
 	for _, marker := range []string{"---", "..."} {
 		if line == marker || strings.HasPrefix(line, marker+" ") || strings.HasPrefix(line, marker+"\t") {
 			return true

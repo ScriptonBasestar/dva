@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"gopkg.in/yaml.v3"
 )
 
 // TestCanonicalSectionOrderPreservesComments is the card's binding acceptance test:
@@ -270,6 +272,21 @@ func TestMigrateSectionOrderStopsAtDocumentBoundary(t *testing.T) {
 			src:  "plans:\n  dev: {}\nversion: \"1\"\n---\nother: doc\n",
 			want: "version: \"1\"\nplans:\n  dev: {}\n---\nother: doc\n",
 		},
+		// The two above with CRLF endings. The split leaves a `\r` on every line, so the
+		// boundary test compared "...\r" against "..." and never matched: the terminator
+		// was hoisted with its key and everything below it became a second document the
+		// loader drops. It reproduced end to end — `dva validate` green, `dva run` on the
+		// vanished interaction "not recognized" — so LF-only coverage was not coverage.
+		{
+			name: "explicit end marker with CRLF endings",
+			src:  "stack:\r\n  db:\r\n    plugin: compose\r\nversion: \"1\"\r\n...\r\n",
+			want: "version: \"1\"\r\nstack:\r\n  db:\r\n    plugin: compose\r\n...\r\n",
+		},
+		{
+			name: "second document with CRLF endings",
+			src:  "plans:\r\n  dev: {}\r\nversion: \"1\"\r\n---\r\nother: doc\r\n",
+			want: "version: \"1\"\r\nplans:\r\n  dev: {}\r\n---\r\nother: doc\r\n",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -321,5 +338,51 @@ func TestMigrateSectionOrderKeepsFooterCommentAtEOF(t *testing.T) {
 	}
 	if string(out) != want {
 		t.Fatalf("MigrateSectionOrder() =\n%q\nwant\n%q", out, want)
+	}
+}
+
+// TestMigrateSectionOrderTrustsHeadCommentOverColumnZero pins the two shapes that the
+// column-0 heuristic gets wrong and yaml.v3's own HeadComment gets right. A double-quoted
+// scalar on a top-level key continues at column 0, and that continuation may begin with
+// `#` — which is a character in the value, not a comment. The heuristic filed such a line
+// above the next key and split the scalar; the output no longer parsed, so VerifyMigrated
+// refused the whole migration of a file that had been valid going in.
+//
+// The second case is why the empty check alone is not enough: the key really does have a
+// banner, so the walk runs, and unbounded it takes the scalar's tail with it. The walk is
+// bounded by the number of lines yaml reported in the HeadComment.
+func TestMigrateSectionOrderTrustsHeadCommentOverColumnZero(t *testing.T) {
+	tests := []struct {
+		name string
+		src  string
+		want string
+	}{
+		{
+			name: "column-zero hash inside a quoted scalar is not a banner",
+			src:  "stack: \"x\n#y\"\nversion: \"1\"\n",
+			want: "version: \"1\"\nstack: \"x\n#y\"\n",
+		},
+		{
+			name: "walk stops at the banner yaml reported, not at the scalar above it",
+			src:  "stack: \"x\n#not a comment\"\n# real banner\nversion: \"1\"\n",
+			want: "# real banner\nversion: \"1\"\nstack: \"x\n#not a comment\"\n",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			out, _, err := MigrateSectionOrder([]byte(tt.src))
+			if err != nil {
+				t.Fatalf("MigrateSectionOrder() error = %v", err)
+			}
+			if string(out) != tt.want {
+				t.Fatalf("MigrateSectionOrder() =\n%q\nwant\n%q", out, tt.want)
+			}
+			// The failure this guards is "the output does not parse at all", so assert
+			// that directly rather than only on the bytes.
+			var probe yaml.Node
+			if err := yaml.Unmarshal(out, &probe); err != nil {
+				t.Fatalf("output does not parse: %v", err)
+			}
+		})
 	}
 }
