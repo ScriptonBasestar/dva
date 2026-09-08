@@ -54,6 +54,11 @@ status: done
 | C3 | canonical order 예시 YAML | **`dva config validate` EXIT=1** — `checks.0: type is required`, `modes.dev: Additional property vars is not allowed`. 문서가 싣는 예시가 통과하지 못했다 | `type: command` 추가, `vars:` → `compose_profiles:`. 수정 후 EXIT=0 확인. `modes`가 deprecated 경고를 낸다는 단서도 추가 |
 | C4 | "`process`/`script`/`native` 러너 엔트리의 로그는 … `.sb/dva/logs/<entry-name>.log`" | `script`는 해당 없음. `runScript`는 stdout/stderr를 자식에 물려 흘려보낼 뿐 파일을 만들지 않는다(`internal/lifecycle/script.go`). 그런데 `planLogTargets`가 `ScriptPluginConfig`를 로그 대상에 세므로 `dva logs`는 **serve할 수 없는 이름을 후보로 제시한다**. 실측: `dva up dev` rc 0에 `.sb` 디렉터리조차 안 생기고, `dva logs dev` → `no log file for entry "seeder": … no such file or directory` rc 1 | `script`를 목록에서 빼고, 후보로 제시되지만 실패한다는 사실과 실제 출력을 어디서 봐야 하는지를 명시 |
 
+2차 전달분(C5·C6)도 같은 방식으로 소스에서 재확인한 뒤 반영했다.
+
+| C5 | "`exclude_tags`는 자식 자신의 interaction/**compose** 태그를 거른다" + 거르는 경로를 둘로만 셈 | 두 군데가 틀렸다. (1) compose는 전혀 걸리지 않는다 — `tag_filter.go`의 `GetComposeServicesExcluding`/`GetComposeServicesIncluding`/`GetExcludedComposeServices`는 테스트 외 호출자가 0이다. compose 태그를 적으면 오류도 경고도 없이 무시된다. (2) 경로는 셋이다 — `dva <p>:<k>`와 `run --project <p> <k>`가 같은 `runSubprojectCommand`로 합류하고(`run.go:141`) `ls --project`가 따로 건다(`list.go:82`). 그리고 네 번째 경로인 `import`의 `<p>/<k>`는 **안 걸린다**(`resolveSubprojectImports`가 `subCfg.Interaction[name]`을 직접 읽음) | interaction 태그만 거른다고 좁히고, 걸리는 세 경로와 안 걸리는 import 경로, compose가 무관하다는 사실을 각각 명시 |
+| C6 | endpoints 표의 `tags` 행: "`--tags`로 표시 대상을 좁히는 태그" | endpoint를 좁히는 것은 설정뿐이다 — `plans.<name>.endpoint_tags`(`plan_lifecycle.go:339`)와 `modes.<name>.endpoint_tags`(`compose.go:281`). CLI `--tag`/`--tags`는 lifecycle 엔트리를 거를 뿐 endpoint에 닿지 않고, `dva status`(`status.go:136`)는 아예 거르지 않는다 | 두 설정 키를 이름으로 적고 CLI 플래그와 무관함을 명시 |
+
 C4가 드러낸 `planLogTargets`의 결함(제공할 수 없는 이름을 로그 대상으로 세는 것)은 문서가
 아니라 코드 문제이므로 **TASK-355**로 분리했다.
 
@@ -70,9 +75,17 @@ verify binding 거부)이 다루는 범주다. 문서 카드에 한해서는 "�
 실행된다"가 훨씬 강한 바인딩이다 — C3은 `dva config validate`를 직접 걸었다면 애초에
 머지되지 않았을 것이다. TASK-350에 그 관찰을 남긴다.
 
+C5는 이 교훈을 실제로 적용한 첫 사례다. 문장 존재 확인 대신
+`TestSubprojectImportIgnoresExcludeTags`(`internal/config/subproject_reserved_test.go`)를
+바인딩했고, 그 테스트가 vacuous하지 않다는 것을 변이체로 확인했다 — `import` 루프가
+`subCfg.FilterInteractions(subproject.ExcludeTags)`를 쓰도록 바꾼 소스를 `go test -overlay`로
+끼워 넣으면 `subproject "engine" interaction "dbshell" not found`로 FAIL한다. C6은 여전히
+문장 바인딩인데, 좁히는 주체가 설정 두 곳이라는 사실을 실행으로 거는 방법이 지금 CLI 표면에는
+없기 때문이다(그 자체가 TASK-350이 다룰 재료다).
+
 ## Completion Criteria
 
-- [x] exclude_tags는 부모 stack 태그가 아니라 자식 자신의 interaction/compose 태그를 거른다는 것을 USAGE.md에 명시 | verify: `/usr/bin/grep -qF '부모 stack 엔트리의 태그는 걸러내지 않습니다' USAGE.md`
+- [x] exclude_tags가 거르는 세 경로와 거르지 않는 import 경로, compose와 무관하다는 사실을 USAGE.md에 명시 | verify: `go test ./internal/config/ -run TestSubprojectImportIgnoresExcludeTags`
 - [x] script_file:이 exec 방식(shebang+실행권한 필수)이라는 것을 USAGE.md에 명시 | verify: `/usr/bin/grep -qF '그런 보정 없이 선언된 파일 경로를 그대로' USAGE.md`
 - [x] native runner env: 필드 예시가 USAGE.md에 있는지 확인 — STALE: 2026-08-06 커밋(67107664)에서 이미 추가돼 이 카드보다 선행함, 신규 작업 불필요 | verify: `/usr/bin/grep -qF 'PORT: "8080"' USAGE.md`
 - [x] suggestion_ignore 정본 위치(checks 뒤, interaction 앞)를 표/예시로 USAGE.md에 명시 | verify: `/usr/bin/grep -qF '위 표의 순서가 그대로 canonical order입니다' USAGE.md`
@@ -81,4 +94,5 @@ verify binding 거부)이 다루는 범주다. 문서 카드에 한해서는 "�
 - [x] interaction step에서 dva down 등 재귀 호출 시 --dry-run이 내부 계획까지 들여다보지 않는다는 것을 USAGE.md에 명시 | verify: `/usr/bin/grep -qF '재귀 호출 안쪽까지 들여다보지 않습니다' USAGE.md`
 - [x] endpoints.*.url/source가 ${VAR}/${VAR:-default}를 치환하지 않는다는 것을 USAGE.md에 명시 | verify: `/usr/bin/grep -qF '치환하지 않습니다' USAGE.md`
 - [x] composition plan(composes:)에 environment:/site:/top-level vars:를 두면 validate ERROR라는 것을 USAGE.md에 명시 | verify: `/usr/bin/grep -qF '자신의 stack 엔트리가 없으므로 셋 중 하나라도 있으면' USAGE.md`
+- [x] endpoints `tags`를 좁히는 주체가 `plans`/`modes`의 `endpoint_tags`이며 CLI `--tag`와 무관함을 USAGE.md에 명시 | verify: `/usr/bin/grep -qF 'modes.<name>.endpoint_tags' USAGE.md`
 - [x] 문서 변경이 generate 결과물과 어긋나지 않는지 확인 | verify: `make check-generate`

@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -162,5 +163,56 @@ func TestSubprojectImportAcceptsKeysTheChildValidatorAllows(t *testing.T) {
 	}
 	if _, ok := cfg.Interaction["engine/status"]; ok {
 		t.Fatal("`engine/status` appeared without being imported")
+	}
+}
+
+// TestSubprojectImportIgnoresExcludeTags pins the asymmetry USAGE.md's `exclude_tags`
+// section documents, and pins it as behavior rather than as a sentence. The parent has
+// four ways to reach a child interaction and `exclude_tags` reaches three of them:
+// `dva p:k` and `dva run --project p k` both land in runSubprojectCommand, and
+// `dva ls --project p` filters separately, all three through
+// subCfg.FilterInteractions(sub.ExcludeTags). The fourth, an `import:` of the name, does
+// not — resolveSubprojectImports reads subCfg.Interaction[name] directly.
+//
+// Whether that asymmetry is right is a separate question; an import names one key
+// explicitly, so honoring a tag filter over an explicit name is arguable either way. What
+// is not arguable is that it must not change by accident: someone who hides an interaction
+// with exclude_tags and then imports it by name gets it back silently, and the only place
+// that is written down is the document this test is bound to.
+//
+// Both halves are asserted together on purpose. The import half alone would still pass if
+// FilterInteractions stopped filtering at all, which is the failure most likely to go
+// unnoticed.
+func TestSubprojectImportIgnoresExcludeTags(t *testing.T) {
+	parentDir := writeSubprojectFixture(t,
+		"version: \"0.1.0\"\nsubprojects:\n  engine:\n    path: child\n    exclude_tags: [infra]\n    import:\n      interactions:\n        - dbshell\n",
+		"child",
+		"version: \"0.1.0\"\ninteraction:\n  dbshell:\n    command: echo CHILD-DBSHELL\n    tags: [infra]\n  test:\n    command: echo CHILD-TEST\n    tags: [app]\n")
+
+	cfg, err := Load(parentDir)
+	if err != nil {
+		t.Fatalf("Load error: %v", err)
+	}
+	if _, ok := cfg.Interaction["engine/dbshell"]; !ok {
+		keys := make([]string, 0, len(cfg.Interaction))
+		for k := range cfg.Interaction {
+			keys = append(keys, k)
+		}
+		slices.Sort(keys)
+		t.Errorf("`engine/dbshell` is missing: the import route now honors exclude_tags, "+
+			"which contradicts the exclude_tags section of USAGE.md; got keys %v", keys)
+	}
+
+	childCfg, err := Load(filepath.Join(parentDir, "child"))
+	if err != nil {
+		t.Fatalf("Load child error: %v", err)
+	}
+	filtered := childCfg.FilterInteractions([]string{"infra"})
+	if _, ok := filtered["dbshell"]; ok {
+		t.Error("FilterInteractions kept `dbshell` despite its `infra` tag: the three " +
+			"routes that do filter no longer filter, so the documented asymmetry is gone")
+	}
+	if _, ok := filtered["test"]; !ok {
+		t.Error("FilterInteractions dropped `test`, which carries no excluded tag")
 	}
 }

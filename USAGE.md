@@ -1625,14 +1625,24 @@ Subproject `path`는 absolute path나 parent 밖을 가리키는 `../` path도 �
 
 #### `exclude_tags`가 거르는 대상
 
-`subprojects.<name>.exclude_tags`는 **자식 자신의** interaction/compose 태그를 거릅니다 —
-`dva ls --project <name>`과 `dva run --project <name>`이 그 태그가 붙은 자식 interaction을
-숨깁니다(`internal/cli/list.go`, `internal/cli/run.go`가 `FilterInteractions(sub.ExcludeTags)`로
-자식 config에 적용). **부모 stack 엔트리의 태그는 걸러내지 않습니다** — 부모가 자신의 stack
-엔트리를 태그로 고르거나 빼는 것은 `dva up/down/stop --tags`/`--exclude-tags`가 하는 별개의
-일이며(위 [라이프사이클 플래그](#라이프사이클-플래그) 참조), `exclude_tags`와 이름이 비슷해도
-서로 다른 축입니다. 자식이 자체 인프라 interaction/compose 태그를 부모 namespace에서 감추는
-용도로만 씁니다.
+`subprojects.<name>.exclude_tags`는 **자식 자신의 interaction 태그만** 거릅니다. 부모가
+자식 interaction을 부르는 세 경로가 모두 걸립니다 — `dva <p>:<k>` 축약형과
+`dva run --project <p> <k>`는 같은 `runSubprojectCommand`로 합류하고(`internal/cli/run.go`),
+목록 쪽은 `dva ls --project <p>`가 따로 거릅니다(`internal/cli/list.go`). 셋 다
+`subCfg.FilterInteractions(sub.ExcludeTags)` 한 줄을 지납니다.
+
+**import 경로 `<p>/<k>`는 이 필터를 타지 않습니다.** `resolveSubprojectImports`는
+`subCfg.Interaction[name]`을 직접 읽으므로(`internal/config/subproject.go`), `import:`으로
+끌어온 이름은 `exclude_tags`에 걸린 태그를 달고 있어도 부모 namespace에 그대로 나옵니다.
+감추려면 `import:` 목록에서 빼야 합니다 — 태그로는 안 됩니다.
+
+**compose 서비스와 그 태그는 이 필드가 전혀 건드리지 않습니다.** `internal/config/tag_filter.go`의
+`GetComposeServicesExcluding`/`GetComposeServicesIncluding`/`GetExcludedComposeServices`는
+테스트 외에 부르는 곳이 없습니다. compose 태그 이름을 `exclude_tags`에 적으면 오류도 경고도
+없이 아무 일도 일어나지 않습니다. 부모가 자신의 stack 엔트리를 태그로 고르거나 빼는 것은
+`dva up/down/stop --tags`/`--exclude-tags`가 하는 별개의 일이며(위
+[라이프사이클 플래그](#라이프사이클-플래그) 참조), `exclude_tags`와 이름이 비슷해도 서로 다른
+축입니다.
 
 #### 예약어 및 자식 검증 규칙
 
@@ -1671,7 +1681,7 @@ endpoints:
 | `url` | 직접 명시하는 URL |
 | `source` | compose `service:host_port` 참조 — `url`이 비어 있으면 `http://localhost:{port}`로 자동 계산(잘 알려진 비-HTTP 서비스는 `localhost:{port}`). `url`이 있으면 `source`는 무시됩니다 |
 | `label` | 표시용 이름 |
-| `tags` | `--tags`로 표시 대상을 좁히는 태그 |
+| `tags` | 표시 대상을 좁히는 태그. **좁히는 주체는 설정뿐입니다** — `plans.<name>.endpoint_tags`(`internal/cli/plan_lifecycle.go`)와 `modes.<name>.endpoint_tags`(`internal/cli/compose.go`)만 이 값을 봅니다. CLI의 `--tag`/`--tags`와는 무관합니다(그 플래그는 lifecycle 엔트리를 거르지 endpoint를 거르지 않습니다). `dva status`는 아예 거르지 않고 전부 출력합니다 |
 | `paths` | sub-path → 설명 맵 |
 
 **`url:`과 `source:`는 `${VAR}`/`${VAR:-default}`를 치환하지 않습니다** — 위
