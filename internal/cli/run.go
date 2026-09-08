@@ -138,10 +138,27 @@ func runSubprojectCommand(parentCfg *config.Config, project, cmdName string, cmd
 	if err != nil {
 		return err
 	}
+	tree := runner.NewInteractionTree(subCfg.FilterInteractions(sub.ExcludeTags))
+	resolved := tree.Find(cmdName, cmdArgs...)
+	if resolved == nil {
+		return fmt.Errorf("command `%s` not found in subproject `%s`. Run 'dva ls --project %s'", cmdName, project, project)
+	}
+
 	// TASK-263 §3 decision (b): the parent must not offer an address the child would refuse.
 	// Both routes that reach here — `--project p k` and the `p:k` shorthand run.go splits
 	// above — are checked in one place because they are one call; the third form, a `p/k`
 	// import, is refused at load in config.resolveSubprojectImports.
+	//
+	// After the filter, not before. `exclude_tags` is the parent's own statement that it does
+	// not offer this key, and `dva ls --project` applies the filter and omits it. Checking
+	// first made the two surfaces answer one spelling two ways: ls said the key does not
+	// exist while run said it exists and is refused, which is the shape LiteralKeyWins'
+	// comment rules out. A key the parent excluded is "not found" on both, and only a key the
+	// parent does offer gets the child's refusal.
+	//
+	// The lookup is still on the unfiltered subCfg.Interaction, which is what makes this
+	// correct rather than merely consistent: the filter decides whether the parent offers the
+	// key, the child's own validator decides whether the key is addressable at all.
 	if rejected, _, advice := subCfg.RejectsInteractionKey(cmdName); rejected {
 		return config.SubprojectKeyRejection(project, cmdName, advice)
 	}
@@ -153,12 +170,6 @@ func runSubprojectCommand(parentCfg *config.Config, project, cmdName string, cmd
 	// winning — and roots the run at the child config directory (TASK-264).
 	rt := ownedRuntime(subCfg)
 	subEnv := rt.env
-
-	tree := runner.NewInteractionTree(subCfg.FilterInteractions(sub.ExcludeTags))
-	resolved := tree.Find(cmdName, cmdArgs...)
-	if resolved == nil {
-		return fmt.Errorf("command `%s` not found in subproject `%s`. Run 'dva ls --project %s'", cmdName, project, project)
-	}
 
 	subEnv.MergeVars(resolved.Environment)
 

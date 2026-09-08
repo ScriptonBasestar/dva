@@ -235,10 +235,14 @@ func ConflictAdvice(name string) string {
 	// Namespaced keys first: this is the one case reachable by no invocation at all, so it is
 	// also the one case where "rename" is the whole answer rather than a preference.
 	//
-	// "No invocation reaches this key" is only true because ReservedSubprojectNames rejects a
-	// subproject spelled like a reserved command. Without that rule a parent declaring
-	// subproject `up` makes `dva up:web` run the child's `web`, and this sentence names a
-	// failure the reader will never see.
+	// "No invocation reaches this key" is scoped to configs that pass `dva config validate`,
+	// and what makes it true there is ValidateReservedCommands rejecting this interaction key
+	// itself — not ReservedSubprojectNames, which runs in the same Validate and never on the
+	// routing path. An unvalidated config still routes: measured at 1e73a99 against a parent
+	// declaring both subproject `up` and interaction `up:web`, `dva up:web` logged this very
+	// advice and then printed the child's CHILD-WEB, rc 0. The sentence is honest about the
+	// key it is handed and says nothing about where that spelling lands in a config nobody
+	// validated, which is the most a load-time warning can promise.
 	if idx := strings.Index(name, ":"); idx > 0 {
 		// The cause is spelled out but no failing invocation is written in full: this text is
 		// read by machines (it reaches the reader through validate's stderr and the load-time
@@ -320,8 +324,20 @@ func WarnReservedCommandConflicts(interaction map[string]*InteractionCommand) []
 // The subproject name is the side that gives. The interaction key genuinely is unroutable
 // whenever its prefix is reserved (UnroutableNamespacePrefix says so, and Validate rejects
 // it); it is the subproject that quietly claims a spelling the reserved set already owns.
-// Rejecting it here is what makes UnroutableNamespacePrefix's account true of every config
-// that validates.
+//
+// What this rule buys is narrower than "it makes UnroutableNamespacePrefix's account true".
+// That account was already true of every validating config, and vacuously so: the interaction
+// key `up:web` is rejected by ValidateReservedCommands whether or not a subproject named `up`
+// exists (measured — a config with only the interaction key exits 1). What this adds is that
+// a config which validates can no longer hold the *declaration* that makes one spelling mean
+// two things at once.
+//
+// It does not close the divergence on the routing path, and by TASK-263 §3 (a) it is not
+// meant to: the decision put the rule in Validate and froze routing. So the two surfaces
+// still disagree on a config nobody validated — measured at 1e73a99, a parent declaring
+// subproject `compose` and a child `ps` runs `dva compose:ps` → CHILD-PS, rc 0, while
+// `dva config validate` on that same file exits 1. Closing that would mean moving the check
+// onto the routing path, which is a separate decision from the one this implements.
 func ReservedSubprojectNames(subprojects map[string]SubprojectConfig) []string {
 	var names []string
 	for name := range subprojects {
@@ -392,9 +408,17 @@ func (c *Config) RejectsInteractionKey(name string) (rejected bool, builtin, adv
 // One constructor for all three address forms — `--project`, the `p:key` shorthand and a
 // `p/key` import — because a reader who tries the next form after the first refuses must
 // not be told a different story about why. It names the rule and the declaration that
-// tripped it, and carries the child's own diagnosis so the fix is actionable from the
-// parent's output alone: the reader is standing in the parent directory and has no reason
-// to have run validate in the child.
+// tripped it, and carries the child's own diagnosis, which is the part the reader cannot
+// get otherwise: they are standing in the parent directory and have no reason to have run
+// validate in the child.
+//
+// The forwarded diagnosis explains the cause; it is not a command to run from here. It was
+// written for a reader inside the child and says so in the child's terms — for a reserved
+// key `status` it reads "reachable only as 'dva run status'", and measured at 1e73a99 that
+// invocation exits 1 with "command `status` not recognized" from the parent directory and
+// prints CHILD-STATUS only after a `cd` into the child. Rewriting it to be runnable from
+// here would mean re-deriving the child's advice in the parent's terms, which is the
+// duplicate diagnosis this constructor exists to avoid.
 func SubprojectKeyRejection(subproject, key, childAdvice string) error {
 	return fmt.Errorf(
 		"subprojects.%s: interaction `%s` is rejected by `dva config validate` inside "+

@@ -4,6 +4,23 @@ All notable changes to DVA are documented here.
 
 ## [Unreleased]
 
+### Changed
+- **subproject 이름과 자식 interaction 키에 예약어 규칙이 강제됩니다** (TASK-263 §3):
+  두 가지 breaking change입니다. (a) 내장 커맨드와 같은 이름의 subproject를 선언한
+  config는 `dva config validate`가 거부합니다 — `subprojects.up`은 `dva up:web`이
+  자식의 `web`으로 라우팅되게 만드는데, 같은 철자를 interaction 키로 쓰면 "도달 불가"로
+  거부되므로 한 철자가 두 의미를 가질 수 없습니다. (b) 자식 자신의 validator가 거부하는
+  키는 부모의 세 주소 형태(`--project`, `p:key` shorthand, `p/key` import) 모두에서
+  거부됩니다 — 이전에는 부모를 통해서만 실행되어 "어느 validator가 권위인가"가 서 있는
+  위치에 따라 달라졌습니다. 저장소 내 예시·문서·flow에는 해당 이름을 쓰는 곳이 없습니다.
+  거부된 키는 `dva ls --project`와 `dva manifest`에서도 unroutable로 표시됩니다.
+  규칙은 `Validate()`에서만 돌고 라우팅 경로는 §3 (a) 결정대로 동결돼 있으므로,
+  validate를 거치지 않은 config는 여전히 라우팅됩니다
+  ([USAGE.md](USAGE.md#예약어-및-자식-검증-규칙))
+- **부모의 `exclude_tags`가 자식의 거부보다 먼저 판정합니다**: 부모가 제외한 키는
+  `dva ls --project`와 `dva run --project` 양쪽에서 "not found"입니다. 이전에는 ls가
+  없다고 하고 run이 있지만 거부한다고 답해 한 철자에 두 답이 나왔습니다.
+
 ### Removed
 - **interaction의 `env_file:`이 schema에서 거부됩니다** (TASK-266 Stage B):
   `interaction.<name>.env_file`과 `subcommands.*.env_file`은 additional-property 오류이며,
