@@ -28,7 +28,7 @@ ignore 수단은 침묵 남용으로 이어질 수 있어 설계 검토 필요.
 ## Completion Criteria
 
 - [ ] 설계 결정 기록 | verify: human — docs/56-suppression-ergonomics-design.md §5의 결정 항목 5개(suggestion 순서, 카테고리 단위, drift_ignore 채택 여부/키 이름, 억제 건수 요약 표시 가능 여부, stale ignore 소급 적용)에 답이 기록되고 문서 제목의 "결정 대기"가 해소되었는지 확인
-- [ ] 구현 + 테스트 | verify: `make test`
+- [ ] 구현 + 테스트 (바인딩 잠정 — 설계 확정 후 groom에서 테스트 함수명으로 교체) | verify: `make test`
 - [ ] dripter/flow-taskchain의 ignore 목록이 유의미하게 축약된 예시 | verify: human — dripter와 flow-taskchain의 suggestion_ignore 항목 수 축소 전/후와 dva validate 출력이 카드에 첨부되고, 축소가 §5에서 채택한 신규 수단(카테고리 opt-out 등)을 실제로 사용했는지 확인
 
 ## Dogfood evidence (2026-09-05 실행)

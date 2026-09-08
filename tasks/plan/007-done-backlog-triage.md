@@ -3,10 +3,10 @@ id: PLAN-007
 title: "Retire the unreviewed done backlog and move quality review to card close"
 type: plan
 scope: "tasks/done/ 58장의 일회성 트리아지, done-disposition 루프에서 발견된 소유자 없는 결함 3건, 닫기 시점 독립 리뷰 전환의 외부 의존"
-progress: 75
-total-tasks: 4
+progress: 30
+total-tasks: 10
 completed-tasks: 3
-children: [TASK-325, TASK-326, TASK-327, TASK-330]
+children: [TASK-325, TASK-326, TASK-327, TASK-330, TASK-332, TASK-333, TASK-334, TASK-335, TASK-337, TASK-342]
 target-date: "2026-09-30"
 created: 2026-09-05
 ---
@@ -19,7 +19,9 @@ done 카드 58장 전부에 `quality-review`가 없고, 아카이브 직전의 d
 
 완료 상태:
 
-1. 58장이 아래 티어대로 처리되어 `tasks/done/`가 비어 있다.
+1. 58장이 아래 티어대로 처리되어 `tasks/done/`에 Tier C(PLAN-006 소유) 9장만 남는다.
+   문자 그대로 비우는 것은 이 계획의 목표가 아니다 — Tier C는 명시적으로 범위 밖이고,
+   그 카드들은 PLAN-006이 닫는 시점에 리뷰된다.
 2. 리뷰 없이 아카이브한 카드는 `quality-review` 값으로 그 사실이 정직하게 남아 있다.
 3. 루프가 관찰로만 남겼던 결함 3건이 자식 카드로 처리됐다.
 4. 이후 done 진입 조건에 독립 리뷰가 요구된다 (외부 의존, §External).
@@ -79,9 +81,11 @@ PLAN-006 자식. 그 계획을 진행하는 세션이 닫는 시점에 리뷰하
 |---|---|---|
 | 1 | TASK-325, 326, 327 처리 | 독립. 지금 가능 |
 | 1a | TASK-326 완료 후 세션 리뷰가 발견한 P2 결함을 TASK-330으로 분리 | TASK-326의 후속. 완료 및 통합됨 |
-| 2 | §External의 엔진 정책 변경 | ce 소스 체크아웃 필요. 별도 태스크 |
-| 3 | Tier B 일괄 아카이브 | 2가 `waived` 값을 주면 그 값으로, 아니면 `conditional` 대체 표기 |
-| 4 | Tier A 13장 done-review | 3과 병행 가능. P0 결정 카드부터 |
+| 2 | §External의 엔진 정책 변경 | **카드 없음, 추적 안 함.** ce-workbook 소유이고 3의 우회로 실무 필요는 이미 충족됐다 (§External) |
+| 3 | Tier B 일괄 아카이브 | **완료** 2026-09-07, 커밋 `8d3031b`. `waived` 값이 없어 `conditional` + evidence 문구로 대체 |
+| 4a | Tier A 13장 done-review | **완료** 2026-09-07, 커밋 `a575ccb`(7장) + `242cd5b`(6장) |
+| 4b | Tier A 아카이브 | **미완.** 12장이 `pass`/`conditional`로 아카이브 가능. TASK-282는 `fail`이라 결함 카드(TASK-334·335)가 닫힐 때까지 남는다 |
+| 4c | 4a가 낳은 결함 카드 6장 | TASK-332·333·342·334·335·337. 이 계획의 자식으로 편입됨 |
 | 5 | Tier C | 이 계획 범위 밖. PLAN-006 종료 시 잔여분만 재평가 |
 
 ## External
@@ -90,6 +94,12 @@ PLAN-006 자식. 그 계획을 진행하는 세션이 닫는 시점에 리뷰하
 
 - `run-finish` 또는 `move --to done` 전제조건에 `quality-review` 존재 요구. 대기열 재발을 막는 유일한 지점.
 - `host-schema.yaml` `quality-review_values`에 `waived` 추가. 리뷰 생략을 `conditional`로 위장하지 않기 위해.
+
+**상태 (2026-09-08): 둘 다 카드가 없고, 만들지 않는다.** 엔진 소스는 ce-workbook 소유라 이 저장소의
+태스크 보드가 진척을 강제할 수 없고, 여기에 카드를 두면 영원히 열린 채 남는다. 두 번째 항목의 실무
+필요는 Tier B 아카이브(`8d3031b`)가 `conditional` + `waived: PLAN-007 backlog triage, no independent
+review` evidence 문구로 이미 충족했다 — 값이 정직하게 남아 있고 리뷰됨으로 위장되지도 않았다.
+첫 번째 항목(닫기 시점 강제)은 정책 변경으로 남으며, 그 저장소에서 다룬다.
 
 DVA 쪽 문서는 이 계획이 끝난 뒤 `AGENTS.md`에 "카드를 닫으려면 별도 세션의 done-review가 필요하다"
 한 줄과 정책 링크만 둔다. 규칙 본문을 복제하지 않는다.
@@ -108,3 +118,11 @@ DVA 쪽 문서는 이 계획이 끝난 뒤 `AGENTS.md`에 "카드를 닫으려�
 - TASK-326 — doccheck 앵커 슬러그가 `_`를 버려 GitHub와 어긋남
 - TASK-327 — PLAN-002에 TASK-284 temp-name supersession 기록
 - TASK-330 — doccheck 언더스코어 강조가 문자 단위가 아닌 run 단위로 페어링하도록 수정 (TASK-326 세션 리뷰가 발견한 후속 결함)
+Tier A done-review(4a)가 발견한 결함 카드 — 리뷰가 관찰만 남기지 않고 카드를 만든다는 §Rules 규칙의 결과다.
+
+- TASK-332 — 죽은 interaction `env_file` deprecation 경고 제거 (TASK-259 배치 1)
+- TASK-333 — import 항목의 owner·canonical/alias 정체 노출 (TASK-259 배치 1)
+- TASK-342 — TASK-263의 subproject 예약어·부모 라우트 거부 규칙 강제 (TASK-263 배치 1)
+- TASK-334 — `config env show`를 실제 sops에 대해 pty로 검증 (TASK-282 배치 2)
+- TASK-335 — seal create-only TOCTOU 창 차단 (TASK-282 배치 2)
+- TASK-337 — `GatedCommands`를 살아 있는 커맨드 트리에 결속 (TASK-286 배치 2)

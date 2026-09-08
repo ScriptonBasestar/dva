@@ -22,6 +22,6 @@ Nothing behavioural changes: the string is never printed today.
 
 ## Completion Criteria
 
-- [ ] `InteractionEnvFileMessage` and its doc comment are gone from `internal/config/config.go` | verify: `/usr/bin/grep -rL InteractionEnvFileMessage internal/config/config.go`
-- [ ] the cross-reference in `internal/config/migrate_report.go` is gone | verify: `/usr/bin/grep -rL InteractionEnvFileMessage internal/config/migrate_report.go`
+- [ ] `InteractionEnvFileMessage` and its doc comment are gone from `internal/config/config.go` | verify: `! /usr/bin/grep -q InteractionEnvFileMessage internal/config/config.go`
+- [ ] the cross-reference in `internal/config/migrate_report.go` is gone | verify: `! /usr/bin/grep -q InteractionEnvFileMessage internal/config/migrate_report.go`
 - [ ] the build and tests stay green | verify: `make test`

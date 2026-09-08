@@ -20,4 +20,4 @@ status: todo
 
 ## Completion Criteria
 
-- [ ] 각 항목 테스트 + 수정 | verify: `make test`
+- [ ] 각 항목 테스트 + 수정 (바인딩 잠정 — 설계 확정 후 groom에서 테스트 함수명으로 교체) | verify: `make test`

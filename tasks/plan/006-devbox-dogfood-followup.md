@@ -3,10 +3,10 @@ id: PLAN-006
 title: "Work the devbox dogfood follow-up queue in dependency order"
 type: plan
 scope: "TASK-311..323 from the 2026-09-05 mydevbox migration, plus the needs-human cards that gate the rest"
-progress: 48
-total-tasks: 21
+progress: 40
+total-tasks: 25
 completed-tasks: 10
-children: [TASK-339, TASK-340, TASK-328, TASK-329, TASK-312, TASK-313, TASK-317, TASK-311, TASK-324, TASK-314, TASK-316, TASK-320, TASK-322, TASK-315, TASK-318, TASK-323, TASK-249, TASK-307, TASK-309, TASK-319, TASK-321]
+children: [TASK-339, TASK-340, TASK-328, TASK-329, TASK-312, TASK-313, TASK-317, TASK-311, TASK-324, TASK-314, TASK-316, TASK-320, TASK-322, TASK-315, TASK-318, TASK-323, TASK-249, TASK-307, TASK-309, TASK-319, TASK-321, TASK-345, TASK-346, TASK-347, TASK-348]
 target-date: "2026-10-31"
 created: 2026-09-05
 ---
@@ -34,10 +34,10 @@ created: 2026-09-05
 | 4 | ~~TASK-311~~ down <plan> volume/network 잔존 | 완료 2026-09-05. P1 M. `--purge`가 프로젝트 전체 down |
 | 4a | ~~TASK-324~~ composition plan 중복 경고 오탐 | 완료 2026-09-05. P2 S. `Composes` 비교 추가 |
 | 5 | ~~TASK-314~~ logs/build plan 범위 | 완료 2026-09-05. P2 S |
-| 6 | TASK-316 drift 감지 결함 | P2 M. docs/56 `drift_ignore`(309)보다 먼저 — 감지 폭이 억제 설계의 입력. 2026-09-05 분석 완료(카드 §Analysis), 코드 미착수 |
+| 6 | ~~TASK-316~~ drift 감지 결함 | 완료 2026-09-07(quality-review conditional). P2 M. docs/56 `drift_ignore`(309)보다 먼저 — 감지 폭이 억제 설계의 입력 |
 | 7 | TASK-320 suggestion 파서·manifest | P3 S. 309 결정 C의 소스 개선과 겹치므로 309 전에 |
-| 8 | TASK-322 init 탐지 결함 | P2 M. 249 재설계와 겹치지 않는 탐지 버그만 |
-| 9 | TASK-315 compose profiles | P2 M. 둘째 기준 human |
+| 8 | ~~TASK-322~~ init 탐지 결함 | 완료 2026-09-07. P2 M. 249 재설계와 겹치지 않는 탐지 버그만. 잔여 항목은 339·340으로 분리 |
+| 9 | ~~TASK-315~~ compose profiles | 완료·통합 2026-09-08(master 5f2d85d). P2 M. 후속 345·346·347·348 파생 |
 | 10 | TASK-318 섹션 순서 자동 정렬 | P3 S |
 | 10a | 실기동 검증 회차 (TASK-328) | 311 완료로 착수 가능. primeno1 native 6종(gate 체인+`exec`), familybook/flow-taskchain composition plan을 `dva up`/`status`/`down --purge` 실제 실행으로 확인하고 각 리포트에 출력 첨부. 결함이 나오면 카드로 승격 |
 | 11 | TASK-323 문서 의미 공백 | P3 S. `--env` 항목은 307 결정에 따라 문구가 달라짐 — 마지막 |
@@ -46,7 +46,6 @@ created: 2026-09-05
 
 - TASK-307 → docs/55 §5 (4항목). TASK-309 → docs/56 §5 (5항목). 309는 316·320 뒤.
 - TASK-319 native entry ergonomics, TASK-321 destructive interaction agent-deny: 설계 결정 기록 필요.
-- TASK-249 capability-driven init: PLAN-002 child. 322와 경계 확인 후.
 
 ## Devbox integration state (2026-09-05 저녁 갱신)
 
@@ -60,8 +59,10 @@ created: 2026-09-05
   완료 후 이 브랜치 → develop 통합 → dva-yml-migrate 브랜치 rebase 후 통합 순. 래퍼가 target을 임시 트리에
   체크아웃해 `make check`를 돌리므로 gitignore된 `scripton-mfe-protocol`이 없어 baseline 측정 불가.
   `--allow-skipped-checks`로도 우회 안 됨. 해법은 devbox Makefile `check`가 `prepare`를 선행하거나 사람이 통합.
-- 사람 통합 대기: familybook `dev/claude/mst/chore/readiness-dva-yml`(3538cf2) — readiness contract가
-  `dva.yml`/`dva.yaml` 둘 다 허용하도록 수정. 계약 파일은 에이전트 통합 불가. 통합 후 `dva.yaml`→`dva.yml` 개명 재시도.
+- ~~사람 통합 대기: familybook `dev/claude/mst/chore/readiness-dva-yml`(3538cf2)~~ — **2026-09-08 확인: 유실.**
+  `~/mydevbox/familybook-devbox`에 커밋 3538cf2가 없고(`git cat-file -t` 실패), readiness 브랜치도 워크트리도
+  없으며 HEAD는 `be6d0fd [develop]`, 파일은 여전히 `dva.yaml`. 통합 대기가 아니라 **재작성 대상**이다.
+  상세와 정정된 기준은 TASK-329 참조.
 - 세션 종료 2026-09-05 저녁(dva 2cb184e): 이 세션은 TASK-324 완료, PLAN-006/TASK-323 현행화, familybook 자식 통합
   (`.gz-git.yaml` workspace 항목 + `integration: {}`)까지. 다른 세션이 311·313·314·317을 병행 처리했으므로
   다음 착수 전 `git log origin/master`와 `tasks/todo/` 재확인.
@@ -71,7 +72,8 @@ created: 2026-09-05
 ## Session handoff (2026-09-05 밤)
 
 - 세션 1회차 종료 시점: 1~5·4a 통합 완료(master 2cb184e). 316은 분석만 카드에 기록, worktree 없음.
-- 다음 착수: TASK-316 → 320 → 322 → 315 → 318 → 10a 실기동(TASK-328) → 323. 카드 §Analysis에서 바로 시작.
+- 다음 착수(2026-09-08 갱신): 316·322·315 완료로 소진. 잔여 순서는 TASK-320 → 318 → 10a 실기동(TASK-328) → 323,
+  그리고 사람 결정 대기 4장(307, 309, 319, 321). 315 후속 345~348은 §Order에 편입하지 않고 compose 묶음으로 함께 처리.
 - 잔여 사람 결정: 위 §Needs-human, §Devbox integration state의 scripton-dashboard·familybook 2건.
 
 ## Rules

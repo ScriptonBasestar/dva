@@ -18,4 +18,4 @@ checks → suggestion_ignore → interaction → provision → subprojects → e
 
 ## Completion Criteria
 
-- [ ] 주석 보존 재배열 구현 + 테스트 | verify: `make test`
+- [ ] 주석 보존 재배열 구현 + 테스트 | verify: `/usr/bin/grep -rq 'func TestCanonicalSectionOrderPreservesComments(' internal tools`

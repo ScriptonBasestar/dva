@@ -34,5 +34,5 @@ broken. The fix has to bind the absence check to the write itself, not to prefli
 ## Completion Criteria
 
 - [ ] the create-only guarantee is enforced at the write, not only at preflight — the commit path refuses when the target appeared after the check | verify: `/usr/bin/grep -rq "func TestConfigEnvSealRefusesSourceCreatedAfterPreflight" internal/cli`
-- [ ] the refusal resolves to the frozen matrix code for row 16, not a new one | verify: `make test`
-- [ ] the seal fault matrix gains a row covering the post-preflight-appearance case | verify: `make test`
+- [ ] the refusal reuses `codeSourceExists` rather than adding a code — `envBridgeCodes` stays identical to the frozen list asserted in `internal/cli/config_env_grammar_test.go` | verify: `make test`
+- [ ] the seal fault matrix gains a row covering the post-preflight-appearance case | verify: `/usr/bin/grep -q 'source appears between preflight and commit' internal/cli/config_env_seal_test.go`

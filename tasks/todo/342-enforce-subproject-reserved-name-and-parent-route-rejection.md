@@ -28,5 +28,5 @@ Filed from the TASK-263 done-review; the card was left `conditional` for exactly
 ## Completion Criteria
 
 - [ ] `dva config validate` rejects a subproject whose name collides with a reserved built-in, and the message names the reserved word | verify: `/usr/bin/grep -rq "func TestSubprojectReservedNameRejected" internal/config`
-- [ ] a key the child validator rejects is unreachable through all three parent address forms (`--project`, `:`, `/`) | verify: `/usr/bin/grep -rq "func TestSubprojectParentRouteRejectsChildInvalidKey" internal/config`
-- [ ] both rejection paths report the rule and the offending declaration | verify: `make test`
+- [ ] a key the child validator rejects is unreachable through all three parent address forms (`--project`, `:`, `/`) | verify: `/usr/bin/grep -rq "func TestSubprojectParentRouteRejectsChildInvalidKey" internal`
+- [ ] both rejection paths report the rule and the offending declaration | verify: `/usr/bin/grep -rq "func TestSubprojectRejectionNamesRuleAndDeclaration" internal`

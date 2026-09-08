@@ -9,6 +9,7 @@ status: todo
 created: 2026-09-07
 source: "tasks/done/282 done-review (PLAN-007 Tier A batch 2)"
 depends-on: [TASK-282]
+needs-human: true
 ---
 
 ## Summary

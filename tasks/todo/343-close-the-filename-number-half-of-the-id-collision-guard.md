@@ -7,6 +7,7 @@ effort: S
 exec-tier: standard
 status: todo
 created: 2026-09-07
+needs-human: true
 ---
 
 ## Summary

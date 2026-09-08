@@ -31,4 +31,4 @@ complete is a worse surface than no alias.
 
 - [ ] `dva ls --json` and the manifest output carry an `owner` field for every item | verify: `/usr/bin/grep -rq "func TestImportedItemOwnerField" internal/cli`
 - [ ] items reachable under multiple addresses mark one canonical and the rest aliases | verify: `/usr/bin/grep -rq "func TestImportedItemCanonicalAndAliasMarkers" internal/cli`
-- [ ] completion offers all three address forms | verify: `make test`
+- [ ] completion offers all three address forms | verify: `/usr/bin/grep -rq 'func TestCompletionOffersAllThreeAddressForms(' internal/cli`

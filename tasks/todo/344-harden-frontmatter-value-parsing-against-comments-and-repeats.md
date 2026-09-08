@@ -38,4 +38,4 @@ trailing ` #` comment, and report a repeated key rather than resolving it — no
 - [ ] A trailing `#` comment is stripped from a frontmatter value, so `id: TASK-331 # note` collides with `id: TASK-331` | verify: `/usr/bin/grep -rq 'func TestFrontmatterValueDropsTrailingComment(' tools/doccheck`
 - [ ] A `#` inside a quoted value survives, so titles containing `#` are unchanged | verify: `/usr/bin/grep -rq 'func TestQuotedValueKeepsItsHash(' tools/doccheck`
 - [ ] A repeated frontmatter key is reported rather than silently resolved to the first | verify: `/usr/bin/grep -rq 'func TestRepeatedFrontmatterKeyIsReported(' tools/doccheck`
-- [ ] `cardStatus` and `hasCanonicalField` share the hardened helper | verify: `make test`
+- [ ] `cardStatus` and `hasCanonicalField` share the hardened helper | verify: `/usr/bin/grep -rq 'func TestCardStatusAndCanonicalFieldShareParser(' tools/doccheck`

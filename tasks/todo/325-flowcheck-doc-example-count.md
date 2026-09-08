@@ -9,6 +9,7 @@ created-at: 2026-09-05T15:10:00+09:00
 source: "TASK-244 done-disposition observation, 2026-09-05"
 parent: PLAN-007
 status: todo
+needs-human: true
 ---
 
 # Task 325: docs/51 flowcheck 예시가 낡은 개수를 찍는다
