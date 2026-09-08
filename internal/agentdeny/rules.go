@@ -30,11 +30,12 @@ type GatedCommand struct {
 // state at generation time. tools/agentdenygen renders it into docs/agent-deny-rules.md,
 // and 'make check-generate' fails if that render has drifted from this list.
 //
-// This is the complete set of TASK-281 §3-7 gated commands as of TASK-286. If a future
-// card adds another command behind an env_bridge-shaped gate, add it here in the same
-// change — see docs/agent-deny-rules.md "Binding this list to the CLI" for why this
-// cannot yet be a compile-time or test-time check against the registered cobra command
-// tree.
+// This is the complete set of TASK-281 §3-7 gated commands. A future command behind an
+// env_bridge-shaped gate must be added here in the same change, and since TASK-337 that is
+// enforced rather than requested: internal/cli.TestGatedCommandsCoverEveryGatedSurface
+// derives the gated surface from internal/cli's own source and fails in both directions —
+// a gated command with no entry here, and an entry naming an argv that no gated command
+// produces. See docs/agent-deny-rules.md "Binding this list to the CLI".
 var GatedCommands = []GatedCommand{
 	{
 		ID:     "config-env-seal",
