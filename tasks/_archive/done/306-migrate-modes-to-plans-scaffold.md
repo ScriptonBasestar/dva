@@ -8,6 +8,31 @@ exec-tier: strong
 created-at: 2026-09-05T09:00:00+09:00
 source: "docs/dogfood/{primeno1,sigdock-idp,sadawiki}.md"
 status: done
+completed-at: 2026-09-05T07:50:06+09:00
+completion-summary: "MigrateModes converts stack-select and compose_services modes into plans of the same name, leaves blocked modes with a reason, and rewrites default_mode when the named mode converted."
+verification-status: verified
+verification-evidence:
+  - kind: automated
+    command-or-step: "go test ./internal/config -count=1 -run MigrateMode"
+    result: "ok github.com/ScriptonBasestar/dva/internal/config 0.574s"
+  - kind: automated
+    command-or-step: "go test ./internal/cli -count=1 -run Migrate"
+    result: "ok github.com/ScriptonBasestar/dva/internal/cli 0.694s"
+  - kind: automated
+    command-or-step: "make test"
+    result: "exit 0 on cdfd59e (same code as e0c0c6c); cli 80.1%, config 78.1%"
+  - kind: automated
+    command-or-step: "./bin/dva config migrate <scratch with stack-select full + compose_profiles blocked>"
+    result: "exit 0; modes.full → plans.full; default_mode → default_plan; modes.blocked left with compose_profiles reason"
+quality-review: pass
+quality-reviewed-at: 2026-09-08T16:43:16+09:00
+quality-review-evidence:
+  - "independent re-review. AC1 migrate_modes tests cover stack-select, compose_services, five unconvertible shapes, default conflict, and pipeline scaffolding remaining modes. go test ./internal/config -run MigrateMode ok 0.574s."
+  - "AC1 source: MigrateModes in migrate_modes.go; convertible keys are description/stack/compose_services/endpoint_tags; foreign fields block; default_mode rewrites only when that mode converted and no default_plan exists. interaction.clean is deliberately not moved."
+  - "AC2: primeno1 not re-run. Scratch migrate converted a stack-select mode into plans.full with default_plan: full and left a compose_profiles sibling unconverted with a reason. That is the subclass split the primeno1 transcript claimed for six stack-select modes."
+archived-at: 2026-09-08T16:43:16+09:00
+verified-at: 2026-09-08T16:43:16+09:00
+verification-summary: "Mode subclass conversion holds in tests and a scratch preview. primeno1 itself was not re-run."
 ---
 
 # Task 306: migrate가 modes → plans 스캐폴드 YAML을 실제 출력
