@@ -22,29 +22,29 @@ quality-reviewed-at: 2026-09-07T18:05:00+09:00
 
 Replace the rejected fixed three-plan template with an evidence-driven generation contract aligned
 with D8 and the repository's capability preset policy. The design decision and the rejected baseline
-live in [docs/58](../../docs/58-capability-driven-init-design.md); the TASK-233 conflict analysis is
+live in [docs/58](../../../docs/58-capability-driven-init-design.md); the TASK-233 conflict analysis is
 in docs/58 §4-5; the criterion-by-criterion verification against TASK-250's implementation is in
-[docs/59](../../docs/59-capability-driven-init-verification.md); the label/evidence inventory is in
-[docs/60](../../docs/60-capability-driven-init-label-inventory.md). This card only tracks what remains
+[docs/59](../../../docs/59-capability-driven-init-verification.md); the label/evidence inventory is in
+[docs/60](../../../docs/60-capability-driven-init-label-inventory.md). This card only tracks what remains
 open.
 
 ## Status
 
 9 of the original 10 completion criteria are decided and verified against TASK-250's implementation;
-see [docs/59 §2](../../docs/59-capability-driven-init-verification.md#2-완료기준-매핑) for the full
+see [docs/59 §2](../../../docs/59-capability-driven-init-verification.md#2-완료기준-매핑) for the full
 mapping. The 10th criterion, census governance, is now decided and recorded in
-[docs/61](../../docs/61-capability-driven-init-census-governance.md) — `decision-status: decided`
+[docs/61](../../../docs/61-capability-driven-init-census-governance.md) — `decision-status: decided`
 now covers both the design direction (docs/58 §5) and this card's remaining criterion. Zone move to `done/` done
-after main-thread review of [docs/61](../../docs/61-capability-driven-init-census-governance.md).
+after main-thread review of [docs/61](../../../docs/61-capability-driven-init-census-governance.md).
 
 ## Completion Criteria
 
-- [x] Define census owner, canonical repository IDs/revisions, input inventory, cadence, and the change threshold that can revise defaults | verify: human — [docs/61](../../docs/61-capability-driven-init-census-governance.md) states owner (ce-workbook portfolio catalog), canonical IDs/revisions (dva-adopter set, SHA-pinned per run), input inventory (docs/60 label vocabulary), cadence (once per release, immediately before cut), and the promote/demote thresholds (>50% / <25%), each with its reasoning
+- [x] Define census owner, canonical repository IDs/revisions, input inventory, cadence, and the change threshold that can revise defaults | verify: human — [docs/61](../../../docs/61-capability-driven-init-census-governance.md) states owner (ce-workbook portfolio catalog), canonical IDs/revisions (dva-adopter set, SHA-pinned per run), input inventory (docs/60 label vocabulary), cadence (once per release, immediately before cut), and the promote/demote thresholds (>50% / <25%), each with its reasoning
 
 ## Non-goals
 
 The following are out of scope for this card because they are already decided and verified — see
-[docs/59 §1](../../docs/59-capability-driven-init-verification.md#1-task-250-대조-검증-2026-09-04)
+[docs/59 §1](../../../docs/59-capability-driven-init-verification.md#1-task-250-대조-검증-2026-09-04)
 for the record and evidence of each:
 
 - Discovery evidence/output contract for compose-only, native-only, hybrid, and no-discovery fixtures
@@ -52,7 +52,7 @@ for the record and evidence of each:
 - Reusing the capability-driven preset policy so generation omits plans lacking evidence (docs/59 §1
   기준 2).
 - Separating human-facing example names from verified provider facts across the repository's preset/
-  flow/generated-library projections ([docs/60](../../docs/60-capability-driven-init-label-inventory.md)).
+  flow/generated-library projections ([docs/60](../../../docs/60-capability-driven-init-label-inventory.md)).
 - Keeping `local-infra`, `local-dev`, `full-stack` out of Go `init` generator defaults while coexisting
   with TASK-233's `am` preset corpus decision (docs/58 §5, docs/59 §1 기준 4).
 - Single-plan implicit default vs. explicit `default_plan` for multi-plan output (docs/59 §1 기준 5).
@@ -66,16 +66,16 @@ for the record and evidence of each:
 
 - (2026-09-07) 증상: census 거버넌스 결정 기록을 docs/58 안에 이어 쓰면 파일이 10,005바이트로
   10,240바이트 상한에 235바이트 여유만 남음 / 원인: docs/58이 이미 §1-5의 설계·충돌 분석을 담아
-  거의 상한에 근접해 있었음 / 해결: 지침대로 별도 [docs/61](../../docs/61-capability-driven-init-census-governance.md)에
+  거의 상한에 근접해 있었음 / 해결: 지침대로 별도 [docs/61](../../../docs/61-capability-driven-init-census-governance.md)에
   기록하고 docs/58에는 한 줄 포인터만 남김(docs/58 8,200B, docs/61 4,531B) / 걸린시간: 판단 즉시
 
 ## Related
 
-- Design and decision record: [docs/58-capability-driven-init-design.md](../../docs/58-capability-driven-init-design.md)
-- Verification against implementation and criterion mapping: [docs/59-capability-driven-init-verification.md](../../docs/59-capability-driven-init-verification.md)
-- Label/evidence inventory: [docs/60-capability-driven-init-label-inventory.md](../../docs/60-capability-driven-init-label-inventory.md)
-- Census governance decision record: [docs/61-capability-driven-init-census-governance.md](../../docs/61-capability-driven-init-census-governance.md)
+- Design and decision record: [docs/58-capability-driven-init-design.md](../../../docs/58-capability-driven-init-design.md)
+- Verification against implementation and criterion mapping: [docs/59-capability-driven-init-verification.md](../../../docs/59-capability-driven-init-verification.md)
+- Label/evidence inventory: [docs/60-capability-driven-init-label-inventory.md](../../../docs/60-capability-driven-init-label-inventory.md)
+- Census governance decision record: [docs/61-capability-driven-init-census-governance.md](../../../docs/61-capability-driven-init-census-governance.md)
 - Implementation: [TASK-250](../done/250-implement-capability-driven-init.md) (`status: done`, commit `4cc0fdc`)
 - Parent plan: [PLAN-002](../plan/002-command-surface-delivery.md)
-- Superseded-surface note: [TASK-233](../_archive/233-capability-driven-plan-presets.md) (`am` preset
+- Superseded-surface note: [TASK-233](../233-capability-driven-plan-presets.md) (`am` preset
   corpus default — coexists with this card's Go `init` generator scope; see docs/58 §5)

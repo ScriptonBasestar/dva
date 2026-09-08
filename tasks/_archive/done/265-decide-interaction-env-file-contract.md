@@ -57,7 +57,7 @@ parent/subcommand inheritance, top-level 대비 precedence, required 실패라�
 
 **승인 이력.** 독립 review는 이 결정을 작성하지 않은 reviewer가 수행했고, §1 증거표의 file:line 주장과
 §5 handoff를 source에 대해 재확인했다. 그 결과를 사용자에게 제시한 뒤 2026-09-03에 사용자가 versioned
-deprecation → rejection을 승인했다. [런북 §5](../../docs/53-command-surface-agent-execution.md)가 요구하는
+deprecation → rejection을 승인했다. [런북 §5](../../../docs/53-command-surface-agent-execution.md)가 요구하는
 사용자 선택은 이 시점에 충족됐고, `decision-status: decided`는 그 승인에 근거한다. 승인 전 상태에서는
 이 field가 `pending`이어야 했다.
 

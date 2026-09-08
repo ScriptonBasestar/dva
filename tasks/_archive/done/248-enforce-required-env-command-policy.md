@@ -73,7 +73,7 @@ secret sentinel 부재). Gates: `make lint` 0 issues, `make test`, `make test-in
 
 ### 문서
 
-`USAGE.md`에 [환경 입력이 불완전할 때](../../USAGE.md) 절(route 표, partial JSON, 소유자 규칙,
+`USAGE.md`에 [환경 입력이 불완전할 때](../../../USAGE.md) 절(route 표, partial JSON, 소유자 규칙,
 마이그레이션 주의)을 추가하고 doctor 빌트인 체크 목록을 갱신했습니다. `CHANGELOG.md`에 동작 변경과
 마이그레이션 영향을 기록했습니다. `docs/42-migration-and-compatibility.md`는 10226/10240 byte로
 doc-check 상한 직전이라 한 줄도 추가할 수 없어 사용하지 않았습니다.

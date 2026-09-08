@@ -485,15 +485,15 @@ alias 처리, §3.6/3.7 ownership 경계, §4.4 fail-closed flag-scope, §4.5 ca
 모두 "보고하되 고치지 않는다" 원칙에 따라 처리했다:
 
 - **F1**(MEDIUM, readiness-gate 실패 시 성공한 child가 rollback 대상에서 빠짐) →
-  [TASK-296](../todo/296-fix-composition-readiness-gate-rollback-gap.md)로 분리 접수, 통합됨
+  [TASK-296](./296-fix-composition-readiness-gate-rollback-gap.md)로 분리 접수, 통합됨
   (`59f51fa`).
 - **F2**(LOW-MEDIUM, `dva status`가 `CompositionOrchestrator.Status`와 별개로 구현되어 있어
   전체 다운 상태에서도 exit 0) →
-  [TASK-297](../todo/297-fix-composition-status-divergent-implementation.md)로 분리 접수, 통합됨
+  [TASK-297](./297-fix-composition-status-divergent-implementation.md)로 분리 접수, 통합됨
   (`1c20f23`).
 - **F4**(LOW, composition `restart`가 stop-then-up이며 `--no-rollback` opt-out이 막혀 있음) +
   **F5**(LOW, rollback 실패 진단 메시지가 계산만 되고 출력되지 않음) →
-  [TASK-298](../todo/298-fix-composition-restart-rollback-and-diagnostics-gaps.md)로 묶어 분리
+  [TASK-298](./298-fix-composition-restart-rollback-and-diagnostics-gaps.md)로 묶어 분리
   접수, 통합됨(`5243573`).
 - **F3**(LOW, §4.4의 `--project`/`--volumes` 예문이 실제 동작과 반대로 서술됨) → 이 카드 자체의
   텍스트 오류이므로 위 §4.4 예문을 이번 커밋에서 직접 정정했다(계약을 바꾸지 않고 예시 서술만
