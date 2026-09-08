@@ -512,7 +512,10 @@ force-recreate가 될 수 있습니다. 이것은 완전한 무인자 호출이 
 (`--purge is only supported by down`). 데이터를 지우는 플래그가 조용히 무시되는 경우를
 없애기 위한 것으로, `dva up p --purge`는 성공하지 않습니다.
 
-환경/모드/태그는 plan 정의(`plans.<name>`)가 결정하므로, named plan 실행에는 `--mode`/`--env`/`--tag`를 쓸 수 없습니다.
+환경/모드/태그는 plan 정의(`plans.<name>`)가 결정하므로, named plan 실행에는 `--mode`/`--env`/`--tag`를 쓸 수 없습니다(`dva up <plan> --env prod`는 `unsupported plan flag: --env`로 거부됩니다).
+**"같은 plan을 다른 environment로 한 번만 실행"은 지금은 지원되지 않습니다** — `environment:`가
+다른 plan을 하나 더 선언해 복제하는 것이 유일한 방법입니다. plan 간 선언 중복을 alias/extends로
+줄이는 안은 TASK-307(설계 승인 대기, `docs/55-plan-alias-extends-design.md`)에서 검토 중입니다.
 
 ```bash
 dva up --tag db,cache          # db/cache 태그 엔트리만 시작
@@ -549,6 +552,12 @@ dva down db-only
 (`compose logs -f postgres redis`), 서비스 이름을 직접 쓰면 그 이름이 서브셋을 대체합니다.
 `build`는 여기서 한 번 더 걸러서, compose 파일에 `build:`가 없는 이미지 전용 서비스는
 인자에서 빼고, 남는 서비스가 없으면 `nothing to build`만 출력합니다 (TASK-314).
+
+**`dva logs <PLAN>`은 plan이 로그를 낼 수 있는 엔트리를 2개 이상 가지면 엔트리 이름을
+요구합니다** — `plan "X" runs N entries with logs; name one: dva logs X <a|b>`로 거부되고,
+엔트리가 하나뿐이면 그 엔트리로 자동 선택됩니다. `process`/`script`/`native` 러너 엔트리의
+로그는 compose를 거치지 않고 `.sb/dva/logs/<entry-name>.log` 파일(마지막 100줄)로 표시됩니다
+(`internal/cli/logs.go` `entryLogFile`/`showEntryLogFile`).
 
 > **완전히 인자 없는 `dva up`은 명시된 `default_plan` 또는 유일한 plan을 선택합니다.** 여러
 > plan에 기본값이 없으면 plan 이름을 요구하며, plan이 전혀 없을 때만 선언된 stack 전체를
@@ -815,6 +824,25 @@ interaction:
 | `infra` | 공유 인프라 서비스 (git 기반) |
 | `ssh` | SSH agent 설정 |
 | `devcontainer` | devcontainer 통합 (실험적) |
+
+위 표의 순서가 그대로 canonical order입니다. 예를 들어 `checks` → `default_mode` →
+`suggestion_ignore` → `modes`는 이 순서로 나란히 놓입니다.
+
+```yaml
+checks:
+  - name: docker
+    command: docker info
+default_mode: dev
+suggestion_ignore:
+  - "docker-*"
+  - "k8s-*"
+modes:
+  dev:
+    vars: { LOG_LEVEL: debug }
+```
+
+순서가 어긋나도 에러는 아니고 `dva config validate`가 advisory 경고만 냅니다
+(`section order: found [...] but canonical order is [...]; consider reordering`).
 
 ### stack (선언 저장소)
 
@@ -1410,6 +1438,12 @@ interaction:
 안에서 `dva`를 다시 호출해도 재귀 가드가 걸려 안쪽 호출은 훅 없이 내장 커맨드만
 실행합니다.
 
+**`--dry-run`/`--explain`은 `run:`에 적힌 `dva …` 재귀 호출 안쪽까지 들여다보지 않습니다.**
+`steps[].run: "dva down other-plan"`처럼 스텝이 다른 `dva` 명령을 그대로 문자열로 호출하면,
+바깥쪽 `dva --dry-run run <name>`은 그 줄을 `run: dva down other-plan`이라는 **문자열
+그대로만** 보여 줍니다 — `other-plan`이 실제로 down될 엔트리 목록·순서(wave order)는 계획에
+나타나지 않습니다. 안쪽 계획까지 보려면 `dva --dry-run down other-plan`을 따로 실행하세요.
+
 ### interaction 실행 대상 (`service:` / `pod:`)
 
 interaction이 **무엇을 대상으로** 실행되는지는 다음 필드로 고릅니다 (서로 배타적 권장).
@@ -1451,6 +1485,13 @@ interaction:
 **compose와의 차이:** `service:` + `script:`/`script_file:` 은 compose 러너가 네이티브로
 지원하지 않아 **호스트 local 실행으로 폴백**합니다. 같은 YAML을 `pod:`로 바꾸면 스크립트는
 클러스터 안에서 돌아가므로, 대상 파일시스템·DB가 달라집니다.
+
+**local/native 러너에서 `script_file:`은 exec 방식입니다.** `script:`(인라인)는 임시
+파일로 떨궈 실행하기 전에 shebang이 없으면 `#!/bin/sh`를 자동으로 붙입니다. `script_file:`은
+그런 보정 없이 선언된 파일 경로를 그대로 `exec`합니다(`internal/exec/exec.go`
+`ExecScriptFile`) — 그래서 대상 파일에 **shebang 줄과 실행 권한(`chmod +x`)이 모두** 있어야
+합니다. 둘 중 하나라도 없으면 `permission denied`로 실패합니다. compose/kubectl에서는
+`script_file:`이 컨테이너·파드 안에서 `sh -c <body>`로 실행되어 이 제약이 없습니다(위 표).
 
 ```yaml
 interaction:
@@ -1561,6 +1602,17 @@ readiness를 사용합니다. Parent의 같은 이름 선언은 섞이지 않으
 
 Subproject `path`는 absolute path나 parent 밖을 가리키는 `../` path도 사용할 수 있습니다.
 
+#### `exclude_tags`가 거르는 대상
+
+`subprojects.<name>.exclude_tags`는 **자식 자신의** interaction/compose 태그를 거릅니다 —
+`dva ls --project <name>`과 `dva run --project <name>`이 그 태그가 붙은 자식 interaction을
+숨깁니다(`internal/cli/list.go`, `internal/cli/run.go`가 `FilterInteractions(sub.ExcludeTags)`로
+자식 config에 적용). **부모 stack 엔트리의 태그는 걸러내지 않습니다** — 부모가 자신의 stack
+엔트리를 태그로 고르거나 빼는 것은 `dva up/down/stop --tags`/`--exclude-tags`가 하는 별개의
+일이며(위 [라이프사이클 플래그](#라이프사이클-플래그) 참조), `exclude_tags`와 이름이 비슷해도
+서로 다른 축입니다. 자식이 자체 인프라 interaction/compose 태그를 부모 namespace에서 감추는
+용도로만 씁니다.
+
 #### 예약어 및 자식 검증 규칙
 
 **서브프로젝트 이름은 예약어일 수 없습니다.** `up`, `run`, `config` 같은 내장 커맨드 이름을
@@ -1578,11 +1630,49 @@ Subproject `path`는 absolute path나 parent 밖을 가리키는 `../` path도 �
 거부는 키 단위입니다 — 자식에 문제 있는 키가 하나 있어도 나머지 키는 그대로 import되고
 실행됩니다.
 
+### endpoints
+
+사용자에게 노출할 URL을 선언합니다. `dva show`/`dva up` 성공 후 요약에 표시됩니다.
+
+```yaml
+endpoints:
+  api:
+    url: "http://localhost:8080"
+    label: "API"
+    tags: [core]
+  web:
+    source: "web:3000"        # compose "service:host_port" — url은 자동 계산
+    label: "Web"
+```
+
+| 필드 | 설명 |
+|------|------|
+| `url` | 직접 명시하는 URL |
+| `source` | compose `service:host_port` 참조 — `url`이 비어 있으면 `http://localhost:{port}`로 자동 계산(잘 알려진 비-HTTP 서비스는 `localhost:{port}`). `url`이 있으면 `source`는 무시됩니다 |
+| `label` | 표시용 이름 |
+| `tags` | `--tags`로 표시 대상을 좁히는 태그 |
+| `paths` | sub-path → 설명 맵 |
+
+**`url:`과 `source:`는 `${VAR}`/`${VAR:-default}`를 치환하지 않습니다** — 위
+[변수 참조 문법](#변수-참조-문법)의 대상(`environment:`, `env_file`, `vars`, interaction
+`command` 등)에 `endpoints`는 들어 있지 않습니다. `dva show`는 `ep.URL`을 원문 그대로
+출력하므로(`internal/cli/endpoints.go`), 포트를 바꿔야 한다면 `endpoints.<name>.url`에 리터럴
+값을 직접 쓰거나 `source:`의 compose 포트 자동 계산을 쓰세요 — `${PORT}` 같은 참조를 넣으면
+치환되지 않은 문자열 그대로 노출됩니다.
+
 ### composes (cross-project plan composition)
 
 Root plan이 이미 import된 child plan들을 순서대로 실행합니다. `composes:`가 있는 plan은
 자신의 `entries:`를 가질 수 없고(상호 배타), 다른 composition plan을 다시 compose할 수도
 없습니다 — recursion과 composition-of-composition을 구조적으로 거부합니다.
+
+**composition plan은 `environment:`/`site:`/top-level `vars:`를 선언할 수 없습니다** — 적용할
+자신의 stack 엔트리가 없으므로 셋 중 하나라도 있으면 `dva config validate`가 에러로
+거부합니다(`plan "X" is a composition plan (composes:) and cannot declare environment: —
+each composed child keeps its own owning environment`, 같은 문구가 `site:`/`vars:`에도
+있습니다, `internal/config/composition_plan.go`). 각 composed child가 자기 자신의
+environment/site/vars를 이미 갖고 있으므로, child별로 다르게 주려면 `composes[].vars`로
+개별 override하세요.
 
 ```yaml
 subprojects:
