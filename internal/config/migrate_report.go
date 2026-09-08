@@ -50,6 +50,10 @@ func Migrate(src []byte) ([]byte, MigrationReport, error) {
 		MigrateApplications,
 		MigrateStackOrder,
 		MigrateModes,
+		// Last: it only rearranges top-level blocks, so it needs every earlier step's
+		// key additions and removals (applications: gone, stack/plans entries added)
+		// already settled to reorder the document it will actually leave behind.
+		MigrateSectionOrder,
 	} {
 		next, stepReport, err := step(out)
 		if err != nil {

@@ -35,6 +35,11 @@ convert shapes that still load but that nothing reads on the plan path: an
 order left on a stack declaration is overwritten by the plan entry's own value,
 so a config that declares it and runs through a plan is not ordered by it.
 
+It also reorders top-level sections into the canonical order 'dva config
+validate' asks for — unlike the conversions above, this is not a deprecation
+and will not be removed. Only known section names move; an unrecognized
+top-level key keeps its own position.
+
 Conversion is per declaration. Anything that cannot be converted mechanically
 is left exactly where it is and listed under "left for you" with what it did
 and where that behaviour now lives — 'modes' is always in that list, because
