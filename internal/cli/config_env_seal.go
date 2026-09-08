@@ -238,7 +238,7 @@ func runEnvSeal(target string, yes bool) error {
 		return err
 	}
 
-	w, err := resolved.anchor.newTemp()
+	w, err := resolved.anchor.newCreateOnlyTemp()
 	if err != nil {
 		// 28: temp create/rename/fsync failures all map to permission_denied —
 		// seal's matrix does not carry unseal's postRenameError distinction.
@@ -263,6 +263,16 @@ func runEnvSeal(target string, yes bool) error {
 	}
 
 	if err := w.Commit(); err != nil {
+		// 16 again, now decided at the write. The preflight already answered
+		// this for the moment it ran; the create-only link answers it for the
+		// moment the bytes land, which is the only moment that binds. Same
+		// frozen code, because it is the same condition and §7-1 closed the
+		// set — only the wording says the source arrived late.
+		if errors.Is(err, fs.ErrExist) {
+			return bridgeErr(codeSourceExists,
+				"encrypted source %s appeared while sealing; nothing was overwritten — use `edit` to change it",
+				resolved.entry.SopsSource)
+		}
 		return bridgeErr(codePermissionDenied, "permission denied writing %s", resolved.entry.SopsSource)
 	}
 

@@ -240,8 +240,37 @@ func sealFaultRows() []sealFaultRow {
 			want:              codePermissionDenied,
 			wantEncryptCalled: true,
 		},
+		{
+			// TASK-335: row 16 decided at the write rather than at
+			// preflight. The encrypt hook stands in for the concurrent
+			// writer — a second seal, a git pull, an edit — that lands
+			// during the window preflight cannot see past. Creating the
+			// source from inside encrypt puts it there after the check and
+			// before the commit, which is the only ordering that
+			// distinguishes a create-only placement from a rename.
+			name: "source appears between preflight and commit",
+			build: func(t *testing.T) *bridgeFixture {
+				f := defaultSealFixture(t)
+				f.sops.encrypt = func(_ string, in, out *os.File) error {
+					if _, err := io.Copy(out, in); err != nil {
+						return err
+					}
+					return os.WriteFile(f.path("secrets.env.enc"), []byte(sealIntruderBytes), 0o600)
+				}
+				return f
+			},
+			yes:                 true,
+			want:                codeSourceExists,
+			wantEncryptCalled:   true,
+			expectSourcePresent: true,
+		},
 	}
 }
+
+// sealIntruderBytes is what the concurrent writer of TASK-335 leaves at the
+// source path. It is deliberately not the fake's ciphertext, so a placement
+// that overwrote it would be caught by content and not only by mtime.
+const sealIntruderBytes = "ENC-FROM-A-CONCURRENT-WRITER\n"
 
 // TestConfigEnvSealFaultMatrix walks TASK-281 §3-3-1 in order (the subset
 // described in sealFaultRow's doc comment). Every row asserts the frozen
@@ -284,6 +313,40 @@ func TestConfigEnvSealFaultMatrix(t *testing.T) {
 			f.assertNoTempResidue()
 		})
 	}
+}
+
+// TestConfigEnvSealRefusesSourceCreatedAfterPreflight is the create-only
+// guarantee stated as an end-to-end property rather than as a code.
+//
+// TASK-281 §2-1 calls the lost update "발생 자체가 불가능", but sealPreflight
+// answers that for the moment it runs, and an unbounded confirmation prompt and
+// a sops run follow before anything is written. This test puts a foreign source
+// in place during that window and asserts the bytes survive byte-for-byte: the
+// matrix row above proves the code, this one proves nothing was destroyed to
+// produce it.
+func TestConfigEnvSealRefusesSourceCreatedAfterPreflight(t *testing.T) {
+	f := defaultSealFixture(t)
+	f.sops.encrypt = func(_ string, in, out *os.File) error {
+		if _, err := io.Copy(out, in); err != nil {
+			return err
+		}
+		return os.WriteFile(f.path("secrets.env.enc"), []byte(sealIntruderBytes), 0o600)
+	}
+	f.install(false)
+
+	var err error
+	captureStreams(t, func() { err = runEnvSeal("", true) })
+
+	requireCode(t, err, codeSourceExists)
+
+	got, readErr := os.ReadFile(f.path("secrets.env.enc"))
+	if readErr != nil {
+		t.Fatalf("read source: %v", readErr)
+	}
+	if string(got) != sealIntruderBytes {
+		t.Errorf("source was overwritten\n got: %q\nwant: %q", got, sealIntruderBytes)
+	}
+	f.assertNoTempResidue()
 }
 
 // TestConfigEnvSealConfirmation covers rows 25-26: no controlling terminal

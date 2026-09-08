@@ -317,6 +317,22 @@ func (a *targetAnchor) newTemp() (*safeWriter, error) {
 	return nil, err
 }
 
+// newCreateOnlyTemp is newTemp for a caller whose contract forbids replacing an
+// existing leaf — seal, which TASK-281 §2-1 specifies as create-only with no
+// --force.
+//
+// The flag rides on the writer rather than on the anchor because it describes
+// the operation, not the directory: unseal anchors the same way and is required
+// to replace.
+func (a *targetAnchor) newCreateOnlyTemp() (*safeWriter, error) {
+	w, err := a.newTemp()
+	if err != nil {
+		return nil, err
+	}
+	w.createOnly = true
+	return w, nil
+}
+
 func randomToken() (string, error) {
 	var b [8]byte
 	if _, err := rand.Read(b[:]); err != nil {
@@ -331,6 +347,10 @@ type safeWriter struct {
 	name   string
 	file   *os.File
 	done   bool
+	// createOnly makes the final placement refuse an existing leaf instead of
+	// replacing it. See place for why the caller's contract has to reach this
+	// far down rather than being answered once at preflight.
+	createOnly bool
 }
 
 // newSafeWriter creates the temp with O_EXCL and mode 0600 through the anchor
@@ -398,7 +418,7 @@ func (w *safeWriter) Commit() error {
 		w.discard()
 		return err
 	}
-	if err := w.anchor.dir.root.Rename(w.name, w.anchor.leaf); err != nil {
+	if err := w.place(); err != nil {
 		w.discard()
 		return err
 	}
@@ -406,6 +426,40 @@ func (w *safeWriter) Commit() error {
 	if err := w.anchor.dir.syncDir(); err != nil {
 		return &postRenameError{target: w.anchor.declared, err: err}
 	}
+	return nil
+}
+
+// place moves the finished temp onto the anchor's leaf.
+//
+// A replacing caller renames. rename(2) is atomic and unconditional, which is
+// exactly what unseal wants: whatever is at the leaf goes away in the same
+// instant the new bytes arrive.
+//
+// A create-only caller cannot use it. seal's absence check ran in sealPreflight,
+// and between that check and this line sit an unbounded confirmation prompt and
+// a sops run — long enough for a concurrent seal, a git pull or an edit to
+// create the source, which rename would then silently destroy. Narrowing the
+// window by re-stating the leaf here would not close it either; a test followed
+// by a rename is still two operations.
+//
+// link(2) is the portable primitive that carries the absence check into the
+// write itself. It fails with EEXIST when the name is taken and it makes that
+// decision atomically, so nothing can appear between the test and the write —
+// the same guarantee O_EXCL gives an open, applied to a name that must not be
+// clobbered. Until the temp is unlinked the payload simply has two names.
+func (w *safeWriter) place() error {
+	if !w.createOnly {
+		return w.anchor.dir.root.Rename(w.name, w.anchor.leaf)
+	}
+	if err := w.anchor.dir.root.Link(w.name, w.anchor.leaf); err != nil {
+		return err
+	}
+	// The link is the commit: from here the target exists and the caller has
+	// succeeded. A failed unlink leaves residue, not a wrong target, and
+	// reclaimStaleTemps sweeps it on the next invocation — so it must not be
+	// reported as a failure that would tell the caller nothing was written.
+	w.done = true
+	_ = w.anchor.dir.root.Remove(w.name)
 	return nil
 }
 

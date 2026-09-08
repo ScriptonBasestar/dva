@@ -107,5 +107,5 @@ TASK-281이 동결한 계약대로 `env_bridge` 게이트와 `dva config env sea
 **판정: fail** — 결함 1이 완료기준 미충족에 해당한다. 결함 2는 별도 카드 권고.
 
 **후속 카드**: 결함 1은 [TASK-334](./334-cover-config-env-show-against-real-sops-with-a-pty.md)가,
-결함 2는 [TASK-335](../todo/335-close-the-seal-create-only-toctou-window.md)가 이어받는다.
+결함 2는 [TASK-335](./335-close-the-seal-create-only-toctou-window.md)가 이어받는다.
 real-sops 완료기준의 `[x]`는 `seal`에 대해서만 성립하며, `show` 몫은 TASK-334에 있다.

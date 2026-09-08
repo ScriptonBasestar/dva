@@ -3,9 +3,9 @@ id: PLAN-007
 title: "Retire the unreviewed done backlog and move quality review to card close"
 type: plan
 scope: "tasks/done/ 58장의 일회성 트리아지, done-disposition 루프에서 발견된 소유자 없는 결함 3건, 닫기 시점 독립 리뷰 전환의 외부 의존"
-progress: 40
+progress: 50
 total-tasks: 10
-completed-tasks: 4
+completed-tasks: 5
 children: [TASK-325, TASK-326, TASK-327, TASK-330, TASK-332, TASK-333, TASK-334, TASK-335, TASK-337, TASK-342]
 target-date: "2026-09-30"
 created: 2026-09-05
@@ -84,7 +84,7 @@ PLAN-006 자식. 그 계획을 진행하는 세션이 닫는 시점에 리뷰하
 | 2 | §External의 엔진 정책 변경 | **카드 없음, 추적 안 함.** ce-workbook 소유이고 3의 우회로 실무 필요는 이미 충족됐다 (§External) |
 | 3 | Tier B 일괄 아카이브 | **완료** 2026-09-07, 커밋 `8d3031b`. `waived` 값이 없어 `conditional` + evidence 문구로 대체 |
 | 4a | Tier A 13장 done-review | **완료** 2026-09-07, 커밋 `a575ccb`(7장) + `242cd5b`(6장) |
-| 4b | Tier A 아카이브 | **미완.** 12장이 `pass`/`conditional`로 아카이브 가능. TASK-282는 `fail`이라 결함 카드 TASK-335가 닫힐 때까지 남는다 (TASK-334는 2026-09-08 결정으로 닫힘) |
+| 4b | Tier A 아카이브 | **미완.** 12장이 `pass`/`conditional`로 아카이브 가능. TASK-282는 `fail`로 남아 있다. 두 결함 카드(TASK-334 결정, TASK-335 수정)는 2026-09-08에 모두 닫혔으므로 재리뷰가 가능하다 — 구현 세션이 아닌 별도 세션이 판정해야 한다 |
 | 4c | 4a가 낳은 결함 카드 6장 | TASK-332·333·342·334·335·337. 이 계획의 자식으로 편입됨 |
 | 5 | Tier C | 이 계획 범위 밖. PLAN-006 종료 시 잔여분만 재평가 |
 
@@ -124,5 +124,5 @@ Tier A done-review(4a)가 발견한 결함 카드 — 리뷰가 관찰만 남기
 - TASK-333 — import 항목의 owner·canonical/alias 정체 노출 (TASK-259 배치 1)
 - TASK-342 — TASK-263의 subproject 예약어·부모 라우트 거부 규칙 강제 (TASK-263 배치 1)
 - TASK-334 — `config env show`의 real-sops 커버리지 한계 결정 (TASK-282 배치 2) — 완료, fake 주도 한계 수용
-- TASK-335 — seal create-only TOCTOU 창 차단 (TASK-282 배치 2)
+- TASK-335 — seal create-only TOCTOU 창 차단 (TASK-282 배치 2) — 완료, `link(2)` 원자 배치
 - TASK-337 — `GatedCommands`를 살아 있는 커맨드 트리에 결속 (TASK-286 배치 2)
