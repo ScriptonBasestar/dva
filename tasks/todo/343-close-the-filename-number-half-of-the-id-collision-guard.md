@@ -31,6 +31,11 @@ The gap matters because the filename number is what a human reads when picking t
 and what a stale-based agent reads when it invents one. An id space that is unique in
 frontmatter but ambiguous on disk still misleads the next writer.
 
+Implementation pointer: `taskRecord` already carries the data this check needs. `paths` is
+appended to at `tools/planprogress/check.go:70` and read nowhere — a per-id list of the files
+that folded into one record is exactly the collision evidence, so the check is closer to
+consuming a dead field than to collecting new state.
+
 Design note: the filename number and the frontmatter id are two separate namespaces that are
 conventionally kept in sync, and nothing enforces the convention either. A card whose filename
 says `331` and whose id says `TASK-900` is currently legal. Deciding whether that is a second
