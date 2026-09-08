@@ -998,3 +998,87 @@ func TestDetectUnrunnableComposeCommands_AcceptsRealCommands(t *testing.T) {
 		})
 	}
 }
+
+// TestDetectConfigSuggestionWarnings_MultiTargetMakefileLine pins the parser against Make's
+// own rule that one recipe may serve several targets. Before TASK-320 the left side of
+// `a b: ## desc` was taken whole, so the suggestion named a target spelled "a b" — which no
+// interaction can be named after — and never named either real target.
+func TestDetectConfigSuggestionWarnings_MultiTargetMakefileLine(t *testing.T) {
+	tmpDir := t.TempDir()
+	oldWd, _ := os.Getwd()
+	defer os.Chdir(oldWd)
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+
+	makefile := "log-search-bench perf-log-search: ## Run the log search benchmark\nsolo: ## Single target still works\n"
+	if err := os.WriteFile(filepath.Join(tmpDir, "Makefile"), []byte(makefile), 0644); err != nil {
+		t.Fatalf("write Makefile: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, config.FileName), []byte("version: \"0.1.0\"\n"), 0644); err != nil {
+		t.Fatalf("write dva.yml: %v", err)
+	}
+
+	c, err := config.Load(".")
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+
+	joined := strings.Join(detectConfigSuggestionWarnings(c), "\n")
+	if strings.Contains(joined, `"log-search-bench perf-log-search"`) {
+		t.Errorf("the two targets must not be reported as one name, got: %s", joined)
+	}
+	for _, want := range []string{`"log-search-bench"`, `"perf-log-search"`, `"solo"`} {
+		if !strings.Contains(joined, want) {
+			t.Errorf("expected suggestion for %s, got: %s", want, joined)
+		}
+	}
+}
+
+// TestDetectConfigSuggestionWarnings_ImportedInteractionCovers pins TASK-320 item 2: an
+// interaction imported from a subproject is keyed `sub/name`, which the parent's Makefile
+// never spells, so before this the import counted as no coverage and DVA suggested
+// re-declaring at the root exactly what the child already provides.
+func TestDetectConfigSuggestionWarnings_ImportedInteractionCovers(t *testing.T) {
+	tmpDir := t.TempDir()
+	oldWd, _ := os.Getwd()
+	defer os.Chdir(oldWd)
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+
+	makefile := "test-e2e: ## End to end\nlint: ## Lint\norphan: ## No coverage\n"
+	if err := os.WriteFile(filepath.Join(tmpDir, "Makefile"), []byte(makefile), 0644); err != nil {
+		t.Fatalf("write Makefile: %v", err)
+	}
+
+	childDir := filepath.Join(tmpDir, "frontend")
+	if err := os.MkdirAll(childDir, 0755); err != nil {
+		t.Fatalf("mkdir child: %v", err)
+	}
+	childYml := "version: \"0.1.0\"\ninteraction:\n  test:\n    runner: local\n    command: pnpm test\n    subcommands:\n      e2e:\n        command: pnpm test:e2e\n  lint:\n    runner: local\n    command: pnpm lint\n"
+	if err := os.WriteFile(filepath.Join(childDir, config.FileName), []byte(childYml), 0644); err != nil {
+		t.Fatalf("write child dva.yml: %v", err)
+	}
+
+	parentYml := "version: \"0.1.0\"\nsubprojects:\n  frontend:\n    path: frontend\n    import:\n      interactions:\n        - name: test\n        - name: lint\n"
+	if err := os.WriteFile(filepath.Join(tmpDir, config.FileName), []byte(parentYml), 0644); err != nil {
+		t.Fatalf("write dva.yml: %v", err)
+	}
+
+	c, err := config.Load(".")
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+
+	joined := strings.Join(detectConfigSuggestionWarnings(c), "\n")
+	if strings.Contains(joined, `"test-e2e"`) {
+		t.Errorf("imported frontend/test e2e should cover make test-e2e, got: %s", joined)
+	}
+	if strings.Contains(joined, `"lint"`) {
+		t.Errorf("imported frontend/lint should cover make lint, got: %s", joined)
+	}
+	if !strings.Contains(joined, `"orphan"`) {
+		t.Errorf("orphan should still warn (nothing covers it), got: %s", joined)
+	}
+}

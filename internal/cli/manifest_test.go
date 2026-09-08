@@ -300,3 +300,37 @@ subprojects:
 		t.Fatalf("ready shell command missing: %v", m.Subprojects["ready"].Commands)
 	}
 }
+
+// TestBuildManifest_RemovedBuiltinNameKeepsBareUsage settles TASK-320 item 4, which asked
+// whether manifest should emit `dva run clean` instead of `dva clean` for an interaction named
+// `clean`. It should not: `clean` stopped being a built-in with the command-surface restructure
+// (docs/43), so `dva clean` reaches the interaction through dynamic routing and the bare form is
+// the shorter true one. UsageExample's promise (manifest.go) is that running the value invokes
+// the entry, and `dva clean` does.
+//
+// This is pinned rather than left as a comment because the decision is only safe while `clean`
+// stays out of the built-in list. Re-registering it would silently turn this usage_example into
+// a form that runs a different command, and the downstream consumer that asserts on this value
+// (funbricks-elemhant scripts/tests/test-dva-clean-command.sh) would be the first to notice.
+func TestBuildManifest_RemovedBuiltinNameKeepsBareUsage(t *testing.T) {
+	for _, name := range []string{"clean", "stack", "app", "infra"} {
+		c := &config.Config{
+			Interaction: map[string]*config.InteractionCommand{
+				name: {Description: "project " + name, Command: "echo " + name},
+			},
+		}
+
+		cmd, ok := buildManifest(c).DynamicCommands[name]
+		if !ok {
+			t.Fatalf("missing %q in DynamicCommands", name)
+		}
+		if want := "dva " + name; cmd.UsageExample != want {
+			t.Errorf("%s.usage_example = %q, want %q — the built-in was removed, so the bare form routes",
+				name, cmd.UsageExample, want)
+		}
+		if cmd.ShadowedByBuiltin != "" {
+			t.Errorf("%s.shadowed_by_builtin = %q, want empty — no built-in of that name exists",
+				name, cmd.ShadowedByBuiltin)
+		}
+	}
+}

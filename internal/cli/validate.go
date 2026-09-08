@@ -653,27 +653,45 @@ func printConfigSuggestionWarnings(w io.Writer, warnings []string) {
 
 func detectConfigSuggestionWarnings(c *config.Config) []string {
 	allCommands := runner.NewInteractionTree(c.Interaction).List()
-	commandSet := map[string]bool{}
-	for name := range allCommands {
-		commandSet[name] = true
-	}
 
 	// Build subcommand coverage set: for "app:build ce" → also match "build-ce"
 	// This detects when a Makefile target like "build-ce" is already covered by a
 	// DVA interaction subcommand under a different parent name.
+	commandSet := map[string]bool{}
 	subcommandCoverage := map[string]bool{}
-	for fullPath := range allCommands {
-		parts := strings.Split(fullPath, " ")
-		if len(parts) < 2 {
+	for name, cmd := range allCommands {
+		commandSet[name] = true
+
+		// Walk the segments the tree recorded instead of re-splitting name on spaces:
+		// the join is one-way once a segment contains a space, and a consumer that
+		// re-splits gets the boundary wrong (TASK-097, expandInto's own comment).
+		path := cmd.Path
+		if len(path) == 0 {
+			path = []string{name}
+		}
+
+		// An imported interaction is keyed "subproject/name", and its subcommands
+		// "subproject/name sub". The parent's Makefile spells neither prefix, so an
+		// import counted as no coverage at all and DVA suggested re-declaring at the
+		// root what the child already provides — dripter's "frontend/test e2e" against
+		// `make test-e2e` (TASK-320). Only the import prefix comes off here; a plain
+		// namespace ("app:build") keeps suppressing "app:build" and nothing else,
+		// because that is what it did before this and no report asked to widen it.
+		head := path[0]
+		if idx := strings.LastIndex(head, "/"); idx >= 0 {
+			head = head[idx+1:]
+			commandSet[head] = true
+		}
+
+		if len(path) < 2 {
 			continue
 		}
 		// Strip namespace prefix from parent name ("app:build" → "build")
-		baseName := parts[0]
-		if idx := strings.LastIndex(baseName, ":"); idx >= 0 {
-			baseName = baseName[idx+1:]
+		if idx := strings.LastIndex(head, ":"); idx >= 0 {
+			head = head[idx+1:]
 		}
 		// "app:build ce" → "build-ce", "test all" → "test-all"
-		subParts := append([]string{baseName}, parts[1:]...)
+		subParts := append([]string{head}, path[1:]...)
 		subcommandCoverage[strings.Join(subParts, "-")] = true
 	}
 
@@ -895,9 +913,16 @@ func collectDocumentedTargetNames(path string, seen map[string]bool, targets *[]
 			if len(parts) != 2 || strings.HasPrefix(parts[0], ".") {
 				continue
 			}
-			target := strings.TrimSpace(parts[0])
-			if target != "" && !shouldIgnoreMakefileTarget(target) {
-				*targets = append(*targets, target)
+			// One recipe may serve several targets: `a b: ## desc` declares both, and
+			// Make separates them by whitespace. Taking parts[0] whole invented a single
+			// target spelled "a b", which no interaction name can ever match, so the
+			// suggestion warned about a target that does not exist and stayed silent
+			// about the two that do — flow-pipechain's
+			// "log-search-bench perf-log-search:" (TASK-320).
+			for target := range strings.FieldsSeq(parts[0]) {
+				if !shouldIgnoreMakefileTarget(target) {
+					*targets = append(*targets, target)
+				}
 			}
 		}
 	}

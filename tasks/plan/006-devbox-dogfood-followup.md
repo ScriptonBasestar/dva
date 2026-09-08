@@ -3,10 +3,10 @@ id: PLAN-006
 title: "Work the devbox dogfood follow-up queue in dependency order"
 type: plan
 scope: "TASK-311..323 from the 2026-09-05 mydevbox migration, plus the needs-human cards that gate the rest"
-progress: 40
-total-tasks: 25
-completed-tasks: 10
-children: [TASK-339, TASK-340, TASK-328, TASK-329, TASK-312, TASK-313, TASK-317, TASK-311, TASK-324, TASK-314, TASK-316, TASK-320, TASK-322, TASK-315, TASK-318, TASK-323, TASK-249, TASK-307, TASK-309, TASK-319, TASK-321, TASK-345, TASK-346, TASK-347, TASK-348]
+progress: 42
+total-tasks: 26
+completed-tasks: 11
+children: [TASK-339, TASK-340, TASK-328, TASK-329, TASK-312, TASK-313, TASK-317, TASK-311, TASK-324, TASK-314, TASK-316, TASK-320, TASK-322, TASK-315, TASK-318, TASK-323, TASK-249, TASK-307, TASK-309, TASK-319, TASK-321, TASK-345, TASK-346, TASK-347, TASK-348, TASK-351]
 target-date: "2026-10-31"
 created: 2026-09-05
 ---
@@ -35,7 +35,7 @@ created: 2026-09-05
 | 4a | ~~TASK-324~~ composition plan 중복 경고 오탐 | 완료 2026-09-05. P2 S. `Composes` 비교 추가 |
 | 5 | ~~TASK-314~~ logs/build plan 범위 | 완료 2026-09-05. P2 S |
 | 6 | ~~TASK-316~~ drift 감지 결함 | 완료 2026-09-07(quality-review conditional). P2 M. docs/56 `drift_ignore`(309)보다 먼저 — 감지 폭이 억제 설계의 입력 |
-| 7 | TASK-320 suggestion 파서·manifest | P3 S. 309 결정 C의 소스 개선과 겹치므로 309 전에 |
+| 7 | ~~TASK-320~~ suggestion 파서·manifest | 완료·통합 2026-09-08. P3 S. 항목 1·2 수정, 항목 4는 `dva clean`이 실제로 라우팅되므로 변경 없음(테스트로 고정), 항목 3은 TASK-351로 분리 |
 | 8 | ~~TASK-322~~ init 탐지 결함 | 완료 2026-09-07. P2 M. 249 재설계와 겹치지 않는 탐지 버그만. 잔여 항목은 339·340으로 분리 |
 | 9 | ~~TASK-315~~ compose profiles | 완료·통합 2026-09-08(master 5f2d85d). P2 M. 후속 345·346·347·348 파생 |
 | 10 | TASK-318 섹션 순서 자동 정렬 | P3 S |
@@ -44,8 +44,9 @@ created: 2026-09-05
 
 ## Needs-human (결정 후 착수)
 
-- TASK-307 → docs/55 §5 (4항목). TASK-309 → docs/56 §5 (5항목). 309는 316·320 뒤.
+- TASK-307 → docs/55 §5 (4항목). TASK-309 → docs/56 §5 (5항목). 309의 선행 316·320은 둘 다 완료.
 - TASK-319 native entry ergonomics, TASK-321 destructive interaction agent-deny: 설계 결정 기록 필요.
+- TASK-351 built-in 동등 replace 훅 경고: "무엇을 동등으로 볼 것인가"를 카드가 좁게 제안해 두었으나 확정 필요.
 
 ## Devbox integration state (2026-09-05 저녁 갱신)
 
@@ -72,7 +73,7 @@ created: 2026-09-05
 ## Session handoff (2026-09-05 밤)
 
 - 세션 1회차 종료 시점: 1~5·4a 통합 완료(master 2cb184e). 316은 분석만 카드에 기록, worktree 없음.
-- 다음 착수(2026-09-08 갱신): 316·322·315 완료로 소진. 잔여 순서는 TASK-320 → 318 → 10a 실기동(TASK-328) → 323,
+- 다음 착수(2026-09-08 갱신): 316·322·315·320 완료로 소진. 잔여 순서는 TASK-318 → 10a 실기동(TASK-328) → 323,
   그리고 사람 결정 대기 4장(307, 309, 319, 321). 315 후속 345~348은 §Order에 편입하지 않고 compose 묶음으로 함께 처리.
 - 잔여 사람 결정: 위 §Needs-human, §Devbox integration state의 scripton-dashboard·familybook 2건.
 
