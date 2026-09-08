@@ -244,11 +244,16 @@ func ReportInteractionEnvFile(src []byte) []string {
 	return out
 }
 
-// InteractionEnvFileBlockedMessage is the migrate-side wording of
-// InteractionEnvFileMessage. It is a separate string because the two surfaces answer
-// different questions: `validate` explains why the declaration is a problem, while
-// `migrate` lists an edit the author has to make by hand, so it opens with the action and
-// leaves the release number to the validate channel and the CHANGELOG.
+// InteractionEnvFileBlockedMessage is the migrate-side wording for an interaction
+// `env_file:`. It stays separate from the validate-side guidance in
+// removedInteractionKeys (`validate.go`) because the two surfaces answer different
+// questions: validate explains why the declaration is rejected, while migrate lists an
+// edit the author has to make by hand, so this one opens with the action.
+//
+// It once paired with a deprecation constant announcing that the key would be rejected a
+// release later. The rejection has since landed — the schema refuses the key and
+// removedInteractionKeys supplies validate's wording — so that constant was removed
+// rather than left reading as a live warning about a future that already happened.
 const InteractionEnvFileBlockedMessage = "remove it — declare shared inputs in the top-level 'env_file:', or inline command-local values under 'environment:'"
 
 // ReportModuleScope names the modules a config declares, so a report built only from this
