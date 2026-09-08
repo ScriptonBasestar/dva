@@ -35,8 +35,10 @@ TASK-281이 동결한 계약대로 `env_bridge` 게이트와 `dva config env sea
 
 ## Implementation notes
 
-- 게이트 검사는 `preflight` 1단계(platform)보다 **앞**에 온다. 꺼진 명령은 config 상태나 OS와
-  무관하게 항상 같은 code를 낸다.
+- 게이트 검사는 `preflight` 1단계(platform)보다 **앞**에 온다. config가 로드된 뒤라면 꺼진
+  명령은 OS나 나머지 config 내용과 무관하게 항상 같은 code를 낸다. 다만 "config 상태와
+  무관"까지는 아니다 — `loadConfig()`가 게이트보다 먼저 돌기 때문에 `dva.yml`이 없거나
+  파싱에 실패하면 `seal_not_enabled`가 아니라 config 오류가 먼저 나온다.
 - `seal`의 source write는 `unseal`의 target write와 같은 안전 쓰기 경로를 재사용한다
   (same-directory 0600 O_EXCL temp → 검증 → rename → parent fsync). 두 번째 writer 구현을
   만들지 않는다.
@@ -52,13 +54,17 @@ TASK-281이 동결한 계약대로 `env_bridge` 게이트와 `dva config env sea
 - [x] Add the `env_bridge` section to the config struct and `schema.json` with both switches defaulting to false, rejecting the declaration locations TASK-281 forbids | verify: `make test`
   - `internal/config/env_bridge.go` (`EnvBridgeConfig{AllowSeal, AllowShow bool}`, both zero-value false) + `internal/config/schema.json` (`env_bridge`, `additionalProperties: false`). Non-root declarations are rejected by `checkEnvBridgeOriginAndVersion` (`internal/cli/config_env_gate.go`), not schema-level — schema only bounds shape.
 - [x] Prove a config without `env_bridge` is byte-identical through load, merge, `config show`, and `validate` against the pre-change binary | verify: `make test`
-  - Empirically compared `config show --json` for a config with no `env_bridge` against a binary built from `master`: it already emits `env_file: null` (and every other unset optional section as `null`/`{}`) for configs that don't declare those sections — this is the established, pre-existing convention (`internal/cli/config_dump.go`'s `yaml.Marshal` round-trip has no `omitempty` on any of these fields). `env_bridge` follows the identical pattern: a new top-level key (`env_bridge: null`) appears, but no existing key's value changes. This is the only sense in which "byte-identical" is achievable for a new struct field — literal identity is impossible for any new declarative section. load/merge/validate paths are unchanged and covered by the pre-existing `edit`/`unseal` fixture suite continuing to pass unmodified.
+  - Empirically compared `config show --json` for a config with no `env_bridge` against a binary built from `master`: it already emits `env_file: null` (and every other unset optional section as `null`/`{}`) for configs that don't declare those sections — this is the established, pre-existing convention (`internal/cli/config_dump.go`'s `yaml.Marshal` round-trip has no `omitempty` on any of these fields). `env_bridge` follows the identical pattern: a new top-level key (`env_bridge: null`) appears, but no existing key's value changes. 이 규약을 기준으로 했을 때만 "byte-identical"이 성립한다 — **리터럴 동일성이 불가능한 것은 아니다.** `EnvBridge`는 포인터 필드(`internal/config/config.go:23`)이므로 `yaml:"env_bridge,omitempty"`를 붙였다면 미선언 config의 출력에서 키가 통째로 사라져 실제로 byte-identical이 된다. 그렇게 하지 않은 이유는 불가능해서가 아니라, 인접 필드(`env_file`, `ci`, `devcontainer` …) 중 어느 것도 `omitempty`를 쓰지 않아 이 키만 빠지면 "선언하지 않은 섹션은 `null`로 보인다"는 기존 규약이 이 키 하나에서만 깨지기 때문이다. 코드 선택은 그대로 두고 근거만 정정한다 (독립 리뷰, 2026-09-08). load/merge/validate paths are unchanged and covered by the pre-existing `edit`/`unseal` fixture suite continuing to pass unmodified.
 - [x] Implement the gate's origin and merge rule, including a test that a subproject cannot enable the parent's gate | verify: `make test`
   - Origin/merge rule: `internal/config/env_bridge.go` (`setEnvBridgeOrigin`, never merged — `c.EnvBridge` always holds only the root's own value). New test: `internal/config/env_bridge_test.go::TestSubprojectEnvBridgeDoesNotEnableParentGate` — proves a subproject declaring `env_bridge: {allow_seal: true, allow_show: true}` leaves the parent's `cfg.EnvBridge` nil and `cfg.EnvBridgeOrigin().Kind` at `EnvBridgeOriginUnknown`, while the subproject's own standalone `Load` does see its own declaration.
 - [x] Implement `seal` with no key or provider arguments, failing closed when `.sops.yaml` declares no creation rule for the source | verify: `make test`
   - `internal/cli/config_env_seal.go` — `runEnvSeal`/`sealPreflight` take no key/provider args; `hasSopsCreationRuleAncestor` fail-closed check at preflight row 23, before any write.
 - [x] Cover every row of the TASK-281 §3-3-1 `seal` matrix, asserting no source file is created on any refusal row and that an existing source is never opened for write | verify: `make test`
-  - `internal/cli/config_env_seal_test.go` (`TestConfigEnvSealFaultMatrix`, fake-driven, full row coverage) + real-binary rows in `internal/integration/config_env_test.go::TestConfigEnvGatedCommandsRealBinary`.
+  - `internal/cli/config_env_seal_test.go` (`TestConfigEnvSealFaultMatrix`, fake-driven) + real-binary rows in `internal/integration/config_env_test.go::TestConfigEnvGatedCommandsRealBinary`.
+  - **전체 행 커버리지는 아니다 (정정, 독립 리뷰 2026-09-08).** `sealFaultRow`의 doc comment(`config_env_seal_test.go:14-30`)가 스스로 밝히듯, unseal과 preflight 헬퍼를 공유하는 행들은 의도적으로 반복하지 않고 행 6이 그 블록 전체를 대표한다. 확인한 미커버 행 둘:
+    - 행 7 `unsupported_env_origin` — `codeUnsupportedOrigin`(`internal/cli/config_env_select.go:60`)을 실행하는 테스트가 없다. 유일한 등장 지점은 `config_env_grammar_test.go:64`의 동결된 code 목록으로, 이름만 확인할 뿐 분기를 타지 않는다.
+    - 행 20 평문 target 읽기 실패 → `permission_denied` (`internal/cli/config_env_seal.go:127`). seal은 `codePermissionDenied`를 다섯 곳에서 내는데 단언은 `config_env_seal_test.go:240`(행 28) 하나뿐이고, 나머지 하나는 unseal의 write 경로(`config_env_test.go:333`)다.
+  - 둘 다 로직 없는 한 줄 `bridgeErr` 매핑이라 위험도는 낮지만, "every row"라는 문구는 하위집합임을 스스로 문서화한 테스트 위에 놓인 과장 주장이었다 — TASK-334를 만든 것과 같은 결함 유형이라 여기서 정정한다.
 - [x] Implement `show` on the frozen output stream, failing closed when it cannot be opened, and assert no decrypted value reaches debug log, stderr, error envelope, JSON, or any temp filename in any failure path | verify: `make test`
   - `internal/cli/config_env_show.go` decrypts only to `bridgeOpenTTY()` (`/dev/tty`). `TestConfigEnvShowFaultMatrix` (`internal/cli/config_env_show_test.go`) asserts sentinel absence from stdout/stderr/JSON on every failure row; `assertNoSentinel` reused in the real-binary integration tests.
 - [x] Implement the frozen agent-exposure controls with no bypass flag, and assert the disabled, no-terminal, and advisory refusals resolve to one deterministic code each | verify: `make test`
