@@ -8,6 +8,25 @@ exec-tier: standard
 created-at: 2026-09-05T09:00:00+09:00
 source: "docs/dogfood/familybook.md (dogfood sweep 2026-09-05)"
 status: done
+completed-at: 2026-09-05T07:29:44+09:00
+completion-summary: "ConfigFileInDir is the single dva.yml-then-dva.yaml lookup; migrate preview and --write accept dva.yaml, hint at rename, and do not create dva.yml themselves."
+verification-status: verified
+verification-evidence:
+  - kind: automated
+    command-or-step: "go test ./internal/cli/ -count=1 -run 'TestConfigMigrateAcceptsDvaYaml|TestConfigMigratePrefersDvaYml|TestResolveConfigPathMissing'"
+    result: "ok github.com/ScriptonBasestar/dva/internal/cli 0.486s"
+  - kind: automated
+    command-or-step: "./bin/dva config migrate <scratch dir with only dva.yaml>"
+    result: "exit 0; converted stack.core → runners.compose; rename hint; not written; source file unchanged"
+quality-review: pass
+quality-reviewed-at: 2026-09-08T16:38:27+09:00
+quality-review-evidence:
+  - "independent re-review. AC1 binding re-ran: go test ./internal/cli -count=1 -run TestConfigMigrateAcceptsDvaYaml|TestConfigMigratePrefersDvaYml|TestResolveConfigPathMissing -> ok 0.486s. Tests pin dva.yaml preview/write, dva.yml preference, missing-path error naming both files, and that --write does not create dva.yml beside dva.yaml."
+  - "AC1 source: ConfigFileInDir in config.go prefers FileName then FileNameAlt; findConfig, dvaConfigExists and resolveConfigPath all call it. renameHint fires only for dva.yaml and the converter does not rename."
+  - "AC2: did not re-run ~/mydevbox/familybook-devbox. Reproduced migrate preview with ./bin/dva config migrate on a scratch dva.yaml (legacy stack.plugin compose): exit 0, Converted stack.core → runners.compose, legacy-name hint, not written. Matches the command contract the familybook transcript claimed."
+archived-at: 2026-09-08T16:38:27+09:00
+verified-at: 2026-09-08T16:38:27+09:00
+verification-summary: "AC1 tests and ConfigFileInDir wiring hold. Scratch migrate preview on dva.yaml matches the familybook contract; that repo itself was not re-run."
 ---
 
 # Task 304: `config migrate`의 dva.yaml 미인식 수정
