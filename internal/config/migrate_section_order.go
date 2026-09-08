@@ -28,12 +28,16 @@ import (
 // *contiguous* comment lines — a comment separated from the key by a blank line
 // belongs to the previous block instead, which matches yaml.v3's own HeadComment
 // attachment. A block ends the line before the next block starts (after that
-// extension), so a trailing blank-line separator travels with the block above it. The
-// very first block in the file is the one exception: it is never extended upward.
-// Whatever sits above it — a leading `---`, `%YAML` directives, a file header comment
-// — is a document preamble, not that key's section banner, and it must stay fixed at
-// the top of the file even when the key below it is relocated elsewhere. Treating it
-// as an ordinary block would instead drag it away with that key.
+// extension), and the blank lines at that seam are then split back off as the slot's
+// separator rather than moved as the block's content — see slotSeparator below.
+//
+// The document's two ends are fixed, and for the same reason. The first block is never
+// extended upward: whatever sits above it — a leading `---`, a file header comment —
+// is a document preamble, not that key's section banner, so it stays at the top even
+// when the key below it moves. The last block stops symmetrically, at a document
+// boundary or a blank-separated footer comment rather than at EOF. Treating either end
+// as ordinary block content drags it away with a key, and in the boundary case that
+// silently discards the config (see the end[n-1] comment below).
 func MigrateSectionOrder(src []byte) ([]byte, MigrationReport, error) {
 	var report MigrationReport
 
@@ -55,6 +59,30 @@ func MigrateSectionOrder(src []byte) ([]byte, MigrationReport, error) {
 	for i := range n {
 		keys[i] = root.Content[2*i].Value
 		keyLines[i] = root.Content[2*i].Line
+	}
+
+	// Two shapes this line-range partition cannot represent. Both return the source
+	// untouched rather than cutting the file at a boundary that does not exist — the
+	// other Migrate steps still run, and the loader still reports what is wrong.
+	//
+	// A duplicate top-level key: yaml.Node keeps both halves, so the same name occupies
+	// two slots while there is only one canonical position to move it to. Reordering is
+	// not merely hard here but ill-defined, and `dva validate` already rejects the file
+	// with "mapping key ... already defined". Migrate runs before VerifyMigrated, so
+	// without this the command panics on exactly the broken file it exists to repair.
+	//
+	// Keys sharing a line: a flow-style mapping ({a: 1, b: 2}) gives no line that
+	// belongs to one key alone, and the comment-extension below can then push a later
+	// key's start above an earlier one's, inverting a slice bound.
+	seen := make(map[string]bool, n)
+	for i, k := range keys {
+		if seen[k] {
+			return src, report, nil
+		}
+		seen[k] = true
+		if i > 0 && keyLines[i] <= keyLines[i-1] {
+			return src, report, nil
+		}
 	}
 
 	// Relative order of the canonical keys already present is the same check
@@ -101,13 +129,59 @@ func MigrateSectionOrder(src []byte) ([]byte, MigrationReport, error) {
 	for i := 0; i < n-1; i++ {
 		end[i] = start[i+1] - 1
 	}
+
+	// The last block runs to a document boundary, not to EOF. yaml.Unmarshal decodes
+	// only the first document, so keys/keyLines describe that document alone; letting
+	// the last block absorb everything below it would carry a `...` terminator — or a
+	// whole second document — along as if it were that key's content. Relocated to the
+	// top, a terminator turns every section under it into a second document, which the
+	// loader then ignores: the file still parses, `dva validate` still passes, and the
+	// config is gone. Everything from the boundary on is a fixed postamble instead.
 	end[n-1] = len(lines)
+	postambleStart := 0
+	for i := keyLines[n-1] + 1; i <= len(lines); i++ {
+		if isDocumentBoundary(lines[i-1]) {
+			end[n-1] = i - 1
+			postambleStart = i
+			break
+		}
+	}
+
+	// A blank-separated comment run at EOF is a file footer and stays put, for the same
+	// reason the header above the first key does. The tail is otherwise the one place
+	// this walk is asymmetric: a licence footer or a `# vim:` line would be the last
+	// block's content, so it rides that block to wherever the block lands — for a file
+	// whose last section belongs first, that is the top of the document.
+	if postambleStart == 0 {
+		i := len(lines)
+		for i > keyLines[n-1] && strings.HasPrefix(lines[i-1], "#") {
+			i--
+		}
+		if i < len(lines) && i > keyLines[n-1] && strings.TrimSpace(lines[i-1]) == "" {
+			end[n-1] = i
+			postambleStart = i + 1
+		}
+	}
 
 	preamble := lines[:start[0]-1]
 
+	// A blank-line separator belongs to the slot, not to the block that happens to sit
+	// in it. The last slot has no separator by construction and the others carry
+	// whatever the author wrote, so a block that moves out of the last slot arrives
+	// somewhere in the middle with nothing after it — gluing its successor onto its
+	// final line — while the block that takes its place brings a now-trailing blank.
+	// Splitting each block into content plus its slot's separator and permuting only
+	// the content leaves the document's vertical rhythm exactly as authored.
 	blockText := make([]string, n)
+	slotSeparator := make([]int, n)
 	for i := range n {
-		blockText[i] = strings.Join(lines[start[i]-1:end[i]], "\n")
+		body := lines[start[i]-1 : end[i]]
+		blanks := 0
+		for len(body)-blanks > 0 && strings.TrimSpace(body[len(body)-blanks-1]) == "" {
+			blanks++
+		}
+		blockText[i] = strings.Join(body[:len(body)-blanks], "\n")
+		slotSeparator[i] = blanks
 	}
 
 	// Canonical keys fill the slots canonical keys currently occupy, in canonical
@@ -135,34 +209,42 @@ func MigrateSectionOrder(src []byte) ([]byte, MigrationReport, error) {
 		newKeys[slot] = name
 	}
 
-	var out strings.Builder
-	out.WriteString(strings.Join(preamble, "\n"))
-	if len(preamble) > 0 {
-		out.WriteString("\n")
-	}
+	// Assembled as lines rather than as a string so the separators stay countable:
+	// every blank line in the output is one an author wrote, in the slot they wrote it.
+	outLines := slices.Clone(preamble)
 	for i, t := range newBlockText {
-		out.WriteString(t)
-		if i < n-1 {
-			out.WriteString("\n")
+		outLines = append(outLines, strings.Split(t, "\n")...)
+		for range slotSeparator[i] {
+			outLines = append(outLines, "")
 		}
 	}
-	// The new last block's own trailing content decides whether this already ends
-	// in a newline; only add one when the original file had one and this block's
-	// text did not already supply it, so a moved separator is never doubled.
-	if trailingNewline && !strings.HasSuffix(out.String(), "\n") {
-		out.WriteString("\n")
+	if postambleStart > 0 {
+		outLines = append(outLines, lines[postambleStart-1:]...)
+	}
+	out := strings.Join(outLines, "\n")
+	// No line carries its own newline, so the trailing one is re-added exactly when
+	// the original file had it — the mirror of the TrimSuffix above.
+	if trailingNewline {
+		out += "\n"
 	}
 
 	report.Changes = []string{
 		fmt.Sprintf("section order: reordered to %s", strings.Join(newKeys, " → ")),
 	}
-	return []byte(out.String()), report, nil
+	return []byte(out), report, nil
 }
 
 // commentExtendedStart returns the first line of the comment block directly above
 // keyLine, or keyLine itself if there is none. "Directly above" means contiguous: a
 // blank line stops the walk, so a comment separated from the key by one belongs to
 // whatever block precedes it instead.
+//
+// Only a `#` in column 0 counts. A top-level key sits in column 0, so its banner does
+// too; an indented `#` is inside the previous block — most dangerously the last line
+// of a literal block scalar, where it is script text and not a comment at all. Left
+// indented-tolerant, this walk tears `# TODO: ...` out of an `interaction.*.command: |`
+// body and files it above the next key, and the result still loads as valid YAML, so
+// VerifyMigrated and `dva validate` both pass while the user's script is a line short.
 func commentExtendedStart(lines []string, keyLine int) int {
 	start := keyLine
 	for i := keyLine - 1; i >= 1; i-- {
@@ -170,10 +252,21 @@ func commentExtendedStart(lines []string, keyLine int) int {
 		if strings.TrimSpace(line) == "" {
 			break
 		}
-		if !strings.HasPrefix(strings.TrimLeft(line, " \t"), "#") {
+		if !strings.HasPrefix(line, "#") {
 			break
 		}
 		start = i
 	}
 	return start
+}
+
+// isDocumentBoundary reports whether line opens or closes a YAML document at the top
+// level: `---`, `...`, or either followed by content on the same line.
+func isDocumentBoundary(line string) bool {
+	for _, marker := range []string{"---", "..."} {
+		if line == marker || strings.HasPrefix(line, marker+" ") || strings.HasPrefix(line, marker+"\t") {
+			return true
+		}
+	}
+	return false
 }

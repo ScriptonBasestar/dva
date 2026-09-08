@@ -55,6 +55,7 @@ plans:
 interaction:
   test:
     command: make test  # run unit tests
+
 `
 
 	out, report, err := MigrateSectionOrder([]byte(src))
@@ -97,10 +98,11 @@ func TestMigrateSectionOrderNonCanonicalKeyKeepsSlot(t *testing.T) {
 
 // TestMigrateSectionOrderCommentAboveBlankStaysWithPreviousSection covers the case
 // where a trailing comment on one section is separated from the *next* section's key
-// by a blank line: it must move with the section above it, not the one below.
+// by a blank line: it must move with the section above it, not the one below. The
+// blank itself does not move — it separates slot 0 from slot 1 before and after.
 func TestMigrateSectionOrderCommentAboveBlankStaysWithPreviousSection(t *testing.T) {
 	src := "plans:\n  x: 1\n# leftover note about plans\n\nversion: b\n"
-	want := "version: b\nplans:\n  x: 1\n# leftover note about plans\n"
+	want := "version: b\n\nplans:\n  x: 1\n# leftover note about plans\n"
 
 	out, _, err := MigrateSectionOrder([]byte(src))
 	if err != nil {
@@ -187,5 +189,137 @@ stack:
 	after := validateCanonicalOrder(path)
 	if len(after) != 0 {
 		t.Errorf("expected no section-order warning after the rewrite, got %v:\n%s", after, out)
+	}
+}
+
+// TestMigrateSectionOrderKeepsIndentedHashInsideBlockScalar pins the column-0 rule in
+// commentExtendedStart. The `#` line here is the last line of a literal block scalar —
+// shell text, not a comment — and an indented-tolerant upward walk files it above
+// `version` as that key's banner, deleting a line from the user's script. The result
+// still loads as valid YAML, so neither VerifyMigrated nor `dva validate` catches it;
+// only this test does.
+func TestMigrateSectionOrderKeepsIndentedHashInsideBlockScalar(t *testing.T) {
+	src := "interaction:\n  seed:\n    command: |\n      set -e\n      # TODO: keep this in the script\nversion: \"1\"\n"
+	want := "version: \"1\"\ninteraction:\n  seed:\n    command: |\n      set -e\n      # TODO: keep this in the script\n"
+
+	out, _, err := MigrateSectionOrder([]byte(src))
+	if err != nil {
+		t.Fatalf("MigrateSectionOrder() error = %v", err)
+	}
+	if string(out) != want {
+		t.Fatalf("MigrateSectionOrder() =\n%q\nwant\n%q", out, want)
+	}
+}
+
+// TestMigrateSectionOrderBailsOnUnrepresentableShapes covers the two document shapes a
+// line-range partition cannot express. Both must return the source untouched — and,
+// for the duplicate key, must not panic: Migrate runs before VerifyMigrated, so the
+// duplicate reaches this code on exactly the broken file `dva config migrate` exists
+// to repair.
+func TestMigrateSectionOrderBailsOnUnrepresentableShapes(t *testing.T) {
+	tests := []struct {
+		name string
+		src  string
+	}{
+		{
+			// Two slots for one name, one canonical position to move it to.
+			name: "duplicate top-level key",
+			src:  "stack:\n  db: 1\nversion: \"a\"\nversion: \"b\"\n",
+		},
+		{
+			// No line belongs to one key alone, so no key has a range of its own.
+			name: "flow-style root mapping",
+			src:  "{stack: b, version: a}\n",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			out, report, err := MigrateSectionOrder([]byte(tt.src))
+			if err != nil {
+				t.Fatalf("MigrateSectionOrder() error = %v", err)
+			}
+			if string(out) != tt.src {
+				t.Errorf("expected the source back untouched, got:\n%q", out)
+			}
+			if len(report.Changes) != 0 {
+				t.Errorf("report.Changes = %v, want none", report.Changes)
+			}
+		})
+	}
+}
+
+// TestMigrateSectionOrderStopsAtDocumentBoundary is the silent-data-loss regression.
+// keys/keyLines describe the first document only, so letting the last block run to EOF
+// carries whatever follows a `...` or `---` along as that key's content. Hoisted to the
+// top with the key, a boundary marker turns every section below it into a second
+// document that the loader ignores: the file still parses and `dva validate` still
+// passes while the config is gone.
+func TestMigrateSectionOrderStopsAtDocumentBoundary(t *testing.T) {
+	tests := []struct {
+		name string
+		src  string
+		want string
+	}{
+		{
+			name: "explicit end marker",
+			src:  "stack:\n  db:\n    plugin: compose\nversion: \"1\"\n...\n",
+			want: "version: \"1\"\nstack:\n  db:\n    plugin: compose\n...\n",
+		},
+		{
+			name: "second document",
+			src:  "plans:\n  dev: {}\nversion: \"1\"\n---\nother: doc\n",
+			want: "version: \"1\"\nplans:\n  dev: {}\n---\nother: doc\n",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			out, _, err := MigrateSectionOrder([]byte(tt.src))
+			if err != nil {
+				t.Fatalf("MigrateSectionOrder() error = %v", err)
+			}
+			if string(out) != tt.want {
+				t.Fatalf("MigrateSectionOrder() =\n%q\nwant\n%q", out, tt.want)
+			}
+		})
+	}
+}
+
+// TestMigrateSectionOrderKeepsSlotSeparators pins the separator-belongs-to-the-slot
+// rule on the shape that exposes it: the block that has to leave the last slot is the
+// only one carrying no trailing blank, so moving separators with blocks glues the
+// section that follows onto its final line. examples/modules/main.yml is exactly this
+// file — `provision` last, `modules` bound for the tail — and it came out one line
+// shorter with `modules:` welded to the end of the last provision step.
+func TestMigrateSectionOrderKeepsSlotSeparators(t *testing.T) {
+	src := "modules:\n  - sast\n\nversion: \"1\"\n\nprovision:\n  - step: build\n"
+	want := "version: \"1\"\n\nprovision:\n  - step: build\n\nmodules:\n  - sast\n"
+
+	out, _, err := MigrateSectionOrder([]byte(src))
+	if err != nil {
+		t.Fatalf("MigrateSectionOrder() error = %v", err)
+	}
+	if string(out) != want {
+		t.Fatalf("MigrateSectionOrder() =\n%q\nwant\n%q", out, want)
+	}
+	if got, wantN := strings.Count(string(out), "\n"), strings.Count(src, "\n"); got != wantN {
+		t.Errorf("line count changed: %d → %d", wantN, got)
+	}
+}
+
+// TestMigrateSectionOrderKeepsFooterCommentAtEOF is the tail half of the preamble
+// symmetry. A licence or `# vim:` footer separated from the last section by a blank
+// line is document furniture, not that section's content; absorbed into the block it
+// follows, it rides that block to the block's new slot — which for a last section
+// that sorts first is the top of the file.
+func TestMigrateSectionOrderKeepsFooterCommentAtEOF(t *testing.T) {
+	src := "plans:\n  x: 1\n\nversion: \"1\"\n\n# vim: set ft=yaml:\n"
+	want := "version: \"1\"\n\nplans:\n  x: 1\n\n# vim: set ft=yaml:\n"
+
+	out, _, err := MigrateSectionOrder([]byte(src))
+	if err != nil {
+		t.Fatalf("MigrateSectionOrder() error = %v", err)
+	}
+	if string(out) != want {
+		t.Fatalf("MigrateSectionOrder() =\n%q\nwant\n%q", out, want)
 	}
 }

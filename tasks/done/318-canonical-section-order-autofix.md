@@ -34,10 +34,13 @@ provision → subprojects → endpoints`)를 적었지만 실제 `canonicalSecti
 
 경계 규칙 두 가지:
 
-- 블록은 자기 키 줄에서 시작해 **연속된** 주석 줄만큼 위로 확장된다. 빈 줄이 걸리면 멈추므로
-  빈 줄로 떨어진 주석은 위 블록 소유다 (yaml.v3의 HeadComment 부착과 같은 규칙).
-- **첫 블록만 위로 확장하지 않는다.** 그 위의 `---`/`%YAML`/파일 헤더 주석은 문서 서두지 그
-  키의 섹션 배너가 아니며, 그 키가 다른 자리로 옮겨가도 파일 맨 위에 남아야 한다.
+- 블록은 자기 키 줄에서 시작해 **연속된 컬럼 0** 주석 줄만큼 위로 확장된다. 빈 줄이 걸리면
+  멈추므로 빈 줄로 떨어진 주석은 위 블록 소유다 (yaml.v3의 HeadComment 부착과 같은 규칙).
+  들여쓰기된 `#`는 주석이 아닐 수 있어(리터럴 블록 스칼라 안의 스크립트) 제외한다.
+- **문서의 양 끝은 고정이다.** 첫 블록 위의 `---`나 파일 헤더 주석은 문서 서두지 그 키의 섹션
+  배너가 아니다. 대칭으로 마지막 블록은 EOF가 아니라 **문서 경계(`---`/`...`)나 빈 줄로 떨어진
+  꼬리 주석**에서 멈춘다.
+- **빈 줄 구분자는 블록이 아니라 슬롯 소유다.** 내용만 순열하고 구분자는 자리에 남긴다.
 
 canonical 목록에 없는 키는 자기 슬롯을 그대로 지킨다 — 어디로 가야 할지 추측하지 않는다.
 
@@ -56,8 +59,25 @@ canonical 목록에 없는 키는 자기 슬롯을 그대로 지킨다 — 어�
 - 2회차 실행 결과가 1회차와 **바이트 동일** (멱등)
 - 재배열 후 `dva validate` rc 0, `section order` 경고 0건
 
-알려진 결과(결함 아님): 빈 줄 구분선은 **위 블록에 붙어** 이동한다. 뒤에 빈 줄이 없던 블록이
-앞 슬롯으로 오면 그 경계의 빈 줄은 사라진다. 문서 주석에 명시된 설계상의 귀결이다.
+## 리뷰 BLOCK 및 수정 (2026-09-08)
+
+독립 리뷰가 BLOCK을 냈다. 통합 세션이 **다섯 건을 실제 바이너리와 픽스처로 재현한 뒤** 고쳤다.
+넷은 조용한 손상이다 — 결과가 여전히 유효한 YAML이라 `VerifyMigrated`도 `dva validate`도
+rc 0을 낸다. 어떤 게이트도 잡을 수 없었고, 회귀 테스트만이 잡는다.
+
+| # | 증상 | 재현 결과 | 수정 |
+|---|------|-----------|------|
+| M1 | `interaction.*.command: \|` 리터럴 스칼라의 마지막 `# ...` 줄이 다음 키의 배너로 오인돼 스크립트에서 **삭제** | rc 0, 파일은 유효 | `commentExtendedStart`가 컬럼 0 `#`만 인정 |
+| M2 | 중복 최상위 키에서 `index out of range` **패닉** — 하필 이 명령이 고치려는 그 깨진 파일 | preview 모드에서도 패닉 | 중복 키·플로우 스타일이면 원본 그대로 반환 |
+| M3 | 마지막 블록이 EOF까지 삼켜 `...` 종결자를 함께 맨 위로 올림 → 그 아래 전 섹션이 **두 번째 문서**가 되어 로더가 무시 | rc 0, `dva show plans`가 `version`만 봄 | 마지막 블록은 문서 경계에서 멈추고 그 뒤는 postamble |
+| M4 | 빈 줄 구분자가 블록에 붙어 이동 → 마지막 슬롯을 떠난 블록 뒤에 구분자가 없어 다음 섹션이 **앞 줄에 붙음** | `examples/modules/main.yml`에서 `modules:`가 마지막 provision step에 용접됨 | 구분자를 슬롯 소유로 분리, 내용만 순열 |
+| M5 | EOF의 빈 줄로 떨어진 꼬리 주석(라이선스·`# vim:`)이 마지막 블록에 흡수돼 그 블록을 따라 **파일 맨 위로** 이동 | preamble/postamble 비대칭 | 꼬리 주석 런을 postamble로 고정 |
+
+M4는 이전 버전 카드가 "알려진 결과(결함 아님)"로 적었던 항목이다 — 리뷰어의 판단이 옳았다.
+`examples/modules/main.yml` 왕복은 이제 줄 수가 보존된다(68 → 68).
+
+다섯 건 모두 **overlay로 수정 전 소스에 대해 실행해 FAIL을 확인**했다(`go test -overlay`).
+통과만으로는 회귀 테스트임이 증명되지 않는다.
 
 ## Completion Criteria
 
@@ -66,4 +86,9 @@ canonical 목록에 없는 키는 자기 슬롯을 그대로 지킨다 — 어�
 - [x] 재배열이 멱등이고 이미 canonical인 파일은 바이트 단위로 불변 | verify: `go test ./internal/config/ -run 'TestMigrateSectionOrderIdempotent|TestMigrateSectionOrderAlreadyCanonicalUnchanged'`
 - [x] 재배열이 semantic `section order` 경고를 실제로 해소 | verify: `go test ./internal/config/ -run TestMigrateSectionOrderClearsTheValidateWarning`
 - [x] canonical 목록에 없는 키는 자기 슬롯 유지 | verify: `go test ./internal/config/ -run TestMigrateSectionOrderNonCanonicalKeyKeepsSlot`
+- [x] M1 — 들여쓰기된 `#`는 배너로 오인되지 않아 블록 스칼라 스크립트가 온전하다 | verify: `go test ./internal/config/ -run TestMigrateSectionOrderKeepsIndentedHashInsideBlockScalar`
+- [x] M2 — 중복 키·플로우 스타일 루트에서 패닉 없이 원본을 그대로 돌려준다 | verify: `go test ./internal/config/ -run TestMigrateSectionOrderBailsOnUnrepresentableShapes`
+- [x] M3 — 마지막 블록이 `---`/`...` 문서 경계에서 멈춰 설정이 두 번째 문서로 밀려나지 않는다 | verify: `go test ./internal/config/ -run TestMigrateSectionOrderStopsAtDocumentBoundary`
+- [x] M4 — 빈 줄 구분자가 슬롯에 남아 재배열이 줄 수를 바꾸지 않는다 | verify: `go test ./internal/config/ -run TestMigrateSectionOrderKeepsSlotSeparators`
+- [x] M5 — EOF 꼬리 주석이 파일 끝에 남는다 | verify: `go test ./internal/config/ -run TestMigrateSectionOrderKeepsFooterCommentAtEOF`
 - [x] 게이트 통과 | verify: `make doc-check`
