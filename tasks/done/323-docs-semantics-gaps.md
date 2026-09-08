@@ -12,8 +12,12 @@ status: done
 
 # Task 323: 마이그레이션 중 드러난 미문서 의미론
 
-- `subprojects.exclude_tags`는 부모 stack 태그가 아니라 하위 프로젝트 자신의 interaction/compose 태그를 거른다
-  (run.go:149, list.go:82). stack entry tags는 `dva up/down/stop --tags/--exclude-tags`가 소비. 분석자 2명이 오독.
+- `subprojects.exclude_tags`는 부모 stack 태그가 아니라 하위 프로젝트 자신의 **interaction**
+  태그를 거른다 (`run.go:141`, `list.go:82`). stack entry tags는
+  `dva up/down/stop --tags/--exclude-tags`가 소비. 분석자 2명이 오독.
+  **정정(C5):** 이 줄은 원래 "interaction/compose 태그"라고 썼는데 compose는 걸리지 않는다.
+  경로 수도 아래 C5 행이 다시 센다. 호출 지점도 `run.go:149`가 아니라 `:141`이다 —
+  `:149`는 주석 줄이다.
 - `script_file:`은 exec 방식(shebang + 실행권한 필수, internal/exec/exec.go:230) — 문서/init 노출 없음.
 - native runner `env:` 필드 존재 — 예시 부재.
 - `suggestion_ignore` 정본 위치(checks 뒤, interaction 앞)가 docs 예시에 없음.
@@ -31,7 +35,7 @@ status: done
 
 | 문서 주장 | 대조한 근거 |
 |-----------|-------------|
-| `exclude_tags`는 자식 자신의 태그를 거른다 | 별도 실측(TASK-342 nit): `ls --project`/`run --project` 두 경로에만 적용되고 `p/k` import는 태그 필터를 아예 타지 않는다. 문서가 그 두 경로로 범위를 한정하고 있어 정확 |
+| `exclude_tags`는 자식 자신의 태그를 거른다 | ~~별도 실측(TASK-342 nit): `ls --project`/`run --project` 두 경로에만 적용되고 `p/k` import는 태그 필터를 아예 타지 않는다. 문서가 그 두 경로로 범위를 한정하고 있어 정확~~ **이 판정은 틀렸다. 아래 C5 행이 반증한다** — 걸리는 경로는 둘이 아니라 셋이고(`p:k` 축약형이 빠져 있었다), compose 태그는 아예 걸리지 않는다. 취소선을 남기는 이유는 아래 "왜 못 잡았나" 절을 보라 |
 | `script_file:`은 shebang 보정 없이 exec | `exec.go:230` `ExecScriptFile`는 경로를 그대로 `ExecSubprocess`; 인라인 `script:`만 `exec.go:204`에서 `#!/bin/sh` 삽입 |
 | native `env:` 예시 존재 | STALE — 커밋 `67107664`(2026-08-06)가 이 카드보다 먼저 추가. 신규 작업 없음 |
 | canonical order와 advisory 경고 문구 | `validate_warnings.go:21` 목록, `:1172` `section order: found [...] but canonical order is [...]; consider reordering` |
@@ -62,6 +66,20 @@ status: done
 C4가 드러낸 `planLogTargets`의 결함(제공할 수 없는 이름을 로그 대상으로 세는 것)은 문서가
 아니라 코드 문제이므로 **TASK-355**로 분리했다.
 
+**C4 비대칭 해소(리뷰 후속 측정).** C4는 "`script`는 로그 파일을 안 쓴다"만 실측이었고
+"`process`/`native`는 **쓴다**"는 소스 판독이었다. 문서가 그 절반을 단정하고 있었으므로
+같은 방식으로 재보았다 — `native` 엔트리 하나짜리 plan(`stack.ticker.runners.native.run`이
+stdout과 stderr에 각각 마커를 찍고 `sleep 30`)에 `dva up dev`:
+
+- `[lifecycle] ticker (process)` — `native`로 선언한 엔트리가 실행 시점에 **process 플러그인**으로
+  나타난다. `native`가 process의 별칭이라는 `lifecycle.go:750-751`의 주석이 런타임에서 확인된다.
+  그래서 이름 두 개를 따로 잴 필요가 없다 — 플러그인이 하나다.
+- `.sb/dva/logs/ticker.log`와 `.sb/dva/pids/ticker.pid`가 생성된다.
+- 로그 파일 내용은 `C4-STDOUT-MARK`와 `C4-STDERR-MARK` 두 줄 — **stdout과 stderr가 같은
+  파일로 합쳐진다**. 소스 판독만으로는 나오지 않던 사실이라 USAGE.md에 함께 적었다.
+- 엔트리가 하나뿐이므로 `dva logs dev`가 이름 없이 그 엔트리를 자동 선택해 같은 두 줄을 낸다.
+- Docker를 타지 않는다. 정리는 `dva down dev`(`[-] removed ticker (pid …)`), 잔여 프로세스 없음.
+
 ### 이 카드의 수용기준이 왜 이걸 못 잡았나
 
 수정 **전후 모두** 아홉 개 `grep` 바인딩이 전부 통과한다. 실제로 그렇게 확인했다. 바인딩은
@@ -82,6 +100,13 @@ C5는 이 교훈을 실제로 적용한 첫 사례다. 문장 존재 확인 대�
 끼워 넣으면 `subproject "engine" interaction "dbshell" not found`로 FAIL한다. C6은 여전히
 문장 바인딩인데, 좁히는 주체가 설정 두 곳이라는 사실을 실행으로 거는 방법이 지금 CLI 표면에는
 없기 때문이다(그 자체가 TASK-350이 다룰 재료다).
+
+**그리고 다섯 번째 형태가 이 카드 안에 있었다.** 1차 대조 표의 `exclude_tags` 행(위, 취소선)은
+"문서가 그 두 경로로 범위를 한정하고 있어 **정확**"이라고 판정했다. 그 판정 자체가 틀렸다 —
+경로는 셋이고 compose는 걸리지 않는다. 이건 통과한 검증이 아니라 **통과했다고 적힌 검증**이고,
+빈 바인딩보다 나쁘다. 빈 바인딩은 아무것도 말하지 않지만 이 행은 다음 사람에게 "여긴 이미
+봤다"고 말해 재검증을 건너뛰게 만든다. 취소선으로 남긴 이유가 그것이다 — 지우면 이 실패
+자체가 기록에서 사라진다. TASK-350 note (E)에 형태로 옮겨 적었다.
 
 ### C3 재방문 — 제자리 수정으로는 부족했다
 

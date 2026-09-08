@@ -147,7 +147,10 @@ func runSubprojectCommand(parentCfg *config.Config, project, cmdName string, cmd
 	// TASK-263 §3 decision (b): the parent must not offer an address the child would refuse.
 	// Both routes that reach here — `--project p k` and the `p:k` shorthand run.go splits
 	// above — are checked in one place because they are one call; the third form, a `p/k`
-	// import, is refused at load in config.resolveSubprojectImports.
+	// import, is refused at load in config.resolveSubprojectImports — but on reserved keys,
+	// not on tags. That refusal and this one share a reason, not a mechanism, which is why
+	// the paragraph below can say the same form is not tag-filtered at all without
+	// contradicting this sentence.
 	//
 	// After the filter, not before. `exclude_tags` is the parent's own statement that it does
 	// not offer this key, and `dva ls --project` applies the filter and omits it. Checking

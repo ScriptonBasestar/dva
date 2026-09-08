@@ -557,7 +557,10 @@ dva down db-only
 요구합니다** — `plan "X" runs N entries with logs; name one: dva logs X <a|b>`로 거부되고,
 엔트리가 하나뿐이면 그 엔트리로 자동 선택됩니다. `process`/`native` 러너 엔트리의 로그는
 compose를 거치지 않고 `.sb/dva/logs/<entry-name>.log` 파일(마지막 100줄)로 표시됩니다
-(`internal/cli/logs.go` `entryLogFile`/`showEntryLogFile`).
+(`internal/cli/logs.go` `entryLogFile`/`showEntryLogFile`). **stdout과 stderr는 한 파일에
+합쳐집니다** — 둘을 나눠 받을 방법은 없습니다. `native`는 별도 플러그인이 아니라 `process`의
+별칭이라 (`internal/config/lifecycle.go`) 두 이름의 동작이 같고, `dva up` 출력에도
+`[lifecycle] <name> (process)`로 나옵니다.
 
 **`script` 러너는 여기에 해당하지 않습니다.** `runScript`는 자식 프로세스에 stdout/stderr를
 그대로 물려 흘려보낼 뿐 파일로 남기지 않습니다 (`internal/lifecycle/script.go`). 그런데
@@ -1531,13 +1534,20 @@ interaction:
 지원하지 않아 **호스트 local 실행으로 폴백**합니다. 같은 YAML을 `pod:`로 바꾸면 스크립트는
 클러스터 안에서 돌아가므로, 대상 파일시스템·DB가 달라집니다.
 
-**local/native 러너에서 `script_file:`은 exec 방식입니다.** `script:`(인라인)는 임시
+**local 러너에서 `script_file:`은 exec 방식입니다.** `script:`(인라인)는 임시
 파일로 떨궈 실행하기 전에 shebang이 없으면 `#!/bin/sh`를 자동으로 붙입니다. `script_file:`은
 그런 보정 없이 선언된 파일 경로를 그대로 `exec`합니다(`internal/exec/exec.go`
 `ExecScriptFile`) — 그래서 대상 파일에 **shebang 줄과 실행 권한(`chmod +x`)이 모두** 있어야
 합니다. 빠진 쪽에 따라 실패 메시지가 갈립니다 — 실행 권한이 없으면 `permission denied`,
 권한은 있는데 shebang이 없으면 `exec format error`입니다. 후자를 권한 문제로 읽고 `chmod`을
 반복하는 것이 흔한 헛수고입니다.
+
+**interaction의 `runner:`가 인식하는 값은 `local`/`docker_compose`/`kubectl` 셋뿐입니다.**
+그 밖의 값은 거부되지 않고 **compose 러너로 처리됩니다**
+(`internal/runner/runner.go` `NewRunner`의 `default:`). 즉 `runner: native`라고 쓰면
+오류도 경고도 없이 compose 러너가 되어, 위 문단이 보증한 exec 동작을 얻지 못합니다.
+stack 쪽 `native` 러너는 별개의 표면이고, 그쪽에도 `script_file:`은 없습니다
+(`NativeRunnerConfig`의 필드는 `dir`/`build`/`run`/`env` 넷뿐).
 
 **이 제약은 compose에도 그대로 적용됩니다.** 바로 위에서 말한 대로 compose 러너는
 `script:`/`script_file:`을 네이티브로 지원하지 않고 호스트 local 실행으로 폴백하므로, 실제로
@@ -1757,17 +1767,21 @@ endpoints:
 | 필드 | 설명 |
 |------|------|
 | `url` | 직접 명시하는 URL |
-| `source` | compose `service:host_port` 참조 — `url`이 비어 있으면 `http://localhost:{port}`로 자동 계산(잘 알려진 비-HTTP 서비스는 `localhost:{port}`). `url`이 있으면 `source`는 무시됩니다 |
+| `source` | `"<이름>:<host_port>"` 표기. `url`이 비어 있으면 `http://localhost:{host_port}`로 조립됩니다(잘 알려진 비-HTTP 서비스 이름이면 스킴 없이 `localhost:{host_port}`). **compose 파일을 읽지 않습니다** — 포트는 이 문자열에 적힌 값을 그대로 쓰므로 compose의 포트 매핑과 자동으로 동기화되지 않고, 이름 조각은 스킴 선택에만 쓰입니다(`internal/config/config.go` `ResolveEndpoints`). `url`이 있으면 `source`는 무시됩니다 |
 | `label` | 표시용 이름 |
 | `tags` | 표시 대상을 좁히는 태그. **좁히는 주체는 설정뿐입니다** — `plans.<name>.endpoint_tags`(`internal/cli/plan_lifecycle.go`)와 `modes.<name>.endpoint_tags`(`internal/cli/compose.go`)만 이 값을 봅니다. CLI의 `--tag`/`--tags`와는 무관합니다(그 플래그는 lifecycle 엔트리를 거르지 endpoint를 거르지 않습니다). `dva status`는 아예 거르지 않고 전부 출력합니다 |
 | `paths` | sub-path → 설명 맵 |
 
-**`url:`과 `source:`는 `${VAR}`/`${VAR:-default}`를 치환하지 않습니다** — 위
+**`url:`과 `source:`는 `${VAR}`/`${VAR:-default}`를 치환하지 않습니다** — 아래
 [변수 참조 문법](#변수-참조-문법)의 대상(`environment:`, `env_file`, `vars`, interaction
 `command` 등)에 `endpoints`는 들어 있지 않습니다. `dva show`는 `ep.URL`을 원문 그대로
-출력하므로(`internal/cli/endpoints.go`), 포트를 바꿔야 한다면 `endpoints.<name>.url`에 리터럴
-값을 직접 쓰거나 `source:`의 compose 포트 자동 계산을 쓰세요 — `${PORT}` 같은 참조를 넣으면
-치환되지 않은 문자열 그대로 노출됩니다.
+출력하므로(`internal/cli/endpoints.go`), 포트를 바꿔야 한다면 `endpoints.<name>.url` 또는
+`source:`에 리터럴 값을 직접 쓰세요 — `${PORT}` 같은 참조를 넣으면 치환되지 않은
+문자열 그대로 노출됩니다.
+
+어느 쪽을 쓰든 **포트는 손으로 적힌 두 번째 사본입니다.** `source: "web:3000"`은
+`url: "http://localhost:3000"`보다 짧을 뿐, compose의 포트 매핑을 바꾸면 둘 다 똑같이
+낡습니다. `source:`는 중복 기재를 없애주는 장치가 아니며, 줄이는 건 표기뿐입니다.
 
 ### composes (cross-project plan composition)
 
