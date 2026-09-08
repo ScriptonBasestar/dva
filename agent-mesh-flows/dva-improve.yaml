@@ -1399,7 +1399,8 @@ steps:
       subprojects:                    # Subproject references
         {name}:
           path: relative/path
-          exclude_tags: [infra]       # Tags to exclude when running from parent
+          exclude_tags: [infra]       # Tags the parent drops on `p:k`, `run --project`
+                                      # and `ls --project`. A `p/k` import is NOT filtered.
           import:                     # Optional; non-empty imports require child dva.yml
             plans: [local-dev]
             interactions: [shell]
