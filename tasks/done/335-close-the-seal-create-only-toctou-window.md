@@ -50,6 +50,38 @@ create-only 호출자는 `link(2)`를 쓴다.
 두 테스트 모두 수정 없이는 *성공*으로 끝나 조용한 덮어쓰기를 드러낸다 — 수정 전 실행에서
 `expected a failure, got success`로 확인했다.
 
+### 독립 리뷰가 남긴 caveat (2026-09-08, 구현과 다른 세션)
+
+통합 후 독립 리뷰. 정확성 결함은 없었고 `place()`를 항상 `Rename`하도록 강제하는
+뮤테이션으로 새 테스트 둘이 실제로 결속됨을 확인했다(반대로 항상 `Link`로 강제하면
+unseal 테스트 세 그룹이 깨져 `createOnly == false` 분기도 덮여 있음). 남은 것은 결함이
+아니라 채택한 설계의 caveat 셋이다.
+
+**`link(2)`와 `rename(2)`의 실제 동작 차이 두 가지 — 둘 다 안전한 방향.** darwin/arm64
+Go 1.26.5에서 `os.Root.Link`를 직접 측정: leaf가 **symlink**면 따라가지 않고 `EEXIST`
+(rename이었다면 symlink 자체를 대체했다), leaf가 **디렉터리**면 `EEXIST` → `source_exists`
+(rename이었다면 raw errno가 `permission_denied`로 뭉개졌다). 권한·소유권은 두 경로 모두
+`O_CREATE|O_EXCL`의 `0600` 그대로다.
+
+**link 이후 `syncDir` 실패는 성공한 seal을 `permission_denied`로 오보한다**
+(`config_env_safewrite.go:426` → `config_env_seal.go:276`). `Commit`이 돌려주는
+`postRenameError`가 `fs.ErrExist`가 아니라서 그렇다. §7-1 row 28이 unseal의 같은 구분을
+의도적으로 뭉갠 결과이고 이 카드의 회귀가 아니다. 새로 생긴 것은 그 다음이다 — 그
+메시지를 보고 재시도하면 이제 preflight에서 `source_exists`를 만난다. 전에는 조용히
+덮어썼다. 안전하지만 혼란스럽고, 코드 집합이 얼려 있어 코드로 고칠 자리가 없다.
+
+**`link(2)`는 `rename(2)`보다 파일시스템 지원이 좁다.** exFAT/FAT과 일부 SMB/FUSE/
+virtiofs 마운트에는 하드링크가 없어 `EPERM`/`EOPNOTSUPP`로 실패하고, seal은 원인을 잘못
+지목한 `permission_denied`를 보고한다. 원자성을 지키면서 이식 가능한 stdlib 대안은 없다
+— `renameat2(RENAME_NOREPLACE)`는 Linux 전용, `renamex_np(RENAME_EXCL)`은 darwin 전용,
+`os.Root`는 둘 다 노출하지 않는다. dev 머신의 config 디렉터리에서는 일어나기 어려워
+`link`가 옳은 선택이라는 판단은 유지하고, 트레이드오프만 기록해둔다.
+
+**새 테스트가 증명하지 않는 것.** 두 테스트 모두 침입자를 `encrypt` 훅 안에서, 즉
+`Commit` *이전에* 심는다. 따라서 stat-then-rename 구현에서도 통과한다 — "쓰기 시점에
+create-only로 결정된다"를 결속하지 "원자적으로 create-only"를 결속하지는 않는다.
+인프로세스 테스트로 실제 커널 레이스를 열 수 없어 본질적 한계다.
+
 ## Completion Criteria
 
 - [x] the create-only guarantee is enforced at the write, not only at preflight — the commit path refuses when the target appeared after the check | verify: `/usr/bin/grep -rq "func TestConfigEnvSealRefusesSourceCreatedAfterPreflight" internal/cli`
