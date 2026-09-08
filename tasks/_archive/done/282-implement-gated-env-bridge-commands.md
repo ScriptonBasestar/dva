@@ -9,8 +9,8 @@ created-at: 2026-09-03T18:10:00+09:00
 source: "TASK-281 frozen contract"
 scope: "env_bridge schema and config plumbing, dva config env seal, dva config env show, gate preflight, error codes, fixtures, USAGE/CHANGELOG"
 status: done
-quality-review: fail
-quality-reviewed-at: 2026-09-07T17:50:00+09:00
+quality-review: conditional
+quality-reviewed-at: 2026-09-08T13:45:00+09:00
 depends-on: [TASK-281]
 ---
 
@@ -115,3 +115,30 @@ TASK-281이 동결한 계약대로 `env_bridge` 게이트와 `dva config env sea
 **후속 카드**: 결함 1은 [TASK-334](./334-cover-config-env-show-against-real-sops-with-a-pty.md)가,
 결함 2는 [TASK-335](./335-close-the-seal-create-only-toctou-window.md)가 이어받는다.
 real-sops 완료기준의 `[x]`는 `seal`에 대해서만 성립하며, `show` 몫은 TASK-334에 있다.
+
+### 재리뷰 (2026-09-08) — 판정 `conditional`
+
+`fail`을 낳은 두 결함이 각각 TASK-334(결정)와 TASK-335(수정)로 닫힌 뒤, 구현 세션이 아닌
+별도 세션이 재리뷰했다. **코드 결함은 없다.**
+
+게이트 (master `a3cc9ee` 기준, 전부 exit 0): `make test`, `make lint`, `make doc-check`,
+`make commit-check`, `make test-integration`(`-race`), `make check-generate`. real-sops
+통합 테스트는 skip이 아니라 실제로 실행됐다 — `TestConfigEnvRealSOPS`(4 subtest),
+`TestConfigEnvGatedCommandsRealBinary`(4 subtest), `TestConfigEnvSealRealSOPSRoundTrip`.
+
+- **TASK-335는 코드에서 실제로 닫혔고 테스트가 결속한다.** `safeWriter.place()`
+  (`internal/cli/config_env_safewrite.go:449-465`)가 `createOnly`로 분기해 unseal은
+  rename, seal은 `Link`한다. mutation(항상 `Rename`)으로 정확히 두 테스트만 FAIL:
+  `TestConfigEnvSealFaultMatrix/source_appears_between_preflight_and_commit`,
+  `TestConfigEnvSealRefusesSourceCreatedAfterPreflight`.
+- **TASK-334는 한계가 정직하게 기록됐다.** `runEnvShow`는 `bridgeOpenTTY()`로만 복호하고,
+  평문은 커널 측 child-stdout → tty/temp fd로만 흐르며 Go 문자열이 되지 않는다.
+  `realSops.Decrypt`/`Encrypt`는 child stderr를 capped `limitedWriter`로 받아 echo하지 않는다.
+
+**`conditional`인 이유**는 코드가 아니라 카드 본문의 과장 주장 셋이었고, `1e73a99`에서
+모두 정정했다: 기준 5의 "full row coverage"(미커버 행 7·20 명시), 기준 2의 "literal
+identity is impossible"(포인터 필드라 `omitempty`로 가능 — 규약 일관성이 진짜 이유),
+Implementation notes의 "config 상태와 무관"(`loadConfig()`가 게이트보다 먼저 돈다).
+
+미커버 행 둘은 로직 없는 한 줄 `bridgeErr` 매핑이라 별도 카드를 만들지 않는다. 아카이브를
+막지 않는다는 것이 재리뷰의 명시적 판단이다.
