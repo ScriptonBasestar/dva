@@ -396,10 +396,11 @@ func TestMigrateSectionOrderTrustsHeadCommentOverColumnZero(t *testing.T) {
 // banner, files it under the next key, and the output stops parsing. Same failure as M7,
 // on the axis M7 was not measured against.
 //
-// The fix hands the parser CRLF-normalized bytes and keeps the original bytes for output,
-// so this test has to assert both halves: the scalar and banner survive intact, *and* the
-// result is still CRLF throughout. An LF-only assertion here would pass against a fix that
-// quietly rewrote the user's line endings.
+// The fix hands the parser CRLF-normalized bytes and keeps the original bytes for output.
+// `want` is CRLF throughout, so the byte comparison already pins the preservation half —
+// a separate "no bare LF" assertion was written here and removed as unreachable: the
+// Fatalf above it ends the function on any mismatch, and TestMigrateSectionOrder-
+// StopsAtDocumentBoundary's two CRLF subtests fail independently on that regression.
 func TestMigrateSectionOrderBoundsTheBannerWalkOnCRLFToo(t *testing.T) {
 	src := "stack: \"x\r\n#cont\"\r\n# b1\r\n# b2\r\n# b3\r\nversion: \"1\"\r\n"
 	want := "# b1\r\n# b2\r\n# b3\r\nversion: \"1\"\r\nstack: \"x\r\n#cont\"\r\n"
@@ -417,9 +418,51 @@ func TestMigrateSectionOrderBoundsTheBannerWalkOnCRLFToo(t *testing.T) {
 	if err := yaml.Unmarshal(out, &probe); err != nil {
 		t.Fatalf("output does not parse: %v", err)
 	}
-	// M6 made CRLF preservation an explicit contract; the fix for this bug parses a
-	// normalized copy and could have broken it by writing the copy out instead.
-	if bytes.Contains(bytes.ReplaceAll(out, []byte("\r\n"), nil), []byte("\n")) {
-		t.Fatalf("output has a bare LF, CRLF was not preserved: %q", out)
+}
+
+// TestMigrateSectionOrderRefusesWhenLineBreaksDisagree pins the guard on the one
+// assumption every index in this function rests on: that yaml.v3 and strings.Split agree
+// on where the lines are. On a file whose breaks are lone CRs they do not — yaml.v3 reads
+// "\r" as a break and Split on "\n" does not — and the three panics below came out of
+// files `dva config migrate` exists to repair, which is the worst possible place to die.
+//
+// The fourth case is the one that motivated reporting rather than silently returning src.
+// A stray lone CR among LF lines does not panic; before the guard it prepended a blank
+// line and reordered nothing, so the file was rewritten and the warning it was rewritten
+// to clear survived. Mixed-newline files are not hypothetical: the other Migrate steps
+// round-trip through yaml.v3 and emit LF.
+//
+// Asserting the invariant rather than enumerating newline conventions is the point. A
+// fourth convention would break an enumeration; it cannot break this.
+func TestMigrateSectionOrderRefusesWhenLineBreaksDisagree(t *testing.T) {
+	tests := []struct {
+		name string
+		src  string
+	}{
+		{"lone CR", "plans:\r  x: 1\rversion: \"1\"\r"},
+		{"lone CR with three keys", "plans:\r  x: 1\rstack:\r  db: 1\rversion: \"1\"\r"},
+		{"lone CR with a banner", "plans:\r  x: 1\r# banner\rversion: \"1\"\r"},
+		{"one lone CR among LF lines", "plans:\r  x: 1\nversion: \"1\"\n"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// A panic here is the failure being guarded, so no recover: let it fail loudly.
+			out, report, err := MigrateSectionOrder([]byte(tt.src))
+			if err != nil {
+				t.Fatalf("MigrateSectionOrder() error = %v", err)
+			}
+			if string(out) != tt.src {
+				t.Fatalf("file was rewritten despite not being reordered:\ngot  %q\nwant %q", out, tt.src)
+			}
+			if len(report.Blocked) == 0 {
+				t.Fatal("returned the source unchanged and said nothing: the reader is left " +
+					"with the same `section order:` warning and no reason it was not fixed")
+			}
+			// The reason has to name a fix, not just a refusal -- this is the bail-out
+			// SHOULD-FIX 5 would otherwise have to come back for.
+			if !strings.Contains(report.Blocked[0], "LF or CRLF") {
+				t.Errorf("Blocked reason does not tell the reader what to do: %q", report.Blocked[0])
+			}
+		})
 	}
 }

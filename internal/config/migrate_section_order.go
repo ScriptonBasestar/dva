@@ -150,6 +150,32 @@ func MigrateSectionOrder(src []byte) ([]byte, MigrationReport, error) {
 	trailingNewline := strings.HasSuffix(text, "\n")
 	lines := strings.Split(strings.TrimSuffix(text, "\n"), "\n")
 
+	// The parser and this splitter have to agree on where the lines are, and on a file
+	// whose breaks are lone CRs they do not: yaml.v3 reads "\r" as a break, strings.Split
+	// on "\n" does not. Every index below then reads past the end. Measured on files
+	// `config migrate` exists to repair:
+	//
+	//	"plans:\r  x: 1\rversion: \"1\"\r"          panic: slice bounds out of range [:2] with capacity 1
+	//	"plans:\r  x: 1\r# banner\rversion: \"1\"\r"  panic: index out of range [2] with length 1
+	//
+	// A stray lone CR among LF lines does not panic, and is worse for it: the file comes
+	// back with a blank line prepended and nothing reordered, so it was rewritten and the
+	// warning it was rewritten to clear is still there. Mixed-newline files are not
+	// hypothetical here — the other Migrate steps round-trip through yaml.v3 and emit LF,
+	// so the pipeline produces them.
+	//
+	// Asserting the agreement beats teaching this function a third newline convention: a
+	// fourth convention would break an enumeration, not this invariant. The duplicate-key
+	// loop above bails on any keyLines[i] <= keyLines[i-1], so the last element is the
+	// maximum and bounds every index taken below.
+	if keyLines[n-1] > len(lines) {
+		report.Blocked = append(report.Blocked, fmt.Sprintf(
+			"section order: not reordered — the parser found %d lines where splitting on "+
+				"\\n found %d, so the file's line breaks are neither \\n nor \\r\\n; convert it to "+
+				"LF or CRLF endings and run migrate again", keyLines[n-1], len(lines)))
+		return src, report, nil
+	}
+
 	// start/end are 1-based inclusive line ranges. Block 0 never absorbs a leading
 	// comment — see the preamble note in the doc comment above — every later block's
 	// start does.

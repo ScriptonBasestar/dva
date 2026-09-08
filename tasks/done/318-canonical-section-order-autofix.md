@@ -129,6 +129,36 @@ M8(CRLF에서 제한이 과다). 세 번 다 "배너의 시작을 어디로 볼 
 신규 단언은 `go test -overlay`로 `7695706`에 대해 실행해 FAIL을 확인했다(위 재현 입력의
 정확한 tear가 재현됐다).
 
+### M8 재검증 중 나온 M9
+
+M8을 푸시한 뒤 같은 리뷰어에게 세 가지를 물었다. 그중 두 번째가 새 결함이었다.
+
+| # | 증상 | 재현 결과 | 수정 |
+|---|------|-----------|------|
+| M9 | **파서와 줄 분할기가 개행 규약에 합의하지 않으면 모든 인덱스가 끝을 넘어간다.** yaml.v3는 lone `\r`를 줄바꿈으로 읽고 `strings.Split(text, "\n")`은 읽지 않는다 | 패닉 3종을 직접 재현했다 — `plans:\r  x: 1\rversion: "1"\r` → `slice bounds out of range [:2] with capacity 1`, `plans:\r  x: 1\r# banner\rversion: "1"\r` → `index out of range [2] with length 1`. 그리고 LF 파일에 lone CR 한 줄이 섞인 `plans:\r  x: 1\nversion: "1"\n`는 패닉하지 않는 대신 **맨 앞에 빈 줄을 넣고 재정렬은 하지 않는다** — 파일은 고쳐 썼는데 고치려던 경고는 그대로 남는다 | `lines` 분할 직후 `keyLines[n-1] > len(lines)`면 원본을 그대로 반환. 개행 규약을 열거하지 않고 **파서와 분할기의 합의**라는 불변식만 단언하므로 네 번째 규약이 나와도 버틴다 |
+
+혼합 개행 파일은 가설이 아니다. 다른 Migrate 단계들이 yaml.v3 라운드트립으로 LF를 뱉으므로
+파이프라인 자신이 그런 파일을 만들어 낸다(M7 절 끝의 "범위 밖 관찰"이 바로 이것이고,
+M9는 그 관찰이 실제 잘못된 출력으로 이어짐을 보인다).
+
+**이 bail-out은 침묵하지 않는다.** `report.Blocked`에 파서가 센 줄 수와 분할 결과 줄 수를
+함께 적고 무엇을 하면 되는지(LF나 CRLF로 변환 후 재실행)를 말한다. SHOULD-FIX 5(침묵
+bail-out을 폐루프로)가 아직 남아 있지만, 새로 추가하는 bail-out을 침묵시켜 놓고 나중에
+고치는 것은 부채를 만드는 쪽이다.
+
+리뷰어의 나머지 두 답도 반영했다.
+
+- **Q1(정규화/원본 분리가 네 번째 변종을 여는가) — 아니다.** 파싱된 노드에서 쓰는 필드는
+  `.Kind`/`.Content`/`.Value`/`.Line`/`.HeadComment` 다섯뿐이고 `.Column`은 파일에 없다.
+  CRLF 12케이스에서 raw/normalized 파스의 키 집합·줄 번호·디코드 값이 전부 일치했다.
+- **Q3("bare LF 없음" 단언) — 도달 불가라 제거했다.** `want`가 전부 CRLF이므로 바이트 비교가
+  `t.Fatalf`로 먼저 끝난다. 제거해도 되는지는 회귀를 주입해 직접 확인했다 —
+  `text := string(normalized)`로 바꾸면 `TestMigrateSectionOrderStopsAtDocumentBoundary`의
+  CRLF 서브테스트 두 개와 M8 테스트가 독립적으로 FAIL한다. 파싱 가능성 단언(두 번째)은
+  남겼다. 그것이 잡는 실패는 이 버그에서 **실제로 일어났던** 스칼라 찢김이다.
+
+M9 단언은 `go test -overlay`로 `503ec00`에 대해 실행해 FAIL(패닉)을 확인했다.
+
 ## Completion Criteria
 
 - [x] 주석 보존 재배열 구현 + 테스트 | verify: `/usr/bin/grep -rq 'func TestCanonicalSectionOrderPreservesComments(' internal tools`
@@ -144,4 +174,5 @@ M8(CRLF에서 제한이 과다). 세 번 다 "배너의 시작을 어디로 볼 
 - [x] M6 — CRLF 파일에서도 문서 경계에서 멈춘다 | verify: `go test ./internal/config/ -run TestMigrateSectionOrderStopsAtDocumentBoundary`
 - [x] M7 — 컬럼 0 `#`가 인용 스칼라의 일부일 때 배너로 오인하지 않고, 배너 walk가 HeadComment 줄 수를 넘지 않는다 | verify: `go test ./internal/config/ -run TestMigrateSectionOrderTrustsHeadCommentOverColumnZero`
 - [x] M8 — CRLF 배너에서도 walk가 배너를 넘지 않고, 출력이 CRLF로 남는다 | verify: `go test ./internal/config/ -run TestMigrateSectionOrderBoundsTheBannerWalkOnCRLFToo`
+- [x] M9 — 파서와 줄 분할기가 개행에 합의하지 않으면 패닉 대신 이유를 붙여 원본을 반환한다 | verify: `go test ./internal/config/ -run TestMigrateSectionOrderRefusesWhenLineBreaksDisagree`
 - [x] 게이트 통과 | verify: `make doc-check`
