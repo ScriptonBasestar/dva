@@ -834,25 +834,57 @@ interaction:
 | `ssh` | SSH agent 설정 |
 | `devcontainer` | devcontainer 통합 (실험적) |
 
-위 표의 순서가 그대로 canonical order입니다. 예를 들어 `checks` → `default_mode` →
-`suggestion_ignore` → `modes`는 이 순서로 나란히 놓입니다.
+위 표의 순서가 그대로 canonical order입니다. 아래는 `stack` → `plans` →
+`default_plan` → `environments` → `sites`가 나란히 놓인 전체 파일이며, 그대로
+`dva config validate`에 넣으면 경고 없이 통과합니다.
 
 ```yaml
-checks:
-  - name: docker
-    type: command             # checks 항목은 type이 필수입니다
-    command: docker info
-default_mode: dev
-suggestion_ignore:
-  - "docker-*"
-  - "k8s-*"
-modes:
+version: "0.1"
+
+vars:
+  APP_PORT: "3000"
+
+environment:
+  LOG_LEVEL: debug
+
+stack:
+  api:
+    default_runner: compose
+    runners:
+      compose:
+        files: [docker-compose.yml]
+
+plans:
   dev:
-    compose_profiles: [infra]   # modes 엔트리에 `vars:`는 없습니다
+    description: "Local development"
+    entries:
+      - name: api
+    environment: local
+    site: laptop
+
+default_plan: dev
+
+environments:
+  local:
+    environment:
+      LOG_LEVEL: debug
+
+sites:
+  laptop:
+    vars:
+      APP_PORT: "3001"
 ```
 
-(`modes`는 순서를 보이기 위해 넣었을 뿐 권장 섹션이 아닙니다 — `dva config validate`가
-`plans` + `environments` + `sites`로의 이전을 권고하는 deprecation 경고를 냅니다.)
+이 예시가 실제로 통과하는지는 확인한 것입니다. 이전 판의 예시는 순서만 보여주려고
+`modes:`를 넣었는데, `modes`는 `plans` + `environments` + `sites`로의 이전을 권고하는
+deprecation 경고를 냅니다 — 순서를 설명하는 예시가 그 자리에서 경고를 내면 읽는 쪽은
+어느 쪽을 따라야 할지 알 수 없습니다.
+
+예시를 옮겨 쓸 때 걸리는 곳들: `entries`는 `- name: api` 형태의 맵 목록이라
+`entries: [api]`처럼 문자열을 넣으면 `cannot unmarshal !!str`로 거부됩니다.
+`runners.compose`는 `file:` 단수가 아니라 `files:` 배열이고, `runners`를 쓰면
+`default_runner`가 함께 있어야 합니다(없으면 `stack.api: Must not validate the
+schema (not)`). `version:`은 `"1"`이 아니라 `"0.1"`처럼 실재하는 버전이어야 합니다.
 
 순서가 어긋나도 에러는 아니고 `dva config validate`가 advisory 경고만 냅니다
 (`section order: found [...] but canonical order is [...]; consider reordering`).
@@ -1643,6 +1675,52 @@ Subproject `path`는 absolute path나 parent 밖을 가리키는 `../` path도 �
 `dva up/down/stop --tags`/`--exclude-tags`가 하는 별개의 일이며(위
 [라이프사이클 플래그](#라이프사이클-플래그) 참조), `exclude_tags`와 이름이 비슷해도 서로 다른
 축입니다.
+
+##### 같은 설정에서 네 경로를 직접 돌려본 결과
+
+부모가 `exclude_tags: [infra]`로 자식의 `compile`을 가리면서 동시에 `import:`으로 끌어온
+경우입니다.
+
+```yaml
+# ./dva.yml
+version: "0.1"
+
+subprojects:
+  engine:
+    path: ./engine
+    exclude_tags: [infra]
+    import:
+      interactions:
+        - compile
+```
+
+```yaml
+# ./engine/dva.yml
+version: "0.1"
+
+interaction:
+  compile:
+    description: "build the engine"
+    tags: [infra]
+    command: echo compile
+  smoke:
+    description: "smoke test"
+    tags: [test]
+    command: echo smoke
+```
+
+| 명령 | 결과 |
+|------|------|
+| `dva ls` | `engine/compile  # build the engine` — import 이름이 그대로 보입니다 |
+| `dva ls --project engine` | `smoke  # smoke test` — `compile`이 빠집니다 |
+| `dva engine:compile` | ``ERROR: command `compile` not found in subproject `engine`. Run 'dva ls --project engine'`` (exit 1) |
+| `dva run --project engine compile` | 같은 에러, exit 1 — 축약형과 합류하는 경로입니다 |
+| `dva run engine/compile` | `compile` (exit 0) — 실행됩니다 |
+
+같은 interaction 하나가 **동시에 감춰져 있고 실행 가능합니다.** 그리고 에러 메시지가
+가리키는 `dva ls --project engine`은 바로 그것을 보여주지 않는 목록입니다 — 태그로
+감췄다고 믿고 이 에러를 만나면 원인을 찾을 단서가 없습니다. `import:`에서 빼는 것이
+유일한 차단 방법인 이유입니다.
 
 #### 예약어 및 자식 검증 규칙
 

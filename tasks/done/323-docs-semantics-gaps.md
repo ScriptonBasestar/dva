@@ -83,12 +83,56 @@ C5는 이 교훈을 실제로 적용한 첫 사례다. 문장 존재 확인 대�
 문장 바인딩인데, 좁히는 주체가 설정 두 곳이라는 사실을 실행으로 거는 방법이 지금 CLI 표면에는
 없기 때문이다(그 자체가 TASK-350이 다룰 재료다).
 
+### C3 재방문 — 제자리 수정으로는 부족했다
+
+C3의 첫 수정은 예시를 고쳐 `dva config validate` EXIT=0을 만들었지만, 그 예시는 여전히
+`modes:`를 싣고 있었고 `modes`는 `plans` + `environments` + `sites`로의 이전을 권고하는
+deprecation 경고를 낸다. 그래서 "이렇게 쓰라"는 예시가 그 자리에서 "이렇게 쓰지 말라"는
+경고를 내는 상태였고, 첫 수정은 그 사실을 괄호 주석으로 **인정**했을 뿐 없애지 못했다.
+
+canonical order를 보여주는 데 `modes`가 필요하지도 않다 — `stack` → `plans` →
+`default_plan` → `environments` → `sites`가 `canonicalSectionOrder`
+(`internal/config/validate_warnings.go:21-32`)의 인접한 인덱스 4–8이라 연속 구간을 그대로
+보여준다. 예시를 그 구간으로 바꾸고, 순서만 보이는 조각이 아니라 **그대로 복사하면 통과하는
+전체 파일**로 실었다.
+
+검증은 리뷰어의 사본이 아니라 **USAGE.md에 실제로 실린 블록을 파일에서 추출해** 돌렸다:
+`dva config validate` → `✅ dva.yml is valid`, EXIT=0, 경고 0건(section order advisory도
+없음). 옮겨 쓰다 걸리는 네 곳(`entries`에 문자열, `version: "1"`, `runners.compose.file:`
+단수, `default_runner` 누락)도 각각 어떤 에러가 나는지 문서에 적었다 — 예시를 고치는 데
+실제로 든 시행착오이므로 다음 사람이 같은 길을 되짚을 이유가 없다.
+
+**C3의 수용기준은 여전히 문장 바인딩이다.** 예시가 통과한다는 사실을 게이트가 확인하지
+않으므로 세 번째로 깨질 수 있다. 이 카드가 스스로 내린 결론("예시가 실행된다"가 훨씬 강한
+바인딩)을 C3에만 적용하지 못한 셈이고, 문서 예시를 게이트에서 실행하는 일반 역량은
+**TASK-357**로 분리했다.
+
+### exclude_tags 네 경로 실측 예시
+
+C5의 산문은 세 경로가 걸리고 import 경로는 안 걸린다고 말한다. 그 문장이 무엇을 뜻하는지
+독자가 자기 설정에서 알아보기 어려워, 하나의 설정으로 네 경로를 전부 돌린 결과를 USAGE.md에
+표로 실었다. 직접 측정한 값이다.
+
+| 명령 | 결과 |
+|------|------|
+| `dva ls` | `engine/compile` 표시 (exit 0) |
+| `dva ls --project engine` | `smoke`만 표시 (exit 0) |
+| `dva engine:compile` | not found 에러 (exit 1) |
+| `dva run --project engine compile` | 같은 에러 (exit 1) |
+| `dva run engine/compile` | 실행되어 `compile` 출력 (exit 0) |
+
+같은 interaction 하나가 동시에 감춰져 있고 실행 가능하다. 게다가 에러 메시지가 안내하는
+`dva ls --project engine`이 바로 그것을 보여주지 않는 목록이라, 태그로 감췄다고 믿는
+사용자에게는 단서가 없다. 산문만으로는 이 조합이 잘 전달되지 않는다.
+
 ## Completion Criteria
 
 - [x] exclude_tags가 거르는 세 경로와 거르지 않는 import 경로, compose와 무관하다는 사실을 USAGE.md에 명시 | verify: `go test ./internal/config/ -run TestSubprojectImportIgnoresExcludeTags`
 - [x] script_file:이 exec 방식(shebang+실행권한 필수)이라는 것을 USAGE.md에 명시 | verify: `/usr/bin/grep -qF '그런 보정 없이 선언된 파일 경로를 그대로' USAGE.md`
 - [x] native runner env: 필드 예시가 USAGE.md에 있는지 확인 — STALE: 2026-08-06 커밋(67107664)에서 이미 추가돼 이 카드보다 선행함, 신규 작업 불필요 | verify: `/usr/bin/grep -qF 'PORT: "8080"' USAGE.md`
 - [x] suggestion_ignore 정본 위치(checks 뒤, interaction 앞)를 표/예시로 USAGE.md에 명시 | verify: `/usr/bin/grep -qF '위 표의 순서가 그대로 canonical order입니다' USAGE.md`
+- [x] canonical order 예시가 deprecation 경고 없이 `dva config validate`를 통과한다 — 실린 블록을 추출해 직접 실행, EXIT=0 경고 0건 (게이트 결속은 TASK-357) | verify: `/usr/bin/grep -qF '에 넣으면 경고 없이 통과합니다' USAGE.md`
+- [x] exclude_tags 네 경로의 실측 결과가 USAGE.md에 표로 있다 | verify: `/usr/bin/grep -qF '동시에 감춰져 있고 실행 가능합니다' USAGE.md`
 - [x] plan 경로에서 --env가 거부되고 같은 plan을 다른 env로 쓰려면 plan을 복제해야 함을 USAGE.md에 명시 | verify: `/usr/bin/grep -qF '같은 plan을 다른 environment로 한 번만 실행' USAGE.md`
 - [x] dva logs <plan>이 엔트리 2개 이상이면 이름 지정을 요구한다는 것과 native 엔트리 로그 경로를 USAGE.md에 명시 | verify: `/usr/bin/grep -qF '엔트리를 2개 이상 가지면 엔트리 이름을' USAGE.md`
 - [x] interaction step에서 dva down 등 재귀 호출 시 --dry-run이 내부 계획까지 들여다보지 않는다는 것을 USAGE.md에 명시 | verify: `/usr/bin/grep -qF '재귀 호출 안쪽까지 들여다보지 않습니다' USAGE.md`
