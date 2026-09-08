@@ -82,3 +82,11 @@ non-test 소스를 AST로 파싱해 gate에 도달하는 커맨드를 찾고, de
   미루면 사유와 함께 별도 카드로 남긴다.
 - 리뷰의 픽스처는 워크트리와 함께 사라졌지만 형태가 위 표에 정확히 기술돼 있어 재작성은
   몇 분이면 된다.
+- **이 카드가 닫히면 지워야 할 임시 서술이 하나 있다.** `internal/agentdeny/rules.go`의
+  `GatedCommands` 주석에 검출기가 실제로 보는 형태를 밝히는 두 문장이 들어 있다
+  (`The check sees a command declared as a package-level `var x = &cobra.Command{…}` …
+  so those still rely on the author.`). 이 카드가 없애는 바로 그 간극을 서술한 문장이므로,
+  간극이 사라진 뒤에도 남겨두면 **다음번 거짓 주석**이 된다. 같은 커밋에서 지울 것.
+  같은 이유로 같은 주석의 `checked rather than only requested`도 그때
+  `enforced rather than requested`로 되돌릴지 함께 판단한다 — 검출기가 트리의 모든 형태를
+  보게 되면 "요청"이 아니라 정말로 "강제"가 되기 때문이다.

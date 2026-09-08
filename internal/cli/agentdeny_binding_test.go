@@ -93,8 +93,9 @@ func argvIsGated(argv string) bool {
 
 // parseCLIPackage parses this package's own non-test sources. `go test` runs with the
 // package directory as the working directory, so "." is internal/cli. Test files are
-// excluded because this file would otherwise be part of its own input — every argv string
-// in the messages above would read as a call and a fixture command as a real one.
+// excluded as a precaution, not for a measured effect: nothing in a _test.go file changes
+// the surface today, but a mutation fixture written into one, or a test-file command
+// literal declared the way a real one is, would enter the input unnoticed.
 //
 // Reading the directory rather than the build's file list is deliberate twice over. A
 // build-tagged file counts on every platform, which is what a deny-rule policy wants: a
@@ -179,9 +180,11 @@ func gateCodeConstants(files []*ast.File) map[string]bool {
 //
 // Transitive because the gate is never in the command literal itself: seal's RunE calls
 // runEnvSeal, which calls checkSealEnabled, which is the one that refuses. Fixpoint rather
-// than a fixed depth so an extracted helper does not silently drop a command off the
-// surface — an extraction is exactly the refactor that would otherwise turn this check off
-// without anyone touching it.
+// than a fixed depth: a gate pushed one helper deeper stays on the surface, where a depth
+// limit would quietly drop it. The closure follows *calls* only — extracting RunE's body
+// and assigning it as a value (`RunE: runEnvShow`) takes the command off the surface
+// entirely, because reachesGate below looks for calls, not func values. kubectl.go already
+// uses that idiom.
 func gatedFunctions(files []*ast.File, gateCodes map[string]bool) map[string]bool {
 	bodies := map[string]*ast.FuncDecl{}
 	for _, file := range files {
@@ -242,8 +245,9 @@ func refusesWithGateCode(node ast.Node, gateCodes map[string]bool) bool {
 }
 
 // calledIdents returns the names of every plain-identifier call in node. Selector calls
-// (x.F()) are deliberately ignored: a gate lives in this package, and a method or
-// cross-package call cannot be one.
+// (x.F()) are ignored: gatedFunctions below tracks only package-level funcs, so a method
+// or cross-package call is never in its map. No gate is a method today; one written as a
+// method would not be found here.
 func calledIdents(node ast.Node) map[string]bool {
 	names := map[string]bool{}
 	ast.Inspect(node, func(n ast.Node) bool {
@@ -269,9 +273,9 @@ type commandDecl struct {
 // exactly as GatedCommands.Argv must spell it.
 //
 // The parent chain comes from the same `parent.AddCommand(child)` calls that build the real
-// tree at init time, so a command moved to a different parent moves here too. Commands that
-// never reach rootCmd are skipped rather than failed: an unattached command literal is
-// unreachable from the CLI, so it is not part of any surface.
+// tree at init time, so a command moved to a different parent moves here too. Commands
+// argvOf cannot place are skipped rather than failed; see its comment for the two shapes
+// and what that misses.
 func gatedCommandArgv(t *testing.T, files []*ast.File, gatedFuncs map[string]bool) []string {
 	t.Helper()
 
@@ -402,8 +406,11 @@ func reachesGate(lit *ast.CompositeLit, gatedFuncs map[string]bool) bool {
 }
 
 // argvOf walks from a command variable up to rootCmd, returning the invocation a user
-// types. Reports false for a command whose chain does not reach rootCmd (unattached, or
-// attached in a loop the AST cannot follow), which is not part of the reachable CLI.
+// types. Reports false for a command it cannot place: one whose chain never reaches
+// rootCmd (unattached, or attached in a loop the AST cannot follow), and one whose Use is
+// not a string literal (`Use: otherCmd.Use`, as validate_alias.go builds its alias), which
+// leaves it with no name of its own. Both are skipped silently, so a gated command in
+// either shape is missed.
 func argvOf(name string, commands map[string]commandDecl, parent map[string]string) (string, bool) {
 	var words []string
 	for seen := map[string]bool{}; ; {

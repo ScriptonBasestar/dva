@@ -140,14 +140,13 @@ const binding = `
 ` + "`internal/agentdeny.GatedCommands`" + ` — the source list above — so a change to that list
 that is not accompanied by regenerating this doc is caught in CI.
 
-That only proves the doc agrees with the list it came from. The
-binding to the *live* command tree is
-` + "`internal/cli.TestGatedCommandsCoverEveryGatedSurface`" + ` (TASK-337), run by
-` + "`make test`" + ` in CI. It derives the gated surface from ` + "`internal/cli`" + `'s own
+That only proves the doc agrees with the list it came from. The binding to the *live*
+command tree is ` + "`internal/cli.TestGatedCommandsCoverEveryGatedSurface`" + ` (TASK-337),
+run by ` + "`make test`" + ` in CI. It derives the gated surface from ` + "`internal/cli`" + `'s own
 source rather than a second declared list — a gated command refuses with a
-` + "`*_not_enabled`" + ` code, and that refusal is the gate — then rebuilds each argv from
-the ` + "`AddCommand`" + ` calls that build the real tree. It fails both ways: a gated command
-with no entry here, and an entry whose argv no gated command produces.
+` + "`*_not_enabled`" + ` code, and that refusal is the gate — then rebuilds each argv from the
+` + "`AddCommand`" + ` calls that build the real tree. It fails both ways: a gated command with
+no entry here, and an entry whose argv no gated command produces.
 
 ## What "never clobbers" means here
 
