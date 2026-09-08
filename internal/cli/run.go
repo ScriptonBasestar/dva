@@ -154,7 +154,11 @@ func runSubprojectCommand(parentCfg *config.Config, project, cmdName string, cmd
 	// first made the two surfaces answer one spelling two ways: ls said the key does not
 	// exist while run said it exists and is refused, which is the shape LiteralKeyWins'
 	// comment rules out. A key the parent excluded is "not found" on both, and only a key the
-	// parent does offer gets the child's refusal.
+	// parent offers *on these two routes* gets the child's refusal. The scoping is load-
+	// bearing: the third form, a `p/k` import, is not tag-filtered at all. Measured — parent
+	// with `exclude_tags: [infra]` importing a child `compile` that carries the infra tag,
+	// and `dva ls` lists `engine/compile` while `dva run engine/compile` runs it, rc 0. So
+	// `exclude_tags` states what the parent does not offer *here*, not in the config at large.
 	//
 	// The lookup is still on the unfiltered subCfg.Interaction, which is what makes this
 	// correct rather than merely consistent: the filter decides whether the parent offers the
