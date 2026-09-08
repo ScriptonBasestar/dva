@@ -338,6 +338,17 @@ func WarnReservedCommandConflicts(interaction map[string]*InteractionCommand) []
 // subproject `compose` and a child `ps` runs `dva compose:ps` → CHILD-PS, rc 0, while
 // `dva config validate` on that same file exits 1. Closing that would mean moving the check
 // onto the routing path, which is a separate decision from the one this implements.
+// RootOwnerName is the value `dva manifest` and `dva ls --json` report in `owner` for an
+// item this dva.yml declares itself, rather than imports (TASK-333). It lives here, beside
+// the reserved-name rules, because validate.go refuses a subproject spelled this way and
+// internal/cli reads the same constant for the field it writes — one literal, so the
+// sentinel and the rule that protects it cannot drift apart.
+//
+// Deliberately NOT in reservedCommands: that set also bans a name as an interaction key and
+// as a `p:k` prefix, and nothing about `dva run root` is ambiguous. The narrower problem
+// gets the narrower rule.
+const RootOwnerName = "root"
+
 func ReservedSubprojectNames(subprojects map[string]SubprojectConfig) []string {
 	var names []string
 	for name := range subprojects {

@@ -34,6 +34,13 @@ type ResolvedCommand struct {
 	Pod          string
 	Compose      ComposeOpts
 	Argv         []string
+
+	// SubprojectName and CanonicalAddress mirror config.InteractionCommand's fields of the
+	// same name (TASK-333) — copied through in buildResolved and, for a subcommand row,
+	// inherited from the parent in mergeInteraction, since a subcommand is reached through
+	// the same import as its parent and shares its owner.
+	SubprojectName   string
+	CanonicalAddress string
 }
 
 // ComposeOpts holds normalized compose options for a command.
@@ -231,6 +238,9 @@ func buildResolved(name string, entry *config.InteractionCommand) *ResolvedComma
 		Entrypoint:   entry.Entrypoint,
 		RunnerName:   entry.Runner,
 		Pod:          entry.Pod,
+
+		SubprojectName:   entry.SubprojectName,
+		CanonicalAddress: entry.CanonicalAddress,
 	}
 
 	if cmd.Environment == nil {
@@ -294,6 +304,15 @@ func mergeInteraction(parent, child *config.InteractionCommand) *config.Interact
 		Runner:       parent.Runner,
 		Pod:          parent.Pod,
 		Compose:      parent.Compose,
+
+		// Always the parent's. subproject.go's import loop sets SubprojectName and
+		// CanonicalAddress once, on the top-level clone it hands back — the Subcommands
+		// entries cloneImportedInteraction recurses into keep the zero value for both — so
+		// the child's own fields carry nothing to inherit from here. A subcommand is
+		// reached through its parent's address regardless, and shares the parent's owner
+		// and canonical address rather than needing independent ones. TASK-333.
+		SubprojectName:   parent.SubprojectName,
+		CanonicalAddress: parent.CanonicalAddress,
 	}
 
 	// The one field taken from the child rather than inherited from the parent, and the

@@ -116,6 +116,36 @@ func TestSubprojectRejectionNamesRuleAndDeclaration(t *testing.T) {
 		}
 	})
 
+	// TASK-333. `root` is refused for a different reason than the names above and by a
+	// different check, so this asserts the two messages stay distinct: the reserved-name
+	// text sends a reader to reservedCommands, and `root` is deliberately not in it.
+	t.Run("owner sentinel as a subproject name", func(t *testing.T) {
+		parentDir := writeSubprojectFixture(t,
+			"version: \"0.1.0\"\nsubprojects:\n  "+RootOwnerName+":\n    path: child\n", "", "")
+
+		cfg, err := Load(parentDir)
+		if err != nil {
+			t.Fatalf("Load error: %v", err)
+		}
+		err = cfg.Validate()
+		if err == nil {
+			t.Fatal("expected a rejection")
+		}
+
+		if !strings.Contains(err.Error(), "subprojects."+RootOwnerName) {
+			t.Errorf("error does not name the declaration `subprojects.%s`: %v", RootOwnerName, err)
+		}
+		// The rule, in the reader's terms: the field this name would make ambiguous.
+		if !strings.Contains(err.Error(), "owner") {
+			t.Errorf("error does not name the owner field it protects: %v", err)
+		}
+		// Not the other message. Sharing it would point the reader at a list `root` is
+		// deliberately absent from, which is the disagreement this separation avoids.
+		if strings.Contains(err.Error(), "reserved subproject name") {
+			t.Errorf("owner-sentinel rejection reused the reserved-name message: %v", err)
+		}
+	})
+
 	t.Run("child key rejected through the import route", func(t *testing.T) {
 		parentDir := writeSubprojectFixture(t,
 			"version: \"0.1.0\"\nsubprojects:\n  engine:\n    path: child\n    import:\n      interactions:\n        - status\n",

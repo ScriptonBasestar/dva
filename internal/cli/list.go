@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -10,6 +11,52 @@ import (
 	"github.com/ScriptonBasestar/dva/internal/output"
 	"github.com/ScriptonBasestar/dva/internal/runner"
 )
+
+// rootOwnerName is the owner value TASK-333's owner field carries for a locally declared
+// item — the card's own wording ("the root for locally declared items"), not a subproject
+// name, since Config carries no name of its own for the file `dva ls` is reading.
+//
+// Aliased from config rather than spelled again here: validate.go refuses a subproject by
+// this name so the field cannot answer two questions with one word, and a second literal
+// would let the sentinel and the rule protecting it drift apart without a test noticing.
+const rootOwnerName = config.RootOwnerName
+
+// ownerName is buildCommandEntries' owner field for one root-listing row: the subproject
+// this command was imported from, or rootOwnerName for one declared directly in this
+// dva.yml. cmd.SubprojectName is empty in both the locally-declared case and the
+// zero-value ResolvedCommand callers like TestBuildCommandEntries_Basic construct by hand,
+// which is why both read as "root" rather than one being an error case.
+func ownerName(cmd *runner.ResolvedCommand) string {
+	if cmd.SubprojectName != "" {
+		return cmd.SubprojectName
+	}
+	return rootOwnerName
+}
+
+// interactionAliasGroups partitions commands' top-level keys (len(cmd.Path) == 1 — a
+// subcommand row is reached only through its parent's address, so TASK-333 does not mark it
+// independently) by the CanonicalAddress they share, returning each canonical key's other
+// addresses (its import's `as:` aliases) in sorted order.
+//
+// CanonicalAddress is the identity to group on rather than a pointer comparison against the
+// backing *config.InteractionCommand, because tree.List() only hands back fresh
+// *runner.ResolvedCommand values built per key (buildResolved) — the pointer identity
+// warnDuplicatePlanDeclarations relies on for plans does not survive that conversion, but
+// subproject.go now stamps CanonicalAddress onto the clone before either map entry is
+// assigned, so both keys carry the same string instead.
+func interactionAliasGroups(commands map[string]*runner.ResolvedCommand) map[string][]string {
+	groups := make(map[string][]string)
+	for k, cmd := range commands {
+		if cmd.CanonicalAddress == "" || len(cmd.Path) != 1 || k == cmd.CanonicalAddress {
+			continue
+		}
+		groups[cmd.CanonicalAddress] = append(groups[cmd.CanonicalAddress], k)
+	}
+	for canonical := range groups {
+		sort.Strings(groups[canonical])
+	}
+	return groups
+}
 
 var (
 	lsFormat   string
@@ -66,6 +113,9 @@ func init() {
 	// This is the flag run.go:118's recovery hint ("Run 'dva ls --project %s'") names — before
 	// this it was registered on runCmd alone and the hint exited non-zero as an unknown flag.
 	lsCmd.Flags().StringVarP(&lsProject, "project", "p", "", "List a specific sub-project's interactions instead of the parent's")
+	// TASK-333: same reasoning as runCmd's own registration in run.go's init() — must
+	// happen after the flag above, in the same init(), not in completion.go's.
+	_ = lsCmd.RegisterFlagCompletionFunc("project", subprojectNameCompletion)
 }
 
 // runLsProject is `dva ls --project <name>`'s body: load that subproject the same way
@@ -174,6 +224,11 @@ func buildSubprojectCommandEntries(parent, sub *config.Config, project string, c
 			"command": cmd.Command,
 			"runner":  runner.DetectRunnerType(cmd),
 			"shell":   cmd.Shell,
+			// TASK-333: every row in a `--project` listing is declared in that subproject's
+			// own dva.yml, not imported into it — subCfg.Interaction is loaded straight from
+			// disk, never through resolveSubprojectImports (subprojects do not nest) — so the
+			// owner is the project name itself for the whole listing, not derived per row.
+			"owner": project,
 		}
 		if cmd.Description != "" {
 			entry["description"] = cmd.Description
@@ -409,6 +464,11 @@ func subprojectUsage(parent, sub *config.Config, project, key string, cmd *runne
 }
 
 func buildCommandEntries(c *config.Config, commands map[string]*runner.ResolvedCommand, keys []string) map[string]any {
+	// One grouping pass up front rather than per-row, so every canonical entry's aliases
+	// list is complete before any row is built — a per-row lookup would need to scan
+	// `commands` from scratch for each key anyway, and this makes the one scan explicit.
+	aliasGroups := interactionAliasGroups(commands)
+
 	entries := make(map[string]any, len(keys))
 	for _, k := range keys {
 		cmd := commands[k]
@@ -416,6 +476,11 @@ func buildCommandEntries(c *config.Config, commands map[string]*runner.ResolvedC
 			"command": cmd.Command,
 			"runner":  runner.DetectRunnerType(cmd),
 			"shell":   cmd.Shell,
+			// TASK-333: naming the subproject a command was imported from (or "root" for
+			// one this dva.yml declares itself) unconditionally, not behind a presence
+			// check like the markers below — every row has an owner, so there is no
+			// absent-vs-empty distinction to signal.
+			"owner": ownerName(cmd),
 		}
 		if cmd.Description != "" {
 			entry["description"] = cmd.Description
@@ -436,6 +501,17 @@ func buildCommandEntries(c *config.Config, commands map[string]*runner.ResolvedC
 		if unroutable != "" {
 			entry["unroutable"] = unroutable
 			entry["unroutable_reason"] = config.ConflictAdvice(cmd.Name)
+		}
+		// TASK-333's canonical/alias markers, same presence-is-the-signal contract as the
+		// pair above: a command reachable under exactly one address carries neither field.
+		if cmd.CanonicalAddress != "" && len(cmd.Path) == 1 {
+			if k == cmd.CanonicalAddress {
+				if aliases := aliasGroups[k]; len(aliases) > 0 {
+					entry["aliases"] = aliases
+				}
+			} else {
+				entry["alias_of"] = cmd.CanonicalAddress
+			}
 		}
 		entries[k] = entry
 	}

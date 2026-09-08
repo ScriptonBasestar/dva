@@ -172,6 +172,23 @@ type ManifestDynCmd struct {
 	// parent key. Set only when the condition holds; presence alone is the signal, the same
 	// contract as its neighbours above.
 	ShadowedByLiteralKey string `json:"shadowed_by_literal_key,omitempty" yaml:"shadowed_by_literal_key,omitempty"`
+	// Owner names the subproject this command was imported from, or "root" for one
+	// declared directly in this dva.yml (TASK-333). Always set — unlike every marker
+	// field above, there is no absent-vs-empty distinction to signal, since every
+	// command has exactly one owner.
+	Owner string `json:"owner" yaml:"owner"`
+	// Aliases lists every other top-level address this command is also reachable
+	// under — today at most one, an import's `as:` name, beside its own canonical
+	// "<subproject>/<key>" address. A second `as:` for the same child is unreachable:
+	// subproject.go's canonical-name collision check refuses the repeated import
+	// first. Populated only on the canonical entry, and only
+	// when non-empty: the same presence-is-the-signal contract as
+	// ShadowedByLiteralKey above. TASK-333.
+	Aliases []string `json:"aliases,omitempty" yaml:"aliases,omitempty"`
+	// AliasOf is Aliases' other side: the canonical address this entry is an alias
+	// of. Set only on an alias entry — the canonical entry, and every command
+	// reachable under exactly one address, omit it. TASK-333.
+	AliasOf string `json:"alias_of,omitempty" yaml:"alias_of,omitempty"`
 }
 
 type ManifestRunner struct {
@@ -344,8 +361,11 @@ func fillCommandDescriptions(command *cobra.Command, entry ManifestCmd) Manifest
 
 func buildManifest(c *config.Config) *Manifest {
 	m := &Manifest{
-		DvaVersion:        config.Version,
-		SchemaVersion:     "1.6",
+		DvaVersion: config.Version,
+		// schema_version moves 1.6 -> 1.7 here: TASK-333 adds owner, aliases and alias_of
+		// to every ManifestDynCmd entry (root DynamicCommands and each subproject's
+		// Commands), the same reason 1.4 moved to 1.5 for CanonicalName above.
+		SchemaVersion:     "1.7",
 		GeneratedAt:       time.Now().Format(time.RFC3339),
 		ConfigFile:        c.FilePath(),
 		ProjectDir:        c.FileDir(),
@@ -539,6 +559,11 @@ func buildManifest(c *config.Config) *Manifest {
 	}
 	sort.Strings(keys)
 
+	// TASK-333: computed once over the whole map, same as buildCommandEntries in
+	// list.go, so a canonical entry's aliases list and each alias's alias_of agree
+	// with what `dva ls --json` reports for the same interaction tree.
+	aliasGroups := interactionAliasGroups(commands)
+
 	for _, k := range keys {
 		cmd := commands[k]
 		// usage_example carries an implicit promise that running it invokes the entry it sits
@@ -553,6 +578,16 @@ func buildManifest(c *config.Config) *Manifest {
 			UsageExample:      usage,
 			ShadowedByBuiltin: shadowedBy,
 			Unroutable:        unroutable,
+			Owner:             ownerName(cmd),
+		}
+		if cmd.CanonicalAddress != "" && len(cmd.Path) == 1 {
+			if k == cmd.CanonicalAddress {
+				if aliases := aliasGroups[k]; len(aliases) > 0 {
+					dynCmd.Aliases = aliases
+				}
+			} else {
+				dynCmd.AliasOf = cmd.CanonicalAddress
+			}
 		}
 		if unroutable != "" {
 			dynCmd.UnroutableReason = config.ConflictAdvice(k)
@@ -670,6 +705,10 @@ func buildManifestSubprojectCommands(parentCfg *config.Config, name string, subC
 			ShadowedByLiteralKey: shadowedByLiteralKey,
 			Unroutable:           unroutable,
 			UnroutableReason:     unroutableReason,
+			// TASK-333: a subproject-scoped listing's owner is trivially the subproject's
+			// own name — subprojects don't nest (resolveSubprojectImports runs once, at the
+			// top-level Load()), so every entry here is declared directly inside subCfg.
+			Owner: name,
 		}
 		if cmd.Service != "" {
 			dynCmd.Service = cmd.Service

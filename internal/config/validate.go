@@ -223,6 +223,24 @@ func (c *Config) Validate() error {
 		errs = append(errs, fmt.Errorf("reserved subproject name in this config:\n%s", strings.Join(lines, "\n")))
 	}
 
+	// TASK-333, and a separate error from the one above on purpose: that message points a
+	// reader at reservedCommands, and this name is deliberately absent from it, so sharing
+	// the text would send them looking for `root` in a list that does not contain it.
+	//
+	// The condition is narrower than a routing conflict — `root/web` routes fine either way.
+	// What breaks is the machine-readable output: `owner` says which dva.yml declared an
+	// item, and with a subproject by this name a locally declared command and one imported
+	// from that subproject report the same owner. Measured: two manifest rows, `local-task`
+	// and `root/compile`, both `owner=root`. Refused rather than documented because a
+	// consumer filtering on the field has no second signal to fall back on.
+	if _, exists := c.Subprojects[RootOwnerName]; exists {
+		errs = append(errs, fmt.Errorf(
+			"subprojects.%s: `%s` is the owner value `dva manifest` and `dva ls --json` report "+
+				"for items this dva.yml declares itself, so a subproject cannot take that name. "+
+				"Rename it — the `%s/<name>` import addresses change with it",
+			RootOwnerName, RootOwnerName, RootOwnerName))
+	}
+
 	errs = append(errs, c.validateHookPlacement()...)
 
 	// Stack is a map: sort so two problems are reported in the same order on every run.

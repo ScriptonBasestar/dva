@@ -205,4 +205,9 @@ func init() {
 	runCmd.Flags().StringArrayVarP(&publishPorts, "publish", "p", nil, "Publish container port(s) to host")
 	runCmd.Flags().BoolVarP(&dryRun, "explain", "e", false, "Alias for --dry-run")
 	runCmd.Flags().StringVar(&projectName, "project", "", "Target a specific sub-project")
+	// TASK-333: registered here, right after the flag it completes, rather than in
+	// completion.go's own init() — RegisterFlagCompletionFunc looks the flag up
+	// immediately and silently no-ops if it isn't registered yet, and Go does not
+	// guarantee this file's init() runs before completion.go's.
+	_ = runCmd.RegisterFlagCompletionFunc("project", subprojectNameCompletion)
 }

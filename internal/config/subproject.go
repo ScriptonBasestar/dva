@@ -186,6 +186,12 @@ func resolveSubprojectImports(cfg *Config, opts ...LoadOption) error {
 			}
 
 			importedInteraction := cloneImportedInteraction(interaction, subCfg, subprojectPath)
+			// TASK-333: recorded once, on the single clone both the canonical map entry
+			// and its optional alias below point at, so ls/manifest can name the owning
+			// subproject and tell canonical from alias without re-deriving either from
+			// the map key.
+			importedInteraction.SubprojectName = subprojectName
+			importedInteraction.CanonicalAddress = canonicalName
 			cfg.Interaction[canonicalName] = importedInteraction
 
 			alias := strings.TrimSpace(entry.As)

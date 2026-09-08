@@ -3,9 +3,9 @@ id: PLAN-007
 title: "Retire the unreviewed done backlog and move quality review to card close"
 type: plan
 scope: "tasks/done/ 58장의 일회성 트리아지, done-disposition 루프에서 발견된 소유자 없는 결함 3건, 닫기 시점 독립 리뷰 전환의 외부 의존"
-progress: 80
+progress: 90
 total-tasks: 10
-completed-tasks: 8
+completed-tasks: 9
 children: [TASK-325, TASK-326, TASK-327, TASK-330, TASK-332, TASK-333, TASK-334, TASK-335, TASK-337, TASK-342]
 target-date: "2026-09-30"
 created: 2026-09-05
@@ -85,7 +85,7 @@ PLAN-006 자식. 그 계획을 진행하는 세션이 닫는 시점에 리뷰하
 | 3 | Tier B 일괄 아카이브 | **완료** 2026-09-07, 커밋 `8d3031b`. `waived` 값이 없어 `conditional` + evidence 문구로 대체 |
 | 4a | Tier A 13장 done-review | **완료** 2026-09-07, 커밋 `a575ccb`(7장) + `242cd5b`(6장) |
 | 4b | Tier A 아카이브 | **완료** 2026-09-08. 12장은 4a 리뷰 직후 아카이브됐고, `fail`로 남아 있던 TASK-282는 결함 카드 둘(TASK-334 결정, TASK-335 수정)이 닫힌 뒤 별도 세션이 재리뷰해 `conditional`을 냈다 — 코드 결함 없음, 막고 있던 것은 카드 본문의 과장 주장 셋이었고 `1e73a99`가 정정했다. Tier A 13장 전부 아카이브 완료 |
-| 4c | 4a가 낳은 결함 카드 6장 | TASK-332·333·342·334·335·337. 이 계획의 자식으로 편입됨. 2026-09-08 기준 334·335·337·342 닫힘, 332·333 미착수 |
+| 4c | 4a가 낳은 결함 카드 6장 | TASK-332·333·342·334·335·337. 이 계획의 자식으로 편입됨. 2026-09-08 기준 332·333·334·335·337·342 여섯 장 전부 닫힘 — 4c 완료 |
 | 5 | Tier C | 이 계획 범위 밖. PLAN-006 종료 시 잔여분만 재평가 |
 
 ## External
@@ -120,8 +120,8 @@ DVA 쪽 문서는 이 계획이 끝난 뒤 `AGENTS.md`에 "카드를 닫으려�
 - TASK-330 — doccheck 언더스코어 강조가 문자 단위가 아닌 run 단위로 페어링하도록 수정 (TASK-326 세션 리뷰가 발견한 후속 결함)
 Tier A done-review(4a)가 발견한 결함 카드 — 리뷰가 관찰만 남기지 않고 카드를 만든다는 §Rules 규칙의 결과다.
 
-- TASK-332 — 죽은 interaction `env_file` deprecation 경고 제거 (TASK-259 배치 1)
-- TASK-333 — import 항목의 owner·canonical/alias 정체 노출 (TASK-259 배치 1)
+- TASK-332 — 죽은 interaction `env_file` deprecation 경고 제거 (TASK-259 배치 1) — 완료
+- TASK-333 — import 항목의 owner·canonical/alias 정체 노출 (TASK-259 배치 1) — 완료, 정체를 두 map 키가 공유하는 clone 하나에 한 번 찍어 출력이 키에서 되유도하지 않게 함. `plans:` import는 아직 비어 있고 TASK-366가 소유
 - TASK-342 — TASK-263의 subproject 예약어·부모 라우트 거부 규칙 강제 (TASK-263 배치 1)
 - TASK-334 — `config env show`의 real-sops 커버리지 한계 결정 (TASK-282 배치 2) — 완료, fake 주도 한계 수용
 - TASK-335 — seal create-only TOCTOU 창 차단 (TASK-282 배치 2) — 완료, `link(2)` 원자 배치

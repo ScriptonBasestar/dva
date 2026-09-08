@@ -280,6 +280,22 @@ type InteractionCommand struct {
 
 	SubprojectPath string `yaml:"-"`
 
+	// SubprojectName is the subprojects: map key this command was imported from ("" for
+	// a locally declared command). Unlike SubprojectPath, this is a logical name, not a
+	// filesystem location, so it is safe to publish on ls/manifest output (TASK-333's
+	// owner field) where SubprojectPath's absolute local path is not (see owner's
+	// comment below).
+	SubprojectName string `yaml:"-"`
+
+	// CanonicalAddress is the "<subproject>/<key>" address subproject.go's import loop
+	// always assigns first when this command is imported ("" for a locally declared
+	// command). An import's optional `as:` alias points the SAME *InteractionCommand at
+	// a second map key — the "one declaration exposed twice" identity
+	// warnDuplicatePlanDeclarations already relies on for plans — and CanonicalAddress is
+	// how a reader tells which of the two keys is the canonical one without re-deriving
+	// subprojectName+"/"+name from context or comparing pointers itself (TASK-333).
+	CanonicalAddress string `yaml:"-"`
+
 	// owner is the fully loaded configuration that declared this command when it is
 	// imported from a subproject, mirroring PlanConfig.owner (TASK-262/264). It has no
 	// YAML representation on purpose: importing an interaction exposes a route in the

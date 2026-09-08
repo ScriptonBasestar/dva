@@ -20,6 +20,23 @@ All notable changes to DVA are documented here.
 - **부모의 `exclude_tags`가 자식의 거부보다 먼저 판정합니다**: 부모가 제외한 키는
   `dva ls --project`와 `dva run --project` 양쪽에서 "not found"입니다. 이전에는 ls가
   없다고 하고 run이 있지만 거부한다고 답해 한 철자에 두 답이 나왔습니다.
+- **`root`라는 이름의 subproject를 `dva config validate`가 거부합니다** (TASK-333):
+  breaking change입니다. `root`는 `dva manifest`와 `dva ls --json`의 새 `owner` 필드가
+  "이 dva.yml이 직접 선언한 항목"을 가리키는 값이므로, 같은 이름의 subproject가 있으면
+  로컬 항목과 그 subproject에서 import한 항목이 같은 owner를 보고합니다. 이 필드로
+  필터링하는 소비자에게는 구별할 두 번째 신호가 없어 문서화가 아니라 거부를 택했습니다.
+  라우팅은 바뀌지 않습니다 — `root/web`은 그대로 동작하며, 규칙은 `Validate()`에서만
+  돕니다. `root`는 예약어 목록에 **넣지 않았습니다**: 그 집합은 이름을 interaction 키와
+  `p:key` 접두사로도 금지하는데 `dva run root`에는 모호한 것이 없습니다
+  ([USAGE.md](USAGE.md#subprojects))
+
+### Fixed
+- **subproject 하나를 로드하지 못해도 나머지의 `p:key` completion이 남습니다** (TASK-333):
+  이전에는 `dva run` completion이 선언된 subproject 전체를 한 번에 로드했고, 그 호출이
+  하나라도 실패하면 부분 결과를 버리는 계약이라 이 머신에 없는 sibling 체크아웃 하나가
+  **다른 모든** subproject의 colon 형태를 completion에서 지웠습니다 — 정작 `dva run p:key`
+  자체는 그대로 라우팅됐습니다. 이제 subproject마다 따로 로드하고 실패한 것만 건너뛰므로,
+  completion이 제안하는 집합이 `dva run`이 실제로 받는 집합과 일치합니다.
 
 ### Removed
 - **interaction의 `env_file:`이 schema에서 거부됩니다** (TASK-266 Stage B):
@@ -29,6 +46,20 @@ All notable changes to DVA are documented here.
   Blocked 보고는 그대로입니다.
 
 ### Added
+- **import된 항목이 출처와 canonical 주소를 밝힙니다** (TASK-333):
+  `dva manifest`와 `dva ls --json`의 모든 항목에 `owner` 필드가 실립니다 — 그 항목을
+  import한 subproject 이름이거나, 직접 선언한 항목이면 `root`입니다. 모든 항목에 owner가
+  하나씩 있으므로 이 필드는 **생략되지 않습니다**. `as:` alias를 준 import는 canonical
+  항목에 `aliases`가, alias 항목에 `alias_of`가 붙어 두 주소 중 어느 쪽이 canonical인지
+  드러냅니다(해당 없으면 생략되는 "존재 자체가 신호" 계약). 두 마커는 최상위 키에만
+  붙습니다 — `subcommands:` 파생 행은 부모 주소를 통해서만 도달하므로 부모 행의 마커가
+  답입니다. 사람이 읽는 `dva ls` 표는 바뀌지 않았습니다. manifest `schema_version`은
+  1.6 → 1.7입니다(추가 전용). `plans:` import는 아직 이 세 필드를 싣지 않습니다
+  ([USAGE.md](USAGE.md#subprojects))
+- **`dva run --project`가 subproject 이름을 완성합니다** (TASK-333):
+  플래그 값 completion이 선언된 subproject 이름을 제안합니다. 경로가 없는 subproject도
+  제안되며 실행 시점에 로드 오류를 보고합니다 — 사용자가 자신의 dva.yml에 쓴 이름이므로
+  빈 목록보다 진단이 낫습니다.
 - **`dva kubectl`이 kubectl 패스스루의 canonical 이름입니다** (TASK-255/TASK-256):
   `dva ktl`은 같은 명령을 가리키는 visible compatibility 이름이며 이 릴리스에서
   deprecate하거나 제거하지 않습니다. 두 이름은 예약어이고, manifest는

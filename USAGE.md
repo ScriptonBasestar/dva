@@ -1663,6 +1663,25 @@ readiness를 사용합니다. Parent의 같은 이름 선언은 섞이지 않으
 같은 child owner를 실행합니다. Plan runner의 상대 경로와 process state도 해당 subproject root를
 기준으로 합니다. `interaction`과 `provision` 역시 같은 root 기준으로 실행됩니다.
 
+`manifest`와 `dva ls --json`은 각 항목이 어디서 왔는지를 `owner` 필드로 밝힙니다. 값은
+그 항목을 import한 서브프로젝트 이름이거나, 이 dva.yml이 직접 선언한 항목이면 `root`
+입니다. 앞의 `shadowed_by_builtin`·`unroutable` 계열과 달리 `owner`는 **항상** 실립니다 —
+모든 항목에 owner가 하나씩 있으므로 "없음"이 신호가 될 여지가 없기 때문입니다.
+`dva ls --project <name> -f json`의 모든 행은 그 서브프로젝트가 직접 선언한 것이므로
+owner가 프로젝트 이름 자체입니다.
+
+`as:` alias를 준 import는 두 주소로 도달합니다. 이때 canonical 주소
+(`<subproject>/<name>`) 항목에는 `aliases`가, alias 항목에는 `alias_of`가 실립니다. 두
+필드 모두 해당하지 않으면 생략되므로, 주소가 하나뿐인 항목은 둘 다 없습니다 — 위
+마커들과 같은 "존재 자체가 신호" 계약입니다. 이 마커는 최상위 키에만 붙습니다:
+`subcommands:`로 파생된 행(`backend/db`를 `as: database`로 import했다면
+`backend/db migrate`와 `database migrate`)은 부모 주소를 통해서만 도달하므로 부모 행의
+마커가 그대로 답이 됩니다. 사람이 읽는 `dva ls` 표에는 이 마커가 표시되지 않습니다 —
+기계가 읽는 두 출력에만 실립니다.
+
+`plans:` import는 아직 이 세 필드를 싣지 않습니다. canonical name과 alias가 `plans` 맵에
+같은 내용으로 두 번 나타나며 둘을 구분하는 표시가 없습니다.
+
 Subproject `path`는 absolute path나 parent 밖을 가리키는 `../` path도 사용할 수 있습니다.
 
 #### `exclude_tags`가 거르는 대상
