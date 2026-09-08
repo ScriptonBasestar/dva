@@ -555,9 +555,18 @@ dva down db-only
 
 **`dva logs <PLAN>`은 plan이 로그를 낼 수 있는 엔트리를 2개 이상 가지면 엔트리 이름을
 요구합니다** — `plan "X" runs N entries with logs; name one: dva logs X <a|b>`로 거부되고,
-엔트리가 하나뿐이면 그 엔트리로 자동 선택됩니다. `process`/`script`/`native` 러너 엔트리의
-로그는 compose를 거치지 않고 `.sb/dva/logs/<entry-name>.log` 파일(마지막 100줄)로 표시됩니다
+엔트리가 하나뿐이면 그 엔트리로 자동 선택됩니다. `process`/`native` 러너 엔트리의 로그는
+compose를 거치지 않고 `.sb/dva/logs/<entry-name>.log` 파일(마지막 100줄)로 표시됩니다
 (`internal/cli/logs.go` `entryLogFile`/`showEntryLogFile`).
+
+**`script` 러너는 여기에 해당하지 않습니다.** `runScript`는 자식 프로세스에 stdout/stderr를
+그대로 물려 흘려보낼 뿐 파일로 남기지 않습니다 (`internal/lifecycle/script.go`). 그런데
+`planLogTargets`는 `ScriptPluginConfig`를 로그 대상에 함께 세므로
+(`internal/cli/logs.go`), `dva logs <plan>`은 script 엔트리 이름을 후보로 제시해 놓고 정작
+그 이름을 주면 `no log file for entry "<name>": … no such file or directory` (exit 1)로
+실패합니다. "아직 안 만들어졌다"로 읽히지만 실제로는 "앞으로도 안 만들어진다"입니다 —
+`dva up`을 몇 번을 돌려도 `.sb/dva/logs/` 아래에 생기지 않습니다. script 엔트리의 출력은
+`dva up`을 실행한 터미널에서 봐야 합니다.
 
 > **완전히 인자 없는 `dva up`은 명시된 `default_plan` 또는 유일한 plan을 선택합니다.** 여러
 > plan에 기본값이 없으면 plan 이름을 요구하며, plan이 전혀 없을 때만 선언된 stack 전체를
@@ -831,6 +840,7 @@ interaction:
 ```yaml
 checks:
   - name: docker
+    type: command             # checks 항목은 type이 필수입니다
     command: docker info
 default_mode: dev
 suggestion_ignore:
@@ -838,8 +848,11 @@ suggestion_ignore:
   - "k8s-*"
 modes:
   dev:
-    vars: { LOG_LEVEL: debug }
+    compose_profiles: [infra]   # modes 엔트리에 `vars:`는 없습니다
 ```
+
+(`modes`는 순서를 보이기 위해 넣었을 뿐 권장 섹션이 아닙니다 — `dva config validate`가
+`plans` + `environments` + `sites`로의 이전을 권고하는 deprecation 경고를 냅니다.)
 
 순서가 어긋나도 에러는 아니고 `dva config validate`가 advisory 경고만 냅니다
 (`section order: found [...] but canonical order is [...]; consider reordering`).
@@ -1490,8 +1503,16 @@ interaction:
 파일로 떨궈 실행하기 전에 shebang이 없으면 `#!/bin/sh`를 자동으로 붙입니다. `script_file:`은
 그런 보정 없이 선언된 파일 경로를 그대로 `exec`합니다(`internal/exec/exec.go`
 `ExecScriptFile`) — 그래서 대상 파일에 **shebang 줄과 실행 권한(`chmod +x`)이 모두** 있어야
-합니다. 둘 중 하나라도 없으면 `permission denied`로 실패합니다. compose/kubectl에서는
-`script_file:`이 컨테이너·파드 안에서 `sh -c <body>`로 실행되어 이 제약이 없습니다(위 표).
+합니다. 빠진 쪽에 따라 실패 메시지가 갈립니다 — 실행 권한이 없으면 `permission denied`,
+권한은 있는데 shebang이 없으면 `exec format error`입니다. 후자를 권한 문제로 읽고 `chmod`을
+반복하는 것이 흔한 헛수고입니다.
+
+**이 제약은 compose에도 그대로 적용됩니다.** 바로 위에서 말한 대로 compose 러너는
+`script:`/`script_file:`을 네이티브로 지원하지 않고 호스트 local 실행으로 폴백하므로, 실제로
+실행하는 코드는 같은 `ExecScriptFile`입니다 (`internal/runner/docker_compose.go`의
+`formScriptFile, formScript` → `LocalRunner`). 제약이 없는 쪽은 **kubectl 하나뿐**입니다 —
+거기서만 `sh -c <body>`로 파드 안에서 돌기 때문에 shebang도 실행 권한도 필요 없습니다
+(`internal/runner/kubectl.go`).
 
 ```yaml
 interaction:
