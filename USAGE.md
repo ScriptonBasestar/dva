@@ -76,6 +76,9 @@ Linux에서도 같은 절차로 해당 archive를 선택하고 `sha256sum -c`를
 | `dva config init` | 현재 디렉토리에 `dva.yml` 생성 (`dva init` alias 지원) |
 | `dva config docs` | 프로젝트 AI 파트너용 CLAUDE.md/AGENTS.md 생성/갱신 |
 | `dva config migrate` | legacy compose 선언을 `runners` 형태로 재작성 |
+| `dva secret push <target>` | 선언된 SOPS 키를 현재 저장소의 GitHub Actions Secrets에 전송 |
+| `dva job run <name>` | 저장소 소유 산출물 작업 실행·대기·검증 |
+| `dva job status/resume/verify <run-id>` | 기록한 원격 실행 조회·대기 재개·digest 검증 |
 | `dva config env edit/unseal` | `env_file` 엔트리의 sops 암호화 소스를 편집/복호화 |
 | `dva config env seal/show` | `env_bridge:` 게이트 활성화 시에만: 평문을 암호화/터미널에 표시 |
 | `dva run CMD [ARGS]` | `dva.yml`에 정의된 interaction 커맨드 실행 |
@@ -1955,3 +1958,8 @@ dva validate
 어느 스냅샷을 고를지, 스냅샷이 덮지 않는 변경, 보존 정리는
 [docs/50-improve-flow-backup-and-restore.md](docs/50-improve-flow-backup-and-restore.md)
 를 참조하세요.
+
+## 원격 산출물 작업
+
+`secrets`는 암호화 출처와 전송 대상, `jobs`는 종료하는 원격 산출물 작업을 선언합니다.
+명령·설정·실패 및 재개 규약은 [원격 산출물 작업](docs/62-remote-artifact-jobs.md)을 따릅니다.

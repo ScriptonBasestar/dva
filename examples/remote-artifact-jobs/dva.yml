@@ -1,0 +1,63 @@
+# Example contract: adapt the workflow filename and public input names to your repository.
+# The named ref must exist remotely. The repository must match this checkout's origin.
+secrets:
+  sources:
+    dockerhub:
+      sops: secrets/dockerhub.env.enc
+  targets:
+    dockerhub-actions:
+      provider: github-actions
+      repository: ScriptonBasestar-containers/sb-docker-images
+      source: dockerhub
+      keys:
+        DOCKER_USERNAME: DOCKER_USERNAME
+        DOCKER_PASSWORD: DOCKER_PASSWORD
+
+jobs:
+  postgres-extensions:
+    provider: github-actions
+    repository: ScriptonBasestar-containers/sb-docker-images
+    ref: artifact-source
+    timeout: 30m
+    inputs:
+      pg_version:
+        default: "18"
+        values: ["17", "18"]
+    secret_targets: [dockerhub-actions]
+    runs:
+      - name: essential
+        workflow: build.yml
+        inputs:
+          pg_version: "{{input.pg_version}}"
+          variant: postgres-exts-essential
+        result_artifact: dva-result
+        images:
+          - reference: "docker.io/scriptonbasestar/postgres:{{input.pg_version}}-essential"
+            platforms: [linux/amd64, linux/arm64]
+      - name: full
+        workflow: build.yml
+        inputs:
+          pg_version: "{{input.pg_version}}"
+          variant: postgres-exts-full
+        result_artifact: dva-result
+        images:
+          - reference: "docker.io/scriptonbasestar/postgres:{{input.pg_version}}-full"
+            platforms: [linux/amd64, linux/arm64]
+      - name: vector
+        workflow: build.yml
+        inputs:
+          pg_version: "{{input.pg_version}}"
+          variant: postgres-exts-vector
+        result_artifact: dva-result
+        images:
+          - reference: "docker.io/scriptonbasestar/postgres:{{input.pg_version}}-vector"
+            platforms: [linux/amd64, linux/arm64]
+      - name: postgis
+        workflow: build.yml
+        inputs:
+          pg_version: "{{input.pg_version}}"
+          variant: postgres-exts-postgis
+        result_artifact: dva-result
+        images:
+          - reference: "docker.io/scriptonbasestar/postgres:{{input.pg_version}}-postgis"
+            platforms: [linux/amd64, linux/arm64]

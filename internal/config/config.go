@@ -22,6 +22,8 @@ type Config struct {
 	EnvFile          any                            `yaml:"env_file"`
 	EnvBridge        *EnvBridgeConfig               `yaml:"env_bridge"`
 	Interaction      map[string]*InteractionCommand `yaml:"interaction"`
+	Secrets          *SecretsConfig                 `yaml:"secrets,omitempty" json:"secrets,omitempty"`
+	Jobs             map[string]JobConfig           `yaml:"jobs,omitempty" json:"jobs,omitempty"`
 	CI               *CIConfig                      `yaml:"ci" json:"ci"`
 	Provision        ProvisionConfig                `yaml:"provision"`
 	Infra            map[string]InfraConfig         `yaml:"infra"`
@@ -915,6 +917,10 @@ func finalizeLoadedConfig(cfg *Config) ([]string, error) {
 		return nil, err
 	}
 
+	if err := cfg.validateRemoteDeclarations(); err != nil {
+		return nil, err
+	}
+
 	if err := cfg.validateCIProfiles(); err != nil {
 		return nil, err
 	}
@@ -1014,6 +1020,9 @@ func loadFile(path string) (*Config, error) {
 //
 // Returns an error if a restricted field override is attempted.
 func (c *Config) mergeFrom(other *Config) error {
+	if err := c.mergeRemote(other); err != nil {
+		return err
+	}
 	c.Vars = mergeStringMap(c.Vars, other.Vars)
 
 	// environment: map merge (key-level)

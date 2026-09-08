@@ -46,14 +46,17 @@ to the tool that owns the underlying resource.
 
 ## Product Boundaries
 
-DVA targets local development and maintenance work. It is not a production operations
-or deployment tool.
+DVA targets local development and maintenance work, including explicit invocation and
+observation of repository-owned artifact build, publication, and verification jobs. It is not
+a production operations or application deployment tool.
 
 - Local virtual environments are the default execution target. Declare a remote target
   only for a resource that cannot run locally, such as a shared database or a managed
   service.
-- Remote access carries development or maintenance intent. DVA does not model release,
-  rollout, incident response, or any other production operation.
+- Remote access carries development or maintenance intent. Repository-owned artifact jobs
+  retain their build and publication logic; DVA owns explicit invocation, tracking, and result
+  verification. Artifact promotion, application deployment, rollout, rollback, incident
+  response, and production operations remain outside its model.
 - `environments` names such as `stg` and `prd` label which variable set a plan resolves.
   They are not permission to operate that environment from DVA.
 - Custom configuration can reach past this boundary. Generated configuration —
@@ -64,7 +67,9 @@ DVA coordinates existing developer tools; it does not replace them.
 - Compose, Kubernetes, Helm, and process tools retain ownership of their native resources.
 - DVA does not hide destructive lifecycle operations behind implicit automation.
 - Provisioning is for one-time preparation; repeatable startup belongs to execution plans.
-- Project secrets remain outside shared declarative configuration.
+- Project secrets remain outside shared declarative configuration. Named secret transfers
+  declare encrypted sources, selected keys, and destinations; plaintext values are never
+  configuration fields. See [remote artifact jobs](docs/62-remote-artifact-jobs.md).
 - AI-assisted improvement is optional and must preserve the same validation and ownership rules.
 
 ## Current Status

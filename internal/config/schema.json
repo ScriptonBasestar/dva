@@ -5,6 +5,195 @@
   "type": "object",
   "additionalProperties": false,
   "definitions": {
+    "remote_secrets": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sources": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "sops": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "sops"
+            ]
+          }
+        },
+        "targets": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "provider": {
+                "enum": [
+                  "github-actions"
+                ]
+              },
+              "repository": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*/[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                "maxLength": 200
+              },
+              "source": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$"
+              },
+              "keys": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "minProperties": 1,
+                "maxProperties": 64
+              }
+            },
+            "required": [
+              "provider",
+              "repository",
+              "source",
+              "keys"
+            ]
+          }
+        }
+      },
+      "required": [
+        "sources",
+        "targets"
+      ]
+    },
+    "remote_job": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "provider": {
+          "enum": [
+            "github-actions"
+          ]
+        },
+        "repository": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*/[A-Za-z0-9][A-Za-z0-9_.-]*$",
+          "maxLength": 200
+        },
+        "ref": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "timeout": {
+          "type": "string"
+        },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "default": {
+                "type": "string",
+                "maxLength": 4096
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "values": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 64,
+                "uniqueItems": true
+              }
+            }
+          },
+          "maxProperties": 25
+        },
+        "secret_targets": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$"
+          },
+          "maxItems": 64,
+          "uniqueItems": true
+        },
+        "runs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$"
+              },
+              "workflow": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_][A-Za-z0-9_.-]*\\.ya?ml$"
+              },
+              "inputs": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string",
+                  "maxLength": 4096
+                },
+                "maxProperties": 25
+              },
+              "images": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "reference": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 4096
+                    },
+                    "platforms": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "maxItems": 16,
+                      "uniqueItems": true
+                    }
+                  },
+                  "required": [
+                    "reference"
+                  ]
+                },
+                "maxItems": 16
+              },
+              "result_artifact": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$"
+              }
+            },
+            "required": [
+              "name",
+              "workflow"
+            ]
+          },
+          "minItems": 1,
+          "maxItems": 16
+        }
+      },
+      "required": [
+        "provider",
+        "repository",
+        "ref",
+        "timeout",
+        "runs"
+      ]
+    },
     "environment_vars": {
       "type": "object",
       "description": "Defines environment variables",
@@ -480,6 +669,8 @@
     }
   },
   "properties": {
+    "secrets": { "$ref": "#/definitions/remote_secrets" },
+    "jobs": { "type": "object", "additionalProperties": { "$ref": "#/definitions/remote_job" } },
     "version": {
       "type": "string",
       "description": "Optional. Specifies the minimum version of DVA this config requires of its reader — not the version of the binary that wrote it. Must not exceed the installed DVA version, or the config is rejected. Omit it for no compatibility gate.",

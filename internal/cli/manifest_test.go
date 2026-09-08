@@ -27,8 +27,8 @@ func TestBuildManifest_MinimalConfig(t *testing.T) {
 	if m.DvaVersion != config.Version {
 		t.Errorf("DvaVersion = %q, want %q", m.DvaVersion, config.Version)
 	}
-	if m.SchemaVersion != "1.7" {
-		t.Errorf("SchemaVersion = %q, want %q", m.SchemaVersion, "1.7")
+	if m.SchemaVersion != "1.8" {
+		t.Errorf("SchemaVersion = %q, want %q", m.SchemaVersion, "1.8")
 	}
 	if len(m.ComposeFiles) != 1 || m.ComposeFiles[0] != "compose.yml" {
 		t.Errorf("ComposeFiles = %v, want [compose.yml]", m.ComposeFiles)

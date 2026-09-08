@@ -68,6 +68,8 @@ type Manifest struct {
 	Plans           map[string]ManifestPlan        `json:"plans,omitempty" yaml:"plans,omitempty"`
 	Subprojects     map[string]ManifestSubproject  `json:"subprojects,omitempty" yaml:"subprojects,omitempty"`
 	HealthChecks    map[string]ManifestHealthCheck `json:"health_checks,omitempty" yaml:"health_checks,omitempty"`
+	SecretTargets   map[string]config.SecretTarget `json:"secret_targets,omitempty" yaml:"secret_targets,omitempty"`
+	Jobs            map[string]config.JobConfig    `json:"jobs,omitempty" yaml:"jobs,omitempty"`
 	CIProfiles      map[string]config.CIProfile    `json:"ci_profiles,omitempty" yaml:"ci_profiles,omitempty"`
 }
 
@@ -106,12 +108,15 @@ type ManifestHealthCheck struct {
 }
 
 type ManifestSubproject struct {
-	Path        string                    `json:"path" yaml:"path"`
-	ExcludeTags []string                  `json:"exclude_tags,omitempty" yaml:"exclude_tags,omitempty"`
-	Commands    map[string]ManifestDynCmd `json:"commands,omitempty" yaml:"commands,omitempty"`
+	SecretTargets map[string]config.SecretTarget `json:"secret_targets,omitempty" yaml:"secret_targets,omitempty"`
+	Jobs          map[string]config.JobConfig    `json:"jobs,omitempty" yaml:"jobs,omitempty"`
+	Path          string                         `json:"path" yaml:"path"`
+	ExcludeTags   []string                       `json:"exclude_tags,omitempty" yaml:"exclude_tags,omitempty"`
+	Commands      map[string]ManifestDynCmd      `json:"commands,omitempty" yaml:"commands,omitempty"`
 }
 
 type ManifestCmd struct {
+	Effects     []string               `json:"effects,omitempty" yaml:"effects,omitempty"`
 	Description string                 `json:"description" yaml:"description"`
 	Type        string                 `json:"type" yaml:"type"`
 	Options     map[string]string      `json:"options,omitempty" yaml:"options,omitempty"`
@@ -362,10 +367,8 @@ func fillCommandDescriptions(command *cobra.Command, entry ManifestCmd) Manifest
 func buildManifest(c *config.Config) *Manifest {
 	m := &Manifest{
 		DvaVersion: config.Version,
-		// schema_version moves 1.6 -> 1.7 here: TASK-333 adds owner, aliases and alias_of
-		// to every ManifestDynCmd entry (root DynamicCommands and each subproject's
-		// Commands), the same reason 1.4 moved to 1.5 for CanonicalName above.
-		SchemaVersion:     "1.7",
+		// Schema 1.8 adds declared secret targets, artifact jobs and command effects.
+		SchemaVersion:     "1.8",
 		GeneratedAt:       time.Now().Format(time.RFC3339),
 		ConfigFile:        c.FilePath(),
 		ProjectDir:        c.FileDir(),
@@ -387,6 +390,13 @@ func buildManifest(c *config.Config) *Manifest {
 		// remains is the hand-parsed set, which has no cobra flag to derive from. See both
 		// functions for why (TASK-105).
 		StaticCommands: map[string]ManifestCmd{
+			"secret": {Type: "config", Subcommands: map[string]ManifestCmd{"push": {Type: "mutation", Effects: []string{"remote_write:secrets", "local_write:receipt"}}}},
+			"job": {Type: "config", Subcommands: map[string]ManifestCmd{
+				"run":    {Type: "mutation", Effects: []string{"remote_write:workflow_dispatch", "remote_write:secrets_if_with_secrets", "local_write:receipt"}},
+				"status": {Type: "query", Effects: []string{"remote_read", "local_write:receipt"}},
+				"resume": {Type: "query", Effects: []string{"remote_read", "local_write:receipt"}},
+				"verify": {Type: "query", Effects: []string{"remote_read", "local_write:receipt"}},
+			}},
 			"ci": {Type: "config", Subcommands: map[string]ManifestCmd{
 				"status": {Type: "query"},
 				"logs":   {Type: "query"},
@@ -535,6 +545,10 @@ func buildManifest(c *config.Config) *Manifest {
 			}
 		}
 	}
+	m.Jobs = c.Jobs
+	if c.Secrets != nil {
+		m.SecretTargets = c.Secrets.Targets
+	}
 	fillStaticCommandDescriptions(m.StaticCommands)
 	fillStaticCommandOptions(m.StaticCommands)
 	m.GlobalFlags = globalFlagsFromRoot()
@@ -614,6 +628,10 @@ func buildManifest(c *config.Config) *Manifest {
 			if err != nil {
 				m.Subprojects[name] = subManifest
 				continue
+			}
+			subManifest.Jobs = subs[name].Jobs
+			if subs[name].Secrets != nil {
+				subManifest.SecretTargets = subs[name].Secrets.Targets
 			}
 			subManifest.Commands = buildManifestSubprojectCommands(c, name, subs[name])
 			m.Subprojects[name] = subManifest

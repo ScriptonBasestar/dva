@@ -226,3 +226,6 @@ make clean      # Clean build artifacts
 ## License
 
 MIT
+
+원격 산출물의 시크릿 전송, GitHub Actions 실행 추적과 OCI digest 검증은
+[원격 산출물 작업](docs/62-remote-artifact-jobs.md)을 참고하세요.

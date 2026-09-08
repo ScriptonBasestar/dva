@@ -72,6 +72,16 @@ Config Loader → Schema/Semantic Validation → effective config
 `locks` 키를 선언했을 때만 충돌한다. 계약과 실행 규약은
 [CI 프로필](docs/53-ci-profiles.md)을 따른다.
 
+### Remote artifact jobs and secret transfer
+
+`internal/secretpush/`는 SOPS 복호화·명시 키 선택·GitHub 전송과 값 없는 결과 기록을
+소유한다. `internal/jobrun/`는 GitHub workflow ID/run ID, 유한 대기, 재조회와 작업별
+결과 기록을 소유하며, `internal/ociverify/`에 공개 OCI 이미지 digest·플랫폼 검증을
+위임한다. `internal/remotetarget/`은 GitHub 목적지를 owning checkout의 origin과 대조한다.
+CLI는 설정 타입을 runtime 입력으로 변환하고 명시적인 `--with-secrets`만 연결한다.
+세 실행 패키지는 lifecycle·runner·cirun을 호출하지 않는다. 설정·결과 계약은
+[원격 산출물 작업](docs/62-remote-artifact-jobs.md)이 소유한다.
+
 ### Skill distribution
 
 - `internal/skillinstall/`은 번들된 DVA 스킬의 설치·상태·제거·백업을 담당한다

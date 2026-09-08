@@ -192,6 +192,9 @@ func (c *Config) Validate() error {
 	if err := validateYAMLSchema(yamlBytes); err != nil {
 		errs = append(errs, err)
 	}
+	if err := c.validateRemoteDeclarations(); err != nil {
+		errs = append(errs, err)
+	}
 	if err := c.validateCIProfiles(); err != nil {
 		errs = append(errs, err)
 	}

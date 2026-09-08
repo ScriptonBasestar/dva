@@ -17,7 +17,7 @@ var reservedCommands = map[string]bool{
 	"ktl": true, "kubectl": true, "ssh": true, "console": true,
 	"completion": true, "init": true, "status": true, "config": true,
 	"logs": true, "restart": true, "show": true, "doctor": true,
-	"skill": true, "agent-deny": true, "ci": true,
+	"skill": true, "agent-deny": true, "ci": true, "secret": true, "job": true,
 }
 
 // hookableCommands is the subset of reserved commands that support
