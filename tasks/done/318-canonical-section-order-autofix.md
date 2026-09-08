@@ -108,6 +108,27 @@ version: "1"
 함께 타면 그 단계는 yaml.v3 라운드트립으로 LF를 뱉어 파일이 섞인 개행으로 끝난다. 이
 카드의 섹션 정렬 단계는 CRLF를 보존하지만, 파이프라인 전체는 보존하지 않는다. 별개 결함이다.
 
+### 3차 리뷰 — M8
+
+`7695706`을 푸시한 뒤 재리뷰가 M7의 수정 자체에서 결함을 하나 더 찾았다. 재현 입력과
+측정을 통합 세션에서 그대로 다시 돌려 확인했다.
+
+| # | 증상 | 재현 결과 | 수정 |
+|---|------|-----------|------|
+| M8 | **M7의 "HeadComment 줄 수까지만"이 CRLF 입력에서 과다 계산된다.** yaml.v3는 CRLF 파일의 `HeadComment`를 손상된 형태로 돌려준다 — 세 줄 배너에 대해 첫 줄이 빠진 `"# b2\n\n# b3\n"`를 준다. 여기서 센 줄 수는 4가 되어 walk가 한 줄 더 나아가고, 배너 위의 인용 스칼라 연속행을 끌고 온다 | `stack: "x\r\n#cont"\r\n# b1\r\n# b2\r\n# b3\r\nversion: "1"\r\n` → 출력이 `#cont"`를 문서 맨 위로 올리고 `stack: "x`를 닫히지 않은 채 남긴다. `VerifyMigrated`가 거부 | `:47`에서 **주석 메타데이터용으로만** 개행을 정규화해 파싱한다. 출력에 쓰는 `lines`는 원본 `src` 그대로이므로 M6의 CRLF 보존 계약은 유지된다 |
+
+이건 같은 결함 클래스의 세 번째 변종이다 — M1(컬럼 0 규칙) → M7(무제한 walk) →
+M8(CRLF에서 제한이 과다). 세 번 다 "배너의 시작을 어디로 볼 것인가"를 휴리스틱으로
+답하려다 실패했다.
+
+**파생 줄 수를 고치는 안은 측정한 뒤 버렸다.** `#`로 시작하는 줄만 세면 과다 walk는
+사라지지만, `HeadComment`에 배너 첫 줄이 여전히 없으므로 모든 CRLF 배너가 자기 키보다 한 줄
+뒤처진다. 원인은 산술이 아니라 파서에게 잘못 읽히는 입력을 준 것이다. 정규화는 어떤 줄
+번호도 옮기지 않는다 — `\r\n`과 `\n`은 어느 쪽이든 한 줄이다.
+
+신규 단언은 `go test -overlay`로 `7695706`에 대해 실행해 FAIL을 확인했다(위 재현 입력의
+정확한 tear가 재현됐다).
+
 ## Completion Criteria
 
 - [x] 주석 보존 재배열 구현 + 테스트 | verify: `/usr/bin/grep -rq 'func TestCanonicalSectionOrderPreservesComments(' internal tools`
@@ -122,4 +143,5 @@ version: "1"
 - [x] M5 — EOF 꼬리 주석이 파일 끝에 남는다 | verify: `go test ./internal/config/ -run TestMigrateSectionOrderKeepsFooterCommentAtEOF`
 - [x] M6 — CRLF 파일에서도 문서 경계에서 멈춘다 | verify: `go test ./internal/config/ -run TestMigrateSectionOrderStopsAtDocumentBoundary`
 - [x] M7 — 컬럼 0 `#`가 인용 스칼라의 일부일 때 배너로 오인하지 않고, 배너 walk가 HeadComment 줄 수를 넘지 않는다 | verify: `go test ./internal/config/ -run TestMigrateSectionOrderTrustsHeadCommentOverColumnZero`
+- [x] M8 — CRLF 배너에서도 walk가 배너를 넘지 않고, 출력이 CRLF로 남는다 | verify: `go test ./internal/config/ -run TestMigrateSectionOrderBoundsTheBannerWalkOnCRLFToo`
 - [x] 게이트 통과 | verify: `make doc-check`

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"fmt"
 	"slices"
 	"strings"
@@ -43,8 +44,36 @@ import (
 func MigrateSectionOrder(src []byte) ([]byte, MigrationReport, error) {
 	var report MigrationReport
 
+	// Parsed from a CRLF-normalized copy, while every byte written out below still comes
+	// from src. The split is deliberate and the two halves want opposite things: the output
+	// must preserve the file's line endings (see isDocumentBoundary), and the parser must be
+	// given input whose comment metadata it reports accurately. On CRLF input yaml.v3's
+	// HeadComment is damaged — for a three-line banner it returns the *second* line onward,
+	// interleaved with empty entries and with a trailing newline:
+	//
+	//	# b1        HeadComment = "# b2\n\n# b3\n"
+	//	# b2
+	//	# b3
+	//	version: "1"
+	//
+	// commentExtendedStart derives its walk bound by counting lines in that string, so the
+	// bound came out at 4 for a banner of 3, and the extra step reached a quoted scalar's
+	// continuation line above the banner and tore the scalar in half. That is M7's failure
+	// exactly, on the CRLF axis: the output no longer parses and VerifyMigrated refuses the
+	// whole migration of a file that was valid going in.
+	//
+	// Correcting the derived count instead was measured and rejected: counting only the
+	// lines that begin with `#` removes the over-run, but the banner's first line is still
+	// missing from HeadComment, so every CRLF banner is left one line behind its key. The
+	// cause is not the arithmetic, it is that the parser was handed input it reads badly.
+	// Normalizing cannot shift any line number, since \r\n and \n are one line either way.
+	normalized := src
+	if bytes.Contains(src, []byte("\r\n")) {
+		normalized = bytes.ReplaceAll(src, []byte("\r\n"), []byte("\n"))
+	}
+
 	var doc yaml.Node
-	if err := yaml.Unmarshal(src, &doc); err != nil {
+	if err := yaml.Unmarshal(normalized, &doc); err != nil {
 		return nil, report, fmt.Errorf("parse: %w", err)
 	}
 	if len(doc.Content) == 0 || doc.Content[0].Kind != yaml.MappingNode {

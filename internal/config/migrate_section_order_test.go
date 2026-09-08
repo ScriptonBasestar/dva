@@ -386,3 +386,40 @@ func TestMigrateSectionOrderTrustsHeadCommentOverColumnZero(t *testing.T) {
 		})
 	}
 }
+
+// TestMigrateSectionOrderBoundsTheBannerWalkOnCRLFToo pins the CRLF half of the bound M7
+// added. Trusting yaml.v3's HeadComment was the right move, but the line count derived
+// from that string is a second heuristic, and on CRLF input the string it reads is wrong:
+// for a three-line banner yaml.v3 reports the second line onward, padded with empty
+// entries and a trailing newline, so the count came out one too high. One extra step is
+// all it takes — the walk reaches the continuation line of the quoted scalar above the
+// banner, files it under the next key, and the output stops parsing. Same failure as M7,
+// on the axis M7 was not measured against.
+//
+// The fix hands the parser CRLF-normalized bytes and keeps the original bytes for output,
+// so this test has to assert both halves: the scalar and banner survive intact, *and* the
+// result is still CRLF throughout. An LF-only assertion here would pass against a fix that
+// quietly rewrote the user's line endings.
+func TestMigrateSectionOrderBoundsTheBannerWalkOnCRLFToo(t *testing.T) {
+	src := "stack: \"x\r\n#cont\"\r\n# b1\r\n# b2\r\n# b3\r\nversion: \"1\"\r\n"
+	want := "# b1\r\n# b2\r\n# b3\r\nversion: \"1\"\r\nstack: \"x\r\n#cont\"\r\n"
+
+	out, _, err := MigrateSectionOrder([]byte(src))
+	if err != nil {
+		t.Fatalf("MigrateSectionOrder() error = %v", err)
+	}
+	if string(out) != want {
+		t.Fatalf("MigrateSectionOrder() =\n%q\nwant\n%q", out, want)
+	}
+	// The observed failure was "found unexpected end of stream" — the scalar was torn in
+	// half — so assert parseability directly rather than only on bytes.
+	var probe yaml.Node
+	if err := yaml.Unmarshal(out, &probe); err != nil {
+		t.Fatalf("output does not parse: %v", err)
+	}
+	// M6 made CRLF preservation an explicit contract; the fix for this bug parses a
+	// normalized copy and could have broken it by writing the copy out instead.
+	if bytes.Contains(bytes.ReplaceAll(out, []byte("\r\n"), nil), []byte("\n")) {
+		t.Fatalf("output has a bare LF, CRLF was not preserved: %q", out)
+	}
+}
