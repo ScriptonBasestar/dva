@@ -8,6 +8,28 @@ exec-tier: strong
 created-at: 2026-09-05T09:00:00+09:00
 source: "docs/dogfood/{familybook,flow-agent-mesh,sadawiki,scripton-signalhub,primeno1}.md"
 status: done
+completed-at: 2026-09-05T07:44:06+09:00
+completion-summary: "dva validate collects every independent hard error (load problems, Validate, env_bridge, unrunnable compose), still prints warnings, then fails once with a numbered list."
+verification-status: verified
+verification-evidence:
+  - kind: automated
+    command-or-step: "go test ./internal/cli -count=1 -run 'TestValidateReportsEveryHardErrorAtOnce|TestValidateJSONListsEveryHardError|TestValidateSingleErrorMessageUnchanged'"
+    result: "ok github.com/ScriptonBasestar/dva/internal/cli 0.538s"
+  - kind: automated
+    command-or-step: "make test"
+    result: "exit 0; cli 80.1% 38.041s, config 78.1% 6.424s"
+  - kind: automated
+    command-or-step: "DVA_FILE=<scratch 4-error fixture> ./bin/dva config validate"
+    result: "exit 1; '4 errors found' listing compose-entry, schema, interaction.clean hook, default_plan; semantic and drift warnings still printed"
+quality-review: pass
+quality-reviewed-at: 2026-09-08T16:41:18+09:00
+quality-review-evidence:
+  - "independent re-review. AC1 binding make test exit 0. Targeted tests TestValidateReportsEveryHardErrorAtOnce / JSON / single-error-unchanged ok 0.538s."
+  - "AC1 source: Config.Validate joins every check via ValidationErrors; loadConfigForValidate retries with CollectEntryProblems after a strict load fails; the command collects LoadProblems, Validate, env_bridge and unrunnable-compose, runs every warning printer, then failValidation. Single errors keep their exact message."
+  - "AC2: did not re-run familybook/primeno1. Reproduced the 4-error fixture with ./bin/dva config validate: one run, rc 1, numbered list of all four plus [warn] semantic and config drift. That is the collect-and-continue contract the named repos were used to witness."
+archived-at: 2026-09-08T16:41:18+09:00
+verified-at: 2026-09-08T16:41:18+09:00
+verification-summary: "AC1 tests and make test hold. Scratch validate lists every hard error in one run; familybook/primeno1 themselves were not re-run."
 ---
 
 # Task 305: validate 에러 후에도 진단을 계속 출력
