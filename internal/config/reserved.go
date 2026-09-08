@@ -354,7 +354,8 @@ func SubprojectConflictAdvice(name string) string {
 }
 
 // RejectsInteractionKey reports whether c's own `dva config validate` rejects the
-// interaction key name as a reserved-command conflict, and returns the advice that says why.
+// interaction key name as a reserved-command conflict, and returns the reserved built-in it
+// collides with plus the advice that says why.
 //
 // Per key, not per config. The rule TASK-263 §3 decision (b) froze is about a key being
 // addressable, so a child with an unrelated conflict elsewhere keeps its healthy keys
@@ -364,15 +365,25 @@ func SubprojectConflictAdvice(name string) string {
 // set of keys the parent routes refuse is by construction the set the child's own validator
 // rejects. Re-deriving it is how the two would drift the next time the hook exemption or the
 // reserved set moves.
-func (c *Config) RejectsInteractionKey(name string) (bool, string) {
+//
+// builtin is returned from here rather than derived by the caller for the same reason. The
+// listing surfaces name it in their unroutable mark, and a caller that recomputed it would
+// be free to print a built-in name for a key this call reported as fine — the two answers
+// have to come out of one predicate. It is the prefix for a namespaced key (`compose:ps` →
+// `compose`) and the key itself for a plain reserved one (`status` → `status`); those are
+// the only two shapes ValidateReservedCommands rejects.
+func (c *Config) RejectsInteractionKey(name string) (rejected bool, builtin, advice string) {
 	cmd, declared := c.Interaction[name]
 	if !declared {
-		return false, ""
+		return false, "", ""
 	}
 	if len(ValidateReservedCommands(map[string]*InteractionCommand{name: cmd})) == 0 {
-		return false, ""
+		return false, "", ""
 	}
-	return true, ConflictAdvice(name)
+	if prefix := UnroutableNamespacePrefix(name); prefix != "" {
+		return true, prefix, ConflictAdvice(name)
+	}
+	return true, name, ConflictAdvice(name)
 }
 
 // SubprojectKeyRejection is the error every parent route returns for a child interaction key

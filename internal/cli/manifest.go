@@ -141,11 +141,20 @@ type ManifestDynCmd struct {
 	// form is typed. Set only when the key is shadowed, so its presence is the signal; a
 	// consumer must be able to detect this without reading the description or the usage string.
 	ShadowedByBuiltin string `json:"shadowed_by_builtin,omitempty" yaml:"shadowed_by_builtin,omitempty"`
-	// Unroutable names the reserved built-in used as this key's namespace prefix. It is a
-	// separate state from ShadowedByBuiltin, not a variant of it: a shadowed key still runs
-	// under `dva run <key>`, while an unroutable one is reached by no invocation at all, so
-	// a consumer that treats the two alike would keep advertising a dead form. Set only when
-	// the condition holds — presence is the signal.
+	// Unroutable names the reserved built-in that leaves this key reached by no invocation at
+	// all. It is a separate state from ShadowedByBuiltin, not a variant of it: a shadowed key
+	// still runs under `dva run <key>`, so a consumer that treats the two alike would keep
+	// advertising a dead form. Set only when the condition holds — presence is the signal.
+	//
+	// Which built-in that is depends on where the entry sits, because the two scopes kill a
+	// key for different reasons. Under dynamic_commands it is the reserved namespace prefix
+	// (`compose:ps` → `compose`); under a subproject's commands it is the built-in the
+	// child's own validator rejects the key over, which for a plain reserved key like
+	// `status` is that key itself. Both are answers to one question — what does a consumer
+	// name when it explains why there is no usage_example — so they share the field rather
+	// than splitting it the way ShadowedByLiteralKey had to split from ShadowedByBuiltin:
+	// that split was forced by ShadowedByBuiltin pointing INTO the static_commands table,
+	// which a parent interaction key is absent from. This field points into no table.
 	Unroutable string `json:"unroutable,omitempty" yaml:"unroutable,omitempty"`
 	// UnroutableReason carries the same sentence `dva validate` and the load-time warning
 	// print, so the machine-readable surface and the human one state one reason, not two.
@@ -154,12 +163,14 @@ type ManifestDynCmd struct {
 	// colon form runs instead of this subproject entry. It is a third state, distinct from
 	// both ShadowedByBuiltin and Unroutable: ShadowedByBuiltin names a static_commands entry
 	// a consumer can resolve against that table, but a parent literal key is not one of those
-	// entries, so reusing that field would send a consumer looking in the wrong place. There
-	// is no unroutable state for a subproject command — config.LiteralKeyWins is the only
-	// conflict it can be in, and `dva run --project <project> <key>` always reaches it — so
-	// this field only ever pairs with a working UsageExample, never with Unroutable. Set only
-	// when the condition holds; presence alone is the signal, the same contract as its
-	// neighbours above.
+	// entries, so reusing that field would send a consumer looking in the wrong place.
+	//
+	// It never pairs with Unroutable, but not because a subproject command has no unroutable
+	// state — since TASK-342 it has one, when the child's own validator rejects the key. The
+	// two are exclusive because subprojectUsage tests the rejection first and returns there:
+	// a key no parent route reaches cannot also be described as losing the colon form to a
+	// parent key. Set only when the condition holds; presence alone is the signal, the same
+	// contract as its neighbours above.
 	ShadowedByLiteralKey string `json:"shadowed_by_literal_key,omitempty" yaml:"shadowed_by_literal_key,omitempty"`
 }
 
@@ -639,18 +650,26 @@ func unreachableHealthCheckStartReason(name string, hc config.HealthCheckConfig)
 // used to be `fmt.Sprintf("dva %s:%s", name, k)` unconditionally — the same defect the
 // comment on the root DynamicCommands loop above already fixed for local keys via
 // interactionUsage, left unfixed here because this loop predates subprojectUsage.
+//
+// subCfg is the second authority, and the reason both are passed: since TASK-342 the parent
+// refuses to route a key the child's own validator rejects, so an entry can now be reached by
+// no invocation at all. That state is asked of the child, not derived from the parent, and it
+// is why this loop marks Unroutable and leaves UsageExample empty rather than emitting a form
+// that exits 1 — the promise stated on UsageExample above.
 func buildManifestSubprojectCommands(parentCfg *config.Config, name string, subCfg *config.Config) map[string]ManifestDynCmd {
 	subTree := runner.NewInteractionTree(subCfg.Interaction)
 	subCommands := subTree.List()
 	commands := make(map[string]ManifestDynCmd, len(subCommands))
 	for k, cmd := range subCommands {
-		usage, shadowedByLiteralKey := subprojectUsage(parentCfg, name, k)
+		usage, shadowedByLiteralKey, unroutable, unroutableReason := subprojectUsage(parentCfg, subCfg, name, k, cmd)
 		dynCmd := ManifestDynCmd{
 			Description:          cmd.Description,
 			Command:              cmd.Command,
 			Runner:               runner.DetectRunnerType(cmd),
 			UsageExample:         usage,
 			ShadowedByLiteralKey: shadowedByLiteralKey,
+			Unroutable:           unroutable,
+			UnroutableReason:     unroutableReason,
 		}
 		if cmd.Service != "" {
 			dynCmd.Service = cmd.Service

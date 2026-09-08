@@ -142,7 +142,7 @@ func runSubprojectCommand(parentCfg *config.Config, project, cmdName string, cmd
 	// Both routes that reach here — `--project p k` and the `p:k` shorthand run.go splits
 	// above — are checked in one place because they are one call; the third form, a `p/k`
 	// import, is refused at load in config.resolveSubprojectImports.
-	if rejected, advice := subCfg.RejectsInteractionKey(cmdName); rejected {
+	if rejected, _, advice := subCfg.RejectsInteractionKey(cmdName); rejected {
 		return config.SubprojectKeyRejection(project, cmdName, advice)
 	}
 

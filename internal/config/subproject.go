@@ -176,7 +176,7 @@ func resolveSubprojectImports(cfg *Config, opts ...LoadOption) error {
 			// `p/name`, which carries neither a reserved spelling nor a reserved colon
 			// prefix, so nothing downstream would ever look at it again — the parent would
 			// accept and route a key its own owner's validator rejects.
-			if rejected, advice := subCfg.RejectsInteractionKey(name); rejected {
+			if rejected, _, advice := subCfg.RejectsInteractionKey(name); rejected {
 				return SubprojectKeyRejection(subprojectName, name, advice)
 			}
 

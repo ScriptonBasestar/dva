@@ -89,21 +89,24 @@ func runLsProject(parentCfg *config.Config, project string) error {
 
 	switch lsFormat {
 	case "json":
-		return printSubprojectJSON(parentCfg, project, commands, keys)
+		return printSubprojectJSON(parentCfg, subCfg, project, commands, keys)
 	case "yaml":
-		return printSubprojectYAML(parentCfg, project, commands, keys)
+		return printSubprojectYAML(parentCfg, subCfg, project, commands, keys)
 	default:
-		return printSubprojectTable(parentCfg, project, commands, keys)
+		return printSubprojectTable(parentCfg, subCfg, project, commands, keys)
 	}
 }
 
 // printSubprojectTable is printTable's twin for `dva ls --project`: same table shape, but the
 // usage each row advertises comes from subprojectUsage instead of interactionUsage, because a
 // subproject key's shadow state is a property of the PARENT's interaction: map, not the
-// child's own. There is no unreachable mark here, unlike printTable's: D1 — config.
-// LiteralKeyWins is the only conflict a subproject command can be in, and `dva run --project`
-// always reaches it, so the only mark this table ever prints is the shadowed one.
-func printSubprojectTable(parent *config.Config, project string, commands map[string]*runner.ResolvedCommand, keys []string) error {
+// child's own.
+//
+// It prints printTable's two marks for printTable's two reasons — the wording is deliberately
+// the same, because a reader who ran `dva ls` and then `dva ls --project` is looking at one
+// listing in two scopes and must not have to learn a second vocabulary for the same states.
+// Only the shadowed mark's clause differs, naming the parent key rather than a built-in.
+func printSubprojectTable(parent, sub *config.Config, project string, commands map[string]*runner.ResolvedCommand, keys []string) error {
 	maxName := 0
 	for _, k := range keys {
 		if len(k) > maxName {
@@ -113,9 +116,28 @@ func printSubprojectTable(parent *config.Config, project string, commands map[st
 
 	for _, k := range keys {
 		cmd := commands[k]
-		usage, shadowedByLiteralKey := subprojectUsage(parent, project, k)
+		usage, shadowedByLiteralKey, unroutable, _ := subprojectUsage(parent, sub, project, k, cmd)
 		mark := ""
-		if shadowedByLiteralKey != "" {
+		switch {
+		case unroutable != "":
+			// No "run:" clause, the same as printTable's unroutable mark: there is no
+			// invocation to offer. It names the DECLARED key rather than the row label,
+			// because that is the key in the child's file to edit — `status build` is
+			// assembled from the tree walk and appears nowhere in the config.
+			//
+			// It also carries no rename suggestion, where printTable's does. There the dead
+			// key is always namespaced, so config.RenameSuggestion has a colon to remove and
+			// returns something different from what it was given; here the key is usually a
+			// plain reserved word, where the same call returns the name unchanged and the
+			// mark would read "rename to 'status'". The child's own advice — carried whole in
+			// unroutable_reason and printed by validate — is where the suggestion belongs.
+			declared := k
+			if len(cmd.Path) > 0 {
+				declared = cmd.Path[0]
+			}
+			mark = fmt.Sprintf("  (unreachable: subproject '%s' rejects '%s' — '%s' is a reserved DVA command)",
+				project, declared, unroutable)
+		case shadowedByLiteralKey != "":
 			mark = fmt.Sprintf("  (parent key '%s' takes this name; run: %s)", shadowedByLiteralKey, usage)
 		}
 		if lsDetailed {
@@ -144,7 +166,7 @@ func printSubprojectTable(parent *config.Config, project string, commands map[st
 // buildSubprojectCommandEntries is buildCommandEntries' twin for `dva ls --project --json`,
 // keyed through subprojectUsage for the same reason printSubprojectTable is: the shadow
 // state belongs to the parent's namespace, not the child interaction tree being listed.
-func buildSubprojectCommandEntries(parent *config.Config, project string, commands map[string]*runner.ResolvedCommand, keys []string) map[string]any {
+func buildSubprojectCommandEntries(parent, sub *config.Config, project string, commands map[string]*runner.ResolvedCommand, keys []string) map[string]any {
 	entries := make(map[string]any, len(keys))
 	for _, k := range keys {
 		cmd := commands[k]
@@ -163,22 +185,30 @@ func buildSubprojectCommandEntries(parent *config.Config, project string, comman
 		if cmd.Pod != "" {
 			entry["pod"] = cmd.Pod
 		}
-		// Only on the shadowed entries, so the field's presence is the signal — the same
-		// contract buildCommandEntries uses for shadowed_by_builtin/unroutable above.
-		if _, shadowedByLiteralKey := subprojectUsage(parent, project, k); shadowedByLiteralKey != "" {
+		// Only on the conflicted entries, so the field's presence is the signal — the same
+		// contract buildCommandEntries uses for shadowed_by_builtin/unroutable above. The two
+		// states are exclusive by construction (subprojectUsage returns at the first that
+		// holds), which is why this reads as a pair of ifs rather than a choice: a consumer
+		// that sees neither is looking at a key it can run.
+		_, shadowedByLiteralKey, unroutable, unroutableReason := subprojectUsage(parent, sub, project, k, cmd)
+		if shadowedByLiteralKey != "" {
 			entry["shadowed_by_literal_key"] = shadowedByLiteralKey
+		}
+		if unroutable != "" {
+			entry["unroutable"] = unroutable
+			entry["unroutable_reason"] = unroutableReason
 		}
 		entries[k] = entry
 	}
 	return entries
 }
 
-func printSubprojectJSON(parent *config.Config, project string, commands map[string]*runner.ResolvedCommand, keys []string) error {
-	return output.PrintJSON(buildSubprojectCommandEntries(parent, project, commands, keys))
+func printSubprojectJSON(parent, sub *config.Config, project string, commands map[string]*runner.ResolvedCommand, keys []string) error {
+	return output.PrintJSON(buildSubprojectCommandEntries(parent, sub, project, commands, keys))
 }
 
-func printSubprojectYAML(parent *config.Config, project string, commands map[string]*runner.ResolvedCommand, keys []string) error {
-	return output.PrintYAML(buildSubprojectCommandEntries(parent, project, commands, keys))
+func printSubprojectYAML(parent, sub *config.Config, project string, commands map[string]*runner.ResolvedCommand, keys []string) error {
+	return output.PrintYAML(buildSubprojectCommandEntries(parent, sub, project, commands, keys))
 }
 
 func printTable(c *config.Config, commands map[string]*runner.ResolvedCommand, keys []string) error {
@@ -332,28 +362,50 @@ func interactionUsage(c *config.Config, cmd *runner.ResolvedCommand) (usage, sha
 	return fmt.Sprintf("dva %s", form), "", ""
 }
 
-// subprojectUsage returns the invocation that reaches a subproject interaction key, and the
-// parent literal key that shadows it ("" when unshadowed).
+// subprojectUsage returns the invocation that reaches a subproject interaction key, the
+// parent literal key that shadows it ("" when unshadowed), and — when no invocation reaches
+// it at all — the reserved built-in that killed it plus the child's own diagnosis.
 //
 // One function because `dva manifest` and `dva ls --project` describe the same key to the
 // same reader and must not disagree — the same reason interactionUsage above is one function
 // (see its doc comment and TestLsAndManifestStillAgree).
 //
-// There is no unroutable state to report here, unlike interactionUsage: measured, `dva
-// run:go` reaches a subproject named after a reserved command, and `dva run --project
-// <project> <key>` always reaches a declared subproject entry regardless of what shadows the
-// colon form. config.LiteralKeyWins is the only conflict a subproject command can be in — the
-// parent declares the same `<project>:<key>` string as one of its own interaction: keys, and
-// that literal key wins the colon form. Reuse it rather than reimplementing: it is the same
-// predicate warnLiteralKeyShadowsSubproject (internal/config/validate_warnings.go) is built
-// around, and it already excepts a reserved prefix, which is why a subproject named after a
-// reserved command still routes.
-func subprojectUsage(parent *config.Config, project, key string) (usage, shadowedByLiteralKey string) {
+// Two conditions, checked in the order interactionUsage checks its own: unroutable first,
+// because a key nothing reaches has no working form for the shadow branch to name.
+//
+//  1. The child's own validator rejects the key (TASK-342 / TASK-263 §3 decision (b)). Every
+//     parent route then refuses it — `--project` and the colon shorthand in
+//     runSubprojectCommand, a `p/k` import at load — so there is no usage to advertise. This
+//     state did not exist before those routes started refusing; a subproject key used to be
+//     reachable through `dva run --project` no matter what, which is what the D1 note this
+//     comment replaced recorded.
+//  2. config.LiteralKeyWins — the parent declares the same `<project>:<key>` string as one of
+//     its own interaction: keys, and that literal key wins the colon form. Reuse it rather
+//     than reimplementing: it is the same predicate warnLiteralKeyShadowsSubproject
+//     (internal/config/validate_warnings.go) is built around.
+//
+// The rejection is asked about the DECLARED key (cmd.Path[0]), not the flattened display key:
+// runSubprojectCommand checks args[0] and never looks at the rest, so a rejected `status`
+// kills the `status build` subcommand row too. Same no-length-guard reasoning interactionUsage
+// spells out for a dead namespace prefix.
+//
+// unroutableReason comes back from the same call that decides unroutable rather than being
+// re-derived by the caller, because it is the child's verdict, not a property of the key
+// string — see config.RejectsInteractionKey. That is why this returns four values where
+// interactionUsage returns three and lets its callers reach for config.ConflictAdvice.
+func subprojectUsage(parent, sub *config.Config, project, key string, cmd *runner.ResolvedCommand) (usage, shadowedByLiteralKey, unroutable, unroutableReason string) {
+	declared := key
+	if cmd != nil && len(cmd.Path) > 0 {
+		declared = cmd.Path[0]
+	}
+	if rejected, builtin, advice := sub.RejectsInteractionKey(declared); rejected {
+		return "", "", builtin, advice
+	}
 	combined := project + ":" + key
 	if config.LiteralKeyWins(parent, combined) {
-		return fmt.Sprintf("dva run --project %s %s", project, key), combined
+		return fmt.Sprintf("dva run --project %s %s", project, key), combined, "", ""
 	}
-	return fmt.Sprintf("dva %s", combined), ""
+	return fmt.Sprintf("dva %s", combined), "", "", ""
 }
 
 func buildCommandEntries(c *config.Config, commands map[string]*runner.ResolvedCommand, keys []string) map[string]any {

@@ -1365,12 +1365,23 @@ build  down  logs  restart  stop  up
 이 경우 `manifest`의 서브프로젝트 항목은 세 번째 필드를 씁니다 — `shadowed_by_builtin`도
 `unroutable`도 아닌 `shadowed_by_literal_key`입니다. 값은 콜론 형식을 가져간 부모 키
 (`engine:test`)이고, `usage_example`은 생략되지 않고 실제로 도달하는 형식
-(`dva run --project engine test`)으로 채워집니다. 세 필드를 구분하는 이유는 각각이 다른
-곳을 가리키기 때문입니다: `shadowed_by_builtin`은 `static_commands` 표에서 조회할 수 있는
-이름이지만 부모의 interaction 키는 그 표에 없고, `unroutable`은 도달 가능한 호출이 아예
-없다는 뜻인데 서브프로젝트 커맨드는 `dva run --project`로 항상 도달합니다. 같은 값을
-`dva ls --project <name> -f json`도 노출하고, 사람이 읽는 `dva ls --project <name>`은
+(`dva run --project engine test`)으로 채워집니다. `shadowed_by_builtin`을 재사용하지 않는
+이유는 그 필드가 `static_commands` 표에서 조회할 수 있는 이름을 가리키는데 부모의
+interaction 키는 그 표에 없기 때문입니다. 같은 값을 `dva ls --project <name> -f json`도
+노출하고, 사람이 읽는 `dva ls --project <name>`은
 `(parent key '...' takes this name; run: ...)` 표시를 붙입니다.
+
+**자식이 거부하는 키는 서브프로젝트 항목에서도 `unroutable`입니다.** 자식의
+`dva config validate`가 거부하는 키(위 [예약어 및 자식 검증 규칙](#예약어-및-자식-검증-규칙))는
+부모의 어떤 주소 형식으로도 실행되지 않으므로 `usage_example`이 **생략되고**
+`unroutable`(문제의 내장 커맨드 이름)과 `unroutable_reason`(자식 자신의 진단)이 실립니다.
+루트 `dynamic_commands`에서 `unroutable`이 예약어 **접두사**를 담는 것과 달리 여기서는
+`status`처럼 키 자체가 예약어인 경우 그 이름이 그대로 들어갑니다 — 두 값은 "왜
+`usage_example`이 없는가"라는 하나의 질문에 대한 답이라 같은 필드를 씁니다.
+`dva ls --project <name> -f json`도 같은 값을 노출하고, 사람이 읽는 목록은
+`(unreachable: subproject '...' rejects '...' — '...' is a reserved DVA command)` 표시를
+붙입니다. 이 상태는 `shadowed_by_literal_key`와 절대 같이 실리지 않습니다: 도달하는 호출이
+없는 키가 콜론 형식을 부모에게 빼앗겼다고 설명될 수는 없기 때문입니다.
 
 이 규칙은 **살아 있는 예약어 집합**을 기준으로 판정합니다. 그래서 `app`이 내장 커맨드에서
 빠진 지금 `app:build`는 unroutable이 아니라 평범한 interaction입니다 — 접두사가 더 이상
