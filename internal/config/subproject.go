@@ -172,6 +172,14 @@ func resolveSubprojectImports(cfg *Config, opts ...LoadOption) error {
 				return fmt.Errorf("subproject %q interaction %q not found", subprojectName, name)
 			}
 
+			// TASK-263 §3 decision (b), third address form. An import renames the key to
+			// `p/name`, which carries neither a reserved spelling nor a reserved colon
+			// prefix, so nothing downstream would ever look at it again — the parent would
+			// accept and route a key its own owner's validator rejects.
+			if rejected, advice := subCfg.RejectsInteractionKey(name); rejected {
+				return SubprojectKeyRejection(subprojectName, name, advice)
+			}
+
 			canonicalName := subprojectName + "/" + name
 			if _, exists := cfg.Interaction[canonicalName]; exists {
 				return fmt.Errorf("interaction name collision: %q already exists", canonicalName)

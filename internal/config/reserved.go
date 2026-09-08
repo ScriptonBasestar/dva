@@ -234,6 +234,11 @@ func ValidateReservedCommands(interaction map[string]*InteractionCommand) []Rese
 func ConflictAdvice(name string) string {
 	// Namespaced keys first: this is the one case reachable by no invocation at all, so it is
 	// also the one case where "rename" is the whole answer rather than a preference.
+	//
+	// "No invocation reaches this key" is only true because ReservedSubprojectNames rejects a
+	// subproject spelled like a reserved command. Without that rule a parent declaring
+	// subproject `up` makes `dva up:web` run the child's `web`, and this sentence names a
+	// failure the reader will never see.
 	if idx := strings.Index(name, ":"); idx > 0 {
 		// The cause is spelled out but no failing invocation is written in full: this text is
 		// read by machines (it reaches the reader through validate's stderr and the load-time
@@ -299,4 +304,91 @@ func WarnReservedCommandConflicts(interaction map[string]*InteractionCommand) []
 		slog.Warn(FormatConflictWarnings(conflicts))
 	}
 	return conflicts
+}
+
+// ReservedSubprojectNames returns, sorted, the subproject names that collide with a
+// reserved built-in command.
+//
+// TASK-263 §3 decision (a). It reads as mere consistency with the interaction namespace,
+// but it closes a measured divergence. ConflictAdvice tells the author of an interaction
+// key spelled `up:web` that "no invocation reaches this key ... the run form reads 'up:'
+// as a subproject reference, so it fails with subproject 'up' not found". Measured on
+// v0.1.48 against a parent declaring subproject `up` and interaction `up:web`, `dva up:web`
+// printed the child's CHILD-WEB while that same run logged that advice — the invocation the
+// advice calls impossible reached a different command in another project.
+//
+// The subproject name is the side that gives. The interaction key genuinely is unroutable
+// whenever its prefix is reserved (UnroutableNamespacePrefix says so, and Validate rejects
+// it); it is the subproject that quietly claims a spelling the reserved set already owns.
+// Rejecting it here is what makes UnroutableNamespacePrefix's account true of every config
+// that validates.
+func ReservedSubprojectNames(subprojects map[string]SubprojectConfig) []string {
+	var names []string
+	for name := range subprojects {
+		if IsReservedCommand(name) {
+			names = append(names, name)
+		}
+	}
+	// Subprojects is a map: sort so two collisions are reported in the same order on every
+	// run, matching FormatConflictWarnings' reason for doing the same.
+	sort.Strings(names)
+	return names
+}
+
+// SubprojectConflictAdvice returns what a reserved subproject name breaks, and the way out.
+//
+// Separate from ConflictAdvice because the two conditions have different consequences and
+// different fixes: a reserved interaction key loses only its bare form and stays reachable
+// through `dva run`, while a reserved subproject name makes one spelling mean two things.
+// No invocation is written out in full here, for ConflictAdvice's reason — this text reaches
+// machines through validate's stderr, and a consumer scanning for a runnable `dva ...` form
+// would lift it out of the sentence that says it must not exist.
+func SubprojectConflictAdvice(name string) string {
+	return fmt.Sprintf(
+		"'%s' is a reserved DVA command — an interaction key spelled '%s:<command>' is "+
+			"rejected as reachable by nothing, while the same spelling on the command line "+
+			"routes to this subproject's '<command>'. One spelling cannot mean both. Rename "+
+			"the subproject (e.g., '%s-project')",
+		name, name, name,
+	)
+}
+
+// RejectsInteractionKey reports whether c's own `dva config validate` rejects the
+// interaction key name as a reserved-command conflict, and returns the advice that says why.
+//
+// Per key, not per config. The rule TASK-263 §3 decision (b) froze is about a key being
+// addressable, so a child with an unrelated conflict elsewhere keeps its healthy keys
+// importable and runnable from the parent.
+//
+// It delegates to ValidateReservedCommands rather than re-deriving the condition, so the
+// set of keys the parent routes refuse is by construction the set the child's own validator
+// rejects. Re-deriving it is how the two would drift the next time the hook exemption or the
+// reserved set moves.
+func (c *Config) RejectsInteractionKey(name string) (bool, string) {
+	cmd, declared := c.Interaction[name]
+	if !declared {
+		return false, ""
+	}
+	if len(ValidateReservedCommands(map[string]*InteractionCommand{name: cmd})) == 0 {
+		return false, ""
+	}
+	return true, ConflictAdvice(name)
+}
+
+// SubprojectKeyRejection is the error every parent route returns for a child interaction key
+// the child's own validator rejects (TASK-263 §3 decision (b)).
+//
+// One constructor for all three address forms — `--project`, the `p:key` shorthand and a
+// `p/key` import — because a reader who tries the next form after the first refuses must
+// not be told a different story about why. It names the rule and the declaration that
+// tripped it, and carries the child's own diagnosis so the fix is actionable from the
+// parent's output alone: the reader is standing in the parent directory and has no reason
+// to have run validate in the child.
+func SubprojectKeyRejection(subproject, key, childAdvice string) error {
+	return fmt.Errorf(
+		"subprojects.%s: interaction `%s` is rejected by `dva config validate` inside "+
+			"subproject `%s`, so no parent route addresses it — `--project`, the `%s:%s` "+
+			"shorthand and an `%s/%s` import all refuse it. The subproject's own diagnosis: %s",
+		subproject, key, subproject, subproject, key, subproject, key, childAdvice,
+	)
 }

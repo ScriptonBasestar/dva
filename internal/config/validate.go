@@ -210,6 +210,19 @@ func (c *Config) Validate() error {
 		errs = append(errs, fmt.Errorf("reserved command conflict in this config:\n%s", strings.Join(lines, "\n")))
 	}
 
+	// TASK-263 §3 decision (a): the subproject namespace obeys the same reserved set as the
+	// interaction namespace. Without this, `up:web` is a hard error when it is an interaction
+	// key and a working route to a child command when `up` is a subproject — one spelling,
+	// two answers, and the error text for the first one describes a failure the second never
+	// produces. See ReservedSubprojectNames for the measurement.
+	if names := ReservedSubprojectNames(c.Subprojects); len(names) > 0 {
+		var lines []string
+		for _, name := range names {
+			lines = append(lines, fmt.Sprintf("  - subprojects.%s: %s", name, SubprojectConflictAdvice(name)))
+		}
+		errs = append(errs, fmt.Errorf("reserved subproject name in this config:\n%s", strings.Join(lines, "\n")))
+	}
+
 	errs = append(errs, c.validateHookPlacement()...)
 
 	// Stack is a map: sort so two problems are reported in the same order on every run.

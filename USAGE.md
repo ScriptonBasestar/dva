@@ -1340,6 +1340,11 @@ build  down  logs  restart  stop  up
 참조로 읽어 `subproject 'compose' not found`로 실패합니다. 구분자를 바꾸는 것
 (`compose-ps`)이 유일한 해결책입니다.
 
+이 설명은 서브프로젝트 이름이 예약어가 아닐 때만 참입니다. `subprojects: {compose: ...}`가
+있으면 `dva compose:ps`는 실패하는 대신 **자식의 `ps`를 조용히 실행합니다** — 위 문장이
+불가능하다고 말한 호출이 다른 프로젝트의 다른 명령에 도달합니다. 그래서 `config validate`가
+예약어와 같은 서브프로젝트 이름을 거부합니다(아래 [subprojects](#subprojects) 참조).
+
 이 경우 `manifest`는 위의 `shadowed_by_builtin`과 다른 필드를 씁니다 — 도달 가능한 호출이
 아예 없으므로 `usage_example`은 **생략되고**, 대신 `unroutable: "compose"`(문제의 접두사)와
 `unroutable_reason`(전체 설명)이 실립니다. `dva ls --json`도 같은 값을 노출하고,
@@ -1544,6 +1549,23 @@ readiness를 사용합니다. Parent의 같은 이름 선언은 섞이지 않으
 기준으로 합니다. `interaction`과 `provision` 역시 같은 root 기준으로 실행됩니다.
 
 Subproject `path`는 absolute path나 parent 밖을 가리키는 `../` path도 사용할 수 있습니다.
+
+#### 예약어 및 자식 검증 규칙
+
+**서브프로젝트 이름은 예약어일 수 없습니다.** `up`, `run`, `config` 같은 내장 커맨드 이름을
+서브프로젝트 이름으로 쓰면 `dva config validate`가 거부합니다. 같은 규칙이 이미 interaction
+키에 적용되어 있으므로(`compose:ps`는 도달 불가로 거부됨), 서브프로젝트만 예외로 두면 한
+철자가 섹션에 따라 하드 에러이기도 하고 동작하는 경로이기도 한 상태가 됩니다. 이름을
+바꾸세요(`up-project`).
+
+**자식이 거부하는 키는 부모 경로로도 도달하지 않습니다.** 자식의 `dva config validate`가
+거부하는 interaction 키(예약어 키, 예약어 접두사 키)는 부모의 세 주소 형식 — `dva run
+--project <p> <k>`, `dva <p>:<k>`, `import`를 통한 `<p>/<k>` — 어느 것으로도 실행되지
+않습니다. 부모는 자식이 거부할 주소를 제공하지 않습니다. 에러는 어떤 규칙이 걸렸는지와
+자식 자신의 진단을 함께 출력하므로 부모 디렉토리에서 바로 고칠 수 있습니다.
+
+거부는 키 단위입니다 — 자식에 문제 있는 키가 하나 있어도 나머지 키는 그대로 import되고
+실행됩니다.
 
 ### composes (cross-project plan composition)
 

@@ -138,6 +138,14 @@ func runSubprojectCommand(parentCfg *config.Config, project, cmdName string, cmd
 	if err != nil {
 		return err
 	}
+	// TASK-263 §3 decision (b): the parent must not offer an address the child would refuse.
+	// Both routes that reach here — `--project p k` and the `p:k` shorthand run.go splits
+	// above — are checked in one place because they are one call; the third form, a `p/k`
+	// import, is refused at load in config.resolveSubprojectImports.
+	if rejected, advice := subCfg.RejectsInteractionKey(cmdName); rejected {
+		return config.SubprojectKeyRejection(project, cmdName, advice)
+	}
+
 	// Was config.NewEnvironment(subCfg.Environment, parentEnv.WorkDir(), subCfg.FileDir()),
 	// which dropped the child's `vars:` (the base slot held `environment:` instead), never
 	// read the child's env_file at all, and ran from the caller's cwd. ownedRuntime applies

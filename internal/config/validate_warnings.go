@@ -1268,6 +1268,9 @@ func (c *Config) warnLiteralKeyShadowsSubproject() []string {
 		}
 		// A reserved prefix is still unroutable, so nothing is shadowed — that config has a
 		// hard error from ValidateReservedCommands already and does not need a second opinion.
+		// Both sides of the shape are now hard errors: ValidateReservedCommands rejects the
+		// key, and ReservedSubprojectNames rejects the subproject that gave the prefix its
+		// second meaning.
 		if IsReservedCommand(prefix) {
 			continue
 		}
