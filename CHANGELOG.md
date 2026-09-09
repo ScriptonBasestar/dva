@@ -7,6 +7,18 @@ All notable changes to DVA are documented here.
 ## [0.2.0] - 2026-09-09
 
 ### Changed
+- **config 없는 디렉토리에서 `dva`가 셋업 안내를 출력합니다**: 이전에는 전체 help가
+  나왔습니다. 이제 프로젝트 config를 찾지 못하면 무엇을 찾았고(`dva.yml`/`dva.yaml`,
+  현재 디렉토리부터 위로) 다음에 무엇을 할지를 출력합니다. config가 있으면 이전처럼
+  help입니다. `dva --json`은 같은 상황에서 `{"status": "not_configured", "message",
+  "next_steps"}`를 냅니다. exit code는 양쪽 다 0으로 그대로입니다.
+- **config를 찾지 못했을 때의 힌트가 `dva config init`으로 바뀌었습니다**: 이전 힌트는
+  `dva init`이었는데, 실제 커맨드는 `dva config init`이고 `dva init`은 그 alias입니다
+  (alias는 유지되므로 기존 스크립트는 그대로 동작합니다). 힌트는 stderr에 따로 붙던
+  줄에서 로더 오류 메시지 본문으로 옮겨졌으므로, 오류 텍스트를 grep하던 스크립트는
+  확인이 필요합니다. 이 판정은 이제 메시지 문자열이 아니라 `config.ErrConfigNotFound`
+  sentinel로 이뤄집니다 — 명시적으로 고른 `DVA_FILE`이 로드에 실패한 경우는 여전히
+  다른 오류이고, 안내로 대체되지 않습니다.
 - **subproject 이름과 자식 interaction 키에 예약어 규칙이 강제됩니다** (TASK-263 §3):
   두 가지 breaking change입니다. (a) 내장 커맨드와 같은 이름의 subproject를 선언한
   config는 `dva config validate`가 거부합니다 — `subprojects.up`은 `dva up:web`이
