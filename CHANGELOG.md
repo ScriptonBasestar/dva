@@ -4,6 +4,8 @@ All notable changes to DVA are documented here.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-09
+
 ### Changed
 - **subproject 이름과 자식 interaction 키에 예약어 규칙이 강제됩니다** (TASK-263 §3):
   두 가지 breaking change입니다. (a) 내장 커맨드와 같은 이름의 subproject를 선언한

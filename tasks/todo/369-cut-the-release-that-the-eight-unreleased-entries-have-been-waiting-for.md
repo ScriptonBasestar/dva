@@ -131,9 +131,52 @@ breaking이다. `dva manifest`의 `schema_version`도 1.6 → 1.7이다(추가 �
 
 ## 결정 기록
 
-<!-- 1. 고른 버전 번호와 근거
-     2. MinScaffoldVersion 판단과 근거
-     3. release-postflight 통과 기록 (태그, 커밋 SHA, 실행 시각) -->
+**1. 버전 번호는 `0.2.0`이다** (2026-09-09).
+
+근거는 breaking이 **몇 건인가**가 아니라 **어떤 종류인가**다. 세 건 중 둘(TASK-263 §3의
+예약어 규칙, TASK-333의 `root` 거부)이 **어제까지 통과하던 config를 오늘 거부하는** 형태이고,
+그것이 버전 번호가 존재하는 이유다. `0.1.49`를 고르면 0.1.47→0.1.48과 0.1.48→0.1.49가
+동일한 크기의 사건처럼 보이는데 후자만 config를 거부한다 — 0.x에서 SemVer가 그것을 허용하더라도
+번호가 신호를 싣지 못하는 것이 대가다.
+
+선례가 없다는 반대 논거(0.1.44→0.1.48까지 patch만)는 받아들이되, 그 대가로 예상되던
+"문구 손질"은 실측해 보니 **설치 핀 5개뿐이었다**(README 2, USAGE 3). `MinScaffoldVersion`과
+문서 핀은 아래 2번 때문에 손대지 않았고, `@v0.1.x`를 가정한 문장은 없었다.
+
+**2. `MinScaffoldVersion`은 `0.1.44` 그대로 둔다** (`internal/config/version.go:12`).
+
+이 상수가 묻는 것은 "이 릴리스가 무엇을 깨뜨렸는가"가 아니라 **"`dva init`이 이제 예전
+DVA가 파싱할 수 없는 것을 내보내기 시작했는가"**다(상수 위 주석이 그렇게 적어 둔다). 이번
+breaking 3건은 전부 `Validate()`에서만 돌고 scaffold 출력을 한 글자도 바꾸지 않는다 — 두 질문이
+서로 다른 것을 묻고 있고, 지금 답이 바뀌는 쪽은 없다.
+
+반대로 올렸을 때의 비용은 비대칭이다. `dva init`이 써 넣는 `version:`이 올라가면 **새로
+만든 모든 config가 그보다 오래된 DVA 전부에서 로드를 거부하게** 되고, 되돌리면 이미 배포된
+config가 깨진다. "그냥 뒀다"가 아니라 확인하고 둔다 — 이 줄이 그 차이다.
+
+`README.md:49`의 `version: "0.1.44"`는 이 상수의 거울이므로 같이 고정했다.
+
+**만지지 않은 자리(실측 확인)**: `EnvBridgeIntroducedVersion = "0.1.48"`은 그대로다. 그것은
+릴리스 핀이 아니라 `env_bridge:`를 선언한 config가 자기 `version:`에 적어야 하는 하한이다.
+변경 후 트리 전수 grep으로 `0.1.48`이 남은 자리를 다시 확인했고, 전부 이 카드가 "바꾸지 않는다"로
+분류한 자리였다 — 상수 1건, 그것을 고정하는 테스트 9건, 예시 config 3건, 문서 거울/관측 기록.
+
+**3. release-postflight 기록 — 아직 없다.** 게시는 사람이 하는 단계이고(위 §에이전트가 하는
+것과 하지 않는 것 표), 그 전까지는 태그도 커밋 SHA도 존재하지 않는다. §Completion Criteria
+마지막 항목은 그래서 여전히 미충족이며, 이 카드가 `tasks/todo`에 남아 있는 이유다.
+
+### 준비 상태 (2026-09-09)
+
+| 단계 | 상태 |
+|---|---|
+| 버전 번호 결정 | 끝(0.2.0) |
+| `version.go` `Version` bump | 끝 |
+| README·USAGE 설치 핀 5개 | 끝 |
+| CHANGELOG `[Unreleased]` → `[0.2.0] - 2026-09-09` | 끝 (8건 이동, 본문 불변) |
+| `release-notes/v0.2.0.md` | 끝 |
+| `MinScaffoldVersion` 판단 | 끝(유지) |
+| `make release-check` | 끝 |
+| 런북 §준비 → `release-preflight` → 게시 → `release-postflight` | **사람** |
 
 ## Completion Criteria
 
