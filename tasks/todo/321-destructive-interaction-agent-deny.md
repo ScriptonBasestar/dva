@@ -13,6 +13,8 @@ needs-human: true
 
 # Task 321: destructive interaction ↔ agent-deny 연동
 
+## Summary
+
 nd-stack의 `db reset`/`redis flush`는 description 문구로만 파괴성을 표시한다. 스키마에 `destructive:`/`confirm:` 필드가 없고
 agent-deny 목록은 `config env seal|show` 2건뿐 (`dva agent-deny status`). 제안: interaction 필드 추가 + install 시
 `Bash(dva <name> <sub> *)` deny 투영 + 대화형 confirm.

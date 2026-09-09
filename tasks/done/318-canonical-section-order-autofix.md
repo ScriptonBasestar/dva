@@ -12,6 +12,8 @@ status: done
 
 # Task 318: canonical 섹션 순서 자동 정렬
 
+## Summary
+
 semantic warning `section order …`가 수동 재배열을 요구했다. `dva config migrate --write`가
 순서를 맞춘다. 주석 보존이 관건이었다.
 

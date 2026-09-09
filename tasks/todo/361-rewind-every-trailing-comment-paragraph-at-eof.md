@@ -1,7 +1,7 @@
 ---
 id: TASK-361
 title: "Rewind every trailing comment paragraph at EOF"
-type: fix
+type: bug
 priority: P3
 effort: S
 exec-tier: standard
@@ -14,7 +14,7 @@ needs-human: true
 
 # Task 361: EOF의 후행 주석 문단을 하나가 아니라 전부 되감는다
 
-## 왜
+## Summary
 
 `MigrateSectionOrder`(`internal/config/migrate_section_order.go`)는 EOF에 빈 줄로
 구분된 주석 런이 있으면 그걸 파일 footer로 보고 재배열 대상에서 뺀다(`:214-223`).

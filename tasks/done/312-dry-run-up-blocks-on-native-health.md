@@ -12,6 +12,14 @@ status: done
 
 # Task 312: `--dry-run up <plan>`이 native health check를 실제 대기
 
+## Summary
+
+`dva --dry-run up <plan>`이 native entry의 health check를 실제로 폴링하면서
+ready_timeout(120초 이상)까지 블록되어, 일부 프로젝트에서는 dry-run으로 plan을 확인하는
+것 자체가 불가능했다. 원인은 `Orchestrator.Up`의 entry-level health wait가 `opts.DryRun`을
+확인하지 않고 `opts.Wait`만 보던 것이었고, dry-run일 때는 대기 대신 `would wait for
+entry "<name>"` 한 줄만 출력하도록 고쳐 해결했다.
+
 ## Repro
 
 `cd ~/mydevbox/scripton-db-orchestrator-devbox && timeout 20 dva --dry-run up hybrid`

@@ -1,7 +1,7 @@
 ---
 id: TASK-350
 title: "Reject inverted and vacuous verify bindings in doccheck"
-type: fix
+type: bug
 priority: P2
 effort: M
 exec-tier: standard

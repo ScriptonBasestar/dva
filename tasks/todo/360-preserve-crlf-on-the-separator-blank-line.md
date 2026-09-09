@@ -1,7 +1,7 @@
 ---
 id: TASK-360
 title: "Preserve CRLF on the separator blank line"
-type: fix
+type: bug
 priority: P3
 effort: S
 exec-tier: standard
@@ -14,7 +14,7 @@ needs-human: true
 
 # Task 360: 블록 구분 빈 줄에서도 CRLF를 보존한다
 
-## 왜
+## Summary
 
 `MigrateSectionOrder`(`internal/config/migrate_section_order.go`)는 CRLF 파일의 줄
 끝을 보존한다고 명시적으로 주장한다 — `isDocumentBoundary`의 주석(`:350-358`)이 "CRLF를

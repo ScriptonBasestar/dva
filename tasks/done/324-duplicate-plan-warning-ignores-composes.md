@@ -12,6 +12,14 @@ status: done
 
 # Task 324: composition plan 쌍이 항상 "equal declaration" warning
 
+## Summary
+
+composes로 구성된 plan은 entries가 비어 있는데, `plansHaveEqualDeclaration`이 TASK-244
+D6 필드만 비교하고 `Composes`(TASK-260)를 보지 않아 실제로는 서로 다른 compose 구성을
+가진 plan 쌍도 항상 "declare equal" warning을 오탐했다. `Composes`(plan, order,
+depends_on, vars)를 비교 대상에 추가하고 메시지에 composes를 언급하도록 고쳐,
+flow-taskchain-devbox에서 해당 warning이 0건이 되는 것을 확인했다.
+
 ## Repro
 
 flow-taskchain-devbox `dva validate`:

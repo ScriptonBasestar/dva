@@ -1,7 +1,7 @@
 ---
 id: TASK-334
 title: "Decide the real-sops coverage ceiling for config env show"
-type: decision
+type: docs
 priority: P1
 effort: M
 exec-tier: strong
@@ -56,4 +56,4 @@ pty를 쓰지 않기로 한 이상 새로 갈라지는 플랫폼 코드 자체�
 - [x] a decision is recorded on whether to allocate a pty or accept the fake-driven ceiling, with the reasoning | verify: human — §Decision (2026-09-08) records it and its basis; TASK-282's Review Log links here
 - [x] the accepted ceiling is named by the tests that actually constitute it, and those tests exist | verify: `/usr/bin/grep -q 'func TestConfigEnvShowFaultMatrix' internal/cli/config_env_show_test.go && /usr/bin/grep -q 'show: the terminal gate fires before sops runs' internal/integration/config_env_test.go`
 - [x] the Linux leg is either verified in the config-env-platform CI job or explicitly excluded with a stated reason — an unvalidated Linux path must not ship silently | verify: human — §Decision states the exclusion and its reason; declining the pty leaves no new platform-split code to validate
-- [x] TASK-282's real-sops criterion no longer claims coverage `show` does not have | verify: `/usr/bin/grep -q 'seal only; show is TASK-334' tasks/done/282-implement-gated-env-bridge-commands.md`
+- [x] TASK-282's real-sops criterion no longer claims coverage `show` does not have | verify: `/usr/bin/grep -q 'seal only; show is TASK-334' tasks/_archive/done/282-implement-gated-env-bridge-commands.md`

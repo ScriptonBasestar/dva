@@ -78,6 +78,60 @@ completed-children: 13
   사람 결정 대기는 5장(307, 309, 319, 321, 351) — 앞서는 4장으로 적어 §Needs-human과 어긋났고, 351이 빠져 있었다. 315 후속 345~348은 §Order에 편입하지 않고 compose 묶음으로 함께 처리.
 - 잔여 사람 결정: 위 §Needs-human, §Devbox integration state의 scripton-dashboard·familybook 2건.
 
+## Children
+
+착수 순서는 §Order와 §Needs-human이 정본이다. 아래는 26장 전부를 **현재 위치와 함께**
+나열한 것으로, 목적은 순서를 다시 적는 것이 아니라 **어느 자식이 어느 절에도 놓이지
+않았는지 드러내는 것**이다. frontmatter `children:`는 planprogress가 세고, 이 절은
+validate가 요구한다 — 둘은 다른 질문에 답한다.
+
+### §Order에 놓인 13장
+
+- TASK-312 — `--dry-run up`이 native health를 기다림 (done)
+- TASK-313 — local 러너가 `interaction.workdir`를 무시 (done)
+- TASK-317 — config migrate 힌트 오류·legacy 필드 누락 (done)
+- TASK-311 — `down <plan>`이 named volume/network를 남김 (archive/done)
+- TASK-324 — composition plan 중복 경고 오탐 (done)
+- TASK-314 — `logs`/`build <plan>` 범위 좁히기 (done)
+- TASK-316 — compose drift 감지 결함 (archive/done)
+- TASK-320 — Makefile suggestion 파서·manifest usage_example (done)
+- TASK-322 — init 탐지 결함 6종 (done)
+- TASK-315 — compose profiles: stack 러너 옵션과 PlanEntry profiles (done)
+- TASK-318 — 섹션 순서 자동 정렬 (done). 재리뷰가 파생시킨 8장은 **PLAN-008이 소유**한다
+- TASK-323 — 문서 의미 공백 (done)
+- TASK-328 — 실기동 검증 회차 (todo). **§Order에 남은 유일한 미완 항목이다**
+
+### §Needs-human에 놓인 5장 — 결정 전에는 착수 불가
+
+- TASK-307 — plans `alias`/`extends` (todo)
+- TASK-309 — suppression ergonomics (todo)
+- TASK-319 — native entry ergonomics (todo)
+- TASK-321 — destructive interaction agent-deny (todo)
+- TASK-351 — built-in과 동등한 `replace:` 훅 경고 (todo)
+
+### 어느 절에도 놓이지 않은 8장 — 소유는 있고 순서가 없다
+
+이 여덟 장은 이 plan의 자식이지만 §Order에도 §Needs-human에도 행이 없다. 파생시킨
+행이 본문에서 이름만 언급하고 일정에 넣지 않았기 때문이다.
+
+- TASK-249 — init을 검증된 capability 중심으로 재설계 (archive/done). 완료됐으므로 무해
+- TASK-322에서 분리된 두 장:
+  - TASK-339 — init이 `PORT_MAPPINGS.yaml`·`.gz-git.yaml`·Makefile에서 native 엔트리 도출 (todo)
+  - TASK-340 — `dva init --dry-run` 프리뷰 결정 (todo)
+- TASK-329 — familybook devbox `dva.yaml` → `dva.yml` rename (todo). readiness 브랜치 대기
+- **compose 번들 4장** — §Order 9행이 "후속 345·346·347·348 파생"이라고 적고 일정에는
+  넣지 않았다. 네 장 사이에 `depends-on`도 없다:
+  - TASK-345 — 단일 엔트리 config에서도 compose passthrough가 엔트리 이름을 벗김 (todo)
+  - TASK-346 — compose 파일이 정의하지 않은 plan profile 경고 (todo)
+  - TASK-347 — agent-mesh 라이브러리에 plan 수준 profile 선택 교육 (todo)
+  - TASK-348 — plan profile이 argv가 아니라 실제 docker build에 도달하는지 확인 (todo)
+
+**compose 번들을 여기 남겨 두는 것은 의도된 상태가 아니다.** PLAN-006 §Order 10행이
+여덟 장의 필요를 서술만 하고 소유자를 적지 않았고, 그 여덟 장은 2026-09-09에 PLAN-008이
+생길 때까지 방치됐다. 345~348은 지금 같은 자리에 있다 — 다만 그때와 달리 **소유자는
+있고 순서만 없다**는 점이 다르므로, 새 plan을 만들 것인지 §Order에 행을 넣을 것인지는
+이 plan의 소유자 결정으로 남긴다.
+
 ## Rules
 
 - 카드 하나 = worktree 하나 = 통합 하나. 완료 시 카드를 `tasks/done/`으로 옮기고 이 문서의

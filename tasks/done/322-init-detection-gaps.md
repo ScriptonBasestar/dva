@@ -12,6 +12,8 @@ status: done
 
 # Task 322: init 탐지 결함 (TASK-249 후속 증거)
 
+## Summary
+
 1. compose 없는 6개 프로젝트 모두 `dva init --dry-run` → "no Docker Compose file detected … no recognized language manifest" exit 1.
 2. `--recursive`가 루트 compose 부재에서 즉시 종료 — 하위 go.mod 12개(gzh-cli), dashboard-webui/package.json 미탐색. help 문구와 불일치.
 3. 루트 `go.work`를 language manifest로 인식하지 않음.

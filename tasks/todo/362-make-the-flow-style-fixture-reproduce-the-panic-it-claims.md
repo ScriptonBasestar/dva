@@ -14,7 +14,7 @@ needs-human: true
 
 # Task 362: flow-style fixture가 자신이 막는다고 주장하는 패닉을 실제로 재현하게 한다
 
-## 왜
+## Summary
 
 `internal/config/migrate_section_order_test.go`의
 `TestMigrateSectionOrderBailsOnUnrepresentableShapes`는 함수 주석에서 이렇게 말한다:

@@ -1,7 +1,7 @@
 ---
 id: TASK-355
 title: "Stop dva logs from offering script entries it cannot serve"
-type: fix
+type: bug
 priority: P2
 effort: S
 exec-tier: standard

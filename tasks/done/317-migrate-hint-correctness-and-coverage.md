@@ -12,6 +12,8 @@ status: done
 
 # Task 317: migrate 힌트 오류 및 누락 항목
 
+## Summary
+
 TASK-306(스캐폴드 출력)과 별개로, 현재 힌트 자체가 틀리거나 legacy 필드를 침묵으로 통과시킨다.
 
 ## Wrong hints

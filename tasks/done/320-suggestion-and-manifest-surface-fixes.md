@@ -12,6 +12,8 @@ status: done
 
 # Task 320: suggestion/manifest 표면 결함
 
+## Summary
+
 1. Makefile 파서가 `a b:` 멀티타깃 라인을 하나의 타깃명으로 취급 (flow-pipechain `log-search-bench perf-log-search:`).
 2. subprojects import로 들어온 interaction이 Makefile 제안 매칭에 반영되지 않음 (dripter test-e2e).
 3. built-in과 동일 동작인 `logs`/`build` replace 훅에 "제거 가능" 경고 없음 (nd-stack) — 자동 탐지 후보.

@@ -13,16 +13,23 @@ needs-human: true
 
 ## Summary
 
-`ce task validate`가 이 저장소 카드 **26장**을 거부한다(58장 중, 오류 인스턴스 32건).
-그리고 그 26장 때문에 **`ce task gate`가 오늘 `not-ready`로 exit 1 한다** —
+**이 카드를 파일한 시점(2026-09-09 오전)**에 `ce task validate`는 이 저장소 카드
+**26장**을 거부했다(58장 중, 오류 인스턴스 32건). 그 26장 때문에 **`ce task gate`가
+`not-ready`로 exit 1 했다** —
 `{"status":"not-ready","summary":"task_validate_failed","failed_step":"validate"}`.
+
+**같은 날 §작업 1~3을 실행한 뒤 그 26장은 전부 고쳐졌고, 게이트는
+`READY — task_board_ready`, 62장 중 62장 valid다.** 그런데도 이 카드는 열려 있다 — 그 판정이 **사람이 손으로
+`ce task gate`를 쳤을 때만** 나오기 때문이다. 저장소 게이트는 아직 그 명령을 호출하지
+않고, §Completion Criteria 4번 바인딩이 오늘도 exit 1이다. 그러니 남은 범위는
+§게이트 연결 하나이고, 위 26장은 **그 연결이 있었다면 막았을 것**의 기록으로 남긴다.
 
 `ce task gate`는 보드 전체에 대한 단일 판정(validate + lint + preflight)이고, 개인 정책이
 "보드 판정은 통합 러너가 공유 `ce task gate`에 위임한다"고 지정한 바로 그 명령이다.
 저장소가 실제로 도는 게이트(`make doc-check`, `ce task preflight`)는 전부 통과다 —
 둘 다 validate를 부르지 않기 때문이다.
 
-측정: 2026-09-09, 이 브랜치.
+측정: 2026-09-09, 이 브랜치, §작업 착수 전 상태.
 `for f in tasks/{todo,done,plan}/*.md; do ce task validate "$f"; done` 전수 + `ce task gate --json`.
 
 | 실패 사유 | 인스턴스 | 분포 |
@@ -67,8 +74,15 @@ needs-human: true
 `fix`가 더 나은 이름이라고 판단되면 엔진 스키마에 `fix`를 추가하는 것이 옳은 순서이고,
 그때까지 보드는 엔진이 받는 값을 쓴다. 이 카드는 후자만 한다.
 
-**3. `Missing Summary` 20장 — 판단이 셋 중 가장 얕다.** 헤딩 없이 산문으로 시작할 뿐
-첫 문단이 이미 요약이다. 내용 변경 없이 `## Summary` 한 줄을 얹는다.
+**3. `Missing Summary` 20장 — 한 종류가 아니다.** 착수 전에는 "첫 문단이 이미 요약이니
+헤딩 한 줄만 얹으면 된다"고 봤다. 2026-09-09에 20장을 실제로 열어 보니 셋으로 갈렸다:
+**7장**은 정말 헤딩만 얹으면 되고(H1 바로 뒤 산문이 곧 요약), **8장**은 `## 왜`라는 다른
+이름의 절을 이미 갖고 있어 rename이며, **5장**은 요약이라 부를 문단이 아예 없어 **사람이
+써야 한다**.
+
+이 구분이 이 카드의 핵심이다. 빈 `## Summary` 헤딩만 넣어도 `ce task validate`는
+통과하므로 20장 전부를 5분에 초록으로 만들 수 있다. 그건 `7c78ddb`가 13개 verify
+바인딩에서 걷어낸 공허함과 **같은 모양**이고, TASK-350이 거부하려는 바로 그것이다.
 
 ## PLAN-008과 겹친다 — 순서가 있다
 
@@ -86,10 +100,21 @@ PLAN-008은 그 여덟 장을 **한 번에 한 장씩 직렬로** 연다. 이 �
 ## 작업
 
 1. `type: fix` **10장** → `bug` (344·345·350·355·358·359·360·361·363·364).
-   `type: decision` 1장(done 334) → 엔진이 받는 값으로. 334는 아카이브 대상이므로
+   `type: decision` 1장(done 334) → **`docs`** (실측: `ce task validate`가 `type: docs`는
+   받고 `type: idea`는 거부한다 — 사전 경고 1건만 남기고 통과). 334는 아카이브 대상이므로
    `ce task archive`가 거부하지 않는지 먼저 확인한다.
-2. `Missing Summary` **20장**에 `## Summary` 헤딩 추가. 본문은 건드리지 않는다 —
-   기존 첫 문단이 곧 요약이다.
+
+   **순서: type 수정 → 바인딩 경로 수정 → 아카이브.** done/334는 세 작업이 동시에
+   겨냥한다 — 이 카드가 `type`을 고치고, 별도로 오늘 진행 중인 수정이 done/334 자신의
+   `## Completion Criteria`(line 59 근처) verify 바인딩 경로를(TASK-282가 `_archive`로
+   옮겨가며 깨진 `tasks/done/282-…` 참조를) 고치고, TASK-367이 done/334 파일 자체를
+   `_archive`로 옮긴다. `type` 수정과 바인딩 경로 수정이 아카이브보다 먼저 끝나야 한다 —
+   아카이브가 먼저 일어나면 파일이 `tasks/done` 밖으로 나가 이 카드의 스코프
+   (§Completion Criteria 2번, `tasks/todo tasks/done tasks/plan`만 훑는다) 바깥이 되고,
+   `type: decision`이 고쳐지지 않은 채로 판정만 초록이 되는 동일한 실패 패턴이 재발한다.
+2. `Missing Summary` **20장** — §3의 분류대로 7장은 헤딩 삽입(본문 불변), 8장은
+   `## 왜` → `## Summary` rename, 5장은 요약 신규 작성. 어느 경우에도 빈 헤딩만
+   얹지 않는다.
 3. PLAN-006에 `## Children` 절 추가. PLAN-008이 2026-09-09에 같은 결함으로 걸렸고
    `260ed63`이 고쳤다 — **그 커밋의 형태를 그대로 따른다**. frontmatter `children:`는
    planprogress가 세고 `## Children` 절은 validate가 요구한다. 둘 다 있어야 한다.
@@ -127,9 +152,9 @@ validate를 재구현하는 Go 도구를 만드는 것은 이 카드의 범위�
 ## Completion Criteria
 
 - [ ] `ce task gate`가 보드 전체에 대해 ready로 종료한다 | verify: `ce task gate`
-- [ ] `type: fix`와 `type: decision`이 보드에서 사라진다 | verify: `! /usr/bin/grep -rqE '^type: (fix|decision)$' tasks/todo tasks/done tasks/plan`
+- [ ] `type: fix`와 `type: decision`이 보드에서 사라진다 (스코프는 살아 있는 zone만이다 — `_archive`는 역사적 코퍼스이고 `type: fix` 61장을 포함해 이 카드의 범위 밖이다. 경계는 실수가 아니라 의도다: `ce task validate`도 `_archive`는 돌지 않고, 닫힌 기록을 grep 통과시키려 고쳐 쓰는 것은 TASK-350이 말하는 기록 위조다. 그래서 이 카드를 TASK-367보다 먼저 끝낸다, §작업 1번 순서 참조) | verify: `! /usr/bin/grep -rqE '^type: (fix|decision)$' tasks/todo tasks/done tasks/plan`
 - [ ] `## Acceptance Criteria`가 보드에서 사라진다 (regression-guard — 착수 시점에 이미 0장) | verify: `! /usr/bin/grep -rq '^## Acceptance Criteria$' tasks/todo tasks/done tasks/plan`
-- [ ] 저장소 게이트가 `ce task gate`를 호출한다 — validate를 재구현하지 않는다 | verify: `/usr/bin/grep -rq 'ce task gate' Makefile`
+- [ ] 저장소 게이트가 `ce task gate`를 호출한다 — validate를 재구현하지 않는다. `## 게이트 연결`이 제시한 두 붙일 자리(`make doc-check` 또는 통합 러너 선언 `.gz-git.yaml`) 중 사람이 어느 쪽을 골라도 이 바인딩은 만족되어야 한다 — 한쪽만 하드코딩하지 않는다. 주석에서 명령을 언급하는 것만으로는 통과하지 않는다 — 실제 호출 줄이어야 한다 | verify: `/usr/bin/grep -rhE 'ce task gate' Makefile .gz-git.yaml 2>/dev/null | /usr/bin/grep -qvE '^\s*#'`
 - [ ] 게이트를 어디에 붙였는지와 CI의 `ce` 해결 여부가 근거와 함께 기록됐다 | verify: human — 이 카드 `## 결정 기록` 절에 선택과 그 근거, 그리고 CI에서 `ce`가 해결되는지 확인한 결과가 적혀 있는지 확인
 - [ ] 위반 카드를 심으면 게이트가 그 경로를 지목하며 실패한다 | verify: human — `type: fix` 카드 하나를 심고 저장소 게이트가 rc≠0으로 그 경로를 출력한 기록이 `## 결정 기록`에 있다
 - [ ] 기존 게이트 통과 | verify: `make doc-check`

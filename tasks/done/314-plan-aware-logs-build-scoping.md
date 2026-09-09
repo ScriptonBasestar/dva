@@ -12,6 +12,14 @@ status: done
 
 # Task 314: `dva logs/build <plan>` 서비스 범위 지정
 
+## Summary
+
+`dva logs/build <plan>`에 `-f` 같은 추가 플래그를 함께 넘기면 plan의 서비스 서브셋이
+통째로 버려져, logs는 서비스 미지정으로 profile 뒤 서비스의 로그가 빠지고 build는 build
+컨텍스트가 없는 서비스까지 인자에 포함되는 문제가 있었다. 서비스 이름이 실제로 있을 때만
+서브셋을 대체하도록 인자 필터링을 고치고, build는 엔트리 compose 파일의 `build:` 유무로
+이미지 전용 서비스를 제외하도록 해 해결했다.
+
 ## Repro
 
 - `cd ~/mydevbox/flow-knowchain-devbox && dva --dry-run --debug logs docker-full` → `compose logs -f` (서비스 미지정). profile 뒤 서비스는 로그 미출력.

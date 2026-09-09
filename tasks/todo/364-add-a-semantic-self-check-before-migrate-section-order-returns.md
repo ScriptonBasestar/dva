@@ -1,7 +1,7 @@
 ---
 id: TASK-364
 title: "fix: add a semantic self-check before MigrateSectionOrder returns"
-type: fix
+type: bug
 priority: P1
 effort: M
 exec-tier: strong
@@ -14,7 +14,7 @@ needs-human: true
 
 # Task 364: 재정렬이 의미를 바꾸지 않았는지 반환 직전에 스스로 확인한다
 
-## 왜
+## Summary
 
 `MigrateSectionOrder`는 두 라운드의 리뷰에서 **아홉 개의 결함**을 냈다. 세어 보면 무엇을
 고쳐야 하는지가 분명해진다.

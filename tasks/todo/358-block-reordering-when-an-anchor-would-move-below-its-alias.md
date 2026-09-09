@@ -1,7 +1,7 @@
 ---
 id: TASK-358
 title: "Block reordering when an anchor would move below its alias"
-type: fix
+type: bug
 priority: P2
 effort: S
 exec-tier: standard
@@ -14,7 +14,7 @@ needs-human: true
 
 # Task 358: 앵커가 별칭보다 아래로 이동하는 재배열을 막는다
 
-## 왜
+## Summary
 
 `MigrateSectionOrder`(`internal/config/migrate_section_order.go`)는 top-level 블록을
 canonical order로 재배열할 때 블록 텍스트를 그대로(바이트 단위로) 옮긴다. YAML 앵커(`&e`)와

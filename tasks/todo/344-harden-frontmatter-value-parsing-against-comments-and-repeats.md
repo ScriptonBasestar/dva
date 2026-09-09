@@ -1,7 +1,7 @@
 ---
 id: TASK-344
 title: "Harden frontmatter value parsing against trailing comments and repeated keys"
-type: fix
+type: bug
 priority: P3
 effort: S
 exec-tier: standard

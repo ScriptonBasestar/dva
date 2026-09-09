@@ -14,7 +14,7 @@ depends-on: []
 
 # Task 357: USAGE.md가 싣는 YAML 예시를 게이트에서 실제로 검증
 
-## 왜
+## Summary
 
 TASK-323의 C3은 canonical order 예시 하나다. 그 예시는 **두 번 틀렸다.**
 

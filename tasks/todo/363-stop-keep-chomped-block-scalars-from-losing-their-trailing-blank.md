@@ -1,7 +1,7 @@
 ---
 id: TASK-363
 title: "fix: stop keep-chomped block scalars from losing their trailing blank line"
-type: fix
+type: bug
 priority: P1
 effort: S
 exec-tier: standard
@@ -14,7 +14,7 @@ needs-human: true
 
 # Task 363: `|+` 블록 스칼라가 후행 빈 줄을 잃는다
 
-## 왜 이게 남은 것 중 가장 급한가
+## Summary
 
 리뷰어가 TASK-318에서 열어 둔 항목 전부를 놓고 **"유일하게 남은 조용한 데이터 변경"**
 이라고 지목한 건이다. 나머지 열린 항목은 파싱 실패(사용자가 즉시 본다)이거나 외형

@@ -1,7 +1,7 @@
 ---
 id: TASK-359
 title: "Close the silent bail-out loop in config migrate"
-type: fix
+type: bug
 priority: P2
 effort: S
 exec-tier: standard
@@ -30,7 +30,7 @@ report.Blocked = append(report.Blocked, fmt.Sprintf(
 이 카드는 그 가드를 다루지 않는다. 이 카드가 다루는 건 **여전히 침묵하는 기존 두
 bail-out**뿐이다 — 방금 추가된 가드가 바로 그 둘이 따라야 할 모양이다.
 
-## 왜
+## Summary
 
 `:110-119`의 두 bail-out(중복 top-level 키, flow-style root)은 `report`에 아무것도 넣지
 않고 `src`를 그대로 반환한다:

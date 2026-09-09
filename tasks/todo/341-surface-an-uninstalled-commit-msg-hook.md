@@ -35,4 +35,4 @@ commit-check` unrunnable on a fresh clone and would be worked around rather than
 
 - [ ] `commitcheck` reports an unset or non-`.githooks` `core.hooksPath` as a distinct advisory line, without changing its exit code | verify: `/usr/bin/grep -rq 'func TestReportsUninstalledCommitMsgHook(' tools/commitcheck`
 - [ ] The advisory names the exact remedy (`make install-hooks`) and does not fire when the hook is installed | verify: `/usr/bin/grep -rq 'func TestNoHookAdvisoryWhenHooksPathInstalled(' tools/commitcheck`
-- [ ] Gates stay green | verify: `make test`
+- [ ] Gates stay green | verify: `make test` (regression-guard)

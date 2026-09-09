@@ -12,6 +12,8 @@ status: done
 
 # Task 323: 마이그레이션 중 드러난 미문서 의미론
 
+## Summary
+
 - `subprojects.exclude_tags`는 부모 stack 태그가 아니라 하위 프로젝트 자신의 **interaction**
   태그를 거른다 (`run.go:141`, `list.go:82`). stack entry tags는
   `dva up/down/stop --tags/--exclude-tags`가 소비. 분석자 2명이 오독.

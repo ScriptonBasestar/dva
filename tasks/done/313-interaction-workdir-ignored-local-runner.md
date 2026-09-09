@@ -12,6 +12,13 @@ status: done
 
 # Task 313: `interaction.workdir`가 local 러너에서 무시됨
 
+## Summary
+
+`local` 러너가 interaction의 `workdir` 설정을 어떤 실행 form에서도 적용하지 않아, 서브
+디렉터리에서 실행돼야 할 명령이 항상 프로젝트 루트에서 실행되고 있었다(validate 경고도
+없어 원인 파악이 어려웠음). `LocalRunner.runForm`이 실행 전에 `Config.FileDir()` 기준
+상대경로로 chdir하도록 고치고, workdir 미존재 시 명확한 에러를 내도록 했다.
+
 ## Repro
 
 internal/runner/local.go는 어떤 form에서도 chdir하지 않고 Workdir는 docker_compose.go(--workdir)만 소비한다.

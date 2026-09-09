@@ -1,7 +1,7 @@
 ---
 id: TASK-345
 title: "compose passthrough: strip the entry name on single-entry configs too"
-type: fix
+type: bug
 priority: P3
 effort: S
 exec-tier: standard
