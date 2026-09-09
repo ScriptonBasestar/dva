@@ -14,6 +14,12 @@ status: done
 
 ## Summary
 
+이 카드는 compose를 쓰지 않는 6개 devbox 프로젝트(TASK-249 후속 증거)에서 관찰된
+`dva init` 탐지 결함을 모은 것이다. 아래 다섯 항목 중 앞의 셋(compose 없는 프로젝트
+전체 실패, `--recursive`의 하위 탐색 누락, `go.work` 미인식)만 이 카드에서 다뤘고,
+나머지 두 항목은 각각 TASK-339(워크스페이스/포트 매니페스트 탐지)와
+TASK-340(dry-run preview)으로 이월되어 이 카드는 그 범위를 주장하지 않는다.
+
 1. compose 없는 6개 프로젝트 모두 `dva init --dry-run` → "no Docker Compose file detected … no recognized language manifest" exit 1.
 2. `--recursive`가 루트 compose 부재에서 즉시 종료 — 하위 go.mod 12개(gzh-cli), dashboard-webui/package.json 미탐색. help 문구와 불일치.
 3. 루트 `go.work`를 language manifest로 인식하지 않음.

@@ -73,3 +73,8 @@ created: 2026-09-09
 - **TASK-350과 TASK-338을 병렬로 열지 말 것.** 둘 다 `tools/doccheck/check.go`의 `Result`
   구조체와 `tools/doccheck/main.go`의 출력 블록에 카운터를 추가한다 — 같은 자리다.
 - 카드 상태는 `tasks/todo` → `tasks/done`이 정본이고, 이 문서는 순서·의존·기각 기록만 갖는다.
+- **frontmatter에 `completed-children:`를 넣지 않는다.** PLAN-006·008은 갖고 있고
+  PLAN-007·009는 없어 형태가 갈리지만, 맞춰야 할 쪽은 없는 쪽이다 — 이 필드를 읽는 코드가
+  `tools/`와 `internal/` 어디에도 없다(2026-09-09 실측). `planprogress`가 세는 것은
+  `total-tasks`/`completed-tasks`와 `## Children`이다. 형태를 맞추려고 죽은 필드를
+  되살리지 말 것.

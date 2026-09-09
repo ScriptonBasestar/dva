@@ -14,6 +14,13 @@ status: done
 
 ## Summary
 
+이 카드는 flow-pipechain, dripter, scripton-nd-stack, funbricks-elemhant 네 프로젝트의
+dogfood 과정에서 발견된 Makefile 제안 파서와 manifest `usage_example` 관련 결함 네 건을
+모은 것이다. 처리 결과는 항목마다 달랐다 — 멀티타깃 파싱과 import interaction 커버리지
+누락은 실제 결함으로 확인되어 고쳤고, `clean`의 `usage_example`은 조사 결과 변경 대상이
+아니라고 판단해 유지했으며, built-in과 동등한 replace 훅 경고는 별도 설계가 필요해
+TASK-351로 분리했다.
+
 1. Makefile 파서가 `a b:` 멀티타깃 라인을 하나의 타깃명으로 취급 (flow-pipechain `log-search-bench perf-log-search:`).
 2. subprojects import로 들어온 interaction이 Makefile 제안 매칭에 반영되지 않음 (dripter test-e2e).
 3. built-in과 동일 동작인 `logs`/`build` replace 훅에 "제거 가능" 경고 없음 (nd-stack) — 자동 탐지 후보.

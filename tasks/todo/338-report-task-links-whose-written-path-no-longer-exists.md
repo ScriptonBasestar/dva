@@ -64,8 +64,9 @@ the drift is visible and can be swept, without turning every zone move into a br
 
 ## 열린 결정 — `tasks/_archive/`는 스윕 범위에 포함하는가
 
-원래 아래 C3(`the existing stale paths ... are swept to zero, or the remainder is listed
-with a reason`)가 이 질문을 기준 문구 안에 묻어 뒀다. 명시적으로 꺼낸다.
+**이 카드를 다시 쓰기 전의** C3(`the existing stale paths ... are swept to zero, or the
+remainder is listed with a reason`)가 이 질문을 기준 문구 안에 묻어 뒀다. 명시적으로
+꺼내면서 그 기준 자체도 교체했으므로, 지금 §Completion Criteria 3번은 다른 문장이다.
 
 - **포함한다.** 110건 전부 0으로 만든다. 장점: 숫자가 깨끗해진다. 대가: `tasks/_archive/`의
   85건은 닫힌 카드 본문이 닫힐 당시 실제로 썼던 경로다. 지금 시점의 경로로 고쳐 쓰면 그
@@ -98,8 +99,8 @@ with a reason`)가 이 질문을 기준 문구 안에 묻어 뒀다. 명시적�
 
 ## Completion Criteria
 
-- [ ] doccheck counts and lists links that resolve by id but whose written path does not exist | verify: `/usr/bin/grep -rq "stale_link_paths" tools/doccheck`
+- [ ] doccheck counts and lists links that resolve by id but whose written path does not exist. **소스에서 식별자를 grep하지 않는다** — 3번이 `stale_link_paths_docs:`를 emit하게 만드는 순간 `grep "stale_link_paths"`는 접두어로 매치해 총계 카운터 없이도 초록이 된다. 두 기준이 같은 조건으로 만족되면 하나는 검사가 아니다. 그래서 이 기준은 **총계 카운터가 리포트에 실제로 출력되는지**에 걸고, 3번은 **docs 스코프 값이 0인지**에 건다 | verify: `go run ./tools/doccheck | /usr/bin/grep -qE '^stale_link_paths: +[0-9]+$'`
 - [ ] the new category is reported separately from `broken_links` and does not by itself fail the gate | verify: `go test ./tools/doccheck/` (regression-guard)
-- [ ] `docs/`의 stale written-path 링크가 0으로 소진된다 (2026-09-09 측정 25건 — docs/53·54·58·59·61) | verify: `/usr/bin/grep -rq 'func TestStaleLinkPathsZeroOutsideArchive(' tools/doccheck`
+- [ ] `docs/`의 stale written-path 링크가 0으로 소진된다 (2026-09-09 측정 25건 — docs/53·54·58·59·61). **세는 바인딩이어야 한다** — 테스트 함수명의 존재에 거는 것은 TASK-350 §Notes가 (D)로 분류한 형태이고, 빈 테스트 하나면 초록이 된다. 아래 바인딩은 카운터 줄이 있고 그 값이 0일 때만 통과하므로 오늘은 exit 1이다 | verify: `go run ./tools/doccheck | /usr/bin/grep -qE '^stale_link_paths_docs: +0$'`
 - [ ] `tasks/_archive/`의 잔여(2026-09-09 측정 85건)를 스윕할지 여부와 그 근거가 위 §열린 결정에 기록된다 | verify: human — 이 카드 §열린 결정 절에 선택과 근거가 적혀 있는지 확인
 - [ ] TASK-354가 드러내는 엔진(`ce task validate`)의 stale-path 경고와 범위가 겹치지 않음을 착수 전에 확인했다 | verify: human — 이 카드 §TASK-354와의 경계 절의 확인 결과가 적혀 있는지 확인

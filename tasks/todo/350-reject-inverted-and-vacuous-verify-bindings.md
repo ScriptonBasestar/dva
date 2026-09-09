@@ -25,8 +25,9 @@ doccheck는 이미 bare wrapped tool(`binding_tool.go`)과 escaped pipe·외부 
 안전한 부재 관용구는 `! /usr/bin/grep -q PATTERN FILE`이고, `isCommandPrefix`
 (`binding_tool.go:205-212`)가 `!`를 이미 커맨드 접두어로 허용하므로 그대로 쓸 수 있다.
 
-**(B) 공허 — bare `make test`.** 현재 보드에 바인딩 전체가 `make test` 하나뿐인 기준이
-15건 남아 있다. `make test`는 깨끗한 master에서도 exit 0이므로, *"새 동작이 존재한다"*를
+**(B) 공허 — bare `make test`.** 바인딩 전체가 `make test` 하나뿐인 기준이 2026-09-08
+리뷰 시점에 15건이었고, TASK-341이 `(regression-guard)` 표기를 받으면서 **2026-09-09
+현재 `tasks/todo`에 14건**이다. `make test`는 깨끗한 master에서도 exit 0이므로, *"새 동작이 존재한다"*를
 주장하는 기준에 붙으면 아무것도 증명하지 않는다. 다만 전부 결함은 아니다 — *"게이트가
 계속 초록이다"* 류의 회귀 방지 기준에서는 정당하고, TASK-335처럼 동결 집합 테스트
 (`internal/cli/config_env_grammar_test.go`)가 지키는 기준에서도 정당하다. 그래서 규칙은
@@ -49,7 +50,7 @@ doccheck는 이미 bare wrapped tool(`binding_tool.go`)과 escaped pipe·외부 
 - [ ] 바인딩의 커맨드가 전체 스위트 타깃(`make test`, `make lint`, `make check`, `make doc-check`, `go test ./...`) 하나뿐이면 거부된다 | verify: `/usr/bin/grep -rq 'func TestBindingVacuityRejectsBareSuiteTarget(' tools/doccheck`
 - [ ] `(regression-guard)` 마커가 그 기준 한 줄만 면제하고 다음 기준에는 적용되지 않는다 | verify: `/usr/bin/grep -rq 'func TestBindingVacuityHonoursRegressionGuardMarkerPerLine(' tools/doccheck`
 - [ ] 두 검사 모두 `make doc-check` 출력에 카운트로 보고된다 | verify: `/usr/bin/grep -rq 'func TestCheckReportsBindingInversionAndVacuityCounts(' tools/doccheck`
-- [ ] 보드에 남은 15건의 bare `make test` 바인딩이 전부 해소된다 — 실제 바인딩을 얻거나 마커를 단다 | verify: `! /usr/bin/grep -rq 'verify: .make test.$' tasks/todo`
+- [ ] 보드에 남은 bare `make test` 바인딩(2026-09-09 `tasks/todo` 14건)이 전부 해소된다 — 실제 바인딩을 얻거나 마커를 단다. **스코프가 `tasks/todo`인 것은 의도다** — `tasks/done`·`tasks/plan`에 12건이 더 있지만 전부 닫힌 카드의 `- [x]` 기준이고, 닫힌 기록을 grep 통과시키려 고쳐 쓰는 것은 이 카드가 (B)로 분류한 결함과 같은 종류다. 열려 있는 카드만 고친다 | verify: `! /usr/bin/grep -rq 'verify: .make test.$' tasks/todo`
 - [ ] 카드가 `tasks/todo`에 있는 동안 그 카드의 `grep -rq 'func TestX('` 바인딩이 **이미 매치하면** 거부된다 | verify: `/usr/bin/grep -rq 'func TestBindingVacuityRejectsAlreadyMatchingTestName(' tools/doccheck`
 - [ ] 게이트가 계속 초록이다 | verify: `make test` (regression-guard)
 
@@ -112,6 +113,8 @@ doccheck는 이미 bare wrapped tool(`binding_tool.go`)과 escaped pipe·외부 
   "카드 안 모순"을 검사 대상으로 삼을지 정할 것. 삼지 않기로 한다면 **왜 기계적으로 못 잡는지를
   카드에 적어 둘 것** — 그래야 다음 사람이 이 형태를 다시 발견하고 다시 포기하지 않는다.
   기록을 지우는 대신 취소선으로 남기는 관행은 323에서 실제로 채택했다.
-- 15건 해소는 기계적이지 않다. 설계 미확정 카드(307·309·319·320·321·331)의 8개 바인딩에는
+- 해소는 기계적이지 않다. 설계 미확정 카드 **5장**(307·309·319·321·331)의
+  **7개** 바인딩에는(2026-09-09 실측; 320은 이 목록에 있었으나 origin/master 시점부터
+  bare `make test`도 잠정 주석도 없다)
   이미 `(바인딩 잠정 — 설계 확정 후 groom에서 테스트 함수명으로 교체)` 주석이 붙어 있고,
   그 카드들은 groom 단계에서 실제 테스트 이름을 얻어야 한다. 마커로 덮으면 안 된다.

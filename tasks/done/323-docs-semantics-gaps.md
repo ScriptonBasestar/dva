@@ -14,6 +14,13 @@ status: done
 
 ## Summary
 
+이 카드는 gorisa, funbricks-postkit, scripton-nd-stack, matdosa, scripton-db-orchestrator
+다섯 프로젝트를 마이그레이션하며 마주친, 문서에 없던 dva 동작 일곱 가지를 모은 것이다.
+`exclude_tags`의 필터링 대상, `script_file:`의 실행 방식, plan 경로의 `--env` 거부처럼
+소스를 직접 읽어야만 알 수 있던 세부 동작들이 각 프로젝트에서 서로 다른 방식으로
+사용자를 놀라게 했다. 아래 목록은 최초 조사 시점의 기록이며, 이후 실측 대조와 리뷰에서
+그중 일부 서술이 정정되었다는 점은 카드 하단에 별도로 남아 있다.
+
 - `subprojects.exclude_tags`는 부모 stack 태그가 아니라 하위 프로젝트 자신의 **interaction**
   태그를 거른다 (`run.go:141`, `list.go:82`). stack entry tags는
   `dva up/down/stop --tags/--exclude-tags`가 소비. 분석자 2명이 오독.

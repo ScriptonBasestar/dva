@@ -100,8 +100,9 @@ PLAN-008은 그 여덟 장을 **한 번에 한 장씩 직렬로** 연다. 이 �
 ## 작업
 
 1. `type: fix` **10장** → `bug` (344·345·350·355·358·359·360·361·363·364).
-   `type: decision` 1장(done 334) → **`docs`** (실측: `ce task validate`가 `type: docs`는
-   받고 `type: idea`는 거부한다 — 사전 경고 1건만 남기고 통과). 334는 아카이브 대상이므로
+   `type: decision` 1장(done 334) → **`docs`** (실측: done/334의 `type`만 바꿔
+   `ce task validate`를 돌리면 `✅ Valid (no errors or warnings)` — **경고 0건**이다.
+   `idea`와 `decision`은 둘 다 `❌ Invalid type`으로 거부된다). 334는 아카이브 대상이므로
    `ce task archive`가 거부하지 않는지 먼저 확인한다.
 
    **순서: type 수정 → 바인딩 경로 수정 → 아카이브.** done/334는 세 작업이 동시에
@@ -146,8 +147,29 @@ validate를 재구현하는 Go 도구를 만드는 것은 이 카드의 범위�
 
 ## 결정 기록
 
-<!-- 게이트를 어디에 붙였는지와 그 근거를 여기에 적는다. CI에서 `ce`가 해결되는지
-     확인한 결과도 함께 남긴다. -->
+**아직 적히지 않은 것 — §Completion Criteria 5번이 요구하는 내용이다.** 게이트를 어디에
+붙일지(`make doc-check` vs `.gz-git.yaml`)와 CI에서 `ce`가 해결되는지는 **미결정**이다.
+아래는 §작업 1~3을 실행하며 실제로 내린 결정들이고, 5번 기준을 만족시키지 않는다.
+
+**1. `type: decision` → `docs`, `idea`가 아니다.** done/334의 `type`만 바꿔 실측했다.
+`docs`는 `✅ Valid (no errors or warnings)`, `idea`와 `decision`은 `❌ Invalid type`.
+엔진이 받는 값 중 이 카드의 성격에 가장 가까운 것을 골랐다 — 엔진 스키마에 `decision`을
+추가하는 것은 별개의 결정이고 이 카드의 범위가 아니다(§2 참조).
+
+**2. `tasks/_archive`의 `type: fix` 61장은 고치지 않는다.** `ce task validate`가
+`_archive`를 돌지 않으므로 게이트에 영향이 없고, 닫힌 기록을 grep 통과시키려 고쳐 쓰는
+것은 TASK-350이 말하는 기록 위조다. §Completion Criteria 2번 바인딩의 스코프를
+`tasks/todo tasks/done tasks/plan`으로 명시해 이 경계를 기계로 고정했다.
+
+**3. 빈 `## Summary` 헤딩은 넣지 않았다.** 20장 전부 빈 헤딩만으로 validate를 통과시킬 수
+있었다. `7c78ddb`가 13개 verify 바인딩에서 걷어낸 공허함과 같은 모양이라 거부하고,
+7장은 헤딩 삽입 · 8장은 `## 왜` rename · 5장은 요약 신규 작성으로 갈랐다(§3).
+
+**4. 순서: type 수정 → done/334 바인딩 경로 수정 → TASK-367 아카이브.** 아카이브가 먼저면
+파일이 이 카드의 스코프 밖으로 나가 `type: decision`이 고쳐지지 않은 채 판정만 초록이 된다.
+
+**바인딩 현황(2026-09-09 실측)**: 1·2·3·7번 exit 0, **4번 exit 1**(저장소 게이트가 아직
+`ce task gate`를 호출하지 않는다). 5·6번은 `verify: human`이고 위에 적었듯 미결이다.
 
 ## Completion Criteria
 
