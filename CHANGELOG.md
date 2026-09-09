@@ -62,9 +62,10 @@ All notable changes to DVA are documented here.
 - **`dva init --recursive`가 "이미 있음"을 진척으로 세지 않습니다** — exit code가 바뀌는
   breaking change입니다. 남아 있던 `webui/dva.yml` 하나가 쓸 수 없는 루트를 성공으로
   보고하던 동작을 고쳐, 실제 생성만 셉니다. 부분적으로 scaffold된 트리에 이 명령을 건 CI
-  단계는 **exit 0 → exit 1**로 바뀝니다. 함께: 템플릿 선택이 **직접적인** 언어 근거
-  (패키지 매니페스트, `go.work`)로 좁혀져, pre-commit 훅 때문에 `python`을 핀해 둔
-  저장소가 받던 python 템플릿 대신 `minimal`을 받습니다.
+  단계는 **exit 0 → exit 1**로 바뀝니다. 함께 템플릿 선택에 `go.work`가 직접적인 언어
+  근거로 들어가, go.mod 없는 Go workspace 루트가 `minimal` 대신 `go` 템플릿을 받고
+  `--recursive` 스캔에도 잡힙니다. mise·asdf 핀만 있는 디렉토리는 native 전용으로
+  분류되어, 0.1.48이 exit 1로 거절하던 자리에서 주석만 담긴 `dva.yml`이 나옵니다.
 - **`dva config validate`가 hard error를 전부 모아 한 번에 실패합니다**: 이전에는 첫
   오류에서 멈춰 legacy config를 한 번에 하나씩 고쳐야 했습니다. 이제 모든 검사를 돌리고
   번호 붙은 목록을 출력합니다. `--json`은 `errors[]`로 펼칩니다. exit code와 오류가
@@ -154,9 +155,9 @@ All notable changes to DVA are documented here.
   `dva ktl`은 같은 명령을 가리키는 visible compatibility 이름이며 이 릴리스에서
   deprecate하거나 제거하지 않습니다. 두 이름은 예약어이고, manifest는
   `ktl.canonical_name: kubectl`로 호환 경로임을 표시합니다.
-- **`dva ci` — 로컬 CI 프로파일 실행기**: `dva ci [profile]`(기본 `commit`), `--project`,
-  `--json`, 그리고 전역 `--dry-run`(해석된 프로파일을 JSON으로 출력하고 아무것도 실행하지
-  않음). 하위 명령은 `dva ci status`와 `dva ci logs <run-id>`입니다. config는 최상위
+- **`dva ci` — 로컬 CI 프로파일 실행기**: `dva ci [profile]`(기본 `commit`)과 `--project`.
+  전역 `--json`·`--dry-run`도 받습니다(`--dry-run`은 해석된 프로파일을 JSON으로 출력하고
+  아무것도 실행하지 않음). 하위 명령은 `dva ci status`와 `dva ci logs <run-id>`입니다. config는 최상위
   `ci.profiles.<name>`으로 `description`, `timeout`, `warn_after`, `max_parallel`(1–32),
   `locks[]`, 그리고 `{name, run, depends_on, workdir, environment, timeout}` 형태의
   `steps[]`를 받습니다. `locks[]`는 config 루트와 이름 붙은 공유 자원에 스코프되어 로컬 CI
