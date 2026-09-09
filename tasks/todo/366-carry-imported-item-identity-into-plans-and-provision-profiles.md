@@ -9,7 +9,6 @@ status: todo
 needs-human: true
 created: 2026-09-08
 source: "TASK-333 독립 리뷰(2026-09-08) 항목 7 — 측정된 공백"
-depends-on: [TASK-333]
 ---
 
 ## Summary
