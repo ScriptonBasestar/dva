@@ -62,7 +62,7 @@ if postambleStart == 0 {
 이 카드에는 작업을 증언할 기계 기준이 하나도 없었다. 여러 문단 케이스를 위한 새
 이름으로 옮겼다.
 
-## 수용기준
+## Completion Criteria
 
 - [ ] EOF에 빈 줄로 구분된 주석 문단이 둘 이상이면 전부 postamble로 고정되고 재배열을 따라가지 않는다 | verify: `/usr/bin/grep -rq 'func TestMigrateSectionOrderKeepsEveryTrailingCommentParagraph(' internal/config`
 - [ ] 위 테스트가 수정 전 소스에 대해 FAIL함을 go test -overlay로 확인했다 | verify: human — overlay 실행 결과를 카드에 첨부

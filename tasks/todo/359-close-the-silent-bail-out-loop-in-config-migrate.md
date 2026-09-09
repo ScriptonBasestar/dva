@@ -82,7 +82,7 @@ dva validate                          → 같은 경고 반복
 경우 이 두 이름의 최상위 함수를 별도로 두거나 해당 서브테스트가 이 두 조건을 검증하도록
 리팩터링할 것 — 수용기준의 바인딩이 최상위 `func` 선언을 찾는다.
 
-## 수용기준
+## Completion Criteria
 
 - [ ] 중복 top-level 키가 있는 파일에 migrate를 걸면 report.Blocked에 duplicate key 사유가 담긴다 | verify: `/usr/bin/grep -rq 'func TestMigrateSectionOrderBlocksDuplicateKeyReason(' internal/config`
 - [ ] flow-style root 파일에 migrate를 걸면 report.Blocked에 flow-style 사유가 담긴다 | verify: `/usr/bin/grep -rq 'func TestMigrateSectionOrderBlocksFlowStyleRootReason(' internal/config`

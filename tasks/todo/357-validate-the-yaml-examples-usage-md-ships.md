@@ -5,6 +5,7 @@ type: docs
 priority: P2
 effort: M
 exec-tier: standard
+needs-human: true
 created-at: 2026-09-08T16:20:00+09:00
 source: "TASK-323 C3 (두 번 깨짐)"
 status: todo
@@ -56,13 +57,13 @@ TASK-350이 다루는 것은 "바인딩이 뒤집혔거나 공허한가"라는 �
 - **바이너리 의존 회피.** `bin/dva`를 부르면 게이트가 빌드 산출물에 의존한다.
   `internal/config`의 검증 함수를 직접 부르는 Go 테스트/도구가 낫다.
 
-## 수용기준
+## Completion Criteria
 
 - [ ] USAGE.md의 표시된 YAML 블록을 뽑아 스키마 검증하는 검사가 있고, 실패 시 exit 1 | verify: `make doc-check`
 - [ ] 검사가 공허하지 않다 — 표시된 블록을 일부러 깨뜨리면 실패한다 (변이 증거를 카드에 기록) | verify: human — 변이체 실행 결과를 카드에 첨부
 - [ ] canonical order 예시가 이 검사의 대상으로 표시되어 있다 | verify: human — 표시 방식 확정 후 재작성
-- [ ] 경고 0건까지 요구할지 결정하고 근거를 카드에 남긴다 | verify: human —
-- [ ] TASK-323 C3의 수용기준을 문장 바인딩에서 이 검사로 재결속 | verify: human —
+- [ ] 경고 0건까지 요구할지 결정하고 근거를 카드에 남긴다 | verify: human — 결정과 그 근거가 이 카드의 `## 결정 기록` 절에 적혀 있는지 확인
+- [ ] TASK-323 C3의 수용기준을 문장 바인딩에서 이 검사로 재결속 | verify: human — TASK-323 카드의 C3 기준이 문장 grep이 아니라 이 카드가 만든 검사 명령을 부르는지 확인
 
 ## 참고
 

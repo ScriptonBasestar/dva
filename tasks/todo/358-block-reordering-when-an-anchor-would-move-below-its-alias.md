@@ -53,7 +53,7 @@ bail-out을 권장**한다 — 정밀한 조건 판정 자체가 이 함수의 �
 lone-CR 가드(`:171-177`)와 같은 모양 — "무엇을 막았고 왜 재배열되지 않았는지"를 사용자에게
 알리는 문자열).
 
-## 수용기준
+## Completion Criteria
 
 - [ ] 앵커/별칭이 포함된 파일에 `dva config migrate`를 걸면 재배열 없이 `src`가 그대로 반환되고 파싱 실패가 일어나지 않는다 | verify: `/usr/bin/grep -rq 'func TestMigrateSectionOrderBailsOnAnchorBelowAlias(' internal/config`
 - [ ] 위 케이스에서 report.Blocked가 비어 있지 않고 이유를 담는다 | verify: `/usr/bin/grep -rq 'func TestMigrateSectionOrderBailsOnAnchorBelowAlias(' internal/config`

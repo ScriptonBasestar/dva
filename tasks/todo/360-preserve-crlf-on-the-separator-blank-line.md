@@ -44,7 +44,7 @@ LF 한 줄이 섞이는 건, 같은 함수가 스스로 내세우는 CRLF 보존
 포함하지 않지만, join에 쓰이는 개행 문자의 종류를 파일 전체의 개행 스타일에 맞춘다) 함께
 들고 다니거나, 최종 join 단계에서 파일이 CRLF인지 감지해 그에 맞는 개행으로 join한다.
 
-## 수용기준
+## Completion Criteria
 
 - [ ] CRLF 파일을 재배열해도 구분 빈 줄이 \r\n으로 남는다 | verify: `/usr/bin/grep -rq 'func TestMigrateSectionOrderPreservesCRLFSeparator(' internal/config`
 - [ ] 위 테스트가 수정 전 소스에 대해 FAIL함을 go test -overlay로 확인했다 | verify: human — overlay 실행 결과를 카드에 첨부

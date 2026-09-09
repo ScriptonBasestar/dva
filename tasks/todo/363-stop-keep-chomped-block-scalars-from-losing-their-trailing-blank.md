@@ -57,7 +57,7 @@ depends-on: []
 (a)를 권한다. 단, TASK-364가 먼저 들어오면 이 결함은 "조용한 손실"에서 "차단됨"으로
 격하되므로 우선순위를 다시 볼 것.
 
-## 수용기준
+## Completion Criteria
 
 - [ ] `|+` 블록 스칼라를 가진 파일을 재정렬해도 디코드한 값이 src와 동일하다 | verify: `/usr/bin/grep -rq 'func TestMigrateSectionOrderKeepsKeepChompedTrailingBlank(' internal/config`
 - [ ] 그 테스트가 공허하지 않다 — 수정 전 소스에 대해 `go test -overlay`로 FAIL을 확인하고 결과를 카드에 기록 | verify: human — 변이/오버레이 실행 결과 첨부

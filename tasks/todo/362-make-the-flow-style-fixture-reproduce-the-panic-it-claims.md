@@ -65,7 +65,7 @@ report assertion(재배열 없이 원본 그대로 반환됐는가)만 실패할
 증인은 첫 기준(fixture에 배너 주석)이고 이 기준은 그 교체가 무언가를 깨지 않았음을
 지키는 쪽이므로 `(regression-guard)`를 붙였다. 두 기준은 함께 읽어야 한다.
 
-## 수용기준
+## Completion Criteria
 
 - [ ] flow-style root mapping 서브테스트의 fixture가 배너 주석을 포함한 값으로 바뀌었다 | verify: `/usr/bin/grep -qF "# banner\\n{stack: b, version: a}" internal/config/migrate_section_order_test.go`
 - [ ] 교체된 fixture가 현재 코드(패닉 가드 포함)에서는 패닉 없이 통과한다 | verify: `go test ./internal/config/ -run TestMigrateSectionOrderBailsOnUnrepresentableShapes` (regression-guard)
