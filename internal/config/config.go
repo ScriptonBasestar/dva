@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"maps"
 	"os"
@@ -937,6 +938,10 @@ func finalizeLoadedConfig(cfg *Config) ([]string, error) {
 	return migrated, nil
 }
 
+// ErrConfigNotFound means automatic discovery found no project configuration.
+// An explicitly selected DVA_FILE that cannot be loaded is a different error.
+var ErrConfigNotFound = errors.New("could not find dva.yml")
+
 var yamlDeprecationWarned bool
 
 // findConfig walks up from workDir to find dva.yml.
@@ -966,7 +971,7 @@ func findConfig(workDir string) (string, error) {
 		parent := filepath.Dir(dir)
 		if parent == dir {
 			absWork, _ := filepath.Abs(workDir)
-			return "", fmt.Errorf("could not find dva.yml (searched from %s to /).\n  Hint: run 'dva init' or set DVA_FILE=/path/to/dva.yml", absWork)
+			return "", fmt.Errorf("%w (searched from %s to /).\n  Hint: run 'dva config init' or set DVA_FILE=/path/to/dva.yml", ErrConfigNotFound, absWork)
 		}
 		dir = parent
 	}

@@ -65,6 +65,7 @@ making it easy to onboard and manage projects.`,
 	// When unknown command is invoked, treat as dynamic "run" command
 	SilenceUsage:  true,
 	SilenceErrors: true,
+	RunE:          runRootOverview,
 }
 
 // runningCommand is the name of the cobra command PersistentPreRun dispatched to. It exists
@@ -233,8 +234,7 @@ func Execute() {
 				// no-config-file case (`dva somethingunknown` run outside any project), it
 				// carries no subproject or path to name, and cobra's own "unknown command"
 				// plus suggestion list is already the right answer there — unchanged from
-				// before this fix. root.go:231 below matches the same string for the same
-				// reason (the init hint).
+				// before this fix. The loader supplies the initialization hint.
 				reportDynamicRoutingConfigError(err, args)
 			}
 		}
@@ -255,11 +255,6 @@ func Execute() {
 		// returns false for the parent's helpCommand and SuggestionsFor only considers available
 		// commands. `dva hlep` therefore gets no suggestion at all. Measured, not assumed.
 
-		// Hint for dva init if no config found
-		if strings.Contains(errMsg, "could not find dva.yml") {
-			fmt.Fprintf(os.Stderr, "\nHint: run 'dva init' to create a dva.yml\n")
-		}
-
 		os.Exit(1)
 	}
 }
@@ -272,11 +267,9 @@ func Execute() {
 // reportDynamicRoutingConfigError can be pinned by a test without going through Execute()'s
 // os.Exit.
 //
-// The string match mirrors root.go's other "could not find dva.yml" check a few lines below
-// (the `dva init` hint), for the same reason: findConfig (config/config.go) has no sentinel
-// error type for this case, only this message.
+// Use the same discovery sentinel as the bare-command onboarding path.
 func shouldSurfaceDynamicRoutingConfigError(err error) bool {
-	return err != nil && !strings.Contains(err.Error(), "could not find dva.yml")
+	return err != nil && !errors.Is(err, config.ErrConfigNotFound)
 }
 
 // reportDynamicRoutingConfigError surfaces a loadConfig() failure that is not the ordinary

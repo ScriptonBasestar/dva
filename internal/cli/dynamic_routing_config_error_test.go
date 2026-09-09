@@ -30,7 +30,7 @@ func TestShouldSurfaceDynamicRoutingConfigError_NoConfigFile(t *testing.T) {
 		t.Fatal("expected config.Load to fail in a directory with no dva.yml")
 	}
 	if !strings.Contains(err.Error(), "could not find dva.yml") {
-		t.Fatalf("Load error = %q, want it to contain %q (the string both this predicate and the `dva init` hint below match on)", err.Error(), "could not find dva.yml")
+		t.Fatalf("Load error = %q, want it to contain %q", err.Error(), "could not find dva.yml")
 	}
 	if shouldSurfaceDynamicRoutingConfigError(err) {
 		t.Errorf("shouldSurfaceDynamicRoutingConfigError(%v) = true, want false — this is the ordinary no-config-file case and must keep cobra's unknown-command behavior", err)

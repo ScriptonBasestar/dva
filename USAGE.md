@@ -191,6 +191,13 @@ Antigravity CLI(`agy`)의 flat skill 형식도 Antigravity IDE와 다르므로 �
 
 #### init (config init)
 
+설정 파일이 없는 위치에서 인자 없이 `dva`를 실행하면 초기화, 기존 설정 지정,
+선택적인 AI 지원 경로를 안내합니다. 현재 디렉터리와 상위 디렉터리를 검색하며
+`DVA_FILE`이 지정되어 있으면 해당 파일을 사용합니다. 설정이 있으면 기존 도움말을
+표시하고, 잘못된 설정은 오류로 보고합니다. `dva --help`는 설정 유무와 관계없이
+전체 도움말을 표시합니다. 설정이 필요한 실행 명령은 설정이 없으면 실패하며
+`dva config init`을 안내합니다.
+
 ```bash
 dva config init                  # 자동 감지 기반 dva.yml 생성
 dva init                         # 위와 동일 (backward compat alias)
