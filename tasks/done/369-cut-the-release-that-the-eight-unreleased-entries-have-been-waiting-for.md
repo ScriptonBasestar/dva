@@ -5,7 +5,7 @@ type: chore
 priority: P2
 effort: M
 exec-tier: standard
-status: todo
+status: done
 needs-human: true
 created: 2026-09-09
 source: "보드 현행화(2026-09-09) — CHANGELOG Unreleased 8건, 마지막 릴리스 0.1.48이 2026-09-04. breaking 3건이 태그 없이 master에 있다. 2026-09-09 전수 grep에서 버전 리터럴 표가 코드 상수 하나를 빠뜨린 것이 드러나 보강"
@@ -195,9 +195,30 @@ config가 깨진다. "그냥 뒀다"가 아니라 확인하고 둔다 — 이 �
 `schema_version` 한 절만 자기 단계로 한정했다), `release-notes/v0.2.0.md`는 여덟 항목이
 아니라 실측된 범위를 기준으로 다시 썼다. 동작하는 코드는 여전히 한 줄도 바꾸지 않았다.
 
-**4. release-postflight 기록 — 아직 없다.** 게시는 사람이 하는 단계이고(위 §에이전트가 하는
-것과 하지 않는 것 표), 그 전까지는 태그도 커밋 SHA도 존재하지 않는다. §Completion Criteria
-마지막 항목은 그래서 여전히 미충족이며, 이 카드가 `tasks/todo`에 남아 있는 이유다.
+**4. `v0.2.0`을 게시했고 postflight가 통과했다** (2026-09-09).
+
+게시는 사람이 하는 단계로 잡혀 있었고(위 §에이전트가 하는 것과 하지 않는 것 표,
+`docs/52`), 사용자가 이번 릴리스에 한해 명시적으로 허용해 실행했다. 런북 순서를 그대로
+따랐다 — 통합·push 후 tip 일치 확인, 승인된 커밋에 lightweight tag(push하지 않음),
+그 tag의 clean detached worktree, 노트 절대경로와 SHA-256 기록, preflight, GoReleaser,
+`release-clean`, postflight.
+
+| 항목 | 값 |
+|---|---|
+| tag | `v0.2.0` |
+| commit | `59f481ea01be4b4221c39600fe647f2ea6463b06` |
+| release notes | `release-notes/v0.2.0.md` |
+| notes SHA-256 | `7905843de27f4c3c7fcb43474165fa16bee89c0e381ff2577d4dc7e656d2a818` |
+| Release | <https://github.com/ScriptonBasestar/dva/releases/tag/v0.2.0> |
+
+`make release-preflight` — `preflight passed for v0.2.0 at 59f481ea…; no remote state
+was created`. `goreleaser release --clean` — release id 385294237, `release published`.
+`make release-clean` — 저장소 로컬 `dist`·`bin`·`tmp` 제거. `make release-postflight` —
+`postflight passed for v0.2.0 at 59f481ea… with the exact seven assets`(모든 archive를
+내려받아 공개 `checksums.txt`와 대조).
+
+**태그는 이동하지 않는다**(`docs/52`). 이 릴리스에 관해 나중에 발견되는 것은 다음 태그의
+CHANGELOG 항목이 되고, 게시된 노트를 고쳐 쓰는 방식으로 처리하지 않는다.
 
 ### 준비 상태 (2026-09-09)
 
@@ -212,19 +233,20 @@ config가 깨진다. "그냥 뒀다"가 아니라 확인하고 둔다 — 이 �
 | `release-notes/v0.2.0.md` | 끝 (실측 범위 기준으로 재작성) |
 | `MinScaffoldVersion` 판단 | 끝(유지) |
 | `make release-check` | 끝 |
-| 런북 §준비 → `release-preflight` → 게시 → `release-postflight` | **사람** |
+| 태그 직전 독립 검증 | 끝 — blocking 0, M1 1건 수정(없던 init 회귀 철회) |
+| 런북 §준비 → `release-preflight` → 게시 → `release-postflight` | 끝 — `v0.2.0` 게시, postflight 통과 |
 
 ## Completion Criteria
 
-- [ ] `internal/config/version.go`의 `Version`이 0.1.48을 떠났다 | verify: `! /usr/bin/grep -q 'Version = "0.1.48"' internal/config/version.go`
-- [ ] README·USAGE의 설치 안내가 새 태그를 가리킨다 | verify: `! /usr/bin/grep -q 'dva@v0.1.48' README.md USAGE.md`
-- [ ] CHANGELOG `## [Unreleased]`가 비었다 — 항목이 버전 헤딩으로 옮겨졌다 | verify: `! /usr/bin/sed -n '/^## \[Unreleased\]/,/^## \[0/p' CHANGELOG.md | /usr/bin/grep -q '^- '`
-- [ ] `release-notes/v<새 버전>.md`가 존재하고 비어 있지 않다 — `release-preflight`의 필수 입력 | verify: `v=$(/usr/bin/grep -E '^[[:space:]]+Version = ' internal/config/version.go | /usr/bin/cut -d'"' -f2); /bin/test "$v" != 0.1.48 && /usr/bin/grep -q . "release-notes/v$v.md"`
-- [ ] `EnvBridgeIntroducedVersion`이 `0.1.48` 그대로다 — 일괄 sed를 잡는 가드 | verify: `/usr/bin/grep -q 'EnvBridgeIntroducedVersion = "0.1.48"' internal/config/env_bridge.go`
-- [ ] 릴리스 아티팩트 게이트 통과 | verify: `make release-check`
-- [ ] 버전 번호(0.1.49 vs 0.2.0)를 breaking change에 비추어 정하고 근거를 남겼다 | verify: human — 이 카드 `## 결정 기록`에 고른 번호와 근거가 적혀 있는지 확인
-- [ ] `MinScaffoldVersion`을 올릴지 판단하고 근거를 남겼다 | verify: human — `## 결정 기록`에 판단과 근거가 적혀 있는지 확인
-- [ ] 태그 게시와 postflight 검증이 끝났다 | verify: human — `make release-postflight RELEASE_TAG=... RELEASE_COMMIT=...`가 통과한 기록이 `## 결정 기록`에 있는지 확인
+- [x] `internal/config/version.go`의 `Version`이 0.1.48을 떠났다 | verify: `! /usr/bin/grep -q 'Version = "0.1.48"' internal/config/version.go`
+- [x] README·USAGE의 설치 안내가 새 태그를 가리킨다 | verify: `! /usr/bin/grep -q 'dva@v0.1.48' README.md USAGE.md`
+- [x] CHANGELOG `## [Unreleased]`가 비었다 — 항목이 버전 헤딩으로 옮겨졌다 | verify: `! /usr/bin/sed -n '/^## \[Unreleased\]/,/^## \[0/p' CHANGELOG.md | /usr/bin/grep -q '^- '`
+- [x] `release-notes/v<새 버전>.md`가 존재하고 비어 있지 않다 — `release-preflight`의 필수 입력 | verify: `v=$(/usr/bin/grep -E '^[[:space:]]+Version = ' internal/config/version.go | /usr/bin/cut -d'"' -f2); /bin/test "$v" != 0.1.48 && /usr/bin/grep -q . "release-notes/v$v.md"`
+- [x] `EnvBridgeIntroducedVersion`이 `0.1.48` 그대로다 — 일괄 sed를 잡는 가드 | verify: `/usr/bin/grep -q 'EnvBridgeIntroducedVersion = "0.1.48"' internal/config/env_bridge.go`
+- [x] 릴리스 아티팩트 게이트 통과 | verify: `make release-check`
+- [x] 버전 번호(0.1.49 vs 0.2.0)를 breaking change에 비추어 정하고 근거를 남겼다 | verify: human — 이 카드 `## 결정 기록`에 고른 번호와 근거가 적혀 있는지 확인
+- [x] `MinScaffoldVersion`을 올릴지 판단하고 근거를 남겼다 | verify: human — `## 결정 기록`에 판단과 근거가 적혀 있는지 확인
+- [x] 태그 게시와 postflight 검증이 끝났다 | verify: human — `make release-postflight RELEASE_TAG=... RELEASE_COMMIT=...`가 통과한 기록이 `## 결정 기록`에 있는지 확인
 
 ## Notes
 
