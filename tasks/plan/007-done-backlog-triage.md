@@ -2,11 +2,11 @@
 id: PLAN-007
 title: "Retire the unreviewed done backlog and move quality review to card close"
 type: plan
-scope: "tasks/done/ 58장의 일회성 트리아지, done-disposition 루프에서 발견된 소유자 없는 결함 3건, 닫기 시점 독립 리뷰 전환의 외부 의존"
-progress: 90
-total-tasks: 10
+scope: "tasks/done/ 58장의 일회성 트리아지, done-disposition 루프에서 발견된 소유자 없는 결함 3건, 닫기 시점 독립 리뷰 전환의 외부 의존, 그리고 그 트리아지 이후 다시 채워진 대기열(2026-09-09 추가)"
+progress: 75
+total-tasks: 12
 completed-tasks: 9
-children: [TASK-325, TASK-326, TASK-327, TASK-330, TASK-332, TASK-333, TASK-334, TASK-335, TASK-337, TASK-342]
+children: [TASK-325, TASK-326, TASK-327, TASK-330, TASK-332, TASK-333, TASK-334, TASK-335, TASK-337, TASK-342, TASK-367, TASK-368]
 target-date: "2026-09-30"
 created: 2026-09-05
 ---
@@ -75,6 +75,47 @@ PLAN-006 자식. 그 계획을 진행하는 세션이 닫는 시점에 리뷰하
 
 303, 304, 305, 306, 308, 310, 312, 313, 317
 
+## 2026-09-09 중간 점검 — 재고는 비웠고 유량은 그대로다
+
+`progress`를 90에서 **75**로 내렸다. 자식이 둘 늘어서다(TASK-367·368). 숫자가 뒤로 간
+것이 아니라 분모가 정직해진 것이다 — 아래가 근거다.
+
+**측정**: `tasks/done/` **19장**, `quality-review` 보유 **0장**. 2026-09-05 시작 상태가
+"58장, 0장"이었고 §Order 3·4b가 그 58장을 다 비웠다. 이틀 만에 19장이다.
+
+§Goal 1은 "처리되어 `tasks/done/`에 Tier C 9장만 남는다"였다. 지금 19장 중 Tier C는
+다섯(308·310·312·313·317)뿐이다. **§Goal 자신이 진단한 것은 재고가 아니라 유량이었는데**
+("유입이 배출보다 빠르다") 이 계획이 실행한 것은 재고 비우기뿐이었다. 유량을 건드리는
+항목은 §External 1번 하나였고 그것을 카드 없이 남겼다.
+
+그래서 이 계획은 **부분적으로만 닫힌다**:
+
+| §Goal | 상태 |
+|---|---|
+| 1. 58장 처리, Tier C만 잔류 | **일회성으로는 완료.** 그 58장은 전부 처분됐다. 지속 상태로는 거짓 — 19장이 다시 있다 → TASK-367 |
+| 2. 리뷰 없이 아카이브한 카드에 그 사실이 정직히 남음 | **완료**, 단 아래 `waived` 항 참조 |
+| 3. 루프가 관찰만 남긴 결함 3건 → 자식 카드 | **완료** (§Order 4c, 여섯 장) |
+| 4. 이후 done 진입에 독립 리뷰 요구 | **미완, 엔진 소유.** DVA가 할 수 있는 절반은 문서화 → TASK-368 |
+
+**두 항목을 카드로 만든 이유**는 이 저장소가 같은 실수를 이미 한 번 고쳤기 때문이다.
+PLAN-006 §Order 10행이 여덟 장의 필요를 서술하고 소유자를 적지 않았고, 그 여덟 장은
+2026-09-09에 PLAN-008이 생길 때까지 소유자 없이 놓여 있었다. 필요를 문장으로 적는 것과
+카드로 만드는 것은 다르다.
+
+### `waived`가 상류에 추가됐다 — §External 2번은 해결됐다
+
+§External 2번은 `host-schema.yaml`에 `waived` 값을 추가하는 것이었고 "카드 없음"으로
+남겼다. **2026-09-09 재확인: 값이 존재한다.** `ce task archive --help`가
+`quality-review: pass|conditional|waived`를 받는다고 명시하고, `waived`는
+`quality-review-evidence`를 함께 요구한다. 이 계획이 요청한 형태 그대로다.
+
+대가가 하나 남았다. §Order 3이 Tier B 36장을 값이 없던 시절 `conditional` + evidence
+문구로 우회했고, 지금 `tasks/_archive/done/`의 `quality-review: conditional`은 **48장**
+이다. 그중 상당수는 리뷰된 카드가 아니라 우회된 waiver다. **소급 수정하지 않는다** —
+evidence 문구(`waived: PLAN-007 backlog triage, no independent review`)가 각 카드에
+남아 있어 정보는 손실되지 않았고, 아카이브를 다시 쓰는 비용이 이득을 넘는다. 기록만
+남긴다: **그 48장을 세어 "48장이 리뷰됐다"고 읽으면 틀린다.**
+
 ## Order
 
 | # | 작업 | 조건 |
@@ -126,3 +167,8 @@ Tier A done-review(4a)가 발견한 결함 카드 — 리뷰가 관찰만 남기
 - TASK-334 — `config env show`의 real-sops 커버리지 한계 결정 (TASK-282 배치 2) — 완료, fake 주도 한계 수용
 - TASK-335 — seal create-only TOCTOU 창 차단 (TASK-282 배치 2) — 완료, `link(2)` 원자 배치
 - TASK-337 — `GatedCommands`를 살아 있는 커맨드 트리에 결속 (TASK-286 배치 2) — 완료, 게이트 표면을 선언이 아니라 `internal/cli` AST에서 도출
+
+2026-09-09 중간 점검이 §Goal 1·4의 미완 절반에 소유자를 붙인 카드 — 위 §2026-09-09 중간 점검 참조.
+
+- TASK-367 — 트리아지 이후 다시 채워진 done 대기열 처분 (19장, `quality-review` 0장). 이 계획 자신의 자식 일곱 장이 소유자 없이 그 안에 있다
+- TASK-368 — §External이 '이 계획이 끝난 뒤'로 미룬 `AGENTS.md` 한 줄. 엔진 강제가 없는 동안 요구를 전달하는 표면이 문서뿐인데 그 문서가 비어 있다
