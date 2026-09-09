@@ -36,12 +36,12 @@ depends-on: []
 - out: `command == "hi\n"`
 
 **선재 결함이다.** 리뷰어가 명시적으로 확인했다 — `ec81723`에서도 동일하게 재현되며 M4가
-만든 것이 아니다. 다만 M4가 바로 이 코드(`migrate_section_order.go:184-188`의 후행 빈 줄
+만든 것이 아니다. 다만 M4가 바로 이 코드(`migrate_section_order.go:234-244`의 후행 빈 줄
 분리)를 건드렸으므로 함께 처리하는 것이 자연스럽다.
 
 ## 원인
 
-`:184-188`은 블록 끝의 빈 줄을 "슬롯 구분자"로 보고 떼어낸다. `|`나 `>`(clip/strip)에서는
+`:234-244`은 블록 끝의 빈 줄을 "슬롯 구분자"로 보고 떼어낸다. `|`나 `>`(clip/strip)에서는
 맞는 처리지만, `|+`/`>+`(keep chomping)에서는 **그 빈 줄이 스칼라 값의 일부**다. 구분자와
 값이 같은 바이트로 보이기 때문에 위치만으로는 구별할 수 없다.
 
@@ -66,6 +66,9 @@ depends-on: []
 
 ## 참고
 
-- `internal/config/migrate_section_order.go:184-188`
+- `internal/config/migrate_section_order.go:234-244` — `blockText`/`slotSeparator`
+  루프. **2026-09-09에 재확인하며 인용을 옮겼다**: 이 카드는 원래 `:184-188`을
+  가리켰는데 그 줄은 지금 `commentExtendedStart` 루프다. 카드가 쓰인 뒤 파일이 약
+  50줄 자랐다(367줄). 착수 시점에 다시 한 번 확인할 것 — 줄 번호가 또 움직였을 수 있다.
 - TASK-364 (우산 semantic self-check) — 이 결함을 포함해 한 자리에서 막는 상위 접근
 - TASK-350 (inverted/vacuous verify binding) — 오버레이 FAIL 증거를 요구하는 근거
