@@ -8,6 +8,7 @@ exec-tier: standard
 status: todo
 created: 2026-09-08
 source: "TASK-323 작업 중 워크스테이션 파일크기 훅이 차단"
+needs-human: true
 ---
 
 ## Summary

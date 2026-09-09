@@ -9,6 +9,7 @@ created-at: 2026-09-08T16:40:00+09:00
 source: "TASK-318 재리뷰 (t318-rereview)"
 status: todo
 depends-on: []
+needs-human: true
 ---
 
 # Task 360: 블록 구분 빈 줄에서도 CRLF를 보존한다

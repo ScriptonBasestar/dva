@@ -9,6 +9,7 @@ created-at: 2026-09-08T16:40:00+09:00
 source: "TASK-318 재리뷰 (t318-rereview) SHOULD-FIX 6"
 status: todo
 depends-on: []
+needs-human: true
 ---
 
 # Task 364: 재정렬이 의미를 바꾸지 않았는지 반환 직전에 스스로 확인한다

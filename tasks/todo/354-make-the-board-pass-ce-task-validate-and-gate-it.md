@@ -8,6 +8,7 @@ exec-tier: cheap
 status: todo
 created: 2026-09-08
 source: "TASK-352·353를 파일하다 `ce task validate`가 두 카드를 거부해 발견. 전수 측정으로 확대"
+needs-human: true
 ---
 
 ## Summary

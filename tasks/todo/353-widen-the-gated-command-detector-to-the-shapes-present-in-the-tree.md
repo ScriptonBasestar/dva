@@ -8,6 +8,7 @@ exec-tier: standard
 status: todo
 created: 2026-09-08
 source: "TASK-337 독립 리뷰(2026-09-08) 발견 (b)·(c); (f)·(f-2)는 알려진 한계로 기록"
+needs-human: true
 ---
 
 ## Summary

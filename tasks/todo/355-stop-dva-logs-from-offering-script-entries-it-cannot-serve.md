@@ -8,6 +8,7 @@ exec-tier: standard
 status: todo
 created: 2026-09-08
 source: "TASK-323 독립 리뷰(2026-09-08) C4 — 문서 수정 중 드러난 코드 결함"
+needs-human: true
 ---
 
 ## Summary

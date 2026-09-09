@@ -9,6 +9,7 @@ created-at: 2026-09-08T16:40:00+09:00
 source: "TASK-318 재리뷰 (t318-rereview) 개행 계약"
 status: todo
 depends-on: []
+needs-human: true
 ---
 
 # Task 365: migrate 파이프라인의 개행 계약을 정한다

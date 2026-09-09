@@ -9,6 +9,7 @@ created-at: 2026-09-08T16:40:00+09:00
 source: "TASK-318 재리뷰 (t318-rereview)"
 status: todo
 depends-on: []
+needs-human: true
 ---
 
 # Task 359: 남은 두 침묵 bail-out을 report.Blocked로 닫는다

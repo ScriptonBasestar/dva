@@ -9,6 +9,7 @@ created-at: 2026-09-08T16:40:00+09:00
 source: "TASK-318 재리뷰 (t318-rereview)"
 status: todo
 depends-on: []
+needs-human: true
 ---
 
 # Task 361: EOF의 후행 주석 문단을 하나가 아니라 전부 되감는다

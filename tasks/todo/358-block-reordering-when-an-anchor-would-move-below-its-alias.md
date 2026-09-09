@@ -9,6 +9,7 @@ created-at: 2026-09-08T16:40:00+09:00
 source: "TASK-318 재리뷰 (t318-rereview)"
 status: todo
 depends-on: []
+needs-human: true
 ---
 
 # Task 358: 앵커가 별칭보다 아래로 이동하는 재배열을 막는다

@@ -9,6 +9,7 @@ created-at: 2026-09-08T16:40:00+09:00
 source: "TASK-318 재리뷰 (t318-rereview) SHOULD-FIX 4"
 status: todo
 depends-on: []
+needs-human: true
 ---
 
 # Task 363: `|+` 블록 스칼라가 후행 빈 줄을 잃는다

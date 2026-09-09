@@ -9,6 +9,7 @@ created-at: 2026-09-08T16:40:00+09:00
 source: "TASK-318 재리뷰 (t318-rereview)"
 status: todo
 depends-on: []
+needs-human: true
 ---
 
 # Task 362: flow-style fixture가 자신이 막는다고 주장하는 패닉을 실제로 재현하게 한다
