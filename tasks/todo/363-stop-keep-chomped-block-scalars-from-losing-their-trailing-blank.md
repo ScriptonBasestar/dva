@@ -61,7 +61,7 @@ depends-on: []
 
 - [ ] `|+` 블록 스칼라를 가진 파일을 재정렬해도 디코드한 값이 src와 동일하다 | verify: `/usr/bin/grep -rq 'func TestMigrateSectionOrderKeepsKeepChompedTrailingBlank(' internal/config`
 - [ ] 그 테스트가 공허하지 않다 — 수정 전 소스에 대해 `go test -overlay`로 FAIL을 확인하고 결과를 카드에 기록 | verify: human — 변이/오버레이 실행 결과 첨부
-- [ ] `|`/`>`(clip/strip) 블록의 기존 동작은 바뀌지 않는다 | verify: `go test ./internal/config/`
+- [ ] `|`/`>`(clip/strip) 블록의 기존 동작은 바뀌지 않는다 | verify: `go test ./internal/config/` (regression-guard)
 - [ ] 게이트 통과 | verify: `make doc-check`
 
 ## 참고

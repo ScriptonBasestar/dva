@@ -70,7 +70,7 @@ SHOULD-FIX 4(TASK-363, `|+`).
 
 - [ ] 반환 직전 의미 비교가 있고, 불일치 시 `src`를 반환하며 `Blocked`에 이유를 남긴다 | verify: `/usr/bin/grep -rq 'func TestMigrateSectionOrderSelfChecksSemanticEquivalence(' internal/config`
 - [ ] 이 검사가 실제로 결함을 잡는다 — TASK-363의 `|+` 입력을 개별 수정 없이 넣었을 때 차단된다 | verify: `/usr/bin/grep -rq 'func TestMigrateSectionOrderSelfCheckCatchesKeepChomped(' internal/config`
-- [ ] 정상 파일이 이 검사에 걸리지 않는다 — 기존 테스트 전부 통과 | verify: `go test ./internal/config/`
+- [ ] 정상 파일이 이 검사에 걸리지 않는다 — 기존 테스트 전부 통과 | verify: `go test ./internal/config/` (regression-guard)
 - [ ] 추가 파스 1회의 비용을 실제로 측정하고 결과를 카드에 기록한다 (추정 금지) | verify: human — 벤치마크 결과 첨부
 - [ ] 게이트 통과 | verify: `make doc-check`
 

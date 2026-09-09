@@ -30,5 +30,5 @@ the drift is visible and can be swept, without turning every zone move into a br
 ## Completion Criteria
 
 - [ ] doccheck counts and lists links that resolve by id but whose written path does not exist | verify: `/usr/bin/grep -rq "stale_link_paths" tools/doccheck`
-- [ ] the new category is reported separately from `broken_links` and does not by itself fail the gate | verify: `go test ./tools/doccheck/`
+- [ ] the new category is reported separately from `broken_links` and does not by itself fail the gate | verify: `go test ./tools/doccheck/` (regression-guard)
 - [ ] the existing stale paths in `docs/` and `tasks/` are swept to zero, or the remainder is listed with a reason | verify: `make doc-check`

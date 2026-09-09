@@ -73,10 +73,18 @@ EXIT=1
 로그 파일을 만드는 순간 정리 주체와 수명 문제가 따라온다 — `dva logs`가 거짓 후보를
 제시하는 것만 고치면 되는 문제에 비해 값이 크다. 2번을 고른다면 그건 별개의 기능 결정이다.
 
+## 바인딩 주의 (2026-09-09)
+
+이 카드의 기계 기준 셋은 **파일 시점에 이미 전부 통과하고 있었다**. `-run TestPlanLogTargets`는 접두사 패턴이라 이미 존재하고 이미 통과하는 두 테스트(`…SkipsRunnersWithNoReachableLogs`, `…CarriesTheResolvedRunnerConfig`)에 걸렸고,
+USAGE.md의 문장은 이 카드를 낳은 TASK-323 리뷰가 같은 날 이미 넣어 둔 것이다.
+결함 자체는 `internal/cli/logs.go`에 그대로 있다 — script가 native·process와 한
+case를 공유한다. 그래서 앞의 두 기준은 **아직 없는** 테스트 이름에 다시 걸었고,
+USAGE.md 문장은 진척이 아니라 보존을 증언하므로 `(regression-guard)`를 붙였다.
+
 ## Completion Criteria
 
-- [ ] `dva logs <plan>`의 다중 엔트리 후보 목록에 script 엔트리 이름이 포함되지 않는다 | verify: `go test ./internal/cli/ -run TestPlanLogTargets`
-- [ ] script 엔트리만 있는 plan에 `dva logs`를 걸면 파일 없음 오류가 아니라 어디서 출력을 봐야 하는지 안내하는 메시지가 나온다 | verify: `go test ./internal/cli/ -run TestPlanLogTargets`
+- [ ] `dva logs <plan>`의 다중 엔트리 후보 목록에 script 엔트리 이름이 포함되지 않는다 | verify: `/usr/bin/grep -rq 'func TestPlanLogTargetsExcludesScriptEntries(' internal/cli`
+- [ ] script 엔트리만 있는 plan에 `dva logs`를 걸면 파일 없음 오류가 아니라 어디서 출력을 봐야 하는지 안내하는 메시지가 나온다 | verify: `/usr/bin/grep -rq 'func TestScriptOnlyPlanLogsNameWhereOutputWent(' internal/cli`
 - [ ] 위 두 테스트가 수정 전 소스에 대해 FAIL 함을 `go test -overlay`로 확인했다 | verify: human — overlay 실행 결과를 카드에 첨부
-- [ ] USAGE.md의 script 로그 서술이 수정된 동작과 일치한다 | verify: `/usr/bin/grep -qF '러너는 여기에 해당하지 않습니다' USAGE.md`
+- [ ] USAGE.md의 script 로그 서술이 수정된 동작과 일치한다 | verify: `/usr/bin/grep -qF '러너는 여기에 해당하지 않습니다' USAGE.md` (regression-guard)
 - [ ] 게이트 통과 | verify: `make doc-check`

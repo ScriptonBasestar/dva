@@ -53,10 +53,22 @@ report assertion(재배열 없이 원본 그대로 반환됐는가)만 실패할
 `{stack: b, version: a}\n`(배너 없는 버전)이 여전히 유효한 케이스라면 별도 서브테스트로
 남겨도 되지만, "패닉을 막는다"는 주석의 주장은 배너 있는 fixture 쪽에 있어야 한다.
 
+## 바인딩 주의 (2026-09-09)
+
+두 번째 기준은 원래 이 카드가 **수정하려는 테스트 함수의 존재**에 걸려 있어 파일
+시점에 통과했다. 기준의 문장은 "교체된 fixture가 패닉 없이 통과한다"이므로 증인은
+이름이 아니라 실행이다 — `go test -run`으로 옮겼다. 첫 기준(fixture에 배너 주석)이
+올바르게 실패하고 있어 카드 전체가 무증인은 아니었지만, 두 기준 중 하나만 일하고
+있었다.
+
+실행으로 옮긴 뒤에도 이 기준은 통과한다 — 지금 fixture도 패닉하지 않기 때문이다.
+증인은 첫 기준(fixture에 배너 주석)이고 이 기준은 그 교체가 무언가를 깨지 않았음을
+지키는 쪽이므로 `(regression-guard)`를 붙였다. 두 기준은 함께 읽어야 한다.
+
 ## 수용기준
 
 - [ ] flow-style root mapping 서브테스트의 fixture가 배너 주석을 포함한 값으로 바뀌었다 | verify: `/usr/bin/grep -qF "# banner\\n{stack: b, version: a}" internal/config/migrate_section_order_test.go`
-- [ ] 교체된 fixture가 현재 코드(패닉 가드 포함)에서는 패닉 없이 통과한다 | verify: `/usr/bin/grep -rq 'func TestMigrateSectionOrderBailsOnUnrepresentableShapes(' internal/config`
+- [ ] 교체된 fixture가 현재 코드(패닉 가드 포함)에서는 패닉 없이 통과한다 | verify: `go test ./internal/config/ -run TestMigrateSectionOrderBailsOnUnrepresentableShapes` (regression-guard)
 - [ ] 패닉 가드(같은 줄 keyLines 체크, :116-118)를 임시로 되돌렸을 때 새 fixture가 패닉으로 실패하고 이전 fixture는 실패하지 않음을 카드에 첨부해, 새 fixture가 실제로 더 강한 회귀 보호임을 근거로 남긴다 | verify: human — overlay(가드 제거) 실행 결과를 카드에 첨부
 
 ## 참고

@@ -43,13 +43,14 @@ doccheck는 이미 bare wrapped tool(`binding_tool.go`)과 escaped pipe·외부 
 - [ ] 게이트가 계속 초록이다 | verify: `make test` (regression-guard)
 ```
 
-## Acceptance Criteria
+## Completion Criteria
 
 - [ ] verify 바인딩이 grep에 `-L`을 넘기면 거부되고, 메시지가 BSD/GNU 종료 코드 역전을 근거로 든다 | verify: `/usr/bin/grep -rq 'func TestBindingPortabilityRejectsGrepDashL(' tools/doccheck`
 - [ ] 바인딩의 커맨드가 전체 스위트 타깃(`make test`, `make lint`, `make check`, `make doc-check`, `go test ./...`) 하나뿐이면 거부된다 | verify: `/usr/bin/grep -rq 'func TestBindingVacuityRejectsBareSuiteTarget(' tools/doccheck`
 - [ ] `(regression-guard)` 마커가 그 기준 한 줄만 면제하고 다음 기준에는 적용되지 않는다 | verify: `/usr/bin/grep -rq 'func TestBindingVacuityHonoursRegressionGuardMarkerPerLine(' tools/doccheck`
 - [ ] 두 검사 모두 `make doc-check` 출력에 카운트로 보고된다 | verify: `/usr/bin/grep -rq 'func TestCheckReportsBindingInversionAndVacuityCounts(' tools/doccheck`
 - [ ] 보드에 남은 15건의 bare `make test` 바인딩이 전부 해소된다 — 실제 바인딩을 얻거나 마커를 단다 | verify: `! /usr/bin/grep -rq 'verify: .make test.$' tasks/todo`
+- [ ] 카드가 `tasks/todo`에 있는 동안 그 카드의 `grep -rq 'func TestX('` 바인딩이 **이미 매치하면** 거부된다 | verify: `/usr/bin/grep -rq 'func TestBindingVacuityRejectsAlreadyMatchingTestName(' tools/doccheck`
 - [ ] 게이트가 계속 초록이다 | verify: `make test` (regression-guard)
 
 ## Notes
@@ -82,6 +83,22 @@ doccheck는 이미 bare wrapped tool(`binding_tool.go`)과 escaped pipe·외부 
   `t.Error`/`t.Fatal`을 포함하는지 보는 것이 다른 방향이다. 후자는 헬퍼로 단언을 감싼
   정당한 테스트를 오탐한다. 설계 시점에 정할 것 — **지금 이 카드의 다섯 개 바인딩 자신이
   이 형태다.**
+- **(D) 중 기계적으로 잡히는 부분집합이 2026-09-09에 측정됐다.** todo 36장의 비-human 바인딩
+  62개를 **손대지 않은 master에서 그대로 실행**한 결과 10개가 exit 0이었다 — 즉 작업 전에
+  이미 통과하는 기준이 10개였다. 원인이 갈린다.
+  - **이미 존재하는 심볼을 겨눔(5건, 진짜 결함)**: TASK-355의 기계 기준 셋 전부(`-run
+    TestPlanLogTargets`가 접두사 매치로 기존 통과 테스트 둘을 잡았고, USAGE.md 문장은
+    이 카드를 낳은 TASK-323이 이미 넣어 뒀다), TASK-361의 유일한 기계 기준(고치려는 그
+    테스트의 이름에 걸려 있었다), TASK-362의 둘째 기준. 셋 다 결함은 트리에 그대로 있는데
+    기준은 초록이었다 — **카드가 열린 채로 이미 완료를 주장하고 있었다.**
+  - **정당한 회귀 가드인데 마커가 없었음(5건)**: 328·338·349·363·364.
+  여기서 (D)의 일반 문제(본문이 `t.Skip()`인 테스트)와 달리 **이 부분집합은 본문을
+  읽지 않고 잡힌다**: 카드가 아직 `tasks/todo`에 있는데 그 카드의 `func TestX(` 바인딩이
+  이미 매치한다면, 그 이름은 카드가 **추가할** 테스트가 아니라 이미 있는 테스트다.
+  오탐이 없다 — 카드가 닫히면 `done/`으로 옮겨가므로 검사 대상에서 빠진다.
+  10건은 2026-09-09에 전부 수리했고(진짜 결함 5건은 아직 없는 이름으로 재바인딩,
+  가드 5건은 `(regression-guard)` 표기), 재측정에서 잔여 0건이다. 이 검사가 없으면 같은
+  형태가 다음 필링 배치에서 다시 들어온다.
 - **(E) 다섯 번째 형태: 바인딩이 아니라 *검증 기록*이 거짓인 경우.** 앞의 넷은 전부
   "명령이 무엇을 증명하는가"의 문제다. 이건 명령이 아니라 카드 본문의 대조 표가 틀린
   판정을 **정확하다고 승인해 놓은** 경우다. 실례:

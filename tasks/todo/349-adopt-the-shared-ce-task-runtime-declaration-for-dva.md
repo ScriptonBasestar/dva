@@ -34,5 +34,5 @@ chosen deliberately rather than copied.
 ## Completion Criteria
 
 - [ ] .ce/task-runtime.yaml exists and ce task run-doctor reports ACTIVE instead of BLOCKED | verify: `ce task run-doctor`
-- [ ] The declaration is adopted rather than reimplemented: no `git worktree` lifecycle logic is added to the Makefile | verify: `test 0 -eq "$(/usr/bin/grep -c 'git worktree' Makefile)"`
+- [ ] The declaration is adopted rather than reimplemented: no `git worktree` lifecycle logic is added to the Makefile | verify: `test 0 -eq "$(/usr/bin/grep -c 'git worktree' Makefile)"` (regression-guard)
 - [ ] Adoption is a decision, not a default | verify: human — 카드 하단 "Design record" 절에 CE 공유 lifecycle 채택 여부와 근거, reclaim 선언 범위(worktree/local branch/remote branch)가 기록되었는지 확인

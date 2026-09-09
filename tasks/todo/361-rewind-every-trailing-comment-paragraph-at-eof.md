@@ -54,9 +54,17 @@ if postambleStart == 0 {
 전체**를 postamble로 되감는다 — 단일 주석 런 하나가 아니라, "주석 런 + 빈 줄"의 반복
 패턴이 끝나는 지점(즉 주석이 아닌 실제 내용 줄)까지 거슬러 올라간다.
 
+## 바인딩 주의 (2026-09-09)
+
+첫 기준은 원래 `TestMigrateSectionOrderKeepsFooterCommentAtEOF`의 존재에 걸려
+있었는데, 그 테스트는 **이 카드가 고치려는 단일 주석 런 케이스를 이미 덮고 있는
+기존 테스트**다(`migrate_section_order_test.go:331`). 즉 기준이 파일 시점에 통과해
+이 카드에는 작업을 증언할 기계 기준이 하나도 없었다. 여러 문단 케이스를 위한 새
+이름으로 옮겼다.
+
 ## 수용기준
 
-- [ ] EOF에 빈 줄로 구분된 주석 문단이 둘 이상이면 전부 postamble로 고정되고 재배열을 따라가지 않는다 | verify: `/usr/bin/grep -rq 'func TestMigrateSectionOrderKeepsFooterCommentAtEOF(' internal/config`
+- [ ] EOF에 빈 줄로 구분된 주석 문단이 둘 이상이면 전부 postamble로 고정되고 재배열을 따라가지 않는다 | verify: `/usr/bin/grep -rq 'func TestMigrateSectionOrderKeepsEveryTrailingCommentParagraph(' internal/config`
 - [ ] 위 테스트가 수정 전 소스에 대해 FAIL함을 go test -overlay로 확인했다 | verify: human — overlay 실행 결과를 카드에 첨부
 - [ ] 기존 단일 주석 런 footer 동작은 그대로다(회귀 없음), 게이트 통과 | verify: `make test`
 

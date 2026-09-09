@@ -36,7 +36,7 @@ PLAN의 "build/logs 훅 정리" 공통 행은 이런 프로젝트를 **사람이
 `clean`처럼 **이미 제거된** built-in의 훅은 이 검사 대상이 아니다 — 그건 별도 규칙이고
 `clean_hook_advice`가 이미 다룬다.
 
-## Acceptance Criteria
+## Completion Criteria
 
 - [ ] compose 파일 집합이 stack 선언의 부분집합인 단일 step `logs` replace 훅이 warn된다 | verify: `/usr/bin/grep -rq 'func TestWarnsOnReplaceHookEquivalentToBuiltin(' internal/config`
 - [ ] 플래그·서비스·전처리가 붙어 동작이 다른 훅은 warn되지 않는다 | verify: `/usr/bin/grep -rq 'func TestReplaceHookWithExtraBehaviourIsNotWarned(' internal/config`
