@@ -65,7 +65,7 @@ All notable changes to DVA are documented here.
   (`dva stack|app|infra|clean|dev`, `-M/--mode`)를 가리키는 문자열, 고아 health check를
   경고합니다. `--strict`는 semantic 경고를 실패 exit code로 바꾸므로, 어제 경고가 없던
   config가 오늘 CI에서 exit 1이 될 수 있습니다. 이 규칙을 도입한 커밋 자체가 이 저장소
-  `examples/` 4개에서 실제로 죽은 config를 찾아냈습니다 — 오탐만 만드는 규칙이 아닙니다.
+  `examples/` 3개에서 실제로 죽은 config를 찾아냈습니다 — 오탐만 만드는 규칙이 아닙니다.
 - **미등록 compose 파일을 한 방향으로 보고합니다** — 역시 `--strict`에서 breaking입니다.
   `compose-*`·`docker-compose-*` 접두사가 autodiscovery에 들어가고, 루트 entry의 compose
   파일과 `include:`로 도달하는 모든 파일의 디렉토리를 훑습니다. 이전의 대칭 비교 대신
@@ -110,6 +110,11 @@ All notable changes to DVA are documented here.
   둡니다. `:-`를 미지원이라고 하던 validate 경고는 사라졌습니다. 실무 위험은 낮지만(이전
   출력이 깨진 문자열이었으므로) 같은 config가 다른 문자열을 만듭니다
   ([USAGE.md](USAGE.md))
+- **`dva config migrate`가 `dva.yaml`도 찾습니다** (TASK-304): 이전에는 `dva.yml`만
+  봤기 때문에 legacy 이름을 쓰는 저장소에서는 migrate가 "config가 없다"고 답했습니다.
+  이제 loader·`config docs`·migrate가 `config.ConfigFileInDir`(`dva.yml` 우선,
+  `dva.yaml` 허용) 하나를 공유하고, legacy 이름을 쓰고 있으면 rename 힌트를 함께
+  출력합니다.
 - **`dva logs <plan>`·`dva build <plan>`이 plan의 서비스 범위를 지킵니다**: `logs -f`나
   `build --no-cache`처럼 플래그만 넘기면 plan의 서비스 부분집합이 버려져, profile로 켜지는
   서비스가 `dva logs <plan> -f`에서 사라졌습니다. 이제 **이름이 붙은 서비스**만 부분집합을
@@ -177,10 +182,11 @@ All notable changes to DVA are documented here.
   ([docs/53-ci-profiles.md](docs/53-ci-profiles.md))
 - **`dva secret push <target>` — sops 소스에서 원격 secret으로**: 최상위
   `secrets.sources.<name>.sops`와 `secrets.targets.<name>`(`provider`, `repository`,
-  `source`, `keys`)를 받습니다
+  `source`, `keys`)를 받습니다. `--project`로 자식 프로젝트의 선언을 고르고,
+  전역 `--dry-run`은 복호화도 쓰기도 하지 않고 미리 봅니다
   ([docs/62-remote-artifact-jobs.md](docs/62-remote-artifact-jobs.md))
 - **`dva job run|status|resume|verify` — 원격 산출물 작업**: `dva job run <name>`은
-  `--input NAME=VALUE`(반복), `--wait`, `--verify`, `--with-secrets`를 받고,
+  `--input NAME=VALUE`(반복), `--wait`, `--verify`, `--with-secrets`, `--project`를 받고,
   `status|resume|verify <run-id>`가 따라옵니다. config는 최상위 `jobs.<name>`으로
   `provider`, `repository`, `ref`, `timeout`, `inputs`, `secret_targets`, 그리고
   `{name, workflow, inputs, images[], result_artifact}` 형태의 `runs[]`를 받습니다.
