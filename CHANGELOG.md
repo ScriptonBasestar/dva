@@ -31,6 +31,48 @@ All notable changes to DVA are documented here.
   돕니다. `root`는 예약어 목록에 **넣지 않았습니다**: 그 집합은 이름을 interaction 키와
   `p:key` 접두사로도 금지하는데 `dva run root`에는 모호한 것이 없습니다
   ([USAGE.md](USAGE.md#subprojects))
+- **`ci`, `secret`, `job`이 예약어가 됐습니다** — breaking change입니다. 이 세 이름을
+  interaction 키(`ci:build` 같은 namespace 접두사 포함)나 subproject 이름으로 쓴 config는
+  `dva config validate`가 **exit 1**로 거부합니다. `--strict`가 필요 없는 hard error입니다
+  (`internal/config/reserved.go`, `Validate()`의 `ValidateReservedCommands`와
+  `ReservedSubprojectNames`). 예약어 *규칙* 자체는 이미 있었지만 집합에 흔한 단어 셋이
+  새로 들어온 것이라, `up`·`manifest`와 달리 실제로 쓰고 있었을 가능성이 높습니다.
+  같은 이유로 `kubectl`도 예약어입니다.
+- **`dva down <plan> --purge`가 compose 프로젝트 전체를 내립니다** — breaking change이며
+  **파괴적**입니다. 서비스를 고르는 plan은 `compose rm`으로 내려서 named volume과 프로젝트
+  네트워크에 닿지 못했고, 그래서 `--volumes`와 `--purge`가 둘 다 그것들을 남겼습니다.
+  `--purge`는 이제 **선택된 서비스와 무관하게**
+  `compose down --remove-orphans --volumes --rmi local`을 돌립니다 — plan이 고르지 않은
+  서비스의 named volume, 프로젝트 네트워크, orphan 컨테이너, 로컬 빌드 이미지가 함께
+  삭제됩니다. 스크립트에 `dva down <plan> --purge --force`를 걸어 둔 경우 어제까지 남던
+  데이터가 사라집니다. 평범한 `down`과 `--volumes`는 서비스 범위를 유지하고 무엇이 남는지
+  출력합니다 ([USAGE.md](USAGE.md))
+- **참조 무결성 경고 6종이 추가됐습니다** — `--strict`를 쓰는 사용자에게 breaking입니다.
+  `dva config validate`가 plan이 선언하지 않은 서비스, 참조되지 않는 environment/site,
+  아무것도 바꾸지 않는 entry override, 빈 interaction command, 제거된 CLI
+  (`dva stack|app|infra|clean|dev`, `-M/--mode`)를 가리키는 문자열, 고아 health check를
+  경고합니다. `--strict`는 semantic 경고를 실패 exit code로 바꾸므로, 어제 경고가 없던
+  config가 오늘 CI에서 exit 1이 될 수 있습니다. 이 규칙을 도입한 커밋 자체가 이 저장소
+  `examples/` 4개에서 실제로 죽은 config를 찾아냈습니다 — 오탐만 만드는 규칙이 아닙니다.
+- **미등록 compose 파일을 한 방향으로 보고합니다** — 역시 `--strict`에서 breaking입니다.
+  `compose-*`·`docker-compose-*` 접두사가 autodiscovery에 들어가고, 루트 entry의 compose
+  파일과 `include:`로 도달하는 모든 파일의 디렉토리를 훑습니다. 이전의 대칭 비교 대신
+  "발견됐지만 등록되지 않음"만 보고하므로, 등록된 파일 옆에 놓인 `compose-foo.yml`이
+  없던 경고를 만들고 `--strict`에서 exit 1이 됩니다.
+- **`dva init --recursive`가 "이미 있음"을 진척으로 세지 않습니다** — exit code가 바뀌는
+  breaking change입니다. 남아 있던 `webui/dva.yml` 하나가 쓸 수 없는 루트를 성공으로
+  보고하던 동작을 고쳐, 실제 생성만 셉니다. 부분적으로 scaffold된 트리에 이 명령을 건 CI
+  단계는 **exit 0 → exit 1**로 바뀝니다. 함께: 템플릿 선택이 **직접적인** 언어 근거
+  (패키지 매니페스트, `go.work`)로 좁혀져, pre-commit 훅 때문에 `python`을 핀해 둔
+  저장소가 받던 python 템플릿 대신 `minimal`을 받습니다.
+- **`dva config validate`가 hard error를 전부 모아 한 번에 실패합니다**: 이전에는 첫
+  오류에서 멈춰 legacy config를 한 번에 하나씩 고쳐야 했습니다. 이제 모든 검사를 돌리고
+  번호 붙은 목록을 출력합니다. `--json`은 `errors[]`로 펼칩니다. exit code와 오류가
+  하나뿐일 때의 메시지는 그대로입니다.
+- **`dva manifest`의 `schema_version`이 1.5 → 1.8입니다**(전부 추가 전용). 1.5 → 1.6은
+  `ci_profiles`와 `ci` 커맨드 항목, 1.6 → 1.7은 항목별 `owner`·`aliases`·`alias_of`,
+  1.7 → 1.8은 `secret_targets`·`jobs`와 커맨드 항목의 새 `effects` 필드입니다. **1.7을
+  핀한 소비자는 이 릴리스의 바이너리에서 깨집니다.**
 
 ### Fixed
 - **subproject 하나를 로드하지 못해도 나머지의 `p:key` completion이 남습니다** (TASK-333):
@@ -39,6 +81,51 @@ All notable changes to DVA are documented here.
   **다른 모든** subproject의 colon 형태를 completion에서 지웠습니다 — 정작 `dva run p:key`
   자체는 그대로 라우팅됐습니다. 이제 subproject마다 따로 로드하고 실패한 것만 건너뛰므로,
   completion이 제안하는 집합이 `dva run`이 실제로 받는 집합과 일치합니다.
+- **`interaction.<name>.workdir`이 로컬 러너에서도 적용됩니다** — breaking change이고,
+  **`Validate()`가 아니라 실행 시점에** 발생합니다. 이 필드는 그동안 compose 러너의 컨테이너
+  `--workdir`으로만 쓰였고 호스트 실행에서는 **조용히 무시**됐습니다. 이제 다섯 형태 모두
+  실행 전에 chdir하며, 상대 경로는 `dva.yml` 디렉토리를 기준으로 풉니다. 없는 디렉토리는
+  `workdir "sub": directory not found (resolved to …)`라는 이름 붙은 오류입니다 — 어제까지
+  필드가 무시돼 잘 돌던 config가 오늘 실패할 수 있고, `dva config validate`를 한 번도
+  돌리지 않는 사용자에게도 발생합니다. 스크립트가 자기 `cd`를 하고 있었다면 이제 다른
+  디렉토리에서 시작합니다. compose 러너의 script fallback은 호스트를 컨테이너 workdir로
+  chdir하는 대신 그 workdir을 버립니다 ([USAGE.md](USAGE.md))
+- **`${VAR:-default}`가 POSIX 의미대로 확장됩니다** — 확장 의미가 바뀌므로 원칙적으로
+  breaking입니다. 이전 정규식 확장기는 `${...}`의 닫는 중괄호를 선택적으로 취급해서, 변수가
+  **설정돼 있을 때** `${POSTGRES_USER:-gorisa}`가 `gorisa:-gorisa}`로 확장됐습니다. 이제
+  스캐너가 `:-`와 `-`를 구현하고(기본값 자체도 확장, 중첩 지원) 잘못된 형태는 문자 그대로
+  둡니다. `:-`를 미지원이라고 하던 validate 경고는 사라졌습니다. 실무 위험은 낮지만(이전
+  출력이 깨진 문자열이었으므로) 같은 config가 다른 문자열을 만듭니다
+  ([USAGE.md](USAGE.md))
+- **`dva logs <plan>`·`dva build <plan>`이 plan의 서비스 범위를 지킵니다**: `logs -f`나
+  `build --no-cache`처럼 플래그만 넘기면 plan의 서비스 부분집합이 버려져, profile로 켜지는
+  서비스가 `dva logs <plan> -f`에서 사라졌습니다. 이제 **이름이 붙은 서비스**만 부분집합을
+  대체합니다. `dva build <plan>`은 entry의 compose 파일에서 `build:`를 읽어 image 전용
+  서비스를 빼고, 남는 것이 없으면 그렇게 알립니다.
+- **`dva --dry-run up <plan>`이 health를 기다리지 않습니다**: entry 단위 health 대기가
+  `opts.Wait`만 보고 있어서, http check가 붙은 native entry가 아무것도 띄우지 않은 채 닿지
+  않는 주소를 ctx 취소까지 폴링했습니다. 이제 `would wait for` 줄을 출력합니다.
+- **중복 plan 경고가 compose 선언을 비교합니다**: composition plan은 entry가 없어서 두
+  composition plan이면 무조건 같다고 판정돼 지울 수 없는 경고가 남았습니다. 이제 `Composes`를
+  위치별로(`plan`, `order`, `depends_on`, `vars`) 비교하고 어느 것인지 이름을 붙입니다.
+  `--strict`를 쓰는 config에서는 이 수정이 오히려 막힘을 풉니다.
+- **`dva config env seal`의 "신규 생성 전용"이 쓰기 시점에 강제됩니다**: 부재 확인이
+  `sealPreflight`에서만 — 시간 제한 없는 확인 프롬프트와 `sops` 실행 **이전에** — 돌았고
+  배치는 `rename(2)`이라 무엇이 있든 덮어썼습니다. 그 창에서 들어온 동시 seal이나
+  `git pull`, 편집이 **조용히 파괴**됐습니다. 이제 `link(2)`로 배치해 `EEXIST`로 원자적으로
+  실패하므로, 부재 확인 자체가 쓰기입니다.
+- **`dva skill install`이 이미 claim된 번들을 안전하게 확장합니다**: 기존 claim을 잘못
+  다루던 경로를 고쳤습니다(`internal/skillinstall/claims.go`).
+- **Makefile 커버리지 매칭**: `a b: ## desc` 형태의 다중 타겟 줄이 `"a b"`라는 이름 하나로
+  읽혀 어떤 interaction과도 매칭되지 않아 영원히 경고하면서 정작 실제 타겟 둘은 보고되지
+  않았습니다. 이제 줄을 쪼갭니다. import된 interaction은 `sub/name`으로 키가 잡혀 커버리지
+  0으로 세어졌고, 그래서 자식이 이미 제공하는 것을 루트에 다시 선언하라고 권했습니다 —
+  `sub/` 접두사를 벗겨 셉니다. `app:build` 같은 namespace 키는 그대로입니다.
+- **`dva config migrate`의 힌트 오류**: `compose_profiles`가 mode 이름을 profile로
+  렌더링하던 문제, environment 힌트가 schema가 거부하는 키를 가리키던 문제, `provision`에
+  안내가 없던 문제를 고쳤습니다. 사라진 `applications` 포트는 endpoint를 제안하고, `dev`는
+  같은 명령을 이미 돌리는 interaction을 지목하며, 중복 태그는 Converted 목록에 이유가
+  붙습니다.
 
 ### Removed
 - **interaction의 `env_file:`이 schema에서 거부됩니다** (TASK-266 Stage B):
@@ -55,8 +142,9 @@ All notable changes to DVA are documented here.
   항목에 `aliases`가, alias 항목에 `alias_of`가 붙어 두 주소 중 어느 쪽이 canonical인지
   드러냅니다(해당 없으면 생략되는 "존재 자체가 신호" 계약). 두 마커는 최상위 키에만
   붙습니다 — `subcommands:` 파생 행은 부모 주소를 통해서만 도달하므로 부모 행의 마커가
-  답입니다. 사람이 읽는 `dva ls` 표는 바뀌지 않았습니다. manifest `schema_version`은
-  1.6 → 1.7입니다(추가 전용). `plans:` import는 아직 이 세 필드를 싣지 않습니다
+  답입니다. 사람이 읽는 `dva ls` 표는 바뀌지 않았습니다. 이 항목이 올린 manifest `schema_version`은
+  1.6 → 1.7이지만, **0.2.0 전체로는 1.5 → 1.8**입니다(아래 Changed의 manifest
+  항목 참조, 전부 추가 전용). `plans:` import는 아직 이 세 필드를 싣지 않습니다
   ([USAGE.md](USAGE.md#subprojects))
 - **`dva run --project`가 subproject 이름을 완성합니다** (TASK-333):
   플래그 값 completion이 선언된 subproject 이름을 제안합니다. 경로가 없는 subproject도
@@ -66,6 +154,85 @@ All notable changes to DVA are documented here.
   `dva ktl`은 같은 명령을 가리키는 visible compatibility 이름이며 이 릴리스에서
   deprecate하거나 제거하지 않습니다. 두 이름은 예약어이고, manifest는
   `ktl.canonical_name: kubectl`로 호환 경로임을 표시합니다.
+- **`dva ci` — 로컬 CI 프로파일 실행기**: `dva ci [profile]`(기본 `commit`), `--project`,
+  `--json`, 그리고 전역 `--dry-run`(해석된 프로파일을 JSON으로 출력하고 아무것도 실행하지
+  않음). 하위 명령은 `dva ci status`와 `dva ci logs <run-id>`입니다. config는 최상위
+  `ci.profiles.<name>`으로 `description`, `timeout`, `warn_after`, `max_parallel`(1–32),
+  `locks[]`, 그리고 `{name, run, depends_on, workdir, environment, timeout}` 형태의
+  `steps[]`를 받습니다. `locks[]`는 config 루트와 이름 붙은 공유 자원에 스코프되어 로컬 CI
+  실행 사이에서 배타적입니다. `dva manifest`에 `ci_profiles`가 실립니다
+  ([docs/53-ci-profiles.md](docs/53-ci-profiles.md))
+- **`dva secret push <target>` — sops 소스에서 원격 secret으로**: 최상위
+  `secrets.sources.<name>.sops`와 `secrets.targets.<name>`(`provider`, `repository`,
+  `source`, `keys`)를 받습니다
+  ([docs/62-remote-artifact-jobs.md](docs/62-remote-artifact-jobs.md))
+- **`dva job run|status|resume|verify` — 원격 산출물 작업**: `dva job run <name>`은
+  `--input NAME=VALUE`(반복), `--wait`, `--verify`, `--with-secrets`를 받고,
+  `status|resume|verify <run-id>`가 따라옵니다. config는 최상위 `jobs.<name>`으로
+  `provider`, `repository`, `ref`, `timeout`, `inputs`, `secret_targets`, 그리고
+  `{name, workflow, inputs, images[], result_artifact}` 형태의 `runs[]`를 받습니다.
+  `dva manifest`에 `secret_targets`·`jobs`와 커맨드 항목의 `effects`가 실립니다
+  ([docs/62-remote-artifact-jobs.md](docs/62-remote-artifact-jobs.md))
+- **`plans.<plan>.entries[].profiles`**: plan entry에 `profiles: [rust, monitoring]`을
+  선언하면 선언 순서대로 compose 호출의 `--profile` 플래그가 됩니다. `profiles`가 compose가
+  고려할 대상을 정하고 `services`가 그것을 좁힙니다. 비어 있거나 없으면 argv는 바이트 단위로
+  동일합니다. `dva build <plan>`과 `dva logs <plan>`에도 전달됩니다 — 이것이 없으면 profile만
+  쓰는 plan에서 `dva build`가 맨 `compose build`를 내보내 아무것도 출력하지 않고 exit 0으로
+  끝나는데 `dva up`은 서비스를 띄웠습니다
+  ([docs/40-declarative-stack-and-plans.md](docs/40-declarative-stack-and-plans.md),
+  `examples/compose-profiles.yml`)
+- **`dva config migrate --write`가 최상위 섹션을 정규 순서로 재배치합니다**:
+  `section order:` 권고가 사라집니다. 최상위 키 중복, flow 스타일 루트, yaml.v3와
+  `strings.Split`의 줄바꿈 판정이 어긋나는 파일에서는 이유와 함께 `Blocked`로 거부합니다.
+  **주의**: 이 기능과 그 손상 사례들(들여쓴 `#`이 `command: |` 스크립트의 마지막 줄을 먹던
+  것, 중복 키 panic, `...` 종결자가 아래 섹션 전부를 로더가 조용히 버리는 두 번째 문서로
+  만들던 것, 빈 줄 구분자가 블록과 함께 이동해 섹션이 붙던 것, EOF 주석이 맨 위로 올라오던
+  것, CRLF·단독 CR 처리 오류)가 **모두 같은 릴리스에 들어 있습니다**. 쓰기 전에 커밋해
+  두세요.
+- **`dva config migrate`가 stack-select mode를 plan으로 변환합니다**: 키가
+  `description`/`stack`/`compose_services`/`endpoint_tags` 안에 머무는 mode는
+  `plans.<같은 이름>`이 됩니다. `stack`은 `entries[].name`이 되고 `compose_services`는 단일
+  compose entry에 붙습니다. 변환된 mode는 줄 단위로 정확히 제거되고, 비면 `modes:`가
+  사라지며, `default_plan`이 없고 해당 mode가 변환됐다면 `default_mode`가 `default_plan`이
+  됩니다. 그 외에는 이유를 출력하고 남깁니다(`modes.X: not converted — …`).
+  `interaction.clean` 훅은 의도적으로 `down`으로 옮기지 않습니다.
+- **`ReportLegacyFields`**: `environments.*.compose_files`, `env_file`의
+  `priority`/`interpolate`, 최상위 `health_checks`의 `start`/`start_hint`, interaction과
+  `provision`에 남은 `--mode` 잔재를 이름으로 지목합니다.
+- **번들 스킬 `dva-ci`**: `dva skill install`이 `dva-ci` 번들을 추가로 씁니다
+  (`SKILL.md` + `references/configuration.md`, `execution.md`, `languages.md`).
+  `skills/dva`의 `SKILL.md`와 `references/commands.md`에도 CI 자료가 들어갔습니다.
+  바이너리에 임베드됩니다.
+- **새 예시와 설계 문서**: `examples/compose-profiles.yml`, `examples/devbox-native/`,
+  `examples/remote-artifact-jobs/dva.yml`이 새로 들어왔고 기존 예시 넷이 갱신됐습니다(일부는
+  위 참조 무결성 경고를 해소하기 위해). 문서는 `docs/53-ci-profiles.md`,
+  `docs/55-plan-alias-extends-design.md`, `docs/56-suppression-ergonomics-design.md`,
+  `docs/57-devbox-native-lifecycle-guide.md`, `docs/58`~`docs/61`(capability-driven init),
+  `docs/62-remote-artifact-jobs.md`입니다.
+
+### Documentation
+- **틀린 문서를 철회했습니다** — 아래는 새로 쓴 설명이 아니라, 사용자가 믿고 있었을 수 있는
+  **거짓 진술의 취소**입니다. 전부 빌드된 바이너리로 확인한 뒤 고쳤습니다.
+  - `interaction.<name>.runner:`에 `local`/`docker_compose`/`kubectl` 밖의 값을 쓰면
+    **거부되지 않습니다** — compose 러너로 조용히 폴백합니다.
+  - `script_file:`은 compose 러너에서 **컨테이너 안에서 실행되지 않습니다**. 그 보장은 로컬
+    러너에만 있습니다.
+  - `endpoints.source`는 compose 파일을 **읽지 않습니다**. 포트는 문자열에서 문자 그대로
+    가져오고 이름 조각은 scheme만 고릅니다. `source:`가 중복을 없앤다던 안내는 삭제했습니다 —
+    표기를 줄이는 것이지 중복을 줄이는 것이 아닙니다.
+  - `endpoints.tags`는 `--tags`/`--tag`로 **좁혀지지 않습니다**. endpoint에 닿는 CLI 플래그는
+    없고 `plans.<name>.endpoint_tags`와 `modes.<name>.endpoint_tags`만 닿으며, `dva status`는
+    endpoint를 전혀 필터링하지 않습니다.
+  - `exclude_tags`는 compose 태그를 **거르지 않습니다**. `GetComposeServicesExcluding` 계열에
+    테스트 밖 호출자가 없어, `exclude_tags`에 쓴 compose 태그는 오류도 경고도 없이 버려집니다.
+    그리고 부모→자식 interaction 경로는 둘이 아니라 **넷**이며 그중 셋만 거릅니다
+    (`dva p:k`, `run --project p k`, `ls --project`) — `p/k` import는 거르지 않아, 태그로 숨긴
+    interaction이 이름으로 import되는 순간 돌아옵니다.
+  - `native`는 `process`의 별칭이고, stdout/stderr는 한 로그 파일로 합쳐집니다.
+  - USAGE의 정규 순서 예시를 경고 0으로 검증되는 실행 가능한 파일 전체로 다시 썼습니다
+    (이전에는 올바른 형태를 가르치는 바로 그 블록이 `modes:`를 달고 deprecation 경고를
+    냈습니다). 번들 스킬 `dva-config`의 schema reference와 agent-mesh flow 둘에도 고쳐진
+    `exclude_tags` 범위가 반영됐습니다.
 
 ## [0.1.48] - 2026-09-04
 

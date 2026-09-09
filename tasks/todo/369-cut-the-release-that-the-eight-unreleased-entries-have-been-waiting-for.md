@@ -133,9 +133,15 @@ breaking이다. `dva manifest`의 `schema_version`도 1.6 → 1.7이다(추가 �
 
 **1. 버전 번호는 `0.2.0`이다** (2026-09-09).
 
-근거는 breaking이 **몇 건인가**가 아니라 **어떤 종류인가**다. 세 건 중 둘(TASK-263 §3의
-예약어 규칙, TASK-333의 `root` 거부)이 **어제까지 통과하던 config를 오늘 거부하는** 형태이고,
-그것이 버전 번호가 존재하는 이유다. `0.1.49`를 고르면 0.1.47→0.1.48과 0.1.48→0.1.49가
+근거는 breaking이 **몇 건인가**가 아니라 **어떤 종류인가**다. 처음 셋(TASK-263 §3의
+예약어 규칙, TASK-333의 `root` 거부, TASK-266 Stage B) 중 둘이 **어제까지 통과하던 config를
+오늘 거부하는** 형태였고, 그것이 버전 번호가 존재하는 이유다.
+
+**세지 못한 쪽이 결론을 더 강하게 만들었다.** 태그 직전 리뷰(아래 4번)에서 breaking은
+3건이 아니라 **10건**으로 드러났고, 그중 셋(`down --purge`의 파괴적 확대,
+`interaction.workdir` 적용, `${VAR:-default}` 확장)은 `Validate()`를 한 번도 거치지 않는
+사용자에게도 발생한다. 0.2.0을 고른 이유가 사라진 것이 아니라 커졌다 — 반대로 0.1.49였다면
+지금 그 번호가 실을 수 없는 신호가 더 많았다. `0.1.49`를 고르면 0.1.47→0.1.48과 0.1.48→0.1.49가
 동일한 크기의 사건처럼 보이는데 후자만 config를 거부한다 — 0.x에서 SemVer가 그것을 허용하더라도
 번호가 신호를 싣지 못하는 것이 대가다.
 
@@ -146,9 +152,14 @@ breaking이다. `dva manifest`의 `schema_version`도 1.6 → 1.7이다(추가 �
 **2. `MinScaffoldVersion`은 `0.1.44` 그대로 둔다** (`internal/config/version.go:12`).
 
 이 상수가 묻는 것은 "이 릴리스가 무엇을 깨뜨렸는가"가 아니라 **"`dva init`이 이제 예전
-DVA가 파싱할 수 없는 것을 내보내기 시작했는가"**다(상수 위 주석이 그렇게 적어 둔다). 이번
-breaking 3건은 전부 `Validate()`에서만 돌고 scaffold 출력을 한 글자도 바꾸지 않는다 — 두 질문이
-서로 다른 것을 묻고 있고, 지금 답이 바뀌는 쪽은 없다.
+DVA가 파싱할 수 없는 것을 내보내기 시작했는가"**다(상수 위 주석이 그렇게 적어 둔다).
+
+초안은 그 답을 "breaking 3건이 전부 `Validate()`에서만 돈다"로 냈다. **그 전제는 틀렸다**
+(아래 4번). 그래서 상수가 묻는 질문에 직접 답을 다시 냈다: `v0.1.48..HEAD`의
+`internal/cli/init_scaffold.go` diff에서 **새로 나온 YAML 키가 없다** — `dva init`이 쓰는
+`version:`은 여전히 이 상수이고, TASK-322 후속(`792c06a`)이 바꾼 것은 어떤 템플릿을
+고르는지이지 어떤 문법을 쓰는지가 아니다. 두 질문은 서로 다른 것을 묻고 있고, 답이
+바뀌는 쪽은 여전히 없다 — 이번에는 breaking 목록이 아니라 scaffold 출력을 보고 답했다.
 
 반대로 올렸을 때의 비용은 비대칭이다. `dva init`이 써 넣는 `version:`이 올라가면 **새로
 만든 모든 config가 그보다 오래된 DVA 전부에서 로드를 거부하게** 되고, 되돌리면 이미 배포된
@@ -158,8 +169,31 @@ config가 깨진다. "그냥 뒀다"가 아니라 확인하고 둔다 — 이 �
 
 **만지지 않은 자리(실측 확인)**: `EnvBridgeIntroducedVersion = "0.1.48"`은 그대로다. 그것은
 릴리스 핀이 아니라 `env_bridge:`를 선언한 config가 자기 `version:`에 적어야 하는 하한이다.
-변경 후 트리 전수 grep으로 `0.1.48`이 남은 자리를 다시 확인했고, 전부 이 카드가 "바꾸지 않는다"로
-분류한 자리였다 — 상수 1건, 그것을 고정하는 테스트 9건, 예시 config 3건, 문서 거울/관측 기록.
+변경 후 트리 전수 grep으로 `0.1.48`이 남은 자리를 다시 확인했고, **`CHANGELOG.md`(5건)와
+`release-notes/v0.1.48.md`(3건)를 뺀 나머지는** 전부 이 카드가 "바꾸지 않는다"로 분류한
+자리였다 — 상수 1건, 그것을 고정하는 테스트 9건, 예시 config 3건, 문서 거울/관측 기록.
+뺀 두 파일은 지난 릴리스의 **역사 기록**이라 카드의 표에 처음부터 없다. 초안은 이 예외를
+적지 않고 "전부"라고 썼다 — 범위를 밝히지 않은 전수 확인은 확인이 아니다.
+
+**4. 태그 직전에 릴리스 범위를 커밋 단위로 다시 셌고, 기록을 채우고 나가기로 했다**
+(2026-09-09).
+
+이 카드의 제목은 "여덟 항목이 기다려 온 릴리스"다. 통합 직전 독립 리뷰가 그 전제를 깼다:
+`v0.1.48..HEAD`는 **130개 커밋**이고 그중 `internal/`·`cmd/`·`examples/`·`schema.json`을
+건드린 것이 47개인데, CHANGELOG에 기록을 남긴 커밋은 **4개**뿐이다. 여덟 항목은 릴리스가
+아니라 **누군가 적어 둔 부분**이었다.
+
+37개 커밋에서 사용자에게 보이는 변경 24건이 나왔고, breaking은 3건이 아니라 10건이었다.
+가장 심한 미기록 항목은 예약어 집합에 들어간 `ci`·`secret`·`job`(플래그 없이 exit 1),
+`down --purge`의 프로젝트 전역 확대(named volume·네트워크·orphan·로컬 이미지 삭제),
+`interaction.workdir`의 실행 시점 적용이다. 새 루트 커맨드 셋(`dva ci`, `dva secret push`,
+`dva job`)과 새 최상위 config 키 셋(`ci:`, `secrets:`, `jobs:`)도 기록이 없었다.
+
+**태그는 이 기록을 영구히 굳힌다.** 게시 후에는 그 자리에서 고칠 수 없으므로, 알면서
+불완전한 공개 기록을 굳히는 대신 채우고 나간다. CHANGELOG `## [0.2.0]`에 누락분을 항목으로
+추가했고(이동한 여덟 항목은 그대로 두되, 그 안에서 릴리스에 대한 진술로 읽히면 거짓인
+`schema_version` 한 절만 자기 단계로 한정했다), `release-notes/v0.2.0.md`는 여덟 항목이
+아니라 실측된 범위를 기준으로 다시 썼다. 동작하는 코드는 여전히 한 줄도 바꾸지 않았다.
 
 **3. release-postflight 기록 — 아직 없다.** 게시는 사람이 하는 단계이고(위 §에이전트가 하는
 것과 하지 않는 것 표), 그 전까지는 태그도 커밋 SHA도 존재하지 않는다. §Completion Criteria
@@ -172,8 +206,10 @@ config가 깨진다. "그냥 뒀다"가 아니라 확인하고 둔다 — 이 �
 | 버전 번호 결정 | 끝(0.2.0) |
 | `version.go` `Version` bump | 끝 |
 | README·USAGE 설치 핀 5개 | 끝 |
-| CHANGELOG `[Unreleased]` → `[0.2.0] - 2026-09-09` | 끝 (8건 이동, 본문 불변) |
-| `release-notes/v0.2.0.md` | 끝 |
+| CHANGELOG `[Unreleased]` → `[0.2.0] - 2026-09-09` | 끝 (8건 이동) |
+| 릴리스 범위 재실측(130 커밋) | 끝 — 미기록 24건, breaking 10건 |
+| CHANGELOG 누락분 보강 | 끝 (Changed 7 / Fixed 9 / Added 9 / Documentation 1) |
+| `release-notes/v0.2.0.md` | 끝 (실측 범위 기준으로 재작성) |
 | `MinScaffoldVersion` 판단 | 끝(유지) |
 | `make release-check` | 끝 |
 | 런북 §준비 → `release-preflight` → 게시 → `release-postflight` | **사람** |
@@ -186,7 +222,7 @@ config가 깨진다. "그냥 뒀다"가 아니라 확인하고 둔다 — 이 �
 - [ ] `release-notes/v<새 버전>.md`가 존재하고 비어 있지 않다 — `release-preflight`의 필수 입력 | verify: `v=$(/usr/bin/grep -E '^[[:space:]]+Version = ' internal/config/version.go | /usr/bin/cut -d'"' -f2); /bin/test "$v" != 0.1.48 && /usr/bin/grep -q . "release-notes/v$v.md"`
 - [ ] `EnvBridgeIntroducedVersion`이 `0.1.48` 그대로다 — 일괄 sed를 잡는 가드 | verify: `/usr/bin/grep -q 'EnvBridgeIntroducedVersion = "0.1.48"' internal/config/env_bridge.go`
 - [ ] 릴리스 아티팩트 게이트 통과 | verify: `make release-check`
-- [ ] 버전 번호(0.1.49 vs 0.2.0)를 breaking change 3건에 비추어 정하고 근거를 남겼다 | verify: human — 이 카드 `## 결정 기록`에 고른 번호와 근거가 적혀 있는지 확인
+- [ ] 버전 번호(0.1.49 vs 0.2.0)를 breaking change에 비추어 정하고 근거를 남겼다 | verify: human — 이 카드 `## 결정 기록`에 고른 번호와 근거가 적혀 있는지 확인
 - [ ] `MinScaffoldVersion`을 올릴지 판단하고 근거를 남겼다 | verify: human — `## 결정 기록`에 판단과 근거가 적혀 있는지 확인
 - [ ] 태그 게시와 postflight 검증이 끝났다 | verify: human — `make release-postflight RELEASE_TAG=... RELEASE_COMMIT=...`가 통과한 기록이 `## 결정 기록`에 있는지 확인
 
@@ -198,8 +234,12 @@ config가 깨진다. "그냥 뒀다"가 아니라 확인하고 둔다 — 이 �
 - 첫 기준이 "0.1.48을 떠났다"인 것은 번호 결정을 카드가 선점하지 않기 위해서다. 대가로
   기준이 약하다 — 오타로 아무 값이나 넣어도 통과한다. `make release-check`의
   `releasecheck version --tag`가 그 약함을 받는다(태그와 `Version`이 다르면 실패).
-- 이번 릴리스에 들어가는 breaking 3건은 전부 이미 master에 있다. 이 카드는 **동작하는
+- 이번 릴리스에 들어가는 breaking은 전부 이미 master에 있다. 이 카드는 **동작하는
   코드를 바꾸지 않는다** — `version.go`의 버전 문자열과 문서·노트만 만진다.
+- **"3건"은 이 카드가 물려받은 숫자였고 틀렸다.** 카드는 CHANGELOG `[Unreleased]`의 여덟
+  항목을 릴리스의 전체 기록으로 전제했는데, 실제 범위는 130 커밋이고 breaking은 10건이다
+  (§결정 기록 4번). 카드가 예상한 작업량은 "여덟 항목을 옮긴다"였지만, 여덟 항목이
+  전체가 아니라는 것이 통합 직전에 드러났다.
 - **버전 리터럴 표는 처음에 틀렸다.** 초안은 `0.1.48`의 뜻을 셋으로 나누면서 "바꾸지 않는
   것"의 예로 `USAGE.md:1243`만 들었다. 전수 grep을 돌려 보니 그 문서 줄은 거울일 뿐이고
   원본은 `internal/config/env_bridge.go:18`의 **컴파일되는 상수**였다. 표만 믿은 사람은
