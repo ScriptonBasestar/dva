@@ -6,6 +6,7 @@ priority: P2
 effort: S
 exec-tier: standard
 status: todo
+needs-human: true
 created: 2026-09-08
 source: "TASK-333 독립 리뷰(2026-09-08) 항목 7 — 측정된 공백"
 depends-on: [TASK-333]
@@ -54,12 +55,16 @@ TASK-333의 범위를 interaction으로 좁힌 것이 의도였는지 리뷰가 
   포인터로 canonical을 되찾을지는 구현 시점 판단이다 — interaction 쪽이 문자열을 택한 이유는
   `tree.List()`가 `*ResolvedCommand`를 새로 만들어 포인터 동일성이 살아남지 못해서였고,
   plan에는 그 변환이 없다. **그 차이를 확인하고 고르라.**
-- `schema_version`은 이 카드에서 다시 올라간다(1.7 → 1.8). 추가 전용이므로 minor가 맞다 —
-  근거는 `tasks/_archive/done/272-freeze-manifest-route-identity.md:191`.
+- `schema_version`은 이 카드에서 **현재값에서 minor 한 칸** 올라간다. 추가 전용이므로 minor가
+  맞고, 그 bump가 소비자가 존재 여부로 분기할 근거다 — 근거는
+  `tasks/_archive/done/272-freeze-manifest-route-identity.md:191`.
+  **구체적인 번호를 적지 않는다**: TASK-333이 1.6→1.7로 올렸고 그다음날
+  `0111e8b`(CI profile discovery)가 1.8로 다시 올려, 이 카드가 적어둔 숫자는
+  하루 만에 틀린 값이 됐다. 착수 시점의 `internal/cli/manifest.go`를 보고 결정하라.
 - 닫을 때 `USAGE.md`의 세 번째 문단("`plans:` import는 아직 …")을 **같은 커밋에서 지울 것**.
   공백이 사라진 뒤에도 남겨 두면 다음번 거짓 서술이 된다.
 
-## Acceptance Criteria
+## Completion Criteria
 
 - [ ] import된 plan의 canonical 항목과 alias 항목이 manifest에서 구분된다 | verify: `/usr/bin/grep -rq 'func TestImportedPlanCanonicalAndAliasMarkers(' internal/cli`
 - [ ] import된 provision profile에도 같은 식별자가 실린다 | verify: `/usr/bin/grep -rq 'func TestImportedProvisionProfileIdentity(' internal/cli`

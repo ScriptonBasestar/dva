@@ -115,14 +115,14 @@ DVA 쪽 문서는 이 계획이 끝난 뒤 `AGENTS.md`에 "카드를 닫으려�
 ## Children
 
 - TASK-325 — docs/51 flowcheck 예시 출력 갱신
-- TASK-326 — doccheck 앵커 슬러그가 `_`를 버려 GitHub와 어긋남
-- TASK-327 — PLAN-002에 TASK-284 temp-name supersession 기록
-- TASK-330 — doccheck 언더스코어 강조가 문자 단위가 아닌 run 단위로 페어링하도록 수정 (TASK-326 세션 리뷰가 발견한 후속 결함)
+- TASK-326 — doccheck 앵커 슬러그가 `_`를 버려 GitHub와 어긋남 — 완료(아카이브)
+- TASK-327 — PLAN-002에 TASK-284 temp-name supersession 기록 — 완료
+- TASK-330 — doccheck 언더스코어 강조가 문자 단위가 아닌 run 단위로 페어링하도록 수정 (TASK-326 세션 리뷰가 발견한 후속 결함) — 완료(아카이브)
 Tier A done-review(4a)가 발견한 결함 카드 — 리뷰가 관찰만 남기지 않고 카드를 만든다는 §Rules 규칙의 결과다.
 
 - TASK-332 — 죽은 interaction `env_file` deprecation 경고 제거 (TASK-259 배치 1) — 완료
 - TASK-333 — import 항목의 owner·canonical/alias 정체 노출 (TASK-259 배치 1) — 완료, 정체를 두 map 키가 공유하는 clone 하나에 한 번 찍어 출력이 키에서 되유도하지 않게 함. `plans:` import는 아직 비어 있고 TASK-366가 소유
-- TASK-342 — TASK-263의 subproject 예약어·부모 라우트 거부 규칙 강제 (TASK-263 배치 1)
+- TASK-342 — TASK-263의 subproject 예약어·부모 라우트 거부 규칙 강제 (TASK-263 배치 1) — 완료
 - TASK-334 — `config env show`의 real-sops 커버리지 한계 결정 (TASK-282 배치 2) — 완료, fake 주도 한계 수용
 - TASK-335 — seal create-only TOCTOU 창 차단 (TASK-282 배치 2) — 완료, `link(2)` 원자 배치
 - TASK-337 — `GatedCommands`를 살아 있는 커맨드 트리에 결속 (TASK-286 배치 2) — 완료, 게이트 표면을 선언이 아니라 `internal/cli` AST에서 도출
