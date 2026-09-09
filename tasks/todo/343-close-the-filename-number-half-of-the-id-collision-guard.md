@@ -8,6 +8,7 @@ exec-tier: standard
 status: todo
 created: 2026-09-07
 needs-human: true
+depends-on: [TASK-344]
 ---
 
 ## Summary
@@ -43,6 +44,22 @@ says `331` and whose id says `TASK-900` is currently legal. Deciding whether tha
 defect or an intentional degree of freedom belongs in this card, before writing the check —
 enforcing agreement is a stricter rule than merely forbidding filename collisions, and would
 reject the archive's `PLAN-00n` cards unless those zones are exempted.
+
+## Ordering — land TASK-344 first
+
+This card adds a filename-number check beside `checkDuplicateCardIDs`, which reads
+ids through `frontmatterField` (`tools/doccheck/cardids.go:60`). TASK-344 hardens
+that same helper — stripping trailing `#` comments from values and reporting
+repeated keys — and folds `hasCanonicalField` into it. So the value this card's
+check sees is exactly what TASK-344 changes.
+
+The work is possible in either order — it is just wasteful the other way, because the
+tests written here would be rewritten once TASK-344 changes what the helper returns.
+But note what declaring it costs: `ce task preflight` counts `unmet-dependency` as
+**blocking**, not advisory, so this card leaves the runnable set entirely until
+TASK-344 closes. That is deliberate. TASK-344 is P3 and small while this card is P2,
+so without the declaration a runner picking by priority would reliably choose the
+expensive order.
 
 ## Completion Criteria
 
