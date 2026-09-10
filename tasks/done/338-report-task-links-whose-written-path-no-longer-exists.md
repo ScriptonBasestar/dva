@@ -5,10 +5,11 @@ type: feature
 priority: P2
 effort: S
 exec-tier: standard
-status: todo
+status: done
 created: 2026-09-07
 source: "PLAN-002 archive, 2026-09-07"
-needs-human: true
+needs-human: false
+verification-evidence: "2026-09-10: go test ./tools/doccheck and make doc-check passed; stale_link_paths_docs: 0, stale_link_paths: 84 (archive records retained)."
 ---
 
 ## Summary
@@ -78,9 +79,10 @@ remainder is listed with a reason`)가 이 질문을 기준 문구 안에 묻어
   않는다 — 아카이브된 닫힌 기록이 아니라 지금도 참조되는 살아 있는 문서이므로, 링크를
   최신 경로로 고치는 것은 통상적인 문서 유지보수이지 기록 위조가 아니다.
 
-**사람 결정 필요 (`needs-human: true`).** 착수 전에 아래에 선택과 근거를 남긴다.
-
-<!-- 여기에 선택(포함/제외)과 근거를 적는다. -->
+**결정 기록 (2026-09-10, 사용자 승인 방향): 제외한다.** `tasks/_archive/`는 닫힌
+기록이므로 소급 링크 수정은 하지 않는다. `docs/`의 25건만 실제 위치로 고쳐 0으로 만들었다.
+최종 리포트의 전체 stale 수는 84이며 모두 아카이브 기록에서 왔다. 수가 최초 85와 다른 것은
+그 측정 뒤의 저장소 상태 변화이며, 완료 판정은 리포트의 live-docs 카운터를 기준으로 한다.
 
 ## TASK-354와의 경계 — 착수 전에 겹치지 않는지 확인할 것
 
@@ -97,10 +99,24 @@ remainder is listed with a reason`)가 이 질문을 기준 문구 안에 묻어
 연결 자신이 같은 경고를 적어 뒀다: 공유 엔진이 이미 하는 판정을 저장소 도구 안에서 한 겹
 아래 다시 구현하면, 하나를 고치는 순간 둘이 갈라진다.
 
+**확인 결과 (2026-09-10).** `ce task validate tasks/todo/329-*.md`는 기존처럼 verify
+바인딩의 소멸 경로를 경고했고, 이 카드는 그 규칙을 복제하지 않았다. 새 `doccheck` 범주는
+마크다운 링크만 대상으로 하며 inline-code verify 바인딩은 기존 TASK-143 검사에 그대로 맡긴다.
+따라서 shared CE validator의 verify-binding 계약과 이 카드의 live-docs 링크 리포트는 겹치지 않는다.
+이 확인은 TASK-354의 **직접 경계 조사**일 뿐 gate 연결·board-ready 완료는 아니다. 후자는
+[[ISSUE-001]]에 외부 차단돼 TASK-354가 todo인 상태에서, 이 카드는 markdown link 범위로만 예외 진행했다.
+
 ## Completion Criteria
 
-- [ ] doccheck counts and lists links that resolve by id but whose written path does not exist. **소스에서 식별자를 grep하지 않는다** — 3번이 `stale_link_paths_docs:`를 emit하게 만드는 순간 `grep "stale_link_paths"`는 접두어로 매치해 총계 카운터 없이도 초록이 된다. 두 기준이 같은 조건으로 만족되면 하나는 검사가 아니다. 그래서 이 기준은 **총계 카운터가 리포트에 실제로 출력되는지**에 걸고, 3번은 **docs 스코프 값이 0인지**에 건다 | verify: `go run ./tools/doccheck | /usr/bin/grep -qE '^stale_link_paths: +[0-9]+$'`
-- [ ] the new category is reported separately from `broken_links` and does not by itself fail the gate | verify: `go test ./tools/doccheck/` (regression-guard)
-- [ ] `docs/`의 stale written-path 링크가 0으로 소진된다 (2026-09-09 측정 25건 — docs/53·54·58·59·61). **세는 바인딩이어야 한다** — 테스트 함수명의 존재에 거는 것은 TASK-350 §Notes가 (D)로 분류한 형태이고, 빈 테스트 하나면 초록이 된다. 아래 바인딩은 카운터 줄이 있고 그 값이 0일 때만 통과하므로 오늘은 exit 1이다 | verify: `go run ./tools/doccheck | /usr/bin/grep -qE '^stale_link_paths_docs: +0$'`
-- [ ] `tasks/_archive/`의 잔여(2026-09-09 측정 85건)를 스윕할지 여부와 그 근거가 위 §열린 결정에 기록된다 | verify: human — 이 카드 §열린 결정 절에 선택과 근거가 적혀 있는지 확인
-- [ ] TASK-354가 드러내는 엔진(`ce task validate`)의 stale-path 경고와 범위가 겹치지 않음을 착수 전에 확인했다 | verify: human — 이 카드 §TASK-354와의 경계 절의 확인 결과가 적혀 있는지 확인
+- [x] doccheck counts and lists links that resolve by id but whose written path does not exist. **소스에서 식별자를 grep하지 않는다** — 3번이 `stale_link_paths_docs:`를 emit하게 만드는 순간 `grep "stale_link_paths"`는 접두어로 매치해 총계 카운터 없이도 초록이 된다. 두 기준이 같은 조건으로 만족되면 하나는 검사가 아니다. 그래서 이 기준은 **총계 카운터가 리포트에 실제로 출력되는지**에 걸고, 3번은 **docs 스코프 값이 0인지**에 건다 | verify: `go run ./tools/doccheck | /usr/bin/grep -qE '^stale_link_paths: +[0-9]+$'`
+- [x] the new category is reported separately from `broken_links` and does not by itself fail the gate | verify: `go test ./tools/doccheck/` (regression-guard)
+- [x] `docs/`의 stale written-path 링크가 0으로 소진된다 (2026-09-09 측정 25건 — docs/53·54·58·59·61). **세는 바인딩이어야 한다** — 테스트 함수명의 존재에 거는 것은 TASK-350 §Notes가 (D)로 분류한 형태이고, 빈 테스트 하나면 초록이 된다. 아래 바인딩은 카운터 줄이 있고 그 값이 0일 때만 통과하므로 오늘은 exit 1이다 | verify: `go run ./tools/doccheck | /usr/bin/grep -qE '^stale_link_paths_docs: +0$'`
+- [x] `tasks/_archive/`의 잔여(2026-09-09 측정 85건)를 스윕할지 여부와 그 근거가 위 §열린 결정에 기록된다 | verify: human — 이 카드 §열린 결정 절에 선택과 근거가 적혀 있는지 확인
+- [x] TASK-354가 드러내는 엔진(`ce task validate`)의 stale-path 경고와 범위가 겹치지 않음을 착수 전에 확인했다 | verify: human — 이 카드 §TASK-354와의 경계 절의 확인 결과가 적혀 있는지 확인
+
+## 검증 기록
+
+- `go test ./tools/doccheck` — passed (moved task-link, live-docs counter, and symlink-alias regressions 포함).
+- `make doc-check` — passed; `broken_links: 0`, `stale_link_paths_docs: 0`,
+  `stale_link_paths: 84`.
+- `ce task validate tasks/todo/338-report-task-links-whose-written-path-no-longer-exists.md` — passed.

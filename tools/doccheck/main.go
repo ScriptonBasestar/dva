@@ -62,6 +62,8 @@ func printReport(res Result) {
 	fmt.Printf("links_checked:       %d\n", res.LinksChecked)
 	fmt.Printf("symlinks_skipped:    %d\n", res.SymlinksSkipped)
 	fmt.Printf("broken_links:        %d\n", res.BrokenLinks)
+	fmt.Printf("stale_link_paths:   %d\n", res.StaleLinkPaths)
+	fmt.Printf("stale_link_paths_docs: %d\n", res.StaleLinkPathsDocs)
 	fmt.Printf("oversized_docs:      %d\n", res.OversizedDocs)
 	fmt.Printf("test_funcs_found:    %d (from %d _test.go files)\n", res.TestFuncsFound, res.TestFilesSwept)
 	fmt.Printf("run_patterns:        %d\n", res.RunPatternsChecked)
@@ -85,6 +87,9 @@ func printReport(res Result) {
 	}
 	for _, d := range res.BrokenDetail {
 		fmt.Printf("  BROKEN   %s\n", d)
+	}
+	for _, d := range res.StaleLinkPathDetail {
+		fmt.Printf("  STALE    %s\n", d)
 	}
 	for _, d := range res.UnmatchedRunDetail {
 		fmt.Printf("  NO-TESTS %s\n", d)

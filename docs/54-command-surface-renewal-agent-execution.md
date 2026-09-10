@@ -1,10 +1,9 @@
 # Command Surface Renewal 작업의 에이전트 실행 런북
 
-이 문서는 [PLAN-003](../tasks/plan/003-command-surface-renewal-discovery.md)을 새 Codex 세션에서
-실행할 때의 세션 경계, 모델 라우팅, dependency wave, 사람 승인 지점과 시작 프롬프트를 소유한다.
-제품 계약과 acceptance criteria는 PLAN-003과 target task card가 정본이다. PLAN-002 전용
-[기존 런북](53-command-surface-agent-execution.md)의 task graph, prompt와 guardrail은 이 계획에
-적용하지 않는다.
+이 문서는 [PLAN-003](../tasks/_archive/plan/003-command-surface-renewal-discovery.md)을 새 Codex 세션에서
+실행 세션 규칙과 시작 프롬프트를 소유한다. 제품 계약과 acceptance criteria는 PLAN-003과 target
+task card가 정본이다. PLAN-002 전용 [기존 런북](53-command-surface-agent-execution.md)의 내용은
+이 계획에 적용하지 않는다.
 
 ## 1. 실행 단위
 
@@ -40,17 +39,17 @@ lead이고 root가 실제 code, diff, pinned revision과 gate 결과를 확인�
 | 완료 | [TASK-262](../tasks/_archive/done/262-restore-imported-plan-execution.md) | imported-plan owner contract 복구·독립 review·통합 완료 |
 | 완료 | [TASK-253](../tasks/_archive/done/253-align-help-groups-and-discovery-descriptions.md) | help 정비 구현·독립 review·통합 완료 |
 | 완료 | [TASK-264](../tasks/_archive/done/264-restore-imported-command-ownership.md) | imported interaction/provision owner 복구·독립 review·통합 완료 |
-| 완료 | [TASK-254](../tasks/done/254-discover-command-metadata-registry.md) | metadata 소유권 evidence 기록·통합 완료 |
-| 완료 | [TASK-259](../tasks/done/259-discover-qualified-project-addressing.md) | addressing evidence와 recommendation 기록·통합 완료 |
-| 1 | [TASK-267](../tasks/todo/267-repair-subproject-exposure-defects.md) | TASK-259 §5의 문법 독립 노출 결함 수리 |
-| 2 | [TASK-255](../tasks/todo/255-decide-kubectl-route-compatibility.md) | TASK-254 근거를 사용한 사람 승인 decision 기록 |
-| 2 | [TASK-257](../tasks/todo/257-decide-validate-route-compatibility.md) | TASK-254 근거를 사용한 사람 승인 decision 기록 |
-| 2 | [TASK-272](../tasks/todo/272-freeze-manifest-route-identity.md) | manifest route identity 표현 사람 승인 기록 |
-| 2 | [TASK-263](../tasks/todo/263-decide-qualified-project-addressing.md) | TASK-259 근거와 TASK-264 owner 복구 위에서 address/exposure 사람 승인 기록 |
-| 3 | [TASK-256](../tasks/todo/256-implement-kubectl-route-decision.md) | TASK-255 결정 구현·통합 |
-| 3 | [TASK-258](../tasks/todo/258-implement-validate-route-decision.md) | TASK-257 결정 구현·통합 |
-| 3 | [TASK-260](../tasks/todo/260-freeze-cross-project-plan-composition.md) | TASK-262·263 위에서 composition 사람 승인 기록 |
-| 4 | [TASK-261](../tasks/todo/261-decide-vnext-vocabulary-and-migration.md) | 선행 결과를 근거로 사람 승인 또는 현행 유지 기록 |
+| 완료 | [TASK-254](../tasks/_archive/done/254-discover-command-metadata-registry.md) | metadata 소유권 evidence 기록·통합 완료 |
+| 완료 | [TASK-259](../tasks/_archive/done/259-discover-qualified-project-addressing.md) | addressing evidence와 recommendation 기록·통합 완료 |
+| 1 | [TASK-267](../tasks/_archive/done/267-repair-subproject-exposure-defects.md) | TASK-259 §5의 문법 독립 노출 결함 수리 |
+| 2 | [TASK-255](../tasks/_archive/done/255-decide-kubectl-route-compatibility.md) | TASK-254 근거를 사용한 사람 승인 decision 기록 |
+| 2 | [TASK-257](../tasks/_archive/done/257-decide-validate-route-compatibility.md) | TASK-254 근거를 사용한 사람 승인 decision 기록 |
+| 2 | [TASK-272](../tasks/_archive/done/272-freeze-manifest-route-identity.md) | manifest route identity 표현 사람 승인 기록 |
+| 2 | [TASK-263](../tasks/_archive/done/263-decide-qualified-project-addressing.md) | TASK-259 근거와 TASK-264 owner 복구 위에서 address/exposure 사람 승인 기록 |
+| 3 | [TASK-256](../tasks/_archive/done/256-implement-kubectl-route-decision.md) | TASK-255 결정 구현·통합 |
+| 3 | [TASK-258](../tasks/_archive/done/258-implement-validate-route-decision.md) | TASK-257 결정 구현·통합 |
+| 3 | [TASK-260](../tasks/_archive/done/260-freeze-cross-project-plan-composition.md) | TASK-262·263 위에서 composition 사람 승인 기록 |
+| 4 | [TASK-261](../tasks/_archive/done/261-decide-vnext-vocabulary-and-migration.md) | 선행 결과를 근거로 사람 승인 또는 현행 유지 기록 |
 
 TASK-262·253·247·264·259·254는 완료됐다. 다음 변경 세션은 PLAN-002의 TASK-248, 그 뒤 TASK-267과
 product critical path TASK-259→263→260이다. TASK-255·257은 TASK-254 근거 위에서 착수 가능하고,

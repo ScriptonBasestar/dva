@@ -1,7 +1,7 @@
 # 58. Capability-driven init 설계와 결정 기록
 
 > 상태: **결정됨** (TASK-249, `decision-status: decided`, 2026-09-03). 구현은
-> [TASK-250](../tasks/done/250-implement-capability-driven-init.md)(`status: done`, commit `4cc0fdc`)이
+> [TASK-250](../tasks/_archive/done/250-implement-capability-driven-init.md)(`status: done`, commit `4cc0fdc`)이
 > 완료했다. 이 문서는 채택된 계약과 기각된 대안을 소유한다. 그 계약이 TASK-250 구현·TASK-233
 > 결정과 충돌하지 않음을 검증한 기록은 [docs/59](59-capability-driven-init-verification.md)가,
 > label/증거 인벤토리는 [docs/60](60-capability-driven-init-label-inventory.md)이 각각 소유한다.
@@ -113,5 +113,5 @@ cadence, change threshold)에 대한 Decision Record는 크기 상한을 지키�
 - 구현·label 증거·TASK-250 대조 검증, 완료기준 매핑: [docs/59](59-capability-driven-init-verification.md)
 - Label/증거 인벤토리(완료기준 3): [docs/60](60-capability-driven-init-label-inventory.md)
 - Census 거버넌스 Decision Record(완료기준 10): [docs/61](61-capability-driven-init-census-governance.md)
-- Implementation: [TASK-250](../tasks/done/250-implement-capability-driven-init.md)
+- Implementation: [TASK-250](../tasks/_archive/done/250-implement-capability-driven-init.md)
 - Parent plan: [PLAN-002](../tasks/_archive/plan/002-command-surface-delivery.md)

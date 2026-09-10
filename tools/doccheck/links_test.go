@@ -204,6 +204,60 @@ func TestLinks_resolvesMovedTaskLink(t *testing.T) {
 	if !res.OK {
 		t.Fatalf("expected the moved task link to resolve; errors=%v detail=%v", res.Errors, res.BrokenDetail)
 	}
+	if res.StaleLinkPaths != 1 || res.StaleLinkPathsDocs != 0 {
+		t.Fatalf("stale links total/docs=%d/%d want 1/0; detail=%v", res.StaleLinkPaths, res.StaleLinkPathsDocs, res.StaleLinkPathDetail)
+	}
+	if !containsAny(res.StaleLinkPathDetail, "tasks/todo/153-app-up.md", "tasks/done/153-app-up.md") {
+		t.Fatalf("expected written and resolved paths in stale detail, got %v", res.StaleLinkPathDetail)
+	}
+}
+
+// Given a live document whose task-card link resolves by id after the literal state directory
+// moved, When links are checked, Then it is reported separately from broken links without
+// failing the gate (TASK-338).
+func TestLinks_reportsStaleWrittenTaskPathFromDocsWithoutFailing(t *testing.T) {
+	root := t.TempDir()
+	referrer := "docs/guide.md"
+	moved := "tasks/_archive/done/153-app-up.md"
+	writeFile(t, root, referrer, "# Guide\n\nSee [153](../tasks/todo/153-app-up.md).\n")
+	writeFile(t, root, moved, "---\nid: TASK-153\nstatus: done\n---\n\n# 153\n")
+	inv := mustInventory(t, root, referrer, moved)
+
+	res := Check(CheckInput{Root: root, Inventory: inv})
+	if !res.OK {
+		t.Fatalf("stale written path must not fail the gate; errors=%v broken=%v", res.Errors, res.BrokenDetail)
+	}
+	if res.BrokenLinks != 0 {
+		t.Fatalf("broken_links=%d want 0", res.BrokenLinks)
+	}
+	if res.StaleLinkPaths != 1 || res.StaleLinkPathsDocs != 1 {
+		t.Fatalf("stale links total/docs=%d/%d want 1/1; detail=%v", res.StaleLinkPaths, res.StaleLinkPathsDocs, res.StaleLinkPathDetail)
+	}
+}
+
+// Given a symlink alias whose apparent relative task link would be stale, When links are
+// checked, Then the alias is skipped instead of being counted from its alias location.
+func TestLinks_skipsSymlinkAliasForStaleWrittenTaskPath(t *testing.T) {
+	root := t.TempDir()
+	canonical := "docs/canonical.md"
+	alias := "docs/alias.md"
+	moved := "tasks/done/153-app-up.md"
+	writeFile(t, root, canonical, "# Canonical\n\n[self](canonical.md)\n")
+	writeFile(t, root, alias, "# Alias\n\nSee [153](../tasks/todo/153-app-up.md).\n")
+	writeFile(t, root, moved, "---\nid: TASK-153\nstatus: done\n---\n\n# 153\n")
+	inv := []InventoryEntry{
+		{Path: canonical, Mode: modeRegular},
+		{Path: alias, Mode: modeSymlink},
+		{Path: moved, Mode: modeRegular},
+	}
+
+	res := Check(CheckInput{Root: root, Inventory: inv})
+	if !res.OK {
+		t.Fatalf("expected symlink alias to be skipped; errors=%v", res.Errors)
+	}
+	if res.StaleLinkPaths != 0 || res.StaleLinkPathsDocs != 0 {
+		t.Fatalf("symlink alias must not add stale paths, got %d/%d", res.StaleLinkPaths, res.StaleLinkPathsDocs)
+	}
 }
 
 // Given a task link whose basename matches nothing under tasks/, When links are checked, Then it

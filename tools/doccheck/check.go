@@ -17,12 +17,17 @@ type CheckInput struct {
 
 // Result is the structured outcome of a documentation gate run.
 type Result struct {
-	OK                      bool
-	MarkdownCandidates      int
-	MarkdownChecked         int
-	LinksChecked            int
-	SymlinksSkipped         int
-	BrokenLinks             int
+	OK                 bool
+	MarkdownCandidates int
+	MarkdownChecked    int
+	LinksChecked       int
+	SymlinksSkipped    int
+	BrokenLinks        int
+	// StaleLinkPaths counts task-card links that resolve by their stable basename while the
+	// relative path written in the document no longer exists in the inventory. This is a
+	// maintenance signal, not a broken link: state-directory moves are intentional (TASK-143).
+	StaleLinkPaths          int
+	StaleLinkPathsDocs      int
 	OversizedDocs           int
 	TestFilesSwept          int
 	TestFuncsFound          int
@@ -48,6 +53,7 @@ type Result struct {
 	DuplicateFilenameNums   int
 	Errors                  []string
 	BrokenDetail            []string
+	StaleLinkPathDetail     []string
 	OversizedDetail         []string
 	UnmatchedRunDetail      []string
 	PortabilityDetail       []string
@@ -147,9 +153,17 @@ func Check(in CheckInput) Result {
 				continue
 			}
 			res.LinksChecked++
-			if errMsg := checkOneLink(e.Path, link, pathSet, loadAnchors); errMsg != "" {
+			outcome := checkOneLink(e.Path, link, pathSet, loadAnchors)
+			if outcome.broken != "" {
 				res.BrokenLinks++
-				res.BrokenDetail = append(res.BrokenDetail, errMsg)
+				res.BrokenDetail = append(res.BrokenDetail, outcome.broken)
+			}
+			if outcome.stale != "" {
+				res.StaleLinkPaths++
+				if strings.HasPrefix(e.Path, "docs/") {
+					res.StaleLinkPathsDocs++
+				}
+				res.StaleLinkPathDetail = append(res.StaleLinkPathDetail, outcome.stale)
 			}
 		}
 	}
@@ -319,15 +333,20 @@ func Check(in CheckInput) Result {
 	return res
 }
 
+type linkCheckOutcome struct {
+	broken string
+	stale  string
+}
+
 func checkOneLink(
 	from string,
 	link linkRef,
 	pathSet map[string]struct{},
 	loadAnchors func(string) (map[string]struct{}, bool),
-) string {
+) linkCheckOutcome {
 	rawPath, anchor, err := splitLink(link.Target)
 	if err != nil {
-		return fmt.Sprintf("%s:%d: bad link encoding %q: %v", from, link.Line, link.Target, err)
+		return linkCheckOutcome{broken: fmt.Sprintf("%s:%d: bad link encoding %q: %v", from, link.Line, link.Target, err)}
 	}
 
 	var targetPath string
@@ -341,7 +360,7 @@ func checkOneLink(
 			targetPath = path.Clean(path.Join(dir, rawPath))
 		}
 		if targetPath == ".." || strings.HasPrefix(targetPath, "../") {
-			return fmt.Sprintf("%s:%d: link escapes repository: %q", from, link.Line, link.Target)
+			return linkCheckOutcome{broken: fmt.Sprintf("%s:%d: link escapes repository: %q", from, link.Line, link.Target)}
 		}
 	}
 
@@ -350,38 +369,41 @@ func checkOneLink(
 	// (NNN-slug.md); its directory is its state (todo/done/_archive/…), which is expected to change
 	// when it is worked or archived. One basename match resolves the link; zero is a genuine broken
 	// link; more than one is an ambiguity the checker refuses to guess (TASK-143).
+	literalTargetPath := targetPath
+	var stale string
 	if _, ok := pathSet[targetPath]; !ok {
 		if resolved, found, ambiguous := resolveTaskLink(targetPath, pathSet); ambiguous {
-			return fmt.Sprintf("%s:%d: ambiguous task link %q: basename matches several files under tasks/", from, link.Line, link.Target)
+			return linkCheckOutcome{broken: fmt.Sprintf("%s:%d: ambiguous task link %q: basename matches several files under tasks/", from, link.Line, link.Target)}
 		} else if found {
 			targetPath = resolved
+			stale = fmt.Sprintf("%s:%d: written task path %q is absent; resolved by card id to %q", from, link.Line, literalTargetPath, resolved)
 		}
 	}
 
 	if _, ok := pathSet[targetPath]; !ok {
 		if !inventoryHasPrefix(pathSet, targetPath+"/") {
-			return fmt.Sprintf("%s:%d: missing target %q (from %q)", from, link.Line, targetPath, link.Target)
+			return linkCheckOutcome{broken: fmt.Sprintf("%s:%d: missing target %q (from %q)", from, link.Line, targetPath, link.Target)}
 		}
 		if anchor != "" {
-			return fmt.Sprintf("%s:%d: anchor on directory target %q", from, link.Line, link.Target)
+			return linkCheckOutcome{broken: fmt.Sprintf("%s:%d: anchor on directory target %q", from, link.Line, link.Target)}
 		}
-		return ""
+		return linkCheckOutcome{}
 	}
 
 	if anchor == "" {
-		return ""
+		return linkCheckOutcome{stale: stale}
 	}
 	if !isMarkdownPath(targetPath) {
-		return fmt.Sprintf("%s:%d: anchor on non-markdown target %q", from, link.Line, link.Target)
+		return linkCheckOutcome{broken: fmt.Sprintf("%s:%d: anchor on non-markdown target %q", from, link.Line, link.Target)}
 	}
 	a, ok := loadAnchors(targetPath)
 	if !ok {
-		return fmt.Sprintf("%s:%d: cannot read anchors for %q", from, link.Line, targetPath)
+		return linkCheckOutcome{broken: fmt.Sprintf("%s:%d: cannot read anchors for %q", from, link.Line, targetPath)}
 	}
 	if _, hit := a[anchor]; !hit {
-		return fmt.Sprintf("%s:%d: missing anchor #%s in %s", from, link.Line, anchor, targetPath)
+		return linkCheckOutcome{broken: fmt.Sprintf("%s:%d: missing anchor #%s in %s", from, link.Line, anchor, targetPath)}
 	}
-	return ""
+	return linkCheckOutcome{stale: stale}
 }
 
 func inventoryHasPrefix(pathSet map[string]struct{}, prefix string) bool {

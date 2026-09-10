@@ -1,7 +1,7 @@
 # 59. Capability-driven init — TASK-250 대조 검증과 완료기준 매핑
 
 > 설계와 채택된 결정은 [docs/58](58-capability-driven-init-design.md)를 참조하세요. 여기서는 그
-> 결정이 [TASK-250](../tasks/done/250-implement-capability-driven-init.md) 구현으로 실제 코드에
+> 결정이 [TASK-250](../tasks/_archive/done/250-implement-capability-driven-init.md) 구현으로 실제 코드에
 > 고정됐는지 완료기준별로 대조하고, 원본 완료기준 10개의 최종 소재를 매핑한다. Label/증거
 > 인벤토리(완료기준 3)는 [docs/60](60-capability-driven-init-label-inventory.md)이 소유한다.
 
