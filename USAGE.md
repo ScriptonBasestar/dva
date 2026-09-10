@@ -585,13 +585,12 @@ compose를 거치지 않고 `.sb/dva/logs/<entry-name>.log` 파일(마지막 100
 `[lifecycle] <name> (process)`로 나옵니다.
 
 **`script` 러너는 여기에 해당하지 않습니다.** `runScript`는 자식 프로세스에 stdout/stderr를
-그대로 물려 흘려보낼 뿐 파일로 남기지 않습니다 (`internal/lifecycle/script.go`). 그런데
-`planLogTargets`는 `ScriptPluginConfig`를 로그 대상에 함께 세므로
-(`internal/cli/logs.go`), `dva logs <plan>`은 script 엔트리 이름을 후보로 제시해 놓고 정작
-그 이름을 주면 `no log file for entry "<name>": … no such file or directory` (exit 1)로
-실패합니다. "아직 안 만들어졌다"로 읽히지만 실제로는 "앞으로도 안 만들어진다"입니다 —
-`dva up`을 몇 번을 돌려도 `.sb/dva/logs/` 아래에 생기지 않습니다. script 엔트리의 출력은
-`dva up`을 실행한 터미널에서 봐야 합니다.
+그대로 물려 흘려보낼 뿐 파일로 남기지 않습니다 (`internal/lifecycle/script.go`). 따라서
+`planLogTargets`는 `ScriptPluginConfig`를 로그 대상에서 제외합니다
+(`internal/cli/logs.go`): compose·process·native 엔트리와 섞여도 script 이름은 후보 목록에
+나오지 않습니다. script 엔트리만 있는 plan의 `dva logs <plan>`은 로그 파일 없음 오류 대신
+출력이 lifecycle 명령을 실행한 터미널에 있음을 안내합니다. lifecycle 명령을 몇 번을 돌려도
+`.sb/dva/logs/` 아래에는 script 로그가 생기지 않습니다.
 
 > **완전히 인자 없는 `dva up`은 명시된 `default_plan` 또는 유일한 plan을 선택합니다.** 여러
 > plan에 기본값이 없으면 plan 이름을 요구하며, plan이 전혀 없을 때만 선언된 stack 전체를

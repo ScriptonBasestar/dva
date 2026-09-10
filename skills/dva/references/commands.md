@@ -135,7 +135,9 @@ dva build compose web     # compose entry, single service
 ### `dva logs [PLAN] [ENTRY] [SERVICE...]`
 
 View a plan's output. Compose entries pass through to `docker compose logs`; process and
-script entries read `.sb/dva/logs/<name>.log`.
+native entries read `.sb/dva/logs/<name>.log`. Script entries are excluded because their
+output stays in the terminal that ran the lifecycle command; a script-only plan explains this
+instead of offering a missing log file.
 
 ```bash
 dva logs                  # the default plan's entries

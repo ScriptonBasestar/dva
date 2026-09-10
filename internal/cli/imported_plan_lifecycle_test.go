@@ -61,12 +61,12 @@ func TestImportedPlanLifecycleParity(t *testing.T) {
 		t.Fatalf("imported status: %v", err)
 	}
 
-	writeEntryLog(t, root, "first", "parent-log-only")
-	owner := root.Plans["child/dev"].OwnerConfig(root)
-	writeEntryLog(t, owner, "first", "child-log-only")
+	writeEntryLog(t, root, "builder", "parent-log-only")
+	owner := root.Plans["child/build"].OwnerConfig(root)
+	writeEntryLog(t, owner, "builder", "child-log-only")
 	var logErr error
 	logOutput := captureStdout(t, func() {
-		logErr = runPlanLogs(root, planEnv(rootEnv), "child/dev", []string{"first"})
+		logErr = runPlanLogs(root, planEnv(rootEnv), "child/build", []string{"builder"})
 	})
 	if logErr != nil {
 		t.Fatalf("imported logs: %v", logErr)
@@ -188,10 +188,10 @@ func TestImportedPlanUsesOwnerHooksAndEndpoints(t *testing.T) {
 		return runPlanLogs(root, rootEnvLoad(root), planName, extra)
 	}}
 	wrapWithHooks(config.LogsDirName, logs)
-	writeEntryLog(t, root.Plans["child/dev"].OwnerConfig(root), "first", "child-log")
+	writeEntryLog(t, root.Plans["child/build"].OwnerConfig(root), "builder", "child-log")
 	var logsErr error
 	captureStdout(t, func() {
-		logsErr = logs.RunE(logs, []string{"--json=true", "child-dev", "first"})
+		logsErr = logs.RunE(logs, []string{"--json=true", "child/build", "builder"})
 	})
 	if logsErr != nil {
 		t.Fatalf("wrapped imported logs with inline root flag: %v", logsErr)
@@ -200,7 +200,7 @@ func TestImportedPlanUsesOwnerHooksAndEndpoints(t *testing.T) {
 		t.Fatalf("child logs hook did not run: %v", err)
 	}
 	if _, err := os.Stat(filepath.Join(root.FileDir(), "parent-logs-before")); !os.IsNotExist(err) {
-		t.Fatalf("parent logs hook leaked before imported alias route: %v", err)
+		t.Fatalf("parent logs hook leaked before imported route: %v", err)
 	}
 }
 

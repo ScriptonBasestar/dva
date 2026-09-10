@@ -44,9 +44,46 @@ plans:
       - name: api
 `
 
+const scriptLogPlanConfig = `version: "0.1.44"
+stack:
+  infra:
+    default_runner: compose
+    runners:
+      compose:
+        files: [compose.yml]
+  api:
+    default_runner: native
+    runners:
+      native:
+        run: "go run ./cmd/api"
+  seeder:
+    default_runner: script
+    runners:
+      script:
+        up: "echo seeding"
+plans:
+  mixed:
+    entries:
+      - name: infra
+      - name: api
+      - name: seeder
+  script-only:
+    entries:
+      - name: seeder
+`
+
 func logTestConfig(t *testing.T) *config.Config {
 	t.Helper()
 	c := loadTestConfig(t, logPlanConfig)
+	if err := os.WriteFile(filepath.Join(c.FileDir(), "compose.yml"), []byte("services: {}\n"), 0o644); err != nil {
+		t.Fatalf("write compose file: %v", err)
+	}
+	return c
+}
+
+func scriptLogTestConfig(t *testing.T) *config.Config {
+	t.Helper()
+	c := loadTestConfig(t, scriptLogPlanConfig)
 	if err := os.WriteFile(filepath.Join(c.FileDir(), "compose.yml"), []byte("services: {}\n"), 0o644); err != nil {
 		t.Fatalf("write compose file: %v", err)
 	}
@@ -96,6 +133,48 @@ func TestPlanLogTargetsSkipsRunnersWithNoReachableLogs(t *testing.T) {
 	if strings.Join(got, ",") != strings.Join(want, ",") {
 		t.Fatalf("selectable entries = %v, want %v — helm has neither a log file nor a compose "+
 			"project, so it must not be offered", got, want)
+	}
+}
+
+// TestPlanLogTargetsExcludesScriptEntries prevents dva logs from offering a script entry
+// whose output is only inherited by the terminal that ran the lifecycle command.
+func TestPlanLogTargetsExcludesScriptEntries(t *testing.T) {
+	c := scriptLogTestConfig(t)
+	plan := resolveLogPlan(t, c, "mixed")
+
+	if len(plan.Entries) != 3 {
+		t.Fatalf("plan resolved %d entries, want 3 — the script entry never reached the filter", len(plan.Entries))
+	}
+
+	got := strings.Join(planLogTargetNames(planLogTargets(plan)), ",")
+	if want := "api,infra"; got != want {
+		t.Fatalf("selectable entries = %q, want %q — script output has no log file", got, want)
+	}
+
+	err := runPlanLogs(c, planEnv(config.NewEnvironment(nil, c.FileDir(), c.FileDir())), "mixed", nil)
+	if err == nil {
+		t.Fatal("mixed plan unexpectedly selected one log entry")
+	}
+	if got := err.Error(); !strings.Contains(got, "<api|infra>") || strings.Contains(got, "seeder") {
+		t.Errorf("candidate prompt = %q, want only reachable entries", got)
+	}
+}
+
+// TestScriptOnlyPlanLogsNameWhereOutputWent makes the zero-target diagnosis actionable:
+// scripts do not create a file for dva logs, so users need the lifecycle command's terminal.
+func TestScriptOnlyPlanLogsNameWhereOutputWent(t *testing.T) {
+	c := scriptLogTestConfig(t)
+	e := config.NewEnvironment(nil, c.FileDir(), c.FileDir())
+
+	err := runPlanLogs(c, planEnv(e), "script-only", nil)
+	if err == nil {
+		t.Fatal("script-only plan unexpectedly produced a log target")
+	}
+	if !strings.Contains(err.Error(), "terminal that ran the lifecycle command") {
+		t.Errorf("error does not say where script output went: %v", err)
+	}
+	if strings.Contains(err.Error(), "no log file") {
+		t.Errorf("error presents a missing file instead of the script output location: %v", err)
 	}
 }
 

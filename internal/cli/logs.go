@@ -11,7 +11,7 @@ import (
 	"github.com/ScriptonBasestar/dva/internal/lifecycle"
 )
 
-// entryLogFile is where the process and script plugins write an entry's output.
+// entryLogFile is where the native and process runners write an entry's output.
 func entryLogFile(c *config.Config, name string) string {
 	return filepath.Join(c.FileDir(), config.DotDirName, config.LogsDirName, name+".log")
 }
@@ -73,7 +73,7 @@ func planLogTargets(plan *lifecycle.ExecutionPlan) []planLogTarget {
 				name: entry.Name, runner: entry.Runner, compose: cfg,
 				profiles: entry.Profiles, services: entry.Services,
 			})
-		case *config.NativeRunnerConfig, *config.ProcessPluginConfig, *config.ScriptPluginConfig:
+		case *config.NativeRunnerConfig, *config.ProcessPluginConfig:
 			targets = append(targets, planLogTarget{name: entry.Name, runner: entry.Runner})
 		}
 	}
@@ -161,6 +161,11 @@ func runPlanLogs(c *config.Config, el *envLoad, planName string, extraArgs []str
 
 	targets := planLogTargets(plan)
 	if len(targets) == 0 {
+		for _, entry := range plan.Entries {
+			if _, ok := entry.RunnerConfig.(*config.ScriptPluginConfig); ok {
+				return fmt.Errorf("plan %q has no entry whose logs dva can reach; script output is written to the terminal that ran the lifecycle command", planName)
+			}
+		}
 		return fmt.Errorf("plan %q has no entry whose logs dva can reach; its runners hand logging to their own tools", planName)
 	}
 

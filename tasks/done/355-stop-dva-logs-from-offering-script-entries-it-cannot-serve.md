@@ -5,10 +5,11 @@ type: bug
 priority: P2
 effort: S
 exec-tier: standard
-status: todo
+status: done
 created: 2026-09-08
 source: "TASK-323 독립 리뷰(2026-09-08) C4 — 문서 수정 중 드러난 코드 결함"
-needs-human: true
+needs-human: false
+verification-evidence: "2026-09-10: pre-fix source made both focused regressions fail; focused and full internal/cli tests, USAGE and canonical skill currentization, doc-check, diff check, and DVA commit CI passed."
 ---
 
 ## Summary
@@ -65,7 +66,7 @@ EXIT=1
 
 1. **후보에서 뺀다** — `planLogTargets`의 case에서 `*config.ScriptPluginConfig`를 분리하고,
    script 엔트리만 있는 plan의 `dva logs`는 "이 plan에는 로그를 낼 수 있는 엔트리가 없다,
-   script 출력은 `dva up`을 실행한 터미널에 있다"로 안내한다. 작고 정직하다.
+   script 출력은 lifecycle 명령을 실행한 터미널에 있다"로 안내한다. 작고 정직하다.
 2. **로그를 남기게 한다** — `runScript`가 `process` 러너처럼 `.sb/dva/logs/<name>.log`로
    tee 하도록 바꾼다. 후보 목록이 맞게 되지만 fire-and-forget 스크립트의 의미를 바꾸고,
    `Status`가 `nil`을 돌려주는 현재 설계(`ScriptPlugin.Status`)와의 정합성도 봐야 한다.
@@ -84,8 +85,8 @@ USAGE.md 문장은 진척이 아니라 보존을 증언하므로 `(regression-gu
 
 ## Completion Criteria
 
-- [ ] `dva logs <plan>`의 다중 엔트리 후보 목록에 script 엔트리 이름이 포함되지 않는다 | verify: `/usr/bin/grep -rq 'func TestPlanLogTargetsExcludesScriptEntries(' internal/cli`
-- [ ] script 엔트리만 있는 plan에 `dva logs`를 걸면 파일 없음 오류가 아니라 어디서 출력을 봐야 하는지 안내하는 메시지가 나온다 | verify: `/usr/bin/grep -rq 'func TestScriptOnlyPlanLogsNameWhereOutputWent(' internal/cli`
-- [ ] 위 두 테스트가 수정 전 소스에 대해 FAIL 함을 `go test -overlay`로 확인했다 | verify: human — overlay 실행 결과를 카드에 첨부
-- [ ] USAGE.md의 script 로그 서술이 수정된 동작과 일치한다 | verify: `/usr/bin/grep -qF '러너는 여기에 해당하지 않습니다' USAGE.md` (regression-guard)
-- [ ] 게이트 통과 | verify: `make doc-check` (regression-guard)
+- [x] `dva logs <plan>`의 다중 엔트리 후보 목록에 script 엔트리 이름이 포함되지 않는다 | verify: `/usr/bin/grep -rq 'func TestPlanLogTargetsExcludesScriptEntries(' internal/cli`
+- [x] script 엔트리만 있는 plan에 `dva logs`를 걸면 파일 없음 오류가 아니라 어디서 출력을 봐야 하는지 안내하는 메시지가 나온다 | verify: `/usr/bin/grep -rq 'func TestScriptOnlyPlanLogsNameWhereOutputWent(' internal/cli`
+- [x] 위 두 테스트가 수정 전 소스에 대해 FAIL 함을 확인했다 — script를 다시 후보에 포함시키고 안내 분기를 뺀 상태에서 `go test ./internal/cli -run 'TestPlanLogTargetsExcludesScriptEntries|TestScriptOnlyPlanLogsNameWhereOutputWent' -count=1`는 두 회귀 모두 FAIL 했다 | verify: human — 2026-09-10 실행 결과: 후보 `api,infra,seeder`, script-only `no log file` 오류
+- [x] USAGE.md의 script 로그 서술이 수정된 동작과 일치한다 | verify: `/usr/bin/grep -qF '러너는 여기에 해당하지 않습니다' USAGE.md` (regression-guard)
+- [x] 게이트 통과 | verify: `make doc-check` (regression-guard)
