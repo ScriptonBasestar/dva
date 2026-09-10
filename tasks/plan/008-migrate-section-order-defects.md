@@ -3,13 +3,13 @@ id: PLAN-008
 title: "Work the migrate-section-order defect bundle in a single file's order"
 type: plan
 scope: "TASK-358..365 — TASK-318 재리뷰가 파생시킨 8장. 전부 internal/config/migrate_section_order.go(367줄) 한 파일 또는 그 테스트에 걸린다"
-progress: 13
+progress: 25
 total-tasks: 8
-completed-tasks: 1
+completed-tasks: 2
 children: [TASK-365, TASK-363, TASK-359, TASK-358, TASK-361, TASK-362, TASK-364, TASK-360]
 target-date: "2026-10-31"
 created: 2026-09-09
-completed-children: 1
+completed-children: 2
 ---
 
 ## Goal
@@ -36,7 +36,7 @@ TASK-318(섹션 순서 자동 정렬)의 재리뷰가 결함 8장을 파생시�
 | # | 카드 | P | 왜 이 자리인가 |
 |---|---|---|---|
 | 1 | ~~TASK-365~~ CRLF 계약 결정 | P2 | 완료 2026-09-10. Option 1을 택해 pipeline 경계에서 균일 CRLF를 보존했고, TASK-360은 계획대로 남은 separator 세부 조각을 처리한다 |
-| 2 | TASK-363 `\|+` 후행 공백 유실 | **P1** | 남은 8장 중 **유일한 무성 데이터 손실**이다 — 출력이 정상 파싱되면서 값이 달라진다. 나머지는 파싱 실패이거나 외형 문제다. 영역 `:234-244`로 고립돼 있어 1번 뒤 아무 때나 가능 |
+| 2 | ~~TASK-363~~ `\|+` 후행 공백 유실 | **P1** | 완료 2026-09-10. keep-chomped scalar의 trailing blank를 의미 보존하며, header prefix·explicit indent·sequence/explicit-key 경계와 slot separator를 함께 검증했다 |
 | 3 | TASK-359 조용한 bail-out 폐루프 | P2 | `:110-119`의 두 bail-out에 `report.Blocked` 메시지를 넣으며 **그 메시지의 형태를 정한다**. 4번이 그 형태를 따라야 한다 |
 | 4 | TASK-358 anchor/alias 재배치 차단 | P2 | 같은 `:110-119`에 세 번째 bail-out을 추가한다. 카드 본문이 "TASK-359가 정하는 것과 같은 모양"이라고 직접 적고 있다 — **하드 제약** |
 | 5 | TASK-361 EOF 주석 문단 되감기 | P3 | `:214-223`으로 완전 고립. 어느 자리든 무방하나 앞 네 장보다 급하지 않다 |
@@ -84,7 +84,7 @@ TASK-365의 결정은 **Option 1(균일한 CRLF를 migrate 파이프라인 경�
 착수 순서는 §Order가 정본이다. 아래는 같은 여덟 장을 그 순서로 나열한 것이다.
 
 - TASK-365 — migrate 파이프라인이 CRLF를 보존하는지 계약 결정 (done, 2026-09-10)
-- TASK-363 — `|+`/`>+` 블록 스칼라의 후행 공백 유실 (P1, 유일한 무성 데이터 손실)
+- ~~TASK-363~~ — `|+`/`>+` 블록 스칼라의 후행 공백 유실 (done, 2026-09-10)
 - TASK-359 — config migrate의 조용한 bail-out 폐루프 닫기 (P2, Blocked 메시지 형태를 정함)
 - TASK-358 — anchor가 alias 아래로 내려가는 재배치 차단 (P2, 359의 형태를 따름)
 - TASK-361 — EOF의 모든 후행 주석 문단 되감기 (P3, 고립)

@@ -7,7 +7,7 @@ effort: S
 exec-tier: standard
 created-at: 2026-09-08T16:40:00+09:00
 source: "TASK-318 재리뷰 (t318-rereview) SHOULD-FIX 4"
-status: todo
+status: done
 depends-on: []
 needs-human: false
 allowed-paths:
@@ -65,10 +65,10 @@ allowed-paths:
 
 ## Completion Criteria
 
-- [ ] `|+` 블록 스칼라를 가진 파일을 재정렬해도 디코드한 값이 src와 동일하다 | verify: `/usr/bin/grep -rq 'func TestMigrateSectionOrderKeepsKeepChompedTrailingBlank(' internal/config`
-- [ ] 그 테스트가 공허하지 않다 — 수정 전 소스에 대해 `go test -overlay`로 FAIL을 확인하고 결과를 카드에 기록 | verify: human — 변이/오버레이 실행 결과 첨부
-- [ ] `|`/`>`(clip/strip) 블록의 기존 동작은 바뀌지 않는다 | verify: `go test ./internal/config/` (regression-guard)
-- [ ] 게이트 통과 | verify: `make doc-check`
+- [x] `|+` 블록 스칼라를 가진 파일을 재정렬해도 디코드한 값이 src와 동일하다 | verify: `/usr/bin/grep -rq 'func TestMigrateSectionOrderKeepsKeepChompedTrailingBlank(' internal/config`
+- [x] 그 테스트가 공허하지 않다 — 수정 전 소스에 대해 `go test -overlay`로 FAIL을 확인하고 결과를 카드에 기록 | verify: human — 변이/오버레이 실행 결과 첨부
+- [x] `|`/`>`(clip/strip) 블록의 기존 동작은 바뀌지 않는다 | verify: `go test ./internal/config/` (regression-guard)
+- [x] 게이트 통과 | verify: `make doc-check`
 
 ## 수정 전 실패 증거
 
@@ -76,6 +76,12 @@ allowed-paths:
 `go test -overlay=/Users/archmagece/worktrees/misc/dva/codex__mbp__fix__keep-chomped-block-scalars/tmp/task-363-overlay.json ./internal/config/ -run '^TestMigrateSectionOrderKeepsKeepChompedTrailingBlank$' -count=1`
 을 실행했다. `literal`과 `folded` 하위 테스트가 모두 FAIL했고, 각각 디코드 값이
 `before "hi\n\n", after "hi\n"`으로 바뀌었다. 명령은 exit 1이었다.
+
+## Resolution (2026-09-10)
+
+- `|+`/`>+`의 trailing blank를 scalar 값으로 보존하고, anchor/tag prefix, 두 explicit-indent 순서, sequence inline mapping과 explicit key 문법까지 회귀 테스트로 고정했다.
+- scalar 뒤 field/comment의 blank는 기존 slot separator로 유지한다. 수정 전 overlay 테스트에서 literal·folded가 모두 FAIL한 기록을 위에 보존했다.
+- 독립 Sol/high 검토가 PASS했고, `dva ci commit` 전체 게이트가 성공했다.
 
 ## 참고
 
