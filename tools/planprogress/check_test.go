@@ -31,7 +31,7 @@ func TestCheckPlanDefectKinds(t *testing.T) {
 				hasTotalTasks:  true,
 				completedTasks: 2,
 				hasCompleted:   true,
-				progress:       67,
+				progress:       66,
 				hasProgress:    true,
 			},
 			idx:   baseIndex,
@@ -46,7 +46,7 @@ func TestCheckPlanDefectKinds(t *testing.T) {
 				hasTotalTasks:  true,
 				completedTasks: 2,
 				hasCompleted:   true,
-				progress:       50, // consistent with the (wrong) declared total-tasks: round(2/4*100)
+				progress:       50, // consistent with the (wrong) declared total-tasks: 2*100/4
 				hasProgress:    true,
 			},
 			idx:     baseIndex,
@@ -68,12 +68,12 @@ func TestCheckPlanDefectKinds(t *testing.T) {
 			idx:     baseIndex,
 			wantAny: []string{"completed-tasks=3, want 2"},
 			// progress is checked against the *declared* completed-tasks/total-tasks
-			// arithmetic (round(3/3*100) == 100 == declared progress), so this case
+			// arithmetic (3*100/3 == 100 == declared progress), so this case
 			// surfaces only the completed-tasks vs. measured-reality defect.
 			wantN: 1,
 		},
 		{
-			name: "progress disagrees with round(completed/total*100)",
+			name: "progress disagrees with truncated completed/total*100",
 			p: plan{
 				id:             "PLAN-C",
 				children:       []string{"TASK-1", "TASK-2", "TASK-3"},
@@ -81,11 +81,11 @@ func TestCheckPlanDefectKinds(t *testing.T) {
 				hasTotalTasks:  true,
 				completedTasks: 2,
 				hasCompleted:   true,
-				progress:       88, // wrong: round(2/3*100) is 67
+				progress:       88, // wrong: truncated 2*100/3 is 66
 				hasProgress:    true,
 			},
 			idx:     baseIndex,
-			wantAny: []string{"progress=88, want 67"},
+			wantAny: []string{"progress=88, want 66"},
 			wantN:   1,
 		},
 		{
@@ -270,19 +270,20 @@ func TestBuildTaskIndexWalksNestedArchiveAndSkipsPlanDir(t *testing.T) {
 	}
 }
 
-func TestRoundPercent(t *testing.T) {
+func TestTruncatedPercent(t *testing.T) {
 	tests := []struct {
 		completed, total, want int
 	}{
-		{15, 16, 94},
-		{7, 19, 37},
-		{2, 3, 67},
+		{15, 16, 93},
+		{16, 26, 61},
+		{7, 19, 36},
+		{2, 3, 66},
 		{0, 0, 0},
 		{5, 5, 100},
 	}
 	for _, tt := range tests {
-		if got := roundPercent(tt.completed, tt.total); got != tt.want {
-			t.Errorf("roundPercent(%d, %d) = %d, want %d", tt.completed, tt.total, got, tt.want)
+		if got := truncatedPercent(tt.completed, tt.total); got != tt.want {
+			t.Errorf("truncatedPercent(%d, %d) = %d, want %d", tt.completed, tt.total, got, tt.want)
 		}
 	}
 }

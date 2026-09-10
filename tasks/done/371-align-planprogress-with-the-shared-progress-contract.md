@@ -5,11 +5,12 @@ type: bug
 priority: P1
 effort: S
 exec-tier: standard
-status: todo
+status: done
 created: 2026-09-10
 source: "ISSUE-002 — PLAN-006 16/26 is accepted as 61 by ce task validate and 62 by planprogress"
 needs-human: false
 blocks: [TASK-354]
+verification-evidence: "2026-09-10: go test ./tools/planprogress, make doc-check, and ce task validate --all passed; independent review confirmed shared truncation contract."
 ---
 
 # Task 371: planprogress의 진행률 계산을 공유 task 계약과 맞춘다

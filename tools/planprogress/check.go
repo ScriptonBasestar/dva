@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"math"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -290,21 +289,21 @@ func checkPlan(p plan, idx taskIndex) []string {
 	if !p.hasProgress {
 		defects = append(defects, fmt.Sprintf("%s (%s): missing progress", name, p.path))
 	} else if p.hasTotalTasks && p.hasCompleted {
-		wantProgress := roundPercent(p.completedTasks, p.totalTasks)
+		wantProgress := truncatedPercent(p.completedTasks, p.totalTasks)
 		if p.progress != wantProgress {
-			defects = append(defects, fmt.Sprintf("%s (%s): progress=%d, want %d (round(completed-tasks/total-tasks*100))", name, p.path, p.progress, wantProgress))
+			defects = append(defects, fmt.Sprintf("%s (%s): progress=%d, want %d (completed-tasks*100/total-tasks, truncated)", name, p.path, p.progress, wantProgress))
 		}
 	}
 
 	return defects
 }
 
-// roundPercent rounds completed/total*100 to the nearest integer, half away from zero,
-// matching the convention already used by hand across tasks/plan/*.md. A zero total rounds to
-// zero rather than dividing by zero — an empty plan is 0% complete, not NaN.
-func roundPercent(completed, total int) int {
+// truncatedPercent computes completed/total*100 with integer division, matching the shared task
+// validator's truncation contract. A zero total returns zero rather than dividing by zero — an
+// empty plan is 0% complete.
+func truncatedPercent(completed, total int) int {
 	if total == 0 {
 		return 0
 	}
-	return int(math.Round(float64(completed) / float64(total) * 100))
+	return completed * 100 / total
 }
