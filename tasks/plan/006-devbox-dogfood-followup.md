@@ -3,13 +3,13 @@ id: PLAN-006
 title: "Work the devbox dogfood follow-up queue in dependency order"
 type: plan
 scope: "TASK-311..323 from the 2026-09-05 mydevbox migration, plus the needs-human cards that gate the rest"
-progress: 50
+progress: 54
 total-tasks: 26
-completed-tasks: 13
+completed-tasks: 14
 children: [TASK-339, TASK-340, TASK-328, TASK-329, TASK-312, TASK-313, TASK-317, TASK-311, TASK-324, TASK-314, TASK-316, TASK-320, TASK-322, TASK-315, TASK-318, TASK-323, TASK-249, TASK-307, TASK-309, TASK-319, TASK-321, TASK-345, TASK-346, TASK-347, TASK-348, TASK-351]
 target-date: "2026-10-31"
 created: 2026-09-05
-completed-children: 13
+completed-children: 14
 ---
 
 ## Goal
@@ -121,7 +121,7 @@ validate가 요구한다 — 둘은 다른 질문에 답한다.
 - TASK-329 — familybook devbox `dva.yaml` → `dva.yml` rename (todo). readiness 브랜치 대기
 - **compose 번들 4장** — §Order 9행이 "후속 345·346·347·348 파생"이라고 적고 일정에는
   넣지 않았다. 네 장 사이에 `depends-on`도 없다:
-  - TASK-345 — 단일 엔트리 config에서도 compose passthrough가 엔트리 이름을 벗김 (todo)
+  - TASK-345 — 단일 엔트리 config에서도 compose passthrough가 엔트리 이름을 벗김 (done, 2026-09-10)
   - TASK-346 — compose 파일이 정의하지 않은 plan profile 경고 (todo)
   - TASK-347 — agent-mesh 라이브러리에 plan 수준 profile 선택 교육 (todo)
   - TASK-348 — plan profile이 argv가 아니라 실제 docker build에 도달하는지 확인 (todo)

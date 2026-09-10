@@ -5,8 +5,11 @@ type: bug
 priority: P3
 effort: S
 exec-tier: standard
-status: todo
+status: done
 created: 2026-09-07
+allowed-paths:
+  - internal/cli/compose.go
+  - internal/cli/root_flag_passthrough_test.go
 ---
 
 ## Summary
@@ -38,6 +41,17 @@ used.
 
 ## Completion Criteria
 
-- [ ] A leading entry name is consumed on a single-entry config, and the resulting argv matches the argv produced when the name is omitted | verify: `/usr/bin/grep -rq 'func TestSingleEntryComposePassthroughStripsTheEntryName(' internal/cli`
-- [ ] A leading argument that is *not* the entry name still reaches docker unmodified, so `dva compose ps` keeps working | verify: `/usr/bin/grep -rq 'func TestSingleEntryComposePassthroughKeepsNonEntryArgs(' internal/cli`
-- [ ] Gates stay green | verify: `make test`
+- [x] A leading entry name is consumed on a single-entry config, and the resulting argv matches the argv produced when the name is omitted | verify: `/usr/bin/grep -rq 'func TestSingleEntryComposePassthroughStripsTheEntryName(' internal/cli`
+- [x] A leading argument that is *not* the entry name still reaches docker unmodified, so `dva compose ps` keeps working | verify: `/usr/bin/grep -rq 'func TestSingleEntryComposePassthroughKeepsNonEntryArgs(' internal/cli`
+- [x] Gates stay green | verify: `make test`
+
+## Resolution (2026-09-10)
+
+- The single-entry compose path now consumes a leading argument only when it
+  equals that entry name; omitted-name and non-entry forms remain intact.
+- `TestSingleEntryComposePassthroughStripsTheEntryName` compares the actual
+  Docker argv for named and omitted invocations, and
+  `TestSingleEntryComposePassthroughKeepsNonEntryArgs` protects the positional
+  form.
+- Verified with the two card grep bindings, targeted `go test ./internal/cli`,
+  and the independent review with no remaining findings.
