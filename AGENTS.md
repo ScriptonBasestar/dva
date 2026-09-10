@@ -37,6 +37,13 @@ DVA는 개발 환경 오케스트레이터입니다. 핵심 방향은 `stack:`�
 복사하지 않습니다. 미래 후보는 roadmap이 생기기 전까지 현재 지원 기능처럼 서술하지
 않습니다.
 
+## Task completion review
+
+카드를 `done`으로 옮기기 전에는 구현 세션과 다른 세션에서 `done-review`를 거쳐야 한다.
+카드 frontmatter에는 `quality-review: pass`, `conditional`, `waived` 중 하나를 남기며,
+`waived`에는 `quality-review-evidence`도 남긴다. 전이와 증거의 정확한 규칙은
+[ce-workbook task-management done-review 정책](https://gitlab.polypia.net/archmagece/ce-workbook/-/blob/master/task_management/execution/actions/done-review.md)을 따른다.
+
 ## Repository Map
 
 구현 경계와 데이터 흐름의 원본은 `ARCHITECTURE.md`입니다. 아래 목록은 코드 탐색용입니다.

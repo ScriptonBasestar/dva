@@ -5,8 +5,11 @@ type: docs
 priority: P3
 effort: XS
 exec-tier: cheap
-status: todo
-needs-human: true
+status: done
+needs-human: false
+quality-review: pass
+quality-reviewed-at: 2026-09-10
+quality-review-evidence: "Independent review /root/review_task368: PASS; git diff --check and card validation passed."
 created: 2026-09-09
 source: "PLAN-007 §External이 '이 계획이 끝난 뒤' 하기로 적어 둔 DVA 쪽 절반. 소유 카드가 없었다"
 ---
@@ -51,9 +54,9 @@ PLAN-007 §External 1번(`move --to done` 전제조건에 `quality-review` 요�
 
 ## Completion Criteria
 
-- [ ] AGENTS.md가 카드를 닫으려면 별도 세션의 done-review가 필요하다고 기술한다 | verify: `/usr/bin/grep -q "done-review" AGENTS.md`
-- [ ] 규칙 본문을 복제하지 않고 링크만 둔다 | verify: human — 추가된 문단이 정책 규칙을 다시 서술하지 않고 canonical 위치를 가리키는지 확인
-- [ ] 게이트 통과 | verify: `make doc-check` (regression-guard)
+- [x] AGENTS.md가 카드를 닫으려면 별도 세션의 done-review가 필요하다고 기술한다 | verify: `/usr/bin/grep -q "done-review" AGENTS.md`
+- [x] 규칙 본문을 복제하지 않고 링크만 둔다 | verify: human — 독립 리뷰 `/root/review_task368`가 추가 문단이 정책 규칙을 다시 서술하지 않고 canonical 위치를 가리키는지 확인
+- [x] 게이트 통과 | verify: `make doc-check` (regression-guard)
 
 ## Notes
 
@@ -62,3 +65,8 @@ PLAN-007 §External 1번(`move --to done` 전제조건에 `quality-review` 요�
 - 첫 수용기준이 `grep done-review`인 것은 약한 바인딩이다 — 단어가 있으면 통과한다.
   두 번째 사람 기준이 그 약함을 받는다. 더 강한 기계 기준을 쓰려면 문단의 형태를 미리
   고정해야 하는데, 그러면 이 카드가 금지하려는 복제를 카드 자신이 하게 된다.
+
+## Completion record
+
+- 2026-09-10: 독립 세션 `/root/review_task368`가 PASS. 정본 링크와 요약 범위를 대조했고,
+  `git diff --check`, 카드 검증, `make doc-check`를 전이 후 재실행한다.
