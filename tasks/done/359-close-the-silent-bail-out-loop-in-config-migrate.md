@@ -7,7 +7,7 @@ effort: S
 exec-tier: standard
 created-at: 2026-09-08T16:40:00+09:00
 source: "TASK-318 재리뷰 (t318-rereview)"
-status: todo
+status: done
 depends-on: []
 needs-human: false
 allowed-paths:
@@ -138,6 +138,12 @@ $ DVA_FILE=/tmp/dva-task359.h2TQR1/flow-root/dva.yml /tmp/dva-task359.h2TQR1/dva
 [warn] semantic: section order: found [plans → version] but canonical order is [version → plans]; consider reordering
 ✅ dva.yml is valid
 ```
+
+## Resolution (2026-09-10)
+
+- Duplicate top-level keys and flow-style root mappings now return the original bytes with the exact `report.Blocked` reason and a manual next action.
+- The no-change CLI path prints that reason under `Left for you:`; the isolated `validate → migrate --write → validate` log records both the migrate guidance and the remaining warning.
+- Independent Sol/high review passed, and the project `dva ci commit` gate succeeded.
 
 ## 참고
 
