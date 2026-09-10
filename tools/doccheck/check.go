@@ -17,41 +17,44 @@ type CheckInput struct {
 
 // Result is the structured outcome of a documentation gate run.
 type Result struct {
-	OK                     bool
-	MarkdownCandidates     int
-	MarkdownChecked        int
-	LinksChecked           int
-	SymlinksSkipped        int
-	BrokenLinks            int
-	OversizedDocs          int
-	TestFilesSwept         int
-	TestFuncsFound         int
-	RunPatternsChecked     int
-	UnmatchedRunFlags      int
-	EscapedPipeBindings    int
-	AbsCheckoutBindings    int
-	ExternalCorpusBindings int
-	WrappedToolBindings    int
-	BareToolBindings       int
-	InvertedGrepBindings   int
-	BareSuiteBindings      int
-	ExistingTodoTestNames  int
-	ArchiveFilesSeen       int
-	ArchiveCards           int
-	ArchiveMissing         int
-	CardsSeen              int
-	CardsChecked           int
-	StatusMismatches       int
-	CardIDsSeen            int
-	DuplicateCardIDs       int
-	Errors                 []string
-	BrokenDetail           []string
-	OversizedDetail        []string
-	UnmatchedRunDetail     []string
-	PortabilityDetail      []string
-	ArchiveDetail          []string
-	CardStatusDetail       []string
-	DuplicateIDDetail      []string
+	OK                      bool
+	MarkdownCandidates      int
+	MarkdownChecked         int
+	LinksChecked            int
+	SymlinksSkipped         int
+	BrokenLinks             int
+	OversizedDocs           int
+	TestFilesSwept          int
+	TestFuncsFound          int
+	RunPatternsChecked      int
+	UnmatchedRunFlags       int
+	EscapedPipeBindings     int
+	AbsCheckoutBindings     int
+	ExternalCorpusBindings  int
+	WrappedToolBindings     int
+	BareToolBindings        int
+	InvertedGrepBindings    int
+	BareSuiteBindings       int
+	ExistingTodoTestNames   int
+	ArchiveFilesSeen        int
+	ArchiveCards            int
+	ArchiveMissing          int
+	CardsSeen               int
+	CardsChecked            int
+	StatusMismatches        int
+	CardIDsSeen             int
+	DuplicateCardIDs        int
+	FilenameNumbersSeen     int
+	DuplicateFilenameNums   int
+	Errors                  []string
+	BrokenDetail            []string
+	OversizedDetail         []string
+	UnmatchedRunDetail      []string
+	PortabilityDetail       []string
+	ArchiveDetail           []string
+	CardStatusDetail        []string
+	DuplicateIDDetail       []string
+	DuplicateFilenameDetail []string
 }
 
 // Check validates repository-wide relative markdown links against the git
@@ -230,6 +233,12 @@ func Check(in CheckInput) Result {
 	res.DuplicateIDDetail = dupMsgs
 	res.Errors = append(res.Errors, dupErrs...)
 
+	filenameNumsSeen, filenameDupes, filenameDupMsgs, filenameDupErrs := checkDuplicateFilenameNumbers(in.Root, in.Inventory)
+	res.FilenameNumbersSeen = filenameNumsSeen
+	res.DuplicateFilenameNums = filenameDupes
+	res.DuplicateFilenameDetail = filenameDupMsgs
+	res.Errors = append(res.Errors, filenameDupErrs...)
+
 	if res.LinksChecked == 0 {
 		res.Errors = append(res.Errors, "vacuous: zero links checked")
 	}
@@ -301,6 +310,9 @@ func Check(in CheckInput) Result {
 	// inherits the collision.
 	if res.DuplicateCardIDs > 0 {
 		res.Errors = append(res.Errors, fmt.Sprintf("%d task id(s) claimed by more than one card", res.DuplicateCardIDs))
+	}
+	if res.DuplicateFilenameNums > 0 {
+		res.Errors = append(res.Errors, fmt.Sprintf("%d task filename number(s) claimed by more than one card in one namespace", res.DuplicateFilenameNums))
 	}
 
 	res.OK = len(res.Errors) == 0

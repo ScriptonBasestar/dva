@@ -3,8 +3,11 @@ package main
 import (
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
+	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -85,4 +88,93 @@ func checkDuplicateCardIDs(root string, inv []InventoryEntry) (idsSeen, duplicat
 			id, len(where), strings.Join(where, ", ")))
 	}
 	return idsSeen, duplicates, msgs, errs
+}
+
+var cardFilenameNumberRE = regexp.MustCompile(`^0*(\d+)-.+\.md$`)
+
+// checkDuplicateFilenameNumbers reports filename-number collisions within one card namespace.
+//
+// A filename number is the sequence a person or an agent sees when choosing the next card. It
+// is intentionally distinct from the full frontmatter id: existing cards may use a filename
+// number that differs from the id's numeric suffix, and enforcing equality would be a new
+// compatibility rule rather than a collision guard. The frontmatter id's prefix separates
+// namespaces, so ISSUE-001 may coexist with historical TASK-001, while two TASK cards named
+// 331-... remain an actionable collision even if their complete ids differ.
+//
+// A plan is not a task card. That applies to both tasks/plan/ and archived plans under a
+// `plan` path component; otherwise PLAN-006 and TASK-006 would produce a false collision.
+// Missing or non-namespaced ids are left to the card-frontmatter checks that own that contract.
+func checkDuplicateFilenameNumbers(root string, inv []InventoryEntry) (numbersSeen, duplicates int, msgs, errs []string) {
+	paths := map[string][]string{}
+	for _, e := range inv {
+		if isSymlinkMode(e.Mode) || !isMarkdownPath(e.Path) || hasPlanPathComponent(e.Path) {
+			continue
+		}
+		zone, ok := resolveCardZone(e.Path)
+		if !ok || zone.skip {
+			continue
+		}
+		match := cardFilenameNumberRE.FindStringSubmatch(path.Base(e.Path))
+		if match == nil {
+			continue
+		}
+		number, err := strconv.ParseUint(match[1], 10, 64)
+		if err != nil {
+			errs = append(errs, fmt.Sprintf("%s: invalid filename number %q: %v", e.Path, match[1], err))
+			continue
+		}
+		data, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(e.Path)))
+		if err != nil {
+			errs = append(errs, fmt.Sprintf("%s: read: %v", e.Path, err))
+			continue
+		}
+		frontmatter, state := splitFrontmatter(string(data))
+		if state != frontmatterOK {
+			continue
+		}
+		id, found, err := frontmatterField(frontmatter, "id")
+		if err != nil {
+			errs = append(errs, fmt.Sprintf("%s: %v", e.Path, err))
+			continue
+		}
+		namespace, ok := cardIDNamespace(id, found)
+		if !ok {
+			continue
+		}
+		key := fmt.Sprintf("%s-%d", namespace, number)
+		paths[key] = append(paths[key], e.Path)
+	}
+
+	numbersSeen = len(paths)
+	keys := make([]string, 0, len(paths))
+	for key := range paths {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	for _, key := range keys {
+		if len(paths[key]) < 2 {
+			continue
+		}
+		duplicates++
+		where := append([]string(nil), paths[key]...)
+		sort.Strings(where)
+		msgs = append(msgs, fmt.Sprintf("filename number %s is claimed by %d cards: %s",
+			key, len(where), strings.Join(where, ", ")))
+	}
+	return numbersSeen, duplicates, msgs, errs
+}
+
+func hasPlanPathComponent(cardPath string) bool {
+	return strings.Contains("/"+path.Clean(cardPath)+"/", "/plan/")
+}
+
+func cardIDNamespace(id string, found bool) (string, bool) {
+	if !found || id == "" {
+		return "", false
+	}
+	namespace, _, ok := strings.Cut(id, "-")
+	if !ok || namespace == "" {
+		return "", false
+	}
+	return namespace, true
 }

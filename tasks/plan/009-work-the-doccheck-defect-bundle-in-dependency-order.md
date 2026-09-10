@@ -3,9 +3,9 @@ id: PLAN-009
 title: "Work the task and doccheck defect bundle in dependency order"
 type: plan
 scope: "TASK-371, 344, 350, 343, 354, 338 — 여섯 장이 shared task progress contract, tools/doccheck, 또는 그 Makefile 연결을 고친다. 선언된 의존은 TASK-343 depends-on TASK-344와 TASK-354 depends-on TASK-371이다"
-progress: 50
+progress: 66
 total-tasks: 6
-completed-tasks: 3
+completed-tasks: 4
 children: [TASK-371, TASK-344, TASK-350, TASK-343, TASK-354, TASK-338]
 target-date: "2026-09-30"
 created: 2026-09-09
@@ -49,7 +49,7 @@ This aligns the local calculation with the shared task contract; details are in
 |---|---|---|---|
 | 1 | TASK-344 프론트매터 값 파서 강화 | P3 | **가장 먼저.** `cardstatus.go`의 `frontmatterField`와 `archive.go`의 `hasCanonicalField`가 공유하는 파서를 고친다. TASK-343이 `depends-on: [TASK-344]`로 이미 선언했고, 그 카드 자신의 §Ordering이 "먼저 안 하면 여기서 쓴 테스트가 344 이후 다시 쓰인다"고 적어 뒀다. 보드에서 가장 잘 명세된 카드이기도 하다 — 검증 바인딩 4개가 오늘 전부 정확히 실패하고, 공허한 기준이 0개다 |
 | 2 | TASK-350 역전/공허 바인딩 거부 | P2 | **343보다 먼저.** 350은 공허한 verify 바인딩을 거부하는 카드다. 근거는 **잔존 건수가 아니라 발생률**이다 — 2026-09-08~09 이틀 사이에 세 건이 새로 심어졌다: TASK-369의 release-notes 바인딩, TASK-338의 `make doc-check`, TASK-341의 `make test`. **셋 다 지금은 처리됐다**(각각 재작성·삭제·`(regression-guard)` 표기), 그러니 오늘 이 셋을 실행해 재현하려 하지 말 것. 그런데도 카드가 닫히지 않는 이유가 이 자리의 논거다: **세 건 전부 사람이 리뷰에서 붙잡았고 검사기는 아직 없다.** 350이 먼저 들어와야 다음 필링 배치가 같은 형태를 또 넣지 못한다 |
-| 3 | TASK-343 파일명 번호 충돌 가드 | P2, `depends-on: [TASK-344]` | 344가 닫히면서 언블록된다. 순서 자체는 하드 제약(§순서가 하드 제약인 곳 참조) |
+| 3 | TASK-343 파일명 번호 충돌 가드 | P2, `depends-on: [TASK-344]` | done 2026-09-10. 344가 닫히면서 언블록됐고, TASK/ISSUE namespace별 filename-number 중복 가드를 추가했다. |
 | 4 | TASK-354 보드를 `ce task validate` 통과시키고 게이트 연결 | P2, `depends-on: [TASK-371]` | 공유 `ce task gate`를 저장소 게이트에 연결한다. 먼저 TASK-371이 PLAN-006 진행률을 두 validator가 합의하는 값으로 맞춰야 gate가 green을 주장할 수 있고, 두 카드가 같은 plan 파일을 병렬로 바꾸지 않는다. 그 다음 이 연결이 엔진의 기존 범위(예: TASK-329의 stale verify 경고)를 드러내 5번 TASK-338이 자기 범위를 정확히 그을 수 있다 |
 | 5 | TASK-338 링크의 written path 소멸 보고 | P2 | **마지막.** 이 카드는 인용 증거(docs/53·58·61의 PLAN-002 링크)가 사라진 채였고 C3 기준이 닫힌 기록을 건드릴지 여부를 묻지 않고 숨겨 두고 있었다 — **둘 다 2026-09-09에 카드를 다시 쓰면서 처리했다**(TASK-338 §열린 결정, §TASK-354와의 경계). 남은 것은 그 §열린 결정에 사람이 `tasks/_archive/` 85건의 포함 여부를 적는 일이고, 그것이 이 카드 `needs-human: true`의 내용이다. 자리가 마지막인 이유는 354가 드러낸 엔진 표면(verify 바인딩 stale 경로)과 겹치지 않는 범위(`docs/`의 마크다운 링크)로 다시 그은 뒤에 착수해야, 엔진이 이미 하는 일을 `tools/doccheck` 안에서 한 겹 아래 다시 구현하는 함정(TASK-354 §게이트 연결이 스스로 경고한 바로 그 함정)을 피한다 |
 
@@ -79,7 +79,7 @@ This aligns the local calculation with the shared task contract; details are in
 - TASK-371 — planprogress를 shared task progress contract와 맞춤 (P1, 두 보드 게이트가 같은 진행률을 읽게 먼저 고정)
 - TASK-344 — 프론트매터 값 파서를 트레일링 주석·중복 키에 강화 (P3, 공유 파서를 먼저 고정)
 - TASK-350 — doccheck의 역전/공허 verify 바인딩 거부 (P2, done 2026-09-10)
-- TASK-343 — 파일명 번호 충돌 가드 완성 (P2, `depends-on: [TASK-344]`)
+- TASK-343 — 파일명 번호 충돌 가드 완성 (P2, done 2026-09-10)
 - TASK-354 — 보드를 `ce task validate` 통과시키고 공유 게이트에 연결 (P2, 엔진 커버리지를 드러냄)
 - TASK-338 — 링크의 written path 소멸을 보고 (P2, 354가 드러낸 엔진 범위와 겹치지 않게 재기술 후 착수)
 

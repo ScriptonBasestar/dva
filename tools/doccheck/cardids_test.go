@@ -80,3 +80,75 @@ func TestCardsWithoutAnIDAreNotDuplicates(t *testing.T) {
 		t.Fatalf("duplicate_card_ids = %d, want 0; detail: %v", res.DuplicateCardIDs, res.DuplicateIDDetail)
 	}
 }
+
+// TestDuplicateFilenameNumbersAreReported closes the second half of TASK-331: a writer may
+// choose a filename from the highest number on disk while using a different frontmatter id.
+// The ids stay distinct, so the id guard is correctly silent; the filename-number guard must
+// still fail and name both files.
+func TestDuplicateFilenameNumbersAreReported(t *testing.T) {
+	res := cardFixture(t,
+		archiveCard{path: "tasks/todo/331-first.md", body: "---\nid: TASK-900\nstatus: todo\n---\n\n# First\n"},
+		archiveCard{path: "tasks/done/331-second.md", body: "---\nid: TASK-901\nstatus: done\n---\n\n# Second\n"},
+	)
+	if res.DuplicateCardIDs != 0 {
+		t.Fatalf("duplicate_card_ids = %d, want 0: ids are deliberately distinct", res.DuplicateCardIDs)
+	}
+	if res.DuplicateFilenameNums != 1 {
+		t.Fatalf("duplicate_filename_numbers = %d, want 1; detail: %v", res.DuplicateFilenameNums, res.DuplicateFilenameDetail)
+	}
+	joined := strings.Join(res.DuplicateFilenameDetail, "\n")
+	for _, want := range []string{"TASK-331", "tasks/todo/331-first.md", "tasks/done/331-second.md"} {
+		if !strings.Contains(joined, want) {
+			t.Errorf("detail %q does not name %q", joined, want)
+		}
+	}
+	if res.OK {
+		t.Fatal("Check reported OK with two TASK cards sharing filename number 331")
+	}
+}
+
+// TestLeadingZeroFilenameNumbersCollide pins the normalization used for a filename number.
+// A worker can see either spelling while scanning a mixed historical tree, but both 001-* and
+// 1-* claim the same TASK namespace slot and must not be allowed to coexist.
+func TestLeadingZeroFilenameNumbersCollide(t *testing.T) {
+	res := cardFixture(t,
+		archiveCard{path: "tasks/todo/001-first.md", body: "---\nid: TASK-900\nstatus: todo\n---\n\n# First\n"},
+		archiveCard{path: "tasks/done/1-second.md", body: "---\nid: TASK-901\nstatus: done\n---\n\n# Second\n"},
+	)
+	if res.DuplicateFilenameNums != 1 {
+		t.Fatalf("duplicate_filename_numbers = %d, want 1 for 001-* and 1-*; detail: %v", res.DuplicateFilenameNums, res.DuplicateFilenameDetail)
+	}
+	if !strings.Contains(strings.Join(res.DuplicateFilenameDetail, "\n"), "TASK-1") {
+		t.Errorf("detail %v does not report normalized TASK-1", res.DuplicateFilenameDetail)
+	}
+}
+
+// TestPlanAndTaskNamespacesDoNotCollideByNumber preserves both plan exclusions: active plans
+// live in tasks/plan/, while completed plans live under tasks/_archive/plan/. Either may have
+// the same filename number as a TASK card without entering the task filename namespace.
+func TestPlanAndTaskNamespacesDoNotCollideByNumber(t *testing.T) {
+	res := cardFixture(t,
+		archiveCard{path: "tasks/todo/006-task.md", body: "---\nid: TASK-900\nstatus: todo\n---\n\n# Task\n"},
+		archiveCard{path: "tasks/plan/006-active-plan.md", body: "---\nid: PLAN-006\n---\n\n# Active plan\n"},
+		archiveCard{path: "tasks/_archive/plan/006-archived-plan.md", body: "---\nid: PLAN-006\nstatus: done\n---\n\n# Archived plan\n"},
+	)
+	if res.DuplicateFilenameNums != 0 {
+		t.Fatalf("duplicate_filename_numbers = %d, want 0; detail: %v", res.DuplicateFilenameNums, res.DuplicateFilenameDetail)
+	}
+	if !res.OK {
+		t.Fatalf("Check reported FAIL for a task and excluded plan files: errors=%v", res.Errors)
+	}
+}
+
+// TestFilenameNumbersAreScopedByIDNamespace keeps ISSUE and TASK number histories separate.
+// The repository intentionally has ISSUE-001 beside historical TASK-001, so applying a
+// global number rule would reject its existing tracker layout.
+func TestFilenameNumbersAreScopedByIDNamespace(t *testing.T) {
+	res := cardFixture(t,
+		archiveCard{path: "tasks/issue/001-issue.md", body: "---\nid: ISSUE-001\nstatus: todo\n---\n\n# Issue\n"},
+		archiveCard{path: "tasks/_archive/001-task.md", body: "---\nid: TASK-001\nstatus: done\n---\n\n# Task\n"},
+	)
+	if res.DuplicateFilenameNums != 0 {
+		t.Fatalf("duplicate_filename_numbers = %d, want 0; detail: %v", res.DuplicateFilenameNums, res.DuplicateFilenameDetail)
+	}
+}

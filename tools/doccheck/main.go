@@ -79,6 +79,7 @@ func printReport(res Result) {
 	fmt.Printf("cards_checked:       %d\n", res.CardsChecked)
 	fmt.Printf("status_mismatches:   %d\n", res.StatusMismatches)
 	fmt.Printf("card_ids:            %d (duplicate: %d)\n", res.CardIDsSeen, res.DuplicateCardIDs)
+	fmt.Printf("filename_numbers:    %d (duplicate: %d)\n", res.FilenameNumbersSeen, res.DuplicateFilenameNums)
 	for _, d := range res.OversizedDetail {
 		fmt.Printf("  OVERSIZE %s\n", d)
 	}
@@ -99,6 +100,9 @@ func printReport(res Result) {
 	}
 	for _, d := range res.DuplicateIDDetail {
 		fmt.Printf("  DUP-ID   %s\n", d)
+	}
+	for _, d := range res.DuplicateFilenameDetail {
+		fmt.Printf("  DUP-NUM  %s\n", d)
 	}
 	for _, e := range res.Errors {
 		fmt.Printf("  ERROR    %s\n", e)

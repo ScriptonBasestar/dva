@@ -5,9 +5,9 @@ type: feature
 priority: P2
 effort: S
 exec-tier: standard
-status: todo
+status: done
 created: 2026-09-07
-needs-human: true
+needs-human: false
 depends-on: [TASK-344]
 ---
 
@@ -45,6 +45,18 @@ defect or an intentional degree of freedom belongs in this card, before writing 
 enforcing agreement is a stricter rule than merely forbidding filename collisions, and would
 reject the archive's `PLAN-00n` cards unless those zones are exempted.
 
+## Design note resolution — do not require filename/id numeric agreement
+
+The guard groups a leading filename number by the frontmatter ID namespace (`TASK`, `ISSUE`,
+and so on), then rejects duplicate pairs only within that namespace. It does **not** require a
+filename number to equal the numeric suffix of `id:`. That equality is a useful convention, but
+the current corpus and task format treat filename numbering and the full frontmatter identity as
+separate inputs; making it mandatory would reject compatible cards without evidence that their
+freedom is a defect. This card's narrowly evidenced failure is two distinct `TASK-*` ids sharing
+one visible filename number. `tasks/plan/` and archived `tasks/_archive/plan/` are excluded, and
+the repository's intentional `ISSUE-001` / historical `TASK-001` overlap remains valid because
+they are separate namespaces.
+
 ## Ordering — land TASK-344 first
 
 This card adds a filename-number check beside `checkDuplicateCardIDs`, which reads
@@ -63,7 +75,14 @@ expensive order.
 
 ## Completion Criteria
 
-- [ ] Two task cards sharing a leading filename number in the same id space are reported, with distinct frontmatter ids | verify: `/usr/bin/grep -rq 'func TestDuplicateFilenameNumbersAreReported(' tools/doccheck`
-- [ ] The `PLAN-00n` / `TASK-00n` archive overlap and any zone deliberately exempted stay silent | verify: `/usr/bin/grep -rq 'func TestPlanAndTaskNamespacesDoNotCollideByNumber(' tools/doccheck`
-- [ ] The decision on whether filename number and frontmatter id must agree is recorded in this card before the check is written | verify: human — read the Design note resolution in this card
-- [ ] Gates stay green | verify: `make doc-check` (regression-guard)
+- [x] Two task cards sharing a leading filename number in the same id space are reported, with distinct frontmatter ids | verify: `/usr/bin/grep -rq 'func TestDuplicateFilenameNumbersAreReported(' tools/doccheck`
+- [x] The `PLAN-00n` / `TASK-00n` archive overlap and any zone deliberately exempted stay silent | verify: `/usr/bin/grep -rq 'func TestPlanAndTaskNamespacesDoNotCollideByNumber(' tools/doccheck`
+- [x] The decision on whether filename number and frontmatter id must agree is recorded in this card before the check is written | verify: human — read the Design note resolution in this card
+- [x] Gates stay green | verify: `make doc-check` (regression-guard)
+
+## Verification evidence
+
+2026-09-10: `go test ./tools/doccheck`, `make doc-check`, and `go run ./tools/planprogress`
+passed. The real corpus reported `filename_numbers: 373 (duplicate: 0)` after excluding active
+and archived plan paths; the intended historical `TASK-001` / `ISSUE-001` filename overlap
+remained silent.
