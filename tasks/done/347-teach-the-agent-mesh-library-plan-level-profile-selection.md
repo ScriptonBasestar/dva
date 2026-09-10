@@ -5,8 +5,19 @@ type: docs
 priority: P3
 effort: S
 exec-tier: standard
-status: todo
+status: done
 created: 2026-09-07
+allowed-paths:
+  - agent-mesh-flows/shared/library/shared-guardrails.md
+  - agent-mesh-flows/shared/library/shared-checklist.md
+  - skills/dva-config/references/schema-reference.md
+  - internal/cli/library_reference.txt
+  - agent-mesh-flows/dva-diagnose.yaml
+  - agent-mesh-flows/dva-improve-guided/00-analyze.yaml
+  - agent-mesh-flows/dva-improve-guided/30-configure.yaml
+  - agent-mesh-flows/dva-improve.yaml
+  - tasks/todo/347-teach-the-agent-mesh-library-plan-level-profile-selection.md
+  - tasks/plan/006-devbox-dogfood-followup.md
 ---
 
 ## Summary
@@ -37,7 +48,17 @@ correct fix, and `make generate` should follow so the reference picks the change
 
 ## Completion Criteria
 
-- [ ] The plan-scope guardrail names profile selection alongside service selection | verify: `/usr/bin/grep -q 'entries\[\].profiles' agent-mesh-flows/shared/library/shared-guardrails.md`
-- [ ] The checklist has a profiles line under Plans & runner strategy | verify: `/usr/bin/grep -q 'profiles' agent-mesh-flows/shared/library/shared-checklist.md`
-- [ ] The schema reference documents plan-entry profiles as the current route, with `compose_profiles` marked legacy | verify: `/usr/bin/grep -q 'entries\[\].profiles' agent-mesh-flows/shared/library/dva-schema.md`
-- [ ] Generated artefacts are regenerated and gates stay green | verify: `make generate && make doc-check`
+- [x] The plan-scope guardrail names profile selection alongside service selection | verify: `/usr/bin/grep -q 'entries\[\].profiles' agent-mesh-flows/shared/library/shared-guardrails.md`
+- [x] The checklist has a profiles line under Plans & runner strategy | verify: `/usr/bin/grep -q 'profiles' agent-mesh-flows/shared/library/shared-checklist.md`
+- [x] The schema reference documents plan-entry profiles as the current route, with `compose_profiles` marked legacy | verify: `/usr/bin/grep -q 'entries\[\].profiles' agent-mesh-flows/shared/library/dva-schema.md`
+- [x] Generated artefacts are regenerated and gates stay green | verify: `make generate && make doc-check`
+
+## Resolution (2026-09-10)
+
+- The canonical schema reference (the target of the `dva-schema.md` symlink)
+  now identifies `plans.*.entries[].profiles` as the current selection route.
+- `modes.*.compose_profiles` is documented as legacy and migration-only, and
+  the invalid-field guidance no longer directs profile selection to `modes:`.
+- Regenerated agent-mesh flows and `library_reference.txt` carry the source
+  guidance. The card bindings, `make generate && make doc-check`, and an
+  independent review passed.
