@@ -9,10 +9,16 @@ import (
 )
 
 // Docker's doctor rows live here rather than in doctor.go for a mechanical reason: doctor.go
-// was over the file-size gate's error limit, so the gate refused every edit to it, including
-// the one-line ones. `on_error: require_split` says what to do about that, and this cluster is
-// the seam that costs nothing to cut — the four functions below talk to each other and to
+// was over the file-size limit the review tooling applies, so that gate reported every edit to
+// it, including the one-line ones, and the remedy it prescribes is to split. This cluster is
+// the seam that costs nothing to cut — the five functions below talk to each other and to
 // nothing else in doctor.go, and only runDoctorChecks calls into them.
+//
+// The gate is external. An earlier version of this comment quoted `on_error: require_split` as
+// if it were configuration this repository carries; it is not, and a grep for that token
+// matches nothing but the comment itself. .golangci.yml, scripts/ci-lint.sh and .githooks/
+// carry no size rule, so nothing here re-splits this file if it grows — the limit is a review
+// convention, and this note is the only thing recording it.
 
 func runDockerDoctorChecks(
 	daemonCheck func() DoctorResult,

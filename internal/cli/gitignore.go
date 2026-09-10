@@ -92,6 +92,17 @@ func ensureGitignore(configDir string) (bool, error) {
 // The names are probes, not predictions: check-ignore matches a pattern against a pathname and
 // does not require the file to exist, so "probe" stands in for whichever pid, log, source entry
 // or profile happens to be there.
+//
+// That substitution is exact for every pattern but one. A pattern ending in `/` matches only a
+// directory, and with nothing on disk git has no way to know the path names one — so a rule
+// spelled `.sb/dva/sources/*/`, which ignores every real clone, does not match the sources
+// probe, and the unanimous verdict below turns that into a warning. It is the safe direction and
+// it is still a false one. Note which half of the path decides: `.sb/dva/pids/` matches
+// `pids/probe.pid` because `pids` is an ancestor, and an ancestor's directory-ness git can read
+// off the path itself. Only a trailing-slash rule aimed at the probe's own last component needs
+// the thing to exist, which was measured — creating `.sb/dva/sources/probe` as a directory makes
+// the same pattern match.
+//
 // The separator is path.Join, not filepath.Join: these strings are handed to git and compared
 // against what git echoes back, and git speaks forward slashes on every platform.
 func dvaTransientProbes() []string {
@@ -200,9 +211,17 @@ func gitignoreSourceIsShared(source string) bool {
 // The verdict has to be unanimous. One class of marker left committable is the whole hazard,
 // so every probe must come back ignored before this reports that it is.
 //
-// check-ignore deliberately reports a tracked path as not ignored. That is the right answer
-// here too: a transient that is already tracked is already being committed, which is the
-// hazard this check exists to name.
+// What this does NOT see is a transient that is already tracked. check-ignore does report a
+// tracked path as not ignored, but that behaviour cannot reach here: every probe is a synthetic
+// constant — `probe.pid`, `probe.log`, `probe`, `provisioned-probe` — and no writer produces
+// those names, so no probe is ever a tracked path. A repository that already committed
+// `.sb/dva/pids/web.pid` and then wrote a correct rule passes every check in this file.
+//
+// That is a gap, not a decision, and it is worth stating because the gap is the worse half of
+// the hazard: an ignore rule stops the next commit, while a file already in the index keeps
+// being committed regardless of what .gitignore says. Closing it means asking a different
+// question — `git ls-files` against the real directory rather than check-ignore against
+// stand-ins — and gitProbe.Tracked in config_env_git.go is the seam that would answer it.
 func dvaTransientsIgnored(configDir string) (ignored bool, decided bool) {
 	return dvaTransientsCovered(configDir, false)
 }
@@ -371,12 +390,20 @@ func ignoreRulesCovering(dir string) map[string]bool {
 //     commands cannot create it — `ls`, `show`, `validate`, `status` and `manifest` were each
 //     measured leaving the working tree untouched — so on a fresh clone the warning named a
 //     hazard that had not happened and, for a reader who only ever inspects the config, never
-//     would. What creates the directory is the pid, log, module-cache and source-cache writers
-//     under internal/lifecycle and internal/config, and the invocation after one of those is
-//     where the warning has something to point at.
-//   - Already ignored: isDvaIgnored settles it, ancestors and negations included.
+//     would. What creates the directory is the four writers dvaTransientProbes enumerates —
+//     pid files and log files under internal/lifecycle, source clones under internal/config,
+//     provision markers here in internal/cli — and the invocation after one of those is where
+//     the warning has something to point at. There is no module cache and no source cache; an
+//     earlier spelling of this list named both, and a reader who went looking for them found
+//     neither the caches nor the real writers.
+//   - Already ignored: dvaStateIsIgnored settles it, ancestors and negations included. Naming
+//     isDvaIgnored here, as this used to, understates it — that one reads the file literally
+//     and its own comment lists globs and re-inclusion as gaps. Ancestors and negations are
+//     covered only on the git-backed path dvaStateIsIgnored prefers.
 //
-// `dva doctor` deliberately keeps the unconditional form (checkGitignoreStatus, doctor.go:181),
+// `dva doctor` deliberately keeps the unconditional form (checkGitignoreStatus, called from
+// runDoctorChecks in doctor.go; it lives in this file, which the pointer this replaces still
+// placed in doctor.go at a line number that had already moved),
 // which does not gate on existence: "is my setup right?" is the question doctor is asked, and it
 // is asked before anything has run. This path answers the narrower one — something committable is
 // on disk right now — and that is the only version worth putting ahead of another command's
