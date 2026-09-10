@@ -7,9 +7,10 @@ effort: S
 exec-tier: standard
 created-at: 2026-09-08T16:40:00+09:00
 source: "TASK-318 재리뷰 (t318-rereview)"
-status: todo
+status: done
 depends-on: []
-needs-human: true
+needs-human: false
+verification-evidence: "2026-09-10: disposable overlay reproduced the pre-fix failure; focused and full internal/config tests, make doc-check, and independent review passed."
 ---
 
 # Task 361: EOF의 후행 주석 문단을 하나가 아니라 전부 되감는다
@@ -65,9 +66,17 @@ if postambleStart == 0 {
 
 ## Completion Criteria
 
-- [ ] EOF에 빈 줄로 구분된 주석 문단이 둘 이상이면 전부 postamble로 고정되고 재배열을 따라가지 않는다 | verify: `/usr/bin/grep -rq 'func TestMigrateSectionOrderKeepsEveryTrailingCommentParagraph(' internal/config`
-- [ ] 위 테스트가 수정 전 소스에 대해 FAIL함을 go test -overlay로 확인했다 | verify: human — overlay 실행 결과를 카드에 첨부
-- [ ] 기존 단일 주석 런 footer 동작은 그대로다(회귀 없음), 게이트 통과 | verify: `make test`
+- [x] EOF에 빈 줄로 구분된 주석 문단이 둘 이상이면 전부 postamble로 고정되고 재배열을 따라가지 않는다 | verify: `/usr/bin/grep -rq 'func TestMigrateSectionOrderKeepsEveryTrailingCommentParagraph(' internal/config`
+- [x] 위 테스트가 수정 전 소스에 대해 FAIL함을 go test -overlay로 확인했다 | verify: human — overlay 실행 결과를 카드에 첨부
+- [x] 기존 단일 주석 런 footer 동작은 그대로다(회귀 없음), 게이트 통과 | verify: `make test`
+
+## 검증 기록 (2026-09-10)
+
+새 회귀 테스트를 추가한 뒤 수정 전 `migrate_section_order.go` 사본만 대체하는
+일회용 Go overlay를 실행했다. `# licence notice` 문단이 `version` 블록과 함께 이동해
+테스트가 exit 1로 실패했고, overlay와 임시 파일은 즉시 삭제했다. 수정 후에는
+`go test ./internal/config`와 `make doc-check`가 통과했다. 독립 검토는 다중 footer
+문단과 인용 스칼라 내부의 열 0 `#`가 footer로 오인되지 않는 의미 보존 회귀를 확인했다.
 
 ## 참고
 

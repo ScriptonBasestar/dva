@@ -3,13 +3,13 @@ id: PLAN-008
 title: "Work the migrate-section-order defect bundle in a single file's order"
 type: plan
 scope: "TASK-358..365 — TASK-318 재리뷰가 파생시킨 8장. 전부 internal/config/migrate_section_order.go(367줄) 한 파일 또는 그 테스트에 걸린다"
-progress: 50
+progress: 62
 total-tasks: 8
-completed-tasks: 4
+completed-tasks: 5
 children: [TASK-365, TASK-363, TASK-359, TASK-358, TASK-361, TASK-362, TASK-364, TASK-360]
 target-date: "2026-10-31"
 created: 2026-09-09
-completed-children: 4
+completed-children: 5
 ---
 
 ## Goal
@@ -39,7 +39,7 @@ TASK-318(섹션 순서 자동 정렬)의 재리뷰가 결함 8장을 파생시�
 | 2 | ~~TASK-363~~ `\|+` 후행 공백 유실 | **P1** | 완료 2026-09-10. keep-chomped scalar의 trailing blank를 의미 보존하며, header prefix·explicit indent·sequence/explicit-key 경계와 slot separator를 함께 검증했다 |
 | 3 | ~~TASK-359~~ 조용한 bail-out 폐루프 | P2 | 완료 2026-09-10. duplicate key와 flow-style root에 manual action을 담은 `report.Blocked` 계약을 확정했다; 4번은 이 형태를 따른다 |
 | 4 | ~~TASK-358~~ anchor/alias 재배치 차단 | P2 | 완료 2026-09-10. 재배열이 필요한 anchored 문서만 원본과 manual-action `report.Blocked`로 보수적으로 차단하며, TASK-359의 계약을 따른다 |
-| 5 | TASK-361 EOF 주석 문단 되감기 | P3 | `:214-223`으로 완전 고립. 어느 자리든 무방하나 앞 네 장보다 급하지 않다 |
+| 5 | ~~TASK-361~~ EOF 주석 문단 되감기 | P3 | 완료 2026-09-10. 여러 footer 주석 문단을 고정하고, 인용 스칼라의 열 0 `#`를 footer로 오인하지 않도록 의미 보존 회귀를 추가했다 |
 | 6 | TASK-362 flow-style fixture가 패닉을 재현하게 | P3 | **테스트 파일만** 건드린다(`migrate_section_order_test.go:221-251`). 소스와 충돌 없음 |
 | 7 | TASK-364 반환 직전 의미 자기검사 | **P1** | 우선순위는 1위인데 자리는 7번이다. 이 카드는 2·4번을 **backstop**하는 우산이고, 카드 자신이 "차단이 수정을 대체하지 않는다"고 적었다. 먼저 넣으면 363·358의 결함이 "무성 손실"에서 "차단됨"으로 **격하될 뿐 고쳐지지 않는다** |
 | 8 | TASK-360 구분 공백줄의 CRLF 보존 | P3 | 1번의 결정에 종속. Option 1이면 여기서 고치고, Option 2면 **코드 없이 닫는다** |
@@ -87,7 +87,7 @@ TASK-365의 결정은 **Option 1(균일한 CRLF를 migrate 파이프라인 경�
 - ~~TASK-363~~ — `|+`/`>+` 블록 스칼라의 후행 공백 유실 (done, 2026-09-10)
 - ~~TASK-359~~ — config migrate의 조용한 bail-out 폐루프 닫기 (done, 2026-09-10)
 - ~~TASK-358~~ — anchor가 alias 아래로 내려가는 재배치 차단 (done, 2026-09-10)
-- TASK-361 — EOF의 모든 후행 주석 문단 되감기 (P3, 고립)
+- ~~TASK-361~~ — EOF의 모든 후행 주석 문단 되감기 (done, 2026-09-10)
 - TASK-362 — flow-style fixture가 주장하는 패닉을 실제로 재현하게 (P3, 테스트 파일만)
 - TASK-364 — 반환 직전 의미 자기검사 추가 (P1이지만 backstop이라 뒤에 선다)
 - TASK-360 — 구분 공백줄의 CRLF 보존 (P3, 365가 Option 2면 코드 없이 닫힘)
