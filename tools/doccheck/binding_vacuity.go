@@ -62,7 +62,7 @@ type bindingShellToken struct {
 // portable documentation binding check.
 func bindingInvokesGrepDashL(span string) bool {
 	tokens := bindingShellTokens(span)
-	for i := 0; i < len(tokens); i++ {
+	for i := range tokens {
 		if tokens[i].op || !isCommandPosition(tokens, i) {
 			continue
 		}
