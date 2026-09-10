@@ -2,7 +2,10 @@ package cli
 
 import (
 	"os"
+	"os/exec"
+	"path"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -151,5 +154,181 @@ func TestGitignoreWarningNeedsSomethingCommittable(t *testing.T) {
 				t.Errorf("the warning must name the command that fixes it: %q", out)
 			}
 		})
+	}
+}
+
+// initGitRepo makes dir a real repository, which the cases below need because they are about
+// what git decides rather than about what a line of .gitignore looks like. The other tests in
+// this file create a bare `.git` directory instead; that is enough for the existence gate and
+// deliberately not enough for check-ignore, which is the difference the fallback test relies on.
+func initGitRepo(t *testing.T, dir string) {
+	t.Helper()
+	cmd := exec.Command("git", "init", "--quiet")
+	cmd.Dir = dir
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git init: %v: %s", err, out)
+	}
+}
+
+// TestGitignoreCheckAsksGit pins the rules the literal reader cannot parse and git can.
+//
+// Every case here was measured against git first. The pair `.sb/dva/*` + `!.sb/dva/*.yml` is
+// the one that sent this task: it is how a repository keeps DVA's modules tracked while
+// discarding its transient state, and the literal reader saw no line naming `.sb/dva` in any
+// of its spellings, so it warned on a correctly-configured tree. Adding glob cases to that
+// reader would have closed this one spelling and left `**` anchoring and .git/info/exclude —
+// gaps its own comment names — open. Asking git closes the class.
+//
+// The negative cases are the point of the exercise. A checker that stops warning is only an
+// improvement if it still warns when a marker really is committable, so each one re-includes
+// exactly one class of transient and must be caught.
+func TestGitignoreCheckAsksGit(t *testing.T) {
+	for _, tt := range []struct {
+		name      string
+		gitignore string
+		exclude   string
+		wantWarn  bool
+	}{
+		{
+			// The pair this task exists for.
+			name:      "contents excluded, modules re-included",
+			gitignore: ".sb/dva/*\n!.sb/dva/*.yml\n",
+			wantWarn:  false,
+		},
+		{
+			name:      "contents excluded outright",
+			gitignore: ".sb/dva/*\n",
+			wantWarn:  false,
+		},
+		{
+			// Non-root anchoring, the second gap isDvaIgnored's comment names.
+			name:      "matched anywhere in the tree",
+			gitignore: "**/.sb/dva/\n",
+			wantWarn:  false,
+		},
+		{
+			// The third gap: a rule git honours that never appears in .gitignore at all.
+			name:     "ignored through .git/info/exclude",
+			exclude:  ".sb/dva/\n",
+			wantWarn: false,
+		},
+		{
+			// Re-includes the provision markers. `*` does not match `/`, so this negation
+			// applies at depth 1 where the markers live and they become committable —
+			// while pids, logs and sources stay excluded. Precisely the half-correct
+			// configuration a unanimous verdict exists to catch.
+			name:      "provision markers re-included",
+			gitignore: ".sb/dva/*\n!.sb/dva/provisioned-*\n",
+			wantWarn:  true,
+		},
+		{
+			name:      "unrelated rules only",
+			gitignore: "node_modules/\n*.log\n",
+			wantWarn:  true,
+		},
+		{
+			name:     "no rules at all",
+			wantWarn: true,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := t.TempDir()
+			initGitRepo(t, dir)
+			if err := os.MkdirAll(filepath.Join(dir, config.DotDirName), 0o755); err != nil {
+				t.Fatalf("MkdirAll %s: %v", config.DotDirName, err)
+			}
+			if tt.gitignore != "" {
+				if err := os.WriteFile(filepath.Join(dir, ".gitignore"), []byte(tt.gitignore), 0o644); err != nil {
+					t.Fatalf("WriteFile .gitignore: %v", err)
+				}
+			}
+			if tt.exclude != "" {
+				excludePath := filepath.Join(dir, ".git", "info", "exclude")
+				if err := os.MkdirAll(filepath.Dir(excludePath), 0o755); err != nil {
+					t.Fatalf("MkdirAll info: %v", err)
+				}
+				if err := os.WriteFile(excludePath, []byte(tt.exclude), 0o644); err != nil {
+					t.Fatalf("WriteFile exclude: %v", err)
+				}
+			}
+
+			out := captureOutput(t, func() { checkGitignoreForWarning(dir) })
+
+			if warned := strings.Contains(out, "is not in your .gitignore"); warned != tt.wantWarn {
+				t.Errorf("warned = %v, want %v; output was %q", warned, tt.wantWarn, out)
+			}
+		})
+	}
+}
+
+// TestGitignoreFallsBackWhenGitCannotAnswer pins the distinction between "not ignored" and
+// "unanswerable". check-ignore exits 1 for the first and 128 for the second — a `.git` that
+// points at a gitdir which has moved, among others — and folding them together would warn
+// about repositories whose configuration was never read.
+//
+// The fallback is the literal reader, so a plainly-spelled rule still suppresses the warning
+// where git is missing entirely.
+func TestGitignoreFallsBackWhenGitCannotAnswer(t *testing.T) {
+	for _, tt := range []struct {
+		name      string
+		gitignore string
+		wantWarn  bool
+	}{
+		{"literal reader still recognizes its own spelling", ".sb/dva/\n", false},
+		{"and still warns on what it cannot read", ".sb/dva/*\n!.sb/dva/*.yml\n", true},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := t.TempDir()
+			if err := os.MkdirAll(filepath.Join(dir, ".git"), 0o755); err != nil {
+				t.Fatalf("MkdirAll .git: %v", err)
+			}
+			if err := os.MkdirAll(filepath.Join(dir, config.DotDirName), 0o755); err != nil {
+				t.Fatalf("MkdirAll %s: %v", config.DotDirName, err)
+			}
+			if err := os.WriteFile(filepath.Join(dir, ".gitignore"), []byte(tt.gitignore), 0o644); err != nil {
+				t.Fatalf("WriteFile .gitignore: %v", err)
+			}
+
+			old := gitCheckIgnore
+			gitCheckIgnore = func(string, []string) (map[string]bool, bool) { return nil, false }
+			defer func() { gitCheckIgnore = old }()
+
+			out := captureOutput(t, func() { checkGitignoreForWarning(dir) })
+
+			if warned := strings.Contains(out, "is not in your .gitignore"); warned != tt.wantWarn {
+				t.Errorf("warned = %v, want %v; output was %q", warned, tt.wantWarn, out)
+			}
+		})
+	}
+}
+
+// TestDvaTransientProbesCoverEveryWriter guards the list against silently shrinking. The
+// verdict is unanimous over these four paths, so a probe dropped here does not fail anything —
+// it widens the set of configurations that pass, which is the direction that goes unnoticed.
+//
+// Each expectation is rebuilt from the constant its writer uses rather than spelled out, so a
+// renamed directory moves both sides together and this test keeps testing the same thing.
+func TestDvaTransientProbesCoverEveryWriter(t *testing.T) {
+	probes := dvaTransientProbes()
+
+	for _, want := range []struct {
+		what string
+		path string
+	}{
+		{"pid files", path.Join(config.DotDirName, config.PidsDirName, "probe.pid")},
+		{"log files", path.Join(config.DotDirName, config.LogsDirName, "probe.log")},
+		{"git source clones", path.Join(config.DotDirName, config.SourcesDirName, "probe")},
+		{"provision markers", path.Join(config.DotDirName, provisionMarkerName("probe"))},
+	} {
+		if !slices.Contains(probes, want.path) {
+			t.Errorf("no probe for %s: %q missing from %q", want.what, want.path, probes)
+		}
+	}
+
+	// Forward slashes even on Windows: these go to git, which uses them everywhere.
+	for _, probe := range probes {
+		if strings.Contains(probe, `\`) {
+			t.Errorf("probe %q must be spelled with forward slashes for git", probe)
+		}
 	}
 }

@@ -210,44 +210,6 @@ func applyDoctorFixes(results []DoctorResult) {
 	}
 }
 
-func checkGitignoreStatus(configDir string) DoctorResult {
-	r := DoctorResult{Name: fmt.Sprintf("%s/ is ignored in .gitignore", config.DotDirName)}
-
-	gitignorePath := filepath.Join(configDir, ".gitignore")
-	data, err := os.ReadFile(gitignorePath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			r.Passed = false
-			r.Finding = fmt.Sprintf("no .gitignore here, so %s/ is not ignored", config.DotDirName)
-			r.Fixable = true
-			r.FixHint = fmt.Sprintf("Create .gitignore and add '%s/' to avoid committing transient state", config.DotDirName)
-			r.fixFunc = func() error {
-				_, err := ensureGitignore(configDir)
-				return err
-			}
-			return r
-		}
-		r.Passed = false
-		r.Finding = fmt.Sprintf(".gitignore could not be read, so %s/ cannot be confirmed ignored: %v", config.DotDirName, err)
-		return r
-	}
-
-	if isDvaIgnored(string(data)) {
-		r.Passed = true
-	} else {
-		r.Passed = false
-		r.Finding = fmt.Sprintf("%s/ is NOT ignored in .gitignore", config.DotDirName)
-		r.Fixable = true
-		r.FixHint = fmt.Sprintf("Add '%s/' to .gitignore to avoid committing transient state", config.DotDirName)
-		r.fixFunc = func() error {
-			_, err := ensureGitignore(configDir)
-			return err
-		}
-	}
-
-	return r
-}
-
 func runSingleCheck(check config.DoctorCheck, configDir string) DoctorResult {
 	r := DoctorResult{
 		Name:    check.Name,

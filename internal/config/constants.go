@@ -11,6 +11,11 @@ const (
 	DotDirName  = ".sb/dva"
 	PidsDirName = "pids"
 	LogsDirName = "logs"
+	// SourcesDirName holds the clones of git sources. It sits beside the pid and log
+	// directories as a constant rather than a literal because the gitignore check probes all
+	// four transient classes by name: spelled inline, a rename here would leave that check
+	// asking about a directory nothing writes any more, and it would keep passing.
+	SourcesDirName = "sources"
 
 	// EnvPrefix is shared by every environment variable DVA defines for itself, both the
 	// settings it reads and the runtime vars it injects. Callers that forward the merged

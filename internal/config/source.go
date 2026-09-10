@@ -107,7 +107,7 @@ func SourceDir(src *SourceConfig, entryName, cfgDir string) (string, error) {
 		return "", fmt.Errorf("entry %q has no source", entryName)
 	}
 	if src.IsGit() {
-		return filepath.Join(cfgDir, DotDirName, "sources", entryName), nil
+		return filepath.Join(cfgDir, DotDirName, SourcesDirName, entryName), nil
 	}
 
 	path := strings.TrimSpace(src.Path)
