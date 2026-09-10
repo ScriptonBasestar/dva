@@ -186,6 +186,82 @@ plans:
 	}
 }
 
+// TestConfigMigratePreviewAndWritePreserveUniformCRLF exercises both CLI branches.
+// The fixture activates legacy compose, applications, stack order, modes, and section
+// order in one pass, so a step-local newline test cannot satisfy this contract.
+func TestConfigMigratePreviewAndWritePreserveUniformCRLF(t *testing.T) {
+	fixture := `plans:
+  release:
+    entries:
+      - name: compose
+      - name: api
+modes:
+  local:
+    stack: [compose, api]
+applications:
+  api:
+    run: "./api"
+stack:
+  compose:
+    order: 10
+    files: [compose.yml]
+version: "0.1.44"
+`
+	src := strings.ReplaceAll(fixture, "\n", "\r\n")
+
+	previewDir := t.TempDir()
+	writeConfigMigrateFixture(t, previewDir, src)
+	configMigrateWrite = false
+	defer func() { configMigrateWrite = false }()
+	preview, previewReport := captureStreams(t, func() {
+		if err := configMigrateCmd.RunE(configMigrateCmd, []string{previewDir}); err != nil {
+			t.Fatalf("preview RunE error = %v", err)
+		}
+	})
+	if !strings.Contains(previewReport, "not written") {
+		t.Errorf("preview report did not identify the no-write path: %q", previewReport)
+	}
+	previewSource, err := os.ReadFile(filepath.Join(previewDir, config.FileName))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(previewSource) != src {
+		t.Fatalf("preview rewrote its source file:\ngot  %q\nwant %q", previewSource, src)
+	}
+	assertConfigMigrateUniformCRLF(t, []byte(preview))
+
+	writeDir := t.TempDir()
+	writeConfigMigrateFixture(t, writeDir, src)
+	configMigrateWrite = true
+	writeReport, _ := captureStreams(t, func() {
+		if err := configMigrateCmd.RunE(configMigrateCmd, []string{writeDir}); err != nil {
+			t.Fatalf("--write RunE error = %v", err)
+		}
+	})
+	if !strings.Contains(writeReport, "migrated") {
+		t.Errorf("write report did not identify the migrated path: %q", writeReport)
+	}
+	written, err := os.ReadFile(filepath.Join(writeDir, config.FileName))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(written, []byte(preview)) {
+		t.Fatalf("--write bytes differ from preview:\npreview %q\nwritten %q", preview, written)
+	}
+	assertConfigMigrateUniformCRLF(t, written)
+}
+
+func assertConfigMigrateUniformCRLF(t *testing.T, content []byte) {
+	t.Helper()
+	if !bytes.Contains(content, []byte("\r\n")) {
+		t.Fatal("output has no CRLF line ending")
+	}
+	withoutCRLF := bytes.ReplaceAll(content, []byte("\r\n"), nil)
+	if bytes.ContainsAny(withoutCRLF, "\r\n") {
+		t.Fatalf("output contains a bare CR or LF: %q", content)
+	}
+}
+
 // TestConfigMigrateWritesOnlyWithTheFlag: the preview is the default because migration
 // rewrites a file the operator did not hand us a backup of.
 func TestConfigMigrateWritesOnlyWithTheFlag(t *testing.T) {

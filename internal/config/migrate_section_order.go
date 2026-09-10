@@ -161,8 +161,9 @@ func MigrateSectionOrder(src []byte) ([]byte, MigrationReport, error) {
 	// A stray lone CR among LF lines does not panic, and is worse for it: the file comes
 	// back with a blank line prepended and nothing reordered, so it was rewritten and the
 	// warning it was rewritten to clear is still there. Mixed-newline files are not
-	// hypothetical here — the other Migrate steps round-trip through yaml.v3 and emit LF,
-	// so the pipeline produces them.
+	// hypothetical here: before Migrate established its LF working copy and restored the
+	// input style at the pipeline boundary, an earlier step could produce one. Direct
+	// callers can still hand this function mixed input, so the invariant remains local.
 	//
 	// Asserting the agreement beats teaching this function a third newline convention: a
 	// fourth convention would break an enumeration, not this invariant. The duplicate-key

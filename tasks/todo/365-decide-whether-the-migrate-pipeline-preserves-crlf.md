@@ -9,7 +9,16 @@ created-at: 2026-09-08T16:40:00+09:00
 source: "TASK-318 재리뷰 (t318-rereview) 개행 계약"
 status: todo
 depends-on: []
-needs-human: true
+needs-human: false
+allowed-paths:
+  - internal/cli/config_migrate_test.go
+  - internal/config/migrate_report.go
+  - internal/config/migrate_test.go
+  - internal/config/migrate_section_order.go
+  - internal/config/migrate_section_order_test.go
+  - USAGE.md
+  - tasks/todo/365-decide-whether-the-migrate-pipeline-preserves-crlf.md
+  - tasks/plan/008-migrate-section-order-defects.md
 ---
 
 # Task 365: migrate 파이프라인의 개행 계약을 정한다
@@ -77,6 +86,38 @@ LF를 뱉는다. 그래서 **파이프라인 자신이 혼합 개행 파일을 �
   **파서에게 정확한 주석 메타데이터를 얻기 위해** 정규화하는 것이라 목적이 다르다 —
   자동으로 제거되지 않는다.
 
+## Decision — Option 1: 균일한 CRLF를 파이프라인 경계에서 보존한다
+
+사용자가 고른 계약은 **Option 1**이다. `dva config migrate`에 넘긴 파일 전체가 일관된
+CRLF를 사용하면 미리보기와 `--write` 결과도 CRLF여야 한다. LF 입력은 LF로 남는다.
+
+선택 근거는 in-place 변환의 검토 가능성이다. CRLF를 LF로 바꾸면 실제 선언 변환과 무관한
+모든 줄이 diff에 나타나 사용자가 migrate의 의미 변경을 검토하기 어렵다. CRLF 사용자의
+비율을 확인할 telemetry나 corpus 자료는 현재 없으므로 빈도를 추정해 Option 2를 택하지
+않는다. 데이터가 없다는 사실보다 사용자 파일의 기존 바이트 스타일을 지키는 쪽을 계약으로
+삼는다.
+
+## Design
+
+`Migrate`가 파이프라인 경계를 소유한다.
+
+1. 입력에 줄바꿈이 하나 이상 있고 모든 줄바꿈이 `\r\n`일 때만 균일한 CRLF로 감지한다.
+2. 감지한 입력은 첫 migrate 단계 전에 작업용 LF 복사본으로 바꾼다. 따라서 YAML을 새로
+   인코딩하는 단계와 원본 줄을 splice하는 단계가 섞여도 다음 단계에 혼합 개행을 넘기지
+   않는다.
+3. 모든 변환과 report 계산이 끝난 뒤 반환 직전에 LF를 CRLF로 한 번만 복원한다. CLI의
+   미리보기와 `--write`는 이 반환 바이트를 그대로 사용하므로 두 경로의 계약이 같다.
+4. 혼합 LF/CRLF와 lone CR 입력은 보존 대상으로 감지하지 않는다. `Migrate`가 첫
+   line-index 변환 전에 원본과 `Blocked` 사유를 반환해 패닉과 부분 변환을 막는다. 직접
+   호출된 `MigrateSectionOrder`에는 parser와 line splitter의 불일치를 막는 자체 가드도
+   남아 있다.
+
+`MigrateSectionOrder` 내부의 CRLF 정규화/원본 분리는 유지한다. 파이프라인을 통하면 작업
+입력이 이미 LF지만, 직접 호출할 때 yaml.v3가 정확한 `HeadComment` 메타데이터를 내게 하는
+파서 안전장치이므로 파이프라인 경계와 책임이 다르다. 이 카드는 그 함수의 모든 출력 바이트를
+독립적으로 보존한다고 선언하지 않는다. 구분 공백줄의 CRLF 렌더링 결함은 TASK-360이
+소유한다.
+
 ## 범위 밖 (기록만)
 
 리뷰어는 혼합 개행 케이스를 **직접 실행하지 않았다**고 명시했다. TASK-318 커밋 메시지가
@@ -85,10 +126,10 @@ LF를 뱉는다. 그래서 **파이프라인 자신이 혼합 개행 파일을 �
 
 ## Completion Criteria
 
-- [ ] 두 선택지 중 하나를 고르고 근거를 카드에 기록한다 | verify: human — 결정과 근거
-- [ ] 정한 계약을 USAGE.md에 명시한다 | verify: human — 문장 확정 후 재작성
-- [ ] 고른 계약대로 파이프라인이 동작한다 | verify: human — 구현 후 테스트명으로 재작성
-- [ ] 부분 보장 상태가 남지 않는다 — 어떤 단계 조합에서도 결과 개행이 계약과 일치 | verify: human — 단계 조합 테스트 후 재작성
+- [x] 두 선택지 중 하나를 고르고 근거를 카드에 기록한다 | verify: human — Option 1 선택 확정
+- [x] 정한 계약을 USAGE.md에 명시한다 | verify: `/usr/bin/grep -n '파일 전체가 CRLF 개행을 일관되게 사용하면' USAGE.md`
+- [x] 고른 계약대로 파이프라인이 동작한다 | verify: `go test ./internal/config -run TestMigratePipelinePreservesUniformCRLFAcrossCombinedSteps`
+- [x] 부분 보장 상태가 남지 않는다 — 어떤 단계 조합에서도 결과 개행이 계약과 일치 | verify: `go test ./internal/cli -run TestConfigMigratePreviewAndWritePreserveUniformCRLF`
 
 ## 참고
 

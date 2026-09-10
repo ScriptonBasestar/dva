@@ -429,8 +429,9 @@ func TestMigrateSectionOrderBoundsTheBannerWalkOnCRLFToo(t *testing.T) {
 // The fourth case is the one that motivated reporting rather than silently returning src.
 // A stray lone CR among LF lines does not panic; before the guard it prepended a blank
 // line and reordered nothing, so the file was rewritten and the warning it was rewritten
-// to clear survived. Mixed-newline files are not hypothetical: the other Migrate steps
-// round-trip through yaml.v3 and emit LF.
+// to clear survived. Mixed-newline files are not hypothetical: before Migrate normalized
+// its working copy at the pipeline boundary, earlier steps could produce them. This
+// function also remains callable directly, so its own guard must reject such input.
 //
 // Asserting the invariant rather than enumerating newline conventions is the point. A
 // fourth convention would break an enumeration; it cannot break this.

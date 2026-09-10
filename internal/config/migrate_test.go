@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"strings"
 	"testing"
 
@@ -185,5 +186,117 @@ stack:
 	}
 	if !strings.Contains(err.Error(), "authoritative") {
 		t.Errorf("error = %v, want it to explain why migration cannot decide", err)
+	}
+}
+
+// This fixture deliberately activates five pipeline steps in one run: legacy compose,
+// applications, stack order, modes, and final section order. Testing the full chain is
+// the contract: step-local CRLF preservation would still allow a later encoder to turn
+// the file into LF or a mixture of both.
+const combinedMigrationFixture = `plans:
+  release:
+    entries:
+      - name: compose
+      - name: api
+modes:
+  local:
+    stack: [compose, api]
+applications:
+  api:
+    run: "./api"
+stack:
+  compose:
+    order: 10
+    files: [compose.yml]
+version: "0.1.44"
+`
+
+func migrateCombinedCRLFFixture(t *testing.T) []byte {
+	t.Helper()
+	src := bytes.ReplaceAll([]byte(combinedMigrationFixture), []byte("\n"), []byte("\r\n"))
+	out, report, err := Migrate(src)
+	if err != nil {
+		t.Fatalf("Migrate() error = %v", err)
+	}
+	if err := VerifyMigrated(out); err != nil {
+		t.Fatalf("migrated config does not load: %v\n%s", err, out)
+	}
+
+	changes := strings.Join(report.Changes, "\n")
+	for _, want := range []string{
+		"stack.compose → runners.compose",
+		"applications.api → stack.api",
+		"stack.compose.order: 10 → plans.release.entries[compose].order",
+		"modes.local → plans.local",
+		"section order: reordered",
+	} {
+		if !strings.Contains(changes, want) {
+			t.Errorf("combined migration did not activate %q:\n%s", want, changes)
+		}
+	}
+	assertUniformCRLF(t, out)
+	return out
+}
+
+func assertUniformCRLF(t *testing.T, content []byte) {
+	t.Helper()
+	if !bytes.Contains(content, []byte("\r\n")) {
+		t.Fatal("output has no CRLF line ending")
+	}
+	withoutCRLF := bytes.ReplaceAll(content, []byte("\r\n"), nil)
+	if bytes.ContainsAny(withoutCRLF, "\r\n") {
+		t.Fatalf("output contains a bare CR or LF: %q", content)
+	}
+}
+
+func TestMigratePipelinePreservesUniformCRLFAcrossCombinedSteps(t *testing.T) {
+	out := migrateCombinedCRLFFixture(t)
+	for _, want := range [][]byte{
+		[]byte("version: \"0.1.44\"\r\nstack:"),
+		[]byte("default_runner: compose\r\n"),
+		[]byte("run: \"./api\"\r\n"),
+		[]byte("order: 10\r\n"),
+		[]byte("  local:\r\n"),
+	} {
+		if !bytes.Contains(out, want) {
+			t.Errorf("combined migration output missing %q:\n%s", want, out)
+		}
+	}
+}
+
+// The boundary check belongs in Migrate, before MigrateLegacyCompose: that first step
+// already combines yaml.v3 line numbers with strings.Split indexes and used to panic on
+// an all-lone-CR legacy config before MigrateSectionOrder could report its own guard.
+func TestMigratePipelineRefusesUnsupportedLineEndingsBeforeLineIndexing(t *testing.T) {
+	tests := []struct {
+		name string
+		src  string
+	}{
+		{
+			name: "lone CR",
+			src:  "version: \"0.1.44\"\rstack:\r  core:\r    plugin: compose\r    files: [compose.yml]\r",
+		},
+		{
+			name: "mixed LF and CRLF",
+			src:  "version: \"0.1.44\"\r\nstack:\n  core:\r\n    plugin: compose\n    files: [compose.yml]\r\n",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			out, report, err := Migrate([]byte(tt.src))
+			if err != nil {
+				t.Fatalf("Migrate() error = %v", err)
+			}
+			if string(out) != tt.src {
+				t.Fatalf("unsupported input was rewritten:\ngot  %q\nwant %q", out, tt.src)
+			}
+			if len(report.Changes) != 0 {
+				t.Errorf("unsupported input reported conversions: %v", report.Changes)
+			}
+			blocked := strings.Join(report.Blocked, "\n")
+			if !strings.Contains(blocked, "uniform LF or CRLF") {
+				t.Errorf("Blocked does not explain the supported styles: %q", blocked)
+			}
+		})
 	}
 }

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"fmt"
 	"sort"
 	"strings"
@@ -35,7 +36,23 @@ func (r *MigrationReport) merge(other MigrationReport) {
 func Migrate(src []byte) ([]byte, MigrationReport, error) {
 	var report MigrationReport
 
-	out, migrated, err := MigrateLegacyCompose(src)
+	// Every migration step works on LF so a step that splices original lines and a
+	// step that encodes new YAML cannot leave a mixed-newline document for the next
+	// step. The original style is restored once, at this pipeline boundary. Both the
+	// preview and --write paths consume the returned bytes unchanged, so they share the
+	// same contract.
+	preserveCRLF, supportedLineEndings := migrateLineEndingStyle(src)
+	if !supportedLineEndings {
+		report.Blocked = append(report.Blocked, "line endings: migration not run — the file mixes LF and "+
+			"CRLF or uses lone CR line breaks; convert it to uniform LF or CRLF and run migrate again")
+		return src, report, nil
+	}
+	working := src
+	if preserveCRLF {
+		working = bytes.ReplaceAll(src, []byte("\r\n"), []byte("\n"))
+	}
+
+	out, migrated, err := MigrateLegacyCompose(working)
 	if err != nil {
 		// The only failure here is an entry declaring both a legacy compose shape and
 		// runners.compose. That file does not load at all, so there is nothing for the
@@ -68,7 +85,35 @@ func Migrate(src []byte) ([]byte, MigrationReport, error) {
 	report.Blocked = append(report.Blocked, ScaffoldModes(out)...)
 	report.Blocked = append(report.Blocked, ReportLegacyFields(out)...)
 	report.Blocked = append(report.Blocked, ReportModuleScope(out)...)
+	if preserveCRLF {
+		out = bytes.ReplaceAll(out, []byte("\n"), []byte("\r\n"))
+	}
 	return out, report, nil
+}
+
+// migrateLineEndingStyle recognizes the two line-ending styles the pipeline supports.
+// A one-line file has no style to restore and follows the LF working path. Mixed LF/CRLF
+// and lone CR are rejected before a line-indexed migration step can observe inconsistent
+// parser and splitter positions.
+func migrateLineEndingStyle(src []byte) (preserveCRLF, supported bool) {
+	foundCRLF := false
+	foundLF := false
+	for i := 0; i < len(src); i++ {
+		switch src[i] {
+		case '\r':
+			if i+1 >= len(src) || src[i+1] != '\n' {
+				return false, false
+			}
+			foundCRLF = true
+			i++
+		case '\n':
+			foundLF = true
+		}
+		if foundCRLF && foundLF {
+			return false, false
+		}
+	}
+	return foundCRLF, true
 }
 
 // profileFlags renders a compose_profiles value as the up_options flags it becomes.

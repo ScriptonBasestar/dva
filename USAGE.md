@@ -266,6 +266,11 @@ stack:                          stack:
 유지됩니다. `--write` 전에 결과를 메모리에서 먼저 로드해 검증하므로 DVA가 읽을 수
 없는 상태로 파일이 남지 않습니다.
 
+파일 전체가 CRLF 개행을 일관되게 사용하면 migrate 파이프라인은 그 스타일을 보존합니다.
+기본 미리보기와 `--write`는 같은 변환 결과를 사용하므로 둘 다 CRLF를 유지하며, LF 파일은
+LF로 남습니다. LF/CRLF가 섞였거나 lone CR을 쓰는 파일은 이 보존 계약의 대상이 아니며,
+migrate는 변환 전에 원본을 그대로 두고 균일한 LF나 CRLF로 바꾸라는 사유를 보고합니다.
+
 `modes:` 중 `description` / `stack` / `compose_services` / `endpoint_tags`만 가진 mode는
 같은 이름의 plan으로 옮깁니다. `--mode <name>`이 하던 일을 `dva up <name>`이 그대로 하도록
 `stack`은 `entries[].name`이 되고, `compose_services`는 선택된 stack 안의 유일한 compose
