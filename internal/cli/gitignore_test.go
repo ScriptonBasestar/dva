@@ -163,6 +163,14 @@ func TestGitignoreWarningNeedsSomethingCommittable(t *testing.T) {
 // deliberately not enough for check-ignore, which is the difference the fallback test relies on.
 func initGitRepo(t *testing.T, dir string) {
 	t.Helper()
+
+	// The developer's own core.excludesFile is an input to check-ignore, so without this a
+	// machine whose global excludes list `.sb/` would report every case here as ignored and
+	// the negative cases — the ones that prove the check still warns — would pass vacuously.
+	// git reads these two variables in place of the global and system config files.
+	t.Setenv("GIT_CONFIG_GLOBAL", os.DevNull)
+	t.Setenv("GIT_CONFIG_SYSTEM", os.DevNull)
+
 	cmd := exec.Command("git", "init", "--quiet")
 	cmd.Dir = dir
 	if out, err := cmd.CombinedOutput(); err != nil {
@@ -290,7 +298,7 @@ func TestGitignoreFallsBackWhenGitCannotAnswer(t *testing.T) {
 			}
 
 			old := gitCheckIgnore
-			gitCheckIgnore = func(string, []string) (map[string]bool, bool) { return nil, false }
+			gitCheckIgnore = func(string, []string) (map[string]string, bool) { return nil, false }
 			defer func() { gitCheckIgnore = old }()
 
 			out := captureOutput(t, func() { checkGitignoreForWarning(dir) })
@@ -330,5 +338,193 @@ func TestDvaTransientProbesCoverEveryWriter(t *testing.T) {
 		if strings.Contains(probe, `\`) {
 			t.Errorf("probe %q must be spelled with forward slashes for git", probe)
 		}
+	}
+}
+
+// TestGitignoreSourceIsShared pins which ignore files travel with a clone.
+//
+// The spellings are not invented here; each was read off `git check-ignore -v` on a real
+// repository. That matters most for the excludes-file cases: git prints core.excludesFile as
+// configured, and the usual configuration is an absolute path — which is the only thing
+// separating "~/.gitignore, one developer's preference" from ".gitignore, the project's".
+func TestGitignoreSourceIsShared(t *testing.T) {
+	for _, tt := range []struct {
+		name   string
+		source string
+		want   bool
+	}{
+		{"the repository's own file", ".gitignore", true},
+		{"a nested one further down the tree", "web/.gitignore", true},
+		{"one above the config dir", "../.gitignore", true},
+
+		{"this clone only", ".git/info/exclude", false},
+		{"this clone, spelled from a subdirectory", "../.git/info/exclude", false},
+		{"this machine only", "/Users/someone/.gitignore", false},
+		{"this machine, XDG spelling", "/Users/someone/.config/git/ignore", false},
+
+		// check-ignore leaves the source empty for a path no rule matched; the map lookup
+		// already rejects those, and a nil string must not read as the repository's file.
+		{"no source at all", "", false},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := gitignoreSourceIsShared(tt.source); got != tt.want {
+				t.Errorf("gitignoreSourceIsShared(%q) = %v, want %v", tt.source, got, tt.want)
+			}
+		})
+	}
+}
+
+// TestEnsureGitignoreWritesWhatACloneWouldLack is the regression the shared/non-shared split
+// exists for.
+//
+// Once the check started asking git, the writer inherited the wide answer — and the wide answer
+// includes rules that no collaborator receives. On the machine with `.sb/` in its global
+// excludes file, `dva doctor --fix` reported the row fixed and wrote nothing; the committed
+// .gitignore stayed silent about DVA and every other clone committed pid files and logs. The
+// symptom is invisible precisely where the fix is run, which is why it needs a test rather than
+// a look.
+//
+// .git/info/exclude stands in for core.excludesFile here: it is per-clone rather than
+// per-machine, so it is equally not shared, and it needs no global git configuration to set up.
+func TestEnsureGitignoreWritesWhatACloneWouldLack(t *testing.T) {
+	for _, tt := range []struct {
+		name         string
+		gitignore    string // "" means the file does not exist
+		exclude      string
+		wantAppended bool // .gitignore must have gained the rule it did not carry
+	}{
+		{
+			// The defect, in its two shapes: with and without a .gitignore to append to.
+			name:         "ignored only per-clone, no .gitignore yet",
+			exclude:      ".sb/\n",
+			wantAppended: true,
+		},
+		{
+			name:         "ignored only per-clone, .gitignore exists",
+			gitignore:    "node_modules/\n",
+			exclude:      ".sb/\n",
+			wantAppended: true,
+		},
+		{
+			// The repository already says it, in a spelling only git can read. Writing here
+			// would be the duplicate-rule noise that asking git was meant to stop, and it is
+			// why the writer asks git at all rather than reading the file itself.
+			name:      "repository declares it with a glob",
+			gitignore: ".sb/dva/*\n!.sb/dva/*.yml\n",
+		},
+		{
+			// Both the repository's file and the per-clone one cover it. The shared source
+			// is enough on its own, so nothing is appended.
+			name:      "declared in both places",
+			gitignore: ".sb/\n",
+			exclude:   ".sb/\n",
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := t.TempDir()
+			initGitRepo(t, dir)
+			gitignorePath := filepath.Join(dir, ".gitignore")
+			if tt.gitignore != "" {
+				if err := os.WriteFile(gitignorePath, []byte(tt.gitignore), 0o644); err != nil {
+					t.Fatalf("WriteFile .gitignore: %v", err)
+				}
+			}
+			if tt.exclude != "" {
+				excludePath := filepath.Join(dir, ".git", "info", "exclude")
+				if err := os.MkdirAll(filepath.Dir(excludePath), 0o755); err != nil {
+					t.Fatalf("MkdirAll info: %v", err)
+				}
+				if err := os.WriteFile(excludePath, []byte(tt.exclude), 0o644); err != nil {
+					t.Fatalf("WriteFile exclude: %v", err)
+				}
+			}
+
+			wrote, err := ensureGitignore(dir)
+			if err != nil {
+				t.Fatalf("ensureGitignore: %v", err)
+			}
+			// All three callers turn this bool straight into "📎 Updated .gitignore", so a
+			// true here that no write backs up is a message about an edit that never
+			// happened — the one thing a user reading init's output cannot check.
+			if wrote != tt.wantAppended {
+				t.Errorf("ensureGitignore reported wrote = %v, want %v", wrote, tt.wantAppended)
+			}
+
+			after, err := os.ReadFile(gitignorePath)
+			if err != nil && !os.IsNotExist(err) {
+				t.Fatalf("ReadFile .gitignore: %v", err)
+			}
+			// Whether the file changed, not whether the rule is in it: two of these cases
+			// start out already declaring it, so "the rule is there" is satisfied by doing
+			// nothing and would not tell a working writer from a silent one.
+			if appended := string(after) != tt.gitignore; appended != tt.wantAppended {
+				t.Errorf("appended = %v, want %v; %q became %q", appended, tt.wantAppended, tt.gitignore, after)
+			}
+			if tt.wantAppended {
+				// A clone gets this file and nothing else, so the literal reader — which
+				// also sees nothing else — is the right judge of what that clone would know.
+				if !isDvaIgnored(string(after)) {
+					t.Errorf("something was written but a clone still would not ignore the state: %q", after)
+				}
+				// Appending must not cost the rules that were already there.
+				if tt.gitignore != "" && !strings.Contains(string(after), strings.TrimSpace(tt.gitignore)) {
+					t.Errorf("the existing rules were lost: %q became %q", tt.gitignore, after)
+				}
+			}
+		})
+	}
+}
+
+// TestGitignoreStatusNamesTheRightRemedy pins doctor's wording to what is on disk.
+//
+// Asking git had to happen before reading the file — git applies rules the file does not carry,
+// so reading first calls a correctly-configured tree broken. But moving the question up left the
+// "no .gitignore here" branch behind the read, unreachable in any real repository, and doctor
+// began telling first-run users to add a line to a file that does not exist. That is the
+// `dva init` → `dva doctor` path, so it is the first thing a new user sees.
+func TestGitignoreStatusNamesTheRightRemedy(t *testing.T) {
+	for _, tt := range []struct {
+		name        string
+		gitignore   string // "" means the file does not exist
+		wantPass    bool
+		wantFinding string
+	}{
+		{name: "no .gitignore at all", wantFinding: "no .gitignore here"},
+		{name: "a .gitignore that says nothing about it", gitignore: "node_modules/\n", wantFinding: "is NOT ignored"},
+		{name: "ignored through a glob git understands", gitignore: ".sb/dva/*\n", wantPass: true},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := t.TempDir()
+			initGitRepo(t, dir)
+			if tt.gitignore != "" {
+				if err := os.WriteFile(filepath.Join(dir, ".gitignore"), []byte(tt.gitignore), 0o644); err != nil {
+					t.Fatalf("WriteFile .gitignore: %v", err)
+				}
+			}
+
+			r := checkGitignoreStatus(dir)
+
+			if r.Passed != tt.wantPass {
+				t.Fatalf("Passed = %v, want %v (finding %q)", r.Passed, tt.wantPass, r.Finding)
+			}
+			if tt.wantPass {
+				return
+			}
+			if !strings.Contains(r.Finding, tt.wantFinding) {
+				t.Errorf("Finding = %q, want it to contain %q", r.Finding, tt.wantFinding)
+			}
+			// The hint is the half that was wrong: it named a file to edit without saying
+			// to create it. Both halves have to agree about what exists.
+			wantHint := "Add '"
+			if tt.gitignore == "" {
+				wantHint = "Create .gitignore"
+			}
+			if !strings.Contains(r.FixHint, wantHint) {
+				t.Errorf("FixHint = %q, want it to contain %q", r.FixHint, wantHint)
+			}
+			if !r.Fixable || r.fixFunc == nil {
+				t.Errorf("the row must stay fixable: Fixable = %v, fixFunc set = %v", r.Fixable, r.fixFunc != nil)
+			}
+		})
 	}
 }

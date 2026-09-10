@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/ScriptonBasestar/dva/internal/config"
@@ -22,27 +23,39 @@ func defaultIgnorePath() string {
 }
 
 // ensureGitignore ensures that the .gitignore file contains the necessary entries for DVA.
-// Returns true if it was updated or already present.
+// Returns true if it wrote them.
+//
+// It used to return true when the rule was "updated or already present", and all three callers
+// print "📎 Updated .gitignore" on true — so `dva init` claimed an edit it had not made in every
+// repository that already had the rule. Asking git widened the set of repositories that reach
+// that branch, which is what turned a narrow oddity into the ordinary case. "Already present"
+// belongs to whoever wants to ask for it; nobody does, and no caller is worse off for the
+// answer changing, since doctor's fix discards it.
 func ensureGitignore(configDir string) (bool, error) {
 	gitignorePath := filepath.Join(configDir, ".gitignore")
 	ignorePath := defaultIgnorePath()
 
-	if _, err := os.Stat(gitignorePath); os.IsNotExist(err) {
+	// Read first, ask second, write last. The order matters: the two branches below used to
+	// ask different questions — the missing-file branch wrote without consulting git at all
+	// while the existing-file branch consulted it and declined — so whether DVA appended a
+	// rule your repository already had depended on whether some unrelated line put a
+	// .gitignore beside it. One question, asked once, for both.
+	data, readErr := os.ReadFile(gitignorePath)
+	if readErr != nil && !os.IsNotExist(readErr) {
+		return false, fmt.Errorf("failed to read .gitignore: %w", readErr)
+	}
+	content := string(data)
+
+	if dvaRepoAlreadyDeclares(configDir, content) {
+		return false, nil
+	}
+
+	if os.IsNotExist(readErr) {
 		// No .gitignore, creating a new one
-		content := fmt.Sprintf("%s\n%s\n", defaultIgnoreSection, ignorePath)
-		if err := os.WriteFile(gitignorePath, []byte(content), 0644); err != nil {
+		created := fmt.Sprintf("%s\n%s\n", defaultIgnoreSection, ignorePath)
+		if err := os.WriteFile(gitignorePath, []byte(created), 0644); err != nil {
 			return false, fmt.Errorf("failed to create .gitignore: %w", err)
 		}
-		return true, nil
-	}
-
-	data, err := os.ReadFile(gitignorePath)
-	if err != nil {
-		return false, fmt.Errorf("failed to read .gitignore: %w", err)
-	}
-
-	content := string(data)
-	if dvaStateIsIgnored(configDir, content) {
 		return true, nil
 	}
 
@@ -90,21 +103,33 @@ func dvaTransientProbes() []string {
 	}
 }
 
-// gitCheckIgnore reports which of paths git considers ignored, and whether git answered at all.
+// gitCheckIgnore reports, for each ignored path, the ignore file whose rule matched, and
+// whether git answered at all. A path missing from the map is not ignored.
 //
-// `--stdin` settles all of them in one process and names the ignored ones on stdout, which is
-// what makes the verdict readable per path: `--quiet` collapses the same question to "was any
-// one of them ignored", and the configuration worth warning about — contents excluded, one class
+// `--stdin` settles every path in one process and reports them individually, which is what
+// makes the verdict readable per path: `--quiet` collapses the same question to "was any one
+// of them ignored", and the configuration worth warning about — contents excluded, one class
 // re-included — is exactly the one that answer cannot distinguish from a correct setup.
+//
+// `-v` is here for the source, not for the diagnostics. Two callers ask this function different
+// questions — "will this working tree commit transient state" and "does the repository itself
+// say not to" — and only the second one cares that a rule in the user's core.excludesFile is
+// not a rule the repository ships. Without the source those two questions have one answer, and
+// giving them one answer is the defect ensureGitignore had.
+//
+// `-z` rather than parsing "source:line:pattern\tpath": that spelling is ambiguous, because a
+// gitignore pattern may itself contain a colon and so may a directory name. With -z the four
+// fields arrive NUL-separated and need no parsing at all. It changes the INPUT separator too,
+// which is why the probes are joined with NUL below.
 //
 // Exit 1 means "none of these are ignored". That is an answer, not a failure, and the two have
 // to be told apart: a fake or broken `.git` (a worktree pointer to a gitdir that has moved,
 // among others) exits 128, and folding that into "not ignored" turns an unanswerable question
 // into a warning about a repository that may well be configured correctly.
-var gitCheckIgnore = func(dir string, paths []string) (ignored map[string]bool, decided bool) {
-	cmd := exec.Command("git", "check-ignore", "--stdin")
+var gitCheckIgnore = func(dir string, paths []string) (sources map[string]string, decided bool) {
+	cmd := exec.Command("git", "check-ignore", "-vz", "--stdin")
 	cmd.Dir = dir
-	cmd.Stdin = strings.NewReader(strings.Join(paths, "\n") + "\n")
+	cmd.Stdin = strings.NewReader(strings.Join(paths, "\x00") + "\x00")
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	// Discarded: git's complaints here are about the repository, not about DVA, and this
@@ -118,13 +143,48 @@ var gitCheckIgnore = func(dir string, paths []string) (ignored map[string]bool, 
 		}
 	}
 
-	ignored = make(map[string]bool, len(paths))
-	for line := range strings.SplitSeq(out.String(), "\n") {
-		if line = strings.TrimSpace(line); line != "" {
-			ignored[line] = true
+	// Records of four fields — source, line number, pattern, pathname — each NUL-terminated,
+	// so a split leaves one trailing empty element. Stepping by four and requiring a whole
+	// record present means a truncated tail is dropped rather than read as a short record.
+	//
+	// A record is not by itself a verdict. Without -v git prints only the ignored paths; with
+	// -v it prints every path some pattern matched, and a path whose last match is a negation
+	// is reported here while not being ignored — `.sb/dva/*` + `!.sb/dva/provisioned-*` prints
+	// the marker with pattern `!.sb/dva/provisioned-*`. Reading the record as the answer turns
+	// exactly that configuration, the half-correct one this check exists to catch, into a pass.
+	fields := strings.Split(out.String(), "\x00")
+	sources = make(map[string]string, len(paths))
+	for i := 0; i+3 < len(fields); i += 4 {
+		if strings.HasPrefix(fields[i+2], "!") {
+			continue
 		}
+		sources[fields[i+3]] = fields[i]
 	}
-	return ignored, true
+	return sources, true
+}
+
+// gitignoreSourceIsShared reports whether a rule from this source travels with the repository.
+//
+// Only rules in a committed .gitignore do. The user's core.excludesFile is that one machine's
+// preference, and .git/info/exclude is that one clone's; a collaborator cloning the repository
+// gets neither. So a check that decides whether the repository needs the rule WRITTEN has to
+// discount both, or it will read one developer's setup as the project's and leave the project
+// with nothing.
+//
+// git names an in-repository ignore file relative to the directory it ran in (".gitignore",
+// "../.gitignore") and names core.excludesFile as configured, which is an absolute path in
+// every ordinary setup. That is what "relative" tests for here, and it is the part that
+// matters when the excludes file is ~/.gitignore — a common choice whose base name alone would
+// otherwise pass for the repository's own.
+func gitignoreSourceIsShared(source string) bool {
+	if source == "" || filepath.IsAbs(source) {
+		return false
+	}
+	if path.Base(source) != ".gitignore" {
+		return false
+	}
+	// .git/info/exclude is relative and inside the tree, so only its location rules it out.
+	return !slices.Contains(strings.Split(filepath.ToSlash(source), "/"), ".git")
 }
 
 // dvaTransientsIgnored asks git whether every class of transient state is ignored, and reports
@@ -144,6 +204,21 @@ var gitCheckIgnore = func(dir string, paths []string) (ignored map[string]bool, 
 // here too: a transient that is already tracked is already being committed, which is the
 // hazard this check exists to name.
 func dvaTransientsIgnored(configDir string) (ignored bool, decided bool) {
+	return dvaTransientsCovered(configDir, false)
+}
+
+// dvaRepoDeclaresIgnore asks the narrower question: does the repository itself carry the rules,
+// so that a fresh clone has them too?
+//
+// This is the question the writer has to ask, and asking the wider one instead is a regression
+// with no symptom on the machine that has it. A developer whose global excludes file lists
+// .sb/ sees every check pass and every command stay quiet, while the .gitignore they commit
+// says nothing about DVA and every collaborator without that file commits pid files and logs.
+func dvaRepoDeclaresIgnore(configDir string) (declared bool, decided bool) {
+	return dvaTransientsCovered(configDir, true)
+}
+
+func dvaTransientsCovered(configDir string, sharedOnly bool) (covered bool, decided bool) {
 	// Both guards avoid spawning git where it cannot help, and the second is the one that
 	// matters: with git missing, the literal reader is all there is, and it must be reached
 	// through "undecided" rather than through a wrong "not ignored".
@@ -152,12 +227,16 @@ func dvaTransientsIgnored(configDir string) (ignored bool, decided bool) {
 	}
 
 	probes := dvaTransientProbes()
-	ignoredPaths, decided := gitCheckIgnore(configDir, probes)
+	sources, decided := gitCheckIgnore(configDir, probes)
 	if !decided {
 		return false, false
 	}
 	for _, probe := range probes {
-		if !ignoredPaths[probe] {
+		source, ok := sources[probe]
+		if !ok {
+			return false, true
+		}
+		if sharedOnly && !gitignoreSourceIsShared(source) {
 			return false, true
 		}
 	}
@@ -173,6 +252,20 @@ func dvaTransientsIgnored(configDir string) (ignored bool, decided bool) {
 func dvaStateIsIgnored(configDir, gitignoreContent string) bool {
 	if ignored, decided := dvaTransientsIgnored(configDir); decided {
 		return ignored
+	}
+	return isDvaIgnored(gitignoreContent)
+}
+
+// dvaRepoAlreadyDeclares answers dvaStateIsIgnored's question narrowed to what a clone would
+// get, for the one caller that writes.
+//
+// The fallback is the same literal reader, and it needs no narrowing: it only ever read the
+// repository's own .gitignore, so it was already answering the narrow question. That is worth
+// saying because it is the reason this pair can share a fallback — the wide and narrow readings
+// differ only in what git can see beyond the file, and the fallback cannot see beyond it.
+func dvaRepoAlreadyDeclares(configDir, gitignoreContent string) bool {
+	if declared, decided := dvaRepoDeclaresIgnore(configDir); decided {
+		return declared
 	}
 	return isDvaIgnored(gitignoreContent)
 }
@@ -363,28 +456,43 @@ func failGitignore(r DoctorResult, configDir, finding, fixHint string) DoctorRes
 // makes hard to reach again.
 func checkGitignoreStatus(configDir string) DoctorResult {
 	r := DoctorResult{Name: fmt.Sprintf("%s/ is ignored in .gitignore", config.DotDirName)}
-	notIgnored := fmt.Sprintf("%s/ is NOT ignored in .gitignore", config.DotDirName)
-	addTheRule := fmt.Sprintf("Add '%s/' to .gitignore to avoid committing transient state", config.DotDirName)
+	gitignorePath := filepath.Join(configDir, ".gitignore")
+
+	// Which of the two failure wordings is right depends on whether the file exists, and
+	// nothing else — so the choice is made here, once, for every branch that fails. Folding
+	// it into the read below is what made "no .gitignore here" unreachable as soon as git was
+	// asked first: doctor then told people with no .gitignore to add a line to it.
+	fail := func() DoctorResult {
+		if _, err := os.Stat(gitignorePath); os.IsNotExist(err) {
+			return failGitignore(r, configDir,
+				fmt.Sprintf("no .gitignore here, so %s/ is not ignored", config.DotDirName),
+				fmt.Sprintf("Create .gitignore and add '%s/' to avoid committing transient state", config.DotDirName))
+		}
+		return failGitignore(r, configDir,
+			fmt.Sprintf("%s/ is NOT ignored in .gitignore", config.DotDirName),
+			fmt.Sprintf("Add '%s/' to .gitignore to avoid committing transient state", config.DotDirName))
+	}
 
 	// git is asked before the file is read, because it applies rules this function cannot
 	// see — .git/info/exclude, core.excludesFile, nested .gitignore files — so a tree with no
 	// .gitignore at all may already be ignoring every marker correctly. Reading the file
 	// first reports that tree as failing and offers to fix what is not broken.
+	//
+	// The wide reading is the right one for a diagnostic: doctor reports on the machine it is
+	// run on, and on this machine those rules do apply. ensureGitignore asks the narrow one,
+	// because what it decides is what to leave in the repository for everyone else.
 	if ignored, decided := dvaTransientsIgnored(configDir); decided {
 		if ignored {
 			r.Passed = true
 			return r
 		}
-		return failGitignore(r, configDir, notIgnored, addTheRule)
+		return fail()
 	}
 
-	gitignorePath := filepath.Join(configDir, ".gitignore")
 	data, err := os.ReadFile(gitignorePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return failGitignore(r, configDir,
-				fmt.Sprintf("no .gitignore here, so %s/ is not ignored", config.DotDirName),
-				fmt.Sprintf("Create .gitignore and add '%s/' to avoid committing transient state", config.DotDirName))
+			return fail()
 		}
 		r.Passed = false
 		r.Finding = fmt.Sprintf(".gitignore could not be read, so %s/ cannot be confirmed ignored: %v", config.DotDirName, err)
@@ -395,5 +503,5 @@ func checkGitignoreStatus(configDir string) DoctorResult {
 		r.Passed = true
 		return r
 	}
-	return failGitignore(r, configDir, notIgnored, addTheRule)
+	return fail()
 }
