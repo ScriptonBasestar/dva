@@ -3,13 +3,13 @@ id: PLAN-008
 title: "Work the migrate-section-order defect bundle in a single file's order"
 type: plan
 scope: "TASK-358..365 — TASK-318 재리뷰가 파생시킨 8장. 전부 internal/config/migrate_section_order.go(367줄) 한 파일 또는 그 테스트에 걸린다"
-progress: 87
+progress: 100
 total-tasks: 8
-completed-tasks: 7
+completed-tasks: 8
 children: [TASK-365, TASK-363, TASK-359, TASK-358, TASK-361, TASK-362, TASK-364, TASK-360]
 target-date: "2026-10-31"
 created: 2026-09-09
-completed-children: 7
+completed-children: 8
 ---
 
 ## Goal
@@ -42,7 +42,7 @@ TASK-318(섹션 순서 자동 정렬)의 재리뷰가 결함 8장을 파생시�
 | 5 | ~~TASK-361~~ EOF 주석 문단 되감기 | P3 | 완료 2026-09-10. 여러 footer 주석 문단을 고정하고, 인용 스칼라의 열 0 `#`를 footer로 오인하지 않도록 의미 보존 회귀를 추가했다 |
 | 6 | ~~TASK-362~~ flow-style fixture가 현재 차단 계약을 검증 | P3 | 완료 2026-09-10. 배너 fixture가 원본 보존·변경 없음·구체적 `Blocked` 사유·무패닉을 함께 검증한다. 과거 overlay 패닉 전제는 [[ISSUE-003]]으로 disposition했다 |
 | 7 | ~~TASK-364~~ 반환 직전 의미 자기검사 | **P1** | 완료 2026-09-10. YAML node 의미 비교를 반환 경계에 두고 `\|+` 과거 결함 candidate가 개별 수정 없이 차단됨을 검증했다. 4,652-byte 실제 config에서 전체 guard 중앙값은 약 88 µs였다 |
-| 8 | TASK-360 구분 공백줄의 CRLF 보존 | P3 | 1번의 결정에 종속. Option 1이면 여기서 고치고, Option 2면 **코드 없이 닫는다** |
+| 8 | ~~TASK-360~~ 구분 공백줄의 CRLF 보존 | P3 | 완료 2026-09-10. 합성 separator도 CRLF 입력에서 `\r\n`으로 렌더링하고, LF 회귀와 수정 전 overlay 실패를 함께 고정했다 |
 
 TASK-365의 결정은 **Option 1(균일한 CRLF를 migrate 파이프라인 경계에서 보존)**으로
 확정됐다. 따라서 TASK-360은 계획대로 8번에서 이 계약의 남은 section-order 세부 조각을
@@ -90,7 +90,7 @@ TASK-365의 결정은 **Option 1(균일한 CRLF를 migrate 파이프라인 경�
 - ~~TASK-361~~ — EOF의 모든 후행 주석 문단 되감기 (done, 2026-09-10)
 - ~~TASK-362~~ — flow-style fixture가 현재 차단 계약을 검증 (done, 2026-09-10; [[ISSUE-003]] disposition)
 - ~~TASK-364~~ — 반환 직전 의미 자기검사 추가 (done, 2026-09-10; YAML node 의미 비교 + 실측 benchmark)
-- TASK-360 — 구분 공백줄의 CRLF 보존 (P3, 365가 Option 2면 코드 없이 닫힘)
+- ~~TASK-360~~ — 구분 공백줄의 CRLF 보존 (done, 2026-09-10; CRLF/LF 회귀와 수정 전 overlay 실패 고정)
 
 ## Rules
 

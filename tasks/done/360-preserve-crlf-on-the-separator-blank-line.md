@@ -7,9 +7,10 @@ effort: S
 exec-tier: standard
 created-at: 2026-09-08T16:40:00+09:00
 source: "TASK-318 재리뷰 (t318-rereview)"
-status: todo
+status: done
 depends-on: []
-needs-human: true
+needs-human: false
+verification-evidence: "2026-09-10: pre-fix overlay failed as expected; focused and full internal/config tests, dva test, doc-check, and diff check passed."
 ---
 
 # Task 360: 블록 구분 빈 줄에서도 CRLF를 보존한다
@@ -47,9 +48,20 @@ LF 한 줄이 섞이는 건, 같은 함수가 스스로 내세우는 CRLF 보존
 
 ## Completion Criteria
 
-- [ ] CRLF 파일을 재배열해도 구분 빈 줄이 \r\n으로 남는다 | verify: `/usr/bin/grep -rq 'func TestMigrateSectionOrderPreservesCRLFSeparator(' internal/config`
-- [ ] 위 테스트가 수정 전 소스에 대해 FAIL함을 go test -overlay로 확인했다 | verify: human — overlay 실행 결과를 카드에 첨부
-- [ ] 기존 LF 파일의 구분 빈 줄 동작은 그대로다(회귀 없음), 게이트 통과 | verify: `make test` (regression-guard)
+- [x] CRLF 파일을 재배열해도 구분 빈 줄이 \r\n으로 남는다 | verify: `/usr/bin/grep -rq 'func TestMigrateSectionOrderPreservesCRLFSeparator(' internal/config`
+- [x] 위 테스트가 수정 전 소스에 대해 FAIL함을 go test -overlay로 확인했다 | verify: human — overlay 실행 결과를 카드에 첨부
+- [x] 기존 LF 파일의 구분 빈 줄 동작은 그대로다(회귀 없음), 게이트 통과 | verify: `make test` (regression-guard)
+
+## Resolution (2026-09-10)
+
+- `slotSeparator`가 합성하는 빈 줄에도 균일 CRLF 입력이면 `\r`을 넣어, 기존 줄의 `\r`과
+  `\n` join이 만드는 CRLF 형식을 그대로 맞췄다. LF 입력은 빈 문자열을 계속 사용한다.
+- 수정 후 `TestMigrateSectionOrderPreservesCRLFSeparator`와 LF 회귀가 통과했다.
+- 수정 전 `MigrateSectionOrder`을 `go test -overlay`로 겹쳐 실행했을 때 CRLF 회귀는 exit 1로
+  실패했다. 실제 출력은 `version: \"1\"\r\n\nplans:`였고 기대값
+  `version: \"1\"\r\n\r\nplans:`과 달랐다.
+- `go test ./internal/config -count=1`, `dva test`, `make doc-check`, `git diff --check`를
+  통과했다.
 
 ## 참고
 

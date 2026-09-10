@@ -307,11 +307,19 @@ func MigrateSectionOrder(src []byte) ([]byte, MigrationReport, error) {
 
 	// Assembled as lines rather than as a string so the separators stay countable:
 	// every blank line in the output is one an author wrote, in the slot they wrote it.
+	// Source lines keep their trailing \r because this function splits on \n and joins
+	// with it again. A separator is synthesized here, however, so it must carry that
+	// same \r itself for a CRLF source; otherwise the one blank line is emitted as a
+	// bare LF inside an otherwise CRLF document.
+	separatorLine := ""
+	if bytes.Contains(src, []byte("\r\n")) {
+		separatorLine = "\r"
+	}
 	outLines := slices.Clone(preamble)
 	for i, t := range newBlockText {
 		outLines = append(outLines, strings.Split(t, "\n")...)
 		for range slotSeparator[i] {
-			outLines = append(outLines, "")
+			outLines = append(outLines, separatorLine)
 		}
 	}
 	if postambleStart > 0 {

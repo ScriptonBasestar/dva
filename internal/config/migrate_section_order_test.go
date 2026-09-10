@@ -531,6 +531,50 @@ func TestMigrateSectionOrderKeepsSlotSeparators(t *testing.T) {
 	}
 }
 
+// TestMigrateSectionOrderPreservesCRLFSeparator proves that the blank line owned
+// by a slot retains the CRLF style of a uniformly CRLF source. The separator is
+// created during output assembly, rather than copied from block text, so it needs
+// the same newline choice as every authored source line.
+func TestMigrateSectionOrderPreservesCRLFSeparator(t *testing.T) {
+	src := "plans:\r\n  dev: {}\r\n\r\nversion: \"1\"\r\n"
+	want := "version: \"1\"\r\n\r\nplans:\r\n  dev: {}\r\n"
+
+	out, report, err := MigrateSectionOrder([]byte(src))
+	if err != nil {
+		t.Fatalf("MigrateSectionOrder() error = %v", err)
+	}
+	if string(out) != want {
+		t.Fatalf("MigrateSectionOrder() =\n%q\nwant\n%q", out, want)
+	}
+	if len(report.Blocked) != 0 {
+		t.Errorf("report.Blocked = %v, want none", report.Blocked)
+	}
+	if bytes.Contains(out, []byte("\r\n\n")) {
+		t.Errorf("output contains a bare-LF separator: %q", out)
+	}
+}
+
+// TestMigrateSectionOrderPreservesLFSeparator keeps the existing LF-only
+// rendering contract explicit while the CRLF path chooses its own separator.
+func TestMigrateSectionOrderPreservesLFSeparator(t *testing.T) {
+	src := "plans:\n  dev: {}\n\nversion: \"1\"\n"
+	want := "version: \"1\"\n\nplans:\n  dev: {}\n"
+
+	out, report, err := MigrateSectionOrder([]byte(src))
+	if err != nil {
+		t.Fatalf("MigrateSectionOrder() error = %v", err)
+	}
+	if string(out) != want {
+		t.Fatalf("MigrateSectionOrder() =\n%q\nwant\n%q", out, want)
+	}
+	if len(report.Blocked) != 0 {
+		t.Errorf("report.Blocked = %v, want none", report.Blocked)
+	}
+	if bytes.Contains(out, []byte("\r\n")) {
+		t.Errorf("LF output unexpectedly contains CRLF: %q", out)
+	}
+}
+
 // TestMigrateSectionOrderKeepsKeepChompedTrailingBlank proves a blank line at
 // the end of a keep-chomped block scalar remains part of the decoded value when
 // its top-level section moves. A valid output is not enough here: dropping the
