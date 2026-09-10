@@ -159,6 +159,65 @@ func TestSuccessMessageNamesTheExceptionBoundary(t *testing.T) {
 	}
 }
 
+func isolatedHooksPathReader(t *testing.T, hooksPath string, set bool) func() (string, error) {
+	t.Helper()
+	repo := t.TempDir()
+	env := append(os.Environ(),
+		"GIT_CONFIG_NOSYSTEM=1",
+		"GIT_CONFIG_GLOBAL=/dev/null",
+	)
+	run := func(args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Env = env
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %s: %v: %s", strings.Join(args, " "), err, out)
+		}
+	}
+	run("init", "--quiet", repo)
+	if set {
+		run("-C", repo, "config", "--local", "core.hooksPath", hooksPath)
+	}
+	return func() (string, error) {
+		cmd := exec.Command("git", "-C", repo, "config", "--get", "core.hooksPath")
+		cmd.Env = env
+		out, err := cmd.Output()
+		return string(out), err
+	}
+}
+
+func TestReportsUninstalledCommitMsgHook(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		path string
+		set  bool
+		want string
+	}{
+		{"unset", "", false, "core.hooksPath is unset"},
+		{"different path", ".custom-hooks", true, `core.hooksPath = ".custom-hooks", expected ".githooks"`},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			advisory := uninstalledCommitMsgHookAdvisory(isolatedHooksPathReader(t, tc.path, tc.set))
+			if !strings.Contains(advisory, "commitcheck: ADVISORY --") {
+				t.Errorf("advisory = %q, want distinct advisory prefix", advisory)
+			}
+			if !strings.Contains(advisory, tc.want) {
+				t.Errorf("advisory = %q, want %q", advisory, tc.want)
+			}
+			if !strings.Contains(advisory, "make install-hooks") {
+				t.Errorf("advisory = %q, want exact remedy", advisory)
+			}
+		})
+	}
+}
+
+func TestNoHookAdvisoryWhenHooksPathInstalled(t *testing.T) {
+	advisory := uninstalledCommitMsgHookAdvisory(isolatedHooksPathReader(t, ".githooks", true))
+	if advisory != "" {
+		t.Errorf("advisory = %q, want none for installed hook", advisory)
+	}
+}
+
 func TestEveryWaiverRecordsWhyItCouldNotBeRepaired(t *testing.T) {
 	// A waiver without a reason is indistinguishable from one added to make the build green.
 	// The reason is the only part a reviewer can weigh, so its absence is a test failure

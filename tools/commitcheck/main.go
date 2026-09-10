@@ -142,6 +142,8 @@ const maxSubject = 72
 
 const successMessage = "commitcheck: OK -- every non-exempt subject since the baseline matches the format SSOT"
 
+const installedHooksPath = ".githooks"
+
 // ssotTypes is the type list from ce-agent-kit skills/git/SKILL.md <commit-format>. It is
 // copied rather than widened on purpose: this repository has used `style` twice, and
 // quietly accepting a seventh type here would fork the SSOT instead of amending it. A
@@ -221,6 +223,27 @@ func git(args ...string) (string, error) {
 	return string(out), nil
 }
 
+// uninstalledCommitMsgHookAdvisory reports a disabled commit-msg hook without turning an
+// after-the-fact history check into a fresh-clone failure. The hook is deliberately opt-in:
+// callers must be told how to enable it, but may still run commitcheck before doing so.
+func uninstalledCommitMsgHookAdvisory(readHooksPath func() (string, error)) string {
+	hooksPath, err := readHooksPath()
+	hooksPath = strings.TrimSpace(hooksPath)
+	if err == nil && hooksPath == installedHooksPath {
+		return ""
+	}
+
+	if hooksPath == "" {
+		return "commitcheck: ADVISORY -- core.hooksPath is unset; commit-msg subject enforcement is inactive; run make install-hooks"
+	}
+	return fmt.Sprintf("commitcheck: ADVISORY -- core.hooksPath = %q, expected %q; commit-msg subject enforcement is inactive; run make install-hooks",
+		hooksPath, installedHooksPath)
+}
+
+func configuredHooksPath() (string, error) {
+	return git("config", "--get", "core.hooksPath")
+}
+
 // checkMessageFile validates a single commit message being written, and is what the
 // commit-msg hook calls. It exists because the history sweep below can only ever report a
 // violation that already happened: by the time `make commit-check` sees a subject, the
@@ -294,6 +317,9 @@ func main() {
 	}
 
 	rng := baseline + "..HEAD"
+	if advisory := uninstalledCommitMsgHookAdvisory(configuredHooksPath); advisory != "" {
+		fmt.Fprintln(os.Stderr, advisory)
+	}
 
 	// Merge commits carry no authored subject, so they are excluded -- but the count is
 	// printed rather than dropped, so the denominator below stays honest.

@@ -5,8 +5,9 @@ type: feature
 priority: P2
 effort: S
 exec-tier: standard
-status: todo
+status: done
 created: 2026-09-07
+needs-human: false
 ---
 
 ## Summary
@@ -33,6 +34,14 @@ commit-check` unrunnable on a fresh clone and would be worked around rather than
 
 ## Completion Criteria
 
-- [ ] `commitcheck` reports an unset or non-`.githooks` `core.hooksPath` as a distinct advisory line, without changing its exit code | verify: `/usr/bin/grep -rq 'func TestReportsUninstalledCommitMsgHook(' tools/commitcheck`
-- [ ] The advisory names the exact remedy (`make install-hooks`) and does not fire when the hook is installed | verify: `/usr/bin/grep -rq 'func TestNoHookAdvisoryWhenHooksPathInstalled(' tools/commitcheck`
-- [ ] Gates stay green | verify: `make test` (regression-guard)
+- [x] `commitcheck` reports an unset or non-`.githooks` `core.hooksPath` as a distinct advisory line, without changing its exit code | verify: `/usr/bin/grep -rq 'func TestReportsUninstalledCommitMsgHook(' tools/commitcheck`
+- [x] The advisory names the exact remedy (`make install-hooks`) and does not fire when the hook is installed | verify: `/usr/bin/grep -rq 'func TestNoHookAdvisoryWhenHooksPathInstalled(' tools/commitcheck`
+- [x] Gates stay green | verify: `make test` (regression-guard)
+
+## Verification evidence
+
+2026-09-10: `go test ./tools/commitcheck -count=1` passed. Its tests create an isolated
+temporary Git repository with system/global configuration disabled, then cover unset,
+non-`.githooks`, and installed `core.hooksPath` values without changing the checkout's
+configuration. `make commit-check` passed with the advisory inactive for this installed clone;
+`make doc-check` and `git diff --check` passed after the card state transition.
