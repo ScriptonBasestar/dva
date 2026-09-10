@@ -220,17 +220,33 @@ func MigrateSectionOrder(src []byte) ([]byte, MigrationReport, error) {
 		}
 	}
 
-	// A blank-separated comment run at EOF is a file footer and stays put, for the same
-	// reason the header above the first key does. The tail is otherwise the one place
-	// this walk is asymmetric: a licence footer or a `# vim:` line would be the last
-	// block's content, so it rides that block to wherever the block lands — for a file
-	// whose last section belongs first, that is the top of the document.
+	// A blank-separated chain of comment paragraphs at EOF is a file footer and stays
+	// put, for the same reason the header above the first key does. The tail is otherwise
+	// the one place this walk is asymmetric: a licence footer or a `# vim:` line would be
+	// the last block's content, so it rides that block to wherever the block lands — for
+	// a file whose last section belongs first, that is the top of the document.
 	if postambleStart == 0 {
 		i := len(lines)
-		for i > keyLines[n-1] && strings.HasPrefix(lines[i-1], "#") {
-			i--
+		hasComment := false
+		for i > keyLines[n-1] {
+			if strings.HasPrefix(lines[i-1], "#") {
+				hasComment = true
+				i--
+				continue
+			}
+			if strings.TrimSpace(lines[i-1]) == "" {
+				i--
+				continue
+			}
+			break
 		}
-		if i < len(lines) && i > keyLines[n-1] && strings.TrimSpace(lines[i-1]) == "" {
+		// A line beginning with # can be scalar content rather than a YAML comment:
+		// double-quoted scalars may continue at column zero, including across blank
+		// lines. Only detach this candidate when the prefix is already a complete YAML
+		// document; otherwise the candidate contains the scalar's closing content.
+		var prefix yaml.Node
+		if hasComment && i < len(lines) && strings.TrimSpace(lines[i]) == "" &&
+			yaml.Unmarshal([]byte(strings.Join(lines[:i], "\n")), &prefix) == nil {
 			end[n-1] = i
 			postambleStart = i + 1
 		}

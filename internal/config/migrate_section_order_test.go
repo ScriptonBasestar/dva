@@ -638,6 +638,57 @@ func TestMigrateSectionOrderKeepsFooterCommentAtEOF(t *testing.T) {
 	}
 }
 
+// TestMigrateSectionOrderKeepsEveryTrailingCommentParagraph ensures every
+// blank-separated EOF comment paragraph remains file furniture. Each paragraph
+// must stay after the reordered sections rather than travelling with the last
+// source section.
+func TestMigrateSectionOrderKeepsEveryTrailingCommentParagraph(t *testing.T) {
+	src := "plans:\n  x: 1\n\nversion: \"1\"\n\n# licence notice\n\n# vim: set ft=yaml:\n"
+	want := "version: \"1\"\n\nplans:\n  x: 1\n\n# licence notice\n\n# vim: set ft=yaml:\n"
+
+	out, _, err := MigrateSectionOrder([]byte(src))
+	if err != nil {
+		t.Fatalf("MigrateSectionOrder() error = %v", err)
+	}
+	if string(out) != want {
+		t.Fatalf("MigrateSectionOrder() =\n%q\nwant\n%q", out, want)
+	}
+}
+
+// TestMigrateSectionOrderDoesNotTreatQuotedScalarContentAsFooter ensures the
+// EOF scan does not mistake a column-zero # line inside a double-quoted scalar
+// for a comment paragraph. The scalar deliberately crosses a blank line, the
+// same shape that a trailing footer uses.
+func TestMigrateSectionOrderDoesNotTreatQuotedScalarContentAsFooter(t *testing.T) {
+	src := "plans:\n  x: 1\n\nversion: \"value\n\n# ending quote\"\n"
+	want := "version: \"value\n\n# ending quote\"\n\nplans:\n  x: 1\n"
+
+	out, _, err := MigrateSectionOrder([]byte(src))
+	if err != nil {
+		t.Fatalf("MigrateSectionOrder() error = %v", err)
+	}
+	if string(out) != want {
+		t.Fatalf("MigrateSectionOrder() =\n%q\nwant\n%q", out, want)
+	}
+
+	type document struct {
+		Plans struct {
+			X int `yaml:"x"`
+		} `yaml:"plans"`
+		Version string `yaml:"version"`
+	}
+	var before, after document
+	if err := yaml.Unmarshal([]byte(src), &before); err != nil {
+		t.Fatalf("input does not parse: %v", err)
+	}
+	if err := yaml.Unmarshal(out, &after); err != nil {
+		t.Fatalf("output does not parse: %v", err)
+	}
+	if after != before {
+		t.Fatalf("decoded config changed: got %#v, want %#v", after, before)
+	}
+}
+
 // TestMigrateSectionOrderTrustsHeadCommentOverColumnZero pins the two shapes that the
 // column-0 heuristic gets wrong and yaml.v3's own HeadComment gets right. A double-quoted
 // scalar on a top-level key continues at column 0, and that continuation may begin with
