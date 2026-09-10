@@ -158,6 +158,112 @@ func TestMigrateSectionOrderIdempotent(t *testing.T) {
 	}
 }
 
+// TestMigrateSectionOrderSelfChecksSemanticEquivalence pins the self-check's boundary:
+// mapping order, comments and scalar presentation may change, while resolved YAML
+// values may not. Comment-byte preservation remains covered independently by
+// TestCanonicalSectionOrderPreservesComments.
+func TestMigrateSectionOrderSelfChecksSemanticEquivalence(t *testing.T) {
+	src := []byte("# source comment\nplans: {dev: {entries: []}}\nx_extension:\n  ? [left, right]\n  : {second: '2', first: '1'}\nversion: '1'\n")
+	candidate := []byte("version: \"1\" # candidate comment\nx_extension:\n  ? [left, right]\n  : {first: \"1\", second: \"2\"}\nplans:\n  dev:\n    entries: []\n")
+
+	var before yaml.Node
+	if err := yaml.Unmarshal(src, &before); err != nil {
+		t.Fatalf("yaml.Unmarshal(source) error = %v", err)
+	}
+	report := MigrationReport{Changes: []string{"section order: reordered"}}
+	out, gotReport := finishSectionOrderMigration(src, &before, candidate, report)
+	if !bytes.Equal(out, candidate) {
+		t.Fatalf("semantic equivalent candidate was blocked:\n%s", out)
+	}
+	if len(gotReport.Blocked) != 0 {
+		t.Fatalf("report.Blocked = %v, want none", gotReport.Blocked)
+	}
+}
+
+func TestMigrateSectionOrderSelfCheckBlocksUnparseableCandidate(t *testing.T) {
+	src := []byte("plans: {}\nversion: \"1\"\n")
+	candidate := []byte("version: \"1\nplans: {}\n")
+
+	var before yaml.Node
+	if err := yaml.Unmarshal(src, &before); err != nil {
+		t.Fatalf("yaml.Unmarshal(source) error = %v", err)
+	}
+	report := MigrationReport{Changes: []string{"section order: reordered"}}
+	out, gotReport := finishSectionOrderMigration(src, &before, candidate, report)
+	if !bytes.Equal(out, src) {
+		t.Fatalf("unparseable candidate escaped the self-check:\n%s", out)
+	}
+	if len(gotReport.Changes) != 0 {
+		t.Fatalf("report.Changes = %v, want none for a blocked candidate", gotReport.Changes)
+	}
+	if len(gotReport.Blocked) != 1 || !strings.Contains(gotReport.Blocked[0], "could not parse") {
+		t.Fatalf("report.Blocked = %v, want the candidate-parse reason", gotReport.Blocked)
+	}
+}
+
+// TestMigrateSectionOrderSelfCheckCatchesKeepChomped feeds the umbrella check the
+// exact candidate shape produced before TASK-363's dedicated |+ fix: it still parses,
+// but moving the slot separator drops one newline from the scalar value. Keeping this
+// probe at the finishing boundary proves the self-check catches the defect even if its
+// individual block-splitting guard is absent or later regresses.
+func TestMigrateSectionOrderSelfCheckCatchesKeepChomped(t *testing.T) {
+	src := []byte("interaction:\n  seed:\n    command: |+\n      hi\n\nversion: \"1\"\n")
+	buggyCandidate := []byte("version: \"1\"\n\ninteraction:\n  seed:\n    command: |+\n      hi\n")
+
+	var before yaml.Node
+	if err := yaml.Unmarshal(src, &before); err != nil {
+		t.Fatalf("yaml.Unmarshal(source) error = %v", err)
+	}
+	report := MigrationReport{Changes: []string{"section order: reordered"}}
+	out, gotReport := finishSectionOrderMigration(src, &before, buggyCandidate, report)
+	if !bytes.Equal(out, src) {
+		t.Fatalf("semantic change escaped the self-check:\n%s", out)
+	}
+	if len(gotReport.Changes) != 0 {
+		t.Fatalf("report.Changes = %v, want none for a blocked candidate", gotReport.Changes)
+	}
+	if len(gotReport.Blocked) != 1 || !strings.Contains(gotReport.Blocked[0], "changed the YAML value") {
+		t.Fatalf("report.Blocked = %v, want the semantic-change reason", gotReport.Blocked)
+	}
+}
+
+// BenchmarkMigrateSectionOrderSemanticSelfCheck measures the new finishing guard on
+// the repository's largest tracked dva.yml (4,652 bytes at TASK-364). The parse-only
+// sub-benchmark isolates the added yaml.Unmarshal; parse-and-compare is the complete
+// production guard.
+func BenchmarkMigrateSectionOrderSemanticSelfCheck(b *testing.B) {
+	src, err := os.ReadFile("../../dva.yml")
+	if err != nil {
+		b.Fatal(err)
+	}
+	var before yaml.Node
+	if err := yaml.Unmarshal(src, &before); err != nil {
+		b.Fatal(err)
+	}
+
+	b.Run("parse-output-only", func(b *testing.B) {
+		b.ReportAllocs()
+		b.SetBytes(int64(len(src)))
+		for b.Loop() {
+			var after yaml.Node
+			if err := yaml.Unmarshal(src, &after); err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
+	b.Run("parse-and-compare", func(b *testing.B) {
+		b.ReportAllocs()
+		b.SetBytes(int64(len(src)))
+		report := MigrationReport{Changes: []string{"section order: reordered"}}
+		for b.Loop() {
+			out, gotReport := finishSectionOrderMigration(src, &before, src, report)
+			if !bytes.Equal(out, src) || len(gotReport.Blocked) != 0 {
+				b.Fatalf("finishSectionOrderMigration() = blocked %v", gotReport.Blocked)
+			}
+		}
+	})
+}
+
 // TestMigrateSectionOrderClearsTheValidateWarning proves the rewrite actually
 // satisfies the check that motivated it: validateCanonicalOrder's "section order:"
 // warning fires on the input and is gone from the output.

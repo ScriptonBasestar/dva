@@ -327,7 +327,77 @@ func MigrateSectionOrder(src []byte) ([]byte, MigrationReport, error) {
 	report.Changes = []string{
 		fmt.Sprintf("section order: reordered to %s", strings.Join(newKeys, " → ")),
 	}
-	return []byte(out), report, nil
+	checked, checkedReport := finishSectionOrderMigration(src, &doc, []byte(out), report)
+	return checked, checkedReport, nil
+}
+
+// finishSectionOrderMigration is the last line of defence around the line-range
+// rewriter. The source document was already parsed at the start of
+// MigrateSectionOrder; parsing the candidate once more and comparing YAML values turns
+// any future boundary mistake into a reported refusal instead of silent data loss.
+//
+// Presentation is deliberately outside this comparison. Comments, scalar style, and
+// line and column positions do not change a YAML value. Mapping order is ignored at
+// every depth, while sequence order and resolved scalar tags and values remain
+// significant.
+func finishSectionOrderMigration(
+	src []byte, before *yaml.Node, candidate []byte, report MigrationReport,
+) ([]byte, MigrationReport) {
+	var after yaml.Node
+	if err := yaml.Unmarshal(candidate, &after); err != nil {
+		report.Changes = nil
+		report.Blocked = append(report.Blocked,
+			"section order: not reordered — semantic self-check could not parse the candidate output; reorder by hand")
+		return src, report
+	}
+	if !yamlNodesSemanticallyEqual(before, &after) {
+		report.Changes = nil
+		report.Blocked = append(report.Blocked,
+			"section order: not reordered — semantic self-check found that the candidate output changed the YAML value; reorder by hand")
+		return src, report
+	}
+	return candidate, report
+}
+
+func yamlNodesSemanticallyEqual(a, b *yaml.Node) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+	if a.Kind != b.Kind || a.Tag != b.Tag || a.Value != b.Value || len(a.Content) != len(b.Content) {
+		return false
+	}
+
+	if a.Kind != yaml.MappingNode {
+		for i := range a.Content {
+			if !yamlNodesSemanticallyEqual(a.Content[i], b.Content[i]) {
+				return false
+			}
+		}
+		return true
+	}
+
+	// YAML mappings are unordered. Pair complete key/value entries rather than
+	// decoding to map[string]any: node comparison retains non-string keys and scalar
+	// tags, and it does not reject a value merely because Go cannot use its key as a
+	// comparable interface value.
+	matched := make([]bool, len(b.Content)/2)
+	for i := 0; i < len(a.Content); i += 2 {
+		found := false
+		for j := 0; j < len(b.Content); j += 2 {
+			if matched[j/2] ||
+				!yamlNodesSemanticallyEqual(a.Content[i], b.Content[j]) ||
+				!yamlNodesSemanticallyEqual(a.Content[i+1], b.Content[j+1]) {
+				continue
+			}
+			matched[j/2] = true
+			found = true
+			break
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
 }
 
 // hasYAMLAnchorOrAlias reports whether node or any descendant relies on YAML's
