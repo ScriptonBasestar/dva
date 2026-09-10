@@ -27,7 +27,8 @@ var initAliasCmd *cobra.Command
 var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Scaffold a new 'dva.yml' configuration in the current directory",
-	Long: `Scaffold a new dva.yml in the current directory. Auto-detects docker-compose.yml and Dockerfile.
+	Long: `Scaffold a new dva.yml in the current directory. Auto-detects Compose files, declared
+Makefile development targets, PORT_MAPPINGS manifests, and .gz-git workspaces.
 
 Use --recursive to also scaffold dva.yml in detected sub-projects. The sub-project
 scan runs even when the current directory itself has no Compose file and no

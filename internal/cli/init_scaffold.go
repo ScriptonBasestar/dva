@@ -235,9 +235,13 @@ func scaffoldDvaYmlWithPreview(dir, tmpl string, preview bool) (bool, error) {
 		return false, nil
 	}
 
+	discovered, err := discoverNativeScaffold(dir)
+	if err != nil {
+		return false, err
+	}
 	outcome, _, nativeLang, nativeEvidence := classifyDiscovery(dir)
 
-	if outcome == outcomeNoDiscovery {
+	if outcome == outcomeNoDiscovery && !discovered.hasEvidence() {
 		err := fmt.Errorf(`%w in %s; dva.yml was not created
   DVA init also found no recognized language manifest, so it has no verified
   evidence to scaffold from.
@@ -252,6 +256,26 @@ func scaffoldDvaYmlWithPreview(dir, tmpl string, preview bool) (bool, error) {
 			return false, nil
 		}
 		return false, err
+	}
+
+	if (outcome == outcomeNativeOnly || outcome == outcomeNoDiscovery) && discovered.hasEvidence() {
+		content := generateDiscoveredConfig(discovered, nativeLang, nativeEvidence)
+		if preview {
+			printDvaYmlPreview(target, content)
+			return true, nil
+		}
+		if err := os.WriteFile(target, []byte(content), 0644); err != nil {
+			return false, fmt.Errorf("failed to write %s: %w", target, err)
+		}
+		detectedLanguage := ""
+		if nativeLang != "" {
+			detectedLanguage = "; " + nativeEvidence.phrase(nativeLang) + " detected"
+		}
+		fmt.Printf("✅ Created %s (%d declared Makefile native entries, %d workspace subprojects, %d port mappings%s)\n", target, len(discovered.entries), len(discovered.subprojects), len(discovered.ports), detectedLanguage)
+		if updated, err := ensureGitignore(dir); err == nil && updated {
+			fmt.Printf("📎 Updated .gitignore to ignore %s/\n", config.DotDirName)
+		}
+		return true, nil
 	}
 
 	if outcome == outcomeNativeOnly {
@@ -275,7 +299,11 @@ func scaffoldDvaYmlWithPreview(dir, tmpl string, preview bool) (bool, error) {
 	}
 
 	if outcome == outcomeHybrid {
-		fmt.Printf("ℹ️  Detected both a Compose file and a %s in %s; using the Compose stack (add a native runner manually if you also want one)\n", nativeEvidence.phrase(nativeLang), dir)
+		if len(discovered.entries) > 0 {
+			fmt.Printf("ℹ️  Detected both a Compose file and declared Makefile native targets in %s; generating both runner types\n", dir)
+		} else {
+			fmt.Printf("ℹ️  Detected both a Compose file and a %s in %s; using the Compose stack (add a native runner manually if you also want one)\n", nativeEvidence.phrase(nativeLang), dir)
+		}
 	}
 
 	if tmpl == "" {
@@ -283,6 +311,12 @@ func scaffoldDvaYmlWithPreview(dir, tmpl string, preview bool) (bool, error) {
 	}
 
 	content := generateConfigIn(dir, tmpl)
+	if discovered.hasEvidence() {
+		content, err = mergeInitDiscovery(content, generateDiscoveredConfig(discovered, nativeLang, nativeEvidence))
+		if err != nil {
+			return false, err
+		}
+	}
 	if preview {
 		printDvaYmlPreview(target, content)
 		return true, nil

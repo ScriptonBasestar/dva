@@ -101,11 +101,8 @@ func TestInitDryRunPreviewOnNoDiscovery(t *testing.T) {
 // classic language manifest at all. Before TASK-322 this classified as
 // outcomeNoDiscovery and `dva init` exited 1 without writing anything.
 //
-// Only mise.toml is read today — it is what makes this root classify at all.
-// PORT_MAPPINGS.yaml, .gz-git.yaml and the Makefile are carried here because
-// they are part of the observed shape, but nothing reads them yet and the test
-// below asserts len(cfg.Stack) == 0 precisely because of that. Deriving native
-// entries from those three is TASK-339, not a gap in this test.
+// TASK-339 consumes the three declarations that TASK-322 deliberately left as
+// fixture-only data: PORT_MAPPINGS.yaml, .gz-git.yaml and Makefile recipes.
 var scriptonDashboardRootFiles = map[string]string{
 	"mise.toml": `[tools]
 node = "24"
@@ -125,12 +122,26 @@ services:
 `,
 	".gz-git.yaml": `kind: workspace
 workspaces:
+  scripton-mfe-protocol:
+    targetPath: scripton-mfe-protocol
   scripton-ui-components:
     targetPath: scripton-ui-components
 `,
-	"Makefile": `.PHONY: dev-dashboard
+	"Makefile": `DASHBOARD_DIR := dashboard-webui
+COMPONENTS_DIR := scripton-ui-components
+PROTOCOL_DIR := scripton-mfe-protocol
+
+.PHONY: dev-dashboard dev-components build test
 dev-dashboard: ## Run the dashboard host
-	cd dashboard-webui && pnpm dev
+	cd $(DASHBOARD_DIR) && pnpm dev
+dev-components: ## Watch the component library
+	cd $(COMPONENTS_DIR) && pnpm dev
+build: ## Build all packages
+	cd $(PROTOCOL_DIR) && pnpm build
+	cd $(COMPONENTS_DIR) && pnpm build
+	cd $(DASHBOARD_DIR) && pnpm build
+test: ## Test the dashboard
+	cd $(DASHBOARD_DIR) && pnpm test
 `,
 	".env.example":                 "DASHBOARD_PORT=11600\n",
 	"README.md":                    "# scripton-dashboard\n",
@@ -204,8 +215,8 @@ func TestClassifyDiscovery_ScriptonDashboardRootIsNativeOnly(t *testing.T) {
 	if err != nil {
 		t.Fatalf("config.Load: %v", err)
 	}
-	if len(cfg.Stack) != 0 {
-		t.Fatalf("native-only output must not guess a stack entry, got: %+v", cfg.Stack)
+	if len(cfg.Stack) != 2 {
+		t.Fatalf("declared Makefile recipes must produce two stack entries, got: %+v", cfg.Stack)
 	}
 	if err := cfg.Validate(); err != nil {
 		t.Fatalf("generated config does not validate: %v", err)

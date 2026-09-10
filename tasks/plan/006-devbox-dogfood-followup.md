@@ -3,9 +3,9 @@ id: PLAN-006
 title: "Work the devbox dogfood follow-up queue in dependency order"
 type: plan
 scope: "TASK-311..323 from the 2026-09-05 mydevbox migration, plus the needs-human cards that gate the rest"
-progress: 65
+progress: 69
 total-tasks: 26
-completed-tasks: 17
+completed-tasks: 18
 children: [TASK-339, TASK-340, TASK-328, TASK-329, TASK-312, TASK-313, TASK-317, TASK-311, TASK-324, TASK-314, TASK-316, TASK-320, TASK-322, TASK-315, TASK-318, TASK-323, TASK-249, TASK-307, TASK-309, TASK-319, TASK-321, TASK-345, TASK-346, TASK-347, TASK-348, TASK-351]
 target-date: "2026-10-31"
 created: 2026-09-05
@@ -117,7 +117,7 @@ validate가 요구한다 — 둘은 다른 질문에 답한다.
 
 - TASK-249 — init을 검증된 capability 중심으로 재설계 (archive/done). 완료됐으므로 무해
 - TASK-322에서 분리된 두 장:
-  - TASK-339 — init이 `PORT_MAPPINGS.yaml`·`.gz-git.yaml`·Makefile에서 native 엔트리 도출 (todo)
+  - TASK-339 — init이 `PORT_MAPPINGS.yaml`·`.gz-git.yaml`·Makefile에서 native 엔트리 도출 (done, 2026-09-10)
   - TASK-340 — `dva init --dry-run` 프리뷰 결정 (done, Option A; stdout preview only, no writes)
 - TASK-329 — familybook devbox `dva.yaml` → `dva.yml` rename (todo). readiness 브랜치 대기
 - compose 번들은 아래 §Compose follow-up sequence에서 순서를 소유한다.

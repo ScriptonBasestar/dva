@@ -113,5 +113,6 @@ cadence, change threshold)에 대한 Decision Record는 크기 상한을 지키�
 - 구현·label 증거·TASK-250 대조 검증, 완료기준 매핑: [docs/59](59-capability-driven-init-verification.md)
 - Label/증거 인벤토리(완료기준 3): [docs/60](60-capability-driven-init-label-inventory.md)
 - Census 거버넌스 Decision Record(완료기준 10): [docs/61](61-capability-driven-init-census-governance.md)
+- 선언된 native 명령 발견 결정(TASK-339): [docs/63](63-init-native-declaration-discovery.md)
 - Implementation: [TASK-250](../tasks/_archive/done/250-implement-capability-driven-init.md)
 - Parent plan: [PLAN-002](../tasks/_archive/plan/002-command-surface-delivery.md)
