@@ -9,7 +9,12 @@ created-at: 2026-09-08T16:40:00+09:00
 source: "TASK-318 재리뷰 (t318-rereview) SHOULD-FIX 4"
 status: todo
 depends-on: []
-needs-human: true
+needs-human: false
+allowed-paths:
+  - internal/config/migrate_section_order.go
+  - internal/config/migrate_section_order_test.go
+  - tasks/todo/363-stop-keep-chomped-block-scalars-from-losing-their-trailing-blank.md
+  - tasks/plan/008-migrate-section-order-defects.md
 ---
 
 # Task 363: `|+` 블록 스칼라가 후행 빈 줄을 잃는다
@@ -64,6 +69,13 @@ needs-human: true
 - [ ] 그 테스트가 공허하지 않다 — 수정 전 소스에 대해 `go test -overlay`로 FAIL을 확인하고 결과를 카드에 기록 | verify: human — 변이/오버레이 실행 결과 첨부
 - [ ] `|`/`>`(clip/strip) 블록의 기존 동작은 바뀌지 않는다 | verify: `go test ./internal/config/` (regression-guard)
 - [ ] 게이트 통과 | verify: `make doc-check`
+
+## 수정 전 실패 증거
+
+2026-09-10에 기준 커밋 `11948727`의 구현에 새 회귀 테스트 파일만 overlay하고
+`go test -overlay=/Users/archmagece/worktrees/misc/dva/codex__mbp__fix__keep-chomped-block-scalars/tmp/task-363-overlay.json ./internal/config/ -run '^TestMigrateSectionOrderKeepsKeepChompedTrailingBlank$' -count=1`
+을 실행했다. `literal`과 `folded` 하위 테스트가 모두 FAIL했고, 각각 디코드 값이
+`before "hi\n\n", after "hi\n"`으로 바뀌었다. 명령은 exit 1이었다.
 
 ## 참고
 

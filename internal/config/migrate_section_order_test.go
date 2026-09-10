@@ -323,6 +323,206 @@ func TestMigrateSectionOrderKeepsSlotSeparators(t *testing.T) {
 	}
 }
 
+// TestMigrateSectionOrderKeepsKeepChompedTrailingBlank proves a blank line at
+// the end of a keep-chomped block scalar remains part of the decoded value when
+// its top-level section moves. A valid output is not enough here: dropping the
+// blank still produces valid YAML while silently changing the command.
+func TestMigrateSectionOrderKeepsKeepChompedTrailingBlank(t *testing.T) {
+	tests := []struct {
+		name      string
+		prefix    string
+		indicator string
+	}{
+		{name: "literal", indicator: "|+"},
+		{name: "folded", indicator: ">+"},
+		{name: "anchor before literal", prefix: "&script ", indicator: "|+"},
+		{name: "tag before folded", prefix: "!!str ", indicator: ">+"},
+		{name: "anchor and tag before literal", prefix: "&script !!str ", indicator: "|+"},
+		{name: "tag and anchor before folded", prefix: "!!str &script ", indicator: ">+"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			src := "interaction:\n  seed:\n    command: " + tt.prefix + tt.indicator + "\n      hi\n\nversion: \"1\"\n"
+
+			out, _, err := MigrateSectionOrder([]byte(src))
+			if err != nil {
+				t.Fatalf("MigrateSectionOrder() error = %v", err)
+			}
+
+			type document struct {
+				Interaction map[string]struct {
+					Command string `yaml:"command"`
+				} `yaml:"interaction"`
+			}
+			decodeCommand := func(raw []byte) string {
+				t.Helper()
+				var doc document
+				if err := yaml.Unmarshal(raw, &doc); err != nil {
+					t.Fatalf("yaml.Unmarshal() error = %v\n%s", err, raw)
+				}
+				return doc.Interaction["seed"].Command
+			}
+
+			before := decodeCommand([]byte(src))
+			after := decodeCommand(out)
+			if before != "hi\n\n" {
+				t.Fatalf("test fixture decoded command = %q, want %q", before, "hi\n\n")
+			}
+			if after != before {
+				t.Fatalf("decoded command changed: before %q, after %q\n%s", before, after, out)
+			}
+		})
+	}
+}
+
+// TestMigrateSectionOrderKeepsExplicitIndentKeepChompedTrailingBlank proves
+// that an explicit indentation indicator, in either legal modifier order, sets
+// the scalar's required indentation. The first content line may be deeper than
+// that baseline without causing a later baseline-indented line to end the scalar.
+func TestMigrateSectionOrderKeepsExplicitIndentKeepChompedTrailingBlank(t *testing.T) {
+	tests := []struct {
+		name      string
+		prefix    string
+		indicator string
+	}{
+		{name: "literal with anchor", prefix: "&script ", indicator: "|2+"},
+		{name: "folded with tag", prefix: "!!str ", indicator: ">+2"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			src := "interaction:\n  seed:\n    command: " + tt.prefix + tt.indicator +
+				"\n        deeper\n      baseline\n\nversion: \"1\"\n"
+
+			out, _, err := MigrateSectionOrder([]byte(src))
+			if err != nil {
+				t.Fatalf("MigrateSectionOrder() error = %v", err)
+			}
+
+			type document struct {
+				Interaction map[string]struct {
+					Command string `yaml:"command"`
+				} `yaml:"interaction"`
+			}
+			decodeCommand := func(raw []byte) string {
+				t.Helper()
+				var doc document
+				if err := yaml.Unmarshal(raw, &doc); err != nil {
+					t.Fatalf("yaml.Unmarshal() error = %v\n%s", err, raw)
+				}
+				return doc.Interaction["seed"].Command
+			}
+
+			before := decodeCommand([]byte(src))
+			after := decodeCommand(out)
+			if !strings.HasSuffix(before, "\n\n") {
+				t.Fatalf("test fixture decoded command = %q, want two trailing newlines", before)
+			}
+			if after != before {
+				t.Fatalf("decoded command changed: before %q, after %q\n%s", before, after, out)
+			}
+		})
+	}
+}
+
+// TestMigrateSectionOrderNestedSequenceExplicitIndentKeepsSlotSeparator proves
+// that an inline mapping inside a sequence takes its indentation base from the
+// mapping key, not from the spaces before the sequence marker. With |2+ below,
+// scalar content starts at eight spaces; the six-space comment ends the scalar,
+// so the final blank remains the slot separator after reordering.
+func TestMigrateSectionOrderNestedSequenceExplicitIndentKeepsSlotSeparator(t *testing.T) {
+	src := "interaction:\n  seeds:\n    - command: |2+\n        hi\n      # seed tail\n\nversion: \"1\"\n"
+	want := "version: \"1\"\n\ninteraction:\n  seeds:\n    - command: |2+\n        hi\n      # seed tail\n"
+
+	out, _, err := MigrateSectionOrder([]byte(src))
+	if err != nil {
+		t.Fatalf("MigrateSectionOrder() error = %v", err)
+	}
+	if string(out) != want {
+		t.Fatalf("MigrateSectionOrder() =\n%q\nwant\n%q", out, want)
+	}
+}
+
+// TestMigrateSectionOrderExplicitKeyIndentKeepsTrailingBlank proves an explicit
+// mapping key does not move the scalar indentation base after the `? ` prefix.
+// The mapping starts at four spaces, so |2+ accepts both the deeper eight-space
+// first line and the later six-space line, including the final blank in its value.
+func TestMigrateSectionOrderExplicitKeyIndentKeepsTrailingBlank(t *testing.T) {
+	src := "interaction:\n  seed:\n    ? command\n    : |2+\n        deeper\n      baseline\n\nversion: \"1\"\n"
+
+	out, _, err := MigrateSectionOrder([]byte(src))
+	if err != nil {
+		t.Fatalf("MigrateSectionOrder() error = %v", err)
+	}
+
+	type document struct {
+		Interaction map[string]struct {
+			Command string `yaml:"command"`
+		} `yaml:"interaction"`
+	}
+	decodeCommand := func(raw []byte) string {
+		t.Helper()
+		var doc document
+		if err := yaml.Unmarshal(raw, &doc); err != nil {
+			t.Fatalf("yaml.Unmarshal() error = %v\n%s", err, raw)
+		}
+		return doc.Interaction["seed"].Command
+	}
+
+	before := decodeCommand([]byte(src))
+	after := decodeCommand(out)
+	if !strings.HasSuffix(before, "\n\n") {
+		t.Fatalf("test fixture decoded command = %q, want two trailing newlines", before)
+	}
+	if after != before {
+		t.Fatalf("decoded command changed: before %q, after %q\n%s", before, after, out)
+	}
+}
+
+// TestMigrateSectionOrderKeepChompedScalarBeforeTailKeepsSlotSeparator proves
+// that finding |+ inside a top-level block is insufficient to claim the block's
+// final blank. A later field or YAML comment ends the scalar, so the blank after
+// that tail remains attached to the slot and still separates the reordered keys.
+func TestMigrateSectionOrderKeepChompedScalarBeforeTailKeepsSlotSeparator(t *testing.T) {
+	tests := []struct {
+		name string
+		tail string
+	}{
+		{name: "later field", tail: "    shell: bash\n"},
+		{name: "later comment", tail: "    # seed command note\n"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			src := "interaction:\n  seed:\n    command: |+\n      hi\n" + tt.tail + "\nversion: \"1\"\n"
+			want := "version: \"1\"\n\ninteraction:\n  seed:\n    command: |+\n      hi\n" + tt.tail
+
+			out, _, err := MigrateSectionOrder([]byte(src))
+			if err != nil {
+				t.Fatalf("MigrateSectionOrder() error = %v", err)
+			}
+			if string(out) != want {
+				t.Fatalf("MigrateSectionOrder() =\n%q\nwant\n%q", out, want)
+			}
+		})
+	}
+}
+
+// TestMigrateSectionOrderKeepMarkerInCommentDoesNotClaimSeparator pins the
+// lexical boundary of the header check. The parsed scalar is literal, but the +
+// appears only in its inline comment; treating that text as a keep indicator
+// would move the slot's blank line to EOF.
+func TestMigrateSectionOrderKeepMarkerInCommentDoesNotClaimSeparator(t *testing.T) {
+	src := "interaction:\n  seed:\n    command: | # documentation mentions |+\n      hi\n\nversion: \"1\"\n"
+	want := "version: \"1\"\n\ninteraction:\n  seed:\n    command: | # documentation mentions |+\n      hi\n"
+
+	out, _, err := MigrateSectionOrder([]byte(src))
+	if err != nil {
+		t.Fatalf("MigrateSectionOrder() error = %v", err)
+	}
+	if string(out) != want {
+		t.Fatalf("MigrateSectionOrder() =\n%q\nwant\n%q", out, want)
+	}
+}
+
 // TestMigrateSectionOrderKeepsFooterCommentAtEOF is the tail half of the preamble
 // symmetry. A licence or `# vim:` footer separated from the last section by a blank
 // line is document furniture, not that section's content; absorbed into the block it

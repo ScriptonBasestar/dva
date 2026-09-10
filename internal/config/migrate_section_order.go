@@ -231,14 +231,21 @@ func MigrateSectionOrder(src []byte) ([]byte, MigrationReport, error) {
 	// somewhere in the middle with nothing after it — gluing its successor onto its
 	// final line — while the block that takes its place brings a now-trailing blank.
 	// Splitting each block into content plus its slot's separator and permuting only
-	// the content leaves the document's vertical rhythm exactly as authored.
+	// the content leaves the document's vertical rhythm exactly as authored. The one
+	// exception is a block ending in a keep-chomped scalar: its trailing blanks are
+	// scalar data, so that block keeps them as content. A keep-chomped scalar earlier
+	// in the block does not claim the separator after a later field or comment.
 	blockText := make([]string, n)
 	slotSeparator := make([]int, n)
 	for i := range n {
 		body := lines[start[i]-1 : end[i]]
 		blanks := 0
-		for len(body)-blanks > 0 && strings.TrimSpace(body[len(body)-blanks-1]) == "" {
-			blanks++
+		if !keepChompedScalarConsumesTrailingBlanks(
+			root.Content[2*i+1], lines, end[i], root.Content[2*i].Column-1,
+		) {
+			for len(body)-blanks > 0 && strings.TrimSpace(body[len(body)-blanks-1]) == "" {
+				blanks++
+			}
 		}
 		blockText[i] = strings.Join(body[:len(body)-blanks], "\n")
 		slotSeparator[i] = blanks
@@ -292,6 +299,153 @@ func MigrateSectionOrder(src []byte) ([]byte, MigrationReport, error) {
 		fmt.Sprintf("section order: reordered to %s", strings.Join(newKeys, " → ")),
 	}
 	return []byte(out), report, nil
+}
+
+// keepChompedScalarConsumesTrailingBlanks reports whether a keep-chomped block
+// scalar reaches blockEnd. Only then are the block's final blank lines scalar data;
+// a later field or YAML comment ends the scalar and leaves those blanks as the slot
+// separator.
+func keepChompedScalarConsumesTrailingBlanks(
+	node *yaml.Node, lines []string, blockEnd, indentationBase int,
+) bool {
+	return findKeepChompedScalarAtEnd(
+		node, lines, blockEnd, lastNodeLine(node), indentationBase,
+	)
+}
+
+func findKeepChompedScalarAtEnd(
+	node *yaml.Node, lines []string, blockEnd, lastSyntaxLine, indentationBase int,
+) bool {
+	if node.Line == lastSyntaxLine && blockScalarUsesKeepChomping(node, lines) &&
+		blockScalarReachesEnd(node, lines, blockEnd, indentationBase) {
+		return true
+	}
+
+	// Keep the traversal shape-aware: the mapping node's column is the indentation
+	// base for its values. It includes an inline sequence prefix when present, while
+	// an explicit key's own column sits after `? ` and would overstate the base.
+	switch node.Kind {
+	case yaml.MappingNode:
+		for i := 1; i < len(node.Content); i += 2 {
+			value := node.Content[i]
+			if findKeepChompedScalarAtEnd(
+				value, lines, blockEnd, lastSyntaxLine, node.Column-1,
+			) {
+				return true
+			}
+		}
+	case yaml.SequenceNode:
+		for _, child := range node.Content {
+			if findKeepChompedScalarAtEnd(
+				child, lines, blockEnd, lastSyntaxLine, node.Column-1,
+			) {
+				return true
+			}
+		}
+	default:
+		for _, child := range node.Content {
+			if findKeepChompedScalarAtEnd(
+				child, lines, blockEnd, lastSyntaxLine, indentationBase,
+			) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func lastNodeLine(node *yaml.Node) int {
+	last := node.Line
+	for _, child := range node.Content {
+		last = max(last, lastNodeLine(child))
+	}
+	return last
+}
+
+// blockScalarUsesKeepChomping reads the source token because yaml.Node records
+// literal/folded style but not the chomping indicator. Node.Column may point at a
+// preceding tag or anchor, so the block indicator is the last token before an inline
+// comment, not necessarily the rune at Column.
+func blockScalarUsesKeepChomping(node *yaml.Node, lines []string) bool {
+	indicator, ok := blockScalarHeaderIndicator(node, lines)
+	if !ok || len(indicator) < 2 {
+		return false
+	}
+	modifiers := indicator[1:]
+	if len(modifiers) == 1 {
+		return modifiers[0] == '+'
+	}
+	return len(modifiers) == 2 &&
+		((modifiers[0] == '+' && modifiers[1] >= '1' && modifiers[1] <= '9') ||
+			(modifiers[1] == '+' && modifiers[0] >= '1' && modifiers[0] <= '9'))
+}
+
+func blockScalarHeaderIndicator(node *yaml.Node, lines []string) (string, bool) {
+	if node.Kind != yaml.ScalarNode || node.Style&(yaml.LiteralStyle|yaml.FoldedStyle) == 0 ||
+		node.Line < 1 || node.Line > len(lines) {
+		return "", false
+	}
+	line := []rune(strings.TrimSuffix(lines[node.Line-1], "\r"))
+	column := node.Column - 1
+	if column < 0 || column >= len(line) {
+		return "", false
+	}
+	header := line[column:]
+	for i, r := range header {
+		if r == '#' && i > 0 && (header[i-1] == ' ' || header[i-1] == '\t') {
+			header = header[:i]
+			break
+		}
+	}
+	fields := strings.Fields(string(header))
+	if len(fields) == 0 {
+		return "", false
+	}
+	indicator := fields[len(fields)-1]
+	if len(indicator) == 0 || (indicator[0] != '|' && indicator[0] != '>') {
+		return "", false
+	}
+	return indicator, true
+}
+
+// blockScalarReachesEnd distinguishes scalar-owned trailing blanks from a slot
+// separator. An explicit indentation indicator is relative to the owning key or
+// sequence; without one, the first content line establishes the indentation. The
+// first later nonblank line with less indentation is outside the scalar. If no such
+// line occurs before blockEnd, the keep-chomped scalar consumes the trailing blanks.
+func blockScalarReachesEnd(
+	node *yaml.Node, lines []string, blockEnd, indentationBase int,
+) bool {
+	if node.Line >= blockEnd || blockEnd > len(lines) {
+		return false
+	}
+	contentIndent := -1
+	if indicator, ok := blockScalarHeaderIndicator(node, lines); ok {
+		for _, modifier := range indicator[1:] {
+			if modifier >= '1' && modifier <= '9' {
+				contentIndent = indentationBase + int(modifier-'0')
+				break
+			}
+		}
+	}
+	for lineNumber := node.Line + 1; lineNumber <= blockEnd; lineNumber++ {
+		line := strings.TrimSuffix(lines[lineNumber-1], "\r")
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		indent := leadingSpaces(line)
+		if contentIndent < 0 {
+			if node.Value == "" || indent <= indentationBase {
+				return false
+			}
+			contentIndent = indent
+			continue
+		}
+		if indent < contentIndent {
+			return false
+		}
+	}
+	return contentIndent >= 0 || node.Value != ""
 }
 
 // commentExtendedStart returns the first line of the banner comment attached to the
