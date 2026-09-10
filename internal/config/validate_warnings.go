@@ -72,6 +72,7 @@ func (c *Config) ValidateWarnings() []string {
 	warnings = append(warnings, c.warnDuplicatePlanDeclarations()...)
 	warnings = append(warnings, c.warnMultiplePlansWithoutDefault()...)
 	warnings = append(warnings, c.warnPlanServicesNotDeclared()...)
+	warnings = append(warnings, c.warnPlanProfilesNotDefined()...)
 	warnings = append(warnings, c.warnUnreferencedEnvironmentsAndSites()...)
 	warnings = append(warnings, c.warnNoOpEntryOverrides()...)
 	warnings = append(warnings, c.warnEmptyInteractionCommands()...)

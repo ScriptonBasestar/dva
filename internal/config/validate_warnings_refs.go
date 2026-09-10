@@ -2,9 +2,13 @@ package config
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
 // TASK-308: reference-integrity warnings. Each check names a declaration that
@@ -56,6 +60,217 @@ func (c *Config) warnPlanServicesNotDeclared() []string {
 		}
 	}
 	return warnings
+}
+
+// warnPlanProfilesNotDefined warns when plans.<p>.entries[<e>].profiles names a
+// profile no service in the entry's configured compose files defines.
+//
+// Compose owns the declaration surface: profiles intentionally do not have a
+// second declaration in dva.yml. This check therefore runs only when it can read
+// and resolve every configured file. A missing or unreadable file, interpolation,
+// include, or extends makes the complete profile set unknowable, so validation
+// stays quiet and leaves compose to diagnose the file at runtime.
+func (c *Config) warnPlanProfilesNotDefined() []string {
+	var warnings []string
+	for _, planName := range sortedPlanNames(c) {
+		plan := c.Plans[planName]
+		if plan == nil {
+			continue
+		}
+		owner := plan.OwnerConfig(c)
+		for i, pe := range plan.Entries {
+			if len(pe.Profiles) == 0 {
+				continue
+			}
+			entry, ok := owner.Stack[pe.Name]
+			if !ok || entry == nil {
+				continue // undeclared entries are reported elsewhere
+			}
+			available, resolved := composeProfilesForEntry(owner, pe.Name, entry)
+			if !resolved {
+				continue
+			}
+
+			var missing []string
+			seenMissing := make(map[string]bool)
+			for _, profile := range pe.Profiles {
+				if !available[profile] && !seenMissing[profile] {
+					missing = append(missing, profile)
+					seenMissing[profile] = true
+				}
+			}
+			if len(missing) == 0 {
+				continue
+			}
+			sort.Strings(missing)
+			availableNames := make([]string, 0, len(available))
+			for profile := range available {
+				availableNames = append(availableNames, profile)
+			}
+			sort.Strings(availableNames)
+			availableText := strings.Join(availableNames, ", ")
+			if availableText == "" {
+				availableText = "none"
+			}
+			warnings = append(warnings, fmt.Sprintf(
+				"plans.%s.entries[%d].profiles: %s not defined by stack.%s's compose files (available: %s); fix the profile name or define it under services.<name>.profiles in compose",
+				planName, i, strings.Join(missing, ", "), pe.Name, availableText))
+		}
+	}
+	return warnings
+}
+
+type composeProfileDocument struct {
+	Include  yaml.Node                        `yaml:"include"`
+	Services map[string]composeProfileService `yaml:"services"`
+}
+
+type composeProfileService struct {
+	Profiles yaml.Node `yaml:"profiles"`
+	Extends  yaml.Node `yaml:"extends"`
+}
+
+func composeProfilesForEntry(c *Config, entryName string, entry *LifecycleEntry) (map[string]bool, bool) {
+	cc := entry.ComposeConfig()
+	if cc == nil || len(cc.Files) == 0 {
+		return nil, false
+	}
+
+	baseDir := c.FileDir()
+	if entry.Source != nil {
+		var err error
+		baseDir, err = SourceDir(entry.Source, entryName, baseDir)
+		if err != nil {
+			return nil, false
+		}
+	}
+
+	available := make(map[string]bool)
+	hasServicesDeclaration := false
+	for _, configuredPath := range cc.Files {
+		if strings.TrimSpace(configuredPath) == "" || strings.Contains(configuredPath, "$") {
+			return nil, false
+		}
+		filePath := configuredPath
+		if !filepath.IsAbs(filePath) {
+			filePath = filepath.Join(baseDir, filePath)
+		}
+
+		profiles, hasServices, ok := readComposeServiceProfiles(filePath)
+		if !ok {
+			return nil, false
+		}
+		hasServicesDeclaration = hasServicesDeclaration || hasServices
+		for _, profile := range profiles {
+			available[profile] = true
+		}
+	}
+	if !hasServicesDeclaration {
+		return nil, false
+	}
+	return available, true
+}
+
+func readComposeServiceProfiles(filePath string) ([]string, bool, bool) {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, false, false
+	}
+
+	var node yaml.Node
+	if err := yaml.Unmarshal(data, &node); err != nil ||
+		node.Kind != yaml.DocumentNode || len(node.Content) == 0 ||
+		node.Content[0].Kind != yaml.MappingNode {
+		return nil, false, false
+	}
+	root := node.Content[0]
+	servicesNode := findMapValueNode(root, "services")
+	hasServices := servicesNode != nil
+	if hasServices && !composeServicesNodeIsMapping(servicesNode) {
+		return nil, false, false
+	}
+	if hasUnsupportedComposeProfileTag(servicesNode) {
+		return nil, false, false
+	}
+
+	var doc composeProfileDocument
+	if err := node.Decode(&doc); err != nil {
+		return nil, false, false
+	}
+	if doc.Include.Kind != 0 {
+		return nil, false, false
+	}
+	var profiles []string
+	for _, service := range doc.Services {
+		if service.Extends.Kind != 0 {
+			return nil, false, false
+		}
+		if service.Profiles.Kind == 0 {
+			continue
+		}
+		profileList, ok := resolveComposeAlias(&service.Profiles)
+		if !ok || profileList.Kind != yaml.SequenceNode {
+			return nil, false, false
+		}
+		for _, profileNode := range profileList.Content {
+			profileNode, ok = resolveComposeAlias(profileNode)
+			if !ok || profileNode.Kind != yaml.ScalarNode || profileNode.Tag != "!!str" {
+				return nil, false, false
+			}
+			profile := profileNode.Value
+			if strings.TrimSpace(profile) == "" || strings.Contains(profile, "$") {
+				return nil, false, false
+			}
+			profiles = append(profiles, profile)
+		}
+	}
+	return profiles, hasServices, true
+}
+
+func resolveComposeAlias(node *yaml.Node) (*yaml.Node, bool) {
+	seen := make(map[*yaml.Node]bool)
+	for node != nil && node.Kind == yaml.AliasNode {
+		if node.Alias == nil || seen[node] {
+			return nil, false
+		}
+		seen[node] = true
+		node = node.Alias
+	}
+	return node, node != nil
+}
+
+func composeServicesNodeIsMapping(node *yaml.Node) bool {
+	for node != nil && node.Kind == yaml.AliasNode {
+		node = node.Alias
+	}
+	if node == nil || node.Kind != yaml.MappingNode {
+		return false
+	}
+	for i := 1; i < len(node.Content); i += 2 {
+		service := node.Content[i]
+		for service != nil && service.Kind == yaml.AliasNode {
+			service = service.Alias
+		}
+		if service == nil || service.Kind != yaml.MappingNode {
+			return false
+		}
+	}
+	return true
+}
+
+func hasUnsupportedComposeProfileTag(node *yaml.Node) bool {
+	if node == nil {
+		return false
+	}
+	if node.Tag == "!reset" || node.Tag == "!override" {
+		return true
+	}
+	for _, child := range node.Content {
+		if hasUnsupportedComposeProfileTag(child) {
+			return true
+		}
+	}
+	return false
 }
 
 // warnUnreferencedEnvironmentsAndSites warns when an environments.* or sites.*

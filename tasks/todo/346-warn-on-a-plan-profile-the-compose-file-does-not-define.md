@@ -7,7 +7,13 @@ effort: M
 exec-tier: strong
 status: todo
 created: 2026-09-07
-needs-human: true
+needs-human: false
+allowed-paths:
+  - internal/config/validate_warnings.go
+  - internal/config/validate_warnings_refs.go
+  - internal/config/validate_warnings_refs_test.go
+  - tasks/todo/346-warn-on-a-plan-profile-the-compose-file-does-not-define.md
+  - tasks/plan/006-devbox-dogfood-followup.md
 ---
 
 ## Summary
@@ -59,3 +65,19 @@ broken config.
 - [ ] A plan profile absent from the resolved profile set produces a warning naming the plan, the entry index, and the available profiles | verify: `/usr/bin/grep -rq 'func TestWarnPlanProfilesNotDefined(' internal/config`
 - [ ] An unresolvable or absent compose file degrades to silence rather than a warning or an error | verify: `/usr/bin/grep -rq 'func TestPlanProfileWarningStaysQuietWithoutAResolvableComposeFile(' internal/config`
 - [ ] Gates stay green | verify: `make test`
+
+## Design record
+
+2026-09-10: Option 1을 채택한다. profile 정의의 정본은 dva.yml에 중복 선언하지 않고, 각
+stack compose runner가 지정한 파일의 `services.*.profiles`로 둔다. 실제 실행 결과를
+결정하는 compose 파일을 직접 확인하므로 별도 `ComposePluginConfig.Profiles` 목록이
+compose와 어긋나는 두 번째 drift 경로를 만들지 않으며, TASK-315에서 정한 "profile은 plan의
+실행 의도"라는 경계도 유지한다.
+
+검사는 plan이 선언된 실제 owner config와 source entry의 기준 디렉터리에서 명시된 compose
+파일 전부를 읽고, profile 합집합을 정렬해 비교한다. 유효한 compose service 집합에 profile이
+하나도 없으면 `(available: none)`으로 경고한다. 반면 compose runner/file 선언이 없거나,
+파일이 없거나 읽히지 않거나 YAML을 해석할 수 없거나, 경로·profile interpolation 또는
+`include`/`extends`/compose 특수 merge tag 때문에 완전한 집합을 확정할 수 없으면 warning과
+error를 모두 내지 않는다. 일부 파일에서 읽은 불완전한 집합으로 경고하는 것보다 조용히
+runtime compose 진단에 맡기는 쪽이 이 비치명적 validator의 계약에 맞는다.

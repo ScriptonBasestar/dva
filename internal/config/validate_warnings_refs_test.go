@@ -1,6 +1,8 @@
 package config
 
 import (
+	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -60,6 +62,102 @@ default_plan: dev
 	requireNoneContaining(t, got, "nomap", "postgres not declared")
 	if len(got) != 1 {
 		t.Fatalf("want exactly 1 warning, got %d: %v", len(got), got)
+	}
+}
+
+func TestWarnPlanProfilesNotDefined(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "compose.yml"), []byte(`services:
+  api:
+    image: example/api
+    profiles: [rust, monitoring]
+  worker:
+    image: example/worker
+    profiles: [dev, rust]
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "compose.tools.yml"), []byte(`services:
+  adminer:
+    image: adminer
+    profiles: [tools]
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	c := loadConfigForSchemaTest(t, dir, `
+version: "0.1.0"
+stack:
+  app:
+    default_runner: compose
+    runners:
+      compose:
+        files: [compose.yml, compose.tools.yml]
+plans:
+  dev:
+    entries:
+      - name: app
+        profiles: [unknown, rust, absent, unknown]
+default_plan: dev
+`)
+
+	want := "plans.dev.entries[0].profiles: absent, unknown not defined by stack.app's compose files (available: dev, monitoring, rust, tools); fix the profile name or define it under services.<name>.profiles in compose"
+	got := c.warnPlanProfilesNotDefined()
+	if !slices.Equal(got, []string{want}) {
+		t.Fatalf("got  %v\nwant [%s]", got, want)
+	}
+	requireContaining(t, c.ValidateWarnings(), want)
+
+	if err := os.WriteFile(filepath.Join(dir, "compose.yml"), []byte("services:\n  base:\n    image: nginx\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	c.Stack["app"].ComposeConfig().Files = []string{"compose.yml"}
+	got = c.warnPlanProfilesNotDefined()
+	requireContaining(t, got, "plans.dev.entries[0].profiles:", "(available: none)")
+}
+
+func TestPlanProfileWarningStaysQuietWithoutAResolvableComposeFile(t *testing.T) {
+	tests := []struct {
+		name        string
+		composeFile string
+		files       []string
+		unreadable  bool
+	}{
+		{name: "no configured file"},
+		{name: "missing file", files: []string{"missing.yml"}},
+		{name: "unreadable file", files: []string{"compose.yml"}, unreadable: true},
+		{name: "malformed yaml", composeFile: "services: [", files: []string{"compose.yml"}},
+		{name: "include", composeFile: "include: [child.yml]\nservices: {}\n", files: []string{"compose.yml"}},
+		{name: "extends", composeFile: "services:\n  app:\n    extends:\n      file: base.yml\n      service: app\n", files: []string{"compose.yml"}},
+		{name: "interpolated profile", composeFile: "services:\n  app:\n    profiles: [${APP_PROFILE}]\n", files: []string{"compose.yml"}},
+		{name: "integer profile", composeFile: "services:\n  app:\n    profiles: [42]\n", files: []string{"compose.yml"}},
+		{name: "boolean profile", composeFile: "services:\n  app:\n    profiles: [true]\n", files: []string{"compose.yml"}},
+		{name: "interpolated path", composeFile: "services:\n  app:\n    profiles: [dev]\n", files: []string{"${COMPOSE_FILE}"}},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			if tc.unreadable {
+				if err := os.Mkdir(filepath.Join(dir, "compose.yml"), 0o755); err != nil {
+					t.Fatal(err)
+				}
+			} else if tc.composeFile != "" {
+				if err := os.WriteFile(filepath.Join(dir, "compose.yml"), []byte(tc.composeFile), 0o644); err != nil {
+					t.Fatal(err)
+				}
+			}
+			c := &Config{
+				filePath: filepath.Join(dir, FileName),
+				Stack: map[string]*LifecycleEntry{
+					"app": {Compose: &ComposePluginConfig{Files: tc.files}},
+				},
+				Plans: map[string]*PlanConfig{
+					"dev": {Entries: []PlanEntry{{Name: "app", Profiles: []string{"dev"}}}},
+				},
+			}
+			if got := c.warnPlanProfilesNotDefined(); len(got) != 0 {
+				t.Fatalf("warning must stay quiet, got %v", got)
+			}
+		})
 	}
 }
 
