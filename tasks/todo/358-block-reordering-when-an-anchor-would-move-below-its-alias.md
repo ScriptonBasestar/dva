@@ -9,7 +9,12 @@ created-at: 2026-09-08T16:40:00+09:00
 source: "TASK-318 재리뷰 (t318-rereview)"
 status: todo
 depends-on: []
-needs-human: true
+needs-human: false
+allowed-paths:
+  - internal/config/migrate_section_order.go
+  - internal/config/migrate_section_order_test.go
+  - tasks/todo/358-block-reordering-when-an-anchor-would-move-below-its-alias.md
+  - tasks/plan/008-migrate-section-order-defects.md
 ---
 
 # Task 358: 앵커가 별칭보다 아래로 이동하는 재배열을 막는다
@@ -60,6 +65,32 @@ lone-CR 가드(`:171-177`)와 같은 모양 — "무엇을 막았고 왜 재배�
 - [ ] 위 케이스에서 report.Blocked가 비어 있지 않고 이유를 담는다 | verify: `/usr/bin/grep -rq 'func TestMigrateSectionOrderBailsOnAnchorBelowAlias(' internal/config`
 - [ ] 위 테스트가 수정 전 소스(현재 코드)에 대해 FAIL함을 go test -overlay로 확인했다 | verify: human — overlay 실행 결과를 카드에 첨부
 - [ ] 앵커가 없는 기존 재배열 동작은 그대로다(회귀 없음), 게이트 통과 | verify: `make test`
+
+## 검증 기록 (2026-09-10)
+
+### 수정 전 overlay 실패
+
+새 회귀 테스트를 먼저 추가한 뒤, 수정 전
+`migrate_section_order.go` 사본만 대체한 overlay를 실행했다. 앵커가 별칭보다 아래로
+이동하는 실제 참조와 별칭 없는 앵커 모두 재배열되어, 기대한 대로 실패했다.
+
+```text
+$ go test -overlay=tmp/task358.zkT8KA/overlay.json -run '^TestMigrateSectionOrderBailsOnAnchorBelowAlias$' ./internal/config
+--- FAIL: TestMigrateSectionOrderBailsOnAnchorBelowAlias (0.00s)
+    --- FAIL: TestMigrateSectionOrderBailsOnAnchorBelowAlias/anchor_moves_below_alias (0.00s)
+        migrate_section_order_test.go:312: expected the source back untouched, got:
+            "version: \"1\"\nvars: *e\nenvironment: &e\n  A: \"1\"\n"
+    --- FAIL: TestMigrateSectionOrderBailsOnAnchorBelowAlias/anchor_without_an_alias (0.00s)
+        migrate_section_order_test.go:312: expected the source back untouched, got:
+            "version: \"1\"\nvars:\n  B: \"2\"\nenvironment: &defaults\n  A: \"1\"\n"
+FAIL
+FAIL    github.com/ScriptonBasestar/dva/internal/config    0.373s
+FAIL
+```
+
+수정 후 두 사례는 원본 바이트를 그대로 반환하고, `section order: not reordered`와
+수동 재배열 안내를 `report.Blocked`에 남긴다. 앵커가 없는 기존 순서 재배열과 lone-CR
+차단 회귀도 전체 config 패키지 테스트와 프로젝트 게이트에서 함께 확인했다.
 
 ## 참고
 

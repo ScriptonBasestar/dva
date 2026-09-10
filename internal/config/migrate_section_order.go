@@ -121,7 +121,6 @@ func MigrateSectionOrder(src []byte) ([]byte, MigrationReport, error) {
 			return src, report, nil
 		}
 	}
-
 	// Relative order of the canonical keys already present is the same check
 	// validateCanonicalOrder runs. A file that passes it here produces
 	// byte-identical output — nothing to reorder means nothing gets touched.
@@ -139,6 +138,16 @@ func MigrateSectionOrder(src []byte) ([]byte, MigrationReport, error) {
 		}
 	}
 	if inOrder {
+		return src, report, nil
+	}
+
+	// Anchors and aliases can cross top-level block boundaries. This rewriter moves
+	// those blocks verbatim, so it cannot preserve a reference whose anchor and alias
+	// land in a different order. Refuse an anchored document only when it needs
+	// reordering: the established no-op contract for canonical input remains intact.
+	if hasYAMLAnchorOrAlias(&doc) {
+		report.Blocked = append(report.Blocked,
+			"section order: not reordered — YAML anchors or aliases can depend on section order; reorder by hand")
 		return src, report, nil
 	}
 
@@ -303,6 +312,20 @@ func MigrateSectionOrder(src []byte) ([]byte, MigrationReport, error) {
 		fmt.Sprintf("section order: reordered to %s", strings.Join(newKeys, " → ")),
 	}
 	return []byte(out), report, nil
+}
+
+// hasYAMLAnchorOrAlias reports whether node or any descendant relies on YAML's
+// position-sensitive reference syntax. AliasNode is intentionally not followed via
+// Alias: it is itself the reason to bail out, and following it could re-enter an
+// anchored node through a cycle.
+func hasYAMLAnchorOrAlias(node *yaml.Node) bool {
+	if node == nil {
+		return false
+	}
+	if node.Anchor != "" || node.Kind == yaml.AliasNode {
+		return true
+	}
+	return slices.ContainsFunc(node.Content, hasYAMLAnchorOrAlias)
 }
 
 // keepChompedScalarConsumesTrailingBlanks reports whether a keep-chomped block

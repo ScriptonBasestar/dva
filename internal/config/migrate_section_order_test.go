@@ -282,6 +282,71 @@ func TestMigrateSectionOrderBlocksFlowStyleRootReason(t *testing.T) {
 	}
 }
 
+// TestMigrateSectionOrderBailsOnAnchorBelowAlias keeps the original bytes whenever
+// YAML references appear anywhere in the document. Moving whole top-level blocks
+// can put an anchor below its alias, which makes an otherwise valid document fail
+// to parse. An unused anchor gets the same conservative treatment because the
+// rewriter does not have a safe way to distinguish it from a future reference.
+func TestMigrateSectionOrderBailsOnAnchorBelowAlias(t *testing.T) {
+	const wantBlocked = "section order: not reordered — YAML anchors or aliases can depend on section order; reorder by hand"
+	tests := []struct {
+		name string
+		src  string
+	}{
+		{
+			name: "anchor moves below alias",
+			src:  "environment: &e\n  A: \"1\"\nversion: \"1\"\nvars: *e\n",
+		},
+		{
+			name: "anchor without an alias",
+			src:  "environment: &defaults\n  A: \"1\"\nversion: \"1\"\nvars:\n  B: \"2\"\n",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			out, report, err := MigrateSectionOrder([]byte(tt.src))
+			if err != nil {
+				t.Fatalf("MigrateSectionOrder() error = %v", err)
+			}
+			if string(out) != tt.src {
+				t.Fatalf("expected the source back untouched, got:\n%q", out)
+			}
+			if len(report.Changes) != 0 {
+				t.Errorf("report.Changes = %v, want none", report.Changes)
+			}
+			if len(report.Blocked) != 1 || report.Blocked[0] != wantBlocked {
+				t.Errorf("report.Blocked = %q, want %q", report.Blocked, wantBlocked)
+			}
+
+			var probe yaml.Node
+			if err := yaml.Unmarshal(out, &probe); err != nil {
+				t.Fatalf("output does not parse: %v", err)
+			}
+		})
+	}
+}
+
+// TestMigrateSectionOrderAlreadyCanonicalWithAnchorKeepsNoOpContract makes the
+// anchor guard conditional on a needed rewrite. A canonical document must retain
+// MigrateSectionOrder's established byte-identical, empty-report fast path.
+func TestMigrateSectionOrderAlreadyCanonicalWithAnchorKeepsNoOpContract(t *testing.T) {
+	src := []byte("version: \"1\"\nvars: &defaults\n  A: \"1\"\nenvironment: *defaults\n")
+
+	out, report, err := MigrateSectionOrder(src)
+	if err != nil {
+		t.Fatalf("MigrateSectionOrder() error = %v", err)
+	}
+	if !bytes.Equal(out, src) {
+		t.Errorf("expected unchanged output, got:\n%q", out)
+	}
+	if len(report.Changes) != 0 {
+		t.Errorf("report.Changes = %v, want none", report.Changes)
+	}
+	if len(report.Blocked) != 0 {
+		t.Errorf("report.Blocked = %v, want none", report.Blocked)
+	}
+}
+
 // TestMigrateSectionOrderStopsAtDocumentBoundary is the silent-data-loss regression.
 // keys/keyLines describe the first document only, so letting the last block run to EOF
 // carries whatever follows a `...` or `---` along as that key's content. Hoisted to the
