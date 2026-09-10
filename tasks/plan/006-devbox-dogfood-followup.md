@@ -3,9 +3,9 @@ id: PLAN-006
 title: "Work the devbox dogfood follow-up queue in dependency order"
 type: plan
 scope: "TASK-311..323 from the 2026-09-05 mydevbox migration, plus the needs-human cards that gate the rest"
-progress: 69
+progress: 73
 total-tasks: 26
-completed-tasks: 18
+completed-tasks: 19
 children: [TASK-339, TASK-340, TASK-328, TASK-329, TASK-312, TASK-313, TASK-317, TASK-311, TASK-324, TASK-314, TASK-316, TASK-320, TASK-322, TASK-315, TASK-318, TASK-323, TASK-249, TASK-307, TASK-309, TASK-319, TASK-321, TASK-345, TASK-346, TASK-347, TASK-348, TASK-351]
 target-date: "2026-10-31"
 created: 2026-09-05
@@ -46,7 +46,6 @@ created: 2026-09-05
 
 - TASK-307 → docs/55 §5 (4항목). TASK-309 → docs/56 §5 (5항목). 309의 선행 316·320은 둘 다 완료.
 - TASK-319 native entry ergonomics, TASK-321 destructive interaction agent-deny: 설계 결정 기록 필요.
-- TASK-351 built-in 동등 replace 훅 경고: "무엇을 동등으로 볼 것인가"를 카드가 좁게 제안해 두었으나 확정 필요.
 
 ## Devbox integration state (2026-09-05 저녁 갱신)
 
@@ -74,7 +73,7 @@ created: 2026-09-05
 
 - 세션 1회차 종료 시점: 1~5·4a 통합 완료(master 2cb184e). 316은 분석만 카드에 기록, worktree 없음.
 - 다음 착수(2026-09-09 갱신): 318·323까지 닫혀 §Order의 기계적 항목은 전부 소진됐다. **남은 것은 10a 실기동(TASK-328) 하나뿐**이고, 그것도 사람이 실제로 돌려야 닫힐 카드다.
-  사람 결정 대기는 5장(307, 309, 319, 321, 351) — 앞서는 4장으로 적어 §Needs-human과 어긋났고, 351이 빠져 있었다. 315 후속 345~348은 §Order에 편입하지 않고 compose 묶음으로 함께 처리.
+  사람 결정 대기는 4장(307, 309, 319, 321)이다. 315 후속 345~348은 §Order에 편입하지 않고 compose 묶음으로 함께 처리.
 - 잔여 사람 결정: 위 §Needs-human, §Devbox integration state의 scripton-dashboard·familybook 2건.
 
 ## Children
@@ -100,13 +99,12 @@ validate가 요구한다 — 둘은 다른 질문에 답한다.
 - TASK-323 — 문서 의미 공백 (done)
 - TASK-328 — 실기동 검증 회차 (todo). **§Order에 남은 유일한 미완 항목이다**
 
-### §Needs-human에 놓인 5장 — 결정 전에는 착수 불가
+### §Needs-human에 놓인 4장 — 결정 전에는 착수 불가
 
 - TASK-307 — plans `alias`/`extends` (todo)
 - TASK-309 — suppression ergonomics (todo)
 - TASK-319 — native entry ergonomics (todo)
 - TASK-321 — destructive interaction agent-deny (todo)
-- TASK-351 — built-in과 동등한 `replace:` 훅 경고 (todo)
 
 ### 남은 순서 미지정 1장 — TASK-329
 

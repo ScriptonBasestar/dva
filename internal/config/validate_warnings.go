@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"maps"
 	"os"
+	"path/filepath"
 	"slices"
 	"sort"
 	"strings"
@@ -77,6 +78,7 @@ func (c *Config) ValidateWarnings() []string {
 	warnings = append(warnings, c.warnNoOpEntryOverrides()...)
 	warnings = append(warnings, c.warnEmptyInteractionCommands()...)
 	warnings = append(warnings, c.warnRemovedCLIReferences()...)
+	warnings = append(warnings, c.warnEquivalentReplaceHooks()...)
 	warnings = append(warnings, c.warnOrphanHealthChecks()...)
 
 	// Build a contextual environment for accurate interpolation checks.
@@ -97,6 +99,90 @@ func (c *Config) ValidateWarnings() []string {
 		warnings = append(warnings, validateCanonicalOrder(c.filePath)...)
 	}
 	return warnings
+}
+
+// warnEquivalentReplaceHooks finds a deliberately narrow candidate for human review.
+// A replace hook can change lifecycle semantics in ways config validation cannot prove,
+// so this never declares it equivalent to a built-in or tells an author to delete it.
+func (c *Config) warnEquivalentReplaceHooks() []string {
+	declaredFiles := make(map[string]bool)
+	for _, entry := range c.ComposeEntries() {
+		for _, file := range entry.ComposeConfig().Files {
+			declaredFiles[filepath.Clean(file)] = true
+		}
+	}
+	if len(declaredFiles) == 0 {
+		return nil
+	}
+
+	var warnings []string
+	for builtin, command := range c.Interaction {
+		if (builtin != "build" && builtin != "logs") || command == nil || len(command.Replace) != 1 {
+			continue
+		}
+		if replaceHookIsComposeCandidate(command.Replace[0], builtin, declaredFiles) {
+			warnings = append(warnings, fmt.Sprintf(
+				"interaction.%s.replace: may duplicate the configured compose %s invocation; review whether this hook is still needed alongside `dva %s <plan>`",
+				builtin, builtin, builtin))
+		}
+	}
+	sort.Strings(warnings)
+	return warnings
+}
+
+// replaceHookIsComposeCandidate recognizes only an exact, one-command compose invocation:
+// docker compose -f FILE [-f FILE ...] VERB, or docker-compose -f FILE ... VERB.
+// The -f set must exactly match all declared compose files. A quoted path, a newline, or a
+// shell separator is outside this recognizer: valid shell syntax is not a proof that the
+// hook and lifecycle path have the same behaviour.
+func replaceHookIsComposeCandidate(step ProvisionItem, builtin string, declaredFiles map[string]bool) bool {
+	commands := step.RunCommands()
+	if len(commands) != 1 {
+		return false
+	}
+	command := commands[0]
+	if strings.ContainsAny(command, "\r\n;|&") {
+		return false
+	}
+	fields := strings.Fields(command)
+	if len(fields) < 4 {
+		return false
+	}
+
+	i := 0
+	switch {
+	case fields[0] == "docker-compose":
+		i = 1
+	case len(fields) >= 2 && fields[0] == "docker" && fields[1] == "compose":
+		i = 2
+	default:
+		return false
+	}
+
+	files := make(map[string]bool)
+	for i+1 < len(fields) && fields[i] == "-f" {
+		file := filepath.Clean(fields[i+1])
+		if !declaredFiles[file] {
+			return false
+		}
+		files[file] = true
+		i += 2
+	}
+	// Without -f, compose's default-file lookup depends on the invocation directory.
+	// A subset also cannot establish even a useful candidate across a multi-file stack.
+	return len(files) > 0 && sameStringSet(files, declaredFiles) && i+1 == len(fields) && fields[i] == builtin
+}
+
+func sameStringSet(left, right map[string]bool) bool {
+	if len(left) != len(right) {
+		return false
+	}
+	for value := range left {
+		if !right[value] {
+			return false
+		}
+	}
+	return true
 }
 
 // warnLegacyModes warns when legacy `modes` are present and suggests migration.

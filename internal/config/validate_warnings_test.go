@@ -49,6 +49,82 @@ func TestNoVersionFloorRatchetWarning(t *testing.T) {
 	}
 }
 
+func TestWarnsOnNarrowReplaceHookCandidate(t *testing.T) {
+	c := &Config{
+		Stack: map[string]*LifecycleEntry{
+			"compose": {Compose: &ComposePluginConfig{Files: []string{"compose.yml", "compose.dev.yml"}}},
+		},
+		Interaction: map[string]*InteractionCommand{
+			"logs": {Replace: []ProvisionItem{{Run: "docker compose -f ./compose.yml -f compose.dev.yml logs"}}},
+		},
+	}
+
+	warnings := c.warnEquivalentReplaceHooks()
+	if len(warnings) != 1 {
+		t.Fatalf("warnings = %v, want one equivalent replace warning", warnings)
+	}
+	if !strings.Contains(warnings[0], "interaction.logs.replace") ||
+		!strings.Contains(warnings[0], "may duplicate") ||
+		!strings.Contains(warnings[0], "review whether") {
+		t.Errorf("warning does not present a soft review candidate: %q", warnings[0])
+	}
+}
+
+func TestReplaceHookWithExtraBehaviourIsNotWarned(t *testing.T) {
+	declared := map[string]bool{"compose.yml": true}
+	for _, command := range []string{
+		"docker compose -f compose.yml logs -f",
+		"docker compose -f compose.yml logs api",
+		"echo preparing && docker compose -f compose.yml logs",
+		"docker compose -f 'compose.yml' logs",
+	} {
+		if replaceHookIsComposeCandidate(ProvisionItem{Run: command}, "logs", declared) {
+			t.Errorf("replaceHookIsComposeCandidate(%q) = true, want false for extra behaviour", command)
+		}
+	}
+}
+
+func TestNewlineReplaceHookIsNotCandidate(t *testing.T) {
+	declared := map[string]bool{"compose.yml": true}
+	command := "docker compose -f compose.yml logs\necho extra"
+	if replaceHookIsComposeCandidate(ProvisionItem{Run: command}, "logs", declared) {
+		t.Errorf("replaceHookIsComposeCandidate(%q) = true, want false for newline command", command)
+	}
+}
+
+func TestSubsetComposeFilesAreNotCandidate(t *testing.T) {
+	c := &Config{
+		Stack: map[string]*LifecycleEntry{
+			"compose": {Compose: &ComposePluginConfig{Files: []string{"compose.yml", "compose.dev.yml"}}},
+		},
+		Interaction: map[string]*InteractionCommand{
+			"logs": {Replace: []ProvisionItem{{Run: "docker compose -f compose.yml logs"}}},
+		},
+	}
+	if warnings := c.warnEquivalentReplaceHooks(); len(warnings) != 0 {
+		t.Errorf("subset compose files received a candidate warning: %v", warnings)
+	}
+}
+
+func TestOnlyBuildAndLogsAreReplaceHookCandidates(t *testing.T) {
+	c := &Config{
+		Stack: map[string]*LifecycleEntry{
+			"compose": {Compose: &ComposePluginConfig{Files: []string{"compose.yml"}}},
+		},
+		Interaction: map[string]*InteractionCommand{
+			"up":      {Replace: []ProvisionItem{{Run: "docker-compose -f compose.yml up"}}},
+			"down":    {Replace: []ProvisionItem{{Run: "docker-compose -f compose.yml down"}}},
+			"stop":    {Replace: []ProvisionItem{{Run: "docker-compose -f compose.yml stop"}}},
+			"restart": {Replace: []ProvisionItem{{Run: "docker-compose -f compose.yml restart"}}},
+			"clean":   {Replace: []ProvisionItem{{Run: "docker-compose -f compose.yml clean"}}},
+		},
+	}
+	warnings := c.warnEquivalentReplaceHooks()
+	if len(warnings) != 0 {
+		t.Errorf("non-build/logs lifecycle hooks received candidate warnings: %v", warnings)
+	}
+}
+
 func TestWarnHealthCheckRedundancy(t *testing.T) {
 	// Both start and start_hint → warning
 	c := &Config{
