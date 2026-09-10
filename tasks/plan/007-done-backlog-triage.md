@@ -3,9 +3,9 @@ id: PLAN-007
 title: "Retire the unreviewed done backlog and move quality review to card close"
 type: plan
 scope: "tasks/done/ 58장의 일회성 트리아지, done-disposition 루프에서 발견된 소유자 없는 결함 3건, 닫기 시점 독립 리뷰 전환의 외부 의존, 그리고 그 트리아지 이후 다시 채워진 대기열(2026-09-09 추가)"
-progress: 75
+progress: 83
 total-tasks: 12
-completed-tasks: 9
+completed-tasks: 10
 children: [TASK-325, TASK-326, TASK-327, TASK-330, TASK-332, TASK-333, TASK-334, TASK-335, TASK-337, TASK-342, TASK-367, TASK-368]
 target-date: "2026-09-30"
 created: 2026-09-05
@@ -120,7 +120,7 @@ evidence 문구(`waived: PLAN-007 backlog triage, no independent review`)가 각
 
 | # | 작업 | 조건 |
 |---|---|---|
-| 1 | TASK-325, 326, 327 처리 | 독립. 지금 가능 |
+| 1 | TASK-325, 326, 327 처리 | 완료 2026-09-10. 세 카드는 독립으로 처리됐고, TASK-325는 현재 flowcheck 출력으로 예시를 갱신했다 |
 | 1a | TASK-326 완료 후 세션 리뷰가 발견한 P2 결함을 TASK-330으로 분리 | TASK-326의 후속. 완료 및 통합됨 |
 | 2 | §External의 엔진 정책 변경 | **카드 없음, 추적 안 함.** ce-workbook 소유이고 3의 우회로 실무 필요는 이미 충족됐다 (§External) |
 | 3 | Tier B 일괄 아카이브 | **완료** 2026-09-07, 커밋 `8d3031b`. `waived` 값이 없어 `conditional` + evidence 문구로 대체 |
@@ -155,7 +155,7 @@ DVA 쪽 문서는 이 계획이 끝난 뒤 `AGENTS.md`에 "카드를 닫으려�
 
 ## Children
 
-- TASK-325 — docs/51 flowcheck 예시 출력 갱신
+- ~~TASK-325~~ — docs/51 flowcheck 예시 출력 갱신 (done, 2026-09-10)
 - TASK-326 — doccheck 앵커 슬러그가 `_`를 버려 GitHub와 어긋남 — 완료(아카이브)
 - TASK-327 — PLAN-002에 TASK-284 temp-name supersession 기록 — 완료
 - TASK-330 — doccheck 언더스코어 강조가 문자 단위가 아닌 run 단위로 페어링하도록 수정 (TASK-326 세션 리뷰가 발견한 후속 결함) — 완료(아카이브)
