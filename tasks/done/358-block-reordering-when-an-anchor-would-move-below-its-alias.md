@@ -7,7 +7,7 @@ effort: S
 exec-tier: standard
 created-at: 2026-09-08T16:40:00+09:00
 source: "TASK-318 재리뷰 (t318-rereview)"
-status: todo
+status: done
 depends-on: []
 needs-human: false
 allowed-paths:
@@ -61,10 +61,10 @@ lone-CR 가드(`:171-177`)와 같은 모양 — "무엇을 막았고 왜 재배�
 
 ## Completion Criteria
 
-- [ ] 앵커/별칭이 포함된 파일에 `dva config migrate`를 걸면 재배열 없이 `src`가 그대로 반환되고 파싱 실패가 일어나지 않는다 | verify: `/usr/bin/grep -rq 'func TestMigrateSectionOrderBailsOnAnchorBelowAlias(' internal/config`
-- [ ] 위 케이스에서 report.Blocked가 비어 있지 않고 이유를 담는다 | verify: `/usr/bin/grep -rq 'func TestMigrateSectionOrderBailsOnAnchorBelowAlias(' internal/config`
-- [ ] 위 테스트가 수정 전 소스(현재 코드)에 대해 FAIL함을 go test -overlay로 확인했다 | verify: human — overlay 실행 결과를 카드에 첨부
-- [ ] 앵커가 없는 기존 재배열 동작은 그대로다(회귀 없음), 게이트 통과 | verify: `make test`
+- [x] 앵커/별칭이 포함된 파일에 `dva config migrate`를 걸면 재배열 없이 `src`가 그대로 반환되고 파싱 실패가 일어나지 않는다 | verify: `/usr/bin/grep -rq 'func TestMigrateSectionOrderBailsOnAnchorBelowAlias(' internal/config`
+- [x] 위 케이스에서 report.Blocked가 비어 있지 않고 이유를 담는다 | verify: `/usr/bin/grep -rq 'func TestMigrateSectionOrderBailsOnAnchorBelowAlias(' internal/config`
+- [x] 위 테스트가 수정 전 소스(현재 코드)에 대해 FAIL함을 go test -overlay로 확인했다 | verify: human — overlay 실행 결과를 카드에 첨부
+- [x] 앵커가 없는 기존 재배열 동작은 그대로다(회귀 없음), 게이트 통과 | verify: `make test`
 
 ## 검증 기록 (2026-09-10)
 
@@ -91,6 +91,11 @@ FAIL
 수정 후 두 사례는 원본 바이트를 그대로 반환하고, `section order: not reordered`와
 수동 재배열 안내를 `report.Blocked`에 남긴다. 앵커가 없는 기존 순서 재배열과 lone-CR
 차단 회귀도 전체 config 패키지 테스트와 프로젝트 게이트에서 함께 확인했다.
+
+## Resolution (2026-09-10)
+
+- Reordering is conservatively blocked only when it is needed and the first YAML document contains an anchor or alias; the source bytes remain unchanged and `report.Blocked` tells the user to reorder by hand.
+- Canonical anchored documents retain the existing empty no-op report. Overlay evidence, independent Sol/high review, and `dva ci commit` confirm both contracts.
 
 ## 참고
 
