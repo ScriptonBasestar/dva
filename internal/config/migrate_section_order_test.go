@@ -220,8 +220,9 @@ func TestMigrateSectionOrderKeepsIndentedHashInsideBlockScalar(t *testing.T) {
 // to repair.
 func TestMigrateSectionOrderBailsOnUnrepresentableShapes(t *testing.T) {
 	tests := []struct {
-		name string
-		src  string
+		name        string
+		src         string
+		wantBlocked string
 	}{
 		{
 			// Two slots for one name, one canonical position to move it to.
@@ -230,8 +231,9 @@ func TestMigrateSectionOrderBailsOnUnrepresentableShapes(t *testing.T) {
 		},
 		{
 			// No line belongs to one key alone, so no key has a range of its own.
-			name: "flow-style root mapping",
-			src:  "# banner\n{stack: b, version: a}\n",
+			name:        "flow-style root mapping",
+			src:         "# banner\n{stack: b, version: a}\n",
+			wantBlocked: "section order: flow-style root mapping puts two keys on one line — reorder by hand",
 		},
 	}
 	for _, tt := range tests {
@@ -245,6 +247,9 @@ func TestMigrateSectionOrderBailsOnUnrepresentableShapes(t *testing.T) {
 			}
 			if len(report.Changes) != 0 {
 				t.Errorf("report.Changes = %v, want none", report.Changes)
+			}
+			if tt.wantBlocked != "" && (len(report.Blocked) != 1 || report.Blocked[0] != tt.wantBlocked) {
+				t.Errorf("report.Blocked = %q, want %q", report.Blocked, tt.wantBlocked)
 			}
 		})
 	}

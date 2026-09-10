@@ -53,5 +53,9 @@ criterion, and retain the focused passing test.
 
 ## Resolution Criteria
 
-- [ ] TASK-362 no longer claims that the current guard-removal overlay panics | verify: human — TASK-362 links this issue and describes the current observable contract
-- [ ] The flow-style banner fixture is covered by a focused current-source test | verify: human — TASK-362 links the passing focused test evidence
+- [x] TASK-362 no longer claims that the current guard-removal overlay panics | verify: human — TASK-362 links this issue and describes the current observable contract
+- [x] The flow-style banner fixture is covered by a focused current-source test | verify: human — TASK-362 links the passing focused test evidence
+
+## Resolution Evidence
+
+TASK-362 now covers the current contract with the banner fixture and links this issue. On 2026-09-10, `go test ./internal/config/ -run TestMigrateSectionOrderBailsOnUnrepresentableShapes`, `make doc-check`, and `dva ci commit` passed; independent review confirmed the rescope. This issue remains in `tasks/issue` as the historical-panic disposition record.
