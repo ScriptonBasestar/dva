@@ -9,6 +9,7 @@ status: todo
 created: 2026-09-08
 source: "TASK-352·353를 파일하다 `ce task validate`가 두 카드를 거부해 발견. 전수 측정으로 확대. 2026-09-09 재측정에서 노출이 0이 아님이 드러나 P3→P2, S→M"
 needs-human: true
+depends-on: [TASK-371]
 ---
 
 ## Summary
