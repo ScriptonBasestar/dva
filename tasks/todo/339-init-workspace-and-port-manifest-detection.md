@@ -57,5 +57,5 @@ TASK-249/250이 정한 계약은 "DVA는 native run/build 커맨드를 추측하
 - [ ] `.gz-git.yaml`의 `workspaces:`가 subprojects 후보로 변환된다 | verify: `/usr/bin/grep -rq 'func TestGzGitWorkspacesBecomeSubprojects(' internal/cli`
 - [ ] Makefile `dev-*`/`build`/`test` recipe에서 native 러너의 dir·run·build가 유도된다 | verify: `/usr/bin/grep -rq 'func TestMakefileTargetsYieldNativeRunner(' internal/cli`
 - [ ] scripton-dashboard fixture가 native 엔트리 2개 + plan 1개 + endpoints 1개를 생성한다 | verify: `/usr/bin/grep -rq 'func TestScriptonDashboardFixtureYieldsTwoNativeEntries(' internal/cli`
-- [ ] 위 테스트가 모두 통과한다 | verify: `make test` (regression-guard)
+- [ ] 위 테스트가 모두 통과한다 (새 동작의 테스트 이름은 구현 전에는 확정할 수 없다) | verify: human — 구현 시 네 개 criterion의 테스트 이름을 `go test -run` 바인딩으로 승격하고 결과를 기록
 - [ ] lint·문서 게이트 통과 | verify: `make lint && make doc-check`

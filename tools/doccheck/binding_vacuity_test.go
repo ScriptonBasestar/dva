@@ -8,9 +8,14 @@ import (
 )
 
 func TestBindingPortabilityRejectsGrepDashL(t *testing.T) {
-	res := portabilityFixture(t, "- [ ] absence | verify: `/usr/bin/grep -rq -L 'needle' docs`\n")
-	if res.OK || res.InvertedGrepBindings != 1 || !containsAny(res.PortabilityDetail, "bsd and gnu", "grep -l") {
-		t.Fatalf("inverted=%d detail=%v ok=%v", res.InvertedGrepBindings, res.PortabilityDetail, res.OK)
+	for _, binding := range []string{
+		"/usr/bin/grep -rq -L 'needle' docs",
+		"/usr/bin/find tasks/done -exec /usr/bin/xargs -r /usr/bin/grep -L '^quality-review:' {} \\;",
+	} {
+		res := portabilityFixture(t, "- [ ] absence | verify: `"+binding+"`\n")
+		if res.OK || res.InvertedGrepBindings != 1 || !containsAny(res.PortabilityDetail, "bsd and gnu", "grep -l") {
+			t.Fatalf("binding=%q inverted=%d detail=%v ok=%v", binding, res.InvertedGrepBindings, res.PortabilityDetail, res.OK)
+		}
 	}
 }
 
@@ -40,6 +45,22 @@ func TestBindingVacuityRejectsAlreadyMatchingTestName(t *testing.T) {
 	res := portabilityFixture(t, "- [ ] future test | verify: `/usr/bin/grep -rq 'func TestSameStringSet(' pkg`\n")
 	if res.OK || res.ExistingTodoTestNames != 1 || !containsAny(res.PortabilityDetail, "already-declared test testsamestringset") {
 		t.Fatalf("existing=%d detail=%v ok=%v", res.ExistingTodoTestNames, res.PortabilityDetail, res.OK)
+	}
+}
+
+func TestBindingVacuityUsesGrepTestCorpus(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "docs/a.md", "# A\n\nSee [self](a.md).\n")
+	writeFile(t, root, "tasks/todo/001-portability.md", strings.Join([]string{
+		"- [ ] different package | verify: `/usr/bin/grep -rq 'func TestSharedName(' pkg/right`",
+		"- [ ] matching package after another command | verify: `test -d pkg/left && /usr/bin/grep -rq 'func TestSharedName(' pkg/left`",
+	}, "\n"))
+	writeFile(t, root, "pkg/left/thing_test.go", "package left\nimport \"testing\"\nfunc TestSharedName(t *testing.T) {}\n")
+	writeFile(t, root, "pkg/right/thing_test.go", "package right\nimport \"testing\"\nfunc TestOtherName(t *testing.T) {}\n")
+	inv := mustInventory(t, root, "docs/a.md", "tasks/todo/001-portability.md", "pkg/left/thing_test.go", "pkg/right/thing_test.go")
+	res := Check(CheckInput{Root: root, Inventory: inv})
+	if res.ExistingTodoTestNames != 1 || !containsAny(res.PortabilityDetail, "testsharedname in pkg/left") {
+		t.Fatalf("existing=%d detail=%v", res.ExistingTodoTestNames, res.PortabilityDetail)
 	}
 }
 

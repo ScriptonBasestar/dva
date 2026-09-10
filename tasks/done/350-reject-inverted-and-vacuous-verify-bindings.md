@@ -50,7 +50,7 @@ doccheck는 이미 bare wrapped tool(`binding_tool.go`)과 escaped pipe·외부 
 - [x] 바인딩의 커맨드가 전체 스위트 타깃(`make test`, `make lint`, `make check`, `make doc-check`, `go test ./...`) 하나뿐이면 거부된다 | verify: `go test ./tools/doccheck -run '^TestBindingVacuityRejectsBareSuiteTarget$'`
 - [x] `(regression-guard)` 마커가 그 기준 한 줄만 면제하고 다음 기준에는 적용되지 않는다 | verify: `go test ./tools/doccheck -run '^TestBindingVacuityHonoursRegressionGuardMarkerPerLine$'`
 - [x] 두 검사 모두 `make doc-check` 출력에 카운트로 보고된다 | verify: `go test ./tools/doccheck -run '^TestCheckReportsBindingInversionAndVacuityCounts$'`
-- [x] 보드에 남은 bare 전체 스위트 바인딩이 전부 해소된다 — 실제 바인딩을 얻거나 마커를 단다. **스코프가 `tasks/todo`인 것은 의도다** — `tasks/done`·`tasks/plan`의 닫힌 기준은 역사 기록이므로 고쳐 쓰지 않는다. 열린 카드만 고친다 | verify: `! /usr/bin/grep -rq 'verify: .make \(test\|lint\|check\|doc-check\).$' tasks/todo`
+- [x] 보드에 남은 bare 전체 스위트 바인딩이 전부 해소된다 — 실제 바인딩을 얻거나, 정당한 회귀 가드에는 마커를 달고, 설계 미확정 7건은 groom 의무가 있는 human placeholder로 바꾼다. **스코프가 `tasks/todo`인 것은 의도다** — `tasks/done`·`tasks/plan`의 닫힌 기준은 역사 기록이므로 고쳐 쓰지 않는다. 열린 카드만 고친다 | verify: `! /usr/bin/grep -rq 'verify: .make \(test\|lint\|check\|doc-check\).$' tasks/todo`
 - [x] 카드가 `tasks/todo`에 있는 동안 그 카드의 `grep -rq 'func TestX('` 바인딩이 **이미 매치하면** 거부된다 | verify: `go test ./tools/doccheck -run '^TestBindingVacuityRejectsAlreadyMatchingTestName$'`
 - [x] 게이트가 계속 초록이다 | verify: `make test` (regression-guard)
 
@@ -60,6 +60,9 @@ doccheck는 이미 bare wrapped tool(`binding_tool.go`)과 escaped pipe·외부 
 - 2026-09-10: `make doc-check` passed with `inverted_grep_bindings: 0`,
   `bare_suite_bindings: 0`, and `existing_todo_test_bindings: 0`.
 - 2026-09-10: `git diff --check` passed.
+- 2026-09-10: review correction replaced the seven design-pending suite markers
+  with criterion-local human groom obligations; new-behavior cards TASK-339 and
+  TASK-357 no longer claim their future behavior through a blanket marker.
 
 ## Notes
 

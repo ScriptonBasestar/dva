@@ -170,6 +170,8 @@ func Check(in CheckInput) Result {
 	res.Errors = append(res.Errors, nameErrs...)
 	res.TestFilesSwept = testFiles
 	res.TestFuncsFound = len(testNames)
+	testDecls, _, declErrs := collectTestDeclarations(in.Root, in.Inventory)
+	res.Errors = append(res.Errors, declErrs...)
 	for _, e := range scanFiles {
 		if body, ok := bodies[e.Path]; ok {
 			n, msgs := checkRunPatterns(e.Path, body, testNames)
@@ -200,7 +202,7 @@ func Check(in CheckInput) Result {
 			continue
 		}
 		if body, ok := bodies[e.Path]; ok {
-			inverted, bareSuites, existingTests, msgs := checkBindingVacuity(e.Path, body, testNames)
+			inverted, bareSuites, existingTests, msgs := checkBindingVacuity(e.Path, body, testDecls)
 			res.InvertedGrepBindings += inverted
 			res.BareSuiteBindings += bareSuites
 			res.ExistingTodoTestNames += existingTests

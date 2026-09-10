@@ -27,7 +27,20 @@ var (
 // declaration regex stopped matching". Source is read rather than compiled: `go test -list`
 // would need a build, and would miss internal/integration behind its -tags=integration guard.
 func collectTestNames(root string, inv []InventoryEntry) (names []string, filesSwept int, errs []string) {
-	seen := map[string]struct{}{}
+	decls, filesSwept, errs := collectTestDeclarations(root, inv)
+	for name := range decls {
+		names = append(names, name)
+	}
+	slices.Sort(names)
+	return names, filesSwept, errs
+}
+
+// collectTestDeclarations returns each runnable test name and the inventory
+// paths declaring it. Binding vacuity checks use the paths to verify a grep
+// criterion against the corpus it actually names, rather than a same-named
+// test elsewhere in the repository.
+func collectTestDeclarations(root string, inv []InventoryEntry) (decls map[string][]string, filesSwept int, errs []string) {
+	decls = make(map[string][]string)
 	for _, e := range inv {
 		if !strings.HasSuffix(e.Path, "_test.go") || isSymlinkMode(e.Mode) {
 			continue
@@ -42,14 +55,10 @@ func collectTestNames(root string, inv []InventoryEntry) (names []string, filesS
 			if !isRunnableTestName(m[1]) {
 				continue
 			}
-			if _, dup := seen[m[1]]; dup {
-				continue
-			}
-			seen[m[1]] = struct{}{}
-			names = append(names, m[1])
+			decls[m[1]] = append(decls[m[1]], e.Path)
 		}
 	}
-	return names, filesSwept, errs
+	return decls, filesSwept, errs
 }
 
 // isRunnableTestName applies go test's own naming rule: the character after "Test" must not be
