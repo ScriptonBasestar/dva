@@ -63,6 +63,9 @@ doccheck는 이미 bare wrapped tool(`binding_tool.go`)과 escaped pipe·외부 
 - 2026-09-10: review correction replaced the seven design-pending suite markers
   with criterion-local human groom obligations; new-behavior cards TASK-339 and
   TASK-357 no longer claim their future behavior through a blanket marker.
+- 2026-09-10: review correction made `grep -L` recognition shell-token aware
+  (including an `xargs` command operand) and excludes both quoted prose and a
+  negated test-name grep from positive-existing-test findings.
 
 ## Notes
 

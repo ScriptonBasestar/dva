@@ -10,12 +10,19 @@ import (
 func TestBindingPortabilityRejectsGrepDashL(t *testing.T) {
 	for _, binding := range []string{
 		"/usr/bin/grep -rq -L 'needle' docs",
-		"/usr/bin/find tasks/done -exec /usr/bin/xargs -r /usr/bin/grep -L '^quality-review:' {} \\;",
+		"! /usr/bin/find tasks/done -name '*.md' | /usr/bin/xargs -r /usr/bin/grep -L '^quality-review:' | /usr/bin/grep -q .",
 	} {
 		res := portabilityFixture(t, "- [ ] absence | verify: `"+binding+"`\n")
 		if res.OK || res.InvertedGrepBindings != 1 || !containsAny(res.PortabilityDetail, "bsd and gnu", "grep -l") {
 			t.Fatalf("binding=%q inverted=%d detail=%v ok=%v", binding, res.InvertedGrepBindings, res.PortabilityDetail, res.OK)
 		}
+	}
+}
+
+func TestBindingPortabilityDoesNotReadQuotedGrepDashL(t *testing.T) {
+	res := portabilityFixture(t, "- [ ] quoted prose | verify: `printf '%s\\n' 'grep -L is not an invocation'`\n")
+	if res.InvertedGrepBindings != 0 {
+		t.Fatalf("quoted literal produced inverted=%d detail=%v", res.InvertedGrepBindings, res.PortabilityDetail)
 	}
 }
 
@@ -45,6 +52,13 @@ func TestBindingVacuityRejectsAlreadyMatchingTestName(t *testing.T) {
 	res := portabilityFixture(t, "- [ ] future test | verify: `/usr/bin/grep -rq 'func TestSameStringSet(' pkg`\n")
 	if res.OK || res.ExistingTodoTestNames != 1 || !containsAny(res.PortabilityDetail, "already-declared test testsamestringset") {
 		t.Fatalf("existing=%d detail=%v ok=%v", res.ExistingTodoTestNames, res.PortabilityDetail, res.OK)
+	}
+}
+
+func TestBindingVacuityAllowsNegatedExistingTestName(t *testing.T) {
+	res := portabilityFixture(t, "- [ ] absent test is required | verify: `! /usr/bin/grep -rq 'func TestSameStringSet(' pkg`\n")
+	if res.ExistingTodoTestNames != 0 {
+		t.Fatalf("negated grep produced existing=%d detail=%v", res.ExistingTodoTestNames, res.PortabilityDetail)
 	}
 }
 
