@@ -659,6 +659,7 @@ func detectConfigSuggestionWarnings(c *config.Config) []string {
 	// DVA interaction subcommand under a different parent name.
 	commandSet := map[string]bool{}
 	subcommandCoverage := map[string]bool{}
+	importedLeafSources := map[string]map[string]bool{}
 	for name, cmd := range allCommands {
 		commandSet[name] = true
 
@@ -670,26 +671,33 @@ func detectConfigSuggestionWarnings(c *config.Config) []string {
 			path = []string{name}
 		}
 
-		// An imported interaction is keyed "subproject/name", and its subcommands
-		// "subproject/name sub". The parent's Makefile spells neither prefix, so an
-		// import counted as no coverage at all and DVA suggested re-declaring at the
-		// root what the child already provides — dripter's "frontend/test e2e" against
-		// `make test-e2e` (TASK-320). Only the import prefix comes off here; a plain
-		// namespace ("app:build") keeps suppressing "app:build" and nothing else,
-		// because that is what it did before this and no report asked to widen it.
-		head := path[0]
+		// Imported interactions are reachable through their canonical
+		// "subproject/name" address (or an explicit as: alias), never through their
+		// leaf name alone. Keep the leaf source so an otherwise-valid suggestion can
+		// point to the alias that creates a real root route (TASK-352).
+		coverageHead := path[0]
+		head := coverageHead
 		if idx := strings.LastIndex(head, "/"); idx >= 0 {
-			head = head[idx+1:]
-			commandSet[head] = true
+			leaf := head[idx+1:]
+			if len(path) == 1 && cmd.SubprojectName != "" && name == cmd.CanonicalAddress {
+				if importedLeafSources[leaf] == nil {
+					importedLeafSources[leaf] = map[string]bool{}
+				}
+				importedLeafSources[leaf][cmd.SubprojectName] = true
+			}
+			head = leaf
 		}
 
 		if len(path) < 2 {
 			continue
 		}
-		// Strip namespace prefix from parent name ("app:build" → "build")
-		if idx := strings.LastIndex(head, ":"); idx >= 0 {
-			head = head[idx+1:]
+		// Preserve the canonical imported spelling as well as the leaf spelling.
+		// `dva frontend/test e2e` is a real route for `frontend/test-e2e`, while the
+		// leaf form keeps TASK-320's coverage for established root Makefile targets.
+		if idx := strings.LastIndex(coverageHead, ":"); idx >= 0 {
+			coverageHead = coverageHead[idx+1:]
 		}
+		subcommandCoverage[strings.Join(append([]string{coverageHead}, path[1:]...), "-")] = true
 		// "app:build ce" → "build-ce", "test all" → "test-all"
 		subParts := append([]string{head}, path[1:]...)
 		subcommandCoverage[strings.Join(subParts, "-")] = true
@@ -722,12 +730,27 @@ func detectConfigSuggestionWarnings(c *config.Config) []string {
 		if matchesSuggestionIgnore(name, c.SuggestionIgnore) {
 			continue
 		}
+		if sources := importedLeafSources[name]; len(sources) > 0 {
+			warnings = append(warnings,
+				fmt.Sprintf("%s defines %q but it is only imported from %s; add `as: %s` to that interaction import to create a runnable root route",
+					candidates[name], name, formatList(sortedSuggestionSources(sources)), name))
+			continue
+		}
 		warnings = append(warnings,
 			fmt.Sprintf("%s defines %q but no DVA interaction with the same name exists; consider adding a direct mapping if it is part of the developer workflow",
 				candidates[name], name))
 	}
 
 	return warnings
+}
+
+func sortedSuggestionSources(sources map[string]bool) []string {
+	names := make([]string, 0, len(sources))
+	for name := range sources {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
 }
 
 // matchesSuggestionIgnore returns true if name matches any glob pattern in the
@@ -910,7 +933,13 @@ func collectDocumentedTargetNames(path string, seen map[string]bool, targets *[]
 		if strings.Contains(line, "##") && !strings.HasPrefix(line, "#") &&
 			!strings.HasPrefix(line, "\t") && !strings.HasPrefix(line, " ") {
 			parts := strings.SplitN(line, ":", 2)
-			if len(parts) != 2 || strings.HasPrefix(parts[0], ".") {
+			if len(parts) != 2 {
+				continue
+			}
+			// `export NAME := value` contains a colon but is a variable assignment,
+			// not a target declaration. Do this before splitting its left side into
+			// tokens so neither `export` nor NAME becomes a suggestion candidate.
+			if strings.HasPrefix(strings.TrimSpace(parts[1]), "=") {
 				continue
 			}
 			// One recipe may serve several targets: `a b: ## desc` declares both, and
@@ -920,6 +949,9 @@ func collectDocumentedTargetNames(path string, seen map[string]bool, targets *[]
 			// about the two that do — flow-pipechain's
 			// "log-search-bench perf-log-search:" (TASK-320).
 			for target := range strings.FieldsSeq(parts[0]) {
+				if strings.HasPrefix(target, ".") || strings.Contains(target, "$(") || strings.Contains(target, "%") {
+					continue
+				}
 				if !shouldIgnoreMakefileTarget(target) {
 					*targets = append(*targets, target)
 				}

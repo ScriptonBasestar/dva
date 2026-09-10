@@ -1035,11 +1035,7 @@ func TestDetectConfigSuggestionWarnings_MultiTargetMakefileLine(t *testing.T) {
 	}
 }
 
-// TestDetectConfigSuggestionWarnings_ImportedInteractionCovers pins TASK-320 item 2: an
-// interaction imported from a subproject is keyed `sub/name`, which the parent's Makefile
-// never spells, so before this the import counted as no coverage and DVA suggested
-// re-declaring at the root exactly what the child already provides.
-func TestDetectConfigSuggestionWarnings_ImportedInteractionCovers(t *testing.T) {
+func TestImportedLeafNameDoesNotSuppressUnroutableTarget(t *testing.T) {
 	tmpDir := t.TempDir()
 	oldWd, _ := os.Getwd()
 	defer os.Chdir(oldWd)
@@ -1047,21 +1043,25 @@ func TestDetectConfigSuggestionWarnings_ImportedInteractionCovers(t *testing.T) 
 		t.Fatalf("chdir: %v", err)
 	}
 
-	makefile := "test-e2e: ## End to end\nlint: ## Lint\norphan: ## No coverage\n"
+	makefile := "test: ## Run every suite\ndeploy: ## Deploy the whole stack\n"
 	if err := os.WriteFile(filepath.Join(tmpDir, "Makefile"), []byte(makefile), 0644); err != nil {
 		t.Fatalf("write Makefile: %v", err)
 	}
 
-	childDir := filepath.Join(tmpDir, "frontend")
-	if err := os.MkdirAll(childDir, 0755); err != nil {
-		t.Fatalf("mkdir child: %v", err)
-	}
-	childYml := "version: \"0.1.0\"\ninteraction:\n  test:\n    runner: local\n    command: pnpm test\n    subcommands:\n      e2e:\n        command: pnpm test:e2e\n  lint:\n    runner: local\n    command: pnpm lint\n"
-	if err := os.WriteFile(filepath.Join(childDir, config.FileName), []byte(childYml), 0644); err != nil {
-		t.Fatalf("write child dva.yml: %v", err)
+	for name, childYml := range map[string]string{
+		"frontend": "version: \"0.1.0\"\ninteraction:\n  test:\n    runner: local\n    command: pnpm test\n  deploy:\n    runner: local\n    command: pnpm deploy\n",
+		"backend":  "version: \"0.1.0\"\ninteraction:\n  test:\n    runner: local\n    command: go test ./...\n",
+	} {
+		childDir := filepath.Join(tmpDir, name)
+		if err := os.MkdirAll(childDir, 0755); err != nil {
+			t.Fatalf("mkdir %s: %v", name, err)
+		}
+		if err := os.WriteFile(filepath.Join(childDir, config.FileName), []byte(childYml), 0644); err != nil {
+			t.Fatalf("write %s dva.yml: %v", name, err)
+		}
 	}
 
-	parentYml := "version: \"0.1.0\"\nsubprojects:\n  frontend:\n    path: frontend\n    import:\n      interactions:\n        - name: test\n        - name: lint\n"
+	parentYml := "version: \"0.1.0\"\nsubprojects:\n  frontend:\n    path: frontend\n    import:\n      interactions:\n        - name: test\n        - name: deploy\n  backend:\n    path: backend\n    import:\n      interactions:\n        - name: test\n"
 	if err := os.WriteFile(filepath.Join(tmpDir, config.FileName), []byte(parentYml), 0644); err != nil {
 		t.Fatalf("write dva.yml: %v", err)
 	}
@@ -1072,13 +1072,95 @@ func TestDetectConfigSuggestionWarnings_ImportedInteractionCovers(t *testing.T) 
 	}
 
 	joined := strings.Join(detectConfigSuggestionWarnings(c), "\n")
-	if strings.Contains(joined, `"test-e2e"`) {
-		t.Errorf("imported frontend/test e2e should cover make test-e2e, got: %s", joined)
+	for _, target := range []string{"test", "deploy"} {
+		if !strings.Contains(joined, strconv.Quote(target)) {
+			t.Errorf("imported leaf %q must remain a root suggestion, got: %s", target, joined)
+		}
 	}
-	if strings.Contains(joined, `"lint"`) {
-		t.Errorf("imported frontend/lint should cover make lint, got: %s", joined)
+	for _, want := range []string{"frontend", "backend", "as: test", "as: deploy"} {
+		if !strings.Contains(joined, want) {
+			t.Errorf("warning must give an actionable alias hint containing %q, got: %s", want, joined)
+		}
 	}
-	if !strings.Contains(joined, `"orphan"`) {
-		t.Errorf("orphan should still warn (nothing covers it), got: %s", joined)
+}
+
+func TestAliasedImportSuppressesTheRootTarget(t *testing.T) {
+	tmpDir := t.TempDir()
+	oldWd, _ := os.Getwd()
+	defer os.Chdir(oldWd)
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+
+	if err := os.WriteFile(filepath.Join(tmpDir, "Makefile"), []byte("test: ## Run tests\n"), 0644); err != nil {
+		t.Fatalf("write Makefile: %v", err)
+	}
+	childDir := filepath.Join(tmpDir, "frontend")
+	if err := os.MkdirAll(childDir, 0755); err != nil {
+		t.Fatalf("mkdir child: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(childDir, config.FileName), []byte("version: \"0.1.0\"\ninteraction:\n  test:\n    runner: local\n    command: pnpm test\n"), 0644); err != nil {
+		t.Fatalf("write child dva.yml: %v", err)
+	}
+	parentYml := "version: \"0.1.0\"\nsubprojects:\n  frontend:\n    path: frontend\n    import:\n      interactions:\n        - name: test\n          as: test\n"
+	if err := os.WriteFile(filepath.Join(tmpDir, config.FileName), []byte(parentYml), 0644); err != nil {
+		t.Fatalf("write dva.yml: %v", err)
+	}
+
+	c, err := config.Load(".")
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if _, ok := c.Interaction["test"]; !ok {
+		t.Fatal("as: test must create a root interaction key")
+	}
+	if joined := strings.Join(detectConfigSuggestionWarnings(c), "\n"); strings.Contains(joined, `"test"`) {
+		t.Errorf("aliased root interaction should suppress make test, got: %s", joined)
+	}
+}
+
+func TestPathStyleMakefileTargetStaysCovered(t *testing.T) {
+	tmpDir := t.TempDir()
+	oldWd, _ := os.Getwd()
+	defer os.Chdir(oldWd)
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+
+	if err := os.WriteFile(filepath.Join(tmpDir, "Makefile"), []byte("frontend/test-e2e: ## End to end\n"), 0644); err != nil {
+		t.Fatalf("write Makefile: %v", err)
+	}
+	childDir := filepath.Join(tmpDir, "frontend")
+	if err := os.MkdirAll(childDir, 0755); err != nil {
+		t.Fatalf("mkdir child: %v", err)
+	}
+	childYml := "version: \"0.1.0\"\ninteraction:\n  test:\n    runner: local\n    command: pnpm test\n    subcommands:\n      e2e:\n        command: pnpm test:e2e\n"
+	if err := os.WriteFile(filepath.Join(childDir, config.FileName), []byte(childYml), 0644); err != nil {
+		t.Fatalf("write child dva.yml: %v", err)
+	}
+	parentYml := "version: \"0.1.0\"\nsubprojects:\n  frontend:\n    path: frontend\n    import:\n      interactions:\n        - name: test\n"
+	if err := os.WriteFile(filepath.Join(tmpDir, config.FileName), []byte(parentYml), 0644); err != nil {
+		t.Fatalf("write dva.yml: %v", err)
+	}
+
+	c, err := config.Load(".")
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if joined := strings.Join(detectConfigSuggestionWarnings(c), "\n"); strings.Contains(joined, `"frontend/test-e2e"`) {
+		t.Errorf("path-style target should be covered by frontend/test e2e, got: %s", joined)
+	}
+}
+
+func TestDotPrefixedTargetIgnoredAfterMultiTargetSplit(t *testing.T) {
+	tmpDir := t.TempDir()
+	makefile := "foo .bar $(BIN) %pattern: ## Mixed targets\nexport DOCKER_BUILDKIT := 1 ## Build setting\n"
+	if err := os.WriteFile(filepath.Join(tmpDir, "Makefile"), []byte(makefile), 0644); err != nil {
+		t.Fatalf("write Makefile: %v", err)
+	}
+
+	targets := extractDocumentedMakefileTargetNamesInDir(tmpDir)
+	if len(targets) != 1 || targets[0] != "foo" {
+		t.Fatalf("target filtering after split = %v, want [foo]", targets)
 	}
 }

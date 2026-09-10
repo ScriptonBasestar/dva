@@ -5,7 +5,7 @@ type: bug
 priority: P3
 effort: S
 exec-tier: standard
-status: todo
+status: done
 created: 2026-09-08
 source: "TASK-320 독립 리뷰(2026-09-08)의 F1·F2·F3"
 ---
@@ -83,11 +83,11 @@ old-vs-new differ에서 **이 형태의 출현은 0건**이었다. `.`·`$(`·`%
 
 ## Completion Criteria
 
-- [ ] 두 subproject가 같은 잎 이름을 import한 설정에서 루트 Makefile의 그 타깃이 계속 보고된다 | verify: `/usr/bin/grep -rq 'func TestImportedLeafNameDoesNotSuppressUnroutableTarget(' internal/cli`
-- [ ] `as:`로 루트 키를 만든 설정에서는 억제된다 (도달 가능하므로) | verify: `/usr/bin/grep -rq 'func TestAliasedImportSuppressesTheRootTarget(' internal/cli`
-- [ ] path 형태로 문서화된 Makefile 타깃(`sub/name-sub`)이 다시 침묵한다 | verify: `/usr/bin/grep -rq 'func TestPathStyleMakefileTargetStaysCovered(' internal/cli`
-- [ ] `.`-접두어 가드가 분리된 각 토큰에 적용된다 | verify: `/usr/bin/grep -rq 'func TestDotPrefixedTargetIgnoredAfterMultiTargetSplit(' internal/cli`
-- [ ] 게이트 통과 | verify: `make doc-check` (regression-guard)
+- [x] 두 subproject가 같은 잎 이름을 import한 설정에서 루트 Makefile의 그 타깃이 계속 보고된다 | verify: `/usr/bin/grep -rq 'func TestImportedLeafNameDoesNotSuppressUnroutableTarget(' internal/cli`
+- [x] `as:`로 루트 키를 만든 설정에서는 억제된다 (도달 가능하므로) | verify: `/usr/bin/grep -rq 'func TestAliasedImportSuppressesTheRootTarget(' internal/cli`
+- [x] path 형태로 문서화된 Makefile 타깃(`sub/name-sub`)이 다시 침묵한다 | verify: `/usr/bin/grep -rq 'func TestPathStyleMakefileTargetStaysCovered(' internal/cli`
+- [x] `.`-접두어 가드가 분리된 각 토큰에 적용된다 | verify: `/usr/bin/grep -rq 'func TestDotPrefixedTargetIgnoredAfterMultiTargetSplit(' internal/cli`
+- [x] 게이트 통과 | verify: `make doc-check` (regression-guard)
 
 ## Notes
 
@@ -98,3 +98,9 @@ old-vs-new differ에서 **이 형태의 출현은 0건**이었다. `.`·`$(`·`%
   가치가 성립한다.
 - 반대 방향의 개선 하나는 TASK-320이 언급 없이 얻었다: `clean build: ## x`가 예전에는 합쳐진
   이름이 `shouldIgnoreMakefileTarget`을 비껴가 warn됐는데, 지금은 두 토큰 모두 올바르게 무시된다.
+
+## Completion
+
+- 2026-09-10: Option B를 적용했다. import canonical leaf는 루트 명령으로 세지 않고, 경고가
+  import source와 `as:` 별칭을 안내한다. imported subcommand는 leaf와 canonical path 양쪽의
+  Makefile spelling을 계속 커버한다.
