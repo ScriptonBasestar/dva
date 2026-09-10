@@ -3,13 +3,13 @@ id: PLAN-008
 title: "Work the migrate-section-order defect bundle in a single file's order"
 type: plan
 scope: "TASK-358..365 — TASK-318 재리뷰가 파생시킨 8장. 전부 internal/config/migrate_section_order.go(367줄) 한 파일 또는 그 테스트에 걸린다"
-progress: 0
+progress: 13
 total-tasks: 8
-completed-tasks: 0
+completed-tasks: 1
 children: [TASK-365, TASK-363, TASK-359, TASK-358, TASK-361, TASK-362, TASK-364, TASK-360]
 target-date: "2026-10-31"
 created: 2026-09-09
-completed-children: 0
+completed-children: 1
 ---
 
 ## Goal
@@ -35,7 +35,7 @@ TASK-318(섹션 순서 자동 정렬)의 재리뷰가 결함 8장을 파생시�
 
 | # | 카드 | P | 왜 이 자리인가 |
 |---|---|---|---|
-| 1 | TASK-365 CRLF 계약 결정 | P2 | **결정을 먼저 한다.** 코드 결합이 없고, Option 2(migrate가 LF로 정규화하고 보고)를 택하면 8번 TASK-360이 **코드 변경 없이 닫힌다.** 나중에 하면 360을 고친 뒤 그 수정이 필요 없었음을 알게 된다 |
+| 1 | ~~TASK-365~~ CRLF 계약 결정 | P2 | 완료 2026-09-10. Option 1을 택해 pipeline 경계에서 균일 CRLF를 보존했고, TASK-360은 계획대로 남은 separator 세부 조각을 처리한다 |
 | 2 | TASK-363 `\|+` 후행 공백 유실 | **P1** | 남은 8장 중 **유일한 무성 데이터 손실**이다 — 출력이 정상 파싱되면서 값이 달라진다. 나머지는 파싱 실패이거나 외형 문제다. 영역 `:234-244`로 고립돼 있어 1번 뒤 아무 때나 가능 |
 | 3 | TASK-359 조용한 bail-out 폐루프 | P2 | `:110-119`의 두 bail-out에 `report.Blocked` 메시지를 넣으며 **그 메시지의 형태를 정한다**. 4번이 그 형태를 따라야 한다 |
 | 4 | TASK-358 anchor/alias 재배치 차단 | P2 | 같은 `:110-119`에 세 번째 bail-out을 추가한다. 카드 본문이 "TASK-359가 정하는 것과 같은 모양"이라고 직접 적고 있다 — **하드 제약** |
@@ -46,7 +46,7 @@ TASK-318(섹션 순서 자동 정렬)의 재리뷰가 결함 8장을 파생시�
 
 TASK-365의 결정은 **Option 1(균일한 CRLF를 migrate 파이프라인 경계에서 보존)**으로
 확정됐다. 따라서 TASK-360은 계획대로 8번에서 이 계약의 남은 section-order 세부 조각을
-고친다. 이 결정 기록은 작업 순서만 명확히 하며 이 plan의 진행 수치는 바꾸지 않는다.
+고친다. TASK-365의 결정과 pipeline 구현이 완료되어 이 plan 진행 수치에 반영했다.
 
 ## 순서가 하드 제약인 곳 — 두 곳뿐
 
@@ -83,7 +83,7 @@ TASK-365의 결정은 **Option 1(균일한 CRLF를 migrate 파이프라인 경�
 
 착수 순서는 §Order가 정본이다. 아래는 같은 여덟 장을 그 순서로 나열한 것이다.
 
-- TASK-365 — migrate 파이프라인이 CRLF를 보존하는지 계약 결정 (P2, 사람 결정)
+- TASK-365 — migrate 파이프라인이 CRLF를 보존하는지 계약 결정 (done, 2026-09-10)
 - TASK-363 — `|+`/`>+` 블록 스칼라의 후행 공백 유실 (P1, 유일한 무성 데이터 손실)
 - TASK-359 — config migrate의 조용한 bail-out 폐루프 닫기 (P2, Blocked 메시지 형태를 정함)
 - TASK-358 — anchor가 alias 아래로 내려가는 재배치 차단 (P2, 359의 형태를 따름)

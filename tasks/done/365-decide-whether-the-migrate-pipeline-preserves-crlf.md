@@ -7,7 +7,7 @@ effort: M
 exec-tier: strong
 created-at: 2026-09-08T16:40:00+09:00
 source: "TASK-318 재리뷰 (t318-rereview) 개행 계약"
-status: todo
+status: done
 depends-on: []
 needs-human: false
 allowed-paths:
@@ -140,3 +140,14 @@ CRLF를 사용하면 미리보기와 `--write` 결과도 CRLF여야 한다. LF �
   택하면 360은 무의미해지므로 그때 닫는다(고칠 이유가 사라진다). Option 1을 택할 때만
   360이 그 계약의 한 조각으로 살아남는다. 360을 먼저 고치면 부분 보장이 한 칸 더 늘어날
   뿐이므로 순서를 뒤집지 말 것.
+
+## Resolution (2026-09-10)
+
+- Option 1 is implemented at the `Migrate` pipeline boundary: uniform CRLF is
+  processed as LF internally and restored once on return; preview and `--write`
+  use the same returned bytes.
+- Mixed or lone-CR input is returned unchanged with a `Blocked` explanation
+  before any line-indexing migration step; TASK-360 retains the direct
+  section-order separator rendering repair.
+- Focused config/CLI tests, an independent strong review, and the complete
+  commit gate passed.
