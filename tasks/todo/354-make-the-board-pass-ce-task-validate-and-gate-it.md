@@ -180,7 +180,7 @@ validate를 재구현하는 Go 도구를 만드는 것은 이 카드의 범위�
 - [ ] 저장소 게이트가 `ce task gate`를 호출한다 — validate를 재구현하지 않는다. `## 게이트 연결`이 제시한 두 붙일 자리(`make doc-check` 또는 통합 러너 선언 `.gz-git.yaml`) 중 사람이 어느 쪽을 골라도 이 바인딩은 만족되어야 한다 — 한쪽만 하드코딩하지 않는다. 주석에서 명령을 언급하는 것만으로는 통과하지 않는다 — 실제 호출 줄이어야 한다 | verify: `/usr/bin/grep -rhE 'ce task gate' Makefile .gz-git.yaml 2>/dev/null | /usr/bin/grep -qvE '^\s*#'`
 - [ ] 게이트를 어디에 붙였는지와 CI의 `ce` 해결 여부가 근거와 함께 기록됐다 | verify: human — 이 카드 `## 결정 기록` 절에 선택과 그 근거, 그리고 CI에서 `ce`가 해결되는지 확인한 결과가 적혀 있는지 확인
 - [ ] 위반 카드를 심으면 게이트가 그 경로를 지목하며 실패한다 | verify: human — `type: fix` 카드 하나를 심고 저장소 게이트가 rc≠0으로 그 경로를 출력한 기록이 `## 결정 기록`에 있다
-- [ ] 기존 게이트 통과 | verify: `make doc-check`
+- [ ] 기존 게이트 통과 | verify: `make doc-check` (regression-guard)
 
 ## Notes
 

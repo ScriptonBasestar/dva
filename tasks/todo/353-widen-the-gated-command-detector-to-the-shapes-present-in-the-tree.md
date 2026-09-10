@@ -74,7 +74,7 @@ non-test 소스를 AST로 파싱해 gate에 도달하는 커맨드를 찾고, de
 - [ ] `Use:`가 리터럴이 아닌 커맨드는 조용히 건너뛰지 않고 hard failure를 낸다 | verify: `/usr/bin/grep -rq 'func TestGateDetectorFailsOnUnresolvableUse(' internal/cli`
 - [ ] `init()` 안의 대입·지역 `:=` 커맨드 리터럴이 수집된다 | verify: `/usr/bin/grep -rq 'func TestGateDetectorFindsAssignedCommandLiteral(' internal/cli`
 - [ ] 각 형태의 mutation 실패 메시지가 카드에 기록된다 | verify: `human — 카드 본문에 형태별 실패 메시지 표가 있다`
-- [ ] 게이트 통과 | verify: `make doc-check`
+- [ ] 게이트 통과 | verify: `make doc-check` (regression-guard)
 
 ## Notes
 

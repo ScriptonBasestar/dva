@@ -66,4 +66,4 @@ expensive order.
 - [ ] Two task cards sharing a leading filename number in the same id space are reported, with distinct frontmatter ids | verify: `/usr/bin/grep -rq 'func TestDuplicateFilenameNumbersAreReported(' tools/doccheck`
 - [ ] The `PLAN-00n` / `TASK-00n` archive overlap and any zone deliberately exempted stay silent | verify: `/usr/bin/grep -rq 'func TestPlanAndTaskNamespacesDoNotCollideByNumber(' tools/doccheck`
 - [ ] The decision on whether filename number and frontmatter id must agree is recorded in this card before the check is written | verify: human — read the Design note resolution in this card
-- [ ] Gates stay green | verify: `make doc-check`
+- [ ] Gates stay green | verify: `make doc-check` (regression-guard)

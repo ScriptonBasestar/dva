@@ -43,4 +43,4 @@ needs-human: true
 
 - [ ] 1번(분할)과 2번(예외 선언) 중 하나가 근거와 함께 선택돼 이 카드에 기록된다 | verify: human — 결정과 근거를 카드에 기재
 - [ ] 2번을 택하면 예외가 devenv/agent-kit SSOT에 등록되고, 이 저장소에서 USAGE.md 편집이 더 이상 차단되지 않는다 | verify: human — 편집 후 훅 통과 확인
-- [ ] 1번을 택하면 USAGE.md 경로를 가리키는 모든 verify 바인딩이 새 경로로 옮겨지고 게이트가 초록이다 | verify: `make doc-check`
+- [ ] 1번을 택하면 USAGE.md 경로를 가리키는 모든 verify 바인딩이 새 경로로 옮겨지고 게이트가 초록이다 | verify: `make doc-check` (regression-guard)

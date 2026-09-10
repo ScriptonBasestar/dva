@@ -59,7 +59,7 @@ TASK-350이 다루는 것은 "바인딩이 뒤집혔거나 공허한가"라는 �
 
 ## Completion Criteria
 
-- [ ] USAGE.md의 표시된 YAML 블록을 뽑아 스키마 검증하는 검사가 있고, 실패 시 exit 1 | verify: `make doc-check`
+- [ ] USAGE.md의 표시된 YAML 블록을 뽑아 스키마 검증하는 검사가 있고, 실패 시 exit 1 | verify: `make doc-check` (regression-guard)
 - [ ] 검사가 공허하지 않다 — 표시된 블록을 일부러 깨뜨리면 실패한다 (변이 증거를 카드에 기록) | verify: human — 변이체 실행 결과를 카드에 첨부
 - [ ] canonical order 예시가 이 검사의 대상으로 표시되어 있다 | verify: human — 표시 방식 확정 후 재작성
 - [ ] 경고 0건까지 요구할지 결정하고 근거를 카드에 남긴다 | verify: human — 결정과 그 근거가 이 카드의 `## 결정 기록` 절에 적혀 있는지 확인

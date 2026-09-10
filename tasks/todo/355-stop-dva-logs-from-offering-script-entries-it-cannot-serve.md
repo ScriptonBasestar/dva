@@ -88,4 +88,4 @@ USAGE.md 문장은 진척이 아니라 보존을 증언하므로 `(regression-gu
 - [ ] script 엔트리만 있는 plan에 `dva logs`를 걸면 파일 없음 오류가 아니라 어디서 출력을 봐야 하는지 안내하는 메시지가 나온다 | verify: `/usr/bin/grep -rq 'func TestScriptOnlyPlanLogsNameWhereOutputWent(' internal/cli`
 - [ ] 위 두 테스트가 수정 전 소스에 대해 FAIL 함을 `go test -overlay`로 확인했다 | verify: human — overlay 실행 결과를 카드에 첨부
 - [ ] USAGE.md의 script 로그 서술이 수정된 동작과 일치한다 | verify: `/usr/bin/grep -qF '러너는 여기에 해당하지 않습니다' USAGE.md` (regression-guard)
-- [ ] 게이트 통과 | verify: `make doc-check`
+- [ ] 게이트 통과 | verify: `make doc-check` (regression-guard)

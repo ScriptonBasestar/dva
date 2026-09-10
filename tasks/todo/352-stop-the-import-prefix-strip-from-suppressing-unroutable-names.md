@@ -87,7 +87,7 @@ old-vs-new differ에서 **이 형태의 출현은 0건**이었다. `.`·`$(`·`%
 - [ ] `as:`로 루트 키를 만든 설정에서는 억제된다 (도달 가능하므로) | verify: `/usr/bin/grep -rq 'func TestAliasedImportSuppressesTheRootTarget(' internal/cli`
 - [ ] path 형태로 문서화된 Makefile 타깃(`sub/name-sub`)이 다시 침묵한다 | verify: `/usr/bin/grep -rq 'func TestPathStyleMakefileTargetStaysCovered(' internal/cli`
 - [ ] `.`-접두어 가드가 분리된 각 토큰에 적용된다 | verify: `/usr/bin/grep -rq 'func TestDotPrefixedTargetIgnoredAfterMultiTargetSplit(' internal/cli`
-- [ ] 게이트 통과 | verify: `make doc-check`
+- [ ] 게이트 통과 | verify: `make doc-check` (regression-guard)
 
 ## Notes
 

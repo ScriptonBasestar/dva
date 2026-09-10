@@ -22,4 +22,4 @@ agent-deny 목록은 `config env seal|show` 2건뿐 (`dva agent-deny status`). �
 ## Completion Criteria
 
 - [ ] 설계 결정 (docs/agent-deny-rules.md 갱신) | verify: human — internal/agentdeny/rules.go에 destructive interaction(예: nd-stack db reset/redis flush)용 신규 Gated Command 규칙이 추가되고, make generate로 재생성된 docs/agent-deny-rules.md의 "Gated commands" 표에 반영되었는지 확인
-- [ ] 구현 + 테스트 (바인딩 잠정 — 설계 확정 후 groom에서 테스트 함수명으로 교체) | verify: `make test`
+- [ ] 구현 + 테스트 (바인딩 잠정 — 설계 확정 후 groom에서 테스트 함수명으로 교체) | verify: `make test` (regression-guard)

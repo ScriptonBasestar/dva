@@ -53,7 +53,7 @@ PLAN-007 §External 1번(`move --to done` 전제조건에 `quality-review` 요�
 
 - [ ] AGENTS.md가 카드를 닫으려면 별도 세션의 done-review가 필요하다고 기술한다 | verify: `/usr/bin/grep -q "done-review" AGENTS.md`
 - [ ] 규칙 본문을 복제하지 않고 링크만 둔다 | verify: human — 추가된 문단이 정책 규칙을 다시 서술하지 않고 canonical 위치를 가리키는지 확인
-- [ ] 게이트 통과 | verify: `make doc-check`
+- [ ] 게이트 통과 | verify: `make doc-check` (regression-guard)
 
 ## Notes
 

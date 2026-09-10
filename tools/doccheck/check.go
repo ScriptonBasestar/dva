@@ -33,6 +33,9 @@ type Result struct {
 	ExternalCorpusBindings int
 	WrappedToolBindings    int
 	BareToolBindings       int
+	InvertedGrepBindings   int
+	BareSuiteBindings      int
+	ExistingTodoTestNames  int
 	ArchiveFilesSeen       int
 	ArchiveCards           int
 	ArchiveMissing         int
@@ -192,6 +195,18 @@ func Check(in CheckInput) Result {
 			res.PortabilityDetail = append(res.PortabilityDetail, toolMsgs...)
 		}
 	}
+	for _, e := range scanFiles {
+		if !strings.HasPrefix(e.Path, "tasks/") {
+			continue
+		}
+		if body, ok := bodies[e.Path]; ok {
+			inverted, bareSuites, existingTests, msgs := checkBindingVacuity(e.Path, body, testNames)
+			res.InvertedGrepBindings += inverted
+			res.BareSuiteBindings += bareSuites
+			res.ExistingTodoTestNames += existingTests
+			res.PortabilityDetail = append(res.PortabilityDetail, msgs...)
+		}
+	}
 
 	seen, cards, archiveMsgs, archiveErrs := checkArchiveFrontmatter(in.Root, in.Inventory)
 	res.ArchiveFilesSeen = seen
@@ -236,6 +251,15 @@ func Check(in CheckInput) Result {
 	}
 	if res.BareToolBindings > 0 {
 		res.Errors = append(res.Errors, fmt.Sprintf("%d verify binding(s) invoke bare wrapped tools", res.BareToolBindings))
+	}
+	if res.InvertedGrepBindings > 0 {
+		res.Errors = append(res.Errors, fmt.Sprintf("%d verify binding(s) use non-portable grep -L", res.InvertedGrepBindings))
+	}
+	if res.BareSuiteBindings > 0 {
+		res.Errors = append(res.Errors, fmt.Sprintf("%d verify binding(s) are bare suite targets without (regression-guard)", res.BareSuiteBindings))
+	}
+	if res.ExistingTodoTestNames > 0 {
+		res.Errors = append(res.Errors, fmt.Sprintf("%d todo verify binding(s) name an already-declared test", res.ExistingTodoTestNames))
 	}
 	if res.BrokenLinks > 0 {
 		res.Errors = append(res.Errors, fmt.Sprintf("%d broken link(s)", res.BrokenLinks))

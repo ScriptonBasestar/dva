@@ -3,9 +3,9 @@ id: PLAN-009
 title: "Work the task and doccheck defect bundle in dependency order"
 type: plan
 scope: "TASK-371, 344, 350, 343, 354, 338 — 여섯 장이 shared task progress contract, tools/doccheck, 또는 그 Makefile 연결을 고친다. 선언된 의존은 TASK-343 depends-on TASK-344와 TASK-354 depends-on TASK-371이다"
-progress: 33
+progress: 50
 total-tasks: 6
-completed-tasks: 2
+completed-tasks: 3
 children: [TASK-371, TASK-344, TASK-350, TASK-343, TASK-354, TASK-338]
 target-date: "2026-09-30"
 created: 2026-09-09
@@ -78,7 +78,7 @@ This aligns the local calculation with the shared task contract; details are in
 
 - TASK-371 — planprogress를 shared task progress contract와 맞춤 (P1, 두 보드 게이트가 같은 진행률을 읽게 먼저 고정)
 - TASK-344 — 프론트매터 값 파서를 트레일링 주석·중복 키에 강화 (P3, 공유 파서를 먼저 고정)
-- TASK-350 — doccheck의 역전/공허 verify 바인딩 거부 (P2, 지금도 심어지고 있어 344 다음으로 당김)
+- TASK-350 — doccheck의 역전/공허 verify 바인딩 거부 (P2, done 2026-09-10)
 - TASK-343 — 파일명 번호 충돌 가드 완성 (P2, `depends-on: [TASK-344]`)
 - TASK-354 — 보드를 `ce task validate` 통과시키고 공유 게이트에 연결 (P2, 엔진 커버리지를 드러냄)
 - TASK-338 — 링크의 written path 소멸을 보고 (P2, 354가 드러낸 엔진 범위와 겹치지 않게 재기술 후 착수)

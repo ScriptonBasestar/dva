@@ -5,7 +5,7 @@ type: bug
 priority: P2
 effort: M
 exec-tier: standard
-status: todo
+status: done
 created: 2026-09-08
 source: "2026-09-08 board review — TASK-332의 역전된 `grep -L` 바인딩과 bare `make test` 15건"
 ---
@@ -46,13 +46,20 @@ doccheck는 이미 bare wrapped tool(`binding_tool.go`)과 escaped pipe·외부 
 
 ## Completion Criteria
 
-- [ ] verify 바인딩이 grep에 `-L`을 넘기면 거부되고, 메시지가 BSD/GNU 종료 코드 역전을 근거로 든다 | verify: `/usr/bin/grep -rq 'func TestBindingPortabilityRejectsGrepDashL(' tools/doccheck`
-- [ ] 바인딩의 커맨드가 전체 스위트 타깃(`make test`, `make lint`, `make check`, `make doc-check`, `go test ./...`) 하나뿐이면 거부된다 | verify: `/usr/bin/grep -rq 'func TestBindingVacuityRejectsBareSuiteTarget(' tools/doccheck`
-- [ ] `(regression-guard)` 마커가 그 기준 한 줄만 면제하고 다음 기준에는 적용되지 않는다 | verify: `/usr/bin/grep -rq 'func TestBindingVacuityHonoursRegressionGuardMarkerPerLine(' tools/doccheck`
-- [ ] 두 검사 모두 `make doc-check` 출력에 카운트로 보고된다 | verify: `/usr/bin/grep -rq 'func TestCheckReportsBindingInversionAndVacuityCounts(' tools/doccheck`
-- [ ] 보드에 남은 bare `make test` 바인딩(2026-09-09 `tasks/todo` 14건)이 전부 해소된다 — 실제 바인딩을 얻거나 마커를 단다. **스코프가 `tasks/todo`인 것은 의도다** — `tasks/done`·`tasks/plan`에 12건이 더 있지만 전부 닫힌 카드의 `- [x]` 기준이고, 닫힌 기록을 grep 통과시키려 고쳐 쓰는 것은 이 카드가 (B)로 분류한 결함과 같은 종류다. 열려 있는 카드만 고친다 | verify: `! /usr/bin/grep -rq 'verify: .make test.$' tasks/todo`
-- [ ] 카드가 `tasks/todo`에 있는 동안 그 카드의 `grep -rq 'func TestX('` 바인딩이 **이미 매치하면** 거부된다 | verify: `/usr/bin/grep -rq 'func TestBindingVacuityRejectsAlreadyMatchingTestName(' tools/doccheck`
-- [ ] 게이트가 계속 초록이다 | verify: `make test` (regression-guard)
+- [x] verify 바인딩이 grep에 `-L`을 넘기면 거부되고, 메시지가 BSD/GNU 종료 코드 역전을 근거로 든다 | verify: `go test ./tools/doccheck -run '^TestBindingPortabilityRejectsGrepDashL$'`
+- [x] 바인딩의 커맨드가 전체 스위트 타깃(`make test`, `make lint`, `make check`, `make doc-check`, `go test ./...`) 하나뿐이면 거부된다 | verify: `go test ./tools/doccheck -run '^TestBindingVacuityRejectsBareSuiteTarget$'`
+- [x] `(regression-guard)` 마커가 그 기준 한 줄만 면제하고 다음 기준에는 적용되지 않는다 | verify: `go test ./tools/doccheck -run '^TestBindingVacuityHonoursRegressionGuardMarkerPerLine$'`
+- [x] 두 검사 모두 `make doc-check` 출력에 카운트로 보고된다 | verify: `go test ./tools/doccheck -run '^TestCheckReportsBindingInversionAndVacuityCounts$'`
+- [x] 보드에 남은 bare 전체 스위트 바인딩이 전부 해소된다 — 실제 바인딩을 얻거나 마커를 단다. **스코프가 `tasks/todo`인 것은 의도다** — `tasks/done`·`tasks/plan`의 닫힌 기준은 역사 기록이므로 고쳐 쓰지 않는다. 열린 카드만 고친다 | verify: `! /usr/bin/grep -rq 'verify: .make \(test\|lint\|check\|doc-check\).$' tasks/todo`
+- [x] 카드가 `tasks/todo`에 있는 동안 그 카드의 `grep -rq 'func TestX('` 바인딩이 **이미 매치하면** 거부된다 | verify: `go test ./tools/doccheck -run '^TestBindingVacuityRejectsAlreadyMatchingTestName$'`
+- [x] 게이트가 계속 초록이다 | verify: `make test` (regression-guard)
+
+## Verification evidence
+
+- 2026-09-10: `go test ./tools/doccheck/...` passed.
+- 2026-09-10: `make doc-check` passed with `inverted_grep_bindings: 0`,
+  `bare_suite_bindings: 0`, and `existing_todo_test_bindings: 0`.
+- 2026-09-10: `git diff --check` passed.
 
 ## Notes
 

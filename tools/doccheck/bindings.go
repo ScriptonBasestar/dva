@@ -3,8 +3,9 @@ package main
 import "strings"
 
 type verifyBinding struct {
-	Line int
-	Span string
+	Line            int
+	Span            string
+	RegressionGuard bool
 }
 
 // extractVerifyBindings declares the mechanical binding population shared by
@@ -36,7 +37,14 @@ func extractVerifyBindings(body string) []verifyBinding {
 			offset += len(line)
 			continue
 		}
-		bindings = append(bindings, verifyBinding{Line: lineAt(body, offset), Span: span})
+		// A regression guard belongs to this criterion line, after the first
+		// binding span.  Keeping it here makes the exception local: a marker on
+		// one criterion cannot silently bless the next one.
+		bindings = append(bindings, verifyBinding{
+			Line:            lineAt(body, offset),
+			Span:            span,
+			RegressionGuard: strings.Contains(line[match[1]+spanLoc[1]:], "(regression-guard)"),
+		})
 		offset += len(line)
 	}
 	return bindings

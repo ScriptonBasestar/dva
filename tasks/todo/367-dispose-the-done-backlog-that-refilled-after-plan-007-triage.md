@@ -83,7 +83,7 @@ PLAN-007 §External은 두 항목을 "카드 없음, 만들지 않는다"로 남
 - [ ] PLAN-007 자식 7장이 `quality-review` 값을 갖거나 tasks/done을 떠났다 | verify: `! /usr/bin/find tasks/done -maxdepth 1 -name '327-*.md' -o -name '332-*.md' -o -name '333-*.md' -o -name '334-*.md' -o -name '335-*.md' -o -name '337-*.md' -o -name '342-*.md' | /usr/bin/xargs -r /usr/bin/grep -L '^quality-review:' | /usr/bin/grep -q .`
 - [ ] `waived`로 표기한 카드는 `quality-review-evidence`를 함께 갖는다 | verify: `! /usr/bin/grep -rl '^quality-review: waived$' tasks/done --include='*.md' | /usr/bin/xargs -r /usr/bin/grep -L '^quality-review-evidence:' | /usr/bin/grep -q .`
 - [ ] 19장 각각에 소유자와 처분 근거가 기록됐다 | verify: human — 이 카드의 `## 처분 기록` 표에 19장 전부가 소유 plan 또는 처분 사유와 함께 한 행씩 있는지 확인
-- [ ] 게이트 통과 | verify: `make doc-check`
+- [ ] 게이트 통과 | verify: `make doc-check` (regression-guard)
 
 ## Notes
 

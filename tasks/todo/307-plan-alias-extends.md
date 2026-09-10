@@ -26,7 +26,7 @@ SOUL.md의 선언 단순성 원칙과 대조해 스펙 문서(docs/)부터 작�
 ## Completion Criteria
 
 - [ ] 설계 문서 작성 및 승인 | verify: human — docs/55-plan-alias-extends-design.md §5의 결정 항목 4개(A/B 범위, alias의 default_plan 허용, dva ls 표기 형식, C 한계 배치)에 답이 기록되고 문서 제목의 "결정 대기"가 해소되었는지 확인
-- [ ] 구현 + 순환 참조/미정의 참조 에러 테스트 (바인딩 잠정 — 설계 확정 후 groom에서 테스트 함수명으로 교체) | verify: `make test`
+- [ ] 구현 + 순환 참조/미정의 참조 에러 테스트 (바인딩 잠정 — 설계 확정 후 groom에서 테스트 함수명으로 교체) | verify: `make test` (regression-guard)
 - [ ] nd-stack 설정을 alias로 재작성한 예시가 validate 통과 | verify: human — 출력 첨부
 
 ## Dogfood evidence (2026-09-05 실행)
