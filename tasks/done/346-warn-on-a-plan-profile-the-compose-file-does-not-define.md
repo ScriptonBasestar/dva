@@ -5,7 +5,7 @@ type: feature
 priority: P2
 effort: M
 exec-tier: strong
-status: todo
+status: done
 created: 2026-09-07
 needs-human: false
 allowed-paths:
@@ -61,10 +61,10 @@ broken config.
 
 ## Completion Criteria
 
-- [ ] The source-of-truth decision is recorded on this card with its rationale | verify: human — 카드 하단에 "Design record" 절이 추가되어 option 1(compose 파일 파싱)과 option 2(dva.yml 선언) 중 채택안과 근거, 그리고 compose 파일이 없거나 파싱 불가할 때의 degradation 동작이 기록되었는지 확인
-- [ ] A plan profile absent from the resolved profile set produces a warning naming the plan, the entry index, and the available profiles | verify: `/usr/bin/grep -rq 'func TestWarnPlanProfilesNotDefined(' internal/config`
-- [ ] An unresolvable or absent compose file degrades to silence rather than a warning or an error | verify: `/usr/bin/grep -rq 'func TestPlanProfileWarningStaysQuietWithoutAResolvableComposeFile(' internal/config`
-- [ ] Gates stay green | verify: `make test`
+- [x] The source-of-truth decision is recorded on this card with its rationale | verify: human — 카드 하단에 "Design record" 절이 추가되어 option 1(compose 파일 파싱)과 option 2(dva.yml 선언) 중 채택안과 근거, 그리고 compose 파일이 없거나 파싱 불가할 때의 degradation 동작이 기록되었는지 확인
+- [x] A plan profile absent from the resolved profile set produces a warning naming the plan, the entry index, and the available profiles | verify: `/usr/bin/grep -rq 'func TestWarnPlanProfilesNotDefined(' internal/config`
+- [x] An unresolvable or absent compose file degrades to silence rather than a warning or an error | verify: `/usr/bin/grep -rq 'func TestPlanProfileWarningStaysQuietWithoutAResolvableComposeFile(' internal/config`
+- [x] Gates stay green | verify: `make test`
 
 ## Design record
 
@@ -81,3 +81,14 @@ compose와 어긋나는 두 번째 drift 경로를 만들지 않으며, TASK-315
 `include`/`extends`/compose 특수 merge tag 때문에 완전한 집합을 확정할 수 없으면 warning과
 error를 모두 내지 않는다. 일부 파일에서 읽은 불완전한 집합으로 경고하는 것보다 조용히
 runtime compose 진단에 맡기는 쪽이 이 비치명적 validator의 계약에 맞는다.
+
+## Resolution (2026-09-10)
+
+- Validation reads the configured compose files from the effective owner/source
+  directory and warns deterministically for plan profiles absent from the union
+  of `services.*.profiles`.
+- It remains silent when the file or profile shape cannot be resolved, including
+  interpolation, `include`, `extends`, Compose merge tags, and non-string YAML
+  profile values.
+- The two card bindings, focused and package tests, and an independent strong
+  review passed.

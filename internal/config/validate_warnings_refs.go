@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 
@@ -265,12 +266,7 @@ func hasUnsupportedComposeProfileTag(node *yaml.Node) bool {
 	if node.Tag == "!reset" || node.Tag == "!override" {
 		return true
 	}
-	for _, child := range node.Content {
-		if hasUnsupportedComposeProfileTag(child) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(node.Content, hasUnsupportedComposeProfileTag)
 }
 
 // warnUnreferencedEnvironmentsAndSites warns when an environments.* or sites.*

@@ -3,13 +3,13 @@ id: PLAN-006
 title: "Work the devbox dogfood follow-up queue in dependency order"
 type: plan
 scope: "TASK-311..323 from the 2026-09-05 mydevbox migration, plus the needs-human cards that gate the rest"
-progress: 58
+progress: 62
 total-tasks: 26
-completed-tasks: 15
+completed-tasks: 16
 children: [TASK-339, TASK-340, TASK-328, TASK-329, TASK-312, TASK-313, TASK-317, TASK-311, TASK-324, TASK-314, TASK-316, TASK-320, TASK-322, TASK-315, TASK-318, TASK-323, TASK-249, TASK-307, TASK-309, TASK-319, TASK-321, TASK-345, TASK-346, TASK-347, TASK-348, TASK-351]
 target-date: "2026-10-31"
 created: 2026-09-05
-completed-children: 15
+completed-children: 16
 ---
 
 ## Goal
@@ -109,28 +109,28 @@ validate가 요구한다 — 둘은 다른 질문에 답한다.
 - TASK-321 — destructive interaction agent-deny (todo)
 - TASK-351 — built-in과 동등한 `replace:` 훅 경고 (todo)
 
-### 어느 절에도 놓이지 않은 8장 — 소유는 있고 순서가 없다
+### 아직 실행 순서가 필요한 3장 — 소유는 있고 계획 순서가 없다
 
-이 여덟 장은 이 plan의 자식이지만 §Order에도 §Needs-human에도 행이 없다. 파생시킨
-행이 본문에서 이름만 언급하고 일정에 넣지 않았기 때문이다.
+이 세 장은 이 plan의 자식이지만 §Order에도 §Needs-human에도 행이 없다. 파생시킨
+행이 본문에서 이름만 언급하고 일정에 넣지 않았기 때문이다. compose 번들은 아래 순서를
+확정해 이 목록에서 뺐다.
 
 - TASK-249 — init을 검증된 capability 중심으로 재설계 (archive/done). 완료됐으므로 무해
 - TASK-322에서 분리된 두 장:
   - TASK-339 — init이 `PORT_MAPPINGS.yaml`·`.gz-git.yaml`·Makefile에서 native 엔트리 도출 (todo)
   - TASK-340 — `dva init --dry-run` 프리뷰 결정 (todo)
 - TASK-329 — familybook devbox `dva.yaml` → `dva.yml` rename (todo). readiness 브랜치 대기
-- **compose 번들 4장** — §Order 9행이 "후속 345·346·347·348 파생"이라고 적고 일정에는
-  넣지 않았다. 네 장 사이에 `depends-on`도 없다:
-  - TASK-345 — 단일 엔트리 config에서도 compose passthrough가 엔트리 이름을 벗김 (done, 2026-09-10)
-  - TASK-346 — compose 파일이 정의하지 않은 plan profile 경고 (todo)
-  - TASK-347 — agent-mesh 라이브러리에 plan 수준 profile 선택 교육 (done, 2026-09-10)
-  - TASK-348 — plan profile이 argv가 아니라 실제 docker build에 도달하는지 확인 (todo)
+- compose 번들은 아래 §Compose follow-up sequence에서 순서를 소유한다.
 
-**compose 번들을 여기 남겨 두는 것은 의도된 상태가 아니다.** PLAN-006 §Order 10행이
-여덟 장의 필요를 서술만 하고 소유자를 적지 않았고, 그 여덟 장은 2026-09-09에 PLAN-008이
-생길 때까지 방치됐다. 345~348은 지금 같은 자리에 있다 — 다만 그때와 달리 **소유자는
-있고 순서만 없다**는 점이 다르므로, 새 plan을 만들 것인지 §Order에 행을 넣을 것인지는
-이 plan의 소유자 결정으로 남긴다.
+### Compose follow-up sequence (currentized 2026-09-10)
+
+1. TASK-345 is done: a single compose entry now consumes its matching explicit name.
+2. TASK-347 is done independently: generator guidance selects profiles on plan entries.
+3. TASK-346 is done: validation checks the compose profile source of truth without creating a
+   second dva.yml declaration.
+4. TASK-348 remains the final human-owned real-image-build observation. It follows 345 and
+   346 because it verifies their user-facing compose path, and agents must not perform the
+   lifecycle build it requires.
 
 ## Rules
 
