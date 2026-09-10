@@ -9,7 +9,7 @@ created-at: 2026-09-07T15:00:00+09:00
 source: "TASK-322 body item 5 (carried over) — docs/dogfood/*.md"
 status: done
 needs-human: false
-verification-evidence: "2026-09-10: go test ./internal/cli -run 'TestInitDryRunPreview(WritesNothing|OnNoDiscovery)$', go test ./internal/cli, make doc-check, and DVA commit CI b6fbc5af0f663646c0a75a7d4605dc18 (1m10s) passed. Independent review remains required before integration."
+verification-evidence: "2026-09-10: focused/full internal/cli tests, make doc-check, final DVA commit CI, and independent review passed."
 ---
 
 # Task 340: init `--dry-run` preview
@@ -24,8 +24,9 @@ item 5는 "`--dry-run`이 탐지 실패만 출력하고 생성됐을 내용 prev
 `--dry-run`은 root persistent 플래그이고 init은 이를 읽지 않는다. dogfood 리포트의
 `dva init --dry-run`은 사실상 그냥 `dva init`이었다.
 
-또한 `internal/cli/init_test.go`의 no-discovery 케이스는 "DVA has no preview feature"를
-**명시적으로 단언**한다. 즉 preview 부재는 사고가 아니라 현재 기록된 선택이다.
+착수 전 `internal/cli/init_test.go`의 no-discovery 케이스는 "DVA has no preview feature"를
+명시적으로 단언했다. 이 작업은 그 legacy scaffold wrapper의 설명을 갱신하고 command-level
+preview 경로를 추가했다.
 
 ## Decision
 
