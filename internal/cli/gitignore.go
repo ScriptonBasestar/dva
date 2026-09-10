@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/ScriptonBasestar/dva/internal/config"
 )
@@ -17,6 +19,19 @@ import (
 const (
 	defaultIgnoreSection = "# ignore ScriptonBasestar tmp files"
 )
+
+// gitCheckIgnoreTimeout bounds the one git call on the hot path. The work is matching four
+// constant paths against the ignore rules, which is microseconds; the budget is this large
+// because the thing being waited on is not the work. A cold index, a core.fsmonitor hook that
+// has to start a daemon, or a repository on a network filesystem can all put seconds in front of
+// a trivial query, and cutting the answer off there would trade a rare hang for a routine wrong
+// answer. Two seconds is past every one of those and far short of the point where a person
+// decides dva is broken.
+//
+// A var rather than a const so the test for this can shrink it. Testing the deadline means
+// letting it expire, and the alternative is a test that spends the real budget twice over —
+// once for the deadline, once for WaitDelay — every run.
+var gitCheckIgnoreTimeout = 2 * time.Second
 
 func defaultIgnorePath() string {
 	return config.DotDirName + "/"
@@ -136,11 +151,27 @@ func dvaTransientProbes() []string {
 // Exit 1 means "none of these are ignored". That is an answer, not a failure, and the two have
 // to be told apart: a fake or broken `.git` (a worktree pointer to a gitdir that has moved,
 // among others) exits 128, and folding that into "not ignored" turns an unanswerable question
-// into a warning about a repository that may well be configured correctly.
+// into a warning about a repository that may well be configured correctly. One case does slip
+// through that reading: git exits 1 for an unknown subcommand too, so a git predating
+// check-ignore reports "nothing is ignored" rather than "cannot answer". It warns, which is the
+// safe direction, and separating the two would cost a version probe on every invocation.
+//
+// The deadline is not a nicety. This runs on the hot path — one fork per command, ahead of the
+// output the user asked for — and without a bound a git that never returns takes every dva
+// command with it. Measured with a check-ignore that sleeps: `dva ls` went from 457ms to
+// hanging until it was killed from outside. Timing out is not a failure mode this function has
+// to invent an answer for, because `decided` already says "git could not answer" and every
+// caller falls back to reading .gitignore literally. WaitDelay bounds the second half of the
+// same hazard: killing the process does not by itself unblock the goroutine copying the probes
+// into its stdin.
 var gitCheckIgnore = func(dir string, paths []string) (sources map[string]string, decided bool) {
-	cmd := exec.Command("git", "check-ignore", "-vz", "--stdin")
+	ctx, cancel := context.WithTimeout(context.Background(), gitCheckIgnoreTimeout)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "git", "check-ignore", "-vz", "--stdin")
 	cmd.Dir = dir
 	cmd.Stdin = strings.NewReader(strings.Join(paths, "\x00") + "\x00")
+	cmd.WaitDelay = gitCheckIgnoreTimeout
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	// Discarded: git's complaints here are about the repository, not about DVA, and this
@@ -148,6 +179,12 @@ var gitCheckIgnore = func(dir string, paths []string) (sources map[string]string
 	cmd.Stderr = nil
 
 	if err := cmd.Run(); err != nil {
+		// Checked before the exit code, not after. A killed process reports a code of its
+		// own, and reading that code as git's verdict is exactly the confusion the 128 case
+		// above exists to avoid.
+		if ctx.Err() != nil {
+			return nil, false
+		}
 		var exit *exec.ExitError
 		if !errors.As(err, &exit) || exit.ExitCode() != 1 {
 			return nil, false

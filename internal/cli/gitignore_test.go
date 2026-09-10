@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/ScriptonBasestar/dva/internal/config"
 )
@@ -307,6 +308,64 @@ func TestGitignoreFallsBackWhenGitCannotAnswer(t *testing.T) {
 				t.Errorf("warned = %v, want %v; output was %q", warned, tt.wantWarn, out)
 			}
 		})
+	}
+}
+
+// TestGitCheckIgnoreGivesUpOnAStalledGit pins the deadline, which is the one property of
+// gitCheckIgnore that the gitCheckIgnore swap used everywhere else in this file cannot reach:
+// every other test replaces the function, and the timeout lives inside it.
+//
+// The hazard is not hypothetical. Before the deadline, a git that never returned took the whole
+// command with it — `dva ls` against a check-ignore that sleeps ran until it was killed from
+// outside, having printed nothing. The fork is on the hot path, ahead of the output the user
+// asked for, so "one slow git" and "dva is hung" were the same observation.
+//
+// Timing out has to land as undecided rather than as a verdict. `decided == false` is what sends
+// every caller back to reading .gitignore literally; returning "nothing is ignored" instead
+// would warn about repositories that are configured correctly, which is the failure this whole
+// file is built to avoid.
+func TestGitCheckIgnoreGivesUpOnAStalledGit(t *testing.T) {
+	// A git that answers nothing, ever.
+	shimDir := t.TempDir()
+	shim := "#!/bin/sh\nif [ \"$1\" = check-ignore ]; then sleep 600; fi\nexit 1\n"
+	if err := os.WriteFile(filepath.Join(shimDir, "git"), []byte(shim), 0o755); err != nil {
+		t.Fatalf("WriteFile git shim: %v", err)
+	}
+	t.Setenv("PATH", shimDir+string(os.PathListSeparator)+os.Getenv("PATH"))
+
+	// Shrunk so the test spends milliseconds proving what production spends seconds enforcing.
+	// Both the deadline and WaitDelay read this, so the wait is bounded at twice it.
+	old := gitCheckIgnoreTimeout
+	gitCheckIgnoreTimeout = 150 * time.Millisecond
+	defer func() { gitCheckIgnoreTimeout = old }()
+
+	start := time.Now()
+	sources, decided := gitCheckIgnore(t.TempDir(), dvaTransientProbes())
+	elapsed := time.Since(start)
+
+	if decided {
+		t.Errorf("decided = true, want false: a git that never answered was read as a verdict")
+	}
+	if sources != nil {
+		t.Errorf("sources = %v, want nil", sources)
+	}
+
+	// Both bounds are load-bearing, and the lower one is the less obvious of the two.
+	//
+	// Every assertion above is also satisfied by a run where the shim was never reached: a real
+	// git in a temp directory that is not a repository exits 128, which is likewise nil and
+	// undecided, and it does so in about 15ms. So the test would keep passing if the PATH
+	// injection above ever stopped taking effect, having stopped testing the deadline entirely.
+	// Waiting at least the full budget is what distinguishes "gave up on a stalled git" from
+	// "asked a healthy git a question it answered immediately".
+	if elapsed < gitCheckIgnoreTimeout {
+		t.Errorf("returned after %v, before the %v deadline could expire: the stalled git was "+
+			"never reached, so this asserted nothing about the timeout", elapsed, gitCheckIgnoreTimeout)
+	}
+	// Generous against a loaded CI box while still failing outright if the bound is gone,
+	// since the shim sleeps for ten minutes.
+	if limit := 30 * time.Second; elapsed > limit {
+		t.Errorf("took %v, want under %v: the deadline did not bound the call", elapsed, limit)
 	}
 }
 
