@@ -112,10 +112,11 @@ am은 셸 필드를 정적 분석해 명령 이름을 뽑고 허용목록에 없
 
 ## 판정 옆의 개수
 
-flowcheck는 판정과 함께 스캔한 개수를 찍는다:
+flowcheck는 판정과 함께 스캔한 개수를 찍는다. 아래는 `go run ./tools/flowcheck`를
+실행해 얻은 현재 예시이며, 플로우나 내장 명령이 바뀌면 개수도 달라질 수 있다:
 
 ```
-flowcheck: 10 flow file(s), 103 shell field(s), 14 when-gate(s), 40 dva invocation(s), 3 report-reading field(s), 3 skippable reference(s), 4 config-presence probe(s), 23 built-in command(s)
+flowcheck: 10 flow file(s), 106 shell field(s), 16 when-gate(s), 43 dva invocation(s), 6 report-reading field(s), 3 skippable reference(s), 4 config-presence probe(s), 29 built-in command(s)
 flowcheck: OK — no decision-path defects
 ```
 
