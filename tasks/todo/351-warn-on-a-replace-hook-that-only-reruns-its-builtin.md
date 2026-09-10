@@ -6,6 +6,7 @@ priority: P3
 effort: M
 exec-tier: standard
 status: todo
+needs-human: true
 created: 2026-09-08
 source: "TASK-320 item 3 분리 — docs/dogfood/scripton-nd-stack.md 개선점 2"
 ---

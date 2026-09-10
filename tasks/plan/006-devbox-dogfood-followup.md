@@ -9,7 +9,6 @@ completed-tasks: 18
 children: [TASK-339, TASK-340, TASK-328, TASK-329, TASK-312, TASK-313, TASK-317, TASK-311, TASK-324, TASK-314, TASK-316, TASK-320, TASK-322, TASK-315, TASK-318, TASK-323, TASK-249, TASK-307, TASK-309, TASK-319, TASK-321, TASK-345, TASK-346, TASK-347, TASK-348, TASK-351]
 target-date: "2026-10-31"
 created: 2026-09-05
-completed-children: 17
 ---
 
 ## Goal
@@ -109,18 +108,15 @@ validate가 요구한다 — 둘은 다른 질문에 답한다.
 - TASK-321 — destructive interaction agent-deny (todo)
 - TASK-351 — built-in과 동등한 `replace:` 훅 경고 (todo)
 
-### 아직 실행 순서가 필요한 3장 — 소유는 있고 계획 순서가 없다
+### 남은 순서 미지정 1장 — TASK-329
 
-이 세 장은 이 plan의 자식이지만 §Order에도 §Needs-human에도 행이 없다. 파생시킨
-행이 본문에서 이름만 언급하고 일정에 넣지 않았기 때문이다. compose 번들은 아래 순서를
-확정해 이 목록에서 뺐다.
+완료된 TASK-249·339·340은 더 이상 실행 순서를 필요로 하지 않고, compose 번들은 아래
+§Compose follow-up sequence가 소유한다. 이 plan의 미완 자식 중 §Order·§Needs-human 어느
+쪽에도 아직 놓이지 않은 것은 TASK-329 하나다.
 
-- TASK-249 — init을 검증된 capability 중심으로 재설계 (archive/done). 완료됐으므로 무해
-- TASK-322에서 분리된 두 장:
-  - TASK-339 — init이 `PORT_MAPPINGS.yaml`·`.gz-git.yaml`·Makefile에서 native 엔트리 도출 (done, 2026-09-10)
-  - TASK-340 — `dva init --dry-run` 프리뷰 결정 (done, Option A; stdout preview only, no writes)
-- TASK-329 — familybook devbox `dva.yaml` → `dva.yml` rename (todo). readiness 브랜치 대기
-- compose 번들은 아래 §Compose follow-up sequence에서 순서를 소유한다.
+- TASK-329 — familybook devbox `dva.yaml` → `dva.yml` rename (todo). 외부 readiness 브랜치가
+  실제로 착지했는지 확인한 뒤에만 다시 순서를 부여한다. 그 전에는 다른 plan 자식이나 내부
+  코드 작업의 선행 조건으로 취급하지 않는다.
 
 ### Compose follow-up sequence (currentized 2026-09-10)
 

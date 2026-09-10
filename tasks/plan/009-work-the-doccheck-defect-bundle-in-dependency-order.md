@@ -36,18 +36,16 @@ TASK-344·350·343·354·338 다섯 장은 정확히 같은 모양이다. `tools
 
 ## Parallel lane — join before TASK-354
 
-TASK-371 is P1 and owns `tools/planprogress` plus the persisted `progress` in PLAN-006.
-It may proceed in parallel with TASK-344 through TASK-343 because those cards do not
-modify that plan. TASK-354 also changes PLAN-006, so it explicitly `depends-on:
-[TASK-371]`; TASK-371 must integrate and TASK-354 must rebase before TASK-354 starts.
-This aligns the local calculation with the shared task contract; details are in
-[[ISSUE-002]].
+TASK-371 completed on 2026-09-10 and owns the aligned `tools/planprogress` calculation plus
+the persisted PLAN-006 progress. TASK-354 still explicitly `depends-on: [TASK-371]` because
+it changes PLAN-006 too; it may resume only after the separate receipt-contract blocker in
+[[ISSUE-001]] is resolved. The shared progress-contract history remains in [[ISSUE-002]].
 
 ## Order
 
 | # | 카드 | P | 왜 이 자리인가 |
 |---|---|---|---|
-| 1 | TASK-344 프론트매터 값 파서 강화 | P3 | **가장 먼저.** `cardstatus.go`의 `frontmatterField`와 `archive.go`의 `hasCanonicalField`가 공유하는 파서를 고친다. TASK-343이 `depends-on: [TASK-344]`로 이미 선언했고, 그 카드 자신의 §Ordering이 "먼저 안 하면 여기서 쓴 테스트가 344 이후 다시 쓰인다"고 적어 뒀다. 보드에서 가장 잘 명세된 카드이기도 하다 — 검증 바인딩 4개가 오늘 전부 정확히 실패하고, 공허한 기준이 0개다 |
+| 1 | TASK-344 프론트매터 값 파서 강화 | P3 | **완료 2026-09-10.** 공유 `frontmatterField` 파서를 강화했고, TASK-343의 하드 의존을 해제했다. |
 | 2 | TASK-350 역전/공허 바인딩 거부 | P2 | **343보다 먼저.** 350은 공허한 verify 바인딩을 거부하는 카드다. 근거는 **잔존 건수가 아니라 발생률**이다 — 2026-09-08~09 이틀 사이에 세 건이 새로 심어졌다: TASK-369의 release-notes 바인딩, TASK-338의 `make doc-check`, TASK-341의 `make test`. **셋 다 지금은 처리됐다**(각각 재작성·삭제·`(regression-guard)` 표기), 그러니 오늘 이 셋을 실행해 재현하려 하지 말 것. 그런데도 카드가 닫히지 않는 이유가 이 자리의 논거다: **세 건 전부 사람이 리뷰에서 붙잡았고 검사기는 아직 없다.** 350이 먼저 들어와야 다음 필링 배치가 같은 형태를 또 넣지 못한다 |
 | 3 | TASK-343 파일명 번호 충돌 가드 | P2, `depends-on: [TASK-344]` | done 2026-09-10. 344가 닫히면서 언블록됐고, TASK/ISSUE namespace별 filename-number 중복 가드를 추가했다. |
 | 4 | TASK-354 보드를 `ce task validate` 통과시키고 게이트 연결 | P2, `depends-on: [TASK-371]` | 공유 `ce task gate`를 저장소 게이트에 연결한다. TASK-371이 PLAN-006 진행률을 두 validator가 합의하는 값으로 맞춰야 하며, 두 카드가 같은 plan 파일을 병렬로 바꾸지 않는다. **직접 CE 경계 조사**는 2026-09-10에 끝났다(`TASK-329`의 stale verify-binding 경고를 확인). 그러나 board-ready와 gate 연결 완료는 [[ISSUE-001]]의 CE-compatible review-receipt 발급 경로가 없어 외부 차단됐으므로 TASK-354는 todo로 남는다. |
@@ -77,8 +75,8 @@ This aligns the local calculation with the shared task contract; details are in
 
 ## Children
 
-- TASK-371 — planprogress를 shared task progress contract와 맞춤 (P1, 두 보드 게이트가 같은 진행률을 읽게 먼저 고정)
-- TASK-344 — 프론트매터 값 파서를 트레일링 주석·중복 키에 강화 (P3, 공유 파서를 먼저 고정)
+- TASK-371 — planprogress를 shared task progress contract와 맞춤 (P1, done 2026-09-10)
+- TASK-344 — 프론트매터 값 파서를 트레일링 주석·중복 키에 강화 (P3, done 2026-09-10)
 - TASK-350 — doccheck의 역전/공허 verify 바인딩 거부 (P2, done 2026-09-10)
 - TASK-343 — 파일명 번호 충돌 가드 완성 (P2, done 2026-09-10)
 - TASK-354 — 보드를 `ce task validate` 통과시키고 공유 게이트에 연결 (P2, 직접 CE 경계 조사는 완료했으나 [[ISSUE-001]]에 외부 차단, todo 유지)
@@ -94,8 +92,8 @@ This aligns the local calculation with the shared task contract; details are in
 - **TASK-350과 TASK-338을 병렬로 열지 말 것.** 둘 다 `tools/doccheck/check.go`의 `Result`
   구조체와 `tools/doccheck/main.go`의 출력 블록에 카운터를 추가한다 — 같은 자리다.
 - 카드 상태는 `tasks/todo` → `tasks/done`이 정본이고, 이 문서는 순서·의존·기각 기록만 갖는다.
-- **frontmatter에 `completed-children:`를 넣지 않는다.** PLAN-006·008은 갖고 있고
-  PLAN-007·009는 없어 형태가 갈리지만, 맞춰야 할 쪽은 없는 쪽이다 — 이 필드를 읽는 코드가
+- **frontmatter에 `completed-children:`를 넣지 않는다.** PLAN-008만 갖고 있고
+  PLAN-006·007·009에는 없어 형태를 맞추려면 남은 필드도 제거해야 한다 — 이 필드를 읽는 코드가
   `tools/`와 `internal/` 어디에도 없다(2026-09-09 실측). `planprogress`가 세는 것은
   `total-tasks`/`completed-tasks`와 `## Children`이다. 형태를 맞추려고 죽은 필드를
   되살리지 말 것.
