@@ -205,11 +205,18 @@ dva config init -t node          # --template: 템플릿 지정 (minimal, rails,
 dva config init --recursive      # 서브프로젝트에도 dva.yml 생성
 dva config init --devcontainer   # .devcontainer/devcontainer.json 포함 생성
 dva config init --all            # 가능한 모든 기능 통합 활성화 (devcontainer 등)
+dva init --dry-run               # 생성될 dva.yml만 stdout에 preview하고 파일은 쓰지 않음
 ```
 
 생성 후 `am run dva-discover`로 프로젝트와 설정 후보를 먼저 확인하세요. 기존 설정을
 개선하려면 `am run dva-improve`를 사용하고, 전체 재작성은 명시적으로
 `am run dva-improve -p mode=rewrite`를 지정한 경우에만 실행하세요.
+
+**dry-run preview (TASK-340, Option A)**: `dva init --dry-run`은 실제 생성과 같은
+탐지·템플릿 경로로 생성될 `dva.yml`을 stdout에 출력하지만 `dva.yml`, `.gitignore`,
+`.devcontainer/`, 재귀 탐지된 하위 프로젝트에는 파일을 쓰지 않습니다. Compose 파일과
+언어 매니페스트를 모두 찾지 못한 경우에도 실패하지 않고, preview할 생성물이 없다는
+근거와 다음 조사 경로를 출력합니다.
 
 **생성 근거와 생략 (TASK-250)**: `dva init`은 사람과 agent가 공유하는 하나의 canonical
 생성 경로를 거칩니다. 디렉터리에서 검증 가능한 근거만 사용합니다:

@@ -35,6 +35,66 @@ func TestScaffoldDvaYml_ReturnsErrorWithoutCreatingConfig_whenComposeFileIsMissi
 	}
 }
 
+func TestInitDryRunPreviewWritesNothing(t *testing.T) {
+	dir := t.TempDir()
+	writeFixture(t, dir, map[string]string{
+		"docker-compose.yml":  "services: {}\n",
+		"nested/package.json": `{ "name": "nested" }`,
+	})
+	t.Chdir(dir)
+
+	savedTemplate, savedRecursive, savedDevcontainer, savedAll, savedDryRun := initTemplate, initRecursive, initDevcontainer, initAll, dryRun
+	t.Cleanup(func() {
+		initTemplate, initRecursive, initDevcontainer, initAll, dryRun = savedTemplate, savedRecursive, savedDevcontainer, savedAll, savedDryRun
+	})
+	initTemplate, initRecursive, initDevcontainer, initAll, dryRun = "", true, true, false, true
+
+	var runErr error
+	stdout := captureStdout(t, func() {
+		runErr = initCmd.RunE(initCmd, nil)
+	})
+	if runErr != nil {
+		t.Fatalf("dva init --dry-run: %v", runErr)
+	}
+	if !strings.Contains(stdout, "[dry-run] would create dva.yml:") {
+		t.Fatalf("preview must name the generated config, got:\n%s", stdout)
+	}
+	if !strings.Contains(stdout, "stack:") {
+		t.Fatalf("preview must contain generated dva.yml content, got:\n%s", stdout)
+	}
+	for _, rel := range []string{config.FileName, ".gitignore", ".devcontainer/devcontainer.json", "nested/dva.yml"} {
+		if _, err := os.Stat(filepath.Join(dir, rel)); !os.IsNotExist(err) {
+			t.Errorf("dry-run must not write %s, stat err = %v", rel, err)
+		}
+	}
+}
+
+func TestInitDryRunPreviewOnNoDiscovery(t *testing.T) {
+	dir := t.TempDir()
+	writeFixture(t, dir, map[string]string{"README.md": "# empty\n"})
+	t.Chdir(dir)
+
+	savedTemplate, savedRecursive, savedDevcontainer, savedAll, savedDryRun := initTemplate, initRecursive, initDevcontainer, initAll, dryRun
+	t.Cleanup(func() {
+		initTemplate, initRecursive, initDevcontainer, initAll, dryRun = savedTemplate, savedRecursive, savedDevcontainer, savedAll, savedDryRun
+	})
+	initTemplate, initRecursive, initDevcontainer, initAll, dryRun = "", false, false, false, true
+
+	var runErr error
+	stdout := captureStdout(t, func() {
+		runErr = initCmd.RunE(initCmd, nil)
+	})
+	if runErr != nil {
+		t.Fatalf("dva init --dry-run with no discovery: %v", runErr)
+	}
+	if !strings.Contains(stdout, "[dry-run] no dva.yml preview") || !strings.Contains(stdout, "am run dva-discover") {
+		t.Fatalf("no-discovery preview must explain the refusal, got:\n%s", stdout)
+	}
+	if _, err := os.Stat(filepath.Join(dir, config.FileName)); !os.IsNotExist(err) {
+		t.Fatalf("dry-run no-discovery must not write dva.yml, stat err = %v", err)
+	}
+}
+
 // scriptonDashboardRootFiles is the root file set of the scripton-dashboard
 // devbox as observed in docs/dogfood/scripton-dashboard.md: a pnpm workspace
 // whose only package.json lives in dashboard-webui/, so the root carries no

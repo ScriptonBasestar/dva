@@ -40,7 +40,7 @@ Use 'am run dva-improve -p mode=rewrite' only when a full rewrite is intentional
   dva init --recursive      # Also scaffold dva.yml in detected sub-projects
   dva init --devcontainer   # Also write .devcontainer/devcontainer.json`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		created, err := scaffoldDvaYml(".", initTemplate)
+		created, err := scaffoldDvaYmlWithPreview(".", initTemplate, dryRun)
 		if err != nil {
 			// TASK-322 gap 2: --recursive advertises a sub-project scan, but an
 			// evidence-less root aborted before the scan ever ran — so a
@@ -57,7 +57,7 @@ Use 'am run dva-improve -p mode=rewrite' only when a full rewrite is intentional
 			fmt.Fprintf(os.Stderr, "⚠️  %s in .; continuing with the --recursive sub-project scan\n", errComposeFileNotFound)
 		}
 
-		if created {
+		if created && !dryRun {
 			withDevcontainer := initDevcontainer || initAll
 			if withDevcontainer {
 				composeFiles := detectComposeFiles()
@@ -85,7 +85,7 @@ Use 'am run dva-improve -p mode=rewrite' only when a full rewrite is intentional
 			// A failed root plus a scan that created nothing means the run
 			// produced nothing; report the original refusal rather than exiting
 			// 0 on a warning.
-			scaffolded := scaffoldSubprojects()
+			scaffolded := scaffoldSubprojects(dryRun)
 			if err != nil {
 				if scaffolded == 0 {
 					return err
@@ -135,7 +135,7 @@ func init() {
 // already had one is deliberately not counted: the caller uses this to decide
 // whether a run whose root was refused still produced something, and a leftover
 // dva.yml from an earlier run is not something this run produced.
-func scaffoldSubprojects() int {
+func scaffoldSubprojects(preview bool) int {
 	var subs []subInfo
 	scanForSubprojects(".", 0, 3, &subs)
 
@@ -148,7 +148,7 @@ func scaffoldSubprojects() int {
 	createdCount := 0
 	for _, sp := range subs {
 		tmpl := languageToTemplate(sp.language)
-		subCreated, err := scaffoldDvaYml(sp.path, tmpl)
+		subCreated, err := scaffoldDvaYmlWithPreview(sp.path, tmpl, preview)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "⚠️  %s: %v\n", sp.path, err)
 			continue

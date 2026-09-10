@@ -529,9 +529,10 @@ func TestInitPublicSurfaceCompatibility(t *testing.T) {
 			t.Fatalf("expected outcomeNoDiscovery, got %v", outcome)
 		}
 
-		// This is a plain error return, not a preview/dry-run mechanism — DVA
-		// has no preview feature. Ambiguous/no evidence means scaffoldDvaYml
-		// refuses outright and writes nothing; it does not stage a preview.
+		// scaffoldDvaYml is the legacy non-preview wrapper. Its ambiguous/no-
+		// evidence path still returns an error and writes nothing. The command-
+		// level `dva init --dry-run` preview uses scaffoldDvaYmlWithPreview
+		// instead, where the same refusal reason is rendered to stdout.
 		created, err := scaffoldDvaYml(tmpDir, "")
 		if created || err == nil {
 			t.Fatalf("scaffoldDvaYml no-discovery = (%v, %v), want (false, non-nil)", created, err)

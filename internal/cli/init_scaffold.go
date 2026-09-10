@@ -217,16 +217,28 @@ func isToolsTableHeader(line string) bool {
 // path shared by `dva init`, `dva config init`, the top-level alias, and
 // --recursive sub-project scaffolding.
 func scaffoldDvaYml(dir, tmpl string) (bool, error) {
+	return scaffoldDvaYmlWithPreview(dir, tmpl, false)
+}
+
+// scaffoldDvaYmlWithPreview creates a dva.yml unless preview is set. Preview
+// uses the same discovery and generation path as creation so `dva init
+// --dry-run` shows the exact file a normal invocation would write, while
+// leaving every filesystem artifact untouched.
+func scaffoldDvaYmlWithPreview(dir, tmpl string, preview bool) (bool, error) {
 	target := filepath.Join(dir, config.FileName)
 	if _, err := os.Stat(target); err == nil {
-		fmt.Printf("⏭  dva.yml already exists in %s (skipped)\n", dir)
+		if preview {
+			fmt.Printf("[dry-run] %s already exists (no preview generated)\n", target)
+		} else {
+			fmt.Printf("⏭  dva.yml already exists in %s (skipped)\n", dir)
+		}
 		return false, nil
 	}
 
 	outcome, _, nativeLang, nativeEvidence := classifyDiscovery(dir)
 
 	if outcome == outcomeNoDiscovery {
-		return false, fmt.Errorf(`%w in %s; dva.yml was not created
+		err := fmt.Errorf(`%w in %s; dva.yml was not created
   DVA init also found no recognized language manifest, so it has no verified
   evidence to scaffold from.
   For non-standard or multi-project layouts, inspect the project first:
@@ -235,6 +247,11 @@ func scaffoldDvaYml(dir, tmpl string) (bool, error) {
     am run dva-improve -p mode=rewrite
   Or create dva.yml manually, then run:
     dva config validate`, errComposeFileNotFound, dir)
+		if preview {
+			fmt.Printf("[dry-run] no dva.yml preview for %s:\n%s\n", dir, err)
+			return false, nil
+		}
+		return false, err
 	}
 
 	if outcome == outcomeNativeOnly {
@@ -243,6 +260,10 @@ func scaffoldDvaYml(dir, tmpl string) (bool, error) {
 			effectiveTmpl = nativeLang
 		}
 		content := generateNativeOnlyConfigIn(effectiveTmpl, nativeEvidence)
+		if preview {
+			printDvaYmlPreview(target, content)
+			return true, nil
+		}
 		if err := os.WriteFile(target, []byte(content), 0644); err != nil {
 			return false, fmt.Errorf("failed to write %s: %w", target, err)
 		}
@@ -262,6 +283,10 @@ func scaffoldDvaYml(dir, tmpl string) (bool, error) {
 	}
 
 	content := generateConfigIn(dir, tmpl)
+	if preview {
+		printDvaYmlPreview(target, content)
+		return true, nil
+	}
 	if err := os.WriteFile(target, []byte(content), 0644); err != nil {
 		return false, fmt.Errorf("failed to write %s: %w", target, err)
 	}
@@ -273,6 +298,13 @@ func scaffoldDvaYml(dir, tmpl string) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func printDvaYmlPreview(target, content string) {
+	fmt.Printf("[dry-run] would create %s:\n%s", target, content)
+	if !strings.HasSuffix(content, "\n") {
+		fmt.Println()
+	}
 }
 
 // generateNativeOnlyConfigIn produces a minimal, self-contained dva.yml for a
