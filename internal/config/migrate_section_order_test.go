@@ -250,6 +250,38 @@ func TestMigrateSectionOrderBailsOnUnrepresentableShapes(t *testing.T) {
 	}
 }
 
+func TestMigrateSectionOrderBlocksDuplicateKeyReason(t *testing.T) {
+	src := "stack:\n  db: 1\nversion: \"a\"\nversion: \"b\"\n"
+	wantBlocked := "section order: duplicate top-level key \"version\" — reordering is undefined; fix it by hand"
+
+	out, report, err := MigrateSectionOrder([]byte(src))
+	if err != nil {
+		t.Fatalf("MigrateSectionOrder() error = %v", err)
+	}
+	if string(out) != src {
+		t.Errorf("expected the source back untouched, got:\n%q", out)
+	}
+	if len(report.Blocked) != 1 || report.Blocked[0] != wantBlocked {
+		t.Errorf("report.Blocked = %q, want %q", report.Blocked, wantBlocked)
+	}
+}
+
+func TestMigrateSectionOrderBlocksFlowStyleRootReason(t *testing.T) {
+	src := "{stack: b, version: a}\n"
+	wantBlocked := "section order: flow-style root mapping puts two keys on one line — reorder by hand"
+
+	out, report, err := MigrateSectionOrder([]byte(src))
+	if err != nil {
+		t.Fatalf("MigrateSectionOrder() error = %v", err)
+	}
+	if string(out) != src {
+		t.Errorf("expected the source back untouched, got:\n%q", out)
+	}
+	if len(report.Blocked) != 1 || report.Blocked[0] != wantBlocked {
+		t.Errorf("report.Blocked = %q, want %q", report.Blocked, wantBlocked)
+	}
+}
+
 // TestMigrateSectionOrderStopsAtDocumentBoundary is the silent-data-loss regression.
 // keys/keyLines describe the first document only, so letting the last block run to EOF
 // carries whatever follows a `...` or `---` along as that key's content. Hoisted to the

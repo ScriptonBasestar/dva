@@ -110,10 +110,14 @@ func MigrateSectionOrder(src []byte) ([]byte, MigrationReport, error) {
 	seen := make(map[string]bool, n)
 	for i, k := range keys {
 		if seen[k] {
+			report.Blocked = append(report.Blocked, fmt.Sprintf(
+				"section order: duplicate top-level key %q — reordering is undefined; fix it by hand", k))
 			return src, report, nil
 		}
 		seen[k] = true
 		if i > 0 && keyLines[i] <= keyLines[i-1] {
+			report.Blocked = append(report.Blocked,
+				"section order: flow-style root mapping puts two keys on one line — reorder by hand")
 			return src, report, nil
 		}
 	}

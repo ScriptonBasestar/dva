@@ -9,7 +9,12 @@ created-at: 2026-09-08T16:40:00+09:00
 source: "TASK-318 재리뷰 (t318-rereview)"
 status: todo
 depends-on: []
-needs-human: true
+needs-human: false
+allowed-paths:
+  - internal/config/migrate_section_order.go
+  - internal/config/migrate_section_order_test.go
+  - tasks/todo/359-close-the-silent-bail-out-loop-in-config-migrate.md
+  - tasks/plan/008-migrate-section-order-defects.md
 ---
 
 # Task 359: 남은 두 침묵 bail-out을 report.Blocked로 닫는다
@@ -85,11 +90,54 @@ dva validate                          → 같은 경고 반복
 
 ## Completion Criteria
 
-- [ ] 중복 top-level 키가 있는 파일에 migrate를 걸면 report.Blocked에 duplicate key 사유가 담긴다 | verify: `/usr/bin/grep -rq 'func TestMigrateSectionOrderBlocksDuplicateKeyReason(' internal/config`
-- [ ] flow-style root 파일에 migrate를 걸면 report.Blocked에 flow-style 사유가 담긴다 | verify: `/usr/bin/grep -rq 'func TestMigrateSectionOrderBlocksFlowStyleRootReason(' internal/config`
-- [ ] 위 두 테스트가 수정 전 소스에 대해 FAIL함을 go test -overlay로 확인했다 | verify: human — overlay 실행 결과를 카드에 첨부
-- [ ] dva validate → migrate --write → validate 폐루프를 CLI 레벨에서 재현해, 두 번째 validate가 migrate가 남긴 Blocked 사유를 (CLI 출력으로) 확인할 수 있음을 카드에 남긴다 | verify: human — CLI 실행 로그를 카드에 첨부
-- [ ] 새 가드 두 개가 리뷰어 제안 문구를 그대로 쓴다 | verify: `/usr/bin/grep -Eq "duplicate top-level key.*fix it by hand|flow-style root mapping.*reorder by hand" internal/config/migrate_section_order.go`
+- [x] 중복 top-level 키가 있는 파일에 migrate를 걸면 report.Blocked에 duplicate key 사유가 담긴다 | verify: `/usr/bin/grep -rq 'func TestMigrateSectionOrderBlocksDuplicateKeyReason(' internal/config`
+- [x] flow-style root 파일에 migrate를 걸면 report.Blocked에 flow-style 사유가 담긴다 | verify: `/usr/bin/grep -rq 'func TestMigrateSectionOrderBlocksFlowStyleRootReason(' internal/config`
+- [x] 위 두 테스트가 수정 전 소스에 대해 FAIL함을 go test -overlay로 확인했다 | verify: human — overlay 실행 결과를 카드에 첨부
+- [x] dva validate → migrate --write → validate 폐루프를 CLI 레벨에서 재현해, migrate가 남긴 Blocked 사유와 두 번째 validate에 남은 순서 경고를 카드에 기록한다 | verify: human — CLI 실행 로그를 카드에 첨부
+- [x] 새 가드 두 개가 리뷰어 제안 문구를 그대로 쓴다 | verify: `/usr/bin/grep -Eq "duplicate top-level key.*fix it by hand|flow-style root mapping.*reorder by hand" internal/config/migrate_section_order.go`
+
+## 검증 기록 (2026-09-10)
+
+### 수정 전 overlay 실패
+
+새 테스트를 추가한 뒤, 수정 전 `migrate_section_order.go` 사본으로만 대체한 overlay를
+실행했다. 두 사유가 모두 없어서 의도대로 실패했다.
+
+```text
+$ go test -overlay=/tmp/dva-task359.h2TQR1/overlay.json -run '^TestMigrateSectionOrderBlocks(DuplicateKeyReason|FlowStyleRootReason)$' ./internal/config
+--- FAIL: TestMigrateSectionOrderBlocksDuplicateKeyReason (0.00s)
+    migrate_section_order_test.go:265: report.Blocked = [], want "section order: duplicate top-level key \"version\" — reordering is undefined; fix it by hand"
+--- FAIL: TestMigrateSectionOrderBlocksFlowStyleRootReason (0.00s)
+    migrate_section_order_test.go:281: report.Blocked = [], want "section order: flow-style root mapping puts two keys on one line — reorder by hand"
+FAIL
+FAIL    github.com/ScriptonBasestar/dva/internal/config    0.379s
+FAIL
+```
+
+### 격리된 CLI 폐루프
+
+임시 디렉터리의 `dva.yml`에 flow-style root `{plans: {}, version: "0.1.48"}`를 넣고,
+빌드한 작업트리 바이너리로 실행했다. `DVA_FILE`은 두 validate가 같은 격리 입력을 읽게
+했고, `config migrate --write`에는 그 디렉터리를 인자로 줬다. 파일은 rewrite되지 않았지만
+migrate 출력이 수동 조치를 명시하며, 마지막 validate는 여전히 남아 있는 원래 경고를 보였다.
+
+```text
+$ DVA_FILE=/tmp/dva-task359.h2TQR1/flow-root/dva.yml /tmp/dva-task359.h2TQR1/dva config validate
+[warn] semantic: section order: found [plans → version] but canonical order is [version → plans]; consider reordering
+✅ dva.yml is valid
+
+$ /tmp/dva-task359.h2TQR1/dva config migrate --write /tmp/dva-task359.h2TQR1/flow-root
+/tmp/dva-task359.h2TQR1/flow-root/dva.yml: nothing to convert.
+
+Left for you:
+  - section order: flow-style root mapping puts two keys on one line — reorder by hand
+
+Run 'dva validate' for the deprecations this command does not convert.
+
+$ DVA_FILE=/tmp/dva-task359.h2TQR1/flow-root/dva.yml /tmp/dva-task359.h2TQR1/dva config validate
+[warn] semantic: section order: found [plans → version] but canonical order is [version → plans]; consider reordering
+✅ dva.yml is valid
+```
 
 ## 참고
 
