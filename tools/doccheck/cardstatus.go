@@ -50,8 +50,9 @@ func resolveCardZone(path string) (zone cardZone, ok bool) {
 
 // frontmatterField reads a top-level scalar value out of frontmatter. Only a top-level key
 // counts — an indented key belongs to the mapping above it, the same reasoning
-// hasCanonicalField applies to id:/type: in archive.go.
-func frontmatterField(frontmatter, want string) (value string, found bool) {
+// hasCanonicalField applies to id:/type: in archive.go. A repeated key is an error instead of
+// silently choosing one value, matching YAML's duplicate-mapping-key rule.
+func frontmatterField(frontmatter, want string) (value string, found bool, err error) {
 	for line := range strings.SplitSeq(stripFencedRegions(frontmatter), "\n") {
 		if line == "" || line[0] == ' ' || line[0] == '\t' || line[0] == '#' || line[0] == '-' {
 			continue
@@ -63,14 +64,77 @@ func frontmatterField(frontmatter, want string) (value string, found bool) {
 		if unquoteKey(strings.TrimSpace(key)) != want {
 			continue
 		}
-		v := strings.TrimSpace(val)
-		return strings.Trim(v, `"'`), true
+		if found {
+			return "", false, fmt.Errorf("repeated frontmatter key %q", want)
+		}
+		value = frontmatterValue(val)
+		found = true
 	}
-	return "", false
+	return value, found, nil
+}
+
+// frontmatterValue removes an inline YAML comment from a plain scalar, then unwraps exactly one
+// matching outer quote pair. A hash inside a quoted scalar is data, not a comment.
+func frontmatterValue(raw string) string {
+	value := strings.TrimSpace(raw)
+	if len(value) == 0 {
+		return value
+	}
+	if value[0] == '#' {
+		return ""
+	}
+	quote := value[0]
+	if quote != '"' && quote != '\'' {
+		return stripFrontmatterComment(value)
+	}
+	end, ok := matchingQuoteEnd(value, quote)
+	if !ok {
+		// Leave malformed or mismatched quoted text intact. This small reader is not a YAML
+		// parser, so it must not guess where its scalar ends.
+		return value
+	}
+	if tail := strings.TrimSpace(value[end+1:]); tail == "" || strings.HasPrefix(tail, "#") {
+		return value[1:end]
+	}
+	// The closing quote is not an outer pair when ordinary text follows it. Treat this as a
+	// plain scalar for comment stripping, but preserve its quotes.
+	return stripFrontmatterComment(value)
+}
+
+// matchingQuoteEnd returns the closing quote for a scalar whose first byte is quote. Double
+// quotes may escape a byte with backslash; YAML single-quote doubling is skipped as content.
+func matchingQuoteEnd(value string, quote byte) (int, bool) {
+	for i := 1; i < len(value); i++ {
+		ch := value[i]
+		if quote == '"' && ch == '\\' && i+1 < len(value) {
+			i++
+			continue
+		}
+		if quote == '\'' && ch == '\'' && i+1 < len(value) && value[i+1] == '\'' {
+			i++
+			continue
+		}
+		if ch == quote {
+			return i, true
+		}
+	}
+	return 0, false
+}
+
+func stripFrontmatterComment(value string) string {
+	for i := 1; i < len(value); i++ {
+		if value[i] != '#' {
+			continue
+		}
+		if value[i-1] == ' ' || value[i-1] == '\t' {
+			return strings.TrimSpace(value[:i])
+		}
+	}
+	return value
 }
 
 // cardStatus reads the top-level `status:` value out of frontmatter.
-func cardStatus(frontmatter string) (value string, found bool) {
+func cardStatus(frontmatter string) (value string, found bool, err error) {
 	return frontmatterField(frontmatter, "status")
 }
 
@@ -109,7 +173,12 @@ func checkCardStatus(root string, inv []InventoryEntry) (seen, checked, mismatch
 				e.Path, zone.prefix, permitted, malformedFrontmatterReason(state)))
 			continue
 		}
-		status, found := cardStatus(frontmatter)
+		status, found, err := cardStatus(frontmatter)
+		if err != nil {
+			mismatches++
+			msgs = append(msgs, fmt.Sprintf("%s: %v", e.Path, err))
+			continue
+		}
 		if !found {
 			mismatches++
 			msgs = append(msgs, fmt.Sprintf("%s: zone %s requires a status: field (permitted: %s), but frontmatter carries none",

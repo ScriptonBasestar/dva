@@ -5,9 +5,10 @@ type: bug
 priority: P3
 effort: S
 exec-tier: standard
-status: todo
+status: done
 created: 2026-09-07
 blocks: [TASK-343]
+verification-evidence: "2026-09-10: go test ./tools/doccheck, make doc-check, and independent parser review passed."
 ---
 
 ## Summary
@@ -36,7 +37,7 @@ trailing ` #` comment, and report a repeated key rather than resolving it — no
 
 ## Completion Criteria
 
-- [ ] A trailing `#` comment is stripped from a frontmatter value, so `id: TASK-331 # note` collides with `id: TASK-331` | verify: `/usr/bin/grep -rq 'func TestFrontmatterValueDropsTrailingComment(' tools/doccheck`
-- [ ] A `#` inside a quoted value survives, so titles containing `#` are unchanged | verify: `/usr/bin/grep -rq 'func TestQuotedValueKeepsItsHash(' tools/doccheck`
-- [ ] A repeated frontmatter key is reported rather than silently resolved to the first | verify: `/usr/bin/grep -rq 'func TestRepeatedFrontmatterKeyIsReported(' tools/doccheck`
-- [ ] `cardStatus` and `hasCanonicalField` share the hardened helper | verify: `/usr/bin/grep -rq 'func TestCardStatusAndCanonicalFieldShareParser(' tools/doccheck`
+- [x] A trailing `#` comment is stripped from a frontmatter value, so `id: TASK-331 # note` collides with `id: TASK-331` | verify: `/usr/bin/grep -rq 'func TestFrontmatterValueDropsTrailingComment(' tools/doccheck`
+- [x] A `#` inside a quoted value survives, so titles containing `#` are unchanged | verify: `/usr/bin/grep -rq 'func TestQuotedValueKeepsItsHash(' tools/doccheck`
+- [x] A repeated frontmatter key is reported rather than silently resolved to the first | verify: `/usr/bin/grep -rq 'func TestRepeatedFrontmatterKeyIsReported(' tools/doccheck`
+- [x] `cardStatus` and `hasCanonicalField` share the hardened helper | verify: `/usr/bin/grep -rq 'func TestCardStatusAndCanonicalFieldShareParser(' tools/doccheck`

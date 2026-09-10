@@ -57,7 +57,11 @@ func checkDuplicateCardIDs(root string, inv []InventoryEntry) (idsSeen, duplicat
 		if state != frontmatterOK {
 			continue
 		}
-		id, found := frontmatterField(frontmatter, "id")
+		id, found, err := frontmatterField(frontmatter, "id")
+		if err != nil {
+			errs = append(errs, fmt.Sprintf("%s: %v", e.Path, err))
+			continue
+		}
 		if !found || id == "" {
 			continue
 		}

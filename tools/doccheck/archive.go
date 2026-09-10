@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 )
 
@@ -127,24 +126,16 @@ func flowMappingFrontmatter(frontmatter string) bool {
 // top-level keys count: an indented `type:` is a property of the mapping above it, and indenting
 // one is precisely how a card would stop being detected while still containing the string — so a
 // substring search here would report health for the file it is meant to catch.
-func hasCanonicalField(frontmatter string) bool {
-	// Blank fenced code blocks first. Well-formed frontmatter has none, so this only matters
-	// once a malformed fence has already carried the scan into the body — it keeps an `id:`
-	// quoted in a ```yaml example from being read as a real key. Belt to the fence fix's
-	// braces, using the helper the link and anchor passes already share.
-	for line := range strings.SplitSeq(stripFencedRegions(frontmatter), "\n") {
-		if line == "" || line[0] == ' ' || line[0] == '\t' || line[0] == '#' || line[0] == '-' {
-			continue
+func hasCanonicalField(frontmatter string) (bool, error) {
+	hasCanonical := false
+	for _, field := range canonicalFields {
+		_, found, err := frontmatterField(frontmatter, field)
+		if err != nil {
+			return false, err
 		}
-		key, _, ok := strings.Cut(line, ":")
-		if !ok {
-			continue
-		}
-		if slices.Contains(canonicalFields, unquoteKey(strings.TrimSpace(key))) {
-			return true
-		}
+		hasCanonical = hasCanonical || found
 	}
-	return false
+	return hasCanonical, nil
 }
 
 // unquoteKey strips one matching pair of surrounding quotes. YAML allows a quoted key, and ce
@@ -205,7 +196,12 @@ func checkArchiveFrontmatter(root string, inv []InventoryEntry) (filesSeen, chec
 				"%s: frontmatter is a YAML flow mapping — ce parses it, this guard cannot; rewrite it as a block mapping", e.Path))
 			continue
 		}
-		if !hasCanonicalField(frontmatter) {
+		hasCanonical, err := hasCanonicalField(frontmatter)
+		if err != nil {
+			msgs = append(msgs, fmt.Sprintf("%s: %v", e.Path, err))
+			continue
+		}
+		if !hasCanonical {
 			msgs = append(msgs, fmt.Sprintf(
 				"%s: frontmatter carries neither `id:` nor `type:` — ce falls through to the legacy validator here and never reaches its archive skip", e.Path))
 		}

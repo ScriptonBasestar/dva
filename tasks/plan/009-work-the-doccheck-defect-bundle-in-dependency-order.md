@@ -3,9 +3,9 @@ id: PLAN-009
 title: "Work the task and doccheck defect bundle in dependency order"
 type: plan
 scope: "TASK-371, 344, 350, 343, 354, 338 — 여섯 장이 shared task progress contract, tools/doccheck, 또는 그 Makefile 연결을 고친다. 선언된 의존은 TASK-343 depends-on TASK-344와 TASK-354 depends-on TASK-371이다"
-progress: 16
+progress: 33
 total-tasks: 6
-completed-tasks: 1
+completed-tasks: 2
 children: [TASK-371, TASK-344, TASK-350, TASK-343, TASK-354, TASK-338]
 target-date: "2026-09-30"
 created: 2026-09-09

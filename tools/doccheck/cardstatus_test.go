@@ -153,3 +153,67 @@ func TestCardStatus_acceptsPermittedStatusPerZone(t *testing.T) {
 		t.Errorf("status_mismatches=%d on all-permitted cards; detail=%v", res.StatusMismatches, res.CardStatusDetail)
 	}
 }
+
+func TestFrontmatterValueDropsTrailingComment(t *testing.T) {
+	res := cardFixture(t,
+		archiveCard{path: "tasks/todo/331-comment.md", body: "---\nid: TASK-331 # duplicate\nstatus: todo\n---\n\n# Comment\n"},
+		archiveCard{path: "tasks/todo/331-plain.md", body: "---\nid: TASK-331\nstatus: todo\n---\n\n# Plain\n"},
+	)
+	if res.DuplicateCardIDs != 1 {
+		t.Fatalf("duplicate_card_ids = %d, want 1 after removing a trailing id comment; detail=%v", res.DuplicateCardIDs, res.DuplicateIDDetail)
+	}
+}
+
+func TestQuotedValueKeepsItsHash(t *testing.T) {
+	value, found, err := frontmatterField("title: \"release #1\" # catalog\n", "title")
+	if err != nil || !found || value != "release #1" {
+		t.Fatalf("frontmatterField quoted hash = (%q, %t, %v), want (release #1, true, nil)", value, found, err)
+	}
+}
+
+func TestFrontmatterValueHandlesQuoteEdges(t *testing.T) {
+	tests := []struct {
+		name string
+		raw  string
+		want string
+	}{
+		{name: "plain embedded apostrophe", raw: "O'Reilly # catalog", want: "O'Reilly"},
+		{name: "comment only scalar", raw: "# catalog", want: ""},
+		{name: "single quote doubling", raw: "'O''Reilly #1' # catalog", want: "O''Reilly #1"},
+		{name: "unterminated double quote", raw: "\"release #1", want: "\"release #1"},
+		{name: "mismatched quote", raw: "\"release' # catalog", want: "\"release' # catalog"},
+		{name: "non-outer closing quote", raw: "\"release\" draft # catalog", want: "\"release\" draft"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := frontmatterValue(tt.raw); got != tt.want {
+				t.Errorf("frontmatterValue(%q) = %q, want %q", tt.raw, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestRepeatedFrontmatterKeyIsReported(t *testing.T) {
+	res := cardFixture(t, archiveCard{
+		path: "tasks/todo/331-repeated.md",
+		body: "---\nid: TASK-331\nid: TASK-332\nstatus: todo\n---\n\n# Repeated\n",
+	})
+	if res.OK {
+		t.Fatal("Check reported OK with a repeated id: frontmatter key")
+	}
+	if !containsAny(res.Errors, `repeated frontmatter key "id"`) {
+		t.Errorf("errors %v do not report the repeated id key", res.Errors)
+	}
+}
+
+func TestCardStatusAndCanonicalFieldShareParser(t *testing.T) {
+	frontmatter := "status: todo # accepted comment\nid: TASK-331\nid: TASK-332\n"
+	status, found, err := cardStatus(frontmatter)
+	if err != nil || !found || status != "todo" {
+		t.Fatalf("cardStatus = (%q, %t, %v), want (todo, true, nil)", status, found, err)
+	}
+	hasCanonical, err := hasCanonicalField(frontmatter)
+	if hasCanonical || err == nil || !strings.Contains(err.Error(), `repeated frontmatter key "id"`) {
+		t.Fatalf("hasCanonicalField = (%t, %v), want repeated id error", hasCanonical, err)
+	}
+}
