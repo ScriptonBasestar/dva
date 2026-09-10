@@ -6,6 +6,9 @@ priority: P2
 effort: M
 exec-tier: standard
 status: done
+quality-review: conditional
+quality-reviewed-at: 2026-09-10
+quality-review-evidence: "Independent TASK-367 review: interaction identity is implemented; imported plans and provision profiles remain ambiguous and are tracked by TASK-366."
 created: 2026-09-07
 source: "tasks/done/259 done-review (PLAN-007 Tier A batch 1)"
 ---

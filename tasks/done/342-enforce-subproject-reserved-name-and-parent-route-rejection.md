@@ -6,6 +6,9 @@ priority: P1
 effort: M
 exec-tier: strong
 status: done
+quality-review: pass
+quality-reviewed-at: 2026-09-10
+quality-review-evidence: "Independent TASK-367 review: reserved-name and all three parent-route rejection rules remain enforced by the named tests."
 created: 2026-09-07
 source: "tasks/done/263 done-review (PLAN-007 Tier A batch 1)"
 ---

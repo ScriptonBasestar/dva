@@ -6,6 +6,9 @@ priority: P3
 effort: S
 exec-tier: cheap
 status: done
+quality-review: pass
+quality-reviewed-at: 2026-09-10
+quality-review-evidence: "Independent TASK-367 review: removed constant has no code references and removedInteractionKeys still rejects interaction env_file."
 created: 2026-09-07
 source: "tasks/done/259 done-review (PLAN-007 Tier A batch 1)"
 ---

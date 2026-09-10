@@ -10,6 +10,9 @@ source: "TASK-244 done-disposition observation, 2026-09-05"
 parent: PLAN-007
 status: done
 needs-human: false
+quality-review: pass
+quality-reviewed-at: 2026-09-10
+quality-review-evidence: "Independent TASK-367 review: live flowcheck output and documented snapshot both report 29; current doc-check passed."
 verification-evidence: "2026-09-10: go run ./tools/flowcheck, make doc-check, criterion grep, and independent documentation review passed."
 ---
 

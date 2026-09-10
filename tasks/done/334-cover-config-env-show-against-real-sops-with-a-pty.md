@@ -6,6 +6,9 @@ priority: P1
 effort: M
 exec-tier: strong
 status: done
+quality-review: pass
+quality-reviewed-at: 2026-09-10
+quality-review-evidence: "Independent TASK-367 review: recorded fake-driven ceiling, explicit Linux exclusion, and named tests match the accepted decision."
 created: 2026-09-07
 source: "tasks/done/282 done-review (PLAN-007 Tier A batch 2)"
 needs-human: true

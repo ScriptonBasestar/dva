@@ -3,10 +3,10 @@ id: PLAN-007
 title: "Retire the unreviewed done backlog and move quality review to card close"
 type: plan
 scope: "tasks/done/ 58장의 일회성 트리아지, done-disposition 루프에서 발견된 소유자 없는 결함 3건, 닫기 시점 독립 리뷰 전환의 외부 의존, 그리고 그 트리아지 이후 다시 채워진 대기열(2026-09-09 추가)"
-progress: 91
-total-tasks: 12
-completed-tasks: 11
-children: [TASK-325, TASK-326, TASK-327, TASK-330, TASK-332, TASK-333, TASK-334, TASK-335, TASK-337, TASK-342, TASK-367, TASK-368]
+progress: 92
+total-tasks: 13
+completed-tasks: 12
+children: [TASK-325, TASK-326, TASK-327, TASK-330, TASK-332, TASK-333, TASK-334, TASK-335, TASK-337, TASK-342, TASK-367, TASK-368, TASK-373]
 target-date: "2026-09-30"
 created: 2026-09-05
 ---
@@ -80,7 +80,7 @@ PLAN-006 자식. 그 계획을 진행하는 세션이 닫는 시점에 리뷰하
 `progress`를 90에서 **75**로 내렸다. 자식이 둘 늘어서다(TASK-367·368). 숫자가 뒤로 간
 것이 아니라 분모가 정직해진 것이다 — 아래가 근거다.
 
-**측정**: `tasks/done/` **19장**, `quality-review` 보유 **0장**. 2026-09-05 시작 상태가
+**당시 측정**: `tasks/done/` **19장**, `quality-review` 보유 **0장**. 2026-09-05 시작 상태가
 "58장, 0장"이었고 §Order 3·4b가 그 58장을 다 비웠다. 이틀 만에 19장이다.
 
 §Goal 1은 "처리되어 `tasks/done/`에 Tier C 9장만 남는다"였다. 지금 19장 중 Tier C는
@@ -96,6 +96,15 @@ PLAN-006 자식. 그 계획을 진행하는 세션이 닫는 시점에 리뷰하
 | 2. 리뷰 없이 아카이브한 카드에 그 사실이 정직히 남음 | **완료**, 단 아래 `waived` 항 참조 |
 | 3. 루프가 관찰만 남긴 결함 3건 → 자식 카드 | **완료** (§Order 4c, 여섯 장) |
 | 4. 이후 done 진입에 독립 리뷰 요구 | 엔진 강제는 외부 소유로 남고, DVA가 할 수 있는 문서화는 TASK-368로 완료 |
+
+### 2026-09-10 재측정 — 소유권 경계가 다시 필요하다
+
+TASK-368을 독립 리뷰로 닫고 TASK-367이 PLAN-007 자식 8장을 재리뷰한 뒤
+`tasks/done/`은 **46장**이며, 그중 `quality-review`가 있는 카드는 9장이다. 활성 PLAN-006 소유 18장과
+활성 PLAN-009 소유 5장은 각 부모가 닫을 때까지 그대로 둔다. TASK-367은 PLAN-007 자식
+9장의 리뷰·기록을 소유한다. PLAN-008은 8/8 child의 review/disposition을 계속 소유하고,
+독립 카드 6장은 어느 계획도 소유하지 않으므로 TASK-373으로 분리한다. 과거의 19장은 이
+시점의 관측값이고 현재 재고를 뜻하지 않는다.
 
 **두 항목을 카드로 만든 이유**는 이 저장소가 같은 실수를 이미 한 번 고쳤기 때문이다.
 PLAN-006 §Order 10행이 여덟 장의 필요를 서술하고 소유자를 적지 않았고, 그 여덟 장은
@@ -170,5 +179,6 @@ Tier A done-review(4a)가 발견한 결함 카드 — 리뷰가 관찰만 남기
 
 2026-09-09 중간 점검이 §Goal 1·4의 미완 절반에 소유자를 붙인 카드 — 위 §2026-09-09 중간 점검 참조.
 
-- TASK-367 — 트리아지 이후 다시 채워진 done 대기열 처분 (19장, `quality-review` 0장). 이 계획 자신의 자식 일곱 장이 소유자 없이 그 안에 있다
+- TASK-367 — 46장 재고를 현행화하고 PLAN-007 자식 9장의 independent review를 기록 — 완료(2026-09-10)
 - TASK-368 — `AGENTS.md`에 독립 `done-review` 요구와 canonical 정책 링크를 기록 — 완료
+- TASK-373 — 소유자 없는 soft-done 카드 6장의 독립 review/disposition
