@@ -231,7 +231,7 @@ func TestMigrateSectionOrderBailsOnUnrepresentableShapes(t *testing.T) {
 		{
 			// No line belongs to one key alone, so no key has a range of its own.
 			name: "flow-style root mapping",
-			src:  "{stack: b, version: a}\n",
+			src:  "# banner\n{stack: b, version: a}\n",
 		},
 	}
 	for _, tt := range tests {
