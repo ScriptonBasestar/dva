@@ -14,16 +14,29 @@ depends-on: [TASK-371]
 
 ## Summary
 
+**현재 상태(2026-09-10, `af7f6e6`, CE 0.8.4 `8034cc4`)**: `ce task gate
+--json`은 `task_validate_failed`로 exit 1 한다. `ce task validate --all`의 현재
+모수는 67장이고 65장은 valid, 2장은 invalid다. 실패 카드는
+`TASK-344`(`blocks: [TASK-343]`)와 `TASK-371`(`blocks: [TASK-354]`)이며, 둘 다
+`quality-review-receipt` 없이 후속 카드를 unblock했다는 같은 오류다. 아래의 26장
+정규화와 62/62 READY는 2026-09-09의 역사적 측정이지 현재 판정이 아니다.
+
+두 done 카드에는 검증 문장이 있지만 controller가 발급하고 CE canonical digest를 고정한
+영구 review receipt가 없다. 현재 controller는 그 문장을 legacy evidence 파일 경로로
+해석하고, 다른 dialect에서도 workbook digest와 CE canonical digest가 다르며, 산출물을
+ignored `tmp/`에 둔다. 이 카드에서 과거 리뷰 영수증을 손으로 만들면 게이트가 요구하는
+증거를 위조하게 된다. 공동 외부 blocker와 해소 책임은 [[ISSUE-001]]에 P0로 현행화했다.
+
 **이 카드를 파일한 시점(2026-09-09 오전)**에 `ce task validate`는 이 저장소 카드
 **26장**을 거부했다(58장 중, 오류 인스턴스 32건). 그 26장 때문에 **`ce task gate`가
 `not-ready`로 exit 1 했다** —
 `{"status":"not-ready","summary":"task_validate_failed","failed_step":"validate"}`.
 
-**같은 날 §작업 1~3을 실행한 뒤 그 26장은 전부 고쳐졌고, 게이트는
-`READY — task_board_ready`, 62장 중 62장 valid다.** 그런데도 이 카드는 열려 있다 — 그 판정이 **사람이 손으로
-`ce task gate`를 쳤을 때만** 나오기 때문이다. 저장소 게이트는 아직 그 명령을 호출하지
-않고, §Completion Criteria 4번 바인딩이 오늘도 exit 1이다. 그러니 남은 범위는
-§게이트 연결 하나이고, 위 26장은 **그 연결이 있었다면 막았을 것**의 기록으로 남긴다.
+**같은 날 §작업 1~3을 실행한 직후 그 26장은 전부 고쳐졌고, 당시 게이트는
+`READY — task_board_ready`, 62장 중 62장 valid였다.** 그 뒤 review receipt를 갖지
+않은 done blocker 둘이 생겨 보드는 다시 빨간불이 됐다. 따라서 남은 범위는 게이트 연결
+하나가 아니다. 먼저 [[ISSUE-001]]의 호환 경로로 실제 review receipt를 발급해야 하고,
+그 다음 저장소가 채택한 integration readiness 선언에 공유 게이트를 연결해야 한다.
 
 `ce task gate`는 보드 전체에 대한 단일 판정(validate + lint + preflight)이고, 개인 정책이
 "보드 판정은 통합 러너가 공유 `ce task gate`에 위임한다"고 지정한 바로 그 명령이다.
@@ -143,8 +156,11 @@ validate를 재구현하는 Go 도구를 만드는 것은 이 카드의 범위�
   러너를 선언한 적이 없다(`.gz-git.yaml` 부재, Makefile에 해당 타깃 없음). 그 선언을
   만드는 것은 이 카드보다 큰 작업이다.
 
-두 번째가 정본이지만 첫 번째가 오늘 실행 가능하다. **사람이 고르고 근거를 아래
-`## 결정 기록`에 남긴다.** 고르지 않은 쪽은 별도 카드로 남긴다.
+2026-09-10 판정은 **둘 다 지금 적용하지 않는다**. CI가 `ce`를 provision하지 않으므로
+`make doc-check` 연결은 hosted CI를 설치 상태에 따라 깨뜨린다. 정본 integration 경로는
+존재하지만 이 저장소가 아직 채택하지 않았다. [[TASK-349]]의 `.ce/task-runtime.yaml`
+채택은 인접한 lifecycle 결정일 뿐 이 readiness 선언을 대신하지 않는다. ISSUE-001을
+해소한 뒤 이 카드의 `needs-human` 결정으로 정본 선언 채택 여부를 판단한다.
 
 ## 결정 기록
 
@@ -169,8 +185,27 @@ validate를 재구현하는 Go 도구를 만드는 것은 이 카드의 범위�
 **4. 순서: type 수정 → done/334 바인딩 경로 수정 → TASK-367 아카이브.** 아카이브가 먼저면
 파일이 이 카드의 스코프 밖으로 나가 `type: decision`이 고쳐지지 않은 채 판정만 초록이 된다.
 
-**바인딩 현황(2026-09-09 실측)**: 1·2·3·7번 exit 0, **4번 exit 1**(저장소 게이트가 아직
-`ce task gate`를 호출하지 않는다). 5·6번은 `verify: human`이고 위에 적었듯 미결이다.
+**5. 2026-09-10 게이트 배치 판정.** `.github/workflows/ci.yml`은 Go, gopls,
+golangci-lint와 release 도구를 설치하지만 `ce` 설치 단계가 없다. 저장소에는
+`.gz-git.yaml`, `.gz-git/readiness/`, `ce-tasks.yaml`, `.ce/task-runtime.yaml`도 없다.
+설치된 CE 0.8.4의 `ce task doctor --json`은 `repositoryId: unknown`, `gates: []`,
+`status: not-adopted`, `remediation: declare-task-gate`로 exit 2 했다. `ce task run-doctor`도
+`.ce/task-runtime.yaml` 부재로 BLOCKED다. 따라서 `make doc-check`에 `ce task gate`를
+추가하지 않는다. ISSUE-001을 해소한 뒤 이 카드가 정본 readiness 계약 채택을 별도로
+결정해야 한다. TASK-349는 task lifecycle 선언을 소유하며 이 게이트 선언과 같지 않다.
+
+**6. 현재 blocker를 영수증으로 꾸미지 않는다.** `ce task gate --json`은 67장 중
+TASK-344와 TASK-371 두 장을 `quality-review-receipt` 부재로 거부한다. 지금 workbook
+controller는 DVA의 prose `verification-evidence`를 파일 경로로 거부하고, 발급 단계에
+도달해도 CE와 다른 digest를 `tmp/task/...`에 쓴다. 둘을 통과시키는 수기 JSON은 역사적
+controller review가 아니다. [[ISSUE-001]]의 `ce-agent-kit` validator/migration과
+`ce-workbook/task_management` issuer 공동 owner가 CE-compatible digest와
+`tasks/receipts/` 영구 발급 경로를 제공하고, 별도 reviewer가 실제 review를 수행할 때까지
+보드는 not-ready다.
+
+**바인딩 현황(2026-09-10 실측)**: 1번 exit 1(위 receipt blocker 2건), 2·3·7번 exit 0,
+4번 exit 1(채택된 readiness 선언 없음). 5번의 판단 근거는 위에 기록했지만 6번의
+failure-injection은 실행할 저장소 게이트가 아직 없으므로 미완료다.
 
 ## Completion Criteria
 
