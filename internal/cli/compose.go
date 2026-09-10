@@ -54,8 +54,13 @@ If multiple compose entries exist, the first argument must be the entry name.`,
 		}
 
 		if len(composeEntries) == 1 {
-			// Single entry: name can be omitted, pass all args through
-			return execComposePassthroughForEntry(e, c, composeEntries[0], nil /* no stack profiles */, args)
+			// Single entry: name can be omitted. Consume it when callers use the same
+			// explicit form as the multiple-entry path, while preserving all other args.
+			entryArgs := args
+			if len(entryArgs) > 0 && entryArgs[0] == composeEntries[0].Name {
+				entryArgs = entryArgs[1:]
+			}
+			return execComposePassthroughForEntry(e, c, composeEntries[0], nil /* no stack profiles */, entryArgs)
 		}
 
 		// Multiple entries: first arg must be entry name

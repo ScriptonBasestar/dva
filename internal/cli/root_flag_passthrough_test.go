@@ -108,6 +108,61 @@ func composePassthroughFixtureWith(t *testing.T, body string) func() []string {
 	}
 }
 
+func TestSingleEntryComposePassthroughStripsTheEntryName(t *testing.T) {
+	argv := composePassthroughFixtureWith(t, `version: "0.1.44"
+stack:
+  infra:
+    order: 1
+    default_runner: compose
+    runners:
+      compose:
+        files: [docker-compose.yml]
+`)
+
+	if err := composeCmd.RunE(composeCmd, []string{"infra", "ps", "--all"}); err != nil {
+		t.Fatalf("compose returned %v", err)
+	}
+	named := argv()
+	if len(named) != 1 {
+		t.Fatalf("named invocation invoked docker %d times, want 1", len(named))
+	}
+	if err := composeCmd.RunE(composeCmd, []string{"ps", "--all"}); err != nil {
+		t.Fatalf("compose returned %v", err)
+	}
+	allArgs := argv()
+	if len(allArgs) != 2 {
+		t.Fatalf("named and omitted invocations recorded %d docker calls, want 2", len(allArgs))
+	}
+	if named[0] != allArgs[1] {
+		t.Errorf("named invocation argv = %q, omitted invocation argv = %q; want equal", named[0], allArgs[1])
+	}
+}
+
+func TestSingleEntryComposePassthroughKeepsNonEntryArgs(t *testing.T) {
+	argv := composePassthroughFixtureWith(t, `version: "0.1.44"
+stack:
+  infra:
+    order: 1
+    default_runner: compose
+    runners:
+      compose:
+        files: [docker-compose.yml]
+`)
+
+	if err := composeCmd.RunE(composeCmd, []string{"ps", "infra"}); err != nil {
+		t.Fatalf("compose returned %v", err)
+	}
+	got := argv()
+	if len(got) != 1 {
+		t.Fatalf("docker invoked %d times, want 1", len(got))
+	}
+	for _, want := range []string{"ps", "infra"} {
+		if !hasArg(got[0], want) {
+			t.Errorf("%s did not reach docker: %q", want, got[0])
+		}
+	}
+}
+
 // TestPassthroughDoesNotForwardRootFlags is TASK-092's criterion test. Each row drives a real
 // RunE and asserts on the argv docker actually received.
 //
