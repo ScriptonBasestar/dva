@@ -214,6 +214,7 @@ plans:                          # Named deployment plans (optional)
         order: 10
         depends_on: []
         services: [postgres, redis]
+        profiles: [tools]        # Compose profiles to activate for this entry
 
 sites:                          # Host-based execution conditions (optional)
   {site-name}:
@@ -310,12 +311,28 @@ services:
 
 ## Modes & Environments — CLI Flag Reference
 
-### --mode/-M (Modes)
+### Plan entry profiles (current route)
+
+Select Compose profiles on the plan entry that owns the Compose runner. This is the
+current route for named plans and passes each value as a `--profile` flag to Docker
+Compose. Service selection and profile selection are independent and can be combined.
+
+```yaml
+plans:
+  local-dev:
+    entries:
+      - name: infra
+        runner: compose
+        services: [db, redis]
+        profiles: [tools]
+```
+
+### --mode/-M (Modes, legacy)
 Selects a named mode from `modes:` section. Determines HOW to run infrastructure.
 
 ```bash
 dva up --mode native     # Skip compose, health checks only
-dva up -M docker         # Full docker with compose_profiles
+dva up -M docker         # Legacy mode with compose_profiles
 dva up -M hybrid         # Partial compose + health checks
 ```
 
@@ -324,7 +341,7 @@ dva up -M hybrid         # Partial compose + health checks
 2. If `compose_services` omitted (nil) → start all services in compose files
 3. If `compose_services: []` (empty list) → skip compose entirely, run health_checks only
 4. If `compose_services: [svc1, svc2]` → start only listed services
-5. If `compose_profiles: [prof1]` → pass `--profile prof1` to docker compose
+5. If `compose_profiles: [prof1]` → pass `--profile prof1` to docker compose (legacy)
 6. If `environment:` present → merge into compose environment
 7. `compose_services` and `compose_profiles` can be combined (both apply independently)
 
@@ -366,7 +383,7 @@ suggestion_ignore:
   - "test-e2e-*"    # covered by e2e interaction
 ```
 
-**`compose_profiles` semantics:**
+**`compose_profiles` semantics (legacy `modes:` only):**
 - `compose_profiles: [rust]` → activate the "rust" profile
 - `compose_profiles: []` (empty) → no profiles activated (only default services start)
 - Omitted → no `--profile` flag passed (same as empty)
@@ -648,7 +665,7 @@ The following fields are NOT valid in dva.yml. Use the correct equivalents:
 | `echo 'Run: ...'` as command | Actual command + `runner: local` | Always execute, never just echo instructions |
 | `service: local` | `runner: local` (no `service:`) | Host commands use `runner: local`, not `service: local` |
 | `shell: true` (on host commands) | `runner: local` (no `shell: true`) | `runner: local` already executes via shell. Keep `shell: true` only for container commands needing shell interpolation |
-| `profiles:` | `modes:` | Use `modes:` |
+| `profiles:` outside a plan entry | `plans.<plan>.entries[].profiles` | Select Compose profiles on the plan entry that owns the Compose runner. `modes.*.compose_profiles` is the legacy migration-only shape. |
 | top-level `compose:` or `stack.<entry>.compose` | `stack.<entry>.runners.compose` | Use named runners |
 | `lifecycle:` | `stack:` | Use `stack:` |
 

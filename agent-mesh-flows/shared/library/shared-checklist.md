@@ -63,6 +63,7 @@
 ### Plans & runner strategy
 - [ ] Plans select only declared runners
 - [ ] Compose service subsets use `plans.entries[].services`
+- [ ] Compose profile selection uses `plans.entries[].profiles`; legacy `modes.*.compose_profiles` is migration-only
 - [ ] Each plan explicitly contains the full capability closure; it does not assume another plan is an overlay
 - [ ] `local-infra` contains only verified core providers; `local-dev` adds verified native apps; `full-stack`, `observability`, and `tools` are opt-in
 - [ ] Every required capability has exactly one lifecycle provider
