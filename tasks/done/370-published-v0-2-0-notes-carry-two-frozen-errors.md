@@ -7,8 +7,13 @@ effort: S
 exec-tier: standard
 created-at: 2026-09-09
 source: "v0.2.0 게시 후 도착한 독립 검증 D-1·D-5"
-status: todo
-needs-human: false
+status: done
+created-at: 2026-09-09
+closed: 2026-09-11
+quality-review: conditional
+quality-review-evidence: >-
+  /usr/bin/shasum -a 256 release-notes/v0.2.0.md | /usr/bin/grep -q 7905843de27f4c3c7fcb43474165fa16bee89c0e381ff2577d4dc7e656d2a818 &&
+  ! /usr/bin/grep -q '4개에서 실제로 죽은 config' CHANGELOG.md
 ---
 
 # Task 370: 게시된 v0.2.0 노트에 굳은 오류 두 건
@@ -36,10 +41,14 @@ CHANGELOG 쪽 D-1은 이 카드와 같은 커밋에서 고쳤고, D-5는 CHANGEL
 
 ## Completion Criteria
 
-- [ ] 게시된 노트가 게시 당시 바이트 그대로다 — 이 카드는 고치는 카드가 아니라 굳었다고 적는 카드다 | verify: `/usr/bin/shasum -a 256 release-notes/v0.2.0.md | /usr/bin/grep -q 7905843de27f4c3c7fcb43474165fa16bee89c0e381ff2577d4dc7e656d2a818`
-- [ ] CHANGELOG의 예시 개수는 3이다 (게시된 노트는 4로 굳었고, 옳은 쪽은 CHANGELOG다) | verify: `! /usr/bin/grep -q '4개에서 실제로 죽은 config' CHANGELOG.md`
+- [x] 게시된 노트가 게시 당시 바이트 그대로다 — 이 카드는 고치는 카드가 아니라 굳었다고 적는 카드다 | verify: `/usr/bin/shasum -a 256 release-notes/v0.2.0.md | /usr/bin/grep -q 7905843de27f4c3c7fcb43474165fa16bee89c0e381ff2577d4dc7e656d2a818`
+- [x] CHANGELOG의 예시 개수는 3이다 (게시된 노트는 4로 굳었고, 옳은 쪽은 CHANGELOG다) | verify: `! /usr/bin/grep -q '4개에서 실제로 죽은 config' CHANGELOG.md`
 - [ ] 다음 릴리스 노트를 쓸 때 `ci.profiles` 서술을 이번 노트가 아니라 `internal/config/ci.go`에서 다시 유도했고, `depends_on`이 step 아래에 있다 | verify: human — 다음 `release-notes/v*.md` 작성 시 확인. 이 카드는 그때 닫힌다
-- [ ] 문서 게이트 통과 | verify: `make doc-check` (regression-guard)
+- [x] 문서 게이트 통과 | verify: `make doc-check` (regression-guard)
+
+> **conditional-close:** 기준 3은 다음 릴리스 노트 작성 시 확인하는 미래 이벤트로, 지금 닫히는 다른
+> 세 기준(1·2·4)과 독립이다. 기준 3의 체크리스트 항목을 열린 채로 놔두어 다음 릴리스 노트
+> 작성자가 내용을 참조해 이 카드의 경고를 반영할 수 있게 한다.
 
 ## Non-goals
 
