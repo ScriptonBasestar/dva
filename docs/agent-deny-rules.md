@@ -26,18 +26,25 @@ marked unsupported: a reader would otherwise have no way to tell "not covered" f
 | Runtime | Deny mechanism | Status |
 |---|---|---|
 | Claude Code | `.claude/settings.json`, `permissions.deny` array of `Bash(<prefix> *)` patterns — `Bash(...)` is required (a bare string names a tool, not a command) and the space before `*` matters (matches the prefix and trailing args, not a neighbor prefix) | **Implemented.** `dva agent-deny install/status/uninstall --scope user\|project` targets this. |
-| OpenCode | Project/user `opencode.json`, permission-style deny rules (per `skills/_targets.yaml`'s existing OpenCode target, which already assumes an agent-skill-shaped settings surface) | Researched, not implemented this card. The exact deny-array key and glob semantics were not independently verified against a live install; shipping an unverified key name would be a false security assurance, which the task card's honesty requirement rules out. Recorded as a follow-up, not shipped. |
-| Antigravity | Same family as Claude Code/OpenCode per `skills/_targets.yaml` (agent-skill shape) | Researched, not implemented this card. No independently verified settings-file/permission-key documentation was found; recorded rather than guessed. |
-| Cursor (CLI/editor) | Documented prefix/glob command allow-deny lists in some Cursor releases | Researched, not implemented this card. Cursor's rules artifact in this repo (`.cursor/rules/*.mdc`) is a context-injection projection, not a permission-enforcement one — the two are not the same mechanism, and no verified deny-rule file format was confirmed for this card. |
-| Codex CLI | An experimental execpolicy mechanism was referenced in research for this card | Researched, not implemented this card. "Experimental" and unverified against a shipped, stable format; shipping it as a supported target would overstate the guarantee. |
-| Grok CLI (xAI) | Unverified | **Unsupported — no independently verifiable deny/permission mechanism found.** A research pass surfaced a plausible-sounding tool by this name but could not corroborate it against an authoritative source, and it referenced a timeframe past this package's ability to verify; it is recorded here as unsupported rather than shipped on an unverifiable claim. |
-| agent-mesh (`am`) | N/A | **Not applicable.** agent-mesh flows are DVA's own analysis/automation tooling (see `agent-mesh-flows/`), not a third-party coding-agent runtime that calls the `dva` CLI on a user's behalf; it is not a deny-rule target. |
+| OpenCode | Project/user `opencode.json`, permission-style deny rules | Researched, not implemented. Deny-array key and glob semantics were not independently verified against a live install. Recorded as follow-up. |
+| Antigravity | Same family as Claude Code/OpenCode per `skills/_targets.yaml` | Researched, not implemented. No independently verified settings-file/permission-key documentation found. |
+| Cursor (CLI/editor) | Documented prefix/glob command allow-deny lists in some Cursor releases | Researched, not implemented. MDC rules are context injection, not permission enforcement; no verified deny-rule format confirmed. |
+| Codex CLI | An experimental execpolicy mechanism | Researched, not implemented. Unverified against a shipped, stable format. |
+| Grok CLI (xAI) | Unverified | **Unsupported.** No independently verifiable deny/permission mechanism found. |
+| agent-mesh (`am`) | N/A | **Not applicable.** DVA's own workflow tooling, not a third-party agent runtime. |
 
 Only Claude Code has an implemented, tested projection as of TASK-286. Every other
-runtime above is either explicitly unsupported (no known mechanism) or explicitly
-recorded as researched-but-unimplemented (a mechanism may exist, but this card does not
-ship an unverified claim about its exact format) — no runtime this research considered is
-silently absent from this table.
+runtime above is either explicitly unsupported or recorded as researched-but-unimplemented.
+
+## Destructive interactions (Project scope)
+
+In addition to the global secret commands, `dva agent-deny install --scope project`
+dynamically inspects `dva.yml` and projects deny patterns for commands marked `destructive: true`
+(TASK-321). For each destructive interaction (e.g. `db reset`), two patterns are projected:
+- `Bash(dva <name> *)`
+- `Bash(dva run <name> *)`
+
+Interactive CLI invocations prompt for confirmation (`[y/N]`) unless `--yes` (`-y`) is passed.
 
 ## Honest limits
 

@@ -1712,6 +1712,32 @@ interaction:
 > 설정 레이어 사이(base ← modules ← subprojects)의 병합은 다른 축이며
 > [docs/30-config-merge-semantics.md](docs/30-config-merge-semantics.md)가 다룹니다.
 
+### interaction 파괴적 명령과 agent-deny (`destructive:`)
+
+데이터베이스 초기화(`db reset`)나 캐시 플러시(`redis flush`)처럼 실행 시 데이터 손실을
+유발할 수 있는 작업에는 `destructive: true`를 선언합니다.
+
+```yaml dva.yml
+version: "0.1.0"
+interaction:
+  db:
+    description: "Database management"
+    command: "bin/db"
+    destructive: true
+    subcommands:
+      reset:
+        description: "Reset database (inherits destructive)"
+        command: "bin/db reset"
+      migrate:
+        description: "Run migrations (explicitly safe)"
+        destructive: false
+        command: "bin/db migrate"
+```
+
+- **상속과 오버라이드**: 부모 노드가 `destructive: true`이면 자식 서브커맨드도 이를 기본 상속하며, 자식이 `destructive: false`를 명시하여 끌 수 있습니다.
+- **대화형 confirm 프롬프트**: 터미널에서 파괴적 interaction을 실행하면 확인 프롬프트(`[y/N]`)가 나타나며, `--yes` (`-y`) 플래그를 붙이면 확인 없이 즉시 실행됩니다. 터미널이 아닌 환경(CI, 비대화형 파이프 등)에서 `--yes` 없이 실행하면 에러로 즉시 중단됩니다.
+- **agent-deny 투영**: `dva agent-deny install --scope project` 실행 시, 프로젝트 `dva.yml`에서 `destructive: true`로 마크된 모든 명령에 대해 `Bash(dva <name> *)` 및 `Bash(dva run <name> *)` deny 패턴이 Claude Code 설정(`settings.json`)에 자동 투영되어 AI 코딩 에이전트의 오작동을 차단합니다.
+
 ### subprojects
 
 모노레포에서 서브프로젝트별 dva.yml을 참조합니다.

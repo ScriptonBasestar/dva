@@ -672,4 +672,3 @@ func (c *Config) validatePlanAliasExtends() error {
 
 	return errors.Join(errs...)
 }
-

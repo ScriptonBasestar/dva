@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sort"
 
+	"github.com/ScriptonBasestar/dva/internal/config"
 	"github.com/ScriptonBasestar/dva/internal/skillinstall"
 )
 
@@ -25,6 +26,7 @@ type Options struct {
 	StateRoot   string
 	DryRun      bool
 	Version     string
+	Config      *config.Config
 }
 
 type Result struct {
@@ -45,7 +47,11 @@ type DestinationResult struct {
 	Patterns    []string `json:"patterns,omitempty"`
 }
 
-func desiredPatterns() []string {
+func desiredPatterns(opts ...Options) []string {
+	var options Options
+	if len(opts) > 0 {
+		options = opts[0]
+	}
 	seen := map[string]bool{}
 	var patterns []string
 	for _, command := range GatedCommands {
@@ -53,6 +59,22 @@ func desiredPatterns() []string {
 			if !seen[pattern] {
 				seen[pattern] = true
 				patterns = append(patterns, pattern)
+			}
+		}
+	}
+	if options.Scope == skillinstall.ScopeProject {
+		cfg := options.Config
+		if cfg == nil && options.ProjectRoot != "" {
+			if loaded, err := config.Load(options.ProjectRoot); err == nil {
+				cfg = loaded
+			}
+		}
+		if cfg != nil {
+			for _, pattern := range DestructiveInteractionPatterns(cfg) {
+				if !seen[pattern] {
+					seen[pattern] = true
+					patterns = append(patterns, pattern)
+				}
 			}
 		}
 	}
@@ -140,7 +162,7 @@ func Install(options Options) (Result, error) {
 	if err != nil {
 		return Result{}, err
 	}
-	want := desiredPatterns()
+	want := desiredPatterns(resolved)
 	receiptFile := receiptPath(resolved.StateRoot, destination)
 	record, hadReceipt, err := readReceipt(receiptFile)
 	if err != nil {

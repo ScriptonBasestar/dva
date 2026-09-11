@@ -115,7 +115,11 @@ func agentDenyOptions(scopeValue string, isDryRun bool) (agentdeny.Options, erro
 	if scope != skillinstall.ScopeUser && scope != skillinstall.ScopeProject {
 		return agentdeny.Options{}, fmt.Errorf("invalid agent-deny scope %q; supported scopes: user, project", scopeValue)
 	}
-	return agentdeny.Options{Scope: scope, DryRun: isDryRun, Version: config.Version}, nil
+	var cfg *config.Config
+	if scope == skillinstall.ScopeProject {
+		cfg, _ = loadConfig()
+	}
+	return agentdeny.Options{Scope: scope, DryRun: isDryRun, Version: config.Version, Config: cfg}, nil
 }
 
 func printAgentDenyResult(operation string, isDryRun bool, result agentdeny.Result) error {

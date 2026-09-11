@@ -621,6 +621,10 @@
           "type": "boolean",
           "description": "Enables or disables shell interpolation"
         },
+        "destructive": {
+          "type": "boolean",
+          "description": "Marks this command as destructive (e.g. database reset, cache flush). When true, interactive execution requires confirmation unless --yes is supplied, and 'dva agent-deny install --scope project' projects deny rules into agent runtime settings"
+        },
         "entrypoint": {
           "type": "string",
           "description": "Specifies the command entrypoint"

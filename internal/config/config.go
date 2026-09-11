@@ -291,6 +291,7 @@ type InteractionCommand struct {
 	Pod         string                         `yaml:"pod"`
 	Subcommands map[string]*InteractionCommand `yaml:"subcommands"`
 	Tags        []string                       `yaml:"tags"`
+	Destructive *bool                          `yaml:"destructive,omitempty"`
 
 	// Command execution: one of the following should be set.
 	// command: string or []string — single command or list executed sequentially
@@ -443,6 +444,7 @@ func (c *InteractionCommand) UnmarshalYAML(node *yaml.Node) error {
 		Pod         string                         `yaml:"pod"`
 		Subcommands map[string]*InteractionCommand `yaml:"subcommands"`
 		Tags        []string                       `yaml:"tags"`
+		Destructive *bool                          `yaml:"destructive,omitempty"`
 		Script      string                         `yaml:"script"`
 		ScriptFile  string                         `yaml:"script_file"`
 		Steps       []ProvisionItem                `yaml:"steps"`
@@ -468,6 +470,7 @@ func (c *InteractionCommand) UnmarshalYAML(node *yaml.Node) error {
 	c.Pod = p.Pod
 	c.Subcommands = p.Subcommands
 	c.Tags = p.Tags
+	c.Destructive = p.Destructive
 	c.Script = p.Script
 	c.ScriptFile = p.ScriptFile
 	c.Steps = p.Steps
@@ -485,6 +488,11 @@ func (c *InteractionCommand) ShellEnabled() bool {
 		return true
 	}
 	return *c.Shell
+}
+
+// IsDestructive reports whether this interaction command is marked destructive.
+func (c *InteractionCommand) IsDestructive() bool {
+	return c != nil && c.Destructive != nil && *c.Destructive
 }
 
 // ComposeOptions holds per-command Docker Compose options.

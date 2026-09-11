@@ -145,11 +145,13 @@ func MergePlanExtends(cfg *config.Config, childName string, child *config.PlanCo
 	// Check extends depth by walking up the chain
 	depth := 1
 	current := parent
+	visited := map[string]bool{childName: true, parentName: true}
 	for current.Extends != "" && depth < maxExtendsDepth {
 		currentName := current.Extends
-		if currentName == currentName {
+		if visited[currentName] {
 			return nil, fmt.Errorf("plan %q: extends cycle detected at %q", childName, currentName)
 		}
+		visited[currentName] = true
 		var err error
 		currentName, current, err = ResolvePlanAlias(cfg, currentName)
 		if err != nil {

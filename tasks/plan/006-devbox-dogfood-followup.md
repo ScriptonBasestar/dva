@@ -3,9 +3,9 @@ id: PLAN-006
 title: "Work the devbox dogfood follow-up queue in dependency order"
 type: plan
 scope: "TASK-311..323 from the 2026-09-05 mydevbox migration, plus the needs-human cards that gate the rest"
-progress: 76
+progress: 80
 total-tasks: 26
-completed-tasks: 20
+completed-tasks: 21
 children: [TASK-339, TASK-340, TASK-328, TASK-329, TASK-312, TASK-313, TASK-317, TASK-311, TASK-324, TASK-314, TASK-316, TASK-320, TASK-322, TASK-315, TASK-318, TASK-323, TASK-249, TASK-307, TASK-309, TASK-319, TASK-321, TASK-345, TASK-346, TASK-347, TASK-348, TASK-351]
 target-date: "2026-10-31"
 created: 2026-09-05
@@ -101,10 +101,10 @@ validate가 요구한다 — 둘은 다른 질문에 답한다.
 
 ### §Needs-human에 놓인 4장 — 결정 전에는 착수 불가
 
-- TASK-307 — plans `alias`/`extends` (todo)
+- TASK-307 — plans `alias`/`extends` (done)
 - TASK-309 — suppression ergonomics (todo)
 - TASK-319 — native entry ergonomics (todo)
-- TASK-321 — destructive interaction agent-deny (todo)
+- TASK-321 — destructive interaction agent-deny (done)
 
 ### 남은 순서 미지정 1장 — TASK-329
 

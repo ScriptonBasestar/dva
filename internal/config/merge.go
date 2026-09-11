@@ -394,6 +394,9 @@ func mergeInteractionCommand(base, other *InteractionCommand) (*InteractionComma
 	if other.Shell != nil {
 		base.Shell = other.Shell
 	}
+	if other.Destructive != nil {
+		base.Destructive = other.Destructive
+	}
 	if other.Compose != nil {
 		base.Compose = other.Compose
 	}

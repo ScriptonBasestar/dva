@@ -254,4 +254,3 @@ sites:
 		t.Errorf("expected hybrid extends local-dev, got %q", cfg.Plans["hybrid"].Extends)
 	}
 }
-

@@ -439,7 +439,7 @@ func TestDuplicatePlanDeclarationsAliasExtendsMutuallyExclusive(t *testing.T) {
 	aliasExtends.Extends = "parent"
 
 	c := &Config{Plans: map[string]*PlanConfig{
-		"concrete": plan,
+		"concrete":  plan,
 		"alias-ext": aliasExtends,
 	}}
 	if got := c.warnDuplicatePlanDeclarations(); len(got) != 0 {

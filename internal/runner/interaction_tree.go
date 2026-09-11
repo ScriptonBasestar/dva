@@ -34,6 +34,7 @@ type ResolvedCommand struct {
 	Pod          string
 	Compose      ComposeOpts
 	Argv         []string
+	Destructive  bool
 
 	// SubprojectName and CanonicalAddress mirror config.InteractionCommand's fields of the
 	// same name (TASK-333) — copied through in buildResolved and, for a subcommand row,
@@ -238,6 +239,7 @@ func buildResolved(name string, entry *config.InteractionCommand) *ResolvedComma
 		Entrypoint:   entry.Entrypoint,
 		RunnerName:   entry.Runner,
 		Pod:          entry.Pod,
+		Destructive:  entry.IsDestructive(),
 
 		SubprojectName:   entry.SubprojectName,
 		CanonicalAddress: entry.CanonicalAddress,
@@ -304,6 +306,7 @@ func mergeInteraction(parent, child *config.InteractionCommand) *config.Interact
 		Runner:       parent.Runner,
 		Pod:          parent.Pod,
 		Compose:      parent.Compose,
+		Destructive:  parent.Destructive,
 
 		// Always the parent's. subproject.go's import loop sets SubprojectName and
 		// CanonicalAddress once, on the top-level clone it hands back — the Subcommands
@@ -398,6 +401,9 @@ func mergeInteraction(parent, child *config.InteractionCommand) *config.Interact
 	}
 	if child.Compose != nil {
 		merged.Compose = child.Compose
+	}
+	if child.Destructive != nil {
+		merged.Destructive = child.Destructive
 	}
 
 	// Merge environment

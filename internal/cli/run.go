@@ -1,7 +1,10 @@
 package cli
 
 import (
+	"bufio"
 	"fmt"
+	"io"
+	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -13,6 +16,11 @@ import (
 var (
 	publishPorts []string
 	projectName  string
+	confirmYes   bool
+
+	stdinReader     io.Reader = os.Stdin
+	stdoutWriter    io.Writer = os.Stdout
+	isStdinTerminal           = func() bool { return isTerminal(os.Stdin) }
 )
 
 var runCmd = &cobra.Command{
@@ -91,6 +99,10 @@ See USAGE.md's "run" section for worked examples.`,
 		// `sh -c ""` and exit 0 (TASK-173). --explain still runs above so diagnosis works.
 		if !resolved.HasExecutionTarget() {
 			return runner.ErrNothingToRun(resolved)
+		}
+
+		if err := confirmDestructiveCommand(resolved.Name, resolved.Destructive); err != nil {
+			return err
 		}
 
 		r := runner.NewRunner(resolved, runner.RunOptions{
@@ -189,6 +201,10 @@ func runSubprojectCommand(parentCfg *config.Config, project, cmdName string, cmd
 		return runner.ErrNothingToRun(resolved)
 	}
 
+	if err := confirmDestructiveCommand(resolved.Name, resolved.Destructive); err != nil {
+		return err
+	}
+
 	r := runner.NewRunner(resolved, runner.RunOptions{
 		Publish: publishPorts,
 		Explain: dryRun,
@@ -201,10 +217,30 @@ func runSubprojectCommand(parentCfg *config.Config, project, cmdName string, cmd
 	return nil
 }
 
+func confirmDestructiveCommand(name string, destructive bool) error {
+	if !destructive || confirmYes {
+		return nil
+	}
+	if !isStdinTerminal() {
+		return fmt.Errorf("command %q is marked as destructive; use --yes (-y) to confirm in non-interactive mode", name)
+	}
+	_, _ = fmt.Fprintf(stdoutWriter, "Warning: command %q is marked as destructive.\nAre you sure you want to proceed? [y/N]: ", name)
+	scanner := bufio.NewScanner(stdinReader)
+	var response string
+	if scanner.Scan() {
+		response = strings.TrimSpace(scanner.Text())
+	}
+	if strings.EqualFold(response, "y") || strings.EqualFold(response, "yes") {
+		return nil
+	}
+	return fmt.Errorf("command %q cancelled by user", name)
+}
+
 func init() {
 	runCmd.Flags().StringArrayVarP(&publishPorts, "publish", "p", nil, "Publish container port(s) to host")
 	runCmd.Flags().BoolVarP(&dryRun, "explain", "e", false, "Alias for --dry-run")
 	runCmd.Flags().StringVar(&projectName, "project", "", "Target a specific sub-project")
+	runCmd.Flags().BoolVarP(&confirmYes, "yes", "y", false, "Confirm destructive operations automatically")
 	// TASK-333: registered here, right after the flag it completes, rather than in
 	// completion.go's own init() — RegisterFlagCompletionFunc looks the flag up
 	// immediately and silently no-ops if it isn't registered yet, and Go does not

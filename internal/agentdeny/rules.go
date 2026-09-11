@@ -12,6 +12,14 @@
 // full coverage table and honest-limits statement.
 package agentdeny
 
+import (
+	"fmt"
+	"sort"
+
+	"github.com/ScriptonBasestar/dva/internal/config"
+	"github.com/ScriptonBasestar/dva/internal/runner"
+)
+
 // GatedCommand is one DVA CLI invocation an agent runtime must refuse to run directly.
 type GatedCommand struct {
 	// ID is a stable identifier used in receipts and generated output; it never changes
@@ -96,4 +104,35 @@ func ByID(id string) (GatedCommand, bool) {
 		}
 	}
 	return GatedCommand{}, false
+}
+
+// DestructiveInteractionPatterns returns deny patterns for all destructive interactions
+// declared in the given Config. For each command with Destructive: true (e.g. "db reset"),
+// it generates "Bash(dva <name> *)" and "Bash(dva run <name> *)".
+func DestructiveInteractionPatterns(cfg *config.Config) []string {
+	if cfg == nil || len(cfg.Interaction) == 0 {
+		return nil
+	}
+
+	tree := runner.NewInteractionTree(cfg.Interaction)
+	list := tree.List()
+	var patterns []string
+	seen := map[string]bool{}
+
+	for name, cmd := range list {
+		if cmd.Destructive {
+			p1 := fmt.Sprintf("Bash(dva %s *)", name)
+			p2 := fmt.Sprintf("Bash(dva run %s *)", name)
+			if !seen[p1] {
+				seen[p1] = true
+				patterns = append(patterns, p1)
+			}
+			if !seen[p2] {
+				seen[p2] = true
+				patterns = append(patterns, p2)
+			}
+		}
+	}
+	sort.Strings(patterns)
+	return patterns
 }

@@ -334,7 +334,8 @@ func gatedCommandArgvV2(t *testing.T, errorfn func(string, ...any), files []*ast
 // function reached the gate, but `fixtureCmd` had `RunE: runGatedOp` (an
 // *ast.Ident value, not a call), so reachesGate returned false and the command
 // was not reported on the surface.  The test below would have reported:
-//   "dva fixtureop" is not on the detected surface []
+//
+//	"dva fixtureop" is not on the detected surface []
 //
 // TASK-353 criterion 1.
 func TestGateDetectorFindsBareRunEIdent(t *testing.T) {
@@ -396,7 +397,7 @@ func TestGateDetectorFailsOnUnresolvableUse(t *testing.T) {
 		msg := format
 		if len(args) > 0 {
 			msg = strings.NewReplacer("%q", "%q", "%v", "%v", "%s", "%s").Replace(format)
-			_ = msg // keep simple
+			_ = msg      // keep simple
 			msg = format // use format as-is for the assertion
 		}
 		reported = append(reported, msg)
@@ -404,8 +405,8 @@ func TestGateDetectorFailsOnUnresolvableUse(t *testing.T) {
 	gatedCommandArgvV2(t, recorder, files, gatedFuncs)
 
 	if len(reported) == 0 {
-		t.Errorf("gatedCommandArgvV2 did not call errorfn for the fixture command with "+
-			"non-literal Use; it should report rather than silently skip a gated command "+
+		t.Errorf("gatedCommandArgvV2 did not call errorfn for the fixture command with " +
+			"non-literal Use; it should report rather than silently skip a gated command " +
 			"it cannot name")
 	}
 }
