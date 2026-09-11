@@ -367,8 +367,8 @@ func fillCommandDescriptions(command *cobra.Command, entry ManifestCmd) Manifest
 func buildManifest(c *config.Config) *Manifest {
 	m := &Manifest{
 		DvaVersion: config.Version,
-		// Schema 1.8 adds declared secret targets, artifact jobs and command effects.
-		SchemaVersion:     "1.8",
+		// Schema 1.9 adds owner, aliases and alias_of to manifest Plans (TASK-366).
+		SchemaVersion:     "1.9",
 		GeneratedAt:       time.Now().Format(time.RFC3339),
 		ConfigFile:        c.FilePath(),
 		ProjectDir:        c.FileDir(),

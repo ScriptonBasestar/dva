@@ -5,7 +5,7 @@ type: feature
 priority: P2
 effort: S
 exec-tier: standard
-status: todo
+status: done
 needs-human: true
 created: 2026-09-08
 source: "TASK-333 독립 리뷰(2026-09-08) 항목 7 — 측정된 공백"
@@ -65,7 +65,7 @@ TASK-333의 범위를 interaction으로 좁힌 것이 의도였는지 리뷰가 
 
 ## Completion Criteria
 
-- [ ] import된 plan의 canonical 항목과 alias 항목이 manifest에서 구분된다 | verify: `/usr/bin/grep -rq 'func TestImportedPlanCanonicalAndAliasMarkers(' internal/cli`
-- [ ] import된 provision profile에도 같은 식별자가 실린다 | verify: `/usr/bin/grep -rq 'func TestImportedProvisionProfileIdentity(' internal/cli`
-- [ ] USAGE.md의 plans 공백 문단이 제거됐다 | verify: `human — USAGE.md에 plans import 공백을 알리는 문단이 남아 있지 않다`
-- [ ] 게이트 통과 | verify: `make doc-check` (regression-guard)
+- [x] import된 plan의 canonical 항목과 alias 항목이 manifest에서 구분된다 | verify: `/usr/bin/grep -rq 'func TestImportedPlanCanonicalAndAliasMarkers(' internal/cli`
+- [x] import된 provision profile에도 같은 식별자가 실린다 | verify: `/usr/bin/grep -rq 'func TestImportedProvisionProfileIdentity(' internal/cli`
+- [x] USAGE.md의 plans 공백 문단이 제거됐다 | verify: `human — USAGE.md에 plans import 공백을 알리는 문단이 남아 있지 않다`
+- [x] 게이트 통과 | verify: `make doc-check` (regression-guard)

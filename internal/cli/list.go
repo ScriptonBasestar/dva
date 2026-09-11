@@ -518,12 +518,8 @@ func buildCommandEntries(c *config.Config, commands map[string]*runner.ResolvedC
 	return entries
 }
 
-func printJSON(c *config.Config, commands map[string]*runner.ResolvedCommand, keys []string) error {
-	entries := buildCommandEntries(c, commands, keys)
-	if len(c.Plans) == 0 {
-		return output.PrintJSON(entries)
-	}
-
+func buildPlanEntries(c *config.Config) map[string]any {
+	aliasGroups := planAliasGroups(c.Plans)
 	plans := make(map[string]any, len(c.Plans))
 	for _, name := range sortedKeys(c.Plans) {
 		p := c.Plans[name]
@@ -534,17 +530,36 @@ func printJSON(c *config.Config, commands map[string]*runner.ResolvedCommand, ke
 		for _, e := range p.Entries {
 			entryNames = append(entryNames, e.Name)
 		}
-		plans[name] = map[string]any{
+		entry := map[string]any{
 			"description": p.Description,
 			"environment": p.Environment,
 			"site":        p.Site,
 			"entries":     entryNames,
+			"owner":       planOwnerName(p),
 		}
+		if p.CanonicalAddress != "" {
+			if name == p.CanonicalAddress {
+				if aliases := aliasGroups[name]; len(aliases) > 0 {
+					entry["aliases"] = aliases
+				}
+			} else {
+				entry["alias_of"] = p.CanonicalAddress
+			}
+		}
+		plans[name] = entry
+	}
+	return plans
+}
+
+func printJSON(c *config.Config, commands map[string]*runner.ResolvedCommand, keys []string) error {
+	entries := buildCommandEntries(c, commands, keys)
+	if len(c.Plans) == 0 {
+		return output.PrintJSON(entries)
 	}
 
 	return output.PrintJSON(map[string]any{
 		"interaction_commands": entries,
-		"plans":                plans,
+		"plans":                buildPlanEntries(c),
 	})
 }
 
@@ -554,26 +569,8 @@ func printYAML(c *config.Config, commands map[string]*runner.ResolvedCommand, ke
 		return output.PrintYAML(entries)
 	}
 
-	plans := make(map[string]any, len(c.Plans))
-	for _, name := range sortedKeys(c.Plans) {
-		p := c.Plans[name]
-		if p == nil {
-			continue
-		}
-		entryNames := make([]string, 0, len(p.Entries))
-		for _, e := range p.Entries {
-			entryNames = append(entryNames, e.Name)
-		}
-		plans[name] = map[string]any{
-			"description": p.Description,
-			"environment": p.Environment,
-			"site":        p.Site,
-			"entries":     entryNames,
-		}
-	}
-
 	return output.PrintYAML(map[string]any{
 		"interaction_commands": entries,
-		"plans":                plans,
+		"plans":                buildPlanEntries(c),
 	})
 }

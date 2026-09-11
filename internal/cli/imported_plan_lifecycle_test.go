@@ -250,7 +250,7 @@ func TestImportedPlanManifestPreservesSchema(t *testing.T) {
 		t.Fatalf("marshal manifest plans: %v", err)
 	}
 	text := string(encoded)
-	for _, forbidden := range []string{root.FileDir(), child, `"owner"`, `"owner_config"`} {
+	for _, forbidden := range []string{root.FileDir(), child, `"owner_config"`} {
 		if strings.Contains(text, forbidden) {
 			t.Errorf("manifest leaked internal owner data %q: %s", forbidden, text)
 		}

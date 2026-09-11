@@ -151,6 +151,12 @@ func resolveSubprojectImports(cfg *Config, opts ...LoadOption) error {
 			}
 
 			importedPlan := cloneImportedPlan(plan, subCfg, subprojectPath)
+			// TASK-366: recorded once, on the single clone both the canonical map entry
+			// and its optional alias below point at, so ls/manifest can name the owning
+			// subproject and tell canonical from alias without re-deriving either from
+			// the map key.
+			importedPlan.SubprojectName = subprojectName
+			importedPlan.CanonicalAddress = canonicalName
 			cfg.Plans[canonicalName] = importedPlan
 
 			alias := strings.TrimSpace(entry.As)
@@ -220,7 +226,8 @@ func resolveSubprojectImports(cfg *Config, opts ...LoadOption) error {
 
 			importedProfile := append([]ProvisionItem(nil), profile...)
 			cfg.Provision.Profiles[canonicalName] = importedProfile
-			cfg.Provision.setProfileOwner(canonicalName, subCfg)
+			// TASK-366: record ownership, subproject and canonical address
+			cfg.Provision.SetProfileIdentity(canonicalName, subprojectName, canonicalName, subCfg)
 
 			alias := strings.TrimSpace(entry.As)
 			if alias != "" && alias != canonicalName {
@@ -228,9 +235,9 @@ func resolveSubprojectImports(cfg *Config, opts ...LoadOption) error {
 					return fmt.Errorf("provision profile alias collision: %q already exists", alias)
 				}
 				cfg.Provision.Profiles[alias] = importedProfile
-				// Same *Config as the canonical name, not a second lookup: the alias is
+				// Same *Config and canonical address as the canonical name: the alias is
 				// another route to one import, so the two must resolve identically.
-				cfg.Provision.setProfileOwner(alias, subCfg)
+				cfg.Provision.SetProfileIdentity(alias, subprojectName, canonicalName, subCfg)
 			}
 		}
 	}

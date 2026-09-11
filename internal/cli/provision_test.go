@@ -324,7 +324,7 @@ func TestPrintProvisionJSON(t *testing.T) {
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	printProvisionJSON(provision, "setup", keys)
+	printProvisionJSON(nil, provision, "setup", keys)
 
 	w.Close()
 	os.Stdout = old

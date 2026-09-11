@@ -90,6 +90,19 @@ type PlanConfig struct {
 
 	SubprojectPath string `yaml:"-"`
 
+	// SubprojectName is the subprojects: map key this plan was imported from ("" for
+	// a locally declared plan). Unlike SubprojectPath, this is a logical name, not a
+	// filesystem location, so it is safe to publish on ls/manifest output (TASK-366's
+	// owner field).
+	SubprojectName string `yaml:"-"`
+
+	// CanonicalAddress is the "<subproject>/<key>" address subproject.go's import loop
+	// always assigns first when this plan is imported ("" for a locally declared plan).
+	// An import's optional `as:` alias points the SAME *PlanConfig at a second map key,
+	// and CanonicalAddress is how a reader tells which key is canonical without comparing
+	// pointers itself (TASK-366).
+	CanonicalAddress string `yaml:"-"`
+
 	// owner is the fully loaded configuration that declared this plan when it is
 	// imported from a subproject. It intentionally has no YAML representation:
 	// importing a plan exposes a route in the parent, not the child's complete
@@ -479,6 +492,9 @@ type ProvisionConfig struct {
 	// own. Unexported for the same reason as PlanConfig.owner: it holds local absolute
 	// paths and must not serialize (TASK-264).
 	profileOwners map[string]*Config
+
+	profileSubprojects map[string]string
+	profileCanonicals  map[string]string
 }
 
 // ProfileOwner returns the configuration a provision profile resolves against.
@@ -503,6 +519,43 @@ func (pc *ProvisionConfig) setProfileOwner(name string, owner *Config) {
 		pc.profileOwners = make(map[string]*Config)
 	}
 	pc.profileOwners[name] = owner
+}
+
+// SetProfileIdentity records the owner and identity metadata of a registered profile name.
+func (pc *ProvisionConfig) SetProfileIdentity(name, subprojectName, canonicalAddress string, owner *Config) {
+	if owner != nil {
+		pc.setProfileOwner(name, owner)
+	}
+	if subprojectName != "" {
+		if pc.profileSubprojects == nil {
+			pc.profileSubprojects = make(map[string]string)
+		}
+		pc.profileSubprojects[name] = subprojectName
+	}
+	if canonicalAddress != "" {
+		if pc.profileCanonicals == nil {
+			pc.profileCanonicals = make(map[string]string)
+		}
+		pc.profileCanonicals[name] = canonicalAddress
+	}
+}
+
+// ProfileSubproject returns the subproject name this profile was imported from,
+// or "" for a locally declared profile.
+func (pc *ProvisionConfig) ProfileSubproject(name string) string {
+	if pc != nil && pc.profileSubprojects != nil {
+		return pc.profileSubprojects[name]
+	}
+	return ""
+}
+
+// ProfileCanonicalAddress returns the canonical address of an imported profile,
+// or "" for a locally declared profile.
+func (pc *ProvisionConfig) ProfileCanonicalAddress(name string) string {
+	if pc != nil && pc.profileCanonicals != nil {
+		return pc.profileCanonicals[name]
+	}
+	return ""
 }
 
 // MarshalYAML restores the schema shape consumed by UnmarshalYAML.
@@ -1111,6 +1164,22 @@ func (c *Config) mergeFrom(other *Config) error {
 		// silently fall back to the parent — the exact defect TASK-264 repairs.
 		for name := range other.Provision.Profiles {
 			c.Provision.setProfileOwner(name, other.Provision.profileOwners[name])
+			if other.Provision.profileSubprojects != nil {
+				if sub := other.Provision.profileSubprojects[name]; sub != "" {
+					if c.Provision.profileSubprojects == nil {
+						c.Provision.profileSubprojects = make(map[string]string)
+					}
+					c.Provision.profileSubprojects[name] = sub
+				}
+			}
+			if other.Provision.profileCanonicals != nil {
+				if canon := other.Provision.profileCanonicals[name]; canon != "" {
+					if c.Provision.profileCanonicals == nil {
+						c.Provision.profileCanonicals = make(map[string]string)
+					}
+					c.Provision.profileCanonicals[name] = canon
+				}
+			}
 		}
 	}
 

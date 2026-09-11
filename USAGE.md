@@ -1700,9 +1700,6 @@ owner가 프로젝트 이름 자체입니다.
 마커가 그대로 답이 됩니다. 사람이 읽는 `dva ls` 표에는 이 마커가 표시되지 않습니다 —
 기계가 읽는 두 출력에만 실립니다.
 
-`plans:` import는 아직 이 세 필드를 싣지 않습니다. canonical name과 alias가 `plans` 맵에
-같은 내용으로 두 번 나타나며 둘을 구분하는 표시가 없습니다.
-
 Subproject `path`는 absolute path나 parent 밖을 가리키는 `../` path도 사용할 수 있습니다.
 
 #### `exclude_tags`가 거르는 대상

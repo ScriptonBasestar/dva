@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -31,6 +32,21 @@ interaction:
   compile:
     description: "child engine compile"
     command: "echo CHILD-ENGINE-COMPILE"
+stack:
+  eng-stack:
+    default_runner: local
+    runners:
+      local:
+        command: "echo eng-stack"
+plans:
+  boot:
+    description: "child engine boot"
+    entries:
+      - name: eng-stack
+provision:
+  setup:
+    - step: "child setup"
+      run: "echo CHILD-SETUP"
 `), 0o644); err != nil {
 		t.Fatalf("write engine dva.yml: %v", err)
 	}
@@ -41,6 +57,21 @@ interaction:
   local-task:
     description: "declared directly in the root dva.yml"
     command: "echo ROOT-LOCAL-TASK"
+stack:
+  local-stack:
+    default_runner: local
+    runners:
+      local:
+        command: "echo local-stack"
+plans:
+  local-plan:
+    description: "declared directly in the root dva.yml"
+    entries:
+      - name: local-stack
+provision:
+  local-setup:
+    - step: "local setup"
+      run: "echo LOCAL-SETUP"
 subprojects:
   engine:
     path: ./engine
@@ -48,6 +79,12 @@ subprojects:
       interactions:
         - name: compile
           as: fast-compile
+      plans:
+        - name: boot
+          as: quickboot
+      provision:
+        - name: setup
+          as: quicksetup
 `), 0o644); err != nil {
 		t.Fatalf("write parent dva.yml: %v", err)
 	}
@@ -279,5 +316,167 @@ subprojects:
 	// user wrote in their own dva.yml.
 	if !contains(projectNames, "broken") {
 		t.Errorf("--project completion = %v, want it to include \"broken\"", projectNames)
+	}
+}
+
+// TestImportedPlanCanonicalAndAliasMarkers pins TASK-366 item 1: imported plans carry
+// owner, aliases, and alias_of in manifest and JSON outputs, distinguishing canonical
+// names from aliases and indicating declaring subprojects.
+func TestImportedPlanCanonicalAndAliasMarkers(t *testing.T) {
+	c := writeImportedItemIdentityFixture(t)
+
+	m := buildManifest(c)
+
+	localPlan, ok := m.Plans["local-plan"]
+	if !ok {
+		t.Fatalf("manifest missing local-plan: %#v", m.Plans)
+	}
+	if localPlan.Owner != rootOwnerName {
+		t.Errorf("local-plan owner = %q, want %q", localPlan.Owner, rootOwnerName)
+	}
+	if len(localPlan.Aliases) != 0 || localPlan.AliasOf != "" {
+		t.Errorf("local-plan has aliases=%v, alias_of=%q; want neither", localPlan.Aliases, localPlan.AliasOf)
+	}
+
+	canonicalPlan, ok := m.Plans["engine/boot"]
+	if !ok {
+		t.Fatalf("manifest missing engine/boot: %#v", m.Plans)
+	}
+	if canonicalPlan.Owner != "engine" {
+		t.Errorf("engine/boot owner = %q, want \"engine\"", canonicalPlan.Owner)
+	}
+	if len(canonicalPlan.Aliases) != 1 || canonicalPlan.Aliases[0] != "quickboot" {
+		t.Errorf("engine/boot aliases = %v, want [\"quickboot\"]", canonicalPlan.Aliases)
+	}
+	if canonicalPlan.AliasOf != "" {
+		t.Errorf("engine/boot alias_of = %q, want \"\"", canonicalPlan.AliasOf)
+	}
+
+	aliasPlan, ok := m.Plans["quickboot"]
+	if !ok {
+		t.Fatalf("manifest missing quickboot: %#v", m.Plans)
+	}
+	if aliasPlan.Owner != "engine" {
+		t.Errorf("quickboot owner = %q, want \"engine\"", aliasPlan.Owner)
+	}
+	if len(aliasPlan.Aliases) != 0 {
+		t.Errorf("quickboot aliases = %v, want none", aliasPlan.Aliases)
+	}
+	if aliasPlan.AliasOf != "engine/boot" {
+		t.Errorf("quickboot alias_of = %q, want \"engine/boot\"", aliasPlan.AliasOf)
+	}
+
+	// Verify the same distinctions on buildPlanEntries (dva ls --json output path).
+	planEntries := buildPlanEntries(c)
+	localEntry, ok := planEntries["local-plan"].(map[string]any)
+	if !ok {
+		t.Fatalf("planEntries missing local-plan")
+	}
+	if localEntry["owner"] != rootOwnerName {
+		t.Errorf("local-plan entry owner = %v, want %q", localEntry["owner"], rootOwnerName)
+	}
+	if _, has := localEntry["aliases"]; has {
+		t.Errorf("local-plan entry carries aliases: %v", localEntry["aliases"])
+	}
+	if _, has := localEntry["alias_of"]; has {
+		t.Errorf("local-plan entry carries alias_of: %v", localEntry["alias_of"])
+	}
+
+	canonicalEntry, ok := planEntries["engine/boot"].(map[string]any)
+	if !ok {
+		t.Fatalf("planEntries missing engine/boot")
+	}
+	if canonicalEntry["owner"] != "engine" {
+		t.Errorf("engine/boot entry owner = %v, want \"engine\"", canonicalEntry["owner"])
+	}
+	canonicalAliases, _ := canonicalEntry["aliases"].([]string)
+	if len(canonicalAliases) != 1 || canonicalAliases[0] != "quickboot" {
+		t.Errorf("engine/boot entry aliases = %v, want [\"quickboot\"]", canonicalEntry["aliases"])
+	}
+	if _, has := canonicalEntry["alias_of"]; has {
+		t.Errorf("engine/boot entry carries alias_of: %v", canonicalEntry["alias_of"])
+	}
+
+	aliasEntry, ok := planEntries["quickboot"].(map[string]any)
+	if !ok {
+		t.Fatalf("planEntries missing quickboot")
+	}
+	if aliasEntry["owner"] != "engine" {
+		t.Errorf("quickboot entry owner = %v, want \"engine\"", aliasEntry["owner"])
+	}
+	if _, has := aliasEntry["aliases"]; has {
+		t.Errorf("quickboot entry carries aliases: %v", aliasEntry["aliases"])
+	}
+	if aliasEntry["alias_of"] != "engine/boot" {
+		t.Errorf("quickboot entry alias_of = %v, want \"engine/boot\"", aliasEntry["alias_of"])
+	}
+}
+
+// TestImportedProvisionProfileIdentity pins TASK-366 item 2: imported provision profiles
+// carry owner, aliases, and alias_of in JSON output (`dva provision --list --json`).
+func TestImportedProvisionProfileIdentity(t *testing.T) {
+	c := writeImportedItemIdentityFixture(t)
+
+	oldJSON := jsonOutput
+	jsonOutput = true
+	defer func() { jsonOutput = oldJSON }()
+
+	output := captureStdout(t, func() {
+		if err := listProvisionProfiles(c); err != nil {
+			t.Fatalf("listProvisionProfiles: %v", err)
+		}
+	})
+
+	var parsed struct {
+		Profiles map[string]struct {
+			Steps     int      `json:"steps"`
+			FirstStep string   `json:"first_step"`
+			Owner     string   `json:"owner"`
+			Aliases   []string `json:"aliases,omitempty"`
+			AliasOf   string   `json:"alias_of,omitempty"`
+		} `json:"profiles"`
+	}
+
+	if err := json.Unmarshal([]byte(output), &parsed); err != nil {
+		t.Fatalf("unmarshal provision profiles output: %v\noutput was:\n%s", err, output)
+	}
+
+	local, ok := parsed.Profiles["local-setup"]
+	if !ok {
+		t.Fatalf("parsed profiles missing local-setup: %#v", parsed.Profiles)
+	}
+	if local.Owner != rootOwnerName {
+		t.Errorf("local-setup owner = %q, want %q", local.Owner, rootOwnerName)
+	}
+	if len(local.Aliases) != 0 || local.AliasOf != "" {
+		t.Errorf("local-setup has aliases=%v, alias_of=%q; want neither", local.Aliases, local.AliasOf)
+	}
+
+	canonical, ok := parsed.Profiles["engine/setup"]
+	if !ok {
+		t.Fatalf("parsed profiles missing engine/setup: %#v", parsed.Profiles)
+	}
+	if canonical.Owner != "engine" {
+		t.Errorf("engine/setup owner = %q, want \"engine\"", canonical.Owner)
+	}
+	if len(canonical.Aliases) != 1 || canonical.Aliases[0] != "quicksetup" {
+		t.Errorf("engine/setup aliases = %v, want [\"quicksetup\"]", canonical.Aliases)
+	}
+	if canonical.AliasOf != "" {
+		t.Errorf("engine/setup alias_of = %q, want \"\"", canonical.AliasOf)
+	}
+
+	alias, ok := parsed.Profiles["quicksetup"]
+	if !ok {
+		t.Fatalf("parsed profiles missing quicksetup: %#v", parsed.Profiles)
+	}
+	if alias.Owner != "engine" {
+		t.Errorf("quicksetup owner = %q, want \"engine\"", alias.Owner)
+	}
+	if len(alias.Aliases) != 0 {
+		t.Errorf("quicksetup aliases = %v, want none", alias.Aliases)
+	}
+	if alias.AliasOf != "engine/setup" {
+		t.Errorf("quicksetup alias_of = %q, want \"engine/setup\"", alias.AliasOf)
 	}
 }

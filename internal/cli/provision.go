@@ -502,9 +502,27 @@ func listProvisionProfiles(c *config.Config) error {
 	sort.Strings(keys)
 
 	if jsonOutput {
-		return printProvisionJSON(c.Provision.Profiles, c.Provision.DefaultProfile, keys)
+		return printProvisionJSON(c, c.Provision.Profiles, c.Provision.DefaultProfile, keys)
 	}
 	return printProvisionTable(c.Provision.Profiles, c.Provision.DefaultProfile, keys)
+}
+
+func provisionAliasGroups(pc *config.ProvisionConfig) map[string][]string {
+	groups := make(map[string][]string)
+	if pc == nil {
+		return groups
+	}
+	for k := range pc.Profiles {
+		canonical := pc.ProfileCanonicalAddress(k)
+		if canonical == "" || k == canonical {
+			continue
+		}
+		groups[canonical] = append(groups[canonical], k)
+	}
+	for canonical := range groups {
+		sort.Strings(groups[canonical])
+	}
+	return groups
 }
 
 func printProvisionTable(provision map[string][]config.ProvisionItem, defaultProfile string, keys []string) error {
@@ -534,14 +552,37 @@ func printProvisionTable(provision map[string][]config.ProvisionItem, defaultPro
 	return nil
 }
 
-func printProvisionJSON(provision map[string][]config.ProvisionItem, defaultProfile string, keys []string) error {
+func printProvisionJSON(c *config.Config, provision map[string][]config.ProvisionItem, defaultProfile string, keys []string) error {
+	var aliasGroups map[string][]string
+	if c != nil {
+		aliasGroups = provisionAliasGroups(&c.Provision)
+	}
 	profiles := make(map[string]any, len(keys))
 	for _, k := range keys {
 		steps := provision[k]
-		profiles[k] = map[string]any{
+		owner := rootOwnerName
+		var canonical string
+		if c != nil {
+			if o := c.Provision.ProfileSubproject(k); o != "" {
+				owner = o
+			}
+			canonical = c.Provision.ProfileCanonicalAddress(k)
+		}
+		prof := map[string]any{
 			"steps":      len(steps),
 			"first_step": firstStepDescription(steps),
+			"owner":      owner,
 		}
+		if canonical != "" {
+			if k == canonical {
+				if aliases := aliasGroups[k]; len(aliases) > 0 {
+					prof["aliases"] = aliases
+				}
+			} else {
+				prof["alias_of"] = canonical
+			}
+		}
+		profiles[k] = prof
 	}
 	result := map[string]any{"profiles": profiles}
 	if defaultProfile != "" {
