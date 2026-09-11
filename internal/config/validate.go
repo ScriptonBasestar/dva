@@ -294,6 +294,10 @@ func (c *Config) Validate() error {
 		}
 	}
 
+	if err := c.validatePlanAliasExtends(); err != nil {
+		errs = append(errs, err)
+	}
+
 	return joinValidationErrors(errs)
 }
 
@@ -563,5 +567,109 @@ func ValidateConfigBytes(data []byte) (*Config, []string, error) {
 		return cfg, warnings, errors.Join(hardErrs...)
 	}
 	return cfg, warnings, nil
+}
+
+func (c *Config) validatePlanAliasExtends() error {
+	const maxAliasDepth = 10
+	const maxExtendsDepth = 3
+
+	var errs []error
+
+	for name, plan := range c.Plans {
+		if plan == nil {
+			continue
+		}
+
+		if plan.Alias != "" {
+			if plan.Alias == name {
+				errs = append(errs, fmt.Errorf("plan %q: alias cannot reference itself", name))
+				continue
+			}
+			if _, ok := c.Plans[plan.Alias]; !ok {
+				errs = append(errs, fmt.Errorf("plan %q: alias target %q not found", name, plan.Alias))
+				continue
+			}
+			visited := make(map[string]bool)
+			current := plan.Alias
+			for depth := 0; depth <= maxAliasDepth; depth++ {
+				if depth == maxAliasDepth {
+					errs = append(errs, fmt.Errorf("plan %q: alias chain exceeds maximum depth of %d", name, maxAliasDepth))
+					break
+				}
+				target := c.Plans[current]
+				if target == nil {
+					errs = append(errs, fmt.Errorf("plan %q: alias target %q not found", name, current))
+					break
+				}
+				if target.Alias == "" {
+					break
+				}
+				if target.Alias == current {
+					errs = append(errs, fmt.Errorf("plan %q: alias cycle detected (self-reference at %q)", name, current))
+					break
+				}
+				if visited[target.Alias] {
+					errs = append(errs, fmt.Errorf("plan %q: alias cycle detected (via %q)", name, target.Alias))
+					break
+				}
+				visited[current] = true
+				current = target.Alias
+			}
+			if len(plan.Entries) > 0 || len(plan.Composes) > 0 || plan.Environment != "" || plan.Site != "" || len(plan.Vars) > 0 || len(plan.EndpointTags) > 0 {
+				errs = append(errs, fmt.Errorf("plan %q: alias plan must not declare entries, composes, environment, site, vars, or endpoint_tags (only description allowed)", name))
+			}
+		}
+
+		if plan.Extends != "" {
+			if plan.Extends == name {
+				errs = append(errs, fmt.Errorf("plan %q: extends cannot reference itself", name))
+				continue
+			}
+			if plan.Alias != "" {
+				errs = append(errs, fmt.Errorf("plan %q: cannot have both alias and extends", name))
+				continue
+			}
+			if len(plan.Composes) > 0 {
+				errs = append(errs, fmt.Errorf("plan %q: extends is mutually exclusive with composes", name))
+				continue
+			}
+			if _, ok := c.Plans[plan.Extends]; !ok {
+				errs = append(errs, fmt.Errorf("plan %q: extends target %q not found", name, plan.Extends))
+				continue
+			}
+			visited := make(map[string]bool)
+			visited[name] = true
+			current := plan.Extends
+			depth := 0
+			for current != "" {
+				if visited[current] {
+					errs = append(errs, fmt.Errorf("plan %q: extends cycle detected at %q", name, current))
+					break
+				}
+				visited[current] = true
+				depth++
+				if depth > maxExtendsDepth {
+					errs = append(errs, fmt.Errorf("plan %q: extends chain exceeds maximum depth of %d", name, maxExtendsDepth))
+					break
+				}
+				target, ok := c.Plans[current]
+				if !ok || target == nil {
+					errs = append(errs, fmt.Errorf("plan %q: extends target %q not found", name, current))
+					break
+				}
+				if target.Alias != "" {
+					errs = append(errs, fmt.Errorf("plan %q: extends target %q must be a concrete plan (not an alias)", name, current))
+					break
+				}
+				if len(target.Composes) > 0 {
+					errs = append(errs, fmt.Errorf("plan %q: extends target %q must be a concrete plan (not a composition plan)", name, current))
+					break
+				}
+				current = target.Extends
+			}
+		}
+	}
+
+	return errors.Join(errs...)
 }
 

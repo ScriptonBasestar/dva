@@ -1025,6 +1025,62 @@ plans:
 두면 모든 endpoint를 표시하고, 값을 지정하면 tag가 하나라도 일치하는 endpoint만
 표시합니다. `--dry-run`과 실패한 startup은 endpoint 연결 정보를 출력하지 않습니다.
 
+#### plan alias / extends (TASK-307)
+
+플랜 선언 중복을 줄이기 위해 두 가지 수단을 제공합니다.
+
+**alias (별칭)** — 다른 플랜을 그대로 가리키는 별칭입니다.
+
+```yaml
+plans:
+  local-dev:
+    environment: dev
+    site: local
+    entries:
+      - name: core-compose
+        runner: compose
+        order: 10
+        services: [postgres, redis]
+
+  hybrid:
+    alias: local-dev
+    description: "Alias for local-dev (legacy name)"
+```
+
+- `alias`는 `description`을 제외한 다른 필드(`environment`, `site`, `entries`, `vars` 등)와 공존할 수 없습니다.
+- `dva ls`와 `dva show`는 `hybrid → local-dev` 형태로 관계를 표시합니다.
+- `default_plan`은 별칭 이름을 가리킬 수 있으며, `dva show`는 대상 이름도 함께 표기합니다.
+- 체인(별칭의 별칭), 자기 참조, 미정의 참조는 검증 에러입니다.
+
+**extends (단일 부모 상속)** — 부모 플랜을 기반으로 필드를 덮어씁니다.
+
+```yaml
+plans:
+  local-infra:
+    environment: dev
+    site: local
+    entries:
+      - name: core-compose
+        runner: compose
+        order: 10
+        services: [postgres, redis]
+
+  infra-full:
+    extends: local-infra
+    description: "Extended with monitoring"
+    entries:
+      - name: core-compose
+        runner: compose
+        order: 10
+        services: [postgres, redis, minio, grafana]
+```
+
+- 병합 규칙: 스칼라 필드(`description`, `environment`, `site`, `endpoint_tags`)는 자식이 우선, `vars`는 키 병합, `entries`는 `name`으로 매칭해 같은 이름은 자식이 통째로 교체(서비스 합집합 아님), 새 이름은 추가.
+- 단일 부모만 가능, 깊이 제한 3단계, 순환/미정의 참조는 hard error.
+- `composes:` 플랜은 `extends` 불가. `alias`와 `extends`는 동시 사용 불가.
+
+**YAML Anchor/merge-key 한계** — `yaml.v3`의 `&anchor`/`<<:`를 써도 오늘 부분 복제는 가능합니다. 단, `dva config migrate`/`init` 같은 line-edit 도구는 앵커를 보존하지 못하므로, 앵커 기반 설정은 마이그레이션 후 앵커가 풀린 상태로 저장됩니다. 앵커를 쓰려면 도구로 수정하지 않고 직접 편집해야 합니다.
+
 ### default_mode
 
 `default_mode`는 `--mode`(`-M`)를 지정하지 않았을 때 적용할 `modes` 엔트리를 선택합니다.

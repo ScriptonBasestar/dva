@@ -395,3 +395,54 @@ func TestDuplicatePlanDeclarationsCompositionPlans(t *testing.T) {
 		t.Fatalf("warnDuplicatePlanDeclarations() = %v, want one warning for equal composition plans", got)
 	}
 }
+
+// TestDuplicatePlanDeclarationsAliasSkipped verifies that alias plans are not
+// compared for duplicate declarations — they intentionally duplicate their target.
+func TestDuplicatePlanDeclarationsAliasSkipped(t *testing.T) {
+	plan := basePlanFixture()
+	alias := basePlanFixture()
+	alias.Alias = "target-plan"
+	alias.Entries = nil // Alias must not have entries
+
+	c := &Config{Plans: map[string]*PlanConfig{
+		"concrete": plan,
+		"alias":    alias,
+	}}
+	if got := c.warnDuplicatePlanDeclarations(); len(got) != 0 {
+		t.Fatalf("warnDuplicatePlanDeclarations() = %v, want none (alias plans should be skipped)", got)
+	}
+}
+
+// TestDuplicatePlanDeclarationsExtendsSkipped verifies that plans with extends
+// are not compared for duplicate declarations against their parent or siblings.
+func TestDuplicatePlanDeclarationsExtendsSkipped(t *testing.T) {
+	plan := basePlanFixture()
+	child := basePlanFixture()
+	child.Extends = "parent-plan"
+	child.Entries = []PlanEntry{{Name: "svc1", Runner: "compose", Order: 10, Services: []string{"web", "db", "cache"}}}
+
+	c := &Config{Plans: map[string]*PlanConfig{
+		"parent": plan,
+		"child":  child,
+	}}
+	if got := c.warnDuplicatePlanDeclarations(); len(got) != 0 {
+		t.Fatalf("warnDuplicatePlanDeclarations() = %v, want none (extends plans should be skipped)", got)
+	}
+}
+
+// TestDuplicatePlanDeclarationsAliasExtendsMutuallyExclusive verifies that a plan
+// with both alias and extends is skipped (validation catches the error).
+func TestDuplicatePlanDeclarationsAliasExtendsMutuallyExclusive(t *testing.T) {
+	plan := basePlanFixture()
+	aliasExtends := basePlanFixture()
+	aliasExtends.Alias = "target"
+	aliasExtends.Extends = "parent"
+
+	c := &Config{Plans: map[string]*PlanConfig{
+		"concrete": plan,
+		"alias-ext": aliasExtends,
+	}}
+	if got := c.warnDuplicatePlanDeclarations(); len(got) != 0 {
+		t.Fatalf("warnDuplicatePlanDeclarations() = %v, want none (mutually exclusive plans should be skipped)", got)
+	}
+}

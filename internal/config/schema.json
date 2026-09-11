@@ -692,6 +692,14 @@
           "additionalProperties": false,
           "properties": {
             "description": { "type": "string", "description": "Human-readable description of this plan" },
+            "alias": {
+              "type": "string",
+              "description": "Optional reference to another plan by name. When set, this plan becomes an alias for the target plan. Mutually exclusive with all other fields except description — it has no entries, vars, environment, site, endpoint_tags, or composes of its own."
+            },
+            "extends": {
+              "type": "string",
+              "description": "Optional reference to a single parent plan by name. When set, this plan inherits from the parent and can override fields. Mutually exclusive with alias and composes. The parent must be a concrete plan (not an alias or composition plan). Merge rules: scalar fields (description, environment, site, endpoint_tags) are overridden by child; vars is key-merged; entries are matched by name — a child entry with the same name replaces the parent entry entirely (no services union); new entries are appended."
+            },
             "environment": { "type": "string", "description": "Environment name to apply (references environments section)" },
             "site": { "type": "string", "description": "Site name to apply (references sites section)" },
             "endpoint_tags": {
@@ -728,7 +736,7 @@
             },
             "composes": {
               "type": "array",
-              "description": "Ordered list of composed plan references (root-aggregation composition, TASK-260 §3). Mutually exclusive with 'entries' on the same plan — a composition plan has no stack entries of its own and cannot declare environment/site/top-level vars.",
+              "description": "Ordered list of composed plan references (root-aggregation composition, TASK-260 §3). Mutually exclusive with 'entries' and 'extends' on the same plan — a composition plan has no stack entries of its own and cannot declare environment/site/top-level vars.",
               "items": {
                 "type": "object",
                 "additionalProperties": false,
@@ -755,6 +763,17 @@
               "entries": [
                 { "name": "core-compose", "runner": "compose", "order": 10, "profiles": ["monitoring"], "services": ["postgres", "redis"] },
                 { "name": "api", "runner": "native", "order": 20, "depends_on": ["core-compose"] }
+              ]
+            },
+            "hybrid": {
+              "alias": "local-dev",
+              "description": "Alias for local-dev"
+            },
+            "infra-full": {
+              "extends": "local-infra",
+              "description": "Extended plan with additional services",
+              "entries": [
+                { "name": "core-compose", "runner": "compose", "order": 10, "services": ["postgres", "redis", "minio", "grafana"] }
               ]
             }
           }]

@@ -521,6 +521,13 @@ func mergePlanConfig(base, other *PlanConfig) *PlanConfig {
 	if other.Description != "" {
 		base.Description = other.Description
 	}
+	// Alias and extends are structural — later layer wins entirely
+	if other.Alias != "" {
+		base.Alias = other.Alias
+	}
+	if other.Extends != "" {
+		base.Extends = other.Extends
+	}
 	if other.Environment != "" {
 		base.Environment = other.Environment
 	}

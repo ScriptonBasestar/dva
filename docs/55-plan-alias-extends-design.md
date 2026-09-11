@@ -1,6 +1,6 @@
-# 55. plans alias / extends 설계 (결정 대기)
+# 55. plans alias / extends 설계 (승인됨)
 
-> 상태: **승인 대기** (TASK-307, needs-human). 이 문서가 승인되기 전에는 구현하지 않는다.
+> 상태: **승인 완료** (TASK-307). 2026-09-11 결정 기록.
 > 용어는 [docs/40](40-declarative-stack-and-plans.md), plan 해석은 [docs/31](31-execution-plan-resolution.md).
 
 ## 1. 문제
@@ -98,12 +98,11 @@ plans:
   remedy)과 **plan 매개변수**(`--env` 대체)의 문제다. 이 문서 범위 밖으로 두고 별도 카드로
   다룬다.
 
-## 5. 결정이 필요한 항목
+## 5. 결정 기록 (2026-09-11)
 
-1. A만 구현하는가, B까지 가는가. (권고: A)
-2. alias의 `default_plan` 허용 여부. (권고: 허용, `dva show`는 대상 이름을 함께 표기)
-3. `dva ls` 표기 형식: `hybrid → local-dev` vs 별도 "Aliases" 절.
-4. C(anchor) 한계를 USAGE.md 어느 절에 두는가. (권고: "plans" 절 끝에 한 단락)
+1. **A + B 구현** — alias와 extends(단일 부모 상속) 모두 구현. 부분 복제(nd-stack)도 extends로 해결.
+2. **alias의 `default_plan` 허용** — `default_plan`이 alias를 가리킬 수 있으며, `dva show`는 대상 이름을 함께 표기.
+3. **`dva ls` 표기: 인라인 화살표** — `hybrid → local-dev` 형식으로 계획 목록에 관계 표시.
+4. **C(anchor) 한계 문서: "plans" 절 끝** — USAGE.md plans 섹션 마지막에 한 단락으로 anchor/merge-key 한계 명시.
 
-승인 후 작업: 스키마 `plans.<name>.alias`, 로더 치환, hard error 3종(미정의·자기·체인) 테스트,
-`dva ls`/`show` 표기, USAGE.md, nd-stack 설정을 alias+anchor로 재작성한 예시의 validate 출력.
+승인 후 작업: 스키마 `plans.<name>.alias` / `plans.<name>.extends`, 로더 치환·병합, hard error 4종(미정의·자기·체인·깊이 초과) 테스트, `dva ls`/`show` 표기, USAGE.md, nd-stack 설정을 alias+anchor+extends로 재작성한 예시의 validate 출력.

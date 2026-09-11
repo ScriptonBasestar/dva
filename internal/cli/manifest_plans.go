@@ -17,6 +17,8 @@ type ManifestPlan struct {
 	Owner           string              `json:"owner" yaml:"owner"`
 	Aliases         []string            `json:"aliases,omitempty" yaml:"aliases,omitempty"`
 	AliasOf         string              `json:"alias_of,omitempty" yaml:"alias_of,omitempty"`
+	Alias           string              `json:"alias,omitempty" yaml:"alias,omitempty"`
+	Extends         string              `json:"extends,omitempty" yaml:"extends,omitempty"`
 }
 
 type ManifestPlanEntry struct {
@@ -76,6 +78,8 @@ func buildManifestPlans(c *config.Config) map[string]ManifestPlan {
 			EndpointTags: planConfig.EndpointTags,
 			Entries:      make([]ManifestPlanEntry, 0, len(planConfig.Entries)),
 			Owner:        planOwnerName(planConfig),
+			Alias:        planConfig.Alias,
+			Extends:      planConfig.Extends,
 		}
 		if planConfig.CanonicalAddress != "" {
 			if name == planConfig.CanonicalAddress {

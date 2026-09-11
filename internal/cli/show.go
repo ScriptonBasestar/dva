@@ -204,6 +204,12 @@ func showText(c *config.Config) error {
 				continue
 			}
 			var parts []string
+			if plan.Alias != "" {
+				parts = append(parts, fmt.Sprintf("alias → %s", plan.Alias))
+			}
+			if plan.Extends != "" {
+				parts = append(parts, fmt.Sprintf("extends %s", plan.Extends))
+			}
 			if plan.Environment != "" {
 				parts = append(parts, "env:"+plan.Environment)
 			}

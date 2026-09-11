@@ -328,8 +328,21 @@ func printTable(c *config.Config, commands map[string]*runner.ResolvedCommand, k
 		maxLen := maxKeyLen(planKeys)
 		for _, name := range planKeys {
 			plan := c.Plans[name]
+			if plan == nil {
+				continue
+			}
 			desc := plan.Description
-			if desc == "" {
+			if plan.Alias != "" {
+				desc = fmt.Sprintf("→ %s", plan.Alias)
+				if plan.Description != "" {
+					desc += fmt.Sprintf(" (%s)", plan.Description)
+				}
+			} else if plan.Extends != "" {
+				desc = fmt.Sprintf("extends %s", plan.Extends)
+				if plan.Description != "" {
+					desc += fmt.Sprintf(" (%s)", plan.Description)
+				}
+			} else if desc == "" {
 				entryNames := make([]string, 0, len(plan.Entries))
 				for _, e := range plan.Entries {
 					entryNames = append(entryNames, e.Name)

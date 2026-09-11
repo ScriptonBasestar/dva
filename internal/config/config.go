@@ -88,6 +88,21 @@ type PlanConfig struct {
 	Entries      []PlanEntry        `yaml:"entries"`
 	Composes     []CompositionEntry `yaml:"composes"`
 
+	// Alias is an optional reference to another plan by name. When set, this plan
+	// becomes an alias for the target plan. Alias is mutually exclusive with all
+	// other plan fields except Description — it has no entries, vars, environment,
+	// site, endpoint_tags, or composes of its own.
+	Alias string `yaml:"alias"`
+
+	// Extends is an optional reference to a single parent plan by name. When set,
+	// this plan inherits from the parent and can override fields. Extends is mutually
+	// exclusive with Alias and Composes. The parent must be a concrete plan (not an
+	// alias or composition plan). Merge rules: scalar fields (Description, Environment,
+	// Site, EndpointTags) are overridden by child; Vars is key-merged; Entries are
+	// matched by Name — a child entry with the same Name replaces the parent entry
+	// entirely (no services union); new entries are appended.
+	Extends string `yaml:"extends"`
+
 	SubprojectPath string `yaml:"-"`
 
 	// SubprojectName is the subprojects: map key this plan was imported from ("" for

@@ -204,3 +204,51 @@ func TestConfigPlanHelpers(t *testing.T) {
 		t.Errorf("invalid explicit default plan source = %q, want none", source)
 	}
 }
+
+func TestPlanConfigAliasParsing(t *testing.T) {
+	yamlStr := `
+description: Alias for local-dev
+alias: local-dev
+`
+	var plan PlanConfig
+	if err := yaml.Unmarshal([]byte(yamlStr), &plan); err != nil {
+		t.Fatalf("failed to parse alias plan: %v", err)
+	}
+	if plan.Description != "Alias for local-dev" {
+		t.Errorf("description mismatch")
+	}
+	if plan.Alias != "local-dev" {
+		t.Errorf("alias mismatch: got %q", plan.Alias)
+	}
+	if len(plan.Entries) != 0 {
+		t.Errorf("alias plan should have no entries")
+	}
+}
+
+func TestPlanConfigExtendsParsing(t *testing.T) {
+	yamlStr := `
+description: Extended plan
+extends: local-infra
+entries:
+  - name: core-compose
+    runner: compose
+    order: 10
+    services: [postgres, redis, minio, grafana]
+`
+	var plan PlanConfig
+	if err := yaml.Unmarshal([]byte(yamlStr), &plan); err != nil {
+		t.Fatalf("failed to parse extends plan: %v", err)
+	}
+	if plan.Description != "Extended plan" {
+		t.Errorf("description mismatch")
+	}
+	if plan.Extends != "local-infra" {
+		t.Errorf("extends mismatch: got %q", plan.Extends)
+	}
+	if len(plan.Entries) != 1 {
+		t.Errorf("expected 1 entry, got %d", len(plan.Entries))
+	}
+	if plan.Entries[0].Services[2] != "minio" {
+		t.Errorf("entry services mismatch")
+	}
+}

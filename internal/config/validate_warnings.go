@@ -382,29 +382,24 @@ func (c *Config) warnDuplicatePlanDeclarations() []string {
 		if planA == nil {
 			continue
 		}
+		// Skip alias plans — they intentionally duplicate their target
+		if planA.Alias != "" {
+			continue
+		}
 		for _, nameB := range names[i+1:] {
 			planB := c.Plans[nameB]
 			if planB == nil {
 				continue
 			}
-			// A canonical import name and its `as:` alias are the SAME *PlanConfig
-			// reachable under two map keys (subproject.go's import loop assigns
-			// both `cfg.Plans[canonicalName]` and, when `as:` is given,
-			// `cfg.Plans[alias]` to one `importedPlan`). That is one declaration
-			// exposed twice, not two authors independently writing the same
-			// plan — comparing declaration fields on it would always "duplicate"
-			// and would warn on every aliased import.
+			// Skip alias plans
+			if planB.Alias != "" {
+				continue
+			}
+			// Same PlanConfig pointer (imported plan with `as:` alias)
 			if planA == planB {
 				continue
 			}
-			// Partition by SubprojectPath: "" for root-declared plans, the
-			// subproject directory for imported ones (subproject.go's
-			// cloneImportedPlan). Root and each subproject are independently
-			// authored namespaces — subprojects are resolved once, flatly,
-			// against the root (config.go's single Load call site), so this
-			// never compares root against a child or one child against another;
-			// a same-shaped plan across those boundaries is not one author's
-			// accidental duplicate.
+			// Partition by SubprojectPath
 			if planA.SubprojectPath != planB.SubprojectPath {
 				continue
 			}
