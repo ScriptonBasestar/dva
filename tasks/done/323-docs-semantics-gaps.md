@@ -165,7 +165,7 @@ C5의 산문은 세 경로가 걸리고 import 경로는 안 걸린다고 말한
 - [x] script_file:이 exec 방식(shebang+실행권한 필수)이라는 것을 USAGE.md에 명시 | verify: `/usr/bin/grep -qF '그런 보정 없이 선언된 파일 경로를 그대로' USAGE.md`
 - [x] native runner env: 필드 예시가 USAGE.md에 있는지 확인 — STALE: 2026-08-06 커밋(67107664)에서 이미 추가돼 이 카드보다 선행함, 신규 작업 불필요 | verify: `/usr/bin/grep -qF 'PORT: "8080"' USAGE.md`
 - [x] suggestion_ignore 정본 위치(checks 뒤, interaction 앞)를 표/예시로 USAGE.md에 명시 | verify: `/usr/bin/grep -qF '위 표의 순서가 그대로 canonical order입니다' USAGE.md`
-- [x] canonical order 예시가 deprecation 경고 없이 `dva config validate`를 통과한다 — 실린 블록을 추출해 직접 실행, EXIT=0 경고 0건 (게이트 결속은 TASK-357) | verify: `/usr/bin/grep -qF '에 넣으면 경고 없이 통과합니다' USAGE.md`
+- [x] canonical order 예시가 deprecation 경고 없이 `dva config validate`를 통과한다 — 실린 블록을 추출해 직접 실행, EXIT=0 경고 0건 (게이트 결속: TASK-357) | verify: `go run ./tools/yamlcheck`
 - [x] exclude_tags 네 경로의 실측 결과가 USAGE.md에 표로 있다 | verify: `/usr/bin/grep -qF '동시에 감춰져 있고 실행 가능합니다' USAGE.md`
 - [x] plan 경로에서 --env가 거부되고 같은 plan을 다른 env로 쓰려면 plan을 복제해야 함을 USAGE.md에 명시 | verify: `/usr/bin/grep -qF '같은 plan을 다른 environment로 한 번만 실행' USAGE.md`
 - [x] dva logs <plan>이 엔트리 2개 이상이면 이름 지정을 요구한다는 것과 native 엔트리 로그 경로를 USAGE.md에 명시 | verify: `/usr/bin/grep -qF '엔트리를 2개 이상 가지면 엔트리 이름을' USAGE.md`

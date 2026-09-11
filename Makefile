@@ -306,6 +306,7 @@ doc-check:
 	go run ./tools/cilabels
 	go run ./tools/flowcheck
 	go run ./tools/planprogress
+	go run ./tools/yamlcheck
 
 ## commit-check: Hold commit subjects since the gate's baseline to the format SSOT (CI)
 commit-check:

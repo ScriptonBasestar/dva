@@ -1206,7 +1206,12 @@ func validateCanonicalOrder(filePath string) []string {
 	if err != nil {
 		return nil
 	}
+	return validateCanonicalOrderFromBytes(data)
+}
 
+// validateCanonicalOrderFromBytes checks that top-level keys in raw YAML data
+// follow the canonical section order. Returns warnings for out-of-order keys.
+func validateCanonicalOrderFromBytes(data []byte) []string {
 	var doc yaml.Node
 	if err := yaml.Unmarshal(data, &doc); err != nil {
 		return nil

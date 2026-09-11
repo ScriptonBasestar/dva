@@ -862,7 +862,7 @@ interaction:
 `default_plan` → `environments` → `sites`가 나란히 놓인 전체 파일이며, 그대로
 `dva config validate`에 넣으면 경고 없이 통과합니다.
 
-```yaml
+```yaml dva.yml
 version: "0.1"
 
 vars:

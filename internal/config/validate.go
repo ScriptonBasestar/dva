@@ -515,3 +515,53 @@ func convertYAMLToJSON(v any) any {
 		return v
 	}
 }
+
+// ValidateConfigBytes decodes and validates a dva.yml configuration supplied as raw bytes.
+// It enforces the JSON schema, structural constraints, and collects all semantic warnings
+// (including canonical section ordering).
+func ValidateConfigBytes(data []byte) (*Config, []string, error) {
+	var hardErrs []error
+	if err := validateYAMLSchema(data); err != nil {
+		hardErrs = append(hardErrs, err)
+	}
+
+	cfg, err := decodeConfig(data)
+	if err != nil {
+		hardErrs = append(hardErrs, err)
+		return nil, nil, errors.Join(hardErrs...)
+	}
+
+	if _, err := finalizeLoadedConfig(cfg); err != nil {
+		hardErrs = append(hardErrs, err)
+	}
+
+	if err := cfg.validateRemoteDeclarations(); err != nil {
+		hardErrs = append(hardErrs, err)
+	}
+	if err := cfg.validateCIProfiles(); err != nil {
+		hardErrs = append(hardErrs, err)
+	}
+	if conflicts := ValidateReservedCommands(cfg.Interaction); len(conflicts) > 0 {
+		var lines []string
+		for _, conflict := range conflicts {
+			lines = append(lines, fmt.Sprintf("  - interaction.%s: %s", conflict.Name, ConflictAdvice(conflict.Name)))
+		}
+		hardErrs = append(hardErrs, fmt.Errorf("reserved command conflict in this config:\n%s", strings.Join(lines, "\n")))
+	}
+	if names := ReservedSubprojectNames(cfg.Subprojects); len(names) > 0 {
+		var lines []string
+		for _, name := range names {
+			lines = append(lines, fmt.Sprintf("  - subprojects.%s: %s", name, SubprojectConflictAdvice(name)))
+		}
+		hardErrs = append(hardErrs, fmt.Errorf("reserved subproject name in this config:\n%s", strings.Join(lines, "\n")))
+	}
+
+	warnings := cfg.ValidateWarnings()
+	warnings = append(warnings, validateCanonicalOrderFromBytes(data)...)
+
+	if len(hardErrs) > 0 {
+		return cfg, warnings, errors.Join(hardErrs...)
+	}
+	return cfg, warnings, nil
+}
+
