@@ -10,6 +10,10 @@ needs-human: false
 allowed-paths: [tasks/plan/006-devbox-dogfood-followup.md, tasks/plan/009-work-the-doccheck-defect-bundle-in-dependency-order.md, tasks/todo/351-warn-on-a-replace-hook-that-only-reruns-its-builtin.md, tasks/done/372-currentize-active-plan-metadata-after-task-339.md]
 created: 2026-09-10
 source: "2026-09-10 repository/plan review after TASK-339 integration"
+quality-review: conditional
+quality-review-date: 2026-09-11
+quality-review-evidence: "Criteria 1-4 verified 2026-09-11. Criterion 3 (needs-human: true in tasks/todo/351-*.md) is moot: TASK-351 has moved to done with needs-human: false, reflecting resolution of the decision gate after this card's criteria were authored. The outcome is acceptable — the human decision was made and recorded."
+quality-review-session: 1438093b-d243-4c4f-8985-48682b9b9802
 ---
 
 # Task 372: active plan metadata currentization

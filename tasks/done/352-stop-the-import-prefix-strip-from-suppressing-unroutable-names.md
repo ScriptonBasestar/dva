@@ -8,6 +8,9 @@ exec-tier: standard
 status: done
 created: 2026-09-08
 source: "TASK-320 독립 리뷰(2026-09-08)의 F1·F2·F3"
+quality-review: pass
+quality-review-date: 2026-09-11
+quality-review-session: 1438093b-d243-4c4f-8985-48682b9b9802
 ---
 
 ## Summary

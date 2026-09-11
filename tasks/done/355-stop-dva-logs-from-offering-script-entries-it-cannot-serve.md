@@ -10,6 +10,9 @@ created: 2026-09-08
 source: "TASK-323 독립 리뷰(2026-09-08) C4 — 문서 수정 중 드러난 코드 결함"
 needs-human: false
 verification-evidence: "2026-09-10: pre-fix source made both focused regressions fail; focused and full internal/cli tests, USAGE and canonical skill currentization, doc-check, diff check, and DVA commit CI passed."
+quality-review: pass
+quality-review-date: 2026-09-11
+quality-review-session: 1438093b-d243-4c4f-8985-48682b9b9802
 ---
 
 ## Summary

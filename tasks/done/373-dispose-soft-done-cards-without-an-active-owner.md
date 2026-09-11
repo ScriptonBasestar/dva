@@ -5,9 +5,12 @@ type: chore
 priority: P2
 effort: M
 exec-tier: standard
-status: todo
+status: done
 needs-human: false
 created: 2026-09-10
+quality-review: pass
+quality-review-date: 2026-09-11
+quality-review-session: 1438093b-d243-4c4f-8985-48682b9b9802
 source: "TASK-367 2026-09-10 done-backlog inventory — six independent cards have no disposition owner"
 ---
 
@@ -33,10 +36,10 @@ the receipt contract tracked by ISSUE-001.
 
 ## Completion Criteria
 
-- [ ] Every scoped card has a quality-review verdict or has left `tasks/done/` | verify: human — inspect the six scoped paths and their frontmatter
-- [ ] Every waived verdict carries card-specific quality-review evidence | verify: human — inspect each waived scoped card
-- [ ] A failed review is routed to `todo` or `issue` with an actionable finding | verify: human — inspect any non-pass/conditional outcome
-- [ ] Documentation gate passes | verify: `make doc-check` (regression-guard)
+- [x] Every scoped card has a quality-review verdict or has left `tasks/done/` | verify: human — inspect the six scoped paths and their frontmatter
+- [x] Every waived verdict carries card-specific quality-review evidence | verify: human — inspect each waived scoped card
+- [x] A failed review is routed to `todo` or `issue` with an actionable finding | verify: human — inspect any non-pass/conditional outcome
+- [x] Documentation gate passes | verify: `make doc-check` (regression-guard)
 
 ## Notes
 
