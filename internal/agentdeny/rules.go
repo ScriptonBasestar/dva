@@ -32,12 +32,15 @@ type GatedCommand struct {
 //
 // This is the complete set of TASK-281 §3-7 gated commands. A future command behind an
 // env_bridge-shaped gate must be added here in the same change, and since TASK-337 that is
-// checked rather than only requested: internal/cli.TestGatedCommandsCoverEveryGatedSurface
+// enforced rather than requested: internal/cli.TestGatedCommandsCoverEveryGatedSurface
 // derives the gated surface from internal/cli's own source and fails in both directions —
 // a gated command with no entry here, and an entry naming an argv that no gated command
-// produces. The check sees a command declared as a package-level `var x = &cobra.Command{…}`
-// with a literal Use and a call-shaped RunE; commands built the other ways internal/cli
-// builds them are not seen yet, so those still rely on the author. See
+// produces. The check (extended by TASK-353) recognises four command shapes: package-level
+// `var x = &cobra.Command{…}` with literal Use, commands whose RunE is a bare function
+// identifier (`RunE: runFn`), cobra literals assigned inside init() or local := statements,
+// and non-literal Use fields (reported as a hard failure rather than a silent skip). The
+// fifth shape — inline anonymous literals passed directly to AddCommand — is not yet
+// detected; a new gated command in that shape must be registered here by the author. See
 // docs/agent-deny-rules.md "Binding this list to the CLI".
 var GatedCommands = []GatedCommand{
 	{

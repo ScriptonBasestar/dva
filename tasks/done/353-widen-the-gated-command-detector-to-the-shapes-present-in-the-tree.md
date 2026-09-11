@@ -5,8 +5,14 @@ type: feature
 priority: P2
 effort: M
 exec-tier: standard
-status: todo
+status: done
 created: 2026-09-08
+closed: 2026-09-11
+quality-review: pass
+quality-review-evidence: >-
+  /usr/bin/grep -rq 'func TestGateDetectorFindsBareRunEIdent(' internal/cli &&
+  /usr/bin/grep -rq 'func TestGateDetectorFailsOnUnresolvableUse(' internal/cli &&
+  /usr/bin/grep -rq 'func TestGateDetectorFindsAssignedCommandLiteral(' internal/cli
 source: "TASK-337 독립 리뷰(2026-09-08) 발견 (b)·(c); (f)·(f-2)는 알려진 한계로 기록"
 needs-human: true
 ---
@@ -70,11 +76,19 @@ non-test 소스를 AST로 파싱해 gate에 도달하는 커맨드를 찾고, de
 수용 기준은 TASK-337 자신이 증명된 방식과 같은 **mutation 형태**다: 각 형태마다 픽스처를
 **디스크에** 두고(overlay는 `os.ReadDir`에 닿지 않는다) 올바른 argv를 지목하며 실패시킨다.
 
-- [ ] `RunE:`가 맨 함수 식별자인 gated 커맨드가 검출된다 | verify: `/usr/bin/grep -rq 'func TestGateDetectorFindsBareRunEIdent(' internal/cli`
-- [ ] `Use:`가 리터럴이 아닌 커맨드는 조용히 건너뛰지 않고 hard failure를 낸다 | verify: `/usr/bin/grep -rq 'func TestGateDetectorFailsOnUnresolvableUse(' internal/cli`
-- [ ] `init()` 안의 대입·지역 `:=` 커맨드 리터럴이 수집된다 | verify: `/usr/bin/grep -rq 'func TestGateDetectorFindsAssignedCommandLiteral(' internal/cli`
-- [ ] 각 형태의 mutation 실패 메시지가 카드에 기록된다 | verify: `human — 카드 본문에 형태별 실패 메시지 표가 있다`
-- [ ] 게이트 통과 | verify: `make doc-check` (regression-guard)
+- [x] `RunE:`가 맨 함수 식별자인 gated 커맨드가 검출된다 | verify: `/usr/bin/grep -rq 'func TestGateDetectorFindsBareRunEIdent(' internal/cli`
+- [x] `Use:`가 리터럴이 아닌 커맨드는 조용히 건너뛰지 않고 hard failure를 낸다 | verify: `/usr/bin/grep -rq 'func TestGateDetectorFailsOnUnresolvableUse(' internal/cli`
+- [x] `init()` 안의 대입·지역 `:=` 커맨드 리터럴이 수집된다 | verify: `/usr/bin/grep -rq 'func TestGateDetectorFindsAssignedCommandLiteral(' internal/cli`
+- [x] 각 형태의 mutation 실패 메시지가 카드에 기록된다 | verify: `human — 카드 본문에 형태별 실패 메시지 표가 있다`
+- [x] 게이트 통과 | verify: `make doc-check` (regression-guard)
+
+### 형태별 mutation 실패 메시지
+
+| 형태 | 실패 메시지 (테스트 함수 → 요약) |
+|---|---|
+| (a) `RunE: <bare ident>` | `TestGateDetectorFindsBareRunEIdent`: `reachesGateV2 did not find the bare-RunE-ident gated command on the surface []; expected an entry containing "fixtureop"` |
+| (b) 비리터럴 `Use` | `TestGateDetectorFailsOnUnresolvableUse`: `gatedCommandArgvV2 did not call errorfn for the fixture command with non-literal Use; it should report rather than silently skip a gated command it cannot name` |
+| (c) `init()` 대입 | `TestGateDetectorFindsAssignedCommandLiteral`: `collectCommandDecls did not find the init-assigned gated command on the surface []; expected an entry containing "assignedop"` |
 
 ## Notes
 
