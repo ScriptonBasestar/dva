@@ -96,3 +96,38 @@ drift_ignore:
 
 두 devbox의 `dva.yml`은 이번 실측에서 수정하지 않았다(백업·복원 후 `git status` 청결 확인).
 실제 이행은 각 프로젝트 담당 카드에서 한다.
+
+## review-309 최종 verdict (2026-09-13)
+
+**`pass`** — 1라운드 `conditional`의 블로킹 2건과 비블로킹 4건을 `1e15275`가 닫았고,
+2라운드 리뷰어가 독립 검증했다.
+
+| 라운드 1 finding | 처리 |
+|---|---|
+| #1 `driftIgnoreName`이 심볼릭 링크 경로에서 basename으로 붕괴 | canonical base 재시도 + 회귀 테스트 |
+| #2 dogfood 표의 dripter 노출 건수 11 | 22로 정정, 74 = 52 + 22 검산 줄 추가 |
+| #3 `--suggest-ignore` 주석의 없는 구분 | `--json` 가드가 실제 이유임을 명시 |
+| #4 suggestion stale이 빈 표본에서 전건 유죄 | `len(universe) > 0` 가드 + 테스트 |
+| #5 문서·스키마의 "beside dva.yml" | 실제 스캔 집합으로 정정 |
+| #7 죽은 `matchesSuggestionIgnore` | 삭제, 테스트는 `matchIgnorePattern` 직접 검증 |
+
+**회귀 테스트는 반증으로 확인됐다.** 구현자와 리뷰어가 각각 옛 함수 본문을 되돌려
+`TestDriftIgnoreMatchesThroughASymlinkedConfigDirectory`의 세 단언이 전부 FAIL 하는
+것을 재현했다(리뷰어는 `git archive` 사본에서). `#4`의 가드도 같은 방식으로,
+되돌리면 `TestStaleSuggestionIgnoreStandsDownWhenThereIsNothingToJudgeAgainst`가
+두 패턴을 모두 유죄로 만들며 FAIL 한다. 통과가 아니라 실패가 테스트의 값이다.
+
+**요약 줄의 숫자는 억제 건수다** — 리뷰어가 `summarySuffix`
+(`internal/cli/validate_suppression.go`)를 읽어 확인했다. 그래서 74 = 억제 52 +
+노출 22가 성립한다. 이 한 줄을 노출 건수로 읽으면 표의 검산 자체가 무너진다.
+
+2라운드가 추가로 낸 low 2건도 이 카드와 함께 닫았다: docs/56 §1 표가 삭제된
+`matchesSuggestionIgnore`를 계속 가리키고 있었고(`make doc-check`가 잡지 못하는
+종류의 부패다), `#4` 가드의 주석이 조건을 실제보다 좁게 서술하고 있었다 —
+`##` 문서화 타겟이 없는 Makefile도 빈 universe를 만든다.
+
+**남는 한계(이번 변경 이전부터 있던 것, 함수 주석에 이미 명시)**: 스캔 디렉터리가
+config 트리를 완전히 벗어난 심볼릭 링크로 도달되면 `driftIgnoreName`은 여전히
+basename으로 후퇴하고, 그러면 basename 패턴이 다른 디렉터리의 동명 파일까지 덮을 수
+있다. `/tmp → /private/tmp`처럼 config 디렉터리 자신이 링크 뒤에 있는 경우는
+`1e15275`가 덮는다.

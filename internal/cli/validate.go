@@ -849,9 +849,10 @@ func detectConfigSuggestionWarningsWithSuppressions(c *config.Config) ([]string,
 	// The universe is every documented target and script before the built-in exclusions,
 	// not the candidate list above: see allDocumentedMakefileTargetNamesInDir.
 	//
-	// An empty universe means no Makefile and no package.json were found at all, not that
-	// every pattern went unused. Condemning the whole list there would be a verdict drawn
-	// from an empty sample — the same reason the drift side skips its stale check when the
+	// An empty universe means nothing was examined — no Makefile and no package.json, or
+	// ones that declare no documented target and no script — not that every pattern went
+	// unused. Condemning the whole list there would be a verdict drawn from an empty
+	// sample, the same reason the drift side skips its stale check when the
 	// unregistered-file scan does not run.
 	universe := append(allDocumentedMakefileTargetNamesInDir(c.FileDir()), allPackageScriptNamesInDir(c.FileDir())...)
 	if len(universe) > 0 {

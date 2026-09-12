@@ -10,7 +10,7 @@
 
 | 출력 | 생산자 | 억제 수단 |
 |---|---|---|
-| suggestion: Makefile/package.json 타겟을 interaction으로 감싸라는 제안 | `internal/cli/validate.go` (`matchesSuggestionIgnore`, :642) | `suggestion_ignore: [glob...]` — 타겟 이름 glob |
+| suggestion: Makefile/package.json 타겟을 interaction으로 감싸라는 제안 | `detectConfigSuggestionWarnings` | `suggestion_ignore: [glob...]` — 타겟 이름 glob |
 | drift: (a) 루트 compose 자동탐지 파일이 `compose.files`에 없음, (b) 선언된 compose 파일이 디스크에 없음, (c) interaction `service`가 compose에 없음 | `detectConfigDriftWarnings` (:385) | 없음 |
 | 시맨틱 경고 28종 | `config.ValidateWarnings()` | 없음 (설계상 의도: 설정을 고치는 것이 답) |
 
