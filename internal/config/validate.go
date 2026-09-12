@@ -245,6 +245,7 @@ func (c *Config) Validate() error {
 	}
 
 	errs = append(errs, c.validateHookPlacement()...)
+	errs = append(errs, c.validateHookPlanFilters()...)
 
 	// Stack is a map: sort so two problems are reported in the same order on every run.
 	entryNames := make([]string, 0, len(c.Stack))
@@ -386,6 +387,64 @@ func (c *Config) validateHookPlacement() []error {
 	// c.Interaction is a map, so without this a config with two violations lists them in a
 	// different order on each run (TASK-128). All of them are returned, not just the first,
 	// so Validate can report every dead hook in one pass (TASK-305).
+	sort.Strings(problems)
+	errs := make([]error, 0, len(problems))
+	for _, p := range problems {
+		errs = append(errs, errors.New(p))
+	}
+	return errs
+}
+
+// validateHookPlanFilters rejects a `plans:` hook filter that names a plan this dva.yml
+// does not declare.
+//
+// An error rather than a warning, and the reason is the same one that makes the filter
+// worth having. A hook whose filter is misspelled matches no routed plan, so it is skipped
+// on every invocation — and skipping is exactly what a correct filter does. docs/64 §3 makes
+// the skip announce itself, but that line says "this step did not run", not "this step can
+// never run": the two are indistinguishable from the output, and only validate can tell them
+// apart because only validate knows which plans exist. `default_plan` naming a missing plan
+// is refused here for the same reason a few lines up, and this is the same mistake one level
+// down.
+//
+// Filters are walked wherever hooks are, including under `subcommands`. Those hooks are
+// already refused by validateHookPlacement and a reader may reasonably ask why the filter on
+// a dead hook is worth a second error: because both errors are returned in one pass
+// (TASK-305), and reporting only the placement would send the author to fix it and meet the
+// typo on the next run.
+func (c *Config) validateHookPlanFilters() []error {
+	var problems []string
+
+	check := func(path string, items []ProvisionItem) {
+		for i, item := range items {
+			for _, want := range item.Plans {
+				if _, ok := c.Plans[want]; ok {
+					continue
+				}
+				if len(c.Plans) == 0 {
+					problems = append(problems, fmt.Sprintf(
+						"%s[%d].plans: %q is not a declared plan — this dva.yml declares no plans at all, "+
+							"so this filter can never match and the step never runs. Remove the filter, "+
+							"or declare the plan under `plans:`", path, i, want))
+					continue
+				}
+				problems = append(problems, fmt.Sprintf(
+					"%s[%d].plans: %q is not a declared plan, so this filter can never match and the "+
+						"step never runs. Available: %s", path, i, want, strings.Join(sortedPlanNames(c), ", ")))
+			}
+		}
+	}
+
+	eachInteractionNode(c.Interaction, func(path string, cmd *InteractionCommand, _ inheritedExec) {
+		check(path+".before", cmd.Before)
+		check(path+".replace", cmd.Replace)
+		check(path+".after", cmd.After)
+	})
+
+	if len(problems) == 0 {
+		return nil
+	}
+	// c.Interaction is a map (TASK-128): sort so two typos report in the same order every run.
 	sort.Strings(problems)
 	errs := make([]error, 0, len(problems))
 	for _, p := range problems {

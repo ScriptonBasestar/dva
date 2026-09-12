@@ -70,6 +70,7 @@ func (c *Config) ValidateWarnings() []string {
 	warnings = append(warnings, c.warnUnreachableCommands()...)
 	warnings = append(warnings, c.warnInertProvisionSteps()...)
 	warnings = append(warnings, c.warnIgnoredParallelSteps()...)
+	warnings = append(warnings, c.warnIgnoredPlanFilters()...)
 	warnings = append(warnings, c.warnDuplicatePlanDeclarations()...)
 	warnings = append(warnings, c.warnMultiplePlansWithoutDefault()...)
 	warnings = append(warnings, c.warnPlanServicesNotDeclared()...)
@@ -350,6 +351,58 @@ func (c *Config) warnIgnoredParallelSteps() []string {
 		collect(path+".replace", cmd.Replace)
 		collect(path+".after", cmd.After)
 	})
+
+	sort.Strings(warnings)
+	return warnings
+}
+
+// warnIgnoredPlanFilters flags a `plans:` filter where nothing routes a plan to compare it
+// against.
+//
+// `plans:` reaches `provision:` and `interaction.*.steps` only because those share the
+// ProvisionItem type with hooks, exactly as `parallel:` reaches hooks from the other
+// direction. Neither of those two paths has a routed plan: `dva provision` and `dva run` take
+// a command name, not a plan name, so the filter parses, validates, and is dropped.
+//
+// A warning rather than an error, following warnIgnoredParallelSteps: the key does nothing
+// here, and refusing it would fail configs over a line that changes no behaviour. It differs
+// from the parallel case in which direction the silence runs — a dropped `parallel:` produces
+// the right output more slowly, while a dropped `plans:` produces the output of a step the
+// author believed was filtered out. That is the worse of the two, which is why the message
+// says what the key did rather than only that it was ignored.
+//
+// Hook phases are deliberately not walked: there the key works. A hook filter naming a
+// missing plan is a validateHookPlanFilters error, not a warning here.
+func (c *Config) warnIgnoredPlanFilters() []string {
+	var warnings []string
+
+	collect := func(path string, items []ProvisionItem) {
+		for i, item := range items {
+			if len(item.Plans) == 0 {
+				continue
+			}
+			label := item.Step
+			if label == "" {
+				label = fmt.Sprintf("step %d", i+1)
+			}
+			warnings = append(warnings, fmt.Sprintf("%s[%d] %q: %s", path, i, label, IgnoredPlanFilterMessage))
+		}
+	}
+
+	eachInteractionNode(c.Interaction, func(path string, cmd *InteractionCommand, _ inheritedExec) {
+		collect(path+".steps", cmd.Steps)
+	})
+
+	// c.Provision.Profiles is a map (TASK-128): walk it in name order so two configs with
+	// the same defect report it identically on every run.
+	profileNames := make([]string, 0, len(c.Provision.Profiles))
+	for name := range c.Provision.Profiles {
+		profileNames = append(profileNames, name)
+	}
+	sort.Strings(profileNames)
+	for _, name := range profileNames {
+		collect("provision."+name, c.Provision.Profiles[name])
+	}
 
 	sort.Strings(warnings)
 	return warnings

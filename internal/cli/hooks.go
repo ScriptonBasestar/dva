@@ -44,7 +44,7 @@ func wrapWithHooks(cmdName string, cmd *cobra.Command) {
 		}
 
 		rootLoad := rootEnvLoad(c)
-		hookConfig, err := hookOwnerConfig(c, cmdName, args)
+		hookConfig, routedPlan, err := hookOwnerConfig(c, cmdName, args)
 		if err != nil {
 			return err
 		}
@@ -52,6 +52,15 @@ func wrapWithHooks(cmdName string, cmd *cobra.Command) {
 		if ic == nil || !ic.HasHooks() {
 			return original(cmd, args)
 		}
+
+		// Filter every phase against the routed plan before any of them is measured
+		// (TASK-331, docs/64). `replace` in particular: the `len(...) > 0` test below decides
+		// whether the built-in runs at all, so filtering after it would let a `replace:` list
+		// this plan excludes suppress the built-in and then run nothing — the one outcome the
+		// declaration cannot mean.
+		before, skippedBefore := config.StepsForPlan(ic.Before, routedPlan)
+		replace, skippedReplace := config.StepsForPlan(ic.Replace, routedPlan)
+		after, skippedAfter := config.StepsForPlan(ic.After, routedPlan)
 
 		load := rootLoad
 		if hookConfig != c {
@@ -94,21 +103,23 @@ func wrapWithHooks(cmdName string, cmd *cobra.Command) {
 		he := e.WithHookDepth()
 
 		// Phase 1: before hooks (fail-fast)
-		if len(ic.Before) > 0 {
-			if err := runHookSteps(he, hookConfig, "before", cmdName, ic.Before); err != nil {
+		reportSkippedHookSteps("before", cmdName, skippedBefore)
+		if len(before) > 0 {
+			if err := runHookSteps(he, hookConfig, "before", cmdName, before); err != nil {
 				return err
 			}
 		}
 
 		// Phase 2: built-in or replace
-		if len(ic.Replace) > 0 {
-			if err := runHookSteps(he, hookConfig, "replace", cmdName, ic.Replace); err != nil {
+		reportSkippedHookSteps("replace", cmdName, skippedReplace)
+		if len(replace) > 0 {
+			if err := runHookSteps(he, hookConfig, "replace", cmdName, replace); err != nil {
 				return err
 			}
 		} else {
 			// Force subprocess mode if after-hooks need to run,
 			// because execComposePassthrough uses syscall.Exec (process replacement)
-			if len(ic.After) > 0 {
+			if len(after) > 0 {
 				forceSubprocess = true
 				defer func() { forceSubprocess = false }()
 			}
@@ -118,8 +129,9 @@ func wrapWithHooks(cmdName string, cmd *cobra.Command) {
 		}
 
 		// Phase 3: after hooks
-		if len(ic.After) > 0 {
-			if err := runHookSteps(he, hookConfig, "after", cmdName, ic.After); err != nil {
+		reportSkippedHookSteps("after", cmdName, skippedAfter)
+		if len(after) > 0 {
+			if err := runHookSteps(he, hookConfig, "after", cmdName, after); err != nil {
 				return err
 			}
 		}
@@ -131,21 +143,38 @@ func wrapWithHooks(cmdName string, cmd *cobra.Command) {
 // hookOwnerConfig selects the same project owner the built-in plan path will use.
 // Parent hooks remain the owner for whole-stack and root-plan invocations; a
 // standalone imported plan is wrapped only by its child's lifecycle hooks.
-func hookOwnerConfig(root *config.Config, cmdName string, args []string) (*config.Config, error) {
+// It also returns the routed plan name, which `plans:` hook filters compare against
+// (TASK-331). "" means nothing routed — no plan argument, no `default_plan`, or a dva.yml
+// with no plans — and is deliberately the same value the filter refuses to match, so a
+// filtered step stays skipped rather than falling back to "run everywhere". The name is the
+// route's, not the argument's: with `default_plan: design`, a bare `dva up` reports `design`.
+func hookOwnerConfig(root *config.Config, cmdName string, args []string) (*config.Config, string, error) {
 	routeArgs, err := hookPlanRoutingArgs(cmdName, args)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	planName, _, ok := detectPlanRoute(root, routeArgs)
 	if !ok {
-		return root, nil
+		return root, "", nil
 	}
 	resolved, err := lifecycle.ResolvePlan(root, planName, nil)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
-	return resolved.OwnerConfig(root), nil
+	return resolved.OwnerConfig(root), planName, nil
+}
+
+// reportSkippedHookSteps announces the steps a `plans:` filter excluded.
+//
+// Printed even though nothing ran, and that is the point: the failure this key exists to fix
+// was a hook firing where it did not belong, and the failure it introduces is a hook silently
+// not firing where it did. Only one of those two is visible without a line here. The prefix
+// matches runHookSteps so both belong to the same phase in a scrolled log. TASK-331, docs/64 §3.
+func reportSkippedHookSteps(phase, cmdName string, skipped []string) {
+	for _, line := range skipped {
+		fmt.Fprintf(os.Stderr, "[hook:%s:%s] %s\n", phase, cmdName, line)
+	}
 }
 
 // hookPlanRoutingArgs applies the same command-specific normalization as the wrapped

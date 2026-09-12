@@ -845,8 +845,24 @@ mode-aware compose passthrough: 'dva build api' still means the 'api' service.`,
 					// executed for real once nested. Delegating settles all of it, and brings the
 					// compose keys — which the copy did not implement — to the nested path.
 					// TASK-093.
+					//
+					// The plan filter is applied against "" and not against a routed name,
+					// which is exact rather than a simplification: detectPlanRoute above
+					// already returned ok=false, so nothing routed on this path by
+					// construction. A `plans:`-filtered step therefore never runs here, and
+					// the branch below distinguishes that from "no replace declared" — the
+					// original message would otherwise send its reader looking for a
+					// declaration that is present and filtered out. TASK-331.
 					if ic, ok := c.Interaction["build"]; ok && len(ic.Replace) > 0 {
-						return runHookSteps(e, c, "replace", "build", ic.Replace)
+						replace, skipped := config.StepsForPlan(ic.Replace, "")
+						reportSkippedHookSteps("replace", "build", skipped)
+						if len(replace) > 0 {
+							return runHookSteps(e, c, "replace", "build", replace)
+						}
+						return fmt.Errorf("mode %q build=native but every interaction.build.replace step is "+
+							"filtered out by its 'plans:' — no plan routed this invocation, and a filter never "+
+							"matches that. Run 'dva build <plan>', or drop the filter from a step that must "+
+							"always run", mode)
 					}
 					return fmt.Errorf("mode %q build=native but no interaction.build.replace defined", mode)
 				default:

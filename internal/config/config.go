@@ -629,6 +629,13 @@ type ProvisionItem struct {
 	Note     string `yaml:"note"`
 	Parallel bool   `yaml:"parallel"` // Run concurrently with consecutive parallel steps
 
+	// Plans restricts a hook step to the named plans. Empty means every plan, which is
+	// what every pre-TASK-331 config says by omission. Honoured under
+	// interaction.<hookable>.before/replace/after only; `provision:` and
+	// interaction.*.steps have no routed plan to compare against, and validate warns
+	// when the key appears there (docs/64 §4, mirroring `parallel:`).
+	Plans []string `yaml:"plans"`
+
 	// Compose-aware commands (inherit compose.files and compose.project_name)
 	ComposeUp   []string `yaml:"compose_up"`   // Services to start: [postgres, minio, redis]
 	ComposeExec string   `yaml:"compose_exec"` // Command in service: "pg_isready -U ndstack"
@@ -693,6 +700,13 @@ const InertStepMessage = "nothing ran — this item is a label with no 'run:'. A
 // and dropped. TASK-140.
 const IgnoredParallelMessage = "'parallel:' is ignored here — interaction steps always run sequentially. It is honoured under 'provision:'."
 
+// IgnoredPlanFilterMessage is what validate prints where `plans:` cannot filter anything.
+//
+// It names the consequence rather than only the fact, because the two failure directions are
+// not symmetric with IgnoredParallelMessage above: a dropped `parallel:` still does the right
+// work, while a dropped `plans:` runs a step the author believed was excluded. TASK-331.
+const IgnoredPlanFilterMessage = "'plans:' is ignored here and this step runs unfiltered — only interaction hooks (before/replace/after) route a plan to filter on. Move the step to a hook, or drop the key."
+
 // StepsIgnoreParallel reports whether a step list asks for concurrency the executor will not
 // give it, so both executors decide to warn from one place.
 //
@@ -710,6 +724,66 @@ func StepsIgnoreParallel(steps []ProvisionItem) bool {
 		}
 	}
 	return false
+}
+
+// AppliesToPlan reports whether this hook step runs for the plan a lifecycle command
+// routed to. planName is "" when nothing routed — no argument, no `default_plan`, or a
+// dva.yml with no plans at all.
+//
+// Omitting `plans:` means every plan, so the configs that existed before the key did
+// keep running exactly as they did. A filter that names plans never matches "" : the
+// author said which plans the step belongs to, and "no plan" is not one of them. docs/64 §3
+// carries the full table.
+func (p *ProvisionItem) AppliesToPlan(planName string) bool {
+	if len(p.Plans) == 0 {
+		return true
+	}
+	for _, want := range p.Plans {
+		if want == planName {
+			return true
+		}
+	}
+	return false
+}
+
+// StepsForPlan returns the steps of a hook phase that apply to planName, and the labels of
+// those it filtered out.
+//
+// The skipped labels are returned rather than discarded because the caller has to announce
+// them (docs/64 §3): a declared step that does not run and says nothing leaves "why did my
+// hook not fire" unanswerable from the output. Labels are resolved here, against the
+// pre-filter index, so a skipped step's synthesised "step N" matches the position the author
+// counts in dva.yml rather than its position in the surviving slice.
+//
+// Returning a filtered slice rather than filtering at the call site is what lets
+// wrapWithHooks ask `len(replace) > 0` *after* filtering. Asking before would let a
+// `replace:` list that this plan filters away empty out into a no-op that also suppresses the
+// built-in — the command would do nothing at all, where the declaration means "on this plan,
+// use the built-in".
+func StepsForPlan(steps []ProvisionItem, planName string) (kept []ProvisionItem, skipped []string) {
+	for i, s := range steps {
+		if s.AppliesToPlan(planName) {
+			kept = append(kept, s)
+			continue
+		}
+		label := s.Step
+		if label == "" {
+			label = fmt.Sprintf("step %d", i+1)
+		}
+		skipped = append(skipped, fmt.Sprintf("%s — skipped: plans: [%s], running plan is %s",
+			label, strings.Join(s.Plans, ", "), describeRoutedPlan(planName)))
+	}
+	return kept, skipped
+}
+
+// describeRoutedPlan renders the routed plan for the skip line. "" is not a plan name and
+// quoting it as one yields an empty pair of quotes, which reads like a plan whose name
+// really is the empty string.
+func describeRoutedPlan(planName string) string {
+	if planName == "" {
+		return "none"
+	}
+	return "'" + planName + "'"
 }
 
 // IsInert reports whether this item carries no payload at all: nothing to run, nothing to

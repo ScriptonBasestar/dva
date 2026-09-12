@@ -1708,6 +1708,55 @@ interaction:
 안에서 `dva`를 다시 호출해도 재귀 가드가 걸려 안쪽 호출은 훅 없이 내장 커맨드만
 실행합니다.
 
+**훅 항목의 plan 스코프 (`plans:`)** — 훅 스텝 하나를 특정 plan에서만 돌리려면 그 항목에
+`plans:`를 답니다. `plans:`가 없는 항목은 **모든 plan에서 실행**됩니다 — 이 규칙 이전에
+쓰인 모든 설정이 생략으로 그렇게 말하고 있기 때문입니다.
+
+```yaml
+plans:
+  design: {entries: [{name: compose}]}
+  verify: {entries: [{name: compose}]}
+
+interaction:
+  up:
+    after:
+      - step: "Penpot 계정 시드"
+        plans: [design]        # dva up design 에서만 실행
+        run: "./scripts/seed-penpot.sh"
+      - step: "헬스 요약"
+        run: "./scripts/summary.sh"   # 필터 없음 → 모든 plan에서 실행
+```
+
+| 훅 항목 | 라우팅된 plan | 실행 |
+| --- | --- | --- |
+| `plans:` 없음 | 있음 | 실행 |
+| `plans:` 없음 | 없음 (`dva up`) | 실행 |
+| `plans: [design]` | `design` | 실행 |
+| `plans: [design]` | `verify` | 건너뜀 |
+| `plans: [design]` | 없음 (`dva up`) | 건너뜀 |
+
+건너뛴 스텝은 조용히 사라지지 않고 이유와 함께 stderr에 한 줄 남습니다 — 훅이 안 도는
+것과 훅이 죽은 것은 출력만 봐서는 같기 때문입니다:
+
+```text
+[hook:after:up] Penpot 계정 시드 — skipped: plans: [design], running plan is 'verify'
+```
+
+`plans:`에 **선언되지 않은 plan 이름**을 쓰면 경고가 아니라 `dva validate` **에러**입니다.
+오타 난 필터는 어떤 plan과도 안 맞아 항상 건너뛰는데, 그 모습이 올바른 필터가 하는 일과
+완전히 같아서 실행 출력만으로는 구분할 수 없기 때문입니다.
+
+`plans:`는 **훅(`before`/`replace`/`after`)에서만** 동작합니다. `provision:` 프로파일과
+`interaction.*.steps`는 같은 항목 타입을 공유해서 키가 파싱은 되지만 비교할 plan 자체가
+라우팅되지 않으므로 필터가 버려집니다 — 그 스텝은 **필터 없이 그대로 실행**됩니다.
+`dva validate`가 경고로 알려 줍니다(`parallel:`이 반대 방향으로 같은 구조를 갖습니다).
+
+`replace` 훅이 전부 필터로 걸러지면 내장 커맨드가 그대로 실행됩니다. `replace`가 선언돼
+있다는 사실이 아니라 **이번 실행에 남은 `replace` 스텝이 있는지**로 판정하므로, plan을
+안 타는 실행에서 아무것도 안 도는 상태가 되지 않습니다.
+
+설계 근거: `docs/64-plan-scoped-interaction-hooks.md`.
+
 **`--dry-run`/`--explain`은 `run:`에 적힌 `dva …` 재귀 호출 안쪽까지 들여다보지 않습니다.**
 `steps[].run: "dva down other-plan"`처럼 스텝이 다른 `dva` 명령을 그대로 문자열로 호출하면,
 바깥쪽 `dva --dry-run run <name>`은 그 줄을 `run: dva down other-plan`이라는 **문자열

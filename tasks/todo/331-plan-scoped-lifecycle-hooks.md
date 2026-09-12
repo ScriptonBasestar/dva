@@ -8,7 +8,7 @@ exec-tier: strong
 created-at: 2026-09-07T12:00:00+09:00
 source: "dogfood: careerarchive-devbox (2026-09-07)"
 status: todo
-needs-human: true
+needs-human: false
 ---
 
 # Task 331: interaction 훅을 명령 이름이 아니라 plan에 건다
@@ -58,8 +58,17 @@ verify plan에는 Penpot 비밀이 없으니 당연히 실패한다. 훅이 desi
 
 ## Completion Criteria
 
-- [ ] 설계 문서에 A/B 선택과 plan 미지정 훅의 기본 동작이 기록된다 | verify: human — docs/에 결정 문서가 생기고 "결정 대기" 표기가 없다
-- [ ] plan 필터가 붙은 훅이 다른 plan에서 실행되지 않는다 (설계 확정 전에는 기계 바인딩을 만들 수 없다; groom에서 테스트 함수명으로 교체) | verify: human — 설계 승인 뒤 구현 범위와 테스트 이름을 확정해 이 criterion의 기계 바인딩으로 교체
-- [ ] 필터 없는 기존 훅은 모든 plan에서 그대로 실행된다(호환) (설계 확정 전에는 기계 바인딩을 만들 수 없다; groom에서 테스트 함수명으로 교체) | verify: human — 설계 승인 뒤 구현 범위와 테스트 이름을 확정해 이 criterion의 기계 바인딩으로 교체
-- [ ] `dva validate`가 존재하지 않는 plan 이름을 훅 필터에 쓰면 거부한다 (설계 확정 전에는 기계 바인딩을 만들 수 없다; groom에서 테스트 함수명으로 교체) | verify: human — 설계 승인 뒤 구현 범위와 테스트 이름을 확정해 이 criterion의 기계 바인딩으로 교체
-- [ ] 문서(USAGE.md 또는 docs/)의 interaction 절이 plan 스코프를 설명한다 | verify: human — 해당 절을 읽어 확인
+- [x] 설계 문서에 A/B 선택과 plan 미지정 훅의 기본 동작이 기록된다 | verify: `/usr/bin/grep -qF '## 2. 결정 — A: 훅 항목에 `plans:` 필터' docs/64-plan-scoped-interaction-hooks.md && ! /usr/bin/grep -qF '결정 대기' docs/64-plan-scoped-interaction-hooks.md`
+- [x] plan 필터가 붙은 훅이 다른 plan에서 실행되지 않는다 | verify: `go test ./internal/cli/ -run 'TestPlanScopedHooks_(FilteredHookDoesNotRunOnAnotherPlan|FilteredHookSkipsWhenNoPlanRoutes|DefaultPlanRoutesTheFilter)'`
+- [x] 필터 없는 기존 훅은 모든 plan에서 그대로 실행된다(호환) | verify: `go test ./internal/cli/ -run 'TestPlanScopedHooks_(UnfilteredHookRunsOnEveryPlan|FilteredReplaceFallsBackToBuiltin)'`
+- [x] `dva validate`가 존재하지 않는 plan 이름을 훅 필터에 쓰면 거부한다 | verify: `go test ./internal/config/ -run 'TestValidate(RejectsUndeclaredPlanInHookFilter|AcceptsDeclaredPlanInHookFilter|ReportsEveryUndeclaredPlanInOnePass|NamesTheEmptyPlansCaseDifferently)'`
+- [x] 문서(USAGE.md 또는 docs/)의 interaction 절이 plan 스코프를 설명한다 | verify: `/usr/bin/grep -qF '**훅 항목의 plan 스코프 (`plans:`)**' USAGE.md`
+
+## Decision (2026-09-12)
+
+사용자가 **A**를 선택했다 — 훅 항목에 `plans:` 필터를 단다. 근거와 B를 버린 이유,
+plan 미지정 훅의 기본 동작 표, 검증 규칙은 `docs/64-plan-scoped-interaction-hooks.md`.
+
+`plans:`는 `provision:`과 `interaction.*.steps`에도 파싱되지만 비교할 plan이 라우팅되지
+않아 버려진다 — `parallel:`이 반대 방향으로 갖는 것과 같은 구조라, 같은 선례대로 경고를
+낸다(에러가 아니다).
