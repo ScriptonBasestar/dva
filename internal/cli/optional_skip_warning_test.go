@@ -387,18 +387,34 @@ func TestCompositionAndPerChildResolutionAgreeOnWarnings(t *testing.T) {
 	}
 	for _, entry := range comp.Entries {
 		child := entry.ChildPlan
-		if len(child.Warnings) == 0 {
-			// Without this the loop compares two empty slices and passes for the wrong
-			// reason — the test has to observe the warning it claims to be comparing.
-			t.Fatalf("child %q produced no warnings; the fixture is not exercising the comparison", child.Name)
-		}
 		reresolved, err := lifecycle.ResolvePlan(c, child.Name, nil)
 		if err != nil {
 			t.Fatalf("re-resolving child %q: %v", child.Name, err)
 		}
+		// The real assertion first, so that when divergence exists the failure names it rather
+		// than being preempted by one of the fixture-integrity checks below.
 		if !slices.Equal(child.Warnings, reresolved.Warnings) {
 			t.Errorf("child %q: composition-level and per-child resolutions disagree;\n composition: %q\n per-child:   %q",
 				child.Name, child.Warnings, reresolved.Warnings)
+			continue
+		}
+		// Agreement is only meaningful if the fixture could have produced disagreement. Two
+		// ways it could not:
+		if len(child.Warnings) == 0 {
+			// The obvious one — two empty slices compare equal, so a fixture that warns about
+			// nothing passes for the wrong reason.
+			t.Fatalf("child %q produced no warnings; the fixture is not exercising the comparison", child.Name)
+		}
+		if !strings.Contains(strings.Join(child.Warnings, "\n"), "${CHECKOUT}") {
+			// The less obvious one (review-375 F8). The fixture's dir is `vendor/${CHECKOUT}`
+			// and composes[].vars overrides CHECKOUT, so the var the two paths disagree about
+			// is referenced by the value the skip check reads. With a literal dir the var maps
+			// differ and nothing observable depends on them — the comparison is structurally
+			// incapable of differing, and passes even against the exact future change it names.
+			// Nothing interpolates dir today, so both sides see `${CHECKOUT}` unexpanded; if
+			// that stops being true while the two sides still agree, the fixture has gone inert
+			// and this says so instead of reporting a pass.
+			t.Fatalf("child %q: the warning no longer carries the var-bearing dir, so agreement proves nothing:\n %q", child.Name, child.Warnings)
 		}
 	}
 }
@@ -417,7 +433,7 @@ stack:
     default_runner: native
     runners:
       native:
-        dir: vendor/api
+        dir: vendor/${CHECKOUT}
         run: echo vendor
 plans:
   dev:
