@@ -342,6 +342,7 @@ func runCompositionUp(c *config.Config, el *envLoad, planName string, extraArgs 
 	if err != nil {
 		return err
 	}
+	printCompositionWarnings(comp)
 	flags, err := validateCompositionFlagScope(comp, planName, "up", extraArgs)
 	if err != nil {
 		return err
@@ -363,6 +364,7 @@ func runCompositionDown(c *config.Config, el *envLoad, planName string, extraArg
 	if err != nil {
 		return err
 	}
+	printCompositionWarnings(comp)
 	flags, err := validateCompositionFlagScope(comp, planName, "down", extraArgs)
 	if err != nil {
 		return err
@@ -398,6 +400,7 @@ func runCompositionStop(c *config.Config, el *envLoad, planName string, extraArg
 	if err != nil {
 		return err
 	}
+	printCompositionWarnings(comp)
 	flags, err := validateCompositionFlagScope(comp, planName, "stop", extraArgs)
 	if err != nil {
 		return err
@@ -420,6 +423,7 @@ func runCompositionBuild(c *config.Config, el *envLoad, planName string, extraAr
 	if err != nil {
 		return err
 	}
+	printCompositionWarnings(comp)
 	if _, err := validateCompositionFlagScope(comp, planName, "build", extraArgs); err != nil {
 		return err
 	}
@@ -452,6 +456,7 @@ func runCompositionLogs(c *config.Config, el *envLoad, planName string, extraArg
 	if err != nil {
 		return err
 	}
+	printCompositionWarnings(comp)
 	if _, err := validateCompositionFlagScope(comp, planName, "logs", extraArgs); err != nil {
 		return err
 	}
@@ -485,6 +490,7 @@ func runCompositionStatus(c *config.Config, el *envLoad, planName string) error 
 	if err != nil {
 		return err
 	}
+	printCompositionWarnings(comp)
 
 	// status is a read-only query, never an execution verb — dry-run has no coherent meaning
 	// here (runPlanStatus, the single-plan equivalent, never consults it either), and honoring

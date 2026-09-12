@@ -151,6 +151,7 @@ func runPlanLogs(c *config.Config, el *envLoad, planName string, extraArgs []str
 	if err != nil {
 		return err
 	}
+	printPlanWarnings(runtime.plan)
 	// No log content, no control record, no compose child and no log-file read. The
 	// target names the plan as invoked and never the trailing argv, because DVA does
 	// not guess which of a backend's arguments was a service name.

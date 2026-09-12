@@ -269,12 +269,34 @@ func parsePlanFlags(verb string, args []string) (planRunFlags, error) {
 // answer anywhere in the output the user actually saw (TASK-374).
 //
 // stderr for the same reason as everything else here — --json output has to stay parseable.
+//
+// Every verb that resolves a plan calls this, not just the four in this file. The warning is
+// not wired into resolvePlanRuntime itself even though that would reach them all by
+// construction, because compositionChildEnvironment re-resolves a child that
+// ResolveCompositionPlan already resolved — emitting there would print each child's warnings
+// twice. Emission belongs where a plan is presented to the user, once.
 func printPlanWarnings(plan *lifecycle.ExecutionPlan) {
 	if plan == nil {
 		return
 	}
 	for _, w := range plan.Warnings {
 		fmt.Fprintf(os.Stderr, "warning: %s\n", w)
+	}
+}
+
+// printCompositionWarnings surfaces the warnings of every composed child.
+//
+// A CompositionPlan has no entries of its own — it resolves to child ExecutionPlans, and an
+// optional entry skipped inside a child is exactly as invisible as one skipped in a leaf plan
+// was before TASK-374. The children are read straight off the already-resolved
+// CompositionPlanEntry.ChildPlan rather than resolved a second time, so nothing here can
+// disagree with the plan that actually runs.
+func printCompositionWarnings(comp *lifecycle.CompositionPlan) {
+	if comp == nil {
+		return
+	}
+	for _, entry := range comp.Entries {
+		printPlanWarnings(entry.ChildPlan)
 	}
 }
 
@@ -534,6 +556,7 @@ func runPlanStatus(c *config.Config, el *envLoad, planName string) error {
 	if err != nil {
 		return err
 	}
+	printPlanWarnings(runtime.plan)
 	// Before the `[plan: ...]` header, which is a claim about a plan that was resolved
 	// and is about to be queried. On incomplete inputs nothing is queried, so the
 	// header would describe work that never happens.

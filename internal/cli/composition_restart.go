@@ -29,6 +29,7 @@ func runCompositionRestart(c *config.Config, el *envLoad, planName string, extra
 	if err != nil {
 		return err
 	}
+	printCompositionWarnings(comp)
 	flags, err := validateCompositionFlagScope(comp, planName, "restart", extraArgs)
 	if err != nil {
 		return err

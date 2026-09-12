@@ -7,7 +7,7 @@ effort: S
 exec-tier: standard
 created-at: 2026-09-12T12:40:00+09:00
 source: "TASK-319 독립 리뷰 findings #2, #4, #5"
-status: todo
+status: done
 ---
 
 # Task 374: optional 엔트리 skip을 실행 경로에 노출
@@ -132,6 +132,46 @@ config 디렉토리로 대체하지 **않는다** — 디렉토리를 선언하�
 ("일반 실행 경로에는 경고가 없다", "skip은 --dry-run 트레이스에만 보인다", "검사는 plan이
 선택한 러너가 아니라 우선순위상 첫 디렉토리를 본다"). `internal/config/lifecycle.go`,
 `internal/config/schema.json`, `USAGE.md`를 같은 변경에서 갱신했다.
+
+
+### 독립 리뷰(review-374) 대응 — verdict `conditional`
+
+리뷰가 낸 조건 2건을 **종결 전에 코드/카드로 닫았다**. 조건을 기록만 하고 넘기지 않았다.
+
+**조건 1 — `make doc-check` 실패**: 카드가 `tasks/done/`에 있으면서 frontmatter가
+`status: todo`였다. `ce task move`가 `(no **Status** cell found to sync)`를 출력했는데
+내가 frontmatter를 확인하지 않은 종결 과실이다(코드 결함 아님). `status: done`으로 고쳤고
+`make doc-check` exit 0을 재확인했다.
+
+**조건 2 — 경고가 9개 해석 지점 중 4개에만 연결됨**: 실측으로 확인했고, 리뷰가 센 것보다
+넓었다 — `plan_lifecycle.go`의 `resolvePlanRuntime` 호출부는 4개가 아니라 **5개**다
+(316/383/454/500/**533**). CLAUDE.md가 "lifecycle 동사는 전부 `dva <verb> <plan>` 형태"라고
+정의하므로 `build`/`status`/`logs`/composition 동사도 이 카드 Scope 1의 "lifecycle 커맨드"에
+해당한다. 따라서 후속 카드로 미루지 않고 여기서 닫는다.
+
+연결한 지점: `runPlanStatus`, `runPlanBuild`(build.go), `runPlanLogs`(logs.go), 그리고
+composition 7개 지점(`composition_flags.go` 6 + `composition_restart.go` 1)에
+`printCompositionWarnings`.
+
+**의도적으로 제외한 3개 지점과 근거** — 전부 "표현 지점이 아니라 재해석 지점"이다:
+- `compositionChildEnvironment`(composition_flags.go:188) — `ResolveCompositionPlan`이 이미
+  해석한 child를 다시 해석한다. 여기서 내보내면 child마다 경고가 **두 번** 찍힌다.
+- `hooks.go:144` — hook 소유 config를 찾으려는 해석일 뿐이고, 실제 동사가 다시 해석하며 경고한다.
+- `manifest_plans.go:93` — 전 plan 목록을 만드는 기계 판독 경로다.
+
+이 때문에 `resolvePlanRuntime` 내부에 경고를 넣는(= 모든 호출자를 자동 커버하는) 설계를
+채택하지 **않았다**. 경고는 "해석될 때"가 아니라 "사용자에게 제시될 때" 한 번 나가야 한다.
+composition은 `CompositionPlanEntry.ChildPlan`(이미 해석된 `*ExecutionPlan`)에서 경고를
+읽으므로, 메시지가 실제로 실행되는 plan과 어긋날 수 없다.
+
+**반증 검사**: 연결을 제거하자 신규 테스트 5개가 **5/5 실패**한다. 제거 상태의
+`dva status` 출력이 버그 그 자체다 — `[plan: dev] environment= site= entries=1`,
+사라진 엔트리에 대한 설명이 어디에도 없다. 6번째 테스트
+`TestNoWarningWhenNothingIsSkipped`는 부재를 단언하므로 양쪽에서 통과한다(의도된 대칭 가드).
+
+`dva logs`는 `syscall.Exec` 패스스루라 `go test` 아래에서 금지된다(TASK-144 가드). 그래서
+optional 엔트리만 든 plan(`vendor-only`)을 써서, skip 이후 exec할 child가 남지 않는 상태로
+경고만 관측한다.
 
 ## Notes
 

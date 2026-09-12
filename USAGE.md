@@ -1002,7 +1002,10 @@ compose를 고르면, native의 디렉토리가 없더라도 엔트리는 **유�
 파일로 대상을 지정하므로, 이들 중 하나가 선택되고 `source.path`도 없으면 `optional: true`를
 달아도 **건너뛸 근거가 없어 항상 유지**됩니다.
 
-건너뛴 엔트리는 실행 경로에서 경고로 표시됩니다.
+건너뛴 엔트리는 실행 경로에서 경고로 표시됩니다. `--dry-run` 여부와 무관하며, plan을
+해석하는 모든 동사 — `up`/`down`/`stop`/`restart`/`build`/`status`/`logs`와 composition
+동사 — 에 동일하게 적용됩니다. composition plan은 자식 plan에서 건너뛴 엔트리를
+대신 보고합니다.
 
 ```
 warning: entry: vendor-api (optional) — skipped, directory "/path/to/vendor/api" not found
