@@ -369,3 +369,57 @@ plans:
 		})
 	}
 }
+
+// TASK-374 review finding #4: moving the optional check past runner resolution changed what
+// optional: absorbs. A missing directory is still tolerated; a declaration that does not
+// resolve is not. Nothing pinned that, so a refactor could restore the silent drop without
+// any test objecting — and a silently dropped typo is unfindable by the person who made it.
+func TestOptionalEntryWithUnresolvableRunnerFailsInsteadOfBeingSkipped(t *testing.T) {
+	cfg := &config.Config{
+		Stack: map[string]*config.LifecycleEntry{
+			"side": {
+				Name:     "side",
+				Optional: true,
+				Runners: map[string]any{
+					"native": &config.NativeRunnerConfig{Run: "go run .", Dir: filepath.Join(t.TempDir(), "not-checked-out")},
+				},
+			},
+		},
+		Plans: map[string]*config.PlanConfig{
+			// "nativve" is the typo this test exists for.
+			"local-dev": {Entries: []config.PlanEntry{{Name: "side", Runner: "nativve"}}},
+		},
+	}
+
+	plan, err := ResolvePlan(cfg, "local-dev", nil)
+	if err == nil {
+		t.Fatalf("an optional entry naming an undeclared runner must fail the plan, not vanish from it; entries=%d", len(plan.Entries))
+	}
+	if !strings.Contains(err.Error(), "side") {
+		t.Errorf("the error must name the offending entry so the typo is findable, got: %v", err)
+	}
+}
+
+// TASK-374 review finding #5: EntryDir absorbed resolveDir's TrimSpace, which is a behaviour
+// change for its two pre-existing callers (process.go:92 native working dir, build.go:181
+// build working dir), not only for the resolver. Neither was covered with whitespace input.
+func TestEntryDirTrimsWhitespace(t *testing.T) {
+	const configDir = "/cfg"
+	for _, tc := range []struct {
+		name string
+		dir  string
+		want string
+	}{
+		{"padded relative dir loses the padding", "  app  ", "/cfg/app"},
+		{"blank dir is the config dir, not a blank-named subdirectory", "   ", configDir},
+		{"empty dir is the config dir", "", configDir},
+		{"padded absolute dir stays absolute", "  /srv/app  ", "/srv/app"},
+		{"an interior space is part of the name", "my app", "/cfg/my app"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := EntryDir(configDir, tc.dir); got != tc.want {
+				t.Errorf("EntryDir(%q, %q) = %q, want %q", configDir, tc.dir, got, tc.want)
+			}
+		})
+	}
+}

@@ -178,3 +178,41 @@ optional 엔트리만 든 plan(`vendor-only`)을 써서, skip 이후 exec할 chi
 TASK-319의 3개 결함(`PrimaryComposeEntry` 비결정성, process 분기 死코드, 평면 선언
 형태 무동작)은 이미 고쳐졌고 회귀 가드가 있다. 이 카드는 남은 **저심각도** 항목만
 다룬다.
+
+### 독립 리뷰(review-374) 대응 — Finding 3·4·5
+
+리뷰가 conditional 이후 추가로 낸 세 건. 코드 동작은 바꾸지 않고 문서·가드만 보강했다.
+
+**Finding 3 — doc comment 재부모화 (수정)**: `printPlanWarnings`를 추가하면서
+`printPlanResolution`의 doc comment 블록 바로 뒤에 새 함수를 끼워 넣어, 주석이
+조용히 `printPlanWarnings`에 붙어 있었다. Go 는 주석을 "다음에 오는 선언"에 묶을
+뿐이라 컴파일러·`go vet`·`gofmt` 어느 쪽도 경고하지 않는다. 주석을 원래 함수로
+되돌렸다 (`internal/cli/plan_lifecycle.go:296-303`).
+
+**Finding 4 — optional 의 관용 범위가 어디에도 안 적혀 있음 (수정)**: TASK-374 이후
+optional 엔트리는 **디렉토리 부재만** 관용하고, 선언되지 않은/해석 불가한 러너를
+지목하면 skip 이 아니라 plan 실패다. 이 규칙을 선언 지점 세 곳에 모두 적었다 —
+`internal/config/lifecycle.go`의 `Optional` 필드 doc, `internal/config/schema.json`의
+`optional` description, `USAGE.md`의 **관용 범위** 문단.
+
+**Finding 5 — `EntryDir` 의 공백 처리에 가드 없음 (수정)**: `EntryDir`가
+`resolveDir`의 `strings.TrimSpace`를 흡수했지만 이를 고정하는 테스트가 없었다.
+`TestEntryDirTrimsWhitespace`(5 subtest)를 추가했다.
+
+**반증 검사** — 두 신규 테스트 모두 비공허(non-vacuous)임을 실측했다.
+
+- `TestEntryDirTrimsWhitespace`: `EntryDir`에서 `TrimSpace`를 되돌리면 **5개 중 3개
+  실패**(padded relative / blank dir / padded absolute). 나머지 2개는 공백 없는
+  입력이라 양쪽에서 통과하는 대칭 가드다.
+- `TestOptionalEntryWithUnresolvableRunnerFailsInsteadOfBeingSkipped`: 1차 시뮬레이션
+  (optional 검사를 러너 선택 앞으로 옮기되 `optionalSkipDir(entry, nil)` 호출)에서는
+  **통과**했다. 이는 테스트가 공허해서가 아니라 시뮬레이션이 불충실했기 때문이다 —
+  `nil` runnerConfig 로는 어떤 디렉토리도 못 찾아 엔트리가 애초에 skip 후보가
+  되지 않는다. 수정 전 헬퍼(`Runners` 맵을 정렬 순회 후 `Source.Path` 폴백)를 그대로
+  복원해 재실행하니 **실패**한다: `an optional entry naming an undeclared runner must
+  fail the plan, not vanish from it; entries=0`. 반증 검사 자체가 틀릴 수 있다는 점을
+  기록해 둔다 — "버그를 심었는데 통과"는 테스트가 약하다는 뜻일 수도, 심은 것이
+  버그가 아니라는 뜻일 수도 있다.
+
+**게이트**: `make build`·`make lint`·`make test`·`make doc-check`·`make check-generate`
+모두 exit 0, `check-generate` 이후 워킹트리 추가 변경 없음.

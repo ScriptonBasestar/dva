@@ -52,7 +52,13 @@ type LifecycleEntry struct {
 	// entry declaring several is judged on the one that would actually have run.
 	//
 	// A skip prints as a warning on every execution path and is also recorded in the
-	// resolution trace that --dry-run shows in full. (TASK-319, TASK-374)
+	// resolution trace that --dry-run shows in full.
+	//
+	// Optional tolerates a missing directory, not a broken declaration. An optional
+	// entry naming an undeclared or unresolvable runner fails the plan with that
+	// error rather than being dropped: a directory that is not checked out is the
+	// case this field exists for, while a declaration that does not resolve is a
+	// typo, and silently dropping it would hide the typo forever. (TASK-319, TASK-374)
 	Optional bool `yaml:"optional,omitempty"`
 
 	// Primary marks this compose entry as the primary compose entry. When set,

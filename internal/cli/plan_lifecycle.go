@@ -255,13 +255,6 @@ func parsePlanFlags(verb string, args []string) (planRunFlags, error) {
 	return flags, nil
 }
 
-// printPlanResolution writes the steps ResolvePlan recorded while building the plan.
-// It runs only on the dry-run path: there the user asked what would happen instead of
-// asking for it to happen, and the resolution is the answer. Off that path it would be
-// noise on every single invocation.
-//
-// stderr, not stdout, for the same reason the '[plan: ...]' header above it uses stderr —
-// --json output has to stay parseable (TASK-116).
 // printPlanWarnings writes the resolution facts that must reach the user whether or not
 // they asked for the resolution. It is the counterpart to printPlanResolution and runs on
 // every path, which is the whole point: an optional entry dropped for a missing directory
@@ -300,6 +293,13 @@ func printCompositionWarnings(comp *lifecycle.CompositionPlan) {
 	}
 }
 
+// printPlanResolution writes the steps ResolvePlan recorded while building the plan.
+// It runs only on the dry-run path: there the user asked what would happen instead of
+// asking for it to happen, and the resolution is the answer. Off that path it would be
+// noise on every single invocation.
+//
+// stderr, not stdout, for the same reason the '[plan: ...]' header above it uses stderr —
+// --json output has to stay parseable (TASK-116).
 func printPlanResolution(plan *lifecycle.ExecutionPlan) {
 	if plan == nil || len(plan.ResolutionTrace) == 0 {
 		return
