@@ -143,9 +143,9 @@ func TestOptionalSkipIsReportedOutsideDryRun(t *testing.T) {
 	c, e := optionalSkipFixture(t)
 	stderr := captureBothStreams(t, func() { _ = runPlanStatus(c, planEnv(e), "dev") })
 	assertSkipWarned(t, "dva status (no --dry-run)", stderr)
-	// The trace is the dry-run narration and must stay out of the default output; if it
-	// leaked here the assertion above would pass for the wrong reason.
-	if strings.Contains(stderr, "resolution:") {
-		t.Errorf("resolution trace leaked outside --dry-run; stderr:\n%s", stderr)
-	}
+	// No trace-leak assertion here, deliberately. A leaked ResolutionTrace could not make
+	// the assertion above pass for the wrong reason: the trace renders its steps as
+	// "  entry: ..." (printPlanResolution, two-space indent) while assertSkipWarned
+	// requires the literal "warning: entry: ...", and only printPlanWarnings emits that
+	// prefix. Guarding it would be a dead assertion that reads as a live one.
 }

@@ -262,3 +262,42 @@ dry-run 테스트로 변할 수 있다. 호스트는 `runPlanStatus`(exec 패스
 
 **게이트 재실행**: `make build`·`make lint`·`make test`·`make doc-check`·
 `make check-generate` 전부 exit 0.
+
+### 독립 리뷰(review-374) 대응 — Finding 9, verdict pass
+
+**Finding 9 — 죽은 단언 (수정)**: non-blocking. Finding 6 을 닫으면서 내가 넣은
+trace 누수 단언이 **결코 발화할 수 없는** 코드였다. 세 가지가 겹쳤다.
+
+1. 대소문자. 단언은 `strings.Contains(stderr, "resolution:")` 인데 실제 출력은
+   `plan_lifecycle.go:307` 의 `"\nResolution:"` — 대문자 R 이고
+   `strings.Contains` 는 대소문자를 가린다.
+2. 도달 불가. `printPlanResolution` 의 호출 지점은 `:354`·`:421`·`:492`·`:538`
+   넷뿐이고 전부 `up`/`down`/`stop`/`restart` 다. 이 테스트의 호스트인
+   `runPlanStatus` 는 애초에 부르지 않으므로 어떤 경로로도 trace 가 닿지 않는다.
+3. 전제 자체가 틀렸다. trace 가 샜더라도 `assertSkipWarned` 를 잘못 통과시킬 수
+   없다 — trace 는 `:309` 의 `"  %s\n"` 로 `  entry: ...` 를 찍고, 단언은 리터럴
+   `"warning: entry: ..."` 를 요구한다. `warning: ` 접두사는 `printPlanWarnings`
+   만 붙인다. 즉 내가 막으려던 위양성은 이미 불가능했다.
+
+고치는 대신 **지웠다**. 리터럴만 `"Resolution:"` 로 바꾸면 발화는 가능해지지만
+여전히 아무것도 지키지 않는다(2·3 때문에). 그 자리에 위양성이 왜 불가능한지를
+주석으로 적었다. 깨진 것은 없지만 — 주 단언이 테스트를 지탱하고 그건 검증됐다 —
+**죽은 단언이 살아 있는 것처럼 읽히는 것**이 문제다. 스위트가 실제보다 강해
+보이게 만드는 경로다.
+
+단언 제거 후에도 반증 검사는 그대로 성립한다: `runPlanStatus` 자리에
+`if dryRun { ... }` 를 심으면 `TestOptionalSkipIsReportedOutsideDryRun` 이 FAIL 한다.
+
+**Finding 7·8 → TASK-375 로 이관**. 리뷰어 권고대로 **두 장이 아니라 한 장**이다.
+둘 다 `plan_lifecycle.go` + `composition_flags.go` 에 떨어지고 `assertSkipWarned`
+리터럴과 USAGE.md 의 같은 문단을 함께 움직인다 — 나누면 일주일 간격으로 같은
+헬퍼와 같은 문단을 두 번 고치게 되고 그게 둘이 어긋나는 경로다. Finding 7(방출
+순서)을 주로 두었다.
+
+**리뷰어가 다듬어 준 일반화** — 두 변이는 주장하는 바가 다르다. 호출을 **지우면**
+"배선이 존재한다"를 검사하고, 호출을 **다시 가두면** "배선이 카드가 말하는 조건
+아래에서 발화한다"를 검사한다. 스위트는 전자에 대해 완전하면서 후자에 대해 비어
+있을 수 있고, 내 것이 정확히 그랬다. 남길 휴리스틱: **수정이 추가한 코드가 아니라
+카드가 서술하는 버그 쪽으로 변이시켜라.**
+
+**최종 verdict: `pass`** (review-374, cdacd2c 재현 검증 후).
