@@ -225,7 +225,7 @@ vars 는 `resolved.EnvVars` 에만 병합되기 때문이다. "오늘은" 이라
 `resolver.go` 의 `— skipped, directory %q` → `— skipped; directory %q` 를 각각
 넣으면 leaf·composition 서브테스트가 FAIL 한다.
 
-**review-375 최종 verdict: `pass`** (조건 없음). 리뷰어가 F1·F2 를 자기 프로브로
+**review-375 최종 verdict: `pass`** (조건 없음; `3ada3c0` 에서 발행, F8 수정 뒤 `e063207` 에서 재확인, 잔여 finding 없음). 리뷰어가 F1·F2 를 자기 프로브로
 `690c2ad^` / `690c2ad` / `6be1780` 3지점 비교해 재현했고, Q1(억제의 전제)을
 **철회**했다 — 두 경로가 config(root vs owner)와 vars(CLI `--var` vs `composes[].vars`)
 양축에서 실제로 다르지만 둘 다 경고에 닿지 못한다는 것을 구조적으로(`resolver.go:261`
@@ -265,3 +265,28 @@ vars 는 `resolved.EnvVars` 에만 병합되기 때문이다. "오늘은" 이라
 실패를 따로 가진다. 이 단언은 옳았다 — fixture 가 서로 다른 입력을 관측 가능한 출력까지
 배선하지 않았을 뿐이다. 그리고 이건 방출 삭제 변이로는 절대 드러나지 않는다. 테스트가
 막겠다고 선언한 그 변경을 실제로 구현해 봐야 드러난다.
+
+### 최종 확인 (review-375, `e063207`)
+
+**기준 4 바인딩 교체는 유지가 맞다.** 리뷰어가 F4 테스트 요청을 철회한 건 정확성이
+아니라 **가치** 근거였고 (F8 이 더 값싸고 값진 이웃이라는 판단), F8 도 닫힌 지금 남길
+이유가 생겼다. 리뷰어가 변이 4종을 직접 돌렸고 전부 이 테스트 하나가 잡았다:
+
+| 변이 | 결과 |
+|---|---|
+| `warning: [child: %s] %s` → `warning: (child %s) %s` | FAIL |
+| `resolver.go` 의 `— skipped, directory %q not found` → `— skipped, dir %q missing` | FAIL |
+| leaf `warning: %s` → `WARN: %s` | FAIL |
+| USAGE.md 쪽을 편집 (`[child: dev]` → `[child dev]`) | FAIL |
+
+3번과 4번이 결론을 낸다. **3번**: 바인딩이 `internal/cli` 를 넘어 실제로 경고를 만드는
+`internal/lifecycle` 의 문자열까지 닿는다 — 리터럴 grep 이었다면 통과했을 변이다.
+**4번**: 고정이 **대칭**이다 — 코드가 문서에서 멀어지는 것만이 아니라 문서가 코드에서
+멀어지는 것도 잡는다. 기준 4 가 실제로 주장하는 게 그 대칭이다. `make doc-check` 는
+넷 중 **하나도** 잡지 못했다. 기준 4 는 이제 "참"이 아니라 "검증 가능"이다.
+
+**`${CHECKOUT}` 포함 검사가 남아야 하는 이유** (리뷰어가 카드에 남기길 요청): 이 검사는
+*dir 전개가 추가되었는데 양쪽이 여전히 일치하는* 시나리오에서 발화한다. 바로 그때
+fixture 가 조용히 무력 상태로 되돌아가면서도 초록으로 보인다. "빈 경고"와
+"var 가 경고에 닿지 않음"은 정말 서로 다른 두 공허함이고, 순진한 수정에서 살아남는 쪽은
+두 번째다.
