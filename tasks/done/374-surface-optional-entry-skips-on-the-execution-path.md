@@ -216,3 +216,49 @@ optional 엔트리는 **디렉토리 부재만** 관용하고, 선언되지 않�
 
 **게이트**: `make build`·`make lint`·`make test`·`make doc-check`·`make check-generate`
 모두 exit 0, `check-generate` 이후 워킹트리 추가 변경 없음.
+
+### 독립 리뷰(review-374) 대응 — Finding 6·7·8
+
+**Finding 6 — 테스트가 카드 제목의 성질을 고정하지 못함 (수정)**: 심각도 medium.
+`internal/cli/optional_skip_warning_test.go` 의 기존 6개 테스트가 전부
+`enableDryRun(t)` 를 호출한다. 그런데 skip 은 TASK-374 **이전에도** `--dry-run`
+아래에서는 보였다(`ResolutionTrace` 가 실어 날랐다). 버그는 `--dry-run` **밖에서**
+안 보인다는 것이었고, 그 경로를 짚는 테스트가 하나도 없었다.
+
+리뷰어가 이론이 아님을 실증했다 — `build.go` 의 호출을
+`if dryRun { printPlanWarnings(...) }` 로 다시 감싸(= 이 카드가 고치려는 바로 그
+버그를 복원) 돌려도 `TestOptionalSkipIsReportedByPlanBuild` 가 `ok` 를 낸다.
+
+내 반증 검사가 이걸 놓친 이유가 정확히 여기 있다. 나는 호출을 **제거**했고 기존
+테스트는 그건 잡는다. 잡지 못하는 것은 호출을 **다시 가두는** 것이다. 제거와
+재가둠은 다른 변이이며, 후자가 실제 회귀 형태다.
+
+`TestOptionalSkipIsReportedOutsideDryRun` 을 추가했다. `disableDryRun(t)` 로 전역을
+false 에 **명시적으로** 고정한다 — 제로값에 기대면 설정 방식이 바뀔 때 조용히
+dry-run 테스트로 변할 수 있다. 호스트는 `runPlanStatus`(exec 패스스루가 없어 TASK-144
+가드에 걸리지 않는 가장 싼 경로). trace 가 기본 출력으로 새지 않는지도 함께 단언해,
+경고가 엉뚱한 이유로 통과하는 경우를 막는다.
+
+반증 검사(리뷰어의 변이를 그대로 사용, 이번엔 `runPlanStatus` 자리에서):
+
+- 기존 `TestOptionalSkipIsReportedByPlanStatus` → `ok` (구멍 재현)
+- 신규 `TestOptionalSkipIsReportedOutsideDryRun` → **FAIL**:
+  `warning did not name the missing directory; stderr: [plan: dev] environment= site= entries=1`
+
+이 FAIL 출력이 버그 그 자체다 — `entries=1` 인데 사라진 엔트리에 대한 설명이 없다.
+
+**Finding 7 — 방출 순서 불일치 (기록, 미조치)**: 심각도 low. `build.go:234`,
+`logs.go:154`, `plan_lifecycle.go:559` 는 각자의 `report` 검사 **앞에서** 경고하고,
+`runPlanUp:350` 은 **뒤에서** 경고한다. 그래서 환경이 불완전한 plan 은 세 동사에서는
+경고를 낸 뒤 거절하고, 나머지 네 동사에서는 조용히 거절한다. 사용자에게 보이는
+피해는 "거절 사유가 아닌 경고가 먼저 보인다" 정도라 이 카드 범위에서 손대지 않는다.
+바로잡으려면 일곱 자리의 순서를 한 규칙으로 통일해야 하고, 그건 별도 카드다.
+
+**Finding 8 — composition 경고가 출처 child 를 밝히지 않음 (기록, 미조치)**:
+심각도 low. `printCompositionWarnings` 는 각 child 의 경고를 그대로 흘리므로,
+여러 child 가 같은 이름의 optional 엔트리를 건너뛰면 어느 child 것인지 구분되지
+않는다. 메시지 포맷 변경이라 기존 단언(`assertSkipWarned`)과 USAGE.md 문구에
+동시에 영향을 준다 — 별도 카드가 맞다.
+
+**게이트 재실행**: `make build`·`make lint`·`make test`·`make doc-check`·
+`make check-generate` 전부 exit 0.

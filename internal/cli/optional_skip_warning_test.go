@@ -120,3 +120,32 @@ func TestNoWarningWhenNothingIsSkipped(t *testing.T) {
 		t.Errorf("directory exists, so nothing should be warned about; stderr:\n%s", stderr)
 	}
 }
+
+// disableDryRun is the deliberate counterpart to enableDryRun: it pins the global to false
+// rather than trusting its zero value, so the test below cannot be quietly turned into a
+// dry-run test by an unrelated change to how these tests are set up.
+func disableDryRun(t *testing.T) {
+	t.Helper()
+	old := dryRun
+	dryRun = false
+	t.Cleanup(func() { dryRun = old })
+}
+
+// Every other test in this file runs under --dry-run, which leaves the property the card is
+// actually named for untested: the skip was already visible under --dry-run before TASK-374
+// (ResolutionTrace carried it), and the bug was that it was invisible *outside* --dry-run.
+//
+// That gap is not theoretical. Re-guarding the emission as `if dryRun { printPlanWarnings(...) }`
+// — the exact bug this task exists to fix — leaves every dry-run test above still passing.
+// They pin that the call exists, not that it fires on the execution path. This one does.
+func TestOptionalSkipIsReportedOutsideDryRun(t *testing.T) {
+	disableDryRun(t)
+	c, e := optionalSkipFixture(t)
+	stderr := captureBothStreams(t, func() { _ = runPlanStatus(c, planEnv(e), "dev") })
+	assertSkipWarned(t, "dva status (no --dry-run)", stderr)
+	// The trace is the dry-run narration and must stay out of the default output; if it
+	// leaked here the assertion above would pass for the wrong reason.
+	if strings.Contains(stderr, "resolution:") {
+		t.Errorf("resolution trace leaked outside --dry-run; stderr:\n%s", stderr)
+	}
+}
