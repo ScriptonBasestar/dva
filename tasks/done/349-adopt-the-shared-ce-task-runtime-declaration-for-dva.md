@@ -180,3 +180,22 @@ reclaim scope 를 두지 않는다.
 근거 없는 표시는 없었다. 발견된 과장 한 건은 Finding 1 의 "ignore 를 좁혀" —
 실제로는 넓혀 놓고 좁혔다고 적은 것이었고, 위에서 원본 형태·누수 증거·교체본을
 모두 남기는 방식으로 정정했다.
+
+**최종 verdict: `pass`** (review-349, 3800834 재검증 후, 조건 없음).
+
+리뷰어가 세 기준을 각각 직접 재현했다 — `ce task run-doctor` → ACTIVE,
+`grep -c 'git worktree' Makefile` → 0, `git ls-files --error-unmatch` 로 두 선언
+파일이 모두 추적됨. Finding 1 은 `git status --porcelain -uall | grep -c '\.ce/'`
+→ 0 으로 닫혔다. 게이트 다섯 개(`build`/`lint`/`test`/`doc-check`/`check-generate`)를
+리뷰어가 직접 돌려 전부 exit 0.
+
+**남은 증거 공백(기록, 비차단)**: 설치본 `/Users/archmagece/go/bin/gz-git` 이 이
+선언으로 실제 reclaim 을 수행하는지는 리뷰어가 *관측*하지 못했다 — 직접
+`gz-git integrate status` 호출이 `guard-git-integration.sh` 정책 훅에 막히고,
+리뷰어는 우회하지 않았다(옳은 판단이다). 리뷰어의 소스 근거는 vendored
+`ce-devenv/deps/gzh-cli-gitforge/` 사본에서 나왔고 설치 바이너리의 빌드와
+일치하는지는 확인되지 않았다. 이 공백을 메우는 것은 이 세션이 관측한
+`RECLAIMED … worktree local-branch remote-branch` 로그다 — b777f2c 이후 네 번의
+integration(f9f4c9f, b8b0b1a, 3800834, 690c2ad)에서 매번 나왔다. 소스 독해와
+실행 관측이 서로 다른 쪽에서 같은 결론에 도달한 형태이고, 어느 한쪽만으로는
+닫히지 않았을 것이다.
