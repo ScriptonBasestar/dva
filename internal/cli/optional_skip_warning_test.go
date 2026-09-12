@@ -3,10 +3,12 @@ package cli
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
 	"github.com/ScriptonBasestar/dva/internal/config"
+	"github.com/ScriptonBasestar/dva/internal/lifecycle"
 )
 
 // TASK-374 follow-up: the optional-skip warning has to reach the user from every verb that
@@ -312,4 +314,120 @@ func TestCompositionBuildWarnsAboutEachChildExactlyOnce(t *testing.T) {
 	if n := strings.Count(stderr, "entry: vendor-api (optional)"); n != 1 {
 		t.Errorf("one skipped entry must produce one warning, got %d; stderr:\n%s", n, stderr)
 	}
+}
+
+// Every emission site, guarded at once (review-375 F3).
+//
+// Before this, deleting the call from runPlanDown/Stop/Restart and runCompositionDown/Stop/
+// Restart and moving runCompositionUp's below its flag check — seven mutations together — left
+// the whole suite green. The named tests above pin build, status, logs, composition up and
+// composition status; these pin the rest, so no emission site is free to disappear.
+//
+// Each verb is exercised through its own runner rather than a shared one because the whole
+// point is that they are separate call sites: a table that reached them through one helper
+// would pin the helper, which is the mistake this test exists to prevent.
+func TestOptionalSkipIsReportedByEveryRemainingVerb(t *testing.T) {
+	cases := []struct {
+		verb  string
+		child string
+		run   func(c *config.Config, e *envLoad) error
+	}{
+		{"dva down", "", func(c *config.Config, e *envLoad) error { return runPlanDown(c, e, "dev", nil) }},
+		{"dva stop", "", func(c *config.Config, e *envLoad) error { return runPlanStop(c, e, "dev", nil) }},
+		{"dva restart", "", func(c *config.Config, e *envLoad) error { return runPlanRestart(c, e, "dev", nil) }},
+		{"dva down <composition>", "dev", func(c *config.Config, e *envLoad) error { return runCompositionDown(c, e, "all", nil) }},
+		{"dva stop <composition>", "dev", func(c *config.Config, e *envLoad) error { return runCompositionStop(c, e, "all", nil) }},
+		{"dva restart <composition>", "dev", func(c *config.Config, e *envLoad) error { return runCompositionRestart(c, e, "all", nil) }},
+	}
+	for _, tc := range cases {
+		t.Run(tc.verb, func(t *testing.T) {
+			enableDryRun(t)
+			c, e := optionalSkipFixture(t)
+			stderr := captureBothStreams(t, func() { _ = tc.run(c, planEnv(e)) })
+			assertSkipWarnedFrom(t, tc.verb, stderr, tc.child)
+		})
+	}
+}
+
+// The ordering rule on a composition verb, not just on runPlanUp (review-375 F3, condition 5).
+//
+// Asserting presence alone would still pass with the emission moved below
+// validateCompositionFlagScope, as long as some other input reached it. Asserting it on an
+// input the check rejects is what pins the order: after the check, nothing is printed at all.
+func TestCompositionUpWarnsBeforeItRejectsItsFlags(t *testing.T) {
+	enableDryRun(t)
+	c, e := optionalSkipFixture(t)
+	var err error
+	stderr := captureBothStreams(t, func() { err = runCompositionUp(c, planEnv(e), "all", []string{"--bogus-flag"}) })
+	if err == nil {
+		t.Fatal("an unsupported composition flag must be rejected")
+	}
+	assertSkipWarnedFrom(t, "dva up <composition> --bogus-flag", stderr, "dev")
+}
+
+// The premise suppressPlanWarnings rests on (review-375 Q1).
+//
+// Silencing the per-child emission is only honest while the composition-level resolution and
+// the per-child re-resolution produce the same warnings. They are not the same call:
+// ResolveCompositionPlan resolves each child as ResolvePlan(owner, name, entry.Vars) while
+// runPlanBuild re-resolves it as ResolvePlan(root, name, nil) — different config root,
+// different vars. Today that cannot diverge, because the single warn() site in the lifecycle
+// package (resolver.go) decides on the runner's declared dir and the owner's file dir, and
+// neither is reachable from vars. "Today" is why this is a test: the day a vars-dependent
+// warning is added, suppression starts hiding a fact about the plan that actually runs, and
+// this fails instead of the user finding out.
+func TestCompositionAndPerChildResolutionAgreeOnWarnings(t *testing.T) {
+	c, _ := compositionVarsFixture(t)
+	comp, err := lifecycle.ResolveCompositionPlan(c, "all")
+	if err != nil {
+		t.Fatalf("ResolveCompositionPlan: %v", err)
+	}
+	if len(comp.Entries) == 0 {
+		t.Fatal("fixture produced no composition entries")
+	}
+	for _, entry := range comp.Entries {
+		child := entry.ChildPlan
+		if len(child.Warnings) == 0 {
+			// Without this the loop compares two empty slices and passes for the wrong
+			// reason — the test has to observe the warning it claims to be comparing.
+			t.Fatalf("child %q produced no warnings; the fixture is not exercising the comparison", child.Name)
+		}
+		reresolved, err := lifecycle.ResolvePlan(c, child.Name, nil)
+		if err != nil {
+			t.Fatalf("re-resolving child %q: %v", child.Name, err)
+		}
+		if !slices.Equal(child.Warnings, reresolved.Warnings) {
+			t.Errorf("child %q: composition-level and per-child resolutions disagree;\n composition: %q\n per-child:   %q",
+				child.Name, child.Warnings, reresolved.Warnings)
+		}
+	}
+}
+
+// compositionVarsFixture is optionalSkipFixture with composes[].vars actually set, so the
+// agreement test above is exercising the divergence it is named for rather than comparing two
+// identical calls.
+func compositionVarsFixture(t *testing.T) (*config.Config, *config.Environment) {
+	t.Helper()
+	c := loadTestConfig(t, `version: "0.1.44"
+vars:
+  CHECKOUT: vendor
+stack:
+  vendor-api:
+    optional: true
+    default_runner: native
+    runners:
+      native:
+        dir: vendor/api
+        run: echo vendor
+plans:
+  dev:
+    entries:
+      - name: vendor-api
+  all:
+    composes:
+      - plan: dev
+        vars:
+          CHECKOUT: somewhere-else
+`)
+	return c, config.NewEnvironment(nil, c.FileDir(), c.FileDir())
 }

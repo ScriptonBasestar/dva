@@ -85,11 +85,25 @@ child 마다 2~5회 중복 출력된다(`composition_orchestrator.go:437-446` �
 떼면 composition 테스트만 깨지고 leaf 테스트는 그대로 통과한다 — 라벨이 장식이
 아니라 단언이다.
 
-**범위 밖에서 하나 더 고침**: `runCompositionBuild`/`runCompositionLogs` 는
-composition 레벨에서 한 번, 그리고 자식마다 `runPlanBuild`/`runPlanLogs` 안에서
-또 한 번 같은 경고를 내고 있었다(이 카드 이전부터). 라벨이 붙으면서 "라벨 있는 줄 +
-라벨 없는 줄"로 눈에 띄게 되어 composition 레벨 호출을 제거했다. 이 두 동사는 자식을
-각자 헤더 아래 개별 제시하므로 자식 자리의 방출만으로 출처가 드러난다.
+**범위 밖에서 하나 더 고쳤고, 그게 틀렸다** (review-375 F1·F2·F6 반영 후 재작성):
+`runCompositionBuild`/`runCompositionLogs` 는 composition 레벨에서 한 번, 그리고
+자식마다 `runPlanBuild`/`runPlanLogs` 안에서 또 한 번 같은 경고를 내고 있었다. 라벨이
+붙으면서 "라벨 있는 줄 + 라벨 없는 줄"로 눈에 띄어 composition 레벨 호출을 제거했다.
+
+두 가지가 틀렸다.
+
+- **중복의 나이를 과장했다**(F6). "이 카드 이전부터"라고 적었지만
+  `git log -S "printCompositionWarnings(comp)"` 는 `fe448b6` 와 `690c2ad` 둘만
+  돌려준다 — 중복은 바로 앞 커밋인 TASK-374 에서, 같은 작성자가 만들었다. 오래된
+  빚이 아니라 하루 전에 내가 판 구덩이였고, "pre-existing" 이라는 말이 그 사실을
+  가렸다.
+- **제거는 경고 중립이 아니었다**(F1·F2). 자식 자리의 방출은 `runCompositionBuild`
+  기준 `validateCompositionFlagScope` **뒤에서** 도는 루프 안에 있고, 그 루프는 첫
+  자식 실패에서 `return` 한다. 그래서 composition 레벨 호출을 없앤 순간 (a) 플래그가
+  거절되면 아무 경고도 안 나오고 (b) 앞 자식이 실패하면 뒤 자식 경고가 사라졌다 —
+  이 카드가 고치려던 결함을 같은 커밋에서 되살린 것이다. `6be1780` 에서 composition
+  레벨 방출을 검사 앞으로 되돌리고, 중복은 **나중 방출**(루프 안)을 `suppressPlanWarnings`
+  로 죽여서 없앴다. 방향이 중요하다 — 규칙을 지키는 쪽은 먼저 나오는 방출이다.
 
 ### Mutation testing
 
@@ -165,3 +179,41 @@ TASK-374 에서 기록한 휴리스틱 — *"카드가 말하는 버그 쪽으�
 
 **Gates(수정 후)**: `build` 0, `lint` 0, `doc-check` 0, `check-generate` 0,
 `test` 전체 통과(`internal/cli` coverage 82.0%).
+
+### review-375 조건 5·6 이행 (후속 커밋)
+
+**조건 5 — 방출 지점 전수 고정 / composition 순서 단언.**
+리뷰가 지적한 구멍: `runPlanDown`·`runPlanStop`·`runPlanRestart` 와
+`runCompositionDown`·`runCompositionStop`·`runCompositionRestart` 의 방출을 지우고
+`runCompositionUp` 의 방출을 플래그 검사 아래로 내리는 **일곱 개 동시 변이**를 해도
+스위트가 전부 녹색이었다. 열한 개 방출 지점 중 실제로 고정돼 있던 건 build·status·
+logs·composition up·composition status 뿐이었다.
+
+- `TestOptionalSkipIsReportedByEveryRemainingVerb` — 나머지 여섯 동사를 각자
+  **자기 러너로** 호출하는 테이블. 공용 헬퍼를 거쳐 도달하면 헬퍼를 고정하게 되는데,
+  이 테스트의 존재 이유가 바로 "이들이 서로 다른 호출 지점"이라는 사실이다.
+- `TestCompositionUpWarnsBeforeItRejectsItsFlags` — 존재가 아니라 **순서**를 단언한다.
+  `--bogus-flag` 로 검사가 거절하는 입력을 주면, 방출이 검사 뒤로 내려간 순간 아무것도
+  출력되지 않는다. 존재만 보는 단언은 다른 입력으로 통과해 버린다.
+
+변이 E(위 여섯 방출 전부 삭제) → 새 테스트 3종 + 기존 5종이 모두 FAIL. 삭제 전에는
+이 중 어느 것도 안 깨졌다.
+
+**조건 5 부수 — 억제의 전제 고정.** `suppressPlanWarnings` 는 composition 레벨 해석과
+자식별 재해석이 같은 경고를 낸다는 전제 위에 서 있다. 두 호출은 실제로 다르다 —
+`ResolveCompositionPlan` 은 `ResolvePlan(owner, name, entry.Vars)`, `runPlanBuild` 는
+`ResolvePlan(root, name, nil)`. 오늘은 어긋날 수 없다: lifecycle 패키지의 유일한
+`warn()` 호출 지점(`resolver.go:429`)이 러너 선언 dir 와 owner file dir 만 보고,
+vars 는 `resolved.EnvVars` 에만 병합되기 때문이다. "오늘은" 이라서 테스트로 박았다 —
+`TestCompositionAndPerChildResolutionAgreeOnWarnings` 는 `composes[].vars` 가 실제로
+설정된 fixture 로 두 결과를 비교하고, 자식이 경고를 하나도 안 내면 빈 슬라이스끼리
+비교해 엉뚱한 이유로 통과하지 않도록 먼저 `t.Fatal` 한다.
+
+**조건 6** — 위 "범위 밖에서 하나 더 고쳤고, 그게 틀렸다" 문단으로 재작성.
+
+**F4 (정직하게 기록)**: 기준 4 의 `verify:` 는 `make doc-check (regression-guard)` 인데,
+`yamlcheck` 는 태그된 ```yaml 펜스만 검사한다. USAGE.md 의 경고 예시는 태그 없는
+출력 펜스라 **소스 포맷 문자열과 대조되지 않는다.** 이 기준은 바인딩이 아니라 손검사로
+참이다. 바인딩을 바꾸는 대신 사실을 적어 둔다 — 검사하지 않는 바인딩을 다른 검사하지
+않는 바인딩으로 바꾸는 건 개선이 아니다. review-375 에 "USAGE.md 에서 렌더된 줄을
+grep 하는 `internal/cli` 테스트"를 대안으로 제시해 두었다.
