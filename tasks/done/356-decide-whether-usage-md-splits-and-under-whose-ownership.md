@@ -5,10 +5,10 @@ type: docs
 priority: P3
 effort: M
 exec-tier: standard
-status: todo
+status: done
 created: 2026-09-08
 source: "TASK-323 작업 중 워크스테이션 파일크기 훅이 차단"
-needs-human: true
+needs-human: false
 ---
 
 ## Summary
@@ -41,6 +41,35 @@ needs-human: true
 
 ## Completion Criteria
 
-- [ ] 1번(분할)과 2번(예외 선언) 중 하나가 근거와 함께 선택돼 이 카드에 기록된다 | verify: human — 결정과 근거를 카드에 기재
-- [ ] 2번을 택하면 예외가 devenv/agent-kit SSOT에 등록되고, 이 저장소에서 USAGE.md 편집이 더 이상 차단되지 않는다 | verify: human — 편집 후 훅 통과 확인
-- [ ] 1번을 택하면 USAGE.md 경로를 가리키는 모든 verify 바인딩이 새 경로로 옮겨지고 게이트가 초록이다 | verify: `make doc-check` (regression-guard)
+- [x] 1번(분할)과 2번(예외 선언) 중 하나가 근거와 함께 선택돼 이 카드에 기록된다 | verify: `/usr/bin/grep -rq --include='356-decide-whether-usage-md-splits-and-under-whose-ownership.md' '^## 결정 (2026-09-13): 2번' tasks`
+- [x] 2번을 택하면 예외가 SSOT에 등록되고, 이 저장소에서 USAGE.md 편집이 더 이상 차단되지 않는다 | verify: `ce validate filesize --changed-only USAGE.md`
+- [x] 1번을 택하면 USAGE.md 경로를 가리키는 모든 verify 바인딩이 새 경로로 옮겨진다 — 2번을 택했으므로 해당 없음 | verify: `make doc-check` (regression-guard)
+
+## 결정 (2026-09-13): 2번 — 분할하지 않고 예외를 선언한다
+
+카드의 권고대로 2번이다. 1번을 정당화할 증거 — 크기가 실제로 유지보수를 해친다는 —
+는 TASK-323의 자기모순 한 건뿐이고, 그것은 분할이 아니라 그 문단을 고쳐서 해결된
+종류의 결함이다. 반면 분할 비용은 확정적이다: 소유권 축을 하나 새로 만들고,
+`tools/doccheck`의 검사와 여러 카드의 verify 바인딩을 함께 옮겨야 한다. 되돌리기
+어려운 쪽을, 그것을 요구하는 저장소 게이트가 없는 상태에서 먼저 하지 않는다.
+
+**등록 위치는 devenv/agent-kit가 아니라 이 저장소다.** 카드는 개인 정책 SSOT 쪽
+변경이 필요하다고 적었지만, 훅이 부르는 `ce validate filesize`에는 파일 자신이
+선언하는 면제 표지가 이미 있다(규칙 정본 `file-size.yaml`의 `exemption:` 절).
+그래서 예외는 워크스테이션 정책을 흔들지 않고 `USAGE.md` 첫 줄 아래에서 끝난다 —
+그리고 그것이 옳은 자리이기도 하다. "이 저장소의 사용법 문서는 한 파일"이라는 것은
+이 저장소의 설계 결정이지 워크스테이션의 취향이 아니므로, 선언도 여기에 있어야 한다.
+
+`USAGE.md`에 넣은 표지:
+
+```
+<!-- size-limit: exempt, ceiling: 143360 bytes, 1600 lines -- ... -->
+```
+
+ceiling은 무한대가 아니라 실제 상한이다(현재 122,954 bytes / 1,327 prose lines).
+여기에 닿으면 그때는 "크기가 유지보수를 해친다"는 증거가 숫자로 생긴 것이고,
+1번을 다시 검토할 시점이 된다. 면제는 측정을 끄지 않는다 — `ce validate filesize`는
+계속 P3로 현재치와 ceiling 대비 위치를 보고한다.
+
+저장소 게이트(`make doc-check`, `make check-generate`)는 이 결정 전후로 동일하게
+초록이다. 이 카드는 애초에 그 게이트가 요구한 것이 아니었다.
