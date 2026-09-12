@@ -17,14 +17,15 @@ import (
 // Read from the plan's resolved runner rather than the stack declaration, for the reason
 // planLogTarget is: an entry may declare several runners and the plan started one of them.
 type planBuildTarget struct {
-	name     string
-	runner   string
-	compose  *config.ComposePluginConfig // nil unless the plan runs this entry under compose
-	profiles []string                    // compose profiles the plan activates for this entry, if any
-	services []string                    // compose service subset the plan selected, if any
-	command  string                      // native: runners.native.build, run by a shell
-	dir      string                      // native: runners.native.dir, before resolution
-	vars     map[string]string           // the entry's resolved vars, runners.native.env included
+	name      string
+	runner    string
+	compose   *config.ComposePluginConfig // nil unless the plan runs this entry under compose
+	profiles  []string                    // compose profiles the plan activates for this entry, if any
+	services  []string                    // compose service subset the plan selected, if any
+	command   string                      // native: runners.native.build, run by a shell
+	postBuild string                      // native: runners.native.post_build, run by a shell
+	dir       string                      // native: runners.native.dir, before resolution
+	vars      map[string]string           // the entry's resolved vars, runners.native.env included
 }
 
 // planBuildTargets lists the plan's entries that have something to build, in plan order.
@@ -57,7 +58,7 @@ func planBuildTargets(plan *lifecycle.ExecutionPlan) []planBuildTarget {
 			}
 			targets = append(targets, planBuildTarget{
 				name: entry.Name, runner: entry.Runner,
-				command: cfg.Build, dir: cfg.Dir, vars: entry.Vars,
+				command: cfg.Build, postBuild: cfg.PostBuild, dir: cfg.Dir, vars: entry.Vars,
 			})
 		}
 	}
@@ -164,6 +165,9 @@ func buildComposeTarget(e *config.Environment, c *config.Config, target planBuil
 // runners.native.run. Build and run are two commands about one piece of software; if they
 // disagreed about the directory or the environment, the build would succeed against a
 // different tree than the one that starts.
+//
+// PostBuild (runners.native.post_build) runs after a successful build, in the same directory
+// and with the same environment variables (TASK-319).
 func buildNativeTarget(e *config.Environment, c *config.Config, target planBuildTarget, passthrough []string) error {
 	if len(passthrough) > 0 {
 		// The command is a string dva hands to a shell, not an argv it can extend: appending
@@ -186,12 +190,26 @@ func buildNativeTarget(e *config.Environment, c *config.Config, target planBuild
 		// string to sh, so printing the raw form would preview a command that differs from the
 		// one that runs — on the single invocation whose entire purpose is to be that preview.
 		fmt.Fprintf(os.Stderr, "[dry-run] %s: sh -c %q in %s\n", target.name, env.Interpolate(target.command), dir)
+		if target.postBuild != "" {
+			fmt.Fprintf(os.Stderr, "[dry-run] %s: post-build: sh -c %q in %s\n", target.name, env.Interpolate(target.postBuild), dir)
+		}
 		return nil
 	}
 
 	// Interpolated here too, for the same reason: the echo is a record of what ran.
 	fmt.Fprintf(os.Stderr, "  $ %s\n", env.Interpolate(target.command))
-	return dvaexec.ExecSubprocessInDir(env, dir, target.command, nil, true)
+	if err := dvaexec.ExecSubprocessInDir(env, dir, target.command, nil, true); err != nil {
+		return err
+	}
+
+	// Run post-build command if declared (TASK-319)
+	if target.postBuild != "" {
+		fmt.Fprintf(os.Stderr, "  $ %s\n", env.Interpolate(target.postBuild))
+		if err := dvaexec.ExecSubprocessInDir(env, dir, target.postBuild, nil, true); err != nil {
+			return fmt.Errorf("post-build failed: %w", err)
+		}
+	}
+	return nil
 }
 
 // buildPlanEntry routes one target to whatever owns its build.

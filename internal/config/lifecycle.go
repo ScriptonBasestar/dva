@@ -46,6 +46,15 @@ type LifecycleEntry struct {
 	// and working directory resolve against the sourced directory. (TASK-051)
 	Source *SourceConfig `yaml:"source,omitempty"`
 
+	// Optional marks this entry as optional — if its directory does not exist,
+	// the entry is skipped with a warning instead of failing the plan. (TASK-319)
+	Optional bool `yaml:"optional,omitempty"`
+
+	// Primary marks this compose entry as the primary compose entry. When set,
+	// PrimaryComposeEntry() returns this entry instead of inferring from order.
+	// Only one entry should have Primary=true. (TASK-319)
+	Primary bool `yaml:"primary,omitempty"`
+
 	// --- Tier 1: Core ---
 	Compose *ComposePluginConfig `yaml:"compose,omitempty"`
 	Process *ProcessPluginConfig `yaml:"process,omitempty"`
@@ -103,10 +112,11 @@ func (s *SourceConfig) Validate() error {
 }
 
 type NativeRunnerConfig struct {
-	Dir   string            `yaml:"dir"`
-	Build string            `yaml:"build"`
-	Run   string            `yaml:"run"`
-	Env   map[string]string `yaml:"env"`
+	Dir       string            `yaml:"dir"`
+	Build     string            `yaml:"build"`
+	PostBuild string            `yaml:"post_build"`
+	Run       string            `yaml:"run"`
+	Env       map[string]string `yaml:"env"`
 }
 
 type DockerRunnerConfig struct {
@@ -150,6 +160,8 @@ func (e *LifecycleEntry) UnmarshalYAML(node *yaml.Node) error {
 		HealthChecks  map[string]HealthCheckConfig `yaml:"health_checks"`
 		DefaultRunner string                       `yaml:"default_runner"`
 		Source        *SourceConfig                `yaml:"source"`
+		Optional      bool                         `yaml:"optional"`
+		Primary       bool                         `yaml:"primary"`
 
 		// Nested format: plugin config under its type key
 		Compose       *ComposePluginConfig       `yaml:"compose"`
@@ -179,6 +191,8 @@ func (e *LifecycleEntry) UnmarshalYAML(node *yaml.Node) error {
 	e.HealthChecks = raw.HealthChecks
 	e.DefaultRunner = raw.DefaultRunner
 	e.Source = raw.Source
+	e.Optional = raw.Optional
+	e.Primary = raw.Primary
 
 	runners, err := decodeRunnersMap(node)
 	if err != nil {

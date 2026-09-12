@@ -80,6 +80,7 @@ func (c *Config) ValidateWarnings() []string {
 	warnings = append(warnings, c.warnRemovedCLIReferences()...)
 	warnings = append(warnings, c.warnEquivalentReplaceHooks()...)
 	warnings = append(warnings, c.warnOrphanHealthChecks()...)
+	warnings = append(warnings, c.warnMultiplePrimaryCompose()...)
 
 	// Build a contextual environment for accurate interpolation checks.
 	//
@@ -407,8 +408,8 @@ func (c *Config) warnDuplicatePlanDeclarations() []string {
 				continue
 			}
 			warnings = append(warnings, fmt.Sprintf(
-				"plans %q and %q declare equal environment, site, vars, endpoint_tags, entries, and composes — review whether both are intentional",
-				nameA, nameB,
+				"plans %q and %q declare equal environment, site, vars, endpoint_tags, entries, and composes — review whether both are intentional; consider using alias: { alias: %q } for one",
+				nameA, nameB, nameA,
 			))
 		}
 	}
@@ -1499,4 +1500,23 @@ func (c *Config) warnSuspiciousEnvPatterns() []string {
 
 	sort.Strings(warnings)
 	return warnings
+}
+
+// warnMultiplePrimaryCompose warns when multiple compose stack entries declare primary=true.
+// Only one entry should be marked as primary; the first one wins but this indicates a config conflict.
+func (c *Config) warnMultiplePrimaryCompose() []string {
+	var primaries []string
+	for name, entry := range c.Stack {
+		if entry != nil && entry.ComposeConfig() != nil && entry.Primary {
+			primaries = append(primaries, name)
+		}
+	}
+	if len(primaries) <= 1 {
+		return nil
+	}
+	sort.Strings(primaries)
+	return []string{
+		fmt.Sprintf("stack: multiple compose entries marked primary=true (%s); only one should be primary — the first alphabetically (%s) is used, review the others",
+			strings.Join(primaries, ", "), primaries[0]),
+	}
 }

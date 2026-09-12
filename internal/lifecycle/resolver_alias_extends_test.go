@@ -2,6 +2,7 @@ package lifecycle
 
 import (
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/ScriptonBasestar/dva/internal/config"
@@ -189,4 +190,159 @@ func TestMergePlanExtends(t *testing.T) {
 	if e2.Name != "worker" || e2.Order != 30 {
 		t.Errorf("entry 2: expected appended worker, got %+v", e2)
 	}
+}
+
+func TestMergePlanExtendsEdgeCases(t *testing.T) {
+	t.Run("extends self-reference fails", func(t *testing.T) {
+		cfg := &config.Config{
+			Plans: map[string]*config.PlanConfig{
+				"self": {
+					Extends: "self",
+				},
+			},
+		}
+		_, err := MergePlanExtends(cfg, "self", cfg.Plans["self"])
+		if err == nil {
+			t.Fatal("expected error for self-reference, got nil")
+		}
+		if err.Error() != "plan \"self\": extends cannot reference itself" {
+			t.Errorf("unexpected error: %v", err)
+		}
+	})
+
+	t.Run("extends cycle fails", func(t *testing.T) {
+		cfg := &config.Config{
+			Plans: map[string]*config.PlanConfig{
+				"cycle-a": {
+					Extends: "cycle-b",
+				},
+				"cycle-b": {
+					Extends: "cycle-a",
+				},
+			},
+		}
+		_, err := MergePlanExtends(cfg, "cycle-a", cfg.Plans["cycle-a"])
+		if err == nil {
+			t.Fatal("expected error for cycle, got nil")
+		}
+		if !strings.Contains(err.Error(), "cycle") {
+			t.Errorf("expected cycle error, got: %v", err)
+		}
+	})
+
+	t.Run("extends depth exceeded fails", func(t *testing.T) {
+		cfg := &config.Config{
+			Plans: map[string]*config.PlanConfig{
+				"p0": {Description: "p0"},
+				"p1": {Extends: "p0"},
+				"p2": {Extends: "p1"},
+				"p3": {Extends: "p2"},
+				"p4": {Extends: "p3"},
+			},
+		}
+		_, err := MergePlanExtends(cfg, "p4", cfg.Plans["p4"])
+		if err == nil {
+			t.Fatal("expected error for depth exceeded, got nil")
+		}
+		if !strings.Contains(err.Error(), "exceeds maximum depth") {
+			t.Errorf("expected depth exceeded error, got: %v", err)
+		}
+	})
+
+	t.Run("alias and extends mutually exclusive", func(t *testing.T) {
+		cfg := &config.Config{
+			Plans: map[string]*config.PlanConfig{
+				"parent": {Description: "Parent"},
+				"child": {
+					Alias:   "parent",
+					Extends: "parent",
+				},
+			},
+		}
+		_, err := MergePlanExtends(cfg, "child", cfg.Plans["child"])
+		if err == nil {
+			t.Fatal("expected error for alias+extends, got nil")
+		}
+		if !strings.Contains(err.Error(), "cannot have both alias and extends") {
+			t.Errorf("expected alias+extends error, got: %v", err)
+		}
+	})
+
+	t.Run("composes and extends mutually exclusive", func(t *testing.T) {
+		cfg := &config.Config{
+			Plans: map[string]*config.PlanConfig{
+				"parent": {Description: "Parent"},
+				"child": {
+					Extends: "parent",
+					Composes: []config.CompositionEntry{
+						{Plan: "some-plan"},
+					},
+				},
+			},
+		}
+		_, err := MergePlanExtends(cfg, "child", cfg.Plans["child"])
+		if err == nil {
+			t.Fatal("expected error for composes+extends, got nil")
+		}
+		if !strings.Contains(err.Error(), "extends is mutually exclusive with composes") {
+			t.Errorf("expected composes+extends error, got: %v", err)
+		}
+	})
+
+	t.Run("extends target must be concrete plan (not composition)", func(t *testing.T) {
+		cfg := &config.Config{
+			Plans: map[string]*config.PlanConfig{
+				"compose-plan": {Composes: []config.CompositionEntry{{Plan: "infra"}}},
+				"child":        {Extends: "compose-plan"},
+			},
+		}
+		_, err := MergePlanExtends(cfg, "child", cfg.Plans["child"])
+		if err == nil {
+			t.Fatal("expected error for extends to composition plan, got nil")
+		}
+		if !strings.Contains(err.Error(), "must be a concrete plan (not a composition plan)") {
+			t.Errorf("expected concrete plan (not composition) error, got: %v", err)
+		}
+	})
+
+	t.Run("extends target resolves through alias to concrete plan", func(t *testing.T) {
+		cfg := &config.Config{
+			Plans: map[string]*config.PlanConfig{
+				"base":  {Description: "Base", Environment: "dev"},
+				"alias": {Alias: "base"},
+				"child": {Extends: "alias", Description: "Child"},
+			},
+		}
+		merged, err := MergePlanExtends(cfg, "child", cfg.Plans["child"])
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if merged.Description != "Child" {
+			t.Errorf("expected 'Child', got %q", merged.Description)
+		}
+		if merged.Environment != "dev" {
+			t.Errorf("expected 'dev', got %q", merged.Environment)
+		}
+	})
+
+	t.Run("extends chain with alias in middle resolves to concrete", func(t *testing.T) {
+		cfg := &config.Config{
+			Plans: map[string]*config.PlanConfig{
+				"base":   {Description: "Base", Environment: "dev"},
+				"alias1": {Alias: "base"},
+				"alias2": {Alias: "alias1"},
+				"child":  {Extends: "alias2", Description: "Child"},
+			},
+		}
+		merged, err := MergePlanExtends(cfg, "child", cfg.Plans["child"])
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if merged.Description != "Child" {
+			t.Errorf("expected 'Child', got %q", merged.Description)
+		}
+		if merged.Environment != "dev" {
+			t.Errorf("expected 'dev', got %q", merged.Environment)
+		}
+	})
 }

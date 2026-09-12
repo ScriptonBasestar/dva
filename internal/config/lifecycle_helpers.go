@@ -161,7 +161,30 @@ func (c *Config) SortedStack() []LifecycleEntry {
 // PrimaryComposeEntry returns the lifecycle entry with lowest order that has a compose config.
 // Name is already populated from map keys during Load().
 // Tiebreaker: alphabetically first Name when Order values are equal.
+// If an entry has Primary=true, it is returned immediately (explicit primary wins).
+// Multiple entries with Primary=true is a validation error (TASK-319).
 func (c *Config) PrimaryComposeEntry() *LifecycleEntry {
+	// First pass: an explicit primary: true wins over the order/name inference.
+	//
+	// c.Stack is a map, so the visit order is randomized: picking "whichever primary we
+	// saw first" would return a different entry from run to run once a config marks more
+	// than one. Selecting by name keeps the choice deterministic and matches what
+	// warnMultiplePrimaryCompose tells the user is used.
+	var primaryEntry *LifecycleEntry
+	var primaryName string
+	for name, e := range c.Stack {
+		if e == nil || e.ComposeConfig() == nil || !e.Primary {
+			continue
+		}
+		if primaryEntry == nil || name < primaryName {
+			primaryEntry, primaryName = e, name
+		}
+	}
+	if primaryEntry != nil {
+		return primaryEntry
+	}
+
+	// Fallback: implicit selection by order then name
 	var best *LifecycleEntry
 	for _, e := range c.Stack {
 		if e.ComposeConfig() == nil {

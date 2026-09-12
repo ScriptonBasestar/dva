@@ -42,7 +42,7 @@ func TestDuplicatePlanDeclarationsEqualDeclarationsWarn(t *testing.T) {
 	}}
 
 	got := c.warnDuplicatePlanDeclarations()
-	want := []string{`plans "alpha" and "beta" declare equal environment, site, vars, endpoint_tags, entries, and composes — review whether both are intentional`}
+	want := []string{`plans "alpha" and "beta" declare equal environment, site, vars, endpoint_tags, entries, and composes — review whether both are intentional; consider using alias: { alias: "alpha" } for one`}
 	if !slices.Equal(got, want) {
 		t.Fatalf("warnDuplicatePlanDeclarations() = %v\n  want %v", got, want)
 	}

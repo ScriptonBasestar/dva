@@ -3,6 +3,8 @@ package lifecycle
 import (
 	"fmt"
 	"maps"
+	"os"
+	"path/filepath"
 	"slices"
 	"sort"
 	"strings"
@@ -356,6 +358,31 @@ func ResolvePlan(cfg *config.Config, planName string, cliVars map[string]string)
 			}
 		}
 
+		// Optional directory check: if entry is marked optional and its directory
+		// does not exist, skip this entry with a warning (TASK-319).
+		if stackEntry.Optional {
+			// Each runner shape carries its own directory field, and decodeRunnersMap keys
+			// the map by the name as written, so the lookup has to name both the runner and
+			// the type that runner decodes into — runners.process holds a ProcessPluginConfig,
+			// not a NativeRunnerConfig.
+			dir := ""
+			switch {
+			case optionalRunnerDir(stackEntry.Runners, "native") != "":
+				dir = optionalRunnerDir(stackEntry.Runners, "native")
+			case optionalRunnerDir(stackEntry.Runners, "process") != "":
+				dir = optionalRunnerDir(stackEntry.Runners, "process")
+			case stackEntry.Source != nil && stackEntry.Source.Path != "":
+				dir = stackEntry.Source.Path
+			}
+			if dir != "" {
+				resolvedDir := resolveDir(dir, owner.FileDir())
+				if _, err := os.Stat(resolvedDir); err != nil && os.IsNotExist(err) {
+					resolved.trace("entry: %s (optional) — skipped, directory %q not found", entryName, resolvedDir)
+					continue
+				}
+			}
+		}
+
 		finalRunner := normalizeRunnerName(stackEntry.DefaultRunner)
 		entryOverride := (*config.SiteEntryOverride)(nil)
 		if site != nil && site.EntryOverrides != nil {
@@ -623,4 +650,34 @@ func runnerDeclared(runners map[string]any, runner string) bool {
 		}
 	}
 	return false
+}
+
+// resolveDir resolves a directory path against the config directory.
+func resolveDir(dir, configDir string) string {
+	dir = strings.TrimSpace(dir)
+	if dir == "" {
+		return configDir
+	}
+	if filepath.IsAbs(dir) {
+		return dir
+	}
+	return filepath.Join(configDir, dir)
+}
+
+// optionalRunnerDir reports the working directory a runner declares, for the optional-entry
+// existence check. It returns "" when the runner is absent or declares no directory; the
+// caller treats that as "nothing to check" rather than as the config directory, so an entry
+// that never named a directory is not skipped on the strength of an unrelated path.
+func optionalRunnerDir(runners map[string]any, name string) string {
+	cfg, ok := runners[name]
+	if !ok {
+		return ""
+	}
+	switch c := cfg.(type) {
+	case *config.NativeRunnerConfig:
+		return c.Dir
+	case *config.ProcessPluginConfig:
+		return c.Dir
+	}
+	return ""
 }
