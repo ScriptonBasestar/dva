@@ -67,8 +67,12 @@ interaction:
 **건너뛴 항목은 침묵하지 않는다.** 훅 루프는 건너뛴 스텝마다 한 줄을 stderr에 남긴다.
 
 ```
-[hook:after:up] [1/2] Seed the local Penpot account and Stage 0 file — skipped: plans: [design], running plan is 'verify'
+[hook:after:up] Seed the local Penpot account and Stage 0 file — skipped: plans: [design], running plan is 'verify'
 ```
+
+`[n/m]` 진행 카운터가 없는 것은 의도한 것이다. 그 번호는 `runHookSteps`가 **실행할**
+스텝을 세는 것이라, 건너뛴 스텝에 붙이면 실행되지 않은 항목이 실행 목록의 자리를 차지한
+것처럼 보인다.
 
 TASK-374·375가 optional 엔트리 skip에 대해 정한 것과 같은 판단이다. 실행되지 않은
 선언이 조용히 사라지면 "왜 안 돌았지"의 답이 출력 어디에도 없다.

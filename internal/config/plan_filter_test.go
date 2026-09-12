@@ -75,6 +75,32 @@ func TestValidateRejectsUndeclaredPlanInHookFilter(t *testing.T) {
 	}
 }
 
+// TestValidateChecksEveryHookPhase exists because validateHookPlanFilters walks the three
+// phases through three separate calls, and every other test here uses `after:`. Verified by
+// deleting the `before` and `replace` calls: internal/config stayed green while a typo'd
+// filter on either phase validated clean and skipped forever — which is precisely the
+// scenario the error-not-warning argument is built on.
+func TestValidateChecksEveryHookPhase(t *testing.T) {
+	for _, phase := range []string{"before", "replace", "after"} {
+		t.Run(phase, func(t *testing.T) {
+			dir := t.TempDir()
+			if err := os.WriteFile(filepath.Join(dir, "compose.yml"), []byte("services: {}\n"), 0644); err != nil {
+				t.Fatalf("write compose.yml: %v", err)
+			}
+			body := strings.Replace(planFilterFixture, "%s", "nosuchplan", 1)
+			cfg := loadConfigForSchemaTest(t, dir, strings.Replace(body, "    after:", "    "+phase+":", 1))
+
+			err := cfg.Validate()
+			if err == nil {
+				t.Fatalf("Validate() accepted an undeclared plan under %s:", phase)
+			}
+			if !strings.Contains(err.Error(), "interaction.up."+phase+"[0].plans") {
+				t.Errorf("error does not name the %s phase:\n%s", phase, err)
+			}
+		})
+	}
+}
+
 // TestValidateAcceptsDeclaredPlanInHookFilter is the control. Rejecting the typo is only
 // useful if the feature it guards still validates — a check keyed off the presence of
 // `plans:` rather than its contents would fail here and take the whole feature with it.

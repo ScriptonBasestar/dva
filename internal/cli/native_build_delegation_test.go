@@ -161,3 +161,108 @@ func TestNativeBuildHonoursDryRunWhenNested(t *testing.T) {
 		})
 	}
 }
+
+// writeFilteredNativeBuildConfig is writeNativeBuildConfig's TASK-331 sibling: the same
+// `build: native` mode, but every replace step carries a `plans:` filter.
+//
+// Two plans, deliberately. The filter has to name a declared plan or `dva validate` refuses
+// the file, and a fixture that cannot validate reproduces nothing — but with exactly one plan
+// declared, DefaultPlan() returns that plan, detectPlanRoute routes on it, and the invocation
+// leaves through runPlanBuild without ever reaching the branch under test. Two plans and no
+// `default_plan` is the shape where nothing routes.
+func writeFilteredNativeBuildConfig(t *testing.T, marker string) string {
+	t.Helper()
+	dir := t.TempDir()
+	body := `version: "0.1.44"
+stack:
+  compose:
+    default_runner: compose
+    order: 10
+    runners:
+      compose:
+        files: [compose.yml]
+plans:
+  design:
+    entries:
+      - name: compose
+  verify:
+    entries:
+      - name: compose
+modes:
+  nativemode:
+    build: native
+interaction:
+  build:
+    replace:
+      - step: design-only native build
+        plans: [design]
+        run: "touch ` + marker + `"
+`
+	if err := os.WriteFile(filepath.Join(dir, "dva.yml"), []byte(body), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "compose.yml"), []byte("services: {}\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	oldWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+	oldDryRun := dryRun
+	cfg, env = nil, nil
+	t.Cleanup(func() {
+		os.Chdir(oldWd)
+		cfg, env = nil, nil
+		dryRun = oldDryRun
+	})
+	return dir
+}
+
+// TestNestedNativeBuildAppliesThePlanFilter covers the second hook-executing site (TASK-331).
+//
+// compose.go's `build: native` branch is the only place besides wrapWithHooks that runs
+// replace steps, and it is reachable only at DVA_HOOK_DEPTH>0. It was left unfiltered in the
+// first cut of TASK-331 and the whole suite stayed green — a `plans:`-filtered step would run
+// there while the same step was correctly skipped everywhere else, which is worse than not
+// having the filter at all.
+//
+// The path is reached only after detectPlanRoute returns ok=false, so nothing routes here by
+// construction and a filter can never match. The step must therefore be skipped, and the
+// error must say so rather than claiming no replace was declared — the difference decides
+// whether the reader goes looking for a declaration that is right there in the file.
+func TestNestedNativeBuildAppliesThePlanFilter(t *testing.T) {
+	marker := filepath.Join(t.TempDir(), "NATIVE-BUILD-RAN")
+	writeFilteredNativeBuildConfig(t, marker)
+	t.Setenv(config.EnvHookDepthKey, "1")
+
+	// `web` is a compose service name, not a plan: detectPlanRoute declines it (leaving the
+	// invocation unrouted) while requirePlanSelection accepts it as a selection. That
+	// combination is the only way into this branch with plans declared, and it is the
+	// long-standing `dva build <service>` spelling the code comment there calls out.
+	stdout, stderr, err := captureValidateOutput(t, func() error {
+		return buildCmd.RunE(buildCmd, []string{"--mode", "nativemode", "web"})
+	})
+
+	if err == nil {
+		t.Fatalf("nested build succeeded with every replace step filtered out; nothing ran and nothing said so\nstdout: %s\nstderr: %s", stdout, stderr)
+	}
+	if _, statErr := os.Stat(marker); statErr == nil {
+		t.Error("the design-only replace step ran on a path where no plan routes")
+	}
+	if !strings.Contains(err.Error(), "filtered out by its 'plans:'") {
+		t.Errorf("the error does not name the filter as the cause:\n%v", err)
+	}
+	if strings.Contains(err.Error(), "no interaction.build.replace defined") {
+		t.Errorf("the error claims nothing was declared, but the config declares a replace step:\n%v", err)
+	}
+	// The skip still announces itself here, exactly as it does under wrapWithHooks. The error
+	// names the situation; the announcement names the step, which is what an author with
+	// several filtered steps needs.
+	if !strings.Contains(stderr, "[hook:replace:build]") || !strings.Contains(stderr, "design-only native build") {
+		t.Errorf("the skipped step was not announced on stderr:\n%s", stderr)
+	}
+}

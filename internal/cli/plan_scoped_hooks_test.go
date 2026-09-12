@@ -46,6 +46,13 @@ type hookMarkers struct {
 	design, verify, always string
 }
 
+// beforeMarkers is the same idea for the `before` phase. A separate fixture rather than more
+// steps in the shared one: the after-phase tests assert on counts and on stderr, and folding
+// two phases into one config would make each of them pass for reasons the other supplied.
+type beforeMarkers struct {
+	design, always string
+}
+
 func newHookMarkers(t *testing.T) hookMarkers {
 	t.Helper()
 	dir := t.TempDir()
@@ -70,6 +77,24 @@ func (m hookMarkers) config() string {
       - step: Warm the shared cache
         run: "touch %s"
 `, m.design, m.verify, m.always)
+}
+
+func newBeforeMarkers(t *testing.T) beforeMarkers {
+	t.Helper()
+	dir := t.TempDir()
+	return beforeMarkers{design: filepath.Join(dir, "b-design"), always: filepath.Join(dir, "b-always")}
+}
+
+func (m beforeMarkers) config() string {
+	return planScopedHookConfig + fmt.Sprintf(`interaction:
+  up:
+    before:
+      - step: Provision the design secrets
+        plans: [design]
+        run: "touch %s"
+      - step: Check the docker daemon
+        run: "touch %s"
+`, m.design, m.always)
 }
 
 func (m hookMarkers) ran(t *testing.T, path string) bool {
@@ -126,6 +151,31 @@ func TestPlanScopedHooks_FilteredHookDoesNotRunOnAnotherPlan(t *testing.T) {
 	// announcement is part of the contract and not a log-format detail (docs/64 §3).
 	if !strings.Contains(out, "Seed the design stack") || !strings.Contains(out, "skipped") {
 		t.Errorf("skipped hook was not announced on stderr:\n%s", out)
+	}
+}
+
+// TestPlanScopedHooks_BeforePhaseIsFilteredToo exists because every other test in this file
+// drives `after:`, and the three phases are filtered by three separate call sites in
+// wrapWithHooks. Verified by reverting only the `before` call site to the unfiltered lists:
+// the rest of the suite stayed green while a design-only hook fired on `dva up verify` —
+// which is TASK-331's original defect, one phase over.
+//
+// `before` is also the phase where the defect costs the most. An after-hook fails a command
+// that already did its work; a before-hook fails it before the stack comes up at all.
+func TestPlanScopedHooks_BeforePhaseIsFilteredToo(t *testing.T) {
+	m := newBeforeMarkers(t)
+	out := runUpWithHooks(t, m.config(), []string{"verify"})
+
+	if _, err := os.Stat(m.design); err == nil {
+		t.Errorf("the design-only before-hook ran under `dva up verify`\nstderr:\n%s", out)
+	}
+	if _, err := os.Stat(m.always); err != nil {
+		t.Errorf("the unfiltered before-hook did not run under `dva up verify`\nstderr:\n%s", out)
+	}
+	// The announcement is per-phase too: reportSkippedHookSteps is called three times, and
+	// dropping the `before` call leaves a step that silently does not run.
+	if !strings.Contains(out, "[hook:before:up]") || !strings.Contains(out, "Provision the design secrets") {
+		t.Errorf("the skipped before-hook was not announced on stderr:\n%s", out)
 	}
 }
 
@@ -209,14 +259,20 @@ func TestPlanScopedHooks_FilteredReplaceFallsBackToBuiltin(t *testing.T) {
 	wrapWithHooks("up", cmd)
 
 	oldStderr := os.Stderr
-	_, w, _ := os.Pipe()
+	r, w, _ := os.Pipe()
 	os.Stderr = w
 	err := cmd.RunE(cmd, []string{"design"})
 	w.Close()
 	os.Stderr = oldStderr
 
+	var buf bytes.Buffer
+	if _, copyErr := buf.ReadFrom(r); copyErr != nil {
+		t.Fatalf("read stderr: %v", copyErr)
+	}
+	out := buf.String()
+
 	if err != nil {
-		t.Fatalf("dva up design: %v", err)
+		t.Fatalf("dva up design: %v\nstderr:\n%s", err, out)
 	}
 	if !builtinRan {
 		t.Error("a replace list filtered away for this plan suppressed the built-in instead of yielding to it")
@@ -224,4 +280,73 @@ func TestPlanScopedHooks_FilteredReplaceFallsBackToBuiltin(t *testing.T) {
 	if _, statErr := os.Stat(replaced); statErr == nil {
 		t.Error("the verify-only replace step ran under `dva up design`")
 	}
+	// The replace phase has its own announcement call, and this is the phase where silence
+	// misleads most: the output is the built-in's, indistinguishable from a config that
+	// declared no replace at all.
+	if !strings.Contains(out, "[hook:replace:up]") || !strings.Contains(out, "Bring up the design stack by hand") {
+		t.Errorf("the skipped replace step was not announced on stderr:\n%s", out)
+	}
+}
+
+// TestSkipLineExamplesInDocsMatchTheRenderedFormat pins docs/64 and USAGE.md to the code
+// that produces the line, rather than to a second copy of the string.
+//
+// review-331 F5 found the docs/64 example carrying a `[1/2]` progress counter the code never
+// emits. A grep-for-the-literal binding would not have caught it — that stores the wrong
+// string twice. Rendering the expected line through the real printer means editing either
+// half of the format (config.StepsForPlan's suffix or reportSkippedHookSteps' prefix) fails
+// here instead of silently desyncing both documents.
+func TestSkipLineExamplesInDocsMatchTheRenderedFormat(t *testing.T) {
+	// The exact step and plan names the two documents use in their examples.
+	for _, tc := range []struct {
+		doc, step, filter, running string
+	}{
+		{"docs/64-plan-scoped-interaction-hooks.md", "Seed the local Penpot account and Stage 0 file", "design", "verify"},
+		{"USAGE.md", "Penpot 계정 시드", "design", "verify"},
+	} {
+		t.Run(tc.doc, func(t *testing.T) {
+			body, err := os.ReadFile(filepath.Join("..", "..", tc.doc))
+			if err != nil {
+				t.Fatalf("reading %s: %v", tc.doc, err)
+			}
+
+			_, skipped := config.StepsForPlan(
+				[]config.ProvisionItem{{Step: tc.step, Run: "true", Plans: []string{tc.filter}}},
+				tc.running,
+			)
+			if len(skipped) != 1 {
+				t.Fatalf("fixture produced %d skip lines, want 1; the comparison would be vacuous", len(skipped))
+			}
+
+			rendered := strings.TrimSpace(captureStderr(t, func() {
+				reportSkippedHookSteps("after", "up", skipped)
+			}))
+			if rendered == "" {
+				t.Fatal("the printer rendered nothing; the comparison would be vacuous")
+			}
+			if !strings.Contains(string(body), rendered) {
+				t.Errorf("%s does not contain the line this printer renders;\n want: %s", tc.doc, rendered)
+			}
+		})
+	}
+}
+
+// captureStderr runs fn with os.Stderr redirected and returns what it wrote.
+func captureStderr(t *testing.T, fn func()) string {
+	t.Helper()
+	old := os.Stderr
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("pipe: %v", err)
+	}
+	os.Stderr = w
+	fn()
+	w.Close()
+	os.Stderr = old
+
+	var buf bytes.Buffer
+	if _, err := buf.ReadFrom(r); err != nil {
+		t.Fatalf("read stderr: %v", err)
+	}
+	return buf.String()
 }
