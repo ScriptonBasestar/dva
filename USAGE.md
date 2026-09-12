@@ -1802,6 +1802,11 @@ interaction:
 있다는 사실이 아니라 **이번 실행에 남은 `replace` 스텝이 있는지**로 판정하므로, plan을
 안 타는 실행에서 아무것도 안 도는 상태가 되지 않습니다.
 
+예외는 되돌아갈 내장 동작이 없는 한 자리뿐입니다 — `mode.build: native`의 중첩 실행
+경로(`DVA_HOOK_DEPTH>0`)에서 `build`의 `replace`가 전부 걸러지면, dva는 조용히 넘어가지
+않고 무엇이 걸렀는지 말하는 에러로 실패합니다. `native`는 "빌드는 `replace`가 한다"는
+선언이라 내장 빌드가 존재하지 않기 때문입니다.
+
 설계 근거: `docs/64-plan-scoped-interaction-hooks.md`.
 
 **`--dry-run`/`--explain`은 `run:`에 적힌 `dva …` 재귀 호출 안쪽까지 들여다보지 않습니다.**

@@ -508,7 +508,7 @@
             "plans": {
               "type": "array",
               "items": { "type": "string" },
-              "description": "Restrict this step to the named plans. Honoured under interaction hooks (before/replace/after) only — 'provision:' and interaction 'steps:' route no plan, and 'dva validate' warns when the key appears there. Omitted means every plan; a filter that names a plan this dva.yml does not declare is rejected. See docs/64.",
+              "description": "Restrict this step to the named plans. Honoured under interaction hooks (before/replace/after) only — 'provision:' and interaction 'steps:' route no plan, and 'dva validate' warns when the key appears there. Omitted means every plan; an empty array is rejected on purpose, so that \"every plan\" has exactly one spelling and the two cannot drift apart in meaning. A filter that names a plan this dva.yml does not declare is rejected. See docs/64.",
               "minItems": 1,
               "examples": [["design"], ["design", "verify"]]
             }

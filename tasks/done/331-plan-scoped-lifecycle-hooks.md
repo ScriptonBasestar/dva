@@ -62,7 +62,7 @@ verify plan에는 Penpot 비밀이 없으니 당연히 실패한다. 훅이 desi
 - [x] plan 필터가 붙은 훅이 다른 plan에서 실행되지 않는다 | verify: `go test ./internal/cli/ -run 'TestPlanScopedHooks_(FilteredHookDoesNotRunOnAnotherPlan|FilteredHookSkipsWhenNoPlanRoutes|DefaultPlanRoutesTheFilter)'`
 - [x] 필터 없는 기존 훅은 모든 plan에서 그대로 실행된다(호환) | verify: `go test ./internal/cli/ -run 'TestPlanScopedHooks_(UnfilteredHookRunsOnEveryPlan|FilteredReplaceFallsBackToBuiltin)'`
 - [x] `dva validate`가 존재하지 않는 plan 이름을 훅 필터에 쓰면 거부한다 | verify: `go test ./internal/config/ -run 'TestValidate(RejectsUndeclaredPlanInHookFilter|AcceptsDeclaredPlanInHookFilter|ReportsEveryUndeclaredPlanInOnePass|NamesTheEmptyPlansCaseDifferently)'`
-- [x] 문서(USAGE.md 또는 docs/)의 interaction 절이 plan 스코프를 설명한다 | verify: `/usr/bin/grep -qF '**훅 항목의 plan 스코프 (`plans:`)**' USAGE.md`
+- [x] 문서(USAGE.md 또는 docs/)의 interaction 절이 plan 스코프를 설명한다 | verify: `/usr/bin/grep -qF '**훅 항목의 plan 스코프 (`plans:`)**' USAGE.md && go test ./internal/cli/ -run TestSkipLineExamplesInDocsMatchTheRenderedFormat -count=1`
 
 ## Decision (2026-09-12)
 
