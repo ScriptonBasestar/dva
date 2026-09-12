@@ -7,7 +7,7 @@ effort: M
 exec-tier: standard
 created-at: 2026-09-05T09:00:00+09:00
 source: "docs/dogfood/{dripter,flow-taskchain,flow-knowchain}.md"
-status: todo
+status: done
 needs-human: false
 ---
 
