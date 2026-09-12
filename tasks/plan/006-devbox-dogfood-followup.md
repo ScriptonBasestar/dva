@@ -3,9 +3,9 @@ id: PLAN-006
 title: "Work the devbox dogfood follow-up queue in dependency order"
 type: plan
 scope: "TASK-311..323 from the 2026-09-05 mydevbox migration, plus the needs-human cards that gate the rest"
-progress: 84
+progress: 88
 total-tasks: 26
-completed-tasks: 22
+completed-tasks: 23
 children: [TASK-339, TASK-340, TASK-328, TASK-329, TASK-312, TASK-313, TASK-317, TASK-311, TASK-324, TASK-314, TASK-316, TASK-320, TASK-322, TASK-315, TASK-318, TASK-323, TASK-249, TASK-307, TASK-309, TASK-319, TASK-321, TASK-345, TASK-346, TASK-347, TASK-348, TASK-351]
 target-date: "2026-10-31"
 created: 2026-09-05
@@ -44,7 +44,7 @@ created: 2026-09-05
 
 ## Needs-human (결정 후 착수)
 
-- ~~TASK-307~~ plan alias/extends (완료 2026-09-11). TASK-309 → docs/56 §5 (5항목). 309의 선행 316·320은 둘 다 완료.
+- ~~TASK-307~~ plan alias/extends (완료 2026-09-11). TASK-309도 완료(2026-09-13) — docs/56 §6에 결정 5건, 억제 3수단 구현.
 - TASK-319 native entry ergonomics, TASK-321 destructive interaction agent-deny: 설계 결정 기록 필요.
 
 ## Devbox integration state (2026-09-05 저녁 갱신)
@@ -102,7 +102,7 @@ validate가 요구한다 — 둘은 다른 질문에 답한다.
 ### §Needs-human에 놓인 4장 — 결정 전에는 착수 불가
 
 - TASK-307 — plans `alias`/`extends` (done)
-- TASK-309 — suppression ergonomics (todo)
+- TASK-309 — suppression ergonomics (done)
 - TASK-319 — native entry ergonomics (todo)
 - TASK-321 — destructive interaction agent-deny (done)
 

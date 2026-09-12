@@ -27,9 +27,9 @@ ignore 수단은 침묵 남용으로 이어질 수 있어 설계 검토 필요.
 
 ## Completion Criteria
 
-- [x] 설계 결정 기록 | verify: `test -f docs/56-suppression-ergonomics-design.md && grep -q '^## 6. 결정' docs/56-suppression-ergonomics-design.md && grep -q '결정 완료' docs/56-suppression-ergonomics-design.md && ! grep -q '결정 대기' docs/56-suppression-ergonomics-design.md`
+- [x] 설계 결정 기록 | verify: `test -f docs/56-suppression-ergonomics-design.md && /usr/bin/grep -q '^## 6. 결정' docs/56-suppression-ergonomics-design.md && /usr/bin/grep -q '결정 완료' docs/56-suppression-ergonomics-design.md && ! /usr/bin/grep -q '결정 대기' docs/56-suppression-ergonomics-design.md`
 - [x] 구현 + 테스트 | verify: `go test ./internal/cli/ -run 'TestDriftIgnore|TestSuggestion|TestOmittedSuggestionCategory|TestAnAlreadyWrappedTarget|TestTargetFamiliesDVAReplaces|TestStaleSuggestionIgnore|TestStaleIgnoreWarnings|TestValidateSummary|TestSuggestIgnore' -count=1`
-- [x] dripter/flow-taskchain의 ignore 목록이 유의미하게 축약된 예시 | verify: `grep -rq '## Dogfood 축약 검증 (2026-09-13)' tasks/`
+- [x] dripter/flow-taskchain의 ignore 목록이 유의미하게 축약된 예시 | verify: `/usr/bin/grep -rq '## Dogfood 축약 검증 (2026-09-13)' tasks/`
 
 ## Dogfood evidence (2026-09-05 실행)
 
