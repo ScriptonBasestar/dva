@@ -1,0 +1,29 @@
+# Repo-root declaration for `gz-git integrate run`. Only the repository root is
+# read; a `.gz-git.yaml` in a subdirectory is ignored for these two keys, and a
+# missing file means reclaim nothing — which is exactly what dva did until
+# TASK-349: every integration ended with "RECLAIM skipped: reclaim nothing: no
+# declaration" and the worktree, both branches and the empty parent directory
+# were removed by hand.
+#
+# `integrationBranch` names the target instead of letting the resolver infer it
+# from `origin/HEAD`, which is local state a fresh clone or a re-pointed remote
+# can lack.
+#
+# `taskPattern` is the reclaim allow-list, and it is not a glob.
+# `MatchTaskPattern` keeps the text before the first `*` and prefix-compares it,
+# discarding the rest, so this entry reclaims any branch whose name starts with
+# `dev/` at any depth — `dev/a/b/c` and `dev/scratch` alike. `dev/*/*/*` and
+# `dev/*` are the same declaration; the segments mirror the branch convention,
+# they are not a depth check. Do not "fix" the count.
+#
+# There is no way to reclaim only some of the three: matching this pattern
+# deletes the worktree, the local branch and the remote branch together. So
+# anything you intend to keep must live outside `dev/`. `master` is unreachable
+# here because it does not start with `dev/`, and reclaim refuses the
+# integration and default branches before consulting this file at all. Reclaim
+# acts only on the branch being integrated; it never sweeps.
+branch:
+  integrationBranch:
+    - master
+  taskPattern:
+    - dev/*/*/*

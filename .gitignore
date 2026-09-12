@@ -28,7 +28,19 @@ Thumbs.db
 .claude/
 .serena/
 .cursor/
-.ce/
+# .ce/ 안에서 task-runtime.yaml 하나만 추적한다 — 저장소 신원 선언이라 이것이
+# 없으면 새 clone 과 다른 장비에서 `ce task run-*` 가 BLOCKED 다 (TASK-349).
+# 세 줄이 모두 필요하고 순서도 고정이다:
+#   !.ce/    — ~/.gitignore_global 이 `.ce/` 로 디렉토리째 무시한다. 무시된
+#              디렉토리는 git 이 안을 들여다보지도 않아서, 먼저 디렉토리를
+#              되살리지 않으면 아래 두 줄이 무력하다. 저장소 .gitignore 가
+#              global 보다 우선하므로 여기서만 되살릴 수 있다.
+#   .ce/*    — 그다음 내용물을 다시 무시한다. 디렉토리(`.ce/`)가 아니라
+#              내용물(`.ce/*`)을 지목해야 negation 이 닿는다.
+#   !...     — 마지막에 추적할 파일 하나만 예외로 꺼낸다.
+!.ce/
+.ce/*
+!.ce/task-runtime.yaml
 
 # Work files
 tmp/
