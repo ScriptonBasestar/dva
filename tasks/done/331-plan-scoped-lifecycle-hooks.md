@@ -7,7 +7,7 @@ effort: M
 exec-tier: strong
 created-at: 2026-09-07T12:00:00+09:00
 source: "dogfood: careerarchive-devbox (2026-09-07)"
-status: todo
+status: done
 needs-human: false
 ---
 
