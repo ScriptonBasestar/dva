@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"maps"
 	"os"
-	"path/filepath"
 	"slices"
 	"sort"
 	"strings"
@@ -20,6 +19,12 @@ type ExecutionPlan struct {
 	EnvVars         map[string]string
 	Entries         []ResolvedEntry
 	ResolutionTrace []string
+
+	// Warnings carries the resolution facts a user needs even when they did not ask to
+	// see the resolution. ResolutionTrace is the full narration and prints only under
+	// --dry-run; anything in here prints on every path, so it stays short by policy —
+	// an entry silently vanishing from the plan is the case it exists for (TASK-374).
+	Warnings []string
 
 	owner *config.Config
 }
@@ -358,20 +363,6 @@ func ResolvePlan(cfg *config.Config, planName string, cliVars map[string]string)
 			}
 		}
 
-		// Optional directory check: if the entry is marked optional and the directory it
-		// declares does not exist, drop the entry from the plan instead of failing the
-		// whole plan (TASK-319). The skip is recorded in the resolution trace, which the
-		// user reads under --dry-run.
-		if stackEntry.Optional {
-			if dir := optionalEntryDir(stackEntry); dir != "" {
-				resolvedDir := resolveDir(dir, owner.FileDir())
-				if _, err := os.Stat(resolvedDir); err != nil && os.IsNotExist(err) {
-					resolved.trace("entry: %s (optional) — skipped, directory %q not found", entryName, resolvedDir)
-					continue
-				}
-			}
-		}
-
 		finalRunner := normalizeRunnerName(stackEntry.DefaultRunner)
 		entryOverride := (*config.SiteEntryOverride)(nil)
 		if site != nil && site.EntryOverrides != nil {
@@ -414,6 +405,31 @@ func ResolvePlan(cfg *config.Config, planName string, cliVars map[string]string)
 		runnerConfig, err := stackEntry.GetRunnerConfig(finalRunner)
 		if err != nil {
 			return nil, &ResolveError{PlanName: concreteName, Step: "runner_config", Cause: fmt.Errorf("entry %q: %w", entryName, err)}
+		}
+
+		// Optional directory check: if the entry is marked optional and the directory it
+		// declares does not exist, drop the entry from the plan instead of failing the
+		// whole plan (TASK-319).
+		//
+		// This sits after the runner is chosen, not before it, because the directory that
+		// decides the entry's fate belongs to the runner that will actually run it. An
+		// entry declaring runners.native (with a dir) alongside runners.compose (without
+		// one) must not be skipped on native's directory when the plan picked compose
+		// (TASK-374). Consulting the entry's declarations in isolation could only ever
+		// guess, and picked the wrong one whenever the plan disagreed with the guess.
+		//
+		// Placing it here also means a malformed optional entry — an undeclared runner, an
+		// unresolvable one — now reports that error instead of being silently dropped.
+		// optional: promises tolerance for a directory that is not checked out, not for a
+		// declaration that does not parse, and the two failures want opposite responses.
+		if stackEntry.Optional {
+			if dir := optionalSkipDir(stackEntry, runnerConfig); dir != "" {
+				resolvedDir := EntryDir(owner.FileDir(), dir)
+				if _, err := os.Stat(resolvedDir); err != nil && os.IsNotExist(err) {
+					resolved.warn("entry: %s (optional) — skipped, directory %q not found", entryName, resolvedDir)
+					continue
+				}
+			}
 		}
 
 		resolvedEntry := ResolvedEntry{
@@ -554,6 +570,14 @@ func (p *ExecutionPlan) trace(format string, args ...any) {
 	p.ResolutionTrace = append(p.ResolutionTrace, fmt.Sprintf(format, args...))
 }
 
+// warn records a fact that has to reach the user on the execution path, and traces it as
+// well so the dry-run narration stays a complete account of the resolution rather than a
+// parallel one that happens to omit the parts that matter most.
+func (p *ExecutionPlan) warn(format string, args ...any) {
+	p.Warnings = append(p.Warnings, fmt.Sprintf(format, args...))
+	p.trace(format, args...)
+}
+
 // traceLayer records one layer of the variable precedence chain and how much it carried.
 // An empty layer is reported instead of omitted: "why did my variable never get set" is
 // answered by the layer that had nothing in it, so the layer has to appear either way.
@@ -641,18 +665,6 @@ func runnerDeclared(runners map[string]any, runner string) bool {
 	return false
 }
 
-// resolveDir resolves a directory path against the config directory.
-func resolveDir(dir, configDir string) string {
-	dir = strings.TrimSpace(dir)
-	if dir == "" {
-		return configDir
-	}
-	if filepath.IsAbs(dir) {
-		return dir
-	}
-	return filepath.Join(configDir, dir)
-}
-
 // runnerConfigDir reports the working directory one runner config declares. It returns ""
 // both when the config is absent and when that runner shape has no directory of its own —
 // compose, helm, script, docker and friends locate their work by file, not by directory —
@@ -691,27 +703,19 @@ func runnerConfigDir(cfg any) string {
 	return ""
 }
 
-// optionalEntryDir picks the directory whose existence decides whether an optional entry
-// survives plan resolution, or "" when the entry named no directory at all.
+// optionalSkipDir picks the directory whose existence decides whether an optional entry
+// survives plan resolution, or "" when nothing about the entry names one.
 //
-// An entry can declare its runner three different ways — the runners: map, a flat typed
-// field (process:, tilt:, ...), or source: — and only the first of those populates
-// Runners. Consulting the map alone made optional: true a silent no-op on the other two
-// shapes: the schema accepted the flag and nothing happened, which is the failure mode a
-// declarative flag can least afford.
+// The runner config the plan settled on is asked first and answers on its own whenever it
+// declares a directory. Only when it declares none — compose, helm, script, docker and
+// friends locate their work by file, not by directory — does source.path stand in, because
+// a source: entry that was never checked out is exactly the case optional: was added for.
 //
-// Runners is a map, so it is walked in sorted key order. "Whichever runner we saw first"
-// would pick a different directory from run to run on an entry declaring two.
-func optionalEntryDir(e *config.LifecycleEntry) string {
-	for _, name := range slices.Sorted(maps.Keys(e.Runners)) {
-		if dir := runnerConfigDir(e.Runners[name]); dir != "" {
-			return dir
-		}
-	}
-	for _, cfg := range []any{e.Process, e.Kustomize, e.Tilt, e.Vagrant, e.Serverless} {
-		if dir := runnerConfigDir(cfg); dir != "" {
-			return dir
-		}
+// "" means "nothing to check", not "the config directory": an entry that named no directory
+// must not be skipped on the strength of an unrelated path.
+func optionalSkipDir(e *config.LifecycleEntry, runnerConfig any) string {
+	if dir := runnerConfigDir(runnerConfig); dir != "" {
+		return dir
 	}
 	if e.Source != nil && e.Source.Path != "" {
 		return e.Source.Path

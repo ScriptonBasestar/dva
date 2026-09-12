@@ -56,6 +56,12 @@ func waitForProcessExit(ctx context.Context, pid int, timeout time.Duration) boo
 // would let `build` compile in one tree while `up` runs from another, which produces no error
 // at all — just a stale binary and a build whose output nothing reads.
 func EntryDir(configDir, dir string) string {
+	// Whitespace is trimmed before the empty test so that a dir: of blanks resolves to the
+	// config directory rather than to a subdirectory named with spaces. This was the only
+	// behavioural difference between this function and the resolver's own copy of the same
+	// rule, which TASK-374 folded in here; the stricter reading wins because a blank dir is
+	// a typo in every case and a real directory in none.
+	dir = strings.TrimSpace(dir)
 	switch {
 	case dir == "":
 		return configDir

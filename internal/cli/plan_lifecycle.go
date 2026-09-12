@@ -262,6 +262,22 @@ func parsePlanFlags(verb string, args []string) (planRunFlags, error) {
 //
 // stderr, not stdout, for the same reason the '[plan: ...]' header above it uses stderr —
 // --json output has to stay parseable (TASK-116).
+// printPlanWarnings writes the resolution facts that must reach the user whether or not
+// they asked for the resolution. It is the counterpart to printPlanResolution and runs on
+// every path, which is the whole point: an optional entry dropped for a missing directory
+// used to leave no trace outside --dry-run, so "why did that service never come up" had no
+// answer anywhere in the output the user actually saw (TASK-374).
+//
+// stderr for the same reason as everything else here — --json output has to stay parseable.
+func printPlanWarnings(plan *lifecycle.ExecutionPlan) {
+	if plan == nil {
+		return
+	}
+	for _, w := range plan.Warnings {
+		fmt.Fprintf(os.Stderr, "warning: %s\n", w)
+	}
+}
+
 func printPlanResolution(plan *lifecycle.ExecutionPlan) {
 	if plan == nil || len(plan.ResolutionTrace) == 0 {
 		return
@@ -308,6 +324,8 @@ func runPlanUp(c *config.Config, el *envLoad, planName string, extraArgs []strin
 	}
 	plan, c, e := runtime.plan, runtime.config, runtime.env
 	fmt.Fprintf(os.Stderr, "[plan: %s] environment=%s site=%s entries=%d\n", plan.Name, plan.EnvironmentName, plan.SiteName, len(plan.Entries))
+
+	printPlanWarnings(plan)
 
 	effectiveDryRun := dryRun || flags.dryRun
 	if effectiveDryRun {
@@ -373,6 +391,8 @@ func runPlanDown(c *config.Config, el *envLoad, planName string, extraArgs []str
 	}
 	plan, c, e := runtime.plan, runtime.config, runtime.env
 	fmt.Fprintf(os.Stderr, "[plan: %s] environment=%s site=%s entries=%d\n", plan.Name, plan.EnvironmentName, plan.SiteName, len(plan.Entries))
+
+	printPlanWarnings(plan)
 
 	effectiveDryRun := dryRun || flags.dryRun
 	if effectiveDryRun {
@@ -443,6 +463,8 @@ func runPlanStop(c *config.Config, el *envLoad, planName string, extraArgs []str
 	plan, c, e := runtime.plan, runtime.config, runtime.env
 	fmt.Fprintf(os.Stderr, "[plan: %s] environment=%s site=%s entries=%d\n", plan.Name, plan.EnvironmentName, plan.SiteName, len(plan.Entries))
 
+	printPlanWarnings(plan)
+
 	effectiveDryRun := dryRun || flags.dryRun
 	if effectiveDryRun {
 		printPlanResolution(plan)
@@ -486,6 +508,8 @@ func runPlanRestart(c *config.Config, el *envLoad, planName string, extraArgs []
 	}
 	plan, c, e := runtime.plan, runtime.config, runtime.env
 	fmt.Fprintf(os.Stderr, "[plan: %s] environment=%s site=%s entries=%d\n", plan.Name, plan.EnvironmentName, plan.SiteName, len(plan.Entries))
+
+	printPlanWarnings(plan)
 
 	effectiveDryRun := dryRun || flags.dryRun
 	if effectiveDryRun {

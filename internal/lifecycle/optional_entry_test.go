@@ -3,6 +3,7 @@ package lifecycle
 import (
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/ScriptonBasestar/dva/internal/config"
@@ -188,29 +189,110 @@ func TestResolvePlanSkipsOptionalEntryAcrossDeclarationShapes(t *testing.T) {
 	}
 }
 
-// An entry declaring two directory-bearing runners must resolve to the same directory on
-// every run. Runners is a map, so an unsorted walk would pick either one at random.
-func TestOptionalEntryDirIsDeterministicAcrossRunners(t *testing.T) {
-	entry := &config.LifecycleEntry{
-		Name: "side",
-		Runners: map[string]any{
-			"native":  &config.NativeRunnerConfig{Dir: "a-native"},
-			"process": &config.ProcessPluginConfig{Dir: "z-process"},
-			"tilt":    &config.TiltPluginConfig{Dir: "m-tilt"},
+// The directory that decides an optional entry's fate belongs to the runner the plan
+// actually selected. An entry can declare several, and before TASK-374 the check consulted
+// them in a fixed priority order with no reference to the selection — so an entry declaring
+// runners.native (with a dir) alongside runners.compose (without one) was judged on
+// native's directory even when the plan ran compose, and vanished for a directory that
+// nothing in the chosen execution path would ever have opened.
+func TestResolvePlanOptionalEntryIsJudgedBySelectedRunner(t *testing.T) {
+	missing := filepath.Join(t.TempDir(), "not-checked-out")
+	cfg := &config.Config{
+		Stack: map[string]*config.LifecycleEntry{
+			"side": {
+				Name:     "side",
+				Optional: true,
+				Runners: map[string]any{
+					"native":  &config.NativeRunnerConfig{Run: "go run .", Dir: missing},
+					"compose": &config.ComposePluginConfig{Files: []string{"compose.side.yml"}},
+				},
+			},
+		},
+		Plans: map[string]*config.PlanConfig{
+			"local-dev": {Entries: []config.PlanEntry{{Name: "side", Runner: "compose"}}},
 		},
 	}
-	for i := range 50 {
-		if got := optionalEntryDir(entry); got != "a-native" {
-			t.Fatalf("iteration %d: optionalEntryDir = %q, want %q", i, got, "a-native")
-		}
+
+	plan, err := ResolvePlan(cfg, "local-dev", nil)
+	if err != nil {
+		t.Fatalf("ResolvePlan: %v", err)
+	}
+	if len(plan.Entries) != 1 {
+		t.Fatalf("entry was skipped on a directory belonging to a runner the plan did not pick; entries=%d", len(plan.Entries))
+	}
+
+	// The same entry, with the plan picking native instead, must still be skipped —
+	// otherwise this test would pass just as well against a check that never fires.
+	cfg.Plans["local-dev"].Entries[0].Runner = "native"
+	plan, err = ResolvePlan(cfg, "local-dev", nil)
+	if err != nil {
+		t.Fatalf("ResolvePlan(native): %v", err)
+	}
+	if len(plan.Entries) != 0 {
+		t.Fatalf("optional entry kept although the selected runner's dir is missing; entries=%d", len(plan.Entries))
 	}
 }
 
-// Nil flat fields are typed nil pointers once boxed in an any, which is not a nil
-// interface — reading Dir off one without a guard panics.
-func TestOptionalEntryDirIgnoresNilFlatFields(t *testing.T) {
-	if got := optionalEntryDir(&config.LifecycleEntry{Name: "side"}); got != "" {
-		t.Errorf("optionalEntryDir on a bare entry = %q, want \"\"", got)
+// A skipped entry has to be visible to someone who never passed --dry-run: ResolutionTrace
+// only prints there, so the skip also goes on Warnings, which prints on every path.
+func TestResolvePlanWarnsWhenOptionalEntryIsSkipped(t *testing.T) {
+	missing := filepath.Join(t.TempDir(), "not-checked-out")
+	cfg := optionalEntryConfig(true, "native", &config.NativeRunnerConfig{Run: "go run .", Dir: missing})
+
+	plan, err := ResolvePlan(cfg, "local-dev", nil)
+	if err != nil {
+		t.Fatalf("ResolvePlan: %v", err)
+	}
+	if len(plan.Warnings) != 1 {
+		t.Fatalf("Warnings = %v, want exactly one skip warning", plan.Warnings)
+	}
+	if !strings.Contains(plan.Warnings[0], "side") || !strings.Contains(plan.Warnings[0], missing) {
+		t.Errorf("warning %q names neither the entry nor the directory that caused the skip", plan.Warnings[0])
+	}
+	// warn() traces as well, so --dry-run stays a complete account rather than one that
+	// happens to omit the entries that disappeared.
+	if !slices.Contains(plan.ResolutionTrace, plan.Warnings[0]) {
+		t.Errorf("skip warning is absent from ResolutionTrace: %v", plan.ResolutionTrace)
+	}
+}
+
+// An entry that is kept produces no warning — a channel that prints on every path must not
+// become noise on the ordinary case.
+func TestResolvePlanDoesNotWarnWhenNothingIsSkipped(t *testing.T) {
+	dir := t.TempDir()
+	cfg := optionalEntryConfig(true, "native", &config.NativeRunnerConfig{Run: "go run .", Dir: dir})
+
+	plan, err := ResolvePlan(cfg, "local-dev", nil)
+	if err != nil {
+		t.Fatalf("ResolvePlan: %v", err)
+	}
+	if len(plan.Warnings) != 0 {
+		t.Errorf("Warnings = %v, want none", plan.Warnings)
+	}
+}
+
+// optionalSkipDir answers "" both for a runner shape that declares no directory of its own
+// and for a typed nil pointer boxed in an any, which is not a nil interface and panics if
+// a case reads Dir off it without a guard.
+func TestOptionalSkipDirFallsBackToSourcePath(t *testing.T) {
+	withSource := &config.LifecycleEntry{Name: "side", Source: &config.SourceConfig{Path: "vendor/side"}}
+
+	// compose declares no dir, so source.path decides.
+	if got := optionalSkipDir(withSource, &config.ComposePluginConfig{Files: []string{"compose.yml"}}); got != "vendor/side" {
+		t.Errorf("optionalSkipDir with a dirless runner = %q, want %q", got, "vendor/side")
+	}
+	// the selected runner's own dir wins over source.path.
+	if got := optionalSkipDir(withSource, &config.NativeRunnerConfig{Dir: "app"}); got != "app" {
+		t.Errorf("optionalSkipDir = %q, want the selected runner's dir %q", got, "app")
+	}
+	// a typed nil must not panic, and must not be read as a directory.
+	var nilNative *config.NativeRunnerConfig
+	if got := optionalSkipDir(&config.LifecycleEntry{Name: "side"}, nilNative); got != "" {
+		t.Errorf("optionalSkipDir on a typed nil = %q, want \"\"", got)
+	}
+	// nothing named a directory at all: "" means "nothing to check", not "the config dir".
+	if got := optionalSkipDir(&config.LifecycleEntry{Name: "side"}, &config.ComposePluginConfig{}); got != "" {
+		t.Errorf("optionalSkipDir with nothing declared = %q, want \"\"", got)
 	}
 }
 

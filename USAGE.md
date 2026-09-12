@@ -984,24 +984,31 @@ plans:
 
 검사 대상 디렉토리는 다음 순서로 찾습니다.
 
-1. `runners.<name>.dir` — 러너 이름 **사전순**으로 처음 발견되는 `dir`
-2. 평면 선언 형태의 `dir` — `process:`, `kustomize:`, `tilt:`, `vagrant:`, `serverless:`
-3. `source.path`
+1. **plan이 선택한 러너**의 `dir`
+2. 그 러너가 `dir`를 갖지 않으면 `source.path`
 
-어느 것도 선언하지 않은 엔트리는 **검사할 대상이 없으므로 유지**됩니다 — 무관한 경로를
-근거로 건너뛰지 않습니다. 상대 경로는 해당 엔트리를 소유한 설정 파일의 디렉토리를
+엔트리가 러너를 여러 개 선언했더라도 판정 근거는 **실제로 실행될 러너 하나**입니다.
+`runners.native`(`dir` 있음)와 `runners.compose`(`dir` 없음)를 함께 선언하고 plan이
+compose를 고르면, native의 디렉토리가 없더라도 엔트리는 **유지**됩니다 — compose 실행
+경로가 열어 볼 일이 없는 디렉토리이기 때문입니다. 같은 엔트리를 plan이 native로 고르면
+그때는 건너뜁니다.
+
+어느 쪽도 디렉토리를 주지 않는 엔트리는 **검사할 대상이 없으므로 유지**됩니다 — 무관한
+경로를 근거로 건너뛰지 않습니다. 상대 경로는 해당 엔트리를 소유한 설정 파일의 디렉토리를
 기준으로 해석합니다.
 
-**범위 제한**: `dir`를 가진 러너는 위 목록이 전부입니다. `compose`, `docker`, `helm`,
-`script`, `kubectl` 등은 디렉토리가 아니라 파일로 대상을 지정하므로 `optional: true`를
-달아도 **건너뛸 근거가 없어 항상 유지**됩니다. 또한 검사는 plan이 선택한 러너가 아니라
-위 우선순위로 찾은 첫 디렉토리를 봅니다 — `runners.native`(dir 없음)와
-`runners.compose`를 함께 선언하고 plan이 compose를 고르는 엔트리라면, compose가 쓰지
-않는 디렉토리를 근거로 건너뛸 수 있습니다.
+**범위 제한**: `dir`를 갖는 러너는 `native`, `process`, `kustomize`, `tilt`, `vagrant`,
+`serverless`입니다. `compose`, `docker`, `helm`, `script`, `kubectl` 등은 디렉토리가 아니라
+파일로 대상을 지정하므로, 이들 중 하나가 선택되고 `source.path`도 없으면 `optional: true`를
+달아도 **건너뛸 근거가 없어 항상 유지**됩니다.
 
-건너뛴 엔트리는 **dry-run 해석 트레이스**에만
-`entry: <name> (optional) — skipped, directory ... not found`로 기록됩니다. 실제
-`dva up <plan>` 실행 경로에는 별도 경고가 없으므로, 어떤 엔트리가 빠졌는지 확인하려면
+건너뛴 엔트리는 실행 경로에서 경고로 표시됩니다.
+
+```
+warning: entry: vendor-api (optional) — skipped, directory "/path/to/vendor/api" not found
+```
+
+같은 줄이 `--dry-run`의 해석 트레이스에도 남으므로, 전체 해석 과정을 함께 보려면
 `dva up <plan> --dry-run`을 씁니다.
 
 #### primary (다중 compose 엔트리의 명시적 대표)

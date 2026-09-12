@@ -47,9 +47,12 @@ type LifecycleEntry struct {
 	Source *SourceConfig `yaml:"source,omitempty"`
 
 	// Optional marks this entry as optional — if the directory it declares does not
-	// exist, the entry is dropped from the plan instead of failing the plan. The skip
-	// is recorded in the resolution trace, which the user sees under --dry-run; there
-	// is no warning on the normal execution path. (TASK-319)
+	// exist, the entry is dropped from the plan instead of failing the plan. The
+	// directory consulted is the one belonging to the runner the plan selected, so an
+	// entry declaring several is judged on the one that would actually have run.
+	//
+	// A skip prints as a warning on every execution path and is also recorded in the
+	// resolution trace that --dry-run shows in full. (TASK-319, TASK-374)
 	Optional bool `yaml:"optional,omitempty"`
 
 	// Primary marks this compose entry as the primary compose entry. When set,

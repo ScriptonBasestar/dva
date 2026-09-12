@@ -952,7 +952,7 @@
           },
           "optional": {
             "type": "boolean",
-            "description": "If true, an entry whose declared directory is missing is dropped from the plan instead of failing the plan; the skip appears in the --dry-run resolution trace (TASK-319)"
+            "description": "If true, an entry whose declared directory is missing is dropped from the plan instead of failing the plan. The directory checked is the one declared by the runner the plan selected, falling back to source.path when that runner declares none; the skip is reported as a warning on every execution path (TASK-319, TASK-374)"
           },
           "primary": {
             "type": "boolean",
