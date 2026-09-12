@@ -1,7 +1,7 @@
 ---
 id: TASK-374
 title: "optional entry skips are invisible outside --dry-run"
-type: fix
+type: bug
 priority: P3
 effort: S
 exec-tier: standard
@@ -44,8 +44,8 @@ TASK-319은 범위를 문서 정정으로 닫았다 — `lifecycle.go`/`schema.j
 
 ## Completion Criteria
 
-- [ ] 1의 설계 결정 기록 (경고 채널 도입 여부와 근거) | verify: human
-- [ ] 2, 3 구현 + 회귀 테스트 | verify: go test ./internal/lifecycle ./internal/cli
+- [ ] 1의 설계 결정 기록 (경고 채널 도입 여부와 근거) | verify: human — 카드에 "Design Record" 절이 추가되어 ExecutionPlan 경고 채널 도입 여부의 채택/보류 결정과 근거가 기록되었는지 확인
+- [ ] 2, 3 구현 + 회귀 테스트 | verify: `go test ./internal/lifecycle ./internal/cli`
 
 ## Notes
 
