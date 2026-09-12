@@ -51,7 +51,7 @@ Makefile/셸 worktree 로직은 추가하지 않았다 — `grep -c 'git worktre
 - `.gz-git.yaml`(저장소 루트) — `gz-git integrate run` 의 reclaim 이 읽는 유일한
   파일이다. 파일 자신의 주석이 "Only this file is read. Missing file means
   reclaim nothing" 이라고 적고 있고, 실제 원인은 이쪽의 부재였다. 형제 저장소
-  4곳(ce-agent-kit, ce-workbook, devenv, ce-devenv) 중 어느 `.ce/task-runtime.yaml`
+  3곳(ce-agent-kit, ce-workbook, devenv) 중 어느 `.ce/task-runtime.yaml`
   에도 reclaim scope 가 없는 이유가 이것이다 — 그 키는 거기 살지 않는다.
 - `.ce/task-runtime.yaml` — 저장소 **신원** 선언이다. `ce task run-start` /
   `run-status` / `run-finish` 가 이것이 없으면 BLOCKED 로 멈춘다. `run-doctor` 를
@@ -70,14 +70,36 @@ Makefile/셸 worktree 로직은 추가하지 않았다 — `grep -c 'git worktre
 나머지는 버리므로, 이 선언은 `dev/` 로 시작하는 **모든** 브랜치를 깊이와 무관하게
 회수한다 — `dev/a/b/c` 와 `dev/scratch` 가 똑같이 걸린다. 즉 `dev/*/*/*` 와
 `dev/*` 는 동일한 선언이며, 세 segment 는 브랜치 관례를 눈에 보이게 적어둔 것이지
-깊이 검사가 아니다. 보존할 브랜치는 `dev/` 밖에 두어야 한다. `master` 는 `dev/`
-로 시작하지 않아 닿지 않고, reclaim 은 integration/default 브랜치를 이 파일을
-읽기 전에 이미 거부한다. reclaim 은 통합 중인 브랜치에만 작용하며 쓸어내지 않는다.
+깊이 검사가 아니다. 보존할 브랜치는 `dev/` 밖에 두어야 한다.
+
+`taskPattern` 은 마지막 방어선이지 첫 번째가 아니다 — 이 점은 처음에 안전한
+방향으로 **부정확하게** 적었고(review-349 INFO 1) 소스를 확인해 정정한다.
+실제 순서는 셋이다.
+
+1. **로드 시점** — `rejectLiteralProtected`(`pkg/config/task_pattern.go:204-215`)가
+   `*` 로 시작하는 패턴을 `"matches every name"` 으로 거절하고, 보호된 브랜치
+   이름과 같은 패턴도 거절한다. 위험한 `taskPattern` 은 적용되는 게 아니라
+   **로드에 실패**한다.
+2. **`repository.IsProtected(opts.Branch)`**(`pkg/integrate/reclaim.go:44-47`)가
+   가장 먼저 돈다 — target/default/integration 비교보다도, 패턴 매칭보다도 앞이다.
+3. **integration/default/target 비교**(`reclaim.go:48-53`). `opts.Integration` 은
+   `integrationBranch` 키에서만 채워진다.
+
+패턴 매칭은 이 셋을 모두 통과한 뒤에야 돈다. `master` 는 `dev/` 로 시작하지 않아
+닿지 않는 것에 더해 위 1~3 에서 이미 여러 번 걸러진다. reclaim 은 통합 중인
+브랜치(`opts.Branch`) 하나에만 작용하며 브랜치 목록을 받지 않으므로 쓸어내지
+않는다. 이 문단을 늘린 이유는 원래 문장이 `taskPattern` 을 "삭제를 막는 유일한
+것" 처럼 읽히게 해서다 — 안전한 방향의 오류지만 과신을 부른다.
 
 **`integrationBranch: [master]`** 도 함께 선언했다. 없으면 resolver 가
-`origin/HEAD` 로 폴백하는데, 그것은 새로 clone 하거나 remote 를 다시 가리키면
-없을 수 있는 로컬 상태다. 그때 `integrate run` 은 target 선택을 거부하고 매번
-`--target` 을 요구한다.
+`origin/HEAD` 로 폴백하는데(`pkg/integrate/resolve.go:38` 의 주석이 이를
+"remote-HEAD heuristic" 이라 부른다), 그것은 새로 clone 하거나 remote 를 다시
+가리키면 없을 수 있는 로컬 상태다. 그때 `integrate run` 은 target 선택을 거부하고
+매번 `--target` 을 요구한다.
+
+편의 문제만은 아니다. 위 3번 가드의 `opts.Integration` 은 **이 키에서만** 채워지므로,
+선언하면 reclaim 이 건드릴 수 있는 범위가 오히려 **좁아진다**. `taskPattern` 만 넣고
+`integrationBranch` 를 빼는 쪽이 덜 안전한 반쪽 채택이었다.
 
 **검증**: `ce task run-doctor` → `ACTIVE: task runtime dependencies are ready`.
 이 카드 자신의 통합에서 reclaim 이 실제로 동작하는지가 마지막 증거다.
@@ -131,3 +153,30 @@ b777f2c 에서 나는 이것을 세 줄로 썼다:
 `!/.ce/` 는 선행 `/` 로 **루트의 것 하나만** 되살린다. 같은 탐침에서 이 형태는
 아무것도 새지 않는다. ce-devenv 의 주석은 그 트리에만 `.ce/` 가 17곳 있다고
 적고 있다 — 앵커 누락은 작은 실수가 아니다.
+
+### 독립 리뷰(review-349) 대응
+
+**Finding 1 — `.gitignore` 3줄 형태 누수 (수정)**: 위 "정정" 문단 참조. 앵커된
+4줄 형태로 f9f4c9f 에 반영했다.
+
+**INFO 1 — 카드가 자기 안전 마진을 축소해 적음 (수정)**: `taskPattern` 을 첫 번째
+가드처럼 읽히게 적었으나 실제로는 세 번째다. 소스를 직접 확인해(`reclaim.go:44-53`,
+`task_pattern.go:204-215`) 위 문단을 늘렸다. 안전한 방향의 오류였지만, 미래의
+독자가 `taskPattern` 을 "삭제를 막는 유일한 것" 으로 과신할 수 있는 형태였다.
+
+**INFO 2 — 형제 저장소 개수 (수정)**: `4곳(ce-agent-kit, ce-workbook, devenv,
+ce-devenv)` 이라고 적었으나 `~/mywork/ce/ce-devenv` 와 `~/mywork/foundation/devenv`
+는 둘 다 `repository-id: devenv` 를 선언하는 **같은 논리 저장소의 두 체크아웃**이다.
+체크아웃 수로는 4지만 저장소 수로는 3이라 `3곳` 으로 통일했다(뒤 문단이 이미
+`3곳` 이었다). 표본 결론은 그대로다 — 어느 쪽도 `.ce/task-runtime.yaml` 에
+reclaim scope 를 두지 않는다.
+
+**(d) `integrationBranch` 는 범위 확대가 아니라는 리뷰어 판단**에 근거 하나를
+추가로 받아 본문에 반영했다 — 이 키가 `opts.Integration` 의 유일한 출처이고,
+그 값이 reclaim 의 거부 조건에 들어가므로 선언이 범위를 **좁힌다**. 이건 내가
+카드에 쓰지 못했던 근거다.
+
+**(e) 과장 감사**: 리뷰어가 `[x]` 로 표시된 세 기준을 모두 증거와 대조해 확인했고
+근거 없는 표시는 없었다. 발견된 과장 한 건은 Finding 1 의 "ignore 를 좁혀" —
+실제로는 넓혀 놓고 좁혔다고 적은 것이었고, 위에서 원본 형태·누수 증거·교체본을
+모두 남기는 방식으로 정정했다.
