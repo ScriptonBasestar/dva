@@ -268,6 +268,14 @@ func parsePlanFlags(verb string, args []string) (planRunFlags, error) {
 // construction, because compositionChildEnvironment re-resolves a child that
 // ResolveCompositionPlan already resolved — emitting there would print each child's warnings
 // twice. Emission belongs where a plan is presented to the user, once.
+//
+// ORDERING RULE, and the only one — every emission site in this package calls this (or
+// printCompositionWarnings) immediately after resolution succeeds and BEFORE the verb's own
+// rejection check: report.Err, report.Incomplete, validateCompositionFlagScope, the
+// `[plan: ...]` header. A warning states what resolution found; it stays true whether or not
+// the verb then refuses to run, and the run it refuses is exactly the one the user has to
+// diagnose. Emitting after the check would mean the same plan warns under `dva build` and
+// stays silent under `dva up` — one input, seven screens (TASK-375).
 func printPlanWarnings(plan *lifecycle.ExecutionPlan) {
 	if plan == nil {
 		return
@@ -284,12 +292,22 @@ func printPlanWarnings(plan *lifecycle.ExecutionPlan) {
 // was before TASK-374. The children are read straight off the already-resolved
 // CompositionPlanEntry.ChildPlan rather than resolved a second time, so nothing here can
 // disagree with the plan that actually runs.
+//
+// Each child's warnings are labelled with the child plan they came from. Without the label
+// two children that skip a same-named optional entry produce two identical lines, and the
+// user cannot tell whether one child warned twice or two children warned once — which is the
+// difference between one missing checkout and two.
 func printCompositionWarnings(comp *lifecycle.CompositionPlan) {
 	if comp == nil {
 		return
 	}
 	for _, entry := range comp.Entries {
-		printPlanWarnings(entry.ChildPlan)
+		if entry.ChildPlan == nil {
+			continue
+		}
+		for _, w := range entry.ChildPlan.Warnings {
+			fmt.Fprintf(os.Stderr, "warning: [child: %s] %s\n", entry.ChildPlan.Name, w)
+		}
 	}
 }
 
@@ -339,6 +357,7 @@ func runPlanUp(c *config.Config, el *envLoad, planName string, extraArgs []strin
 	if err != nil {
 		return err
 	}
+	printPlanWarnings(runtime.plan)
 	// Fail closed before the first child. The plan's own owner decides this — a root
 	// env_file failure never reaches an imported plan, and vice versa (TASK-247 §3, §4).
 	if err := runtime.report.Err(); err != nil {
@@ -346,8 +365,6 @@ func runPlanUp(c *config.Config, el *envLoad, planName string, extraArgs []strin
 	}
 	plan, c, e := runtime.plan, runtime.config, runtime.env
 	fmt.Fprintf(os.Stderr, "[plan: %s] environment=%s site=%s entries=%d\n", plan.Name, plan.EnvironmentName, plan.SiteName, len(plan.Entries))
-
-	printPlanWarnings(plan)
 
 	effectiveDryRun := dryRun || flags.dryRun
 	if effectiveDryRun {
@@ -406,6 +423,7 @@ func runPlanDown(c *config.Config, el *envLoad, planName string, extraArgs []str
 	if err != nil {
 		return err
 	}
+	printPlanWarnings(runtime.plan)
 	// Fail closed before the first child. The plan's own owner decides this — a root
 	// env_file failure never reaches an imported plan, and vice versa (TASK-247 §3, §4).
 	if err := runtime.report.Err(); err != nil {
@@ -413,8 +431,6 @@ func runPlanDown(c *config.Config, el *envLoad, planName string, extraArgs []str
 	}
 	plan, c, e := runtime.plan, runtime.config, runtime.env
 	fmt.Fprintf(os.Stderr, "[plan: %s] environment=%s site=%s entries=%d\n", plan.Name, plan.EnvironmentName, plan.SiteName, len(plan.Entries))
-
-	printPlanWarnings(plan)
 
 	effectiveDryRun := dryRun || flags.dryRun
 	if effectiveDryRun {
@@ -477,6 +493,7 @@ func runPlanStop(c *config.Config, el *envLoad, planName string, extraArgs []str
 	if err != nil {
 		return err
 	}
+	printPlanWarnings(runtime.plan)
 	// Fail closed before the first child. The plan's own owner decides this — a root
 	// env_file failure never reaches an imported plan, and vice versa (TASK-247 §3, §4).
 	if err := runtime.report.Err(); err != nil {
@@ -484,8 +501,6 @@ func runPlanStop(c *config.Config, el *envLoad, planName string, extraArgs []str
 	}
 	plan, c, e := runtime.plan, runtime.config, runtime.env
 	fmt.Fprintf(os.Stderr, "[plan: %s] environment=%s site=%s entries=%d\n", plan.Name, plan.EnvironmentName, plan.SiteName, len(plan.Entries))
-
-	printPlanWarnings(plan)
 
 	effectiveDryRun := dryRun || flags.dryRun
 	if effectiveDryRun {
@@ -523,6 +538,7 @@ func runPlanRestart(c *config.Config, el *envLoad, planName string, extraArgs []
 	if err != nil {
 		return err
 	}
+	printPlanWarnings(runtime.plan)
 	// Fail closed before the first child. The plan's own owner decides this — a root
 	// env_file failure never reaches an imported plan, and vice versa (TASK-247 §3, §4).
 	if err := runtime.report.Err(); err != nil {
@@ -530,8 +546,6 @@ func runPlanRestart(c *config.Config, el *envLoad, planName string, extraArgs []
 	}
 	plan, c, e := runtime.plan, runtime.config, runtime.env
 	fmt.Fprintf(os.Stderr, "[plan: %s] environment=%s site=%s entries=%d\n", plan.Name, plan.EnvironmentName, plan.SiteName, len(plan.Entries))
-
-	printPlanWarnings(plan)
 
 	effectiveDryRun := dryRun || flags.dryRun
 	if effectiveDryRun {

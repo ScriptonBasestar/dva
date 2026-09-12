@@ -1009,12 +1009,26 @@ compose를 고르면, native의 디렉토리가 없더라도 엔트리는 **유�
 
 건너뛴 엔트리는 실행 경로에서 경고로 표시됩니다. `--dry-run` 여부와 무관하며, plan을
 해석하는 모든 동사 — `up`/`down`/`stop`/`restart`/`build`/`status`/`logs`와 composition
-동사 — 에 동일하게 적용됩니다. composition plan은 자식 plan에서 건너뛴 엔트리를
-대신 보고합니다.
+동사 — 에 동일하게 적용됩니다.
 
 ```
 warning: entry: vendor-api (optional) — skipped, directory "/path/to/vendor/api" not found
 ```
+
+경고는 **해석 직후, 그 동사가 거절 판단을 내리기 전에** 나옵니다. 그래서 환경 입력이
+불완전해 실행이 거절되는 plan도 건너뛴 엔트리를 함께 보여줍니다 — 거절된 실행이야말로
+사용자가 원인을 찾아야 하는 실행이기 때문입니다.
+
+composition plan은 자식 plan에서 건너뛴 엔트리를 대신 보고하며, 이때는 출처 자식 plan
+이름을 붙입니다. 여러 자식이 같은 이름의 optional 엔트리를 건너뛰어도 어느 쪽인지
+구분됩니다.
+
+```
+warning: [child: dev] entry: vendor-api (optional) — skipped, directory "/path/to/vendor/api" not found
+```
+
+단, `dva build <composition>`과 `dva logs <composition>`은 자식을 각각 자기 헤더 아래
+개별 제시하므로 그 자리에서 자식 plan 경고를 그대로 냅니다 — 라벨이 붙지 않습니다.
 
 같은 줄이 `--dry-run`의 해석 트레이스에도 남으므로, 전체 해석 과정을 함께 보려면
 `dva up <plan> --dry-run`을 씁니다.

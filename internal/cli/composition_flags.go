@@ -423,7 +423,10 @@ func runCompositionBuild(c *config.Config, el *envLoad, planName string, extraAr
 	if err != nil {
 		return err
 	}
-	printCompositionWarnings(comp)
+	// No printCompositionWarnings here, unlike up/down/stop/restart/status: this verb presents
+	// each child individually below, under its own header, and runPlanBuild emits that child's
+	// warnings as part of presenting it. Calling both would print every child's warnings twice,
+	// once labelled and once not.
 	if _, err := validateCompositionFlagScope(comp, planName, "build", extraArgs); err != nil {
 		return err
 	}
@@ -456,7 +459,8 @@ func runCompositionLogs(c *config.Config, el *envLoad, planName string, extraArg
 	if err != nil {
 		return err
 	}
-	printCompositionWarnings(comp)
+	// See runCompositionBuild: each child is presented under its own header below and
+	// runPlanLogs emits that child's warnings, so a composition-level pass would duplicate them.
 	if _, err := validateCompositionFlagScope(comp, planName, "logs", extraArgs); err != nil {
 		return err
 	}

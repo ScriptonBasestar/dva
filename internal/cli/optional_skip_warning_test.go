@@ -53,7 +53,20 @@ plans:
 // passing on an unrelated line that merely mentions the entry.
 func assertSkipWarned(t *testing.T, verb, stderr string) {
 	t.Helper()
-	if !strings.Contains(stderr, "warning: entry: vendor-api (optional) — skipped, directory ") {
+	assertSkipWarnedFrom(t, verb, stderr, "")
+}
+
+// assertSkipWarnedFrom is assertSkipWarned with the composition label. Passing the child name
+// is what makes the label an assertion rather than a decoration: the expected prefix is built
+// from it, so dropping the label from printCompositionWarnings fails the composition tests
+// without touching the leaf ones (TASK-375).
+func assertSkipWarnedFrom(t *testing.T, verb, stderr, child string) {
+	t.Helper()
+	prefix := "warning: "
+	if child != "" {
+		prefix = "warning: [child: " + child + "] "
+	}
+	if !strings.Contains(stderr, prefix+"entry: vendor-api (optional) — skipped, directory ") {
 		t.Errorf("%s: optional skip was not reported on the execution path; stderr:\n%s", verb, stderr)
 	}
 	if !strings.Contains(stderr, filepath.Join("vendor", "api")) {
@@ -97,14 +110,14 @@ func TestOptionalSkipIsReportedByCompositionUp(t *testing.T) {
 	enableDryRun(t)
 	c, e := optionalSkipFixture(t)
 	stderr := captureBothStreams(t, func() { _ = runCompositionUp(c, planEnv(e), "all", nil) })
-	assertSkipWarned(t, "dva up <composition>", stderr)
+	assertSkipWarnedFrom(t, "dva up <composition>", stderr, "dev")
 }
 
 func TestOptionalSkipIsReportedByCompositionStatus(t *testing.T) {
 	enableDryRun(t)
 	c, e := optionalSkipFixture(t)
 	stderr := captureBothStreams(t, func() { _ = runCompositionStatus(c, planEnv(e), "all") })
-	assertSkipWarned(t, "dva status <composition>", stderr)
+	assertSkipWarnedFrom(t, "dva status <composition>", stderr, "dev")
 }
 
 // The counterpart guard: a plan with nothing skipped must stay silent. Without this, every
@@ -148,4 +161,56 @@ func TestOptionalSkipIsReportedOutsideDryRun(t *testing.T) {
 	// "  entry: ..." (printPlanResolution, two-space indent) while assertSkipWarned
 	// requires the literal "warning: entry: ...", and only printPlanWarnings emits that
 	// prefix. Guarding it would be a dead assertion that reads as a live one.
+}
+
+// incompleteEnvLoad builds the envLoad a route sees when the owner declared an env_file that
+// is not there. ApplyEnvFiles rather than a hand-built EnvInputReport: the point of the test
+// below is the route's behaviour on a real incomplete verdict, and a literal
+// EnvInputState would pass even if the verdict stopped being reachable.
+func incompleteEnvLoad(t *testing.T, c *config.Config, e *config.Environment) *envLoad {
+	t.Helper()
+	report := config.ApplyEnvFiles(map[string]any{"files": "absent.env", "required": true}, c.FileDir(), e)
+	if !report.Incomplete() {
+		t.Fatalf("fixture did not produce an incomplete env report: %+v", report)
+	}
+	return &envLoad{env: e, report: report}
+}
+
+// The ordering rule of TASK-375, pinned on the one verb that used to break it.
+//
+// runPlanUp emitted the warning after runtime.report.Err(), so a plan whose environment was
+// incomplete was rejected in silence — while `dva build` and `dva status`, which warn first,
+// showed the skip for the same input. The two assertions are the rule stated from both ends:
+// the warning is there, and the `[plan: ...]` header — the first thing printed on the far
+// side of the rejection check — is not. Only an emission that happens before the check can
+// produce that pair.
+func TestOptionalSkipWarnsBeforeTheVerbRejects(t *testing.T) {
+	enableDryRun(t)
+	c, e := optionalSkipFixture(t)
+	var err error
+	stderr := captureBothStreams(t, func() { err = runPlanUp(c, incompleteEnvLoad(t, c, e), "dev", nil) })
+	if err == nil {
+		t.Fatal("incomplete environment inputs must still reject the run")
+	}
+	assertSkipWarned(t, "dva up (incomplete env)", stderr)
+	if strings.Contains(stderr, "[plan: ") {
+		t.Errorf("the plan header describes work that never happened; stderr:\n%s", stderr)
+	}
+}
+
+// The same rule on the path that does proceed: warning first, header second. Without this,
+// moving the call back below the header would still pass the test above, because that one
+// only ever runs on an input where the header never prints at all.
+func TestOptionalSkipWarningPrecedesThePlanHeader(t *testing.T) {
+	enableDryRun(t)
+	c, e := optionalSkipFixture(t)
+	stderr := captureBothStreams(t, func() { _ = runPlanUp(c, planEnv(e), "dev", nil) })
+	assertSkipWarned(t, "dva up", stderr)
+	warn, header := strings.Index(stderr, "warning: entry:"), strings.Index(stderr, "[plan: ")
+	if header < 0 {
+		t.Fatalf("expected the plan header on the execution path; stderr:\n%s", stderr)
+	}
+	if warn > header {
+		t.Errorf("warning came after the plan header; stderr:\n%s", stderr)
+	}
 }
