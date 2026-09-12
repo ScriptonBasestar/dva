@@ -300,6 +300,16 @@ func printPlanWarnings(plan *lifecycle.ExecutionPlan) {
 // non-composition callers whose signatures would otherwise change for a concern that is not
 // theirs; runCompositionLogs already sets forceSubprocess at this exact spot for an analogous
 // reason, so this follows a shape the file already has.
+//
+// SAFE BECAUSE the two warning sets are equal, not merely similar. The composition level
+// resolves each child as ResolvePlan(owner, entry.Plan, entry.Vars) and the loop re-resolves it
+// as ResolvePlan(root, childName, nil) — different config, different vars — yet neither axis
+// reaches a warning: resolver.go:261 re-derives `owner` from the plan itself, so the caller's
+// cfg never decides owner.FileDir(), and the skip check at resolver.go:425 sits ABOVE the first
+// var merge at resolver.go:448. The skip decision is a function of (plan, owner FileDir,
+// entry.optional, the literal entry dir) alone. Move that check below the var merge and the
+// suppression starts hiding a real difference — TestCompositionAndPerChildResolutionAgreeOnWarnings
+// is what breaks when someone does.
 var suppressPlanWarnings bool
 
 // printCompositionWarnings surfaces the warnings of every composed child.

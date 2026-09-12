@@ -51,7 +51,7 @@ USAGE.md 의 같은 문단을 함께 건드리기 때문이다. 나눠서 처리
 - [x] 일곱 방출 지점이 각자의 `report`/거절 검사에 대해 동일한 순서 규칙을 따르고, 그 규칙이 코드 주석에 한 번 적혀 있다 | verify: human — `build.go`·`logs.go`·`composition_restart.go`·`composition_flags.go`·`plan_lifecycle.go` 의 방출 지점을 모두 열어 순서가 일치하는지 확인
 - [x] composition 경고가 출처 child plan 이름을 포함한다 | verify: `go test ./internal/cli -run TestOptionalSkipIsReportedByComposition -count=1`
 - [x] 순서 규칙을 고정하는 테스트가 있다 — 환경이 불완전한 plan 에서 경고와 거절의 상대 순서를 단언한다 | verify: `go test ./internal/cli -run TestOptionalSkip -count=1`
-- [x] USAGE.md 의 경고 예시가 바뀐 메시지와 일치한다 | verify: `make doc-check` (regression-guard)
+- [x] USAGE.md 의 경고 예시가 바뀐 메시지와 일치한다 | verify: `go test ./internal/cli -run TestUsageWarningExamplesMatchTheRenderedFormat`
 
 ## Notes
 
@@ -211,9 +211,28 @@ vars 는 `resolved.EnvVars` 에만 병합되기 때문이다. "오늘은" 이라
 
 **조건 6** — 위 "범위 밖에서 하나 더 고쳤고, 그게 틀렸다" 문단으로 재작성.
 
-**F4 (정직하게 기록)**: 기준 4 의 `verify:` 는 `make doc-check (regression-guard)` 인데,
-`yamlcheck` 는 태그된 ```yaml 펜스만 검사한다. USAGE.md 의 경고 예시는 태그 없는
-출력 펜스라 **소스 포맷 문자열과 대조되지 않는다.** 이 기준은 바인딩이 아니라 손검사로
-참이다. 바인딩을 바꾸는 대신 사실을 적어 둔다 — 검사하지 않는 바인딩을 다른 검사하지
-않는 바인딩으로 바꾸는 건 개선이 아니다. review-375 에 "USAGE.md 에서 렌더된 줄을
-grep 하는 `internal/cli` 테스트"를 대안으로 제시해 두었다.
+**F4 — 바인딩을 실제 검사로 교체**: 기준 4 의 원래 `verify:` 는
+`make doc-check (regression-guard)` 였는데, `yamlcheck` 는 태그된 ```yaml 펜스만
+검사하고 USAGE.md 의 경고 예시는 태그 없는 출력 펜스라 **아무것과도 대조되지 않았다.**
+기준은 바인딩이 아니라 손검사로 참이었다.
+
+리뷰어의 제안대로 리터럴을 grep 하지 않고 **렌더해서** 고정했다 —
+`TestUsageWarningExamplesMatchTheRenderedFormat` 은 실제 `printPlanWarnings` /
+`printCompositionWarnings` 출력을 캡처하고, 문서가 일부러 자리표시자를 쓰는 디렉토리
+경로만 치환한 뒤 그 줄이 USAGE.md 안에 있는지 확인한다. 리터럴을 grep 하면 문자열
+사본을 하나 더 만들어 그 사본에 문서를 묶게 되지만, 이 방식은 포맷 문자열 자체에
+묶는다. 변이로 확인: `warning: [child: %s] %s` → `warning: (child %s) %s` 와
+`resolver.go` 의 `— skipped, directory %q` → `— skipped; directory %q` 를 각각
+넣으면 leaf·composition 서브테스트가 FAIL 한다.
+
+**review-375 최종 verdict: `pass`** (조건 없음). 리뷰어가 F1·F2 를 자기 프로브로
+`690c2ad^` / `690c2ad` / `6be1780` 3지점 비교해 재현했고, Q1(억제의 전제)을
+**철회**했다 — 두 경로가 config(root vs owner)와 vars(CLI `--var` vs `composes[].vars`)
+양축에서 실제로 다르지만 둘 다 경고에 닿지 못한다는 것을 구조적으로(`resolver.go:261`
+의 owner 재유도, skip 검사 425 가 첫 var 병합 448 보다 위) 그리고 경험적으로
+(`dir: vendor/${TARGET}` + 충돌하는 `composes[].vars` fixture 가 양쪽에서 바이트 동일한
+경고 집합을 냄) 확인했다. 그 불변식을 `suppressPlanWarnings` doc 에 적어 두었고,
+깨지면 `TestCompositionAndPerChildResolutionAgreeOnWarnings` 가 잡는다.
+
+리뷰어가 추가한 변이 하나: 억제의 `defer` 리셋만 제거 → 6개 테스트 FAIL. 패키지 전역의
+누수는 (설계가 아니라 테스트 순서 덕이지만) 막혀 있다.

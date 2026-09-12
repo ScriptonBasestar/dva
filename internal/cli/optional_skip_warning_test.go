@@ -431,3 +431,54 @@ plans:
 `)
 	return c, config.NewEnvironment(nil, c.FileDir(), c.FileDir())
 }
+
+// USAGE.md's warning examples, pinned to the format string that produces them.
+//
+// Criterion 4 of TASK-375 binds to `make doc-check`, but yamlcheck only inspects tagged ```yaml
+// fences and these examples live in untagged output fences — so the binding never compared them
+// to anything. Grepping for the literal would not fix that: it just stores a second copy of the
+// string and pins the doc to the copy. Instead the expected line is RENDERED through the real
+// printer, so editing `warning: [child: %s] %s` fails here rather than silently desyncing
+// USAGE.md (review-375 F4).
+//
+// Only the directory is substituted, because the doc deliberately shows a placeholder path where
+// the printer shows the resolved one. Everything else — prefix, label shape, wording, the quoting
+// around the path — is compared exactly.
+func TestUsageWarningExamplesMatchTheRenderedFormat(t *testing.T) {
+	usage, err := os.ReadFile(filepath.Join("..", "..", "USAGE.md"))
+	if err != nil {
+		t.Fatalf("reading USAGE.md: %v", err)
+	}
+	c, _ := optionalSkipFixture(t)
+	docDir := "/path/to/vendor/api"
+	realDir := filepath.Join(c.FileDir(), "vendor", "api")
+
+	plan, err := lifecycle.ResolvePlan(c, "dev", nil)
+	if err != nil {
+		t.Fatalf("ResolvePlan: %v", err)
+	}
+	comp, err := lifecycle.ResolveCompositionPlan(c, "all")
+	if err != nil {
+		t.Fatalf("ResolveCompositionPlan: %v", err)
+	}
+
+	cases := []struct {
+		name   string
+		render func()
+	}{
+		{"leaf", func() { printPlanWarnings(plan) }},
+		{"composition", func() { printCompositionWarnings(comp) }},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			rendered := strings.TrimSpace(captureBothStreams(t, tc.render))
+			if rendered == "" {
+				t.Fatal("fixture rendered no warning; the comparison would be vacuous")
+			}
+			expected := strings.ReplaceAll(rendered, realDir, docDir)
+			if !strings.Contains(string(usage), expected) {
+				t.Errorf("USAGE.md does not contain the line this printer renders;\n want: %s\n (path %q substituted for %q)", expected, docDir, realDir)
+			}
+		})
+	}
+}
