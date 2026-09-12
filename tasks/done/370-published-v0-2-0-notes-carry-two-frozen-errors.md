@@ -8,7 +8,6 @@ exec-tier: standard
 created-at: 2026-09-09
 source: "v0.2.0 게시 후 도착한 독립 검증 D-1·D-5"
 status: done
-created-at: 2026-09-09
 closed: 2026-09-11
 quality-review: conditional
 quality-review-evidence: >-

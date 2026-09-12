@@ -96,8 +96,8 @@ USAGE.md가 "그대로 복사해 넣으면 통과하는 전체 파일"로 독자
 - [x] USAGE.md의 표시된 YAML 블록을 뽑아 스키마 검증하는 검사가 있고, 실패 시 exit 1 | verify: `go run ./tools/yamlcheck`
 - [x] 검사가 공허하지 않다 — 표시된 블록을 일부러 깨뜨리면 실패한다 (변이 증거를 카드에 기록) | verify: `go test ./tools/yamlcheck/ -run 'TestValidateBlocksDetectsSchemaError|TestValidateBlocksDetectsSemanticWarnings'`
 - [x] canonical order 예시가 이 검사의 대상으로 표시되어 있다 | verify: `/usr/bin/grep -qF '```yaml dva.yml' USAGE.md`
-- [x] 경고 0건까지 요구할지 결정하고 근거를 카드에 남긴다 | verify: `/usr/bin/grep -qF '경고 0건(warnings == 0)을 필수로 요구' tasks/done/357-validate-the-yaml-examples-usage-md-ships.md`
-- [x] TASK-323 C3의 수용기준을 문장 바인딩에서 이 검사로 재결속 | verify: `/usr/bin/grep -qF 'verify: `go run ./tools/yamlcheck`' tasks/done/323-docs-semantics-gaps.md`
+- [x] 경고 0건까지 요구할지 결정하고 근거를 카드에 남긴다 | verify: `/usr/bin/grep -rqF --include='357-validate-the-yaml-examples-usage-md-ships.md' '경고 0건(warnings == 0)을 필수로 요구' tasks`
+- [x] TASK-323 C3의 수용기준을 문장 바인딩에서 이 검사로 재결속 | verify: `/usr/bin/grep -rqF --include='323-docs-semantics-gaps.md' 'verify: `go run ./tools/yamlcheck`' tasks`
 
 ## 참고
 

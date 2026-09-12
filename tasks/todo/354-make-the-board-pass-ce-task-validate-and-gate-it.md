@@ -203,6 +203,33 @@ controller review가 아니다. [[ISSUE-001]]의 `ce-agent-kit` validator/migrat
 `tasks/receipts/` 영구 발급 경로를 제공하고, 별도 reviewer가 실제 review를 수행할 때까지
 보드는 not-ready다.
 
+**7. 2026-09-12 재측정 — receipt 외 실패는 2건이 더 있었고, 둘 다 고쳤다.** 6번은
+`ce task validate --all`의 실패를 receipt blocker 2장(344·371)으로만 적었다. 오늘
+실측하니 모수 71장 중 실패는 **4장**이었고, 나머지 둘은 receipt와 무관한 평범한 결함이다.
+
+- `done/370` — frontmatter에 `created-at: 2026-09-09`가 7행과 11행에 중복 정의돼
+  YAML unmarshal 자체가 실패했다(`mapping key "created-at" already defined`).
+  두 값이 동일하므로 뒤엣것을 지웠다. 정보 손실 없음. 유입 경로는 `415d42c`다.
+- `done/357` — C4 바인딩이 자기 카드의 zone 경로(`tasks/done/357-….md`)를 직접 적어
+  validate가 volatile zone path로 거부했다. 검증기가 제시하는
+  `grep -rqF --include='<basename>' … tasks` 형태로 바꿨다.
+
+같은 파일 C5 바인딩은 **다른** 카드의 zone 경로(`tasks/done/323-….md`)를 적고 있었다.
+validate는 자기 경로만 검사하므로 이건 거부되지 않았지만 결함은 동일하다 — 323이
+`_archive`로 가는 순간 깨진다. 이 카드 §작업 1번이 기록하는 done/334의 깨진
+`tasks/done/282-…` 참조가 정확히 그렇게 생긴 것이다. 같이 고쳤고, 고친 뒤에도
+바인딩이 exit 0 하는 것을 확인했다.
+
+결과: `ce task validate --all` 71장 중 **69 valid / 2 invalid**. 남은 2장은 344·371,
+즉 6번이 기록한 ISSUE-001 receipt blocker 그대로다. 이 카드가 손으로 통과시킬 수
+있는 validate 실패는 이제 0이다.
+
+**바인딩 현황(2026-09-12 실측)**: 1번 exit 1(receipt blocker 2건, ISSUE-001),
+2·3·7번 exit 0, 4번 exit 1(채택된 readiness 선언 없음 — 5번 판정이 "지금 붙이지
+않는다"이므로 의도된 상태다). 5번은 6·7번 기록으로 충족되지만 게이트 배치 결정
+자체가 아직 사람 몫이고, 6번 failure-injection은 실행할 저장소 게이트가 없어
+여전히 미완료다. **이 카드는 ISSUE-001 해소 전까지 완료 불가다.**
+
 **바인딩 현황(2026-09-10 실측)**: 1번 exit 1(위 receipt blocker 2건), 2·3·7번 exit 0,
 4번 exit 1(채택된 readiness 선언 없음). 5번의 판단 근거는 위에 기록했지만 6번의
 failure-injection은 실행할 저장소 게이트가 아직 없으므로 미완료다.
