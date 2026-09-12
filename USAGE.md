@@ -793,10 +793,13 @@ suggestions:
   makefile: false
   package_json: true
 
-# 루트에서 자동탐지됐지만 어떤 stack 엔트리도 등록하지 않은 compose 파일 억제
+# 자동탐지됐지만 어떤 stack 엔트리도 등록하지 않은 compose 파일 억제.
+# 탐지 대상은 dva.yml 디렉터리 + 루트 엔트리가 등록한 compose 파일의 디렉터리 +
+# 거기서 `include:`로 도달하는 디렉터리이므로, 하위 디렉터리 파일은 경로로 씁니다
 drift_ignore:
   - "compose.ci.yaml"
   - "compose.*.experimental.yaml"
+  - "infra/compose.ci.yaml"
 ```
 
 ```

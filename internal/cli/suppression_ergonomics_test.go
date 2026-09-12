@@ -72,6 +72,57 @@ drift_ignore:
 	}
 }
 
+// A drift_ignore pattern is a path relative to dva.yml, and it has to keep meaning that
+// when the config directory is reached through a symlink. Directories reached through
+// `include:` come back symlink-resolved, so without canonicalising the base too, the
+// relative name collapses to the bare basename: the pattern below stops matching, the
+// warning comes back, and the pattern is additionally condemned as stale — the same file
+// suppressed on one checkout path and reported on another.
+func TestDriftIgnoreMatchesThroughASymlinkedConfigDirectory(t *testing.T) {
+	base := t.TempDir()
+	real := filepath.Join(base, "real")
+	if err := os.MkdirAll(filepath.Join(real, "sub"), 0755); err != nil {
+		t.Fatalf("mkdir real/sub: %v", err)
+	}
+	link := filepath.Join(base, "link")
+	if err := os.Symlink(real, link); err != nil {
+		t.Fatalf("symlink: %v", err)
+	}
+	write := func(name, body string) {
+		t.Helper()
+		if err := os.WriteFile(filepath.Join(real, name), []byte(body), 0644); err != nil {
+			t.Fatalf("write %s: %v", name, err)
+		}
+	}
+	write(config.FileName, `version: "0.1.0"
+drift_ignore:
+  - "sub/compose.ci.yaml"
+stack:
+  web:
+    runners:
+      compose:
+        files: [compose.yaml]
+`)
+	write("compose.yaml", "include:\n  - ./sub/compose.base.yaml\nservices:\n  web:\n    image: nginx\n")
+	write("sub/compose.base.yaml", "services:\n  worker:\n    image: alpine\n")
+	write("sub/compose.ci.yaml", composeStub)
+
+	c := loadSuppressionConfig(t, filepath.Join(link, config.FileName))
+
+	warnings, suppressed := detectConfigDriftWarningsWithSuppressions(c)
+	for _, w := range warnings {
+		if strings.Contains(w, "compose.ci.yaml") {
+			t.Errorf("drift_ignore must match through the symlinked config dir, got warning: %s", w)
+		}
+	}
+	if got := suppressed.count(suppressedDrift); got != 1 {
+		t.Errorf("suppressed drift count = %d, want 1", got)
+	}
+	if joined := strings.Join(suppressed.stale, "\n"); strings.Contains(joined, "compose.ci.yaml") {
+		t.Errorf("a pattern that did match must not be reported stale: %q", joined)
+	}
+}
+
 // The unregistered-file rule is the only drift finding drift_ignore touches. Both of the
 // findings below describe a config that fails when it runs, and docs/56 §2 principle 2
 // puts those out of reach of every ignore surface.
@@ -274,6 +325,23 @@ suggestion_ignore:
 	}
 	if !strings.Contains(joined, `suggestion_ignore[1] "vanished-*"`) {
 		t.Errorf("a pattern naming no target at all must be reported: %q", joined)
+	}
+}
+
+// A repository with neither a Makefile nor a package.json gives the stale check nothing to
+// judge against. Condemning every pattern there would read as "these entries are dead" when
+// the truth is "nothing was examined" — the drift side already refuses that verdict when its
+// scan does not run.
+func TestStaleSuggestionIgnoreStandsDownWhenThereIsNothingToJudgeAgainst(t *testing.T) {
+	c := loadSuppressionConfig(t, suppressionFixture(t, `version: "0.1.0"
+suggestion_ignore:
+  - "release*"
+  - "bench"
+`, nil))
+
+	_, suppressed := detectConfigSuggestionWarningsWithSuppressions(c)
+	if len(suppressed.stale) != 0 {
+		t.Errorf("no Makefile and no package.json means an empty sample, got: %v", suppressed.stale)
 	}
 }
 

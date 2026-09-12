@@ -1491,7 +1491,7 @@
     "drift_ignore": {
       "type": "array",
       "items": { "type": "string" },
-      "description": "Glob patterns for compose files that autodiscovery finds beside dva.yml but no stack entry registers. Applies ONLY to that unregistered-file drift warning: a configured compose file that does not exist, and an interaction referencing a missing compose service, are states that break 'dva up' and no ignore suppresses them. Patterns match the path relative to dva.yml and do not cross directory separators; a pattern matching no discovered file is reported as stale.",
+      "description": "Glob patterns for compose files that autodiscovery finds but no stack entry registers. Autodiscovery scans the dva.yml directory, the directory of every compose file a root stack entry registers, and every directory reached from those through 'include:' \u2014 so a file in a subdirectory is spelled with its path. Applies ONLY to that unregistered-file drift warning: a configured compose file that does not exist, and an interaction referencing a missing compose service, are states that break 'dva up' and no ignore suppresses them. Patterns match the path relative to dva.yml and do not cross directory separators; a pattern matching no discovered file is reported as stale.",
       "examples": [["compose.ci.yaml", "compose.*.experimental.yaml"]]
     },
     "modes": {

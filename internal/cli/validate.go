@@ -260,8 +260,10 @@ See USAGE.md's "config validate" section for the full list of semantic checks.`,
 		}
 
 		if suggestIgnore, _ := cmd.Flags().GetBool("suggest-ignore"); suggestIgnore && !jsonOutput {
-			// stdout, not the notice writer: this is the one part of validate's output
-			// meant to be piped or copied into dva.yml rather than read.
+			// Printed raw, and only on the human path: this block is meant to be copied
+			// into dva.yml rather than read. On this path the notice writer is stdout
+			// anyway; the guard is about --json, which reserves stdout for the single
+			// document that a YAML fragment beside it would corrupt.
 			fmt.Print(suggestIgnoreBlock(suppressed.suggested))
 		}
 
@@ -707,12 +709,23 @@ func detectUnregisteredComposeFileWarnings(c *config.Config, suppressed *suppres
 // files, and two directories may hold a `compose.yaml` each — matching on the basename
 // would let one project's ignore silently cover the other's file. A path that escapes the
 // config directory falls back to the bare name, since a pattern cannot usefully spell it.
+//
+// The two bases are the same defence composeScanDirLocation makes: directories reached
+// through `include:` are symlink-resolved, so where the config directory itself sits behind
+// a symlink — macOS /tmp → /private/tmp — a plain Rel against root escapes and the name
+// would silently collapse to the basename. A collapsed name is worse here than in a warning
+// string: it decides whether a drift_ignore pattern matches, so the same file would be
+// suppressed on one checkout path and reported on another.
 func driftIgnoreName(root, dir, name string) string {
-	rel, err := filepath.Rel(root, filepath.Join(dir, name))
-	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
-		return name
+	path := filepath.Join(dir, name)
+	for _, base := range []string{root, canonicalComposePath(root)} {
+		rel, err := filepath.Rel(base, path)
+		if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+			continue
+		}
+		return filepath.ToSlash(rel)
 	}
-	return filepath.ToSlash(rel)
+	return name
 }
 
 func printConfigSuggestionWarnings(w io.Writer, warnings []string) {
@@ -835,9 +848,16 @@ func detectConfigSuggestionWarningsWithSuppressions(c *config.Config) ([]string,
 
 	// The universe is every documented target and script before the built-in exclusions,
 	// not the candidate list above: see allDocumentedMakefileTargetNamesInDir.
+	//
+	// An empty universe means no Makefile and no package.json were found at all, not that
+	// every pattern went unused. Condemning the whole list there would be a verdict drawn
+	// from an empty sample — the same reason the drift side skips its stale check when the
+	// unregistered-file scan does not run.
 	universe := append(allDocumentedMakefileTargetNamesInDir(c.FileDir()), allPackageScriptNamesInDir(c.FileDir())...)
-	suppressed.stale = append(suppressed.stale,
-		staleIgnoreWarnings("suggestion_ignore", c.SuggestionIgnore, universe, "Makefile target or package.json script")...)
+	if len(universe) > 0 {
+		suppressed.stale = append(suppressed.stale,
+			staleIgnoreWarnings("suggestion_ignore", c.SuggestionIgnore, universe, "Makefile target or package.json script")...)
+	}
 
 	return warnings, suppressed
 }
@@ -849,14 +869,6 @@ func sortedSuggestionSources(sources map[string]bool) []string {
 	}
 	sort.Strings(names)
 	return names
-}
-
-// matchesSuggestionIgnore returns true if name matches any glob pattern in the
-// suggestion_ignore list from dva.yml. It delegates to matchIgnorePattern so the
-// suggestion and drift ignore surfaces cannot end up with two glob semantics.
-func matchesSuggestionIgnore(name string, patterns []string) bool {
-	_, matched := matchIgnorePattern(name, patterns)
-	return matched
 }
 
 func detectComposeFilesInDir(dir string) []string {

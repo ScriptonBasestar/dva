@@ -829,25 +829,25 @@ func TestIsDVAWrapperRecipe(t *testing.T) {
 	}
 }
 
-func TestMatchesSuggestionIgnore(t *testing.T) {
+func TestMatchIgnorePattern(t *testing.T) {
 	patterns := []string{"*-release", "clippy*", "test-e2e-*"}
 
 	matches := []string{"build-ce-release", "clippy", "clippy-all", "test-e2e-ci", "test-e2e-dev"}
 	for _, name := range matches {
-		if !matchesSuggestionIgnore(name, patterns) {
+		if _, matched := matchIgnorePattern(name, patterns); !matched {
 			t.Errorf("expected %q to match suggestion_ignore patterns", name)
 		}
 	}
 
 	noMatches := []string{"build-ce", "test-ce", "e2e-smoke", "clipboard", "lint"}
 	for _, name := range noMatches {
-		if matchesSuggestionIgnore(name, patterns) {
+		if _, matched := matchIgnorePattern(name, patterns); matched {
 			t.Errorf("expected %q NOT to match suggestion_ignore patterns", name)
 		}
 	}
 
 	// Empty patterns never match
-	if matchesSuggestionIgnore("anything", nil) {
+	if _, matched := matchIgnorePattern("anything", nil); matched {
 		t.Error("empty patterns should never match")
 	}
 }
