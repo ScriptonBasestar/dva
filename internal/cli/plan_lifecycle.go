@@ -277,13 +277,30 @@ func parsePlanFlags(verb string, args []string) (planRunFlags, error) {
 // diagnose. Emitting after the check would mean the same plan warns under `dva build` and
 // stays silent under `dva up` — one input, seven screens (TASK-375).
 func printPlanWarnings(plan *lifecycle.ExecutionPlan) {
-	if plan == nil {
+	if plan == nil || suppressPlanWarnings {
 		return
 	}
 	for _, w := range plan.Warnings {
 		fmt.Fprintf(os.Stderr, "warning: %s\n", w)
 	}
 }
+
+// suppressPlanWarnings silences printPlanWarnings for the duration of a composition verb's
+// per-child loop, and nowhere else.
+//
+// runCompositionBuild and runCompositionLogs present each child by calling the single-plan
+// verb, which emits that child's warnings as part of presenting it. That emission happens on
+// the far side of validateCompositionFlagScope and, in build's case, of an earlier child's
+// failure — so it cannot be the composition's only emission without reintroducing the very
+// silence TASK-374 and TASK-375 exist to remove. The composition level emits up front instead,
+// labelled and before the rejection check like every other site, and this flag stops the
+// per-child pass from printing the same lines a second time.
+//
+// A package-level flag rather than a parameter because runPlanBuild and runPlanLogs have
+// non-composition callers whose signatures would otherwise change for a concern that is not
+// theirs; runCompositionLogs already sets forceSubprocess at this exact spot for an analogous
+// reason, so this follows a shape the file already has.
+var suppressPlanWarnings bool
 
 // printCompositionWarnings surfaces the warnings of every composed child.
 //

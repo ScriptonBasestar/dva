@@ -423,10 +423,7 @@ func runCompositionBuild(c *config.Config, el *envLoad, planName string, extraAr
 	if err != nil {
 		return err
 	}
-	// No printCompositionWarnings here, unlike up/down/stop/restart/status: this verb presents
-	// each child individually below, under its own header, and runPlanBuild emits that child's
-	// warnings as part of presenting it. Calling both would print every child's warnings twice,
-	// once labelled and once not.
+	printCompositionWarnings(comp)
 	if _, err := validateCompositionFlagScope(comp, planName, "build", extraArgs); err != nil {
 		return err
 	}
@@ -434,6 +431,12 @@ func runCompositionBuild(c *config.Config, el *envLoad, planName string, extraAr
 		return fmt.Errorf("composition plan %q builds every composed child; passthrough build arguments are not supported here — run 'dva build %s' directly to target one child",
 			planName, compositionChildNames(comp)[0])
 	}
+
+	// Every child's warnings were already emitted above, labelled. Without this the loop
+	// reprints them unlabelled — and only for the children it reaches, which is not all of
+	// them: this loop returns on the first failure.
+	suppressPlanWarnings = true
+	defer func() { suppressPlanWarnings = false }()
 
 	for _, entry := range comp.Entries {
 		childName := entry.ChildPlan.Name
@@ -459,8 +462,7 @@ func runCompositionLogs(c *config.Config, el *envLoad, planName string, extraArg
 	if err != nil {
 		return err
 	}
-	// See runCompositionBuild: each child is presented under its own header below and
-	// runPlanLogs emits that child's warnings, so a composition-level pass would duplicate them.
+	printCompositionWarnings(comp)
 	if _, err := validateCompositionFlagScope(comp, planName, "logs", extraArgs); err != nil {
 		return err
 	}
@@ -471,6 +473,9 @@ func runCompositionLogs(c *config.Config, el *envLoad, planName string, extraArg
 
 	forceSubprocess = true
 	defer func() { forceSubprocess = false }()
+	// See runCompositionBuild: the composition level already emitted every child's warnings.
+	suppressPlanWarnings = true
+	defer func() { suppressPlanWarnings = false }()
 
 	var errs []error
 	for _, entry := range comp.Entries {

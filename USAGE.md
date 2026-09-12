@@ -1027,8 +1027,10 @@ composition plan은 자식 plan에서 건너뛴 엔트리를 대신 보고하며
 warning: [child: dev] entry: vendor-api (optional) — skipped, directory "/path/to/vendor/api" not found
 ```
 
-단, `dva build <composition>`과 `dva logs <composition>`은 자식을 각각 자기 헤더 아래
-개별 제시하므로 그 자리에서 자식 plan 경고를 그대로 냅니다 — 라벨이 붙지 않습니다.
+composition 동사는 예외 없이 이 형태를 씁니다. `dva build <composition>`과
+`dva logs <composition>`처럼 자식을 순회하는 동사도 **순회 전에 한 번** 모든 자식의
+경고를 냅니다 — 플래그가 거절되거나 앞선 자식이 실패해 순회가 끝까지 가지 못해도
+경고는 이미 나와 있습니다.
 
 같은 줄이 `--dry-run`의 해석 트레이스에도 남으므로, 전체 해석 과정을 함께 보려면
 `dva up <plan> --dry-run`을 씁니다.

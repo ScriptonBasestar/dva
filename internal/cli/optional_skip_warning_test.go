@@ -214,3 +214,102 @@ func TestOptionalSkipWarningPrecedesThePlanHeader(t *testing.T) {
 		t.Errorf("warning came after the plan header; stderr:\n%s", stderr)
 	}
 }
+
+// twoChildCompositionFixture composes two children so the loop-shaped failures below are
+// observable. Two compositions share one stack: "all-ok" reaches both children, "all-broken"
+// fails on the first. In both, the skip-carrying child ("z-second") is the second one, which
+// is the position the defects below make invisible.
+//
+// "no-build" exists only to fail runCompositionBuild's first child: a native entry without
+// runners.native.build gives the plan nothing to build, which is an error rather than a no-op.
+func twoChildCompositionFixture(t *testing.T) (*config.Config, *config.Environment) {
+	t.Helper()
+	c := loadTestConfig(t, `version: "0.1.44"
+stack:
+  vendor-api:
+    optional: true
+    default_runner: native
+    runners:
+      native:
+        dir: vendor/api
+        run: echo vendor
+        build: echo build-vendor
+  plain:
+    default_runner: native
+    runners:
+      native:
+        run: echo plain
+        build: echo build-plain
+  no-build:
+    default_runner: native
+    runners:
+      native:
+        run: echo nothing-to-build
+plans:
+  a-first:
+    entries:
+      - name: plain
+  a-broken:
+    entries:
+      - name: no-build
+  z-second:
+    entries:
+      - name: vendor-api
+      - name: plain
+  all-ok:
+    composes:
+      - plan: a-first
+      - plan: z-second
+  all-broken:
+    composes:
+      - plan: a-broken
+      - plan: z-second
+`)
+	return c, config.NewEnvironment(nil, c.FileDir(), c.FileDir())
+}
+
+// A composition verb that rejects its flags must still have warned (review-375 F1).
+//
+// validateCompositionFlagScope runs before the per-child loop, so a verb whose only emission
+// lived inside that loop went silent on exactly the rejections a user has to diagnose — while
+// `dva up <composition> --bogus`, which emits before the check, warned for the same input. One
+// input, two screens: the defect TASK-375 exists to remove, in the verb that removed it.
+func TestOptionalSkipIsReportedWhenCompositionBuildRejectsItsFlags(t *testing.T) {
+	enableDryRun(t)
+	c, e := optionalSkipFixture(t)
+	var err error
+	stderr := captureBothStreams(t, func() { err = runCompositionBuild(c, planEnv(e), "all", []string{"--no-cache"}) })
+	if err == nil {
+		t.Fatal("passthrough build flags are not supported on a composition; the call must still fail")
+	}
+	assertSkipWarnedFrom(t, "dva build <composition> --no-cache", stderr, "dev")
+}
+
+// A child the loop never reaches must still have warned (review-375 F2).
+//
+// runCompositionBuild returns on the first child's error, so "each child is presented under its
+// own header" is true only for the children that are reached. z-second's missing checkout is
+// exactly the kind of fact that explains why the run went wrong in the first place.
+func TestOptionalSkipIsReportedForChildrenAfterAFailingOne(t *testing.T) {
+	enableDryRun(t)
+	c, e := twoChildCompositionFixture(t)
+	var err error
+	stderr := captureBothStreams(t, func() { err = runCompositionBuild(c, planEnv(e), "all-broken", nil) })
+	if err == nil {
+		t.Fatal("the first child has nothing to build; the composition build must fail on it")
+	}
+	assertSkipWarnedFrom(t, "dva build <composition> (later child)", stderr, "z-second")
+}
+
+// The counterpart to both: emitting at the composition level must not reprint what the
+// per-child call already prints. Without suppressPlanWarnings this is two lines with identical
+// content differing only by the label, which is worse than either defect above — it teaches the
+// reader that one skipped entry means two warnings.
+func TestCompositionBuildWarnsAboutEachChildExactlyOnce(t *testing.T) {
+	enableDryRun(t)
+	c, e := twoChildCompositionFixture(t)
+	stderr := captureBothStreams(t, func() { _ = runCompositionBuild(c, planEnv(e), "all-ok", nil) })
+	if n := strings.Count(stderr, "entry: vendor-api (optional)"); n != 1 {
+		t.Errorf("one skipped entry must produce one warning, got %d; stderr:\n%s", n, stderr)
+	}
+}
