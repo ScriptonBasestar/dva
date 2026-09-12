@@ -46,8 +46,10 @@ type LifecycleEntry struct {
 	// and working directory resolve against the sourced directory. (TASK-051)
 	Source *SourceConfig `yaml:"source,omitempty"`
 
-	// Optional marks this entry as optional — if its directory does not exist,
-	// the entry is skipped with a warning instead of failing the plan. (TASK-319)
+	// Optional marks this entry as optional — if the directory it declares does not
+	// exist, the entry is dropped from the plan instead of failing the plan. The skip
+	// is recorded in the resolution trace, which the user sees under --dry-run; there
+	// is no warning on the normal execution path. (TASK-319)
 	Optional bool `yaml:"optional,omitempty"`
 
 	// Primary marks this compose entry as the primary compose entry. When set,

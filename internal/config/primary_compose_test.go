@@ -84,9 +84,16 @@ func TestWarnMultiplePrimaryCompose(t *testing.T) {
 		}
 		// The warning tells the user which entry wins; if it named a different one than
 		// PrimaryComposeEntry returns, the advice would send them to the wrong entry.
+		//
+		// Target the "(name) is used" clause, not a bare substring: the warning already
+		// enumerates every conflicting entry, so searching the whole message for the
+		// winner's name matches that list and passes no matter which entry was returned.
 		used := cfg.PrimaryComposeEntry()
-		if used == nil || !strings.Contains(got[0], used.Name) {
-			t.Errorf("warning %q does not name the entry in use (%v)", got[0], used)
+		if used == nil {
+			t.Fatalf("PrimaryComposeEntry() = nil with two primaries declared")
+		}
+		if want := "(" + used.Name + ") is used"; !strings.Contains(got[0], want) {
+			t.Errorf("warning %q does not say %q — it names an entry other than the one returned", got[0], want)
 		}
 		for _, n := range []string{"monkey", "zebra"} {
 			if !strings.Contains(got[0], n) {

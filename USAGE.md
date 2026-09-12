@@ -958,6 +958,120 @@ stack:
 | Extended | `kustomize`, `tilt`, `skaffold`, `podman-compose`, `vagrant` |
 | Niche | `sam`, `serverless`, `multipass` |
 
+#### optional (미체크아웃 디렉토리 허용)
+
+`optional: true`인 엔트리는 선언된 디렉토리가 없으면 plan 해석 단계에서 **그 엔트리만**
+건너뜁니다. plan 전체가 실패하지 않습니다. 아직 체크아웃하지 않은 subproject를 참조하는
+엔트리에 씁니다.
+
+```yaml dva.yml
+version: "0.1"
+
+stack:
+  vendor-api:
+    optional: true          # vendor/api 가 없으면 이 엔트리만 빠진다
+    default_runner: native
+    runners:
+      native:
+        dir: vendor/api
+        run: go run ./cmd/api
+
+plans:
+  dev:
+    entries:
+      - name: vendor-api
+```
+
+검사 대상 디렉토리는 다음 순서로 찾습니다.
+
+1. `runners.<name>.dir` — 러너 이름 **사전순**으로 처음 발견되는 `dir`
+2. 평면 선언 형태의 `dir` — `process:`, `kustomize:`, `tilt:`, `vagrant:`, `serverless:`
+3. `source.path`
+
+어느 것도 선언하지 않은 엔트리는 **검사할 대상이 없으므로 유지**됩니다 — 무관한 경로를
+근거로 건너뛰지 않습니다. 상대 경로는 해당 엔트리를 소유한 설정 파일의 디렉토리를
+기준으로 해석합니다.
+
+**범위 제한**: `dir`를 가진 러너는 위 목록이 전부입니다. `compose`, `docker`, `helm`,
+`script`, `kubectl` 등은 디렉토리가 아니라 파일로 대상을 지정하므로 `optional: true`를
+달아도 **건너뛸 근거가 없어 항상 유지**됩니다. 또한 검사는 plan이 선택한 러너가 아니라
+위 우선순위로 찾은 첫 디렉토리를 봅니다 — `runners.native`(dir 없음)와
+`runners.compose`를 함께 선언하고 plan이 compose를 고르는 엔트리라면, compose가 쓰지
+않는 디렉토리를 근거로 건너뛸 수 있습니다.
+
+건너뛴 엔트리는 **dry-run 해석 트레이스**에만
+`entry: <name> (optional) — skipped, directory ... not found`로 기록됩니다. 실제
+`dva up <plan>` 실행 경로에는 별도 경고가 없으므로, 어떤 엔트리가 빠졌는지 확인하려면
+`dva up <plan> --dry-run`을 씁니다.
+
+#### primary (다중 compose 엔트리의 명시적 대표)
+
+compose 엔트리가 둘 이상일 때 `provision`의 `compose_up`과 `service:`를 지정한 interaction이
+어느 compose 파일 세트를 쓸지는 **암묵 결정**됩니다 — stack 엔트리의 `order` 값이 있으면
+그 순, 없거나 같으면 이름순으로 첫 번째 엔트리입니다. `primary: true`는 그 선택을
+명시합니다.
+
+```yaml dva.yml
+version: "0.1"
+
+stack:
+  app-compose:
+    primary: true           # 이름순으로는 뒤지만 이 엔트리가 대표
+    default_runner: compose
+    runners:
+      compose:
+        files: [compose.app.yml]
+  infra-compose:
+    default_runner: compose
+    runners:
+      compose:
+        files: [compose.infra.yml]
+
+plans:
+  app:
+    entries:
+      - name: app-compose
+  infra:
+    entries:
+      - name: infra-compose
+
+default_plan: app
+```
+
+둘 이상에 `primary: true`를 달면 validation warning이 뜨고 **이름순 첫 번째**가 쓰입니다.
+`primary`를 아무 데도 달지 않으면 위의 `order`/이름순 추론이 그대로 적용됩니다. 다만 그
+추론이 읽는 stack 엔트리의 `order`는 plan 경로에서 더 이상 실행 순서로 쓰이지 않는
+deprecated 필드이므로(`plans.*.entries[].order`가 정본), compose 엔트리가 둘 이상이면
+`order`에 기대지 말고 `primary: true`를 명시하는 쪽이 맞습니다.
+
+#### runners.native.post_build
+
+`build`가 성공한 뒤 **같은 디렉토리·같은 환경변수**로 실행되는 후속 명령입니다. 빌드
+산출물 복사처럼 "빌드의 일부지만 빌드 명령 밖"인 단계를 담습니다.
+
+```yaml dva.yml
+version: "0.1"
+
+stack:
+  api:
+    default_runner: native
+    runners:
+      native:
+        dir: apps/api
+        build: go build -o bin/api ./cmd/api
+        post_build: cp bin/api ../../dist/api
+        run: ./bin/api
+
+plans:
+  dev:
+    entries:
+      - name: api
+```
+
+- `build`가 실패하면 `post_build`는 **실행되지 않습니다**.
+- `post_build`가 실패하면 `dva build`가 실패합니다 (`post-build failed: ...`).
+- `--dry-run`은 build 줄에 이어 post-build 줄을 함께 미리 보여줍니다.
+
 ### stack.source (외부 스택 소싱)
 
 stack 엔트리는 `source:`로 **외부 소유 스택**(다른 repo나 로컬 디렉토리에 정의된

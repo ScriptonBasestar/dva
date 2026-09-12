@@ -158,11 +158,14 @@ func (c *Config) SortedStack() []LifecycleEntry {
 	return entries
 }
 
-// PrimaryComposeEntry returns the lifecycle entry with lowest order that has a compose config.
+// PrimaryComposeEntry returns the compose entry that unnamed compose operations act on.
 // Name is already populated from map keys during Load().
-// Tiebreaker: alphabetically first Name when Order values are equal.
-// If an entry has Primary=true, it is returned immediately (explicit primary wins).
-// Multiple entries with Primary=true is a validation error (TASK-319).
+//
+// An explicit primary: true wins over the order/name inference. When more than one entry
+// is marked, the alphabetically first of them is returned and validation emits a warning
+// naming that same entry (TASK-319) — it is a warning, not an error, so this has to pick
+// one rather than refuse. Absent any explicit primary, the entry with the lowest order
+// wins, alphabetically first Name breaking a tie.
 func (c *Config) PrimaryComposeEntry() *LifecycleEntry {
 	// First pass: an explicit primary: true wins over the order/name inference.
 	//

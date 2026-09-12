@@ -952,7 +952,7 @@
           },
           "optional": {
             "type": "boolean",
-            "description": "If true, missing directory for this entry is skipped with a warning instead of failing the plan (TASK-319)"
+            "description": "If true, an entry whose declared directory is missing is dropped from the plan instead of failing the plan; the skip appears in the --dry-run resolution trace (TASK-319)"
           },
           "primary": {
             "type": "boolean",

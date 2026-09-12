@@ -358,23 +358,12 @@ func ResolvePlan(cfg *config.Config, planName string, cliVars map[string]string)
 			}
 		}
 
-		// Optional directory check: if entry is marked optional and its directory
-		// does not exist, skip this entry with a warning (TASK-319).
+		// Optional directory check: if the entry is marked optional and the directory it
+		// declares does not exist, drop the entry from the plan instead of failing the
+		// whole plan (TASK-319). The skip is recorded in the resolution trace, which the
+		// user reads under --dry-run.
 		if stackEntry.Optional {
-			// Each runner shape carries its own directory field, and decodeRunnersMap keys
-			// the map by the name as written, so the lookup has to name both the runner and
-			// the type that runner decodes into — runners.process holds a ProcessPluginConfig,
-			// not a NativeRunnerConfig.
-			dir := ""
-			switch {
-			case optionalRunnerDir(stackEntry.Runners, "native") != "":
-				dir = optionalRunnerDir(stackEntry.Runners, "native")
-			case optionalRunnerDir(stackEntry.Runners, "process") != "":
-				dir = optionalRunnerDir(stackEntry.Runners, "process")
-			case stackEntry.Source != nil && stackEntry.Source.Path != "":
-				dir = stackEntry.Source.Path
-			}
-			if dir != "" {
+			if dir := optionalEntryDir(stackEntry); dir != "" {
 				resolvedDir := resolveDir(dir, owner.FileDir())
 				if _, err := os.Stat(resolvedDir); err != nil && os.IsNotExist(err) {
 					resolved.trace("entry: %s (optional) — skipped, directory %q not found", entryName, resolvedDir)
@@ -664,20 +653,68 @@ func resolveDir(dir, configDir string) string {
 	return filepath.Join(configDir, dir)
 }
 
-// optionalRunnerDir reports the working directory a runner declares, for the optional-entry
-// existence check. It returns "" when the runner is absent or declares no directory; the
-// caller treats that as "nothing to check" rather than as the config directory, so an entry
-// that never named a directory is not skipped on the strength of an unrelated path.
-func optionalRunnerDir(runners map[string]any, name string) string {
-	cfg, ok := runners[name]
-	if !ok {
-		return ""
-	}
+// runnerConfigDir reports the working directory one runner config declares. It returns ""
+// both when the config is absent and when that runner shape has no directory of its own —
+// compose, helm, script, docker and friends locate their work by file, not by directory —
+// and the caller treats "" as "nothing to check" rather than as the config directory, so an
+// entry that never named a directory is not skipped on the strength of an unrelated path.
+//
+// A typed nil pointer stored in an any is not a nil interface, so every case has to guard
+// its own pointer: the flat-field callers below pass fields that are usually nil.
+func runnerConfigDir(cfg any) string {
 	switch c := cfg.(type) {
 	case *config.NativeRunnerConfig:
-		return c.Dir
+		if c != nil {
+			return c.Dir
+		}
 	case *config.ProcessPluginConfig:
-		return c.Dir
+		if c != nil {
+			return c.Dir
+		}
+	case *config.KustomizePluginConfig:
+		if c != nil {
+			return c.Dir
+		}
+	case *config.TiltPluginConfig:
+		if c != nil {
+			return c.Dir
+		}
+	case *config.VagrantPluginConfig:
+		if c != nil {
+			return c.Dir
+		}
+	case *config.ServerlessPluginConfig:
+		if c != nil {
+			return c.Dir
+		}
+	}
+	return ""
+}
+
+// optionalEntryDir picks the directory whose existence decides whether an optional entry
+// survives plan resolution, or "" when the entry named no directory at all.
+//
+// An entry can declare its runner three different ways — the runners: map, a flat typed
+// field (process:, tilt:, ...), or source: — and only the first of those populates
+// Runners. Consulting the map alone made optional: true a silent no-op on the other two
+// shapes: the schema accepted the flag and nothing happened, which is the failure mode a
+// declarative flag can least afford.
+//
+// Runners is a map, so it is walked in sorted key order. "Whichever runner we saw first"
+// would pick a different directory from run to run on an entry declaring two.
+func optionalEntryDir(e *config.LifecycleEntry) string {
+	for _, name := range slices.Sorted(maps.Keys(e.Runners)) {
+		if dir := runnerConfigDir(e.Runners[name]); dir != "" {
+			return dir
+		}
+	}
+	for _, cfg := range []any{e.Process, e.Kustomize, e.Tilt, e.Vagrant, e.Serverless} {
+		if dir := runnerConfigDir(cfg); dir != "" {
+			return dir
+		}
+	}
+	if e.Source != nil && e.Source.Path != "" {
+		return e.Source.Path
 	}
 	return ""
 }
