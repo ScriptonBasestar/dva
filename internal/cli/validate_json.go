@@ -31,6 +31,18 @@ type validateReport struct {
 	// document suppresses the envelope (see fail), so without this key that contract
 	// would break silently on exactly the paths it was written for.
 	Error *validateErrorEnvelope `json:"error,omitempty"`
+
+	// Suppressed is what dva.yml's ignore lists hid. It is always present — never gated on
+	// --show-ignored — for the same reason the text summary always prints its count: a
+	// machine consumer reading `"warnings": []` has to be able to tell "nothing to report"
+	// apart from "everything was ignored" (docs/56 §6-4).
+	Suppressed []validateSuppression `json:"suppressed"`
+}
+
+type validateSuppression struct {
+	Kind   string `json:"kind"`
+	Name   string `json:"name"`
+	Reason string `json:"reason"`
 }
 
 type validateErrorEnvelope struct {
@@ -79,6 +91,7 @@ func newValidateReport(c *config.Config) validateReport {
 		ConfigFile: c.FilePath(),
 		Warnings:   []validateWarning{},
 		Errors:     []validateError{},
+		Suppressed: []validateSuppression{},
 	}
 }
 
@@ -88,6 +101,18 @@ func newValidateReport(c *config.Config) validateReport {
 func (r *validateReport) add(category string, texts ...string) {
 	for _, text := range texts {
 		r.Warnings = append(r.Warnings, newValidateWarning(category, text))
+	}
+}
+
+// addSuppressions mirrors the items behind the summary line's count into the document, in
+// the same sorted order --show-ignored prints them.
+func (r *validateReport) addSuppressions(summary *suppressionSummary) {
+	for _, item := range summary.sortedItems() {
+		r.Suppressed = append(r.Suppressed, validateSuppression{
+			Kind:   item.kind,
+			Name:   item.name,
+			Reason: item.reason,
+		})
 	}
 }
 

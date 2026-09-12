@@ -36,6 +36,8 @@ type Config struct {
 	Endpoints        map[string]EndpointConfig      `yaml:"endpoints"`
 	DefaultMode      string                         `yaml:"default_mode"`
 	SuggestionIgnore []string                       `yaml:"suggestion_ignore"`
+	Suggestions      *SuggestionCategories          `yaml:"suggestions"`
+	DriftIgnore      []string                       `yaml:"drift_ignore"`
 	Modes            map[string]ModeConfig          `yaml:"modes"`
 	Environments     map[string]EnvironmentProfile  `yaml:"environments"`
 	Plans            map[string]*PlanConfig         `yaml:"plans"`
@@ -275,6 +277,43 @@ type HealthCheckConfig struct {
 // ServiceTagConfig defines per-service tag configuration.
 type ServiceTagConfig struct {
 	Tags []string `yaml:"tags"`
+}
+
+// SuggestionCategories turns a whole suggestion source off (docs/56 §6-2). The keys are
+// source kinds — where the candidate name was read from — and never target groups like
+// `docker-*`: those are the suggestion rules' own business, and promoting them to a
+// user-facing category would make the author re-declare a judgement the rules already
+// make, with the two drifting apart the moment the rules change.
+//
+// Every field is a pointer because omission has to mean "on". A plain bool would make an
+// undeclared `suggestions:` block read as false and silence every suggestion in every
+// pre-TASK-309 config.
+type SuggestionCategories struct {
+	Makefile    *bool `yaml:"makefile"`
+	PackageJSON *bool `yaml:"package_json"`
+}
+
+// Suggestion source kinds. These are the `suggestions:` keys and the only values
+// SuggestionCategories.Enabled answers about.
+const (
+	SuggestionSourceMakefile    = "makefile"
+	SuggestionSourcePackageJSON = "package_json"
+)
+
+// Enabled reports whether suggestions from the named source kind should be produced. A
+// nil receiver, an undeclared field, and an unknown key all answer true: this gate can
+// only ever suppress on an explicit `false`.
+func (s *SuggestionCategories) Enabled(source string) bool {
+	if s == nil {
+		return true
+	}
+	switch source {
+	case SuggestionSourceMakefile:
+		return s.Makefile == nil || *s.Makefile
+	case SuggestionSourcePackageJSON:
+		return s.PackageJSON == nil || *s.PackageJSON
+	}
+	return true
 }
 
 // InteractionCommand defines a command in the interaction section.
@@ -1358,6 +1397,20 @@ func (c *Config) mergeFrom(other *Config) error {
 	// suggestion_ignore: list replace
 	if other.SuggestionIgnore != nil {
 		c.SuggestionIgnore = other.SuggestionIgnore
+	}
+
+	// drift_ignore: list replace, same as suggestion_ignore. A module that declares the
+	// key owns the whole list; appending would make the effective list depend on module
+	// order, and an ignore list whose contents depend on load order is exactly the kind
+	// of invisible suppression docs/56 §2 rules out.
+	if other.DriftIgnore != nil {
+		c.DriftIgnore = other.DriftIgnore
+	}
+
+	// suggestions: replace as a whole, for the same reason. The struct is small enough
+	// that per-field merging would only buy the ambiguity of a half-overridden policy.
+	if other.Suggestions != nil {
+		c.Suggestions = other.Suggestions
 	}
 
 	// env_file: replace as a whole

@@ -1478,6 +1478,22 @@
       "description": "Glob patterns for Makefile/package.json targets to suppress from config suggestion warnings. Use when targets are intentionally not mapped to DVA interactions (e.g., CI-only targets, aliases covered by other interactions).",
       "examples": [["*-release", "clippy*", "test-e2e-*"]]
     },
+    "suggestions": {
+      "type": "object",
+      "description": "Turn a whole suggestion source off. Keys are source kinds, not target groups; omitted keys stay enabled. Suppressed suggestions are still counted in the 'dva validate' summary and listed by 'dva validate --show-ignored'.",
+      "properties": {
+        "makefile": { "type": "boolean", "description": "Suggest interactions for documented Makefile targets (default true)." },
+        "package_json": { "type": "boolean", "description": "Suggest interactions for package.json scripts (default true)." }
+      },
+      "additionalProperties": false,
+      "examples": [{ "makefile": false }]
+    },
+    "drift_ignore": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Glob patterns for compose files that autodiscovery finds beside dva.yml but no stack entry registers. Applies ONLY to that unregistered-file drift warning: a configured compose file that does not exist, and an interaction referencing a missing compose service, are states that break 'dva up' and no ignore suppresses them. Patterns match the path relative to dva.yml and do not cross directory separators; a pattern matching no discovered file is reported as stale.",
+      "examples": [["compose.ci.yaml", "compose.*.experimental.yaml"]]
+    },
     "modes": {
       "type": "object",
       "description": "Named operational modes for dva up (--mode/-M flag). Each mode defines which compose profiles/services to start, health checks to run, and environment overrides.",

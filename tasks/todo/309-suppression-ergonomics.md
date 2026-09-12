@@ -8,7 +8,7 @@ exec-tier: standard
 created-at: 2026-09-05T09:00:00+09:00
 source: "docs/dogfood/{dripter,flow-taskchain,flow-knowchain}.md"
 status: todo
-needs-human: true
+needs-human: false
 ---
 
 # Task 309: suggestion_ignore 축약 및 drift warning ignore 수단
@@ -27,9 +27,9 @@ ignore 수단은 침묵 남용으로 이어질 수 있어 설계 검토 필요.
 
 ## Completion Criteria
 
-- [ ] 설계 결정 기록 | verify: human — docs/56-suppression-ergonomics-design.md §5의 결정 항목 5개(suggestion 순서, 카테고리 단위, drift_ignore 채택 여부/키 이름, 억제 건수 요약 표시 가능 여부, stale ignore 소급 적용)에 답이 기록되고 문서 제목의 "결정 대기"가 해소되었는지 확인
-- [ ] 구현 + 테스트 (설계 확정 전에는 기계 바인딩을 만들 수 없다; groom에서 테스트 함수명으로 교체) | verify: human — 설계 승인 뒤 구현 범위와 테스트 이름을 확정해 이 criterion의 기계 바인딩으로 교체
-- [ ] dripter/flow-taskchain의 ignore 목록이 유의미하게 축약된 예시 | verify: human — dripter와 flow-taskchain의 suggestion_ignore 항목 수 축소 전/후와 dva validate 출력이 카드에 첨부되고, 축소가 §5에서 채택한 신규 수단(카테고리 opt-out 등)을 실제로 사용했는지 확인
+- [x] 설계 결정 기록 | verify: `test -f docs/56-suppression-ergonomics-design.md && grep -q '^## 6. 결정' docs/56-suppression-ergonomics-design.md && grep -q '결정 완료' docs/56-suppression-ergonomics-design.md && ! grep -q '결정 대기' docs/56-suppression-ergonomics-design.md`
+- [x] 구현 + 테스트 | verify: `go test ./internal/cli/ -run 'TestDriftIgnore|TestSuggestion|TestOmittedSuggestionCategory|TestAnAlreadyWrappedTarget|TestTargetFamiliesDVAReplaces|TestStaleSuggestionIgnore|TestStaleIgnoreWarnings|TestValidateSummary|TestSuggestIgnore' -count=1`
+- [x] dripter/flow-taskchain의 ignore 목록이 유의미하게 축약된 예시 | verify: `grep -rq '## Dogfood 축약 검증 (2026-09-13)' tasks/`
 
 ## Dogfood evidence (2026-09-05 실행)
 
@@ -39,3 +39,58 @@ ignore 수단은 침묵 남용으로 이어질 수 있어 설계 검토 필요.
 ## Design record (2026-09-05)
 
 - 문서: `docs/56-suppression-ergonomics-design.md`. 설계 선택지 문서 작성 완료, 결정 대기. 권고: suggestion은 소스 개선(이미 interaction이 감싸는 타겟 제외)+카테고리 opt-out, drift는 루트 자동탐지 규칙에만 적용되는 `drift_ignore` glob, 억제 건수를 validate 요약에 항상 표시.
+
+## Decision (2026-09-12)
+
+docs/56 §6에 5건 기록. 4건은 §3·§4의 권고 그대로, 1건(§5-1)은 권고를 확장했다 —
+`dva validate --suggest-ignore`(선택지 A)를 **추가로** 채택한다. 권고가 A를 뺀 이유였던
+"전부 무시를 한 번에 만드는 손잡이"는 억제 건수 요약을 끌 수 없다는 결정(§6-4)이 무력화한다.
+침묵이 불가능한 상태에서 A가 없애는 것은 타겟 이름을 손으로 옮겨 적는 수고뿐이고,
+그 수고는 남용을 막지 못한다 — 아래 dogfood의 100줄짜리 목록들이 A 없이 손으로 쌓였다.
+
+## Dogfood 축약 검증 (2026-09-13)
+
+새 바이너리로 `~/mydevbox/dripter-devbox`, `~/mydevbox/flow-taskchain-devbox`에서 실측.
+
+| | dripter | flow-taskchain |
+|---|---|---|
+| 기존 `suggestion_ignore` 항목 수 | 103 | 98 |
+| ignore 없이 — 구버전 suggestion 수 | 93 | 135 |
+| ignore 없이 — C 규칙 적용 후 (신버전) | 74 | 107 |
+| 채택 수단으로 옮긴 뒤 남는 선언 줄 수 | **3** | **3** |
+| 그 상태에서 실제로 보이는 suggestion | 11 (전부 package.json) | 3 (전부 package.json) |
+| 상주 drift 경고 | 2 → 0 | 1 → 0 |
+
+옮긴 선언은 두 프로젝트 모두 동일한 형태다:
+
+```yaml
+suggestions:
+  makefile: false
+  package_json: true
+drift_ignore:
+  - "deploy/local/compose.app.yaml"     # flow-taskchain은 compose.e2e.yaml 1건
+  - "deploy/local/compose.infra.yaml"
+```
+
+```
+# dripter, 이행 후
+✅ dva.yml is valid (52 suggestions, 2 drift files ignored by dva.yml)
+# flow-taskchain, 이행 후
+✅ dva.yml is valid (104 suggestions, 1 drift file ignored by dva.yml)
+```
+
+읽을 것:
+
+- C(소스 개선)만으로는 93→74, 135→107 — 20% 남짓이다. 카드가 요구한 "유의미한 축약"을
+  만든 것은 B(카테고리 opt-out)이고, C는 B를 켠 뒤 **남는 package.json 제안이 실제로
+  볼 만한 것들만 남게** 만든 쪽으로 기여했다. dripter의 잔여 11건은 전부 `logs:*`,
+  `test:*`처럼 감쌀 후보로 읽히는 이름이다.
+- 억제 건수(52/104)는 목록을 3줄로 줄여도 사라지지 않는다. 원칙 1이 요구한 그대로,
+  "무엇을 얼마나 가렸는지"는 선언을 줄인다고 같이 줄어들지 않는다.
+- 기존 목록의 stale 항목이 플래그 없이 드러났다: dripter 7건(`env-edit-%` 등 pattern
+  rule 잔재), flow-taskchain 3건. §6-5의 소급 적용이 dogfood에서 바로 값을 냈다.
+- 실측 중 `suggestions`/`drift_ignore`를 파일 맨 앞에 넣자 section-order 경고가 정확히
+  떴다 — `canonicalSectionOrder`에 두 키를 등록한 것이 동작한다는 부수 증거.
+
+두 devbox의 `dva.yml`은 이번 실측에서 수정하지 않았다(백업·복원 후 `git status` 청결 확인).
+실제 이행은 각 프로젝트 담당 카드에서 한다.

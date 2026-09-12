@@ -211,13 +211,27 @@ See USAGE.md's "config validate" section for the full list of semantic checks.`,
 		}
 		report.add("interaction_collision", collisionWarnings...)
 
-		driftWarnings := detectConfigDriftWarnings(c)
+		suppressed := &suppressionSummary{}
+
+		driftWarnings, driftSuppressed := detectConfigDriftWarningsWithSuppressions(c)
+		suppressed.merge(driftSuppressed)
 		printConfigDriftWarnings(notice, driftWarnings)
 		report.add("config_drift", driftWarnings...)
 
-		suggestionWarnings := detectConfigSuggestionWarnings(c)
+		suggestionWarnings, suggestionSuppressed := detectConfigSuggestionWarningsWithSuppressions(c)
+		suppressed.merge(suggestionSuppressed)
 		printConfigSuggestionWarnings(notice, suggestionWarnings)
 		report.add("config_suggestion", suggestionWarnings...)
+
+		// A pattern that hides nothing is reported whether or not --show-ignored was asked
+		// for: it is a defect in dva.yml, not a detail about this run (docs/56 §6-5).
+		printStaleIgnoreWarnings(notice, suppressed.stale)
+		report.add("ignore_stale", suppressed.stale...)
+
+		if showIgnored, _ := cmd.Flags().GetBool("show-ignored"); showIgnored {
+			printSuppressedItems(notice, suppressed)
+		}
+		report.addSuppressions(suppressed)
 
 		if err := failValidation(&report, dedupeErrors(hard)); err != nil {
 			return err
@@ -245,10 +259,19 @@ See USAGE.md's "config validate" section for the full list of semantic checks.`,
 			}
 		}
 
+		if suggestIgnore, _ := cmd.Flags().GetBool("suggest-ignore"); suggestIgnore && !jsonOutput {
+			// stdout, not the notice writer: this is the one part of validate's output
+			// meant to be piped or copied into dva.yml rather than read.
+			fmt.Print(suggestIgnoreBlock(suppressed.suggested))
+		}
+
 		if jsonOutput {
 			return output.PrintJSON(report)
 		}
-		fmt.Println("✅ dva.yml is valid")
+		// The suffix is not optional and has no flag to turn it off. It is what lets every
+		// ignore surface above exist: an ignored finding stays counted, so "valid" never
+		// silently means "valid once N findings were hidden" (docs/56 §6-4).
+		fmt.Printf("✅ dva.yml is valid%s\n", suppressed.summarySuffix())
 		return nil
 	},
 }
@@ -383,15 +406,30 @@ func printConfigDriftWarnings(w io.Writer, warnings []string) {
 }
 
 func detectConfigDriftWarnings(c *config.Config) []string {
+	warnings, _ := detectConfigDriftWarningsWithSuppressions(c)
+	return warnings
+}
+
+// detectConfigDriftWarningsWithSuppressions is detectConfigDriftWarnings plus the
+// accounting docs/56 §2 principle 1 requires: what `drift_ignore` hid, and which of its
+// patterns hid nothing. The plain wrapper above stays because most callers — every drift
+// test among them — only ask what the operator would see, and threading an out-parameter
+// through them would obscure that.
+func detectConfigDriftWarningsWithSuppressions(c *config.Config) ([]string, *suppressionSummary) {
 	var warnings []string
+	suppressed := &suppressionSummary{}
 
 	// configuredRootComposeFiles' file list is unused here (Finding 2/3 replaced the symmetric
 	// comparison it fed); its deferredRootCompose flag is still authoritative for "a root
 	// entry's compose path needs plan/site/entry vars that validation cannot resolve yet" and
 	// gates the unregistered-file scan the same way it gated the old comparison — comparing
 	// against an incomplete configured corpus produces false positives, not signal.
+	//
+	// The stale-pattern check is gated with it for the same reason in reverse: when the scan
+	// does not run, no file was examined, so calling every drift_ignore pattern stale would
+	// be a verdict drawn from an empty sample.
 	if _, deferredRootCompose := configuredRootComposeFiles(c); !deferredRootCompose {
-		warnings = append(warnings, detectUnregisteredComposeFileWarnings(c)...)
+		warnings = append(warnings, detectUnregisteredComposeFileWarnings(c, suppressed)...)
 	}
 	for _, file := range missingConfiguredComposeFiles(c) {
 		warnings = append(warnings, fmt.Sprintf("compose file %q is configured by dva.yml but does not exist", file))
@@ -402,7 +440,7 @@ func detectConfigDriftWarnings(c *config.Config) []string {
 		// Not merely an optimization: this is what stops a compose file built entirely out
 		// of `include:` or an incomplete configured corpus from producing a false positive
 		// on every interaction. See configuredComposeServices' doc comment.
-		return warnings
+		return warnings, suppressed
 	}
 
 	tree := runner.NewInteractionTree(c.Interaction)
@@ -417,7 +455,7 @@ func detectConfigDriftWarnings(c *config.Config) []string {
 		}
 	}
 
-	return warnings
+	return warnings, suppressed
 }
 
 // configuredRootComposeFiles returns configured compose files that live directly
@@ -602,7 +640,7 @@ func composeScanDirLocation(baseDir, dir string) string {
 	return fmt.Sprintf("in %s/", filepath.ToSlash(dir))
 }
 
-func detectUnregisteredComposeFileWarnings(c *config.Config) []string {
+func detectUnregisteredComposeFileWarnings(c *config.Config, suppressed *suppressionSummary) []string {
 	configured, _, _ := configuredComposeFiles(c)
 
 	registered := map[string]bool{}
@@ -625,12 +663,25 @@ func detectUnregisteredComposeFileWarnings(c *config.Config) []string {
 	sort.Strings(dirs)
 
 	var warnings []string
+	var discovered []string
 	for _, dir := range dirs {
 		var unregistered []string
 		for _, name := range detectComposeFilesInDir(dir) {
-			if !registered[canonicalComposePath(filepath.Join(dir, name))] {
-				unregistered = append(unregistered, name)
+			ignoreName := driftIgnoreName(c.FileDir(), dir, name)
+			discovered = append(discovered, ignoreName)
+			if registered[canonicalComposePath(filepath.Join(dir, name))] {
+				continue
 			}
+			// docs/56 §6-3: drift_ignore applies to this rule and to nothing else. The
+			// other two drift findings — a configured file that is missing, an interaction
+			// naming a service no compose file exposes — describe a config that fails the
+			// moment it runs, and suppressing those would only move the failure from
+			// validate to `dva up`.
+			if pattern, ok := matchIgnorePattern(ignoreName, c.DriftIgnore); ok {
+				suppressed.add(suppressedDrift, ignoreName, fmt.Sprintf("drift_ignore: %s", pattern))
+				continue
+			}
+			unregistered = append(unregistered, name)
 		}
 		if len(unregistered) == 0 {
 			continue
@@ -642,7 +693,26 @@ func detectUnregisteredComposeFileWarnings(c *config.Config) []string {
 			"compose files %s exist %s but no stack entry lists them under runners.compose.files; add them to an entry or leave them out on purpose (suppression: TASK-309)",
 			formatList(unregistered), location))
 	}
+
+	sort.Strings(discovered)
+	suppressed.stale = append(suppressed.stale,
+		staleIgnoreWarnings("drift_ignore", c.DriftIgnore, discovered, "compose file that autodiscovery found")...)
+
 	return warnings
+}
+
+// driftIgnoreName is what a drift_ignore pattern is matched against: the discovered file's
+// path relative to dva.yml, slash-separated. It is a relative path rather than a bare
+// basename because autodiscovery already scans the directories of registered root compose
+// files, and two directories may hold a `compose.yaml` each — matching on the basename
+// would let one project's ignore silently cover the other's file. A path that escapes the
+// config directory falls back to the bare name, since a pattern cannot usefully spell it.
+func driftIgnoreName(root, dir, name string) string {
+	rel, err := filepath.Rel(root, filepath.Join(dir, name))
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return name
+	}
+	return filepath.ToSlash(rel)
 }
 
 func printConfigSuggestionWarnings(w io.Writer, warnings []string) {
@@ -652,6 +722,15 @@ func printConfigSuggestionWarnings(w io.Writer, warnings []string) {
 }
 
 func detectConfigSuggestionWarnings(c *config.Config) []string {
+	warnings, _ := detectConfigSuggestionWarningsWithSuppressions(c)
+	return warnings
+}
+
+// detectConfigSuggestionWarningsWithSuppressions is detectConfigSuggestionWarnings plus
+// what `suggestion_ignore` and `suggestions:` hid, and which ignore patterns hid nothing.
+// See detectConfigDriftWarningsWithSuppressions for why the plain wrapper stays.
+func detectConfigSuggestionWarningsWithSuppressions(c *config.Config) ([]string, *suppressionSummary) {
+	suppressed := &suppressionSummary{}
 	allCommands := runner.NewInteractionTree(c.Interaction).List()
 
 	// Build subcommand coverage set: for "app:build ce" → also match "build-ce"
@@ -719,6 +798,8 @@ func detectConfigSuggestionWarnings(c *config.Config) []string {
 	}
 	sort.Strings(names)
 
+	wrapped := wrappedWorkflowTargets(c)
+
 	var warnings []string
 	for _, name := range names {
 		if commandSet[name] {
@@ -727,9 +808,20 @@ func detectConfigSuggestionWarnings(c *config.Config) []string {
 		if subcommandCoverage[name] {
 			continue
 		}
-		if matchesSuggestionIgnore(name, c.SuggestionIgnore) {
+		// docs/56 §3 C-1. Not a suppression: the target is already wrapped, so there is
+		// nothing to suggest and nothing for the operator to review.
+		if wrapped[name] {
 			continue
 		}
+		if kind := suggestionSourceKind(candidates[name]); !c.Suggestions.Enabled(kind) {
+			suppressed.add(suppressedSuggestion, name, fmt.Sprintf("suggestions.%s: false", kind))
+			continue
+		}
+		if pattern, ok := matchIgnorePattern(name, c.SuggestionIgnore); ok {
+			suppressed.add(suppressedSuggestion, name, fmt.Sprintf("suggestion_ignore: %s", pattern))
+			continue
+		}
+		suppressed.suggested = append(suppressed.suggested, name)
 		if sources := importedLeafSources[name]; len(sources) > 0 {
 			warnings = append(warnings,
 				fmt.Sprintf("%s defines %q but it is only imported from %s; add `as: %s` to that interaction import to create a runnable root route",
@@ -741,7 +833,13 @@ func detectConfigSuggestionWarnings(c *config.Config) []string {
 				candidates[name], name))
 	}
 
-	return warnings
+	// The universe is every documented target and script before the built-in exclusions,
+	// not the candidate list above: see allDocumentedMakefileTargetNamesInDir.
+	universe := append(allDocumentedMakefileTargetNamesInDir(c.FileDir()), allPackageScriptNamesInDir(c.FileDir())...)
+	suppressed.stale = append(suppressed.stale,
+		staleIgnoreWarnings("suggestion_ignore", c.SuggestionIgnore, universe, "Makefile target or package.json script")...)
+
+	return warnings, suppressed
 }
 
 func sortedSuggestionSources(sources map[string]bool) []string {
@@ -754,14 +852,11 @@ func sortedSuggestionSources(sources map[string]bool) []string {
 }
 
 // matchesSuggestionIgnore returns true if name matches any glob pattern in the
-// suggestion_ignore list from dva.yml.
+// suggestion_ignore list from dva.yml. It delegates to matchIgnorePattern so the
+// suggestion and drift ignore surfaces cannot end up with two glob semantics.
 func matchesSuggestionIgnore(name string, patterns []string) bool {
-	for _, pattern := range patterns {
-		if matched, _ := filepath.Match(pattern, name); matched {
-			return true
-		}
-	}
-	return false
+	_, matched := matchIgnorePattern(name, patterns)
+	return matched
 }
 
 func detectComposeFilesInDir(dir string) []string {
@@ -871,8 +966,23 @@ func formatList(items []string) string {
 }
 
 func extractDocumentedMakefileTargetNamesInDir(dir string) []string {
-	makefilePath := filepath.Join(dir, "Makefile")
-	targets := extractDocumentedTargetNamesFromMakefiles(makefilePath)
+	var kept []string
+	for _, target := range allDocumentedMakefileTargetNamesInDir(dir) {
+		if shouldIgnoreMakefileTarget(target) {
+			continue
+		}
+		kept = append(kept, target)
+	}
+	return kept
+}
+
+// allDocumentedMakefileTargetNamesInDir is the same walk without the built-in exclusions
+// shouldIgnoreMakefileTarget applies. It exists for the stale-ignore check: a
+// `suggestion_ignore: [docker-*]` entry names targets that do exist, and judging its
+// staleness against the already-narrowed list would report it as pointing at nothing the
+// moment the built-in rules learned to exclude the same names (docs/56 §6-5).
+func allDocumentedMakefileTargetNamesInDir(dir string) []string {
+	targets := extractDocumentedTargetNamesFromMakefiles(filepath.Join(dir, "Makefile"))
 	sort.Strings(targets)
 	return targets
 }
@@ -952,9 +1062,7 @@ func collectDocumentedTargetNames(path string, seen map[string]bool, targets *[]
 				if strings.HasPrefix(target, ".") || strings.Contains(target, "$(") || strings.Contains(target, "%") {
 					continue
 				}
-				if !shouldIgnoreMakefileTarget(target) {
-					*targets = append(*targets, target)
-				}
+				*targets = append(*targets, target)
 			}
 		}
 	}
@@ -996,10 +1104,34 @@ func shouldIgnoreMakefileTarget(name string) bool {
 		}
 	}
 
-	return false
+	// Target families DVA replaces outright (docs/56 §3 C-2). A `docker-shell` or
+	// `k8s-apply` target is the orchestration dva.yml took over, not a project command
+	// waiting to be wrapped in an interaction — and these prefixes were the bulk of the
+	// dogfood suggestion_ignore lists. They are excluded by the rules rather than offered
+	// as a `suggestions:` category on purpose (§6-2): a category would make every project
+	// re-declare the same judgement, and the two copies drift.
+	for _, prefix := range []string{"docker-", "compose-", "k8s-", "helm-"} {
+		if strings.HasPrefix(name, prefix) {
+			return true
+		}
+	}
+
+	// A leading underscore is the make convention for an internal helper target — one the
+	// author already marked as not part of the developer-facing workflow.
+	return strings.HasPrefix(name, "_")
 }
 
 func extractPackageScriptNamesInDir(dir string) []string {
+	return packageScriptNamesInDir(dir, false)
+}
+
+// allPackageScriptNamesInDir is extractPackageScriptNamesInDir without the built-in
+// exclusions, for the same reason allDocumentedMakefileTargetNamesInDir exists.
+func allPackageScriptNamesInDir(dir string) []string {
+	return packageScriptNamesInDir(dir, true)
+}
+
+func packageScriptNamesInDir(dir string, all bool) []string {
 	data, err := os.ReadFile(filepath.Join(dir, "package.json"))
 	if err != nil {
 		return nil
@@ -1014,7 +1146,7 @@ func extractPackageScriptNamesInDir(dir string) []string {
 
 	var scripts []string
 	for name := range pkg.Scripts {
-		if shouldIgnorePackageScript(name) {
+		if !all && shouldIgnorePackageScript(name) {
 			continue
 		}
 		scripts = append(scripts, name)
@@ -1025,6 +1157,11 @@ func extractPackageScriptNamesInDir(dir string) []string {
 
 func shouldIgnorePackageScript(name string) bool {
 	if name == "" {
+		return true
+	}
+	// Same convention as the Makefile side: `_build` is an internal helper the author
+	// already flagged as not developer-facing.
+	if strings.HasPrefix(name, "_") {
 		return true
 	}
 	if strings.HasPrefix(name, "pre") && len(name) > 3 {

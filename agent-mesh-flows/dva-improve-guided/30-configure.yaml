@@ -356,7 +356,7 @@ steps:
           deterministic position during migration only; do not generate them for new configs.
 
           <!-- AUTOGEN:section_order:start -->
-          `version` → `vars` → `environment` → `env_file` → `stack` → `plans` → `default_plan` → `environments` → `sites` → `checks` → `default_mode` → `suggestion_ignore` → `modes` → `health_checks` → `interaction` → `provision` → `modules` → `subprojects` → `endpoints` → `infra` → `ssh` → `devcontainer`
+          `version` → `vars` → `environment` → `env_file` → `stack` → `plans` → `default_plan` → `environments` → `sites` → `checks` → `default_mode` → `suggestion_ignore` → `suggestions` → `drift_ignore` → `modes` → `health_checks` → `interaction` → `provision` → `modules` → `subprojects` → `endpoints` → `infra` → `ssh` → `devcontainer`
           <!-- AUTOGEN:section_order:end -->
       15. **File header** — First line must be `# yaml-language-server: $schema=...` schema comment.
       16. **`stack.<entry>.runners.compose.tags: [infra]`** — Primary compose runner MUST have compose-level `tags:` field.

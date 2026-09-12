@@ -371,6 +371,15 @@ func resetValidateFlagsForTest(t *testing.T, cmd *cobra.Command) {
 	if err := cmd.Flags().Set("strict", "false"); err != nil {
 		t.Fatalf("reset --strict: %v", err)
 	}
+	// Cobra keeps flag values on the command between Execute calls, and both validate
+	// spellings live for the whole test binary. Without these two resets, one test asking
+	// for --show-ignored leaves it set for every later test's run of the same command.
+	if err := cmd.Flags().Set("show-ignored", "false"); err != nil {
+		t.Fatalf("reset --show-ignored: %v", err)
+	}
+	if err := cmd.Flags().Set("suggest-ignore", "false"); err != nil {
+		t.Fatalf("reset --suggest-ignore: %v", err)
+	}
 }
 
 func writeValidateConfigForTest(t *testing.T, content string) string {

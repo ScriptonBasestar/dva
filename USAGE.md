@@ -760,9 +760,11 @@ $(brew --prefix)/etc/bash_completion.d/dva` (macOS) 또는
 #### config validate
 
 ```bash
-dva config validate          # 스키마 + 시맨틱 검증
-dva config validate --fix    # compose 파일 project name 불일치 자동 수정
-dva config validate --strict # drift 경고 시에도 검증 실패 처리
+dva config validate                  # 스키마 + 시맨틱 검증
+dva config validate --fix            # compose 파일 project name 불일치 자동 수정
+dva config validate --strict         # drift 경고 시에도 검증 실패 처리
+dva config validate --show-ignored   # 억제된 항목을 하나씩 펼쳐 보기
+dva config validate --suggest-ignore # 현재 suggestion을 붙여 넣을 수 있는 블록으로 출력
 ```
 
 compose 파일에 대한 config drift 경고는 두 방향을 따로 검사합니다. 등록됐지만 디스크에
@@ -773,7 +775,49 @@ compose 파일에 대한 config drift 경고는 두 방향을 따로 검사합�
 디렉터리 + (`source:`가 없는) root stack 엔트리가 참조하는 compose 파일들의 디렉터리 +
 그 파일들이 `include:`로 도달하는 하위 파일들의 디렉터리이며, `source:`로 선언된 외부
 코퍼스는 dva.yml이 전체를 알 필요가 없으므로 스캔 대상에서 제외됩니다. 의도적으로 등록하지
-않은 파일을 억제하는 선언 수단은 아직 없습니다 (TASK-309).
+않은 파일은 아래 `drift_ignore`로 억제합니다.
+
+**억제 수단 (`suggestion_ignore` / `suggestions` / `drift_ignore`)**
+
+세 키 모두 경고를 목록에서 빼지만, **빠졌다는 사실 자체는 뺄 수 없습니다** — 억제 건수는
+항상 요약 줄에 남고 끄는 스위치가 없습니다 (설계 근거: [docs/56](docs/56-suppression-ergonomics-design.md)).
+
+```yaml dva.yml
+# Makefile/package.json 타겟 이름 glob — suggestion 경고를 개별로 억제
+suggestion_ignore:
+  - "release*"
+
+# suggestion 소스 종류를 통째로 끔. 생략하거나 키가 없으면 켜진 상태
+suggestions:
+  makefile: false
+  package_json: true
+
+# 루트에서 자동탐지됐지만 어떤 stack 엔트리도 등록하지 않은 compose 파일 억제
+drift_ignore:
+  - "compose.ci.yaml"
+  - "compose.*.experimental.yaml"
+```
+
+```
+✅ dva.yml is valid (2 suggestions, 1 drift file ignored by dva.yml)
+```
+
+- `--show-ignored`는 억제된 항목을 한 줄씩, 그것을 가린 dva.yml 줄과 함께 보여줍니다:
+  `[info] ignored: suggestion "release" — suggestion_ignore: release*`
+- 가리는 대상이 하나도 없는 패턴은 플래그 없이도 경고합니다:
+  `[warn] stale ignore: suggestion_ignore[0] "vanished" matches no Makefile target or package.json script`.
+  dva.yml의 결함이지 이번 실행의 세부사항이 아니기 때문입니다.
+- `drift_ignore`는 **등록되지 않은 파일** 규칙에만 적용됩니다. 등록됐는데 디스크에 없는 파일과
+  compose에 없는 서비스를 참조하는 interaction은 `dva up`이 실패하는 상태라 어떤 ignore도
+  적용되지 않습니다. 패턴은 dva.yml 기준 상대 경로와 대조하며 디렉터리 구분자를 넘지 않습니다.
+- 시맨틱 경고 28종에는 억제 수단이 없습니다. 경고가 틀렸다면 규칙을 고칩니다.
+- `--suggest-ignore`는 현재 남은 suggestion을 `suggestion_ignore:` 블록으로 출력만 합니다.
+  dva.yml을 대신 고치지 않습니다 — 무엇을 가리는지 읽고 붙여 넣는 절차가 요점입니다.
+
+suggestion 자체도 좁혀져 있습니다. 이미 어떤 interaction이 `make <target>` /
+`pnpm|npm|yarn <script>`로 실행하는 타겟(이름이 달라도), `docker-*`·`compose-*`·`k8s-*`·`helm-*`
+계열, `_` 접두 내부 타겟은 제안하지 않습니다. 서브프로젝트에서 가져온 interaction은
+`as:` 별칭이 있어야 루트 경로가 생기므로 여전히 제안 대상입니다.
 
 hard error(스키마 위반, legacy compose 선언, 실행 불가능한 훅 위치, 잘못된
 `default_plan` 등)가 하나 있어도 거기서 멈추지 않습니다. 가능한 진단을 끝까지 수행한 뒤
@@ -847,6 +891,8 @@ interaction:
 | `checks` | `dva doctor` 환경 사전조건 체크 |
 | `default_mode` | `--mode` 미지정 시 적용할 기본 `modes` 엔트리 |
 | `suggestion_ignore` | config suggestion 경고에서 제외할 Makefile/package.json 타겟 glob 패턴 |
+| `suggestions` | suggestion 소스 종류별 on/off (`makefile`, `package_json`) |
+| `drift_ignore` | 등록되지 않은 compose 파일 drift 경고에서 제외할 파일 glob 패턴 |
 | `modes` | 런타임 전략 프리셋 (`--mode`로 선택) |
 | `health_checks` | 비-compose 서비스 헬스체크 |
 | `interaction` | 커맨드 정의 (command, command list, script, script_file, steps, subcommands 등) — 예약어/훅 규칙은 아래 [interaction](#interaction-예약어와-훅) 참조 |

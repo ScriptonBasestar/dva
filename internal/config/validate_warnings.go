@@ -27,7 +27,7 @@ var canonicalSectionOrder = []string{
 	// longer validates, so a file carrying it is rejected before this order check
 	// ever runs — listing it here would only describe where a key that cannot
 	// appear would have gone.
-	"checks", "default_mode", "suggestion_ignore", "modes",
+	"checks", "default_mode", "suggestion_ignore", "suggestions", "drift_ignore", "modes",
 	"health_checks", "interaction", "provision", "modules", "subprojects",
 	"endpoints", "infra", "ssh", "devcontainer",
 }
