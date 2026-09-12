@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -738,12 +739,7 @@ func (p *ProvisionItem) AppliesToPlan(planName string) bool {
 	if len(p.Plans) == 0 {
 		return true
 	}
-	for _, want := range p.Plans {
-		if want == planName {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(p.Plans, planName)
 }
 
 // StepsForPlan returns the steps of a hook phase that apply to planName, and the labels of
