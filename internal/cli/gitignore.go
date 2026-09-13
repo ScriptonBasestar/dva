@@ -452,10 +452,13 @@ func isDvaIgnored(content string) bool {
 	lines := strings.Split(content, "\n")
 	forfeit := negationForfeitsContents(lines, dvaTransientProbes())
 	for _, prefix := range ancestorsAndSelf(config.DotDirName) {
-		// The path's own spellings are asked first, and the order is load-bearing. Given
-		// `.sb/dva/` and `!.sb/dva/*` together, git excludes the directory and never
-		// descends, so the negation on its contents never applies; reading the contents
-		// form first would let that negation win an argument git does not give it.
+		// The two questions are independent — either answering yes is decisive, and
+		// swapping them changes nothing, which was verified by swapping them and running
+		// the package. What keeps `.sb/dva/` plus `!.sb/dva/*` answering "ignored" is not
+		// the order but lastMatchExcludes: `!.sb/dva/*` is a contents spelling and the last
+		// line naming it negates, so the contents branch declines on its own. Said the
+		// other way, pathSpellings and contentsSpellings share no member, so no line can be
+		// read by both branches and no line can be decided twice.
 		if lastMatchExcludes(lines, pathSpellings(prefix)) {
 			return true
 		}

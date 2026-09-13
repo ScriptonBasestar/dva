@@ -99,9 +99,12 @@ func TestIsDvaIgnored(t *testing.T) {
 		{"a negation that git would discard forfeits anyway", "!.sb/dva/*\n.sb/dva/*\n", false},
 
 		// Directory exclusion outranks a negation on its contents: git does not descend
-		// into an excluded directory, so the negation never applies. This is why the path
-		// spellings are consulted before the contents spellings, and why no forfeit is
-		// consulted on that branch.
+		// into an excluded directory, so the negation never applies. These two assert
+		// git's behaviour, which was measured; they do not pin the order the two branches
+		// are consulted in, and an earlier version of this comment claimed they did.
+		// Swapping the branches was tried and the package still passes — they are
+		// independent, each decisive on its own. What makes the contents branch decline
+		// here is lastMatchExcludes, not the order.
 		{"directory exclusion beats a contents negation", ".sb/dva/\n!.sb/dva/*\n", true},
 		{"directory exclusion beats a negation on the directory's children", ".sb/\n!.sb/d*\n", true},
 
@@ -719,6 +722,55 @@ func TestEnsureGitignoreKeepsModulesAddable(t *testing.T) {
 // "no .gitignore here" branch behind the read, unreachable in any real repository, and doctor
 // began telling first-run users to add a line to a file that does not exist. That is the
 // `dva init` → `dva doctor` path, so it is the first thing a new user sees.
+// TestAdviceSpellsExactlyWhatDvaWrites pins the coupling this whole change exists to establish.
+//
+// The defect being closed is not that one spelling was wrong. It is that two spellings existed:
+// what `dva init` wrote and what the messages told a person to write were separate strings, free
+// to disagree, and they did. defaultIgnoreAdvice reads defaultIgnoreRules for that reason — but
+// "reads it" is a property of the current source text, and nothing failed when that property was
+// removed. Restating the old literal here compiled, passed the package, and put DVA back to
+// recommending a rule that blocks its own modules while writing one that does not.
+//
+// So the assertion is on the relationship, not on either wording: whatever the rules are, the
+// advice names all of them and invents nothing.
+func TestAdviceSpellsExactlyWhatDvaWrites(t *testing.T) {
+	rules := defaultIgnoreRules()
+	advice := defaultIgnoreAdvice()
+
+	if len(rules) == 0 {
+		t.Fatalf("defaultIgnoreRules() is empty; there is no rule to advise")
+	}
+	for _, rule := range rules {
+		if !strings.Contains(advice, "'"+rule+"'") {
+			t.Errorf("advice %q does not name the rule %q that DVA writes", advice, rule)
+		}
+	}
+
+	// And nothing else. Quoted runs in the advice are what a reader copies into .gitignore,
+	// so an extra one is a recommendation DVA does not follow — the same disagreement in the
+	// other direction.
+	var quoted []string
+	for i, part := range strings.Split(advice, "'") {
+		if i%2 == 1 {
+			quoted = append(quoted, part)
+		}
+	}
+	if !slices.Equal(quoted, rules) {
+		t.Errorf("advice names %q, want exactly the rules %q", quoted, rules)
+	}
+
+	// The advice is only worth pinning because it reaches people. Every user-facing string
+	// that tells someone what to put in .gitignore has to be built from it rather than
+	// spelling a rule of its own.
+	for _, site := range []struct{ what, text string }{
+		{"doctor's hint when .gitignore is missing", checkGitignoreStatus(t.TempDir()).FixHint},
+	} {
+		if !strings.Contains(site.text, advice) {
+			t.Errorf("%s reads %q, want it to contain the advice %q", site.what, site.text, advice)
+		}
+	}
+}
+
 // TestDoctorReportsTheRuleThatBlocksModules covers the population this change would otherwise
 // miss entirely: a repository that already ran `dva init` under the old advice and carries
 // `.sb/dva/` today. Changing what DVA writes does nothing for it — ensureGitignore sees the

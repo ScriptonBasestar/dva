@@ -273,7 +273,12 @@ func scaffoldDvaYmlWithPreview(dir, tmpl string, preview bool) (bool, error) {
 		}
 		fmt.Printf("✅ Created %s (%d declared Makefile native entries, %d workspace subprojects, %d port mappings%s)\n", target, len(discovered.entries), len(discovered.subprojects), len(discovered.ports), detectedLanguage)
 		if updated, err := ensureGitignore(dir); err == nil && updated {
-			fmt.Printf("📎 Updated .gitignore to ignore %s/\n", config.DotDirName)
+			// Named as the rules that were written, not as "ignore .sb/dva/". The
+			// second is what DVA used to write and is no longer true of what it
+			// writes: the directory is not ignored, its transient contents are, and
+			// modules stay committable. A line of output that spells the old rule is
+			// the same defect as a fix hint that spells it.
+			fmt.Printf("📎 Updated .gitignore with %s\n", defaultIgnoreAdvice())
 		}
 		return true, nil
 	}
@@ -293,7 +298,12 @@ func scaffoldDvaYmlWithPreview(dir, tmpl string, preview bool) (bool, error) {
 		}
 		fmt.Printf("✅ Created %s (no Compose file; %s detected, no stack entry generated — DVA does not guess native run/build commands)\n", target, nativeEvidence.phrase(nativeLang))
 		if updated, err := ensureGitignore(dir); err == nil && updated {
-			fmt.Printf("📎 Updated .gitignore to ignore %s/\n", config.DotDirName)
+			// Named as the rules that were written, not as "ignore .sb/dva/". The
+			// second is what DVA used to write and is no longer true of what it
+			// writes: the directory is not ignored, its transient contents are, and
+			// modules stay committable. A line of output that spells the old rule is
+			// the same defect as a fix hint that spells it.
+			fmt.Printf("📎 Updated .gitignore with %s\n", defaultIgnoreAdvice())
 		}
 		return true, nil
 	}
