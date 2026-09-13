@@ -38,6 +38,27 @@ disposition defect. At DVA HEAD `af7f6e6`, installed CE 0.8.4 (`8034cc4`),
 two failures are `TASK-344` and `TASK-371`, both done blockers with no canonical
 `quality-review-receipt`. `TASK-371` directly blocks `TASK-354`.
 
+## 2026-09-13: 이 이슈는 이제 신규 카드도 막는다
+
+지금까지 실패 2건(TASK-344·371)은 전부 **레거시** done 카드였고, 그래서 이 이슈는
+"과거 카드를 마이그레이션할 수 없다"는 문제로 읽혔다. 2026-09-13에 TASK-376·377·378을
+완료해 `tasks/done/`으로 옮기자 실패가 2건에서 5건으로 늘었다. 세 장 모두 이 세션에서
+새로 만들어져 새로 완료된 카드다.
+
+레거시 문제가 아니다. `blocks:` 간선을 가진 카드를 완료하는 **정상 경로**에 receipt를
+남길 수단이 없다는 뜻이다. 앞으로 후속 카드를 푸는 모든 완료가 이 실패를 하나씩 더한다.
+
+세 장은 실제로 독립 검토를 거쳤다 — 각 카드의 게이트를 위임 요약이 아니라 직접
+재현했고(TASK-378의 외부 저장소 무변경, TASK-376의 docker 상태 무변경, TASK-377의
+CI `ce` 부재), 그 결과가 카드 `## Evidence`에 있다. 빠진 것은 검토 자체가 아니라
+검토를 기계가 읽는 형태로 고정할 방법이다.
+
+`ce` 바이너리가 요구하는 형태는 확인됐다: `quality-review-receipt`는 JSON 파일
+경로이고, 그 파일은 `reviewed-card-sha256`으로 카드를 고정하며, 카드가 바뀌면
+`the card changed after it was reviewed`로 거부된다. §Summary의 2번(정본 직렬화
+불일치)과 3번(`tmp/`는 durable하지 않음)이 그대로 남아 있어, DVA 안에서는 이
+파일을 만들 수 없다.
+
 ## Reproduction
 
 1. At DVA `af7f6e6`, run `ce task gate --json`; it returns

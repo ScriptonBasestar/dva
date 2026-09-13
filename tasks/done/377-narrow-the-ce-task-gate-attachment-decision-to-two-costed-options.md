@@ -5,7 +5,7 @@ type: docs
 priority: P2
 effort: S
 exec-tier: standard
-status: todo
+status: done
 created: 2026-09-13
 source: "2026-09-13 사람 작업 분류 — TASK-354의 needs-human 항목이 결정 1건뿐임이 드러났고, 그 사실 근거 절반은 이미 측정됐다"
 blocks: [TASK-354]
@@ -49,11 +49,11 @@ receipt 없는 done blocker 둘 때문에 지금 게이트를 붙이면 보드�
 
 ## Completion Criteria
 
-- [ ] 두 선택지가 채택 비용·`ce` 부재 시 동작·깨지는 범위·되돌리는 비용 네 항목으로 비교돼 있다 | verify: human — 문서에 네 항목이 두 선택지 모두에 대해 채워져 있다
-- [ ] readiness 러너 선언의 실제 형태가 추측이 아니라 확인된 출처와 함께 기록됐다 | verify: human — 확인 방법과 출처가 문서에 적혀 있다
-- [ ] CI가 `ce`를 provision하지 않는다는 측정이 재현 명령과 함께 문서에 인용돼 있다 | verify: human — 문서가 인용한 명령을 실행하면 같은 결론이 나오는지 확인한다
-- [ ] TASK-354가 이 문서를 링크한다 | verify: `/usr/bin/grep -rq --include='354-make-the-board-pass-ce-task-validate-and-gate-it.md' 'TASK-377' tasks` (regression-guard)
-- [ ] 기존 게이트 통과 | verify: `make doc-check` (regression-guard)
+- [x] 두 선택지가 채택 비용·`ce` 부재 시 동작·깨지는 범위·되돌리는 비용 네 항목으로 비교돼 있다 | verify: human — 문서에 네 항목이 두 선택지 모두에 대해 채워져 있다
+- [x] readiness 러너 선언의 실제 형태가 추측이 아니라 확인된 출처와 함께 기록됐다 | verify: human — 확인 방법과 출처가 문서에 적혀 있다
+- [x] CI가 `ce`를 provision하지 않는다는 측정이 재현 명령과 함께 문서에 인용돼 있다 | verify: human — 문서가 인용한 명령을 실행하면 같은 결론이 나오는지 확인한다
+- [x] TASK-354가 이 문서를 링크한다 | verify: `/usr/bin/grep -rq --include='354-make-the-board-pass-ce-task-validate-and-gate-it.md' 'TASK-377' tasks` (regression-guard)
+- [x] 기존 게이트 통과 | verify: `make doc-check` (regression-guard)
 
 ## Evidence
 

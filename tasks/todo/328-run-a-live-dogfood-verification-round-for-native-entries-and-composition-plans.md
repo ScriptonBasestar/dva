@@ -36,3 +36,4 @@ TASK-376 하네스는 그 사이 primeno1에 대해 plan `external-db`의 script
 - [ ] primeno1 native entries complete a real dva up / status / down --purge cycle with output attached to the dogfood report | verify: human — docs/dogfood/primeno1.md contains a 실기동 section with exit codes for up, status, down --purge
 - [ ] familybook and flow-taskchain composition plans complete a real up / status / down --purge cycle with output attached | verify: human — docs/dogfood/familybook.md and docs/dogfood/flow-taskchain.md contain a 실기동 section with exit codes
 - [ ] PLAN-006 row 10a references this task | verify: `/usr/bin/grep -rq --include='006-devbox-dogfood-followup.md' 'TASK-328' tasks` (regression-guard)
+- [ ] [[TASK-376]] 하네스의 `--execute` 출력 블록이 리포트에 손대지 않고 붙여넣어진다 | verify: human — 붙여넣은 절이 편집 없이 그대로인지 확인한다

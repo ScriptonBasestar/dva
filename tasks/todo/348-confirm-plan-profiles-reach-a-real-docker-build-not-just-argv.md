@@ -40,3 +40,4 @@ this repo do not run.
 
 - [ ] A profile-gated service is actually built by `dva build <plan>` against a real compose project | verify: human — 카드 하단 "Evidence" 절에 실제 이미지 빌드 로그와 exit code가 첨부되고, 같은 플랜을 pre-TASK-315 바이너리로 돌렸을 때 이미지가 만들어지지 않음이 함께 기록되었는지 확인
 - [ ] The argv-level regression tests still pass unchanged | verify: `make test` (regression-guard)
+- [ ] [[TASK-376]] 하네스의 `--execute` 출력 블록이 리포트에 손대지 않고 붙여넣어진다 | verify: human — 붙여넣은 절이 편집 없이 그대로인지 확인한다

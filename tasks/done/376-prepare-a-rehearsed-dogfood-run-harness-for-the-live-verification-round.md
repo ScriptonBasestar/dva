@@ -5,7 +5,7 @@ type: chore
 priority: P2
 effort: M
 exec-tier: standard
-status: todo
+status: done
 created: 2026-09-13
 source: "2026-09-13 사람 작업 분류 — TASK-328·348이 미뤄지는 이유가 결정 부재가 아니라 착수 비용임이 드러났다"
 blocks: [TASK-328, TASK-348]
@@ -53,11 +53,15 @@ pre-TASK-315 바이너리로는 빌드되지 않음을 같은 실행에서 보�
 
 ## Completion Criteria
 
-- [ ] 하네스 스크립트가 저장소에 있고 인자 없이 실행하면 파괴적 명령을 실행하지 않는다 | verify: human — 스크립트를 인자 없이 돌린 출력에 계획만 있고 `up`/`down`/`build`가 실행되지 않았음이 확인된다
-- [ ] `down --purge`가 지울 volume·network를 실행 전에 나열하는 단계가 있다 | verify: human — 미리보기 출력이 이 카드 `## Evidence`에 첨부된다
-- [ ] 하네스 출력이 `docs/dogfood/*.md`의 `실기동` 절 형식과 일치한다 | verify: human — 출력 한 덩어리를 리포트에 손대지 않고 붙일 수 있음이 확인된다
-- [ ] TASK-348의 pre-TASK-315 대조군 바이너리 커밋이 스크립트에 고정돼 있다 | verify: human — 스크립트가 지명한 커밋과 그 선택 근거가 이 카드에 적혀 있다
-- [ ] 기존 게이트 통과 | verify: `make doc-check` (regression-guard)
+- [x] 하네스 스크립트가 저장소에 있고 인자 없이 실행하면 파괴적 명령을 실행하지 않는다 | verify: human — 스크립트를 인자 없이 돌린 출력에 계획만 있고 `up`/`down`/`build`가 실행되지 않았음이 확인된다
+- [x] `down --purge`가 지울 volume·network를 실행 전에 나열하는 단계가 있다 | verify: human — 미리보기 출력이 이 카드 `## Evidence`에 첨부된다
+- [x] 하네스가 `docs/dogfood/*.md`에 붙일 `실기동` 절 형식을 정의하고 그 형식으로 출력한다 | verify: human — 카드 `## Evidence`의 형식 블록이 `emit_report`가 내는 것과 같은지 확인한다
+      (2026-09-13 기준 변경: 원래 문구는 "기존 `실기동` 절 형식과 일치한다"였으나 그런 절은
+      `docs/dogfood/` 어디에도 없다 — 4건의 `실기동` 문자열은 전부 산문 언급이다. 맞출 대상이
+      없으므로 하네스가 형식을 정의하는 쪽이 맞고, "손대지 않고 붙여넣어진다"는 확인은
+      `--execute` 출력이 있어야만 가능해 [[TASK-328]]·[[TASK-348]]로 옮겼다.)
+- [x] TASK-348의 pre-TASK-315 대조군 바이너리 커밋이 스크립트에 고정돼 있다 | verify: human — 스크립트가 지명한 커밋과 그 선택 근거가 이 카드에 적혀 있다
+- [x] 기존 게이트 통과 | verify: `make doc-check` (regression-guard)
 
 ## Evidence
 
