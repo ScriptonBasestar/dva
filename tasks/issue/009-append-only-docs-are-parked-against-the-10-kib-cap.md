@@ -29,7 +29,11 @@ cannot meet the limits is split, not exempted."
 ## Evidence
 
 여유 2 KiB 미만(≥8192바이트)인 문서가 **21장**이고, 그중 상한에서 200바이트 이내가
-**여섯 장**이다. 측정 명령과 그 출력:
+**여섯 장**이다. 21은 이 브랜치 이후의 수 — base `764ef3d`에서는 **22장**이었고,
+`docs/dogfood/primeno1.md`(10028바이트)가 TASK-380의 분할로 집합에서 빠졌다. 아래
+명령을 이 브랜치에서 다시 돌리면 21이 나와야 하므로 21을 본문 수로 쓰되, 문제를
+만났을 때 실제로 존재하던 수가 22였다는 사실을 지운 채로 두지 않는다. 측정 명령과
+그 출력:
 
 ```
 $ find docs workflows -name '*.md' -type f -exec wc -c {} + \

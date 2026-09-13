@@ -120,6 +120,41 @@ digest는 "이 카드 내용에 대해 검토했다"를 고정할 뿐 검토가 
 않는다 — TASK-379의 경우 독립 리뷰어(review-379)가 실재했으므로 provenance는 진짜다.
 검토 없이 digest만 채우는 것은 여전히 위조다.
 
+### durable 경로의 부재는 이제 done 카드 하나로 실증된다 — TASK-380
+
+TASK-380은 `blocks:`를 선언하지 않아 validator가 receipt 검사에 도달하지 않는다.
+그런데도 카드는 `quality-review-receipt:
+tmp/task-management/direct/queue-run/task-380-review-receipt.json`을 가리키며 done으로
+닫혔다. `.gitignore:51`이 `tmp/`를 무시하므로 **그 경로는 커밋에 없다** — 새로 클론한
+체크아웃에서 카드를 읽는 사람은 판정을 가리키는 포인터만 보고 판정 자체에는 닿지
+못한다. 3라운드 33 KiB짜리 receipt(라운드별 기준 결과, 게이트, 여섯 건 findings 해소,
+타이밍 주석)가 통째로 워크스테이션 로컬에만 있다.
+
+여기서 두 가지가 분명해진다. (1) validator가 조용한 것은 문제가 없어서가 아니라
+`blocks:`가 없어 검사에 닿지 않기 때문이다 — **`blocks:`를 피하는 것은 receipt 부채를
+피하는 것이 아니라 검사를 피하는 것이다.** (2) 그러므로 게이트 실패 5건은 이 결함의
+전부가 아니라 **검사에 걸린 부분집합**이다. done 카드 중 receipt를 선언하고도 그 파일이
+추적되지 않는 카드는 실패 카운트에 나타나지 않는다.
+
+**같은 결함이 2026-09-13에 한 번 더, 이번에는 저절로 재현됐다.** TASK-382의 워크트리를
+새로 열고 아무것도 하기 전에 `ce task validate --all`을 돌리자 baseline 5가 아니라
+**6**이 나왔다. 여섯 번째는 TASK-379이고, 실패 메시지는 receipt 부재가 아니라 **읽기
+불가**다:
+
+```
+❌ quality-review-receipt tmp/task-management/direct/queue-run/task-379-review-receipt.json
+   cannot be read: ... no such file or directory
+```
+
+앞 절의 재현 절차는 내가 순서를 만들어 관측한 것이었지만 이것은 만들지 않았다 —
+새 워크트리를 여는 정상 동작 하나로 나왔다. 카드의 유효성이 **체크아웃마다 다르다**는
+것이 이 이슈의 핵심이며, 여기서 보드가 통과하는지 여부가 커밋 내용이 아니라 워크스테이션
+로컬 파일의 존재에 걸려 있음이 확정된다.
+
+durable 경로가 생기면 이 카드의 receipt도 같이 옮겨야 한다. 그때까지는 정본이
+`~/mywork/scripton/dva/tmp/task-management/direct/queue-run/`에 있고 워크트리 회수와
+함께 사라지지 않도록 주 체크아웃으로 복사해 두는 것이 유일한 보존 수단이다.
+
 ## Reproduction
 
 1. At DVA `af7f6e6`, run `ce task gate --json`; it returns
