@@ -93,6 +93,10 @@ that cannot meet the limits is split, not exempted".
   본다. 셋 다 이 워크스테이션에서는 충족돼 있어 **위반 건수는 여전히 둘**이지만,
   목록이 완전하다고 읽히면 안 된다. 카드와 하네스 양쪽에 추가하고 게이트의 실제 검사
   순서도 적었다 — 위반 둘이 6번과 8/9번이라 앞 다섯 관문을 통과한 뒤에 죽는다.
+- **F6 (informational) — 기준 하나가 절반만 기계 검증됐다.** 기준 2가 "재조준 **과**
+  선행조건"을 요구하는데 바인딩은 `SIGDOCK_CLIENTS_FILE` 하나만 grep했다 — 재조준 쪽이
+  사라져도 통과한다. 리뷰어가 손으로 확인해 실제로는 충족돼 있었지만, 통과가
+  기계 검증으로 읽히면 안 된다. 기준을 둘로 쪼개 각각 바인딩을 줬다.
 - **F5 (low) — 5→6 관측이 재현되지 않는다.** 맞다. 리뷰어를 붙이기 전에 내가 receipt를
   워크트리로 복사해 원인을 제거했기 때문이다. 관측을 지우는 대신 순서를 명시한
   재현 절차를 ISSUE-001에 적었다(새 워크트리 → 6 → 복사 → 5). 원인을 제거하면 사라지는
@@ -105,7 +109,8 @@ that cannot meet the limits is split, not exempted".
 ## Completion Criteria
 
 - [ ] `docs/dogfood/primeno1.md`의 검증 한계가 해소된 TASK-311/312 대신 실제 남은 blocker를 가리킨다 | verify: `/usr/bin/grep -q 'TASK-328' docs/dogfood/primeno1.md`
-- [ ] 같은 문서가 TASK-379의 plan `dev` 재조준과 order 10 sigdock 선행조건을 기록한다 | verify: `/usr/bin/grep -q 'SIGDOCK_CLIENTS_FILE' docs/dogfood/primeno1.md`
+- [ ] 같은 문서가 order 10 sigdock 선행조건을 기록한다 | verify: `/usr/bin/grep -q 'SIGDOCK_CLIENTS_FILE' docs/dogfood/primeno1.md`
+- [ ] 같은 문서가 TASK-379의 plan `dev` 재조준을 기록한다 | verify: `/usr/bin/grep -q '하네스 재조준(TASK-379)' docs/dogfood/primeno1.md`
 - [ ] PLAN-009의 `scope:`와 `## Goal`이 `children:` 일곱 장과 일치한다 | verify: `/usr/bin/grep -rq --include='009-work-the-doccheck-defect-bundle-in-dependency-order.md' 'TASK-377' tasks`
 - [ ] TASK-328 본문의 잔여 blocker가 사람 회차와 sigdock 선행조건 둘로 갱신된다 | verify: `/usr/bin/grep -rq --include='328-run-a-live-dogfood-verification-round-for-native-entries-and-composition-plans.md' 'SIGDOCK_CLIENTS_FILE' tasks`
 - [ ] ISSUE-001에 정본 digest 실증 관측이 기록되고 이슈는 열린 채 P0로 남는다 | verify: `/usr/bin/grep -rq --include='001-task-runtime-cannot-review-legacy-done-cards-without-verification-evidence.md' 'TASK-379' tasks`
