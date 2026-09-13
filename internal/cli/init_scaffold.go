@@ -338,7 +338,14 @@ func scaffoldDvaYmlWithPreview(dir, tmpl string, preview bool) (bool, error) {
 	fmt.Printf("✅ Created %s (template: %s)\n", target, tmpl)
 
 	if updated, err := ensureGitignore(dir); err == nil && updated {
-		fmt.Printf("📎 Updated .gitignore to ignore %s/\n", config.DotDirName)
+		// The template branch of `dva init`, and the last place the old spelling
+		// survived. It was missed when the other two were changed because the
+		// coupling test cannot reach it: this site interpolated config.DotDirName
+		// directly and never called defaultIgnoreAdvice, so no assertion about the
+		// advice naming the rules had anything to assert against here. The same
+		// reasoning applies as at the other two — a line of output that spells the
+		// old rule is the same defect as a fix hint that spells it.
+		fmt.Printf("📎 Updated .gitignore with %s\n", defaultIgnoreAdvice())
 	}
 
 	return true, nil
