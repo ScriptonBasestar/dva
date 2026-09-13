@@ -328,6 +328,29 @@ func dvaModulesBlocked(configDir string) (blocked bool, known bool) {
 	return ignored, true
 }
 
+// dvaModulesUsedHere reports whether this repository authors modules at all, which is what
+// decides whether the blocked-modules finding is worth anyone's attention.
+//
+// The finding is correct wherever the old rule is in force, and correct is not the same as
+// useful. Every repository that ever ran `dva init` under `.sb/dva/` carries it, including the
+// ones that use no modules, and it cannot be cleared by any means DVA offers: the repair is a
+// hand edit to a line a person owns, and `--fix` declines it for the reasons dvaModulesBlocked
+// gives. A row that is permanently red and not clearable is a row people learn to skip, and the
+// cost of that is not this finding — it is the next real one this row carries.
+//
+// So the question is asked of the disk, not of the config: any `.sb/dva/*.yml` is a module,
+// because nothing else writes a `.yml` there (see dvaTransientProbes), and a module file on disk
+// is the evidence that the feature is in use whether or not `modules:` names it yet. Reading the
+// loaded config instead would miss a module authored before it is declared — the moment the
+// person is most likely to run into the refused `git add` and want this row to explain it.
+//
+// A repository that adds its first module later starts hearing about it then, which is the
+// point: the row fires where the feature is used and is silent where it is not.
+func dvaModulesUsedHere(configDir string) bool {
+	matches, err := filepath.Glob(filepath.Join(configDir, config.DotDirName, "*.yml"))
+	return err == nil && len(matches) > 0
+}
+
 // blockedModules is deliberately not routed through failGitignore: that attaches ensureGitignore
 // as the repair, and ensureGitignore is correct to do nothing here. See dvaModulesBlocked.
 func blockedModules(r DoctorResult) DoctorResult {
@@ -769,8 +792,14 @@ func checkGitignoreStatus(configDir string) DoctorResult {
 	// because what it decides is what to leave in the repository for everyone else.
 	if ignored, decided := dvaTransientsIgnored(configDir); decided {
 		if ignored {
-			if blocked, known := dvaModulesBlocked(configDir); known && blocked {
-				return blockedModules(r)
+			// The glob is asked first because it is the cheaper question and the one that
+			// decides whether the other is worth asking: dvaModulesBlocked spawns git, and
+			// in a repository with no modules its answer changes nothing. See
+			// dvaModulesUsedHere for why the row is gated rather than always reported.
+			if dvaModulesUsedHere(configDir) {
+				if blocked, known := dvaModulesBlocked(configDir); known && blocked {
+					return blockedModules(r)
+				}
 			}
 			r.Passed = true
 			return r

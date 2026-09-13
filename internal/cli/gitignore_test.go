@@ -905,6 +905,53 @@ func TestDoctorReportsTheRuleThatBlocksModules(t *testing.T) {
 	}
 }
 
+// TestTheModulesRowFiresOnlyWhereModulesExist pins the gate by changing one thing. The
+// repository is the same one TestDoctorReportsTheRuleThatBlocksModules builds — old rule in
+// force, git genuinely refusing a module — and the only edit between the two assertions is
+// that a module file appears on disk. Anything else that could flip the row, a different
+// .gitignore or a different git state, is held constant, so a pass here is about the gate
+// rather than about the rule.
+//
+// The first half is the population the gate is for: every repository that ran `dva init` under
+// the old advice carries the blocked rule whether or not it uses modules, and telling someone
+// to hand-edit a file to clear a finding that costs them nothing is how a row stops being read.
+// The second half is why the gate is not simply "drop the row": where the feature is in use the
+// finding explains a `git add` that is already failing.
+func TestTheModulesRowFiresOnlyWhereModulesExist(t *testing.T) {
+	dir := t.TempDir()
+	initGitRepo(t, dir)
+	if err := os.WriteFile(filepath.Join(dir, ".gitignore"), []byte(defaultIgnoreSection+"\n"+config.DotDirName+"/\n"), 0o644); err != nil {
+		t.Fatalf("WriteFile .gitignore: %v", err)
+	}
+	// A dot directory holding transient state and no module, which is what a repository
+	// that never used the feature looks like.
+	if err := os.MkdirAll(filepath.Join(dir, config.DotDirName, config.PidsDirName), 0o755); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+
+	// The premise: git does block modules here, so the row is suppressed by the gate and not
+	// by the question coming back negative.
+	if blocked, known := dvaModulesBlocked(dir); !known || !blocked {
+		t.Fatalf("premise failed: modules are not blocked here (blocked=%v known=%v), so this test proves nothing", blocked, known)
+	}
+
+	if r := checkGitignoreStatus(dir); !r.Passed {
+		t.Fatalf("a repository with no modules got the blocked-modules row: %q", r.Finding)
+	}
+
+	if err := os.WriteFile(filepath.Join(dir, config.DotDirName, "gates.yml"), []byte("x: 1\n"), 0o644); err != nil {
+		t.Fatalf("WriteFile module: %v", err)
+	}
+
+	r := checkGitignoreStatus(dir)
+	if r.Passed {
+		t.Fatalf("the row stayed silent in a repository that does author modules")
+	}
+	if !strings.Contains(r.Finding, "modules") {
+		t.Errorf("Finding = %q, want it to name modules as what is blocked", r.Finding)
+	}
+}
+
 func TestGitignoreStatusNamesTheRightRemedy(t *testing.T) {
 	for _, tt := range []struct {
 		name        string
