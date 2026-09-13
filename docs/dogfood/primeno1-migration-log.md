@@ -6,7 +6,8 @@
 exempted"라고 못박는다. 그래서 회차별 적용 이력을 이쪽으로 옮기고 본 문서에는 현황과
 현재 상태만 남겼다.
 
-여기 있는 기록은 전부 2026-09-05 회차의 것이며 편집 없이 그대로 옮겼다.
+여기 있는 기록은 전부 2026-09-05 회차의 것이며 원문 그대로 옮겼다. 이후 사실이 바뀐
+곳에는 원문을 남기고 괄호 주석만 덧붙였다 — 원문을 고쳐 쓰지 않는다.
 
 ## 적용 결과 (2026-09-05)
 
@@ -74,4 +75,5 @@ EXIT=0   (warning 1 — 의도적 예외)
 - native 엔트리 6종 추가: `api`/`gateway`/`stream`/`frontend`(plan `dev`, `dev-stream`) + `api-external-db`/`stream-external-db`(plan `external-db`).
   `run:`은 gate 스크립트 체인을 그대로 두고 마지막을 `exec`로 넘겨 Gradle/Vite 프로세스가 dva의 추적 대상이 되게 했다(§3 devbox 소유 gate 스크립트 허용).
 - interaction `api-run*`/`frontend-dev`/`dev-up` 삭제, 문서·스크립트 11곳을 `dva up dev`/`dev-stream`/`external-db`로 치환. `dva validate` warning 0.
-- 검증 한계(2026-09-05 시점): `dva --dry-run up dev`가 health 대기에 걸려 멈췄다(kill 필요). 실기동 검증은 TASK-311/312 이후로 미뤘다.
+- 검증 한계: `dva --dry-run up dev`는 TASK-312로 health 대기에 걸려 멈춤(kill 필요). 실기동 검증은 TASK-311/312 이후.
+  (2026-09-13 주: 이 한계는 해소됐다 — [primeno1.md](primeno1.md) 참조. 위 줄은 2026-09-05 원문 그대로 둔다.)

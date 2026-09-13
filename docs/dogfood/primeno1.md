@@ -29,9 +29,11 @@
 TASK-303/305/306/308 재검증, docs/57 §4 재점검과 native 엔트리 6종 도입 — 은
 [primeno1-migration-log.md](primeno1-migration-log.md)에 있다.
 
-## 그 검증 한계는 해소됐다 (2026-09-13)
+## 2026-09-05의 검증 한계는 해소됐다 (2026-09-13)
 
-위 문장이 지목한 두 blocker는 둘 다 없다. TASK-312는 `Orchestrator.Up`의 entry-level
+2026-09-05 회차는 "`dva --dry-run up dev`가 TASK-312로 health 대기에 걸려 멈춘다;
+실기동 검증은 TASK-311/312 이후"로 끝났다(원문은 위 이력 문서에 있다). 그 두 blocker는
+둘 다 없다. TASK-312는 `Orchestrator.Up`의 entry-level
 health wait가 `opts.DryRun`을 보지 않던 것을 고쳐 닫혔고, TASK-311은 archive에 있다.
 `dva --dry-run up dev`는 더 이상 대기하지 않는다.
 

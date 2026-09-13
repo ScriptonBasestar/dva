@@ -64,9 +64,22 @@ plan `dev`의 첫 관문은 `scripts/sigdock-local-up.sh`이고 fail-closed다. 
   남아 있다 — 게이트가 "refusing to mutate resources this invocation does not own"으로
   즉시 실패한다. 확인:
   `docker ps -a --filter label=com.docker.compose.project=sigdock-idp`. **위반 중.**
-- 포트 11300에 리스너 없음, `TMPDIR` 아래 ownership marker 없음, 인접 체크아웃
-  `SIGDOCK_DEVBOX_DIR`(기본 `../sigdock-idp-devbox`) 존재, `lsof` 설치.
+- 포트 11300에 리스너 없음, `TMPDIR` 아래 ownership marker 없음.
+- `$SIGDOCK_DEVBOX_DIR/dva.yml`이 **파일로** 존재할 것(기본 `../sigdock-idp-devbox`).
+  디렉터리 존재가 아니라 그 안의 `dva.yml`을 본다.
+- `scripts/sigdock-local-contract.sh`가 **실행 가능**할 것(`-x`). 체크아웃 방식에 따라
+  실행 비트가 죽으면 여기서 죽는다.
+- `dva` · `docker` · `curl` · `lsof` 네 바이너리가 PATH에 있을 것. 2026-09-13 실측으로
+  넷 다 있다 — 충족.
+- `sigdock.localhost`가 **loopback 주소로만** 해석될 것(`require_loopback_provider_host`,
+  내부적으로 `python3`을 쓴다). 2026-09-13 실측: `{127.0.0.1, ::1}` — 충족. macOS에서
+  이 조건이 깨지면 보통 `/etc/hosts` 문제다.
 - `SIGDOCK_IDP_ISSUER_PROFILE=fapi2`는 `dva.yml` 최상위 `vars:` 블록에 이미 있다 — 충족.
+
+게이트가 실제로 검사하는 순서: 바이너리 4종 → fapi2 → loopback → devbox `dva.yml` →
+contract 실행 비트 → `SIGDOCK_CLIENTS_FILE` → ownership marker → sigdock-idp 컨테이너 →
+네트워크 → 포트 11300 리스너. **위반 중인 둘은 6번과 8·9번**이므로, 앞의 다섯 관문을
+통과한 뒤에야 실패한다 — 로그에서 "여기까지는 됐다"로 오해하기 쉬운 자리다.
 
 **체크아웃 전제**: 로컬 primeno1-devbox가 `b432a01`이면 plan `dev`가 없어 unknown plan으로
 죽는다. `origin/master`(`0caeaf9` 이상)로 올리고 `dva ls`에 `dev`가 보이는지 확인한다.

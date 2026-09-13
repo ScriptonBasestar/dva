@@ -28,9 +28,13 @@ cannot meet the limits is split, not exempted."
 
 ## Evidence
 
-여유 2 KiB 미만(≥8192바이트)인 문서 20장, 그중 상한에서 200바이트 이내가 다섯 장이다.
+여유 2 KiB 미만(≥8192바이트)인 문서가 **21장**이고, 그중 상한에서 200바이트 이내가
+**여섯 장**이다. 측정 명령과 그 출력:
 
 ```
+$ find docs workflows -name '*.md' -type f -exec wc -c {} + \
+    | grep -v total | awk '$1>=10040' | sort -rn
+10234 workflows/dva-dogfood/ref-artifacts.md
 10233 docs/42-migration-and-compatibility.md
 10225 docs/54-command-surface-renewal-agent-execution.md
 10215 docs/53-command-surface-agent-execution.md
@@ -38,9 +42,14 @@ cannot meet the limits is split, not exempted."
 10068 docs/62-remote-artifact-jobs.md
 ```
 
-다섯 장 전부 **상한 아래**다(10240 미만) — 42번이 7바이트, 54번이 15바이트, 53번이
-25바이트 남았다. 즉 이 문서들은 게이트를 통과하지만 **한 글자도 더 들어가지 않는다.**
-한글 한 자가 UTF-8로 3바이트이므로 42번에는 두 자가 안 들어간다.
+여섯 장 전부 **상한 아래**다(10240 미만) — 가장 빠듯한 `ref-artifacts.md`가 **6바이트**,
+그다음이 7 · 15 · 25바이트다. 즉 이 문서들은 게이트를 통과하지만 **한 글자도 더 들어가지
+않는다.** 한글 한 자가 UTF-8로 3바이트이므로 앞 네 장에는 한 자도 못 넣는다.
+
+`workflows/` 아래가 목록의 최상위라는 점에 주의한다 — `tools/doccheck/policy.go:31`의
+`sizeEnforced`는 `docs/`와 `workflows/` 둘 다를 대상으로 한다. 이 이슈의 초판은
+`workflows/*.md`만 세는 비재귀 glob으로 측정해 `workflows/dva-dogfood/` 아래를 통째로
+놓쳤고, 그래서 가장 빠듯한 파일을 목록에 넣지 못했다. **측정은 재귀로 해야 한다.**
 
 ## Reproduction
 

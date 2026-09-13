@@ -95,6 +95,18 @@ tasks/done/379-...md
      cannot be read: no such file or directory
 ```
 
+**재현 절차 — 순서가 전부다.** 위 관측은 갓 만든 워크트리에서만 보인다. 이어서 receipt를
+primary 체크아웃에서 복사하자 실패가 다시 5건으로 돌아왔고, 그 뒤로는 같은 워크트리에서
+재현되지 않는다. 즉 관측 자체가 원인을 제거하면 사라진다.
+
+```
+ce task run-start <slug> --type docs        # 새 워크트리
+cd <worktree> && ce task validate --all     # → 6 invalid (379 포함)
+cp <primary>/tmp/task-management/direct/queue-run/task-379-review-receipt.json \
+   tmp/task-management/direct/queue-run/
+ce task validate --all                      # → 5 invalid (baseline)
+```
+
 `.gitignore:51`이 `tmp/`를 무시하므로 receipt는 그것을 만든 체크아웃에만 있다. 즉
 **카드의 유효성이 워크트리마다 다르다.** 사람이 receipt를 primary 체크아웃으로 손수
 복사해 두는 현행 관례가 그 사실을 가리고 있을 뿐이다. durable 경로가 없다는 것은 불편이
