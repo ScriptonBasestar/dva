@@ -176,7 +176,7 @@ func runDoctorChecks(c *config.Config) []DoctorResult {
 	}
 
 	// Built-in: Check if .sb/dva is ignored in .gitignore
-	results = append(results, checkGitignoreStatus(c.FileDir()))
+	results = append(results, checkGitignoreStatus(c.FileDir(), subprojectDirs(c)...))
 
 	// Built-in: transient state that is already committed, which the row above cannot see —
 	// an ignore rule governs the next commit, not the index. Conditional because the question
@@ -194,6 +194,29 @@ func runDoctorChecks(c *config.Config) []DoctorResult {
 	// no port for it to check, so it is not portable to the plan path as it stood.
 
 	return results
+}
+
+// subprojectDirs resolves the declared subprojects to directories, the same way the loader does:
+// a relative path is relative to the parent's config directory.
+//
+// Only the declared ones. A directory that merely looks like a subproject is not one DVA reads,
+// and the checks that take this list report on what DVA reads.
+func subprojectDirs(c *config.Config) []string {
+	dirs := make([]string, 0, len(c.Subprojects))
+	for _, sub := range c.Subprojects {
+		dir := sub.Path
+		if dir == "" {
+			continue
+		}
+		if !filepath.IsAbs(dir) {
+			dir = filepath.Join(c.FileDir(), dir)
+		}
+		dirs = append(dirs, dir)
+	}
+	// Map iteration order is random, and a finding that names a different subproject on each
+	// run reads as flapping. Sorted so the first blocked root is the same one every time.
+	sort.Strings(dirs)
+	return dirs
 }
 
 // applyDoctorFixes attempts to fix all failed checks that have a fix function or command.

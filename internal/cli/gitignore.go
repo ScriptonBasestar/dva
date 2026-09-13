@@ -470,11 +470,42 @@ func dvaModulesUsedHere(configDir string) bool {
 	return err == nil && len(matches) > 0
 }
 
+// dvaModuleRootsInUse narrows a set of candidate directories to the ones that actually author
+// modules, root first.
+//
+// A subproject authors its modules under its own directory, and asking about the root instead
+// gets the wrong answer in both directions. Whether a subproject's module is committable is
+// decided by the rules in force at the subproject's own path, and those are not the root's:
+// `.sb/dva/*` carries a separator in the middle, so git anchors it to the root and it never
+// reaches `sub/.sb/dva/gates.yml`, while `.sb/` has only a trailing one and reaches every depth.
+// A repository can therefore have healthy root rules and a blocked subproject, or the reverse.
+//
+// So each root is asked about itself, and the gate is per root as well: a subproject with no
+// modules is silent for the same reason a repository with none is.
+func dvaModuleRootsInUse(configDir string, others []string) []string {
+	roots := make([]string, 0, len(others)+1)
+	for _, root := range append([]string{configDir}, others...) {
+		if dvaModulesUsedHere(root) && !slices.Contains(roots, root) {
+			roots = append(roots, root)
+		}
+	}
+	return roots
+}
+
 // blockedModules is deliberately not routed through failGitignore: that attaches ensureGitignore
 // as the repair, and ensureGitignore is correct to do nothing here. See dvaModulesBlocked.
-func blockedModules(r DoctorResult) DoctorResult {
+// The blocked path is named relative to the config directory, so a subproject's module reads as
+// `sub/.sb/dva/probe.yml` and a root one keeps the spelling it always had. Which directory is
+// blocked is the first thing a person needs here — the rule to repair may be in that
+// subproject's own .gitignore rather than the root's, and a finding that named only the class
+// would send them to the wrong file.
+func blockedModules(r DoctorResult, configDir, moduleRoot string) DoctorResult {
+	probe := dvaModuleProbe()
+	if rel, err := filepath.Rel(configDir, moduleRoot); err == nil && rel != "." {
+		probe = path.Join(filepath.ToSlash(rel), probe)
+	}
 	r.Passed = false
-	r.Finding = fmt.Sprintf("transient state is ignored, but so are modules: %s is not addable, so DVA's modules feature is disabled here", dvaModuleProbe())
+	r.Finding = fmt.Sprintf("transient state is ignored, but so are modules: %s is not addable, so DVA's modules feature is disabled here", probe)
 	r.Fixable = false
 	r.FixHint = fmt.Sprintf("Replace the rule excluding %s/ itself with %s, which ignores the same transient state and leaves modules committable", config.DotDirName, defaultIgnoreAdvice())
 	return r
@@ -892,7 +923,11 @@ func failGitignore(r DoctorResult, configDir, finding, fixHint string) DoctorRes
 // while it sat in doctor.go the two could be changed apart, and were — one of them reporting a
 // correctly-configured tree as fine while the other called it broken is the state this move
 // makes hard to reach again.
-func checkGitignoreStatus(configDir string) DoctorResult {
+// moduleRoots are the further directories that may author modules — subprojects, whose paths
+// only the loaded config knows. They are an argument rather than a discovery because guessing
+// them from the disk means guessing a depth, and a wrong guess here is a row that fires about
+// a directory DVA does not read.
+func checkGitignoreStatus(configDir string, moduleRoots ...string) DoctorResult {
 	r := DoctorResult{Name: fmt.Sprintf("%s/ is ignored in .gitignore", config.DotDirName)}
 	gitignorePath := filepath.Join(configDir, ".gitignore")
 
@@ -925,9 +960,9 @@ func checkGitignoreStatus(configDir string) DoctorResult {
 			// decides whether the other is worth asking: dvaModulesBlocked spawns git, and
 			// in a repository with no modules its answer changes nothing. See
 			// dvaModulesUsedHere for why the row is gated rather than always reported.
-			if dvaModulesUsedHere(configDir) {
-				if blocked, known := dvaModulesBlocked(configDir); known && blocked {
-					return blockedModules(r)
+			for _, root := range dvaModuleRootsInUse(configDir, moduleRoots) {
+				if blocked, known := dvaModulesBlocked(root); known && blocked {
+					return blockedModules(r, configDir, root)
 				}
 			}
 			r.Passed = true

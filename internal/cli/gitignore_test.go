@@ -1241,6 +1241,63 @@ func TestTheModulesRowFiresOnlyWhereModulesExist(t *testing.T) {
 	}
 }
 
+// TestTheModulesRowReachesSubprojectModules covers the layout the gate above goes blind in, and
+// it is a separate test because the interesting part is not the gate but where the question is
+// asked. The root authors no modules; the subproject does. Gating on the root alone loses a real
+// finding here, and asking the root's probe about the subproject's module would be the other
+// error — root rules and subproject rules are different rules.
+//
+// The .gitignore is `.sb/` deliberately. A trailing separator is the one spelling that is not
+// anchored, so it reaches `sub/.sb/dva/` from the root; the two-line block DVA writes carries a
+// separator in the middle and never would. The premise asserts git actually refuses the module,
+// so a pass is about the row and not about the fixture.
+func TestTheModulesRowReachesSubprojectModules(t *testing.T) {
+	ancestor := path.Dir(config.DotDirName)
+	if ancestor == "." || ancestor == "/" {
+		t.Skipf("DotDirName %q has no ancestor segment, so the unanchored spelling does not exist", config.DotDirName)
+	}
+
+	dir := t.TempDir()
+	initGitRepo(t, dir)
+	if err := os.WriteFile(filepath.Join(dir, ".gitignore"), []byte(defaultIgnoreSection+"\n"+ancestor+"/\n"), 0o644); err != nil {
+		t.Fatalf("WriteFile .gitignore: %v", err)
+	}
+	sub := filepath.Join(dir, "sub")
+	if err := os.MkdirAll(filepath.Join(sub, config.DotDirName), 0o755); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+
+	// No module at the root, so the row is silent whatever the root rules say.
+	if r := checkGitignoreStatus(dir); !r.Passed {
+		t.Fatalf("premise failed: the root has no modules and must not report: %q", r.Finding)
+	}
+	// And silent with the subproject declared but empty, for the same reason.
+	if r := checkGitignoreStatus(dir, sub); !r.Passed {
+		t.Fatalf("a subproject with no modules got the blocked-modules row: %q", r.Finding)
+	}
+
+	if err := os.WriteFile(filepath.Join(sub, config.DotDirName, "gates.yml"), []byte("x: 1\n"), 0o644); err != nil {
+		t.Fatalf("WriteFile subproject module: %v", err)
+	}
+	if blocked, known := dvaModulesBlocked(sub); !known || !blocked {
+		t.Fatalf("premise failed: git does not block the subproject module (blocked=%v known=%v)", blocked, known)
+	}
+
+	// Still silent while the subproject is not declared: DVA reads what the config names, and a
+	// row about a directory DVA does not read is a row nobody can act on.
+	if r := checkGitignoreStatus(dir); !r.Passed {
+		t.Errorf("an undeclared directory produced a finding: %q", r.Finding)
+	}
+
+	r := checkGitignoreStatus(dir, sub)
+	if r.Passed {
+		t.Fatalf("the row stayed silent while a declared subproject's modules were blocked")
+	}
+	if !strings.Contains(r.Finding, path.Join("sub", config.DotDirName)) {
+		t.Errorf("Finding = %q, want it to name the subproject whose modules are blocked", r.Finding)
+	}
+}
+
 func TestGitignoreStatusNamesTheRightRemedy(t *testing.T) {
 	for _, tt := range []struct {
 		name        string
