@@ -322,20 +322,29 @@ func dvaTransientsIgnored(configDir string) (ignored bool, decided bool) {
 // a finding on a healthy repository, and a hint that stages the deletion of the user's own file —
 // so the class carries an exclusion that the query and the repair command both have to use.
 //
-// One thing the coupling below does not buy: `name` is both what a person reads and what git is
-// asked, so a name that is not itself a valid pathspec would quietly mean one thing to the
-// reader and another to ls-files. Every class today is a literal path or a path with one
-// trailing `*`, so nothing is exposed — but a name spelled for readability would be.
+// `name` and `spec` are separate because the marker class made them diverge for real. A pathspec
+// carrying a wildcard is matched WITHOUT pathname semantics, so `*` crosses `/` — measured:
+// `.sb/dva/provisioned-*` matches `.sb/dva/provisioned-things/a.txt`. That is the opposite of the
+// gitignore rule fifty lines up, where `*` stops at a separator, and conflating the two is how
+// this class came to reach inside a directory DVA does not write. `:(glob)` restores pathname
+// semantics, and it is magic no person should have to read in a finding.
 type transientClass struct {
-	name    string   // what doctor reports: the class, in the spelling a person would recognise
-	exclude []string // pathspecs that must not count as transient state, applied with the name
+	name string // what doctor reports: the class, in the spelling a person would recognise
+	// spec is what git is asked, when that cannot be the same string. Empty means the name is
+	// already a pathspec that means what it says.
+	spec    string
+	exclude []string // pathspecs that must not count as transient state, applied with the spec
 }
 
 // pathspecs is what git is asked, and it is also what any suggested repair must be scoped to.
 // Keeping them one function means an exclusion cannot be added to the question and forgotten in
 // the command — which is the failure that would matter, since the command deletes.
 func (c transientClass) pathspecs() []string {
-	return append([]string{c.name}, c.exclude...)
+	spec := c.spec
+	if spec == "" {
+		spec = c.name
+	}
+	return append([]string{spec}, c.exclude...)
 }
 
 // authoredExclusions spells isProvisionMarker's content test as pathspecs, so doctor's question
@@ -360,10 +369,11 @@ func dvaTransientClasses() []transientClass {
 			// The prefix, not provisionMarkerName("*"): that would spell `provisioned-*.marker`
 			// and stop finding the extensionless markers this check exists to find. Markers
 			// written before the extension are still on disk, still committed, and still the
-			// ones a repository needs told about. `provisioned-*` covers both, because git's
-			// `*` does not cross `/` but does match `.` — which is also why it reaches the
-			// authored files the exclusions then remove.
+			// ones a repository needs told about. `provisioned-*` covers both, because `*`
+			// matches `.` — which is also why it reaches the authored files the exclusions
+			// below remove.
 			name:    path.Join(config.DotDirName, provisionMarkerPrefix+"*"),
+			spec:    ":(glob)" + path.Join(config.DotDirName, provisionMarkerPrefix+"*"),
 			exclude: authoredExclusions(),
 		},
 	}

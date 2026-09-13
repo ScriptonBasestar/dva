@@ -40,6 +40,12 @@ func markerTransientClass(t *testing.T) transientClass {
 //
 // Both sides are also checked against the table, not only against each other, because two
 // predicates that drift together are still wrong and agreeing about it proves nothing.
+//
+// The directory case is why the pathspec carries `:(glob)`. A pathspec wildcard is matched
+// without pathname semantics, so a bare `.sb/dva/provisioned-*` matches
+// `.sb/dva/provisioned-things/a.txt` — measured, and the opposite of what gitignore's `*` does
+// with the same characters. isProvisionMarker rejects directories outright, so without the magic
+// the two sides disagree on any committed `provisioned-*` directory.
 func TestDoctorAndPurgeAgreeOnWhatAMarkerIs(t *testing.T) {
 	cases := []struct {
 		name   string // relative to the dot directory
@@ -55,6 +61,8 @@ func TestDoctorAndPurgeAgreeOnWhatAMarkerIs(t *testing.T) {
 		{name: provisionMarkerPrefix + "base.yml"},
 		{name: provisionMarkerPrefix + "base.yaml"},
 		{name: provisionMarkerPrefix + "notes.md"},
+		// Somebody else's directory. Neither side may claim it.
+		{name: provisionMarkerPrefix + "things/a.txt"},
 		// Content without the prefix, so neither side has any business with it.
 		{name: "modules.yml"},
 	}
