@@ -550,6 +550,16 @@ func dvaRepoAlreadyDeclares(configDir, gitignoreContent string) bool {
 // that is in fact ignored, which is the harmless direction — an extra warning, never a silently
 // committed marker.
 //
+// That harmless direction is also an invitation, and it is worth naming because the invitation
+// is what shipped the bug. Every one of those gaps closes the same way — by reading one more
+// exclusion spelling — and reading the contents form without reading what re-includes it is
+// exactly the extension that turned an extra warning into a committed pid file. So an exclusion
+// spelling is not readable on its own. It is readable only together with the set of paths a
+// negation would have to name to undo it: the directory itself for `.sb/dva/`, its immediate
+// children for `.sb/dva/*`. Adding a spelling means deriving that set and handing it to
+// negationReaches. A spelling added without one is not an approximation, it is a regression in
+// the single direction this reader may never get wrong.
+//
 // Negations have to be read, and negationReaches is where that happens. Measured, `.sb/` +
 // `!.sb/d*` has git ignoring all four probes while `.sb/*` + `!.sb/dva` has git ignoring none of
 // them. Answering both "ignored" — as reading the exclusions without reading the negations does
