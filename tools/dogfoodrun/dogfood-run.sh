@@ -103,13 +103,14 @@ target_notes() {
 	case "$1" in
 	primeno1)
 		cat <<'EOF'
-TASK-328은 "native 엔트리 6종(gate 체인 + exec)"을 말하지만, 현재 primeno1-devbox
-master(b432a01)의 dva.yml에는 native stack 엔트리가 하나도 없다. docs/dogfood/primeno1.md의
-"권장안 적용" 절이 기록한 native 6종 + plan `dev`는 devbox 저장소에 반영되지 않았고,
-gate 체인 + `exec` 핸드오프는 여전히 interaction api-run/api-run.gateway 안에 있다.
-따라서 이 하네스가 도는 gate 체인은 plan `external-db`의 script 엔트리
-(external-db-contract → compose-external-db)다. native 엔트리 검증은 devbox 설정이
-먼저 바뀌어야 가능하다.
+이 스텝은 TASK-328 첫 기준의 대상이 아니다 — 재조준 대기 중이다(TASK-379).
+작성 시점(primeno1-devbox b432a01)에는 native stack 엔트리가 0건이라 plan
+`external-db`의 script 게이트 체인(external-db-contract -> compose-external-db)을
+대체재로 돌았다. 그 뒤 origin/master가 0caeaf9로 움직이며 native 엔트리 6종
+(api gateway stream frontend api-external-db stream-external-db)과 plan `dev`가
+실제로 들어왔다. 첫 기준을 닫으려면 plan `dev`
+(sigdock-local-runtime -> compose -> api/frontend -> gateway)를 돌아야 한다.
+아래 스텝은 아직 external-db다.
 compose 프로젝트 `primeno1`은 이 워크스테이션에서 실제로 쓰이는 개발 환경일 수 있다.
 purge 미리보기를 반드시 먼저 읽어라.
 EOF

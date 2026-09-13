@@ -8,6 +8,7 @@ exec-tier: standard
 status: todo
 created: 2026-09-06
 needs-human: true
+depends-on: [TASK-379]
 ---
 
 ## Summary
@@ -17,19 +18,39 @@ needs-human: true
 
 All devbox migrations so far were verified only with `dva validate` and `--dry-run` lifecycle verbs (agent constraint). This round runs the real verbs against the migrated configs: primeno1's six native entries (gate chain plus `exec`) and the familybook / flow-taskchain composition plans, using `dva up`, `dva status`, and `dva down --purge`, and attaches the exit codes and trimmed output to each project's report under `docs/dogfood/`. Any defect found is promoted to its own card. This is PLAN-006 row 10a; unblocked since TASK-311 (plan logs build scope) landed. Requires a human-operated session because lifecycle verbs beyond `--dry-run` are not permitted for agents.
 
-## 첫 기준의 전제가 틀렸다 (2026-09-13, [[TASK-376]])
+## 첫 기준의 전제 — 틀렸다가(2026-09-13 오전) 해소됐다(2026-09-13 오후)
 
-`primeno1-devbox` master(`b432a01`)의 `dva.yml`에 `runner: native` 엔트리는
-**0건**이다. `docs/dogfood/primeno1.md`가 기록한 native 6종과 plan `dev`는 devbox
-저장소에 반영되지 않았고, gate 체인과 `exec`는 여전히 interaction
-`api-run`/`api-run.gateway` 안에 있다.
+**해소됨.** `primeno1-devbox` `origin/master`가 `b432a01` → `0caeaf9`로 움직이면서
+native 엔트리가 실제로 들어왔다. 아래 기록은 그 전후를 남긴 것이다.
 
-그래서 아래 첫 기준은 사람이 실기동 회차를 잡아도 닫을 수 없다 — 하네스가 부족한
-것이 아니라 검증 대상이 없다. devbox 설정이 먼저 native 엔트리로 옮겨져야 하고,
-그것은 이 카드의 범위 밖(외부 저장소)이다.
+**전(`b432a01`)**: `dva.yml`에 `runner: native` 엔트리는 **0건**이었다.
+`docs/dogfood/primeno1.md`가 기록한 native 6종과 plan `dev`는 devbox 저장소에
+반영되지 않았고, gate 체인과 `exec`는 interaction `api-run`/`api-run.gateway` 안에
+있었다. 그래서 첫 기준은 사람이 실기동 회차를 잡아도 닫을 수 없었다 — 하네스가
+부족한 것이 아니라 검증 대상이 없었다.
 
-TASK-376 하네스는 그 사이 primeno1에 대해 plan `external-db`의 script gate 체인을
-돈다. 그것은 대체재이지 이 기준의 충족이 아니다.
+**후(`0caeaf9`, 2026-09-13 실측)**: native stack 엔트리 **6종**이 있다 —
+`api` · `gateway` · `stream` · `frontend` · `api-external-db` · `stream-external-db`
+(각각 `default_runner: native` + `runners.native` 블록). plan `dev`도 있고, 그 형태가
+바로 이 카드 첫 기준이 말하는 대상이다:
+
+```
+$ git -C ~/mydevbox/primeno1-devbox grep -cE '^\s+runner: native' b432a01  -- '*.yml'  → 0
+$ git -C ~/mydevbox/primeno1-devbox grep -c  'default_runner: native' origin/master -- '*.yml'
+origin/master:dva.yml:6
+```
+
+plan `dev` = `sigdock-local-runtime`(script, order 10) → `compose`(order 20,
+depends_on) → `api`·`frontend`(native, order 30) → `gateway`(native, order 40).
+script gate 체인과 native 엔트리와 순서 의존이 한 plan 안에 다 있다.
+
+**남은 것은 하네스다.** TASK-376 하네스의 primeno1 스텝은 아직 대체재였던 plan
+`external-db`(script gate → compose, native 없음)를 돈다. 첫 기준을 닫으려면 plan
+`dev`를 돌아야 한다. 그 재조준은 [[TASK-379]]가 소유한다 — 이 카드는 그 뒤에
+실기동 회차만 남는다.
+
+**따라서 이 카드의 blocker는 이제 외부 저장소가 아니라 (a) 하네스 재조준과
+(b) 사람이 파괴적 회차를 잡는 일, 둘뿐이다.**
 
 ## Completion Criteria
 
