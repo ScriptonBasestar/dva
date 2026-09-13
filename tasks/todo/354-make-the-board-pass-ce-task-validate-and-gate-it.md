@@ -9,7 +9,7 @@ status: todo
 created: 2026-09-08
 source: "TASK-352·353를 파일하다 `ce task validate`가 두 카드를 거부해 발견. 전수 측정으로 확대. 2026-09-09 재측정에서 노출이 0이 아님이 드러나 P3→P2, S→M"
 needs-human: true
-depends-on: [TASK-371]
+depends-on: [TASK-371, TASK-377]
 ---
 
 ## Summary
@@ -164,6 +164,13 @@ validate를 재구현하는 Go 도구를 만드는 것은 이 카드의 범위�
 존재하지만 이 저장소가 아직 채택하지 않았다. [[TASK-349]]의 `.ce/task-runtime.yaml`
 채택은 인접한 lifecycle 결정일 뿐 이 readiness 선언을 대신하지 않는다. ISSUE-001을
 해소한 뒤 이 카드의 `needs-human` 결정으로 정본 선언 채택 여부를 판단한다.
+
+[[TASK-377]]이 이 두 선택지에 비용을 붙여
+[docs/65](../../docs/65-ce-task-gate-attachment-options.md)에 정리했다. 그 문서는
+CI가 `ce`를 provision하지 않는다는 재현 명령, `.gz-git.yaml`의 `branch.readiness`
+선언이 실제로 어떤 형태이고 무엇을 언제 호출하는지, 그리고 네 항목(채택 비용 ·
+`ce` 부재 시 동작 · 깨지는 범위 · 되돌리는 비용) 비교표를 담는다. 결정은 여전히
+이 카드의 몫이다.
 
 ## 결정 기록
 

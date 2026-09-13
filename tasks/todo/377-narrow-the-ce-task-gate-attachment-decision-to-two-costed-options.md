@@ -54,3 +54,52 @@ receipt 없는 done blocker 둘 때문에 지금 게이트를 붙이면 보드�
 - [ ] CI가 `ce`를 provision하지 않는다는 측정이 재현 명령과 함께 문서에 인용돼 있다 | verify: human — 문서가 인용한 명령을 실행하면 같은 결론이 나오는지 확인한다
 - [ ] TASK-354가 이 문서를 링크한다 | verify: `/usr/bin/grep -rq --include='354-make-the-board-pass-ce-task-validate-and-gate-it.md' 'TASK-377' tasks` (regression-guard)
 - [ ] 기존 게이트 통과 | verify: `make doc-check` (regression-guard)
+
+## Evidence
+
+문서: [docs/65](../../docs/65-ce-task-gate-attachment-options.md). 2026-09-13,
+worktree `claude__mbp__docs__gate-attachment-decision-brief`에서 실행한 명령과 결과다.
+
+**CI가 `ce`를 provision하지 않는다** (이미 측정된 항목의 재현):
+
+- `/usr/bin/grep -cE 'ce (task|--version)' .github/workflows/ci.yml` → `0`.
+- `/usr/bin/grep -nE 'uses:|run:' .github/workflows/ci.yml` → step은 checkout,
+  setup-go, golangci-lint-action, goreleaser-action과 `make` 타깃뿐. `ce` 설치 없음.
+
+**저장소 선언 상태**:
+
+- `cat .gz-git.yaml` → `branch.integrationBranch: [master]`,
+  `branch.taskPattern: [dev/*/*/*]`. `branch.readiness` 없음.
+- `cat .ce/task-runtime.yaml` → `schema-version: 1`, `repository-id: dva`,
+  `worktree-roots.mbp`, `integration-provider: gz-git` (TASK-349가 채택함).
+- `ce task run-doctor` → `ACTIVE: task runtime dependencies are ready`, rc 0.
+- `ce task doctor --json` → `repositoryId: dva`, `gates: []`, `status: not-adopted`,
+  `remediation: declare-task-gate`, rc 1. 이 선언은 `ce-tasks.yaml`의 pre-commit
+  훅 계약이고 통합 readiness 러너가 아니다(문서 §2.4).
+
+**readiness 러너 선언의 형태 — 확인된 출처**:
+
+- 설치본: `gz-git version` → `v0.0.0-20260908011233-39edf940b5d8` (commit `39edf94`).
+  `gz-git schema | grep -A 6 'Target-owned integration gate'` → `branch.readiness`의
+  `version: 1` / `runner: .gz-git/readiness/check`.
+- 소스: `~/mydevbox/gzh-cli-devbox/gzh-cli-gitforge`, HEAD `9398a41`(2026-09-09).
+  `pkg/config/readiness.go`(`ValidateReadiness`, `validateReadinessRunner`,
+  `ParseReadinessDocument`), `pkg/integrate/readiness.go`(`loadReadinessManifest`,
+  `checkReadinessContract`, `executeReadinessWithTimeout`:199, `readinessEnv`:324),
+  `cmd/gz-git/cmd/integrate_bootstrap.go`, `cmd/gz-git/cmd/integrate_readiness_update.go`.
+- 위 경로는 `strings /Users/archmagece/go/bin/gz-git | grep -i readiness`가 노출한
+  빌드 경로로 찾았고, 설치본 문자열과 소스 문자열이 일치한다.
+
+**확인하지 못한 것**: `gz-git integrate check`/`bootstrap`의 실제 실행 관측이 없다.
+`gz-git integrate --help`조차 개인 정책 훅(`guard-git-integration.sh`)이 차단한다.
+선언의 형태와 호출 규약은 소스와 `gz-git schema`에서 읽은 것이며 실행으로 재현하지
+않았다. 설치본(`39edf94`)과 소스(`9398a41`)의 리비전 차이도 남아 있다.
+
+**보드 상태**: `ce task gate --json` → `{"status":"not-ready",
+"summary":"task_validate_failed","failed_step":"validate"}`, rc 1.
+`ce task validate --all` → 78장 중 75 valid / 3 invalid. TASK-344와 TASK-371은
+[[ISSUE-001]]의 receipt blocker, 세 번째는 이 카드 자신의 one-sided edge였다 —
+TASK-354의 `depends-on`에 `TASK-377`을 더해 해소했다.
+
+**검증**: `make doc-check` rc 0,
+`ce task validate tasks/todo/377-*.md tasks/todo/354-*.md` 두 장 모두 valid.
