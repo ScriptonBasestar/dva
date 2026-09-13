@@ -45,7 +45,9 @@ created: 2026-09-05
 ## Needs-human (결정 후 착수)
 
 - ~~TASK-307~~ plan alias/extends (완료 2026-09-11). TASK-309도 완료(2026-09-13) — docs/56 §6에 결정 5건, 억제 3수단 구현.
-- TASK-319 native entry ergonomics, TASK-321 destructive interaction agent-deny: 설계 결정 기록 필요.
+- ~~TASK-319~~ native entry ergonomics (완료 2026-09-12), ~~TASK-321~~ destructive interaction
+  agent-deny (완료 2026-09-11). **이 절은 비었다** — needs-human 4장의 설계 결정이 전부
+  기록됐고, 이 plan에 결정 대기로 남은 자식은 없다.
 
 ## Devbox integration state (2026-09-05 저녁 갱신)
 
@@ -73,8 +75,10 @@ created: 2026-09-05
 
 - 세션 1회차 종료 시점: 1~5·4a 통합 완료(master 2cb184e). 316은 분석만 카드에 기록, worktree 없음.
 - 다음 착수(2026-09-09 갱신): 318·323까지 닫혀 §Order의 기계적 항목은 전부 소진됐다. **남은 것은 10a 실기동(TASK-328) 하나뿐**이고, 그것도 사람이 실제로 돌려야 닫힐 카드다.
-  사람 결정 대기는 4장(307, 309, 319, 321)이다. 315 후속 345~348은 §Order에 편입하지 않고 compose 묶음으로 함께 처리.
-- 잔여 사람 결정: 위 §Needs-human, §Devbox integration state의 scripton-dashboard·familybook 2건.
+  사람 결정 대기 4장(307, 309, 319, 321)은 2026-09-13 기준 **전부 완료**다(§Needs-human 참조).
+  315 후속 345~348은 §Order에 편입하지 않고 compose 묶음으로 함께 처리.
+- 잔여 사람 작업: §Devbox integration state의 scripton-dashboard·familybook 2건과 TASK-328·348의
+  실기동 회차뿐이다. 설계 결정 대기는 남아 있지 않다.
 
 ## Children
 
@@ -99,11 +103,11 @@ validate가 요구한다 — 둘은 다른 질문에 답한다.
 - TASK-323 — 문서 의미 공백 (done)
 - TASK-328 — 실기동 검증 회차 (todo). **§Order에 남은 유일한 미완 항목이다**
 
-### §Needs-human에 놓인 4장 — 결정 전에는 착수 불가
+### §Needs-human에 놓인 4장 — 전부 완료
 
 - TASK-307 — plans `alias`/`extends` (done)
 - TASK-309 — suppression ergonomics (done)
-- TASK-319 — native entry ergonomics (todo)
+- TASK-319 — native entry ergonomics (done 2026-09-12)
 - TASK-321 — destructive interaction agent-deny (done)
 
 ### 남은 순서 미지정 1장 — TASK-329

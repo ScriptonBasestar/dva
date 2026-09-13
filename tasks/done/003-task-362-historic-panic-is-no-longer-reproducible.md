@@ -2,7 +2,7 @@
 id: ISSUE-003
 title: "TASK-362 historic flow-style panic is no longer reproducible"
 type: bug
-status: todo
+status: done
 priority: P2
 effort: S
 exec-tier: standard
@@ -58,4 +58,19 @@ criterion, and retain the focused passing test.
 
 ## Resolution Evidence
 
-TASK-362 now covers the current contract with the banner fixture and links this issue. On 2026-09-10, `go test ./internal/config/ -run TestMigrateSectionOrderBailsOnUnrepresentableShapes`, `make doc-check`, and `dva ci commit` passed; independent review confirmed the rescope. This issue remains in `tasks/issue` as the historical-panic disposition record.
+TASK-362 now covers the current contract with the banner fixture and links this issue. On 2026-09-10, `go test ./internal/config/ -run TestMigrateSectionOrderBailsOnUnrepresentableShapes`, `make doc-check`, and `dva ci commit` passed; independent review confirmed the rescope. ## Disposition
+
+Closed 2026-09-13. The `status: todo` this card carried until then was drift, not an
+open question: both Resolution Criteria were already `[x]`, the evidence above was
+recorded on 2026-09-10, and TASK-362 was already done and linking here.
+
+The card was moved to `tasks/done/` rather than closed in place. An earlier revision
+said it would remain in `tasks/issue` as the historical-panic disposition record; that
+is not a state this board can express. `tools/doccheck`'s frozen zone table (TASK-287)
+permits only `status: todo` under `tasks/issue/`, and [[ISSUE-002]] set the precedent
+of moving a resolved issue to `tasks/done/` under its original number. Every reference
+to this card is a `[[ISSUE-003]]` wiki-link resolved by id, so the move breaks nothing.
+
+`ce task validate` accepted the stale `todo` for three days and would equally have
+accepted `done`, `banana`, or no value at all; only the repository-local `doccheck`
+catches it. That asymmetry is filed as [[ISSUE-007]].
