@@ -1,0 +1,42 @@
+# yaml-language-server: $schema=../../../../internal/config/schema.json
+#
+# TASK-348 fixture: a plan whose only selection is a compose profile.
+#
+# `gated` is what the current binary must build: profiles: [rust] has to reach the
+# `docker compose --profile rust build` argv and produce a real image.
+#
+# `legacy` is the same entry with the field removed. It is the third arm of the
+# comparison: the current binary running `legacy` must also build nothing, which is what
+# separates "the profile did it" from "the newer binary did it". The control binary needs
+# no separate plan — it silently drops the unknown field and emits `legacy`'s argv for
+# `gated` too, which is precisely the behaviour TASK-348 wants on record.
+
+version: "0.1.44"
+
+stack:
+  compose:
+    description: One compose project with a profile-gated, buildable service
+    default_runner: compose
+    runners:
+      compose:
+        files:
+          - compose.yaml
+        project_name: dva-dogfood-task348
+
+plans:
+  gated:
+    description: Activate the rust profile so the gated service is buildable
+    entries:
+      - name: compose
+        runner: compose
+        order: 10
+        profiles: [rust]
+
+  legacy:
+    description: Same entry with no profile selection — the pre-TASK-315 control
+    entries:
+      - name: compose
+        runner: compose
+        order: 10
+
+default_plan: gated

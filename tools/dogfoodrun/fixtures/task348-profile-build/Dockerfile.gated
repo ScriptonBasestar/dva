@@ -1,0 +1,5 @@
+# A real image build, kept to one cheap layer: TASK-348 needs an image to actually
+# appear, not a large one. The marker file is what `docker image inspect` proves.
+FROM alpine:3.20
+RUN echo "dva TASK-348 profile-gated build marker" > /task348-marker
+CMD ["sleep", "infinity"]

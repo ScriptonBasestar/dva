@@ -1,0 +1,21 @@
+name: dva-dogfood-task348
+
+# Two services, one gated. `docker compose build` with no profile active reports
+# "No services to build" because `gated` is invisible until the `rust` profile is on;
+# `docker compose --profile rust build` builds it. That is the compose-level half
+# TASK-348 already observed. The dva.yml beside this file supplies the other half.
+services:
+  base:
+    image: alpine:3.20
+    command: ["sleep", "infinity"]
+
+  # No `image:` on purpose. Compose then names the built image after the project and
+  # service (dva-dogfood-task348-gated:latest) and counts it as a locally built image,
+  # which is what `dva down gated --purge` (compose down --rmi local) can remove again.
+  # An explicit image name would survive the teardown and leave the fixture dirty.
+  gated:
+    profiles: [rust]
+    build:
+      context: .
+      dockerfile: Dockerfile.gated
+    command: ["sleep", "infinity"]

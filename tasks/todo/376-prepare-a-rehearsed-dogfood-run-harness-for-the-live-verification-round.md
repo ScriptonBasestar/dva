@@ -58,3 +58,296 @@ pre-TASK-315 바이너리로는 빌드되지 않음을 같은 실행에서 보�
 - [ ] 하네스 출력이 `docs/dogfood/*.md`의 `실기동` 절 형식과 일치한다 | verify: human — 출력 한 덩어리를 리포트에 손대지 않고 붙일 수 있음이 확인된다
 - [ ] TASK-348의 pre-TASK-315 대조군 바이너리 커밋이 스크립트에 고정돼 있다 | verify: human — 스크립트가 지명한 커밋과 그 선택 근거가 이 카드에 적혀 있다
 - [ ] 기존 게이트 통과 | verify: `make doc-check` (regression-guard)
+
+## Evidence
+
+작성 시점: 2026-09-13. 파괴적 명령(`up`/`down`/`build`/`docker rm`/`volume rm`/`network rm`)은
+하나도 실행하지 않았다. 아래 근거는 전부 계획 출력, 읽기 전용 docker 조회, `--dry-run`,
+그리고 저장소 게이트로만 얻은 것이다.
+
+### 산출물
+
+- `tools/dogfoodrun/dogfood-run.sh` — 하네스 (실행 권한 있음)
+- `tools/dogfoodrun/fixtures/task348-profile-build/dva.yml`
+- `tools/dogfoodrun/fixtures/task348-profile-build/compose.yaml`
+- `tools/dogfoodrun/fixtures/task348-profile-build/Dockerfile.gated`
+
+### 실행한 명령과 exit code
+
+| 명령 | exit | 비고 |
+|------|------|------|
+| `make build` | 0 | `bin/dva` 0.2.0 |
+| `shellcheck tools/dogfoodrun/dogfood-run.sh` | 0 | 경고 없음 |
+| `./tools/dogfoodrun/dogfood-run.sh` (인자 없음) | 0 | 계획만 출력, 실행 없음 |
+| `./tools/dogfoodrun/dogfood-run.sh --list` | 0 | 대상 4종 |
+| `./tools/dogfoodrun/dogfood-run.sh --plan familybook` | 0 | |
+| `./tools/dogfoodrun/dogfood-run.sh --plan task348` | 0 | |
+| `./tools/dogfoodrun/dogfood-run.sh --preview` | 0 | 읽기 전용 docker 조회 |
+| `./tools/dogfoodrun/dogfood-run.sh --preview flow-taskchain` | 0 | |
+| `git archive 275c8c98 \| tar -x -C tmp/dogfood-run/control-275c8c98` | 0 | git 상태 변경 없음 |
+| `make -C tmp/dogfood-run/control-275c8c98 build COMMIT=275c8c98` | 0 | 대조군 `dva` 0.1.48 |
+| 현재 `dva validate` (픽스처) | 0 | 경고 0 |
+| 대조군 `dva validate` (픽스처) | 1 | `plans.gated.entries.0: Additional property profiles is not allowed` |
+| 현재 `dva --dry-run build gated` | 0 | argv에 `--profile rust` **있음** |
+| 대조군 `dva --dry-run build gated` | 0 | argv에 `--profile` **없음** |
+| `make doc-check` | 0 | doccheck·cilabels·flowcheck·planprogress·yamlcheck 전부 OK |
+
+argv 비교 원문:
+
+```text
+현재  : docker compose -f .../compose.yaml --project-name dva-dogfood-task348 --profile rust build
+대조군: docker compose -f .../compose.yaml --project-name dva-dogfood-task348 build
+```
+
+### TASK-348 대조군 커밋: `275c8c98`
+
+`275c8c98` = `d79ceaeb^`. `d79ceaeb` ("feat(plans): select compose profiles from a plan
+entry")가 `PlanEntry.Profiles`를 도입한 커밋이다.
+
+PLAN-006은 TASK-315의 착지점으로 `5f2d85d3`을 적었지만, `5f2d85d3`(문서)과 그 부모
+`e2fe2551`(build/logs forwarding 수정)은 **둘 다 이미 기능을 갖고 있다**. 기능의 어떤
+조각도 없는 마지막 트리는 `d79ceaeb^ = 275c8c98`이고, 대조군은 그것이어야 한다.
+`5f2d85d3^`을 골랐다면 profiles가 이미 동작하는 바이너리를 "pre-TASK-315"라고 부르는
+셈이라 대조 자체가 성립하지 않는다.
+
+이 근거는 스크립트 `CONTROL_COMMIT` 선언 바로 위 주석에도 같은 내용으로 박아 두었다.
+
+픽스처는 `version: "0.1.44"`로 선언한다. 대조군 바이너리가 0.1.48이라 `0.2.0`으로 두면
+최소 버전 검사에서 먼저 걸려 정작 보고 싶은 스키마 거부·argv 차이를 볼 수 없다.
+
+### 인자 없이 실행한 출력 (파괴적 명령 0건)
+
+```text
+dogfood-run.sh — 계획만 출력했다. 아무것도 실행하지 않았다.
+실행하려면: dogfood-run.sh --execute <TARGET>
+purge 미리보기만 보려면: dogfood-run.sh --preview <TARGET>
+
+TASK-348 대조군 커밋: 275c8c98 (d79ceaeb^ — PlanEntry.Profiles 도입 직전)
+
+## primeno1
+  작업 디렉토리 : /Users/archmagece/mydevbox/primeno1-devbox
+  설정 파일     : /Users/archmagece/mydevbox/primeno1-devbox/dva.yml
+  리포트        : docs/dogfood/primeno1.md
+  compose 프로젝트: primeno1 primeno1-external-db
+  선행 확인:
+    TASK-328은 "native 엔트리 6종(gate 체인 + exec)"을 말하지만, 현재 primeno1-devbox
+    master(b432a01)의 dva.yml에는 native stack 엔트리가 하나도 없다. docs/dogfood/primeno1.md의
+    "권장안 적용" 절이 기록한 native 6종 + plan `dev`는 devbox 저장소에 반영되지 않았고,
+    gate 체인 + `exec` 핸드오프는 여전히 interaction api-run/api-run.gateway 안에 있다.
+    따라서 이 하네스가 도는 gate 체인은 plan `external-db`의 script 엔트리
+    (external-db-contract → compose-external-db)다. native 엔트리 검증은 devbox 설정이
+    먼저 바뀌어야 가능하다.
+    compose 프로젝트 `primeno1`은 이 워크스테이션에서 실제로 쓰이는 개발 환경일 수 있다.
+    purge 미리보기를 반드시 먼저 읽어라.
+  단계:
+    [읽기]   validate
+             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva validate
+    [읽기]   plan list
+             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva ls
+    [기동]   up full
+             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva up full
+    [읽기]   status
+             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva status
+    [파괴적] down full --purge
+             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva down full --purge --force
+    [기동]   up external-db (script gate → compose)
+             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva up external-db
+    [읽기]   status (gate chain)
+             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva status
+    [파괴적] down external-db --purge
+             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva down external-db --purge --force
+
+## familybook
+  작업 디렉토리 : /Users/archmagece/mydevbox/familybook-devbox
+  설정 파일     : /Users/archmagece/mydevbox/familybook-devbox/dva.yaml
+  리포트        : docs/dogfood/familybook.md
+  compose 프로젝트: familybook-devbox
+  선행 확인:
+    설정 파일 이름이 아직 `dva.yaml`이다 (TASK-329로 개명 대기). composition plan은
+    `--purge`에 `--project <child>`가 필수라 teardown이 infra 하위로 스코프된다
+    (internal/cli/composition_flags.go). backend/dev·frontend/dev는 자식 저장소의
+    native plan이라 purge 대상이 아니다.
+  단계:
+    [읽기]   validate
+             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva validate
+    [읽기]   plan list
+             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva ls
+    [기동]   up hybrid (composition)
+             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva up hybrid
+    [읽기]   status
+             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva status
+    [파괴적] down hybrid --purge (scoped to infra)
+             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva down hybrid --purge --project infra --force
+
+## flow-taskchain
+  작업 디렉토리 : /Users/archmagece/mydevbox/flow-taskchain-devbox
+  설정 파일     : /Users/archmagece/mydevbox/flow-taskchain-devbox/dva.yml
+  리포트        : docs/dogfood/flow-taskchain.md
+  compose 프로젝트: taskchain
+  선행 확인:
+    composition plan이라 teardown은 `--project local-infra`로 스코프된다. engine/mcp/portal은
+    자식 저장소의 native plan이며 purge 대상이 아니다.
+  단계:
+    [읽기]   validate
+             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva validate
+    [읽기]   plan list
+             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva ls
+    [기동]   up local-dev (composition)
+             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva up local-dev
+    [읽기]   status
+             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva status
+    [파괴적] down local-dev --purge (scoped to local-infra)
+             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva down local-dev --purge --project local-infra --force
+
+## task348
+  작업 디렉토리 : /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/tools/dogfoodrun/fixtures/task348-profile-build
+  설정 파일     : /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/tools/dogfoodrun/fixtures/task348-profile-build/dva.yml
+  리포트        : tasks/todo/348-confirm-plan-profiles-reach-a-real-docker-build-not-just-argv.md
+  compose 프로젝트: dva-dogfood-task348
+  선행 확인:
+    대조군은 이 저장소가 스스로 만든다: git archive로 대조 커밋 트리를 tmp/에 풀고
+    그 안에서 make build를 돌린다. 저장소 체크아웃·브랜치·worktree는 건드리지 않는다.
+    대조군 바이너리는 config version 0.1.48을 보고하고, 픽스처는 0.1.44로 선언해
+    두 바이너리 모두 로드할 수 있게 맞춰 두었다.
+  단계:
+    [읽기]   current validate
+             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva validate
+    [읽기]   control validate — schema는 profiles를 거부한다 (exit 1 기대)
+             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/tmp/dogfood-run/control-275c8c98/bin/dva validate
+    [읽기]   argv: current, gated (--profile rust 있어야 한다)
+             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva --dry-run build gated
+    [읽기]   argv: control, gated (--profile 없어야 한다)
+             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/tmp/dogfood-run/control-275c8c98/bin/dva --dry-run build gated
+    [읽기]   출발점: 이미지가 없어야 한다 (exit 1 기대)
+             docker image inspect dva-dogfood-task348-gated:latest
+    [기동]   대조군 빌드: control, gated
+             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/tmp/dogfood-run/control-275c8c98/bin/dva build gated
+    [읽기]   대조군 이후에도 이미지 없음 (exit 1 기대)
+             docker image inspect dva-dogfood-task348-gated:latest
+    [기동]   프로필 없는 플랜: current, legacy
+             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva build legacy
+    [읽기]   legacy 이후에도 이미지 없음 (exit 1 기대)
+             docker image inspect dva-dogfood-task348-gated:latest
+    [기동]   실제 빌드: current, gated
+             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva build gated
+    [읽기]   이미지 생성 확인 (exit 0 기대)
+             docker image inspect --format '{{.Id}} {{.Created}}' dva-dogfood-task348-gated:latest
+    [읽기]   빌드 결과물 확인
+             docker run --rm dva-dogfood-task348-gated:latest cat /task348-marker
+    [파괴적] 픽스처 teardown (프로젝트·볼륨·local 이미지 제거)
+             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva down gated --purge --force
+    [읽기]   teardown 후 이미지 없음 (exit 1 기대)
+             docker image inspect dva-dogfood-task348-gated:latest
+
+주의: 이 워크스테이션은 컨테이너가 다수 도는 살아있는 개발 환경이다.
+[파괴적] 단계는 named volume·network·local 이미지를 지운다. --execute 전에
+반드시 --preview 출력을 눈으로 확인하라.
+```
+
+### purge 미리보기 (읽기 전용)
+
+`docker ps/volume ls/network ls`의 `com.docker.compose.project` 라벨 필터만 쓴다. 두 번째
+"이름만 비슷함" 목록은 라벨이 일치하는 항목을 빼고 낸다 — 같은 이름이 두 목록에 다 오르면
+미리보기가 스스로를 반박하기 때문이다.
+
+```text
+## purge 미리보기 — primeno1
+`dva down ... --purge`는 아래 프로젝트를 `docker compose down --remove-orphans --volumes --rmi local`로 지운다.
+
+### compose project: primeno1
+  containers: (없음)
+  volumes: (없음)
+  networks: (없음)
+  images: (없음)
+  networks (이름만 비슷함 — purge 대상 아님): (없음)
+  volumes (이름만 비슷함 — purge 대상 아님): (없음)
+
+### compose project: primeno1-external-db
+  containers: (없음)
+  volumes: (없음)
+  networks: (없음)
+  images: (없음)
+  networks (이름만 비슷함 — purge 대상 아님): (없음)
+  volumes (이름만 비슷함 — purge 대상 아님): (없음)
+
+## purge 미리보기 — familybook
+`dva down ... --purge`는 아래 프로젝트를 `docker compose down --remove-orphans --volumes --rmi local`로 지운다.
+
+### compose project: familybook-devbox
+  containers: (없음)
+  volumes: (없음)
+  networks: (없음)
+  images: (없음)
+  networks (이름만 비슷함 — purge 대상 아님): (없음)
+  volumes (이름만 비슷함 — purge 대상 아님): (없음)
+
+## purge 미리보기 — flow-taskchain
+`dva down ... --purge`는 아래 프로젝트를 `docker compose down --remove-orphans --volumes --rmi local`로 지운다.
+
+### compose project: taskchain
+  containers: (없음)
+  volumes:
+    taskchain_postgres-data
+    taskchain_redis-data
+  networks: (없음)
+  images: (없음)
+  networks (이름만 비슷함 — purge 대상 아님): (없음)
+  volumes (이름만 비슷함 — purge 대상 아님):
+    taskchain-qa024_postgres-data
+    taskchain-qa024_redis-data
+
+## purge 미리보기 — task348
+`dva down ... --purge`는 아래 프로젝트를 `docker compose down --remove-orphans --volumes --rmi local`로 지운다.
+
+### compose project: dva-dogfood-task348
+  containers: (없음)
+  volumes: (없음)
+  networks: (없음)
+  images: (없음)
+  networks (이름만 비슷함 — purge 대상 아님): (없음)
+  volumes (이름만 비슷함 — purge 대상 아님): (없음)
+```
+
+### 리포트 블록 형식
+
+`--execute <TARGET>`이 마지막에 내는 블록의 형식은 다음과 같다 (`emit_report`).
+`docs/dogfood/*.md`에는 아직 `실기동` 절이 없어서 이 하네스가 그 형식을 정의한다.
+
+````text
+## 실기동 (<타임스탬프>, dva version X.Y.Z)
+
+- 대상: `<devbox>/dva.yml`
+- 하네스: `tools/dogfoodrun/dogfood-run.sh --execute <TARGET>`
+- compose 프로젝트: <프로젝트 목록>
+- 전체 출력: `tmp/dogfood-run/<TARGET>-<ts>.log`
+
+| 명령 | exit | 마지막 출력 줄 |
+|------|------|----------------|
+| ... | ... | ... |
+
+### 선행 확인
+...
+
+### purge 미리보기 (파괴적 단계 실행 전)
+```text
+...
+```
+````
+
+실제로 채워진 블록은 `--execute`를 돌려야 나오므로 이 카드에는 없다. 실기동 회차에서
+붙여넣기 그대로 되는지 확인해야 할 마지막 항목이다.
+
+### 검증하지 못한 것
+
+- `--execute` 경로 전체(`up`/`down --purge`/`build`)는 이 워크스테이션이 컨테이너 105개가
+  도는 살아있는 개발 환경이라 실행하지 않았다. 이 카드의 안전 계약상 실행은 사람의
+  명시적 opt-in에서만 일어난다.
+- **primeno1의 native 엔트리는 존재하지 않는다.** TASK-328은 "native 엔트리 6종(gate 체인
+  + exec)"을 전제하지만 `primeno1-devbox` master(`b432a01`)의 `dva.yml`에는 native stack
+  엔트리가 하나도 없다. `docs/dogfood/primeno1.md`의 "권장안 적용" 절이 기록한 native 6종과
+  plan `dev`는 devbox 저장소에 반영되지 않았고, gate 체인과 `exec` 핸드오프는 여전히
+  interaction `api-run`/`api-run.gateway` 안에 있다. 그래서 하네스는 plan `external-db`의
+  script 엔트리 gate 체인을 대신 돈다. native 엔트리 검증은 devbox 설정이 먼저 바뀌어야
+  가능하다 — TASK-328의 해당 항목은 이 하네스로 닫을 수 없다.
+- `familybook-devbox`의 설정 파일은 아직 `dva.yaml`이다 (TASK-329 개명 대기). 하네스는
+  현재 이름을 그대로 읽는다.
