@@ -103,14 +103,28 @@ target_notes() {
 	case "$1" in
 	primeno1)
 		cat <<'EOF'
-이 스텝은 TASK-328 첫 기준의 대상이 아니다 — 재조준 대기 중이다(TASK-379).
-작성 시점(primeno1-devbox b432a01)에는 native stack 엔트리가 0건이라 plan
-`external-db`의 script 게이트 체인(external-db-contract -> compose-external-db)을
-대체재로 돌았다. 그 뒤 origin/master가 0caeaf9로 움직이며 native 엔트리 6종
-(api gateway stream frontend api-external-db stream-external-db)과 plan `dev`가
-실제로 들어왔다. 첫 기준을 닫으려면 plan `dev`
-(sigdock-local-runtime -> compose -> api/frontend -> gateway)를 돌아야 한다.
-아래 스텝은 아직 external-db다.
+아래 스텝은 TASK-328 첫 기준의 대상이다 — plan `dev`를 먼저 돌고 `external-db`를
+이어 돈다(TASK-379로 재조준했다).
+
+**선행 조건: 체크아웃이 origin/master여야 한다.** plan `dev`는 0caeaf9에서 들어왔다.
+작성 시점의 로컬 체크아웃 b432a01에는 native 엔트리가 0건이고 plan `dev`도 없어
+`dva up dev`가 unknown plan으로 죽는다. 실기동 전에 primeno1-devbox를 origin/master로
+올려라 — `dva ls` 출력에 `dev`가 보이는지로 확인한다.
+
+**선행 조건: `dev`는 compose만 도는 회차가 아니다.** 엔트리 체인은
+sigdock-local-runtime(script) -> compose -> api/frontend(native) -> gateway(native)다.
+api는 PRIMENO1_ENGINE_DIR(기본 primeno1-engine-kt)에서 Gradle bootRun을, frontend는
+primeno1-frontend에서 npm run dev를, gateway는 scripts/sigdock-local-contract.sh와
+scripts/verify-sigdock-gateway-tls.sh를 먼저 통과해야 한다. 즉 Gradle 캐시·npm 설치·
+로컬 TLS 자재(GATEWAY_LOCAL_TLS_CA_FILE)가 없으면 compose가 아니라 native 단계에서
+멈춘다. api/gateway의 health check ready_timeout이 180초라 회차가 길다.
+
+plan `full`은 더 이상 돌지 않는다. `dev`의 compose 엔트리가 `full`과 같은 엔트리(같은
+compose 파일, 같은 프로젝트 `primeno1`)라 별도 회차가 새로 재는 것이 없다.
+`external-db`는 남긴다 — script 게이트 체인
+(external-db-contract -> compose-external-db -> api-external-db/stream-external-db)은
+`dev`가 지나지 않는 경로이고, 재조준 이전 회차와 비교할 기준선이기도 하다.
+
 compose 프로젝트 `primeno1`은 이 워크스테이션에서 실제로 쓰이는 개발 환경일 수 있다.
 purge 미리보기를 반드시 먼저 읽어라.
 EOF
@@ -143,11 +157,11 @@ EOF
 steps_primeno1() {
 	cat <<EOF
 read|validate|$DVA validate
-read|plan list|$DVA ls
-start|up full|$DVA up full
-read|status|$DVA status
-destructive|down full --purge|$DVA down full --purge --force
-start|up external-db (script gate → compose)|$DVA up external-db
+read|plan list — dev가 보여야 한다 (없으면 체크아웃이 낡았다)|$DVA ls
+start|up dev (sigdock 게이트 → compose → native api/frontend → gateway)|$DVA up dev
+read|status (native 엔트리 포함)|$DVA status
+destructive|down dev --purge|$DVA down dev --purge --force
+start|up external-db (script 게이트 → compose → native)|$DVA up external-db
 read|status (gate chain)|$DVA status
 destructive|down external-db --purge|$DVA down external-db --purge --force
 EOF
