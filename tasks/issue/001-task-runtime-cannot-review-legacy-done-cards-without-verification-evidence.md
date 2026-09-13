@@ -59,6 +59,55 @@ CI `ce` 부재), 그 결과가 카드 `## Evidence`에 있다. 빠진 것은 검
 불일치)과 3번(`tmp/`는 durable하지 않음)이 그대로 남아 있어, DVA 안에서는 이
 파일을 만들 수 없다.
 
+## 2026-09-13: §Summary 2번은 부분적으로 낡았다 — DVA 안에서 통과하는 receipt를 만들었다
+
+§Summary 2번은 "controller가 PyYAML 정규화 문서를 해시하고 CE는 자체 정본 JSON을
+해시하므로, controller receipt는 well-formed JSON이면서도 CE의 digest 검사에 걸린다"고
+적었다. 그 사실 자체는 여전히 맞다. 낡은 것은 거기서 따라 나온다고 읽히는 결론 —
+"그래서 DVA 안에서는 이 파일을 만들 수 없다" — 쪽이다.
+
+[[TASK-379]]를 닫으며 실증됐다: `ce task validate`는 `reviewed-card-sha256`이 틀리면
+**기대하는 정본 digest를 에러 메시지에 그대로 출력한다.** 그 값을 receipt에 넣으면
+카드가 통과한다. controller의 digest를 CE의 것과 맞출 필요가 없다 — validator에게
+물어보면 된다.
+
+```
+tasks/done/379-retarget-the-primeno1-dogfood-steps-at-plan-dev.md
+  quality-review-receipt: tmp/task-management/direct/queue-run/task-379-review-receipt.json
+  reviewed-card-sha256: d8827926379c31e492682be7dbd76bc10f6fd2b95efa537a8e128e623e3e0822
+  → ce task validate: ✅ Valid
+```
+
+**그렇다고 이 이슈가 닫히지는 않는다.** 남은 장애는 §Summary 3번이다: 그 receipt는
+`tmp/` 아래 있고 DVA의 `.gitignore`가 `tmp/`를 무시한다. 즉 receipt를 만든 워크트리
+밖에서는 존재하지 않는 파일을 카드가 가리킨다. durable한 경로
+(`tasks/receipts/<TASK-ID>/`)와 그 발급 절차는 여전히 `ce-agent-kit`/`ce-workbook`이
+소유하며, §P0 Blocker의 owner·next_action·next_check는 그대로다.
+
+### 3번이 얼마나 실제인지 — 같은 날 실측됐다
+
+TASK-380 워크트리에서 `ce task validate --all`을 돌리자 실패가 5건에서 **6건**으로
+늘었다. 새 실패는 방금 통과했던 그 카드다.
+
+```
+tasks/done/379-...md
+  ❌ quality-review-receipt tmp/task-management/direct/queue-run/task-379-review-receipt.json
+     cannot be read: no such file or directory
+```
+
+`.gitignore:51`이 `tmp/`를 무시하므로 receipt는 그것을 만든 체크아웃에만 있다. 즉
+**카드의 유효성이 워크트리마다 다르다.** 사람이 receipt를 primary 체크아웃으로 손수
+복사해 두는 현행 관례가 그 사실을 가리고 있을 뿐이다. durable 경로가 없다는 것은 불편이
+아니라 **판정이 재현되지 않는다**는 뜻이다.
+
+이 관측이 바꾸는 것은 **범위**다. 다섯 건의 게이트 실패를 풀기 위해 필요한 것이
+"두 런타임의 digest 계약 통일 + durable 경로" 둘에서 **durable 경로 하나**로 줄었을
+수 있다. 위 절차를 신뢰하려면 먼저 확인해야 할 것: validator가 출력하는 digest를
+그대로 되받아 쓰는 것이 정당한 검토 provenance인가, 아니면 검사를 우회하는 것인가.
+digest는 "이 카드 내용에 대해 검토했다"를 고정할 뿐 검토가 실제로 있었는지는 말하지
+않는다 — TASK-379의 경우 독립 리뷰어(review-379)가 실재했으므로 provenance는 진짜다.
+검토 없이 digest만 채우는 것은 여전히 위조다.
+
 ## Reproduction
 
 1. At DVA `af7f6e6`, run `ce task gate --json`; it returns

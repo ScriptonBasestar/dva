@@ -44,13 +44,35 @@ plan `dev` = `sigdock-local-runtime`(script, order 10) → `compose`(order 20,
 depends_on) → `api`·`frontend`(native, order 30) → `gateway`(native, order 40).
 script gate 체인과 native 엔트리와 순서 의존이 한 plan 안에 다 있다.
 
-**남은 것은 하네스다.** TASK-376 하네스의 primeno1 스텝은 아직 대체재였던 plan
-`external-db`(script gate → compose, native 없음)를 돈다. 첫 기준을 닫으려면 plan
-`dev`를 돌아야 한다. 그 재조준은 [[TASK-379]]가 소유한다 — 이 카드는 그 뒤에
-실기동 회차만 남는다.
+~~**남은 것은 하네스다.**~~ 하네스 재조준은 [[TASK-379]]가 2026-09-13에 끝냈다 —
+primeno1 스텝은 이제 plan `dev`를 먼저 돌고 `external-db`를 이어 돈다.
 
-**따라서 이 카드의 blocker는 이제 외부 저장소가 아니라 (a) 하네스 재조준과
-(b) 사람이 파괴적 회차를 잡는 일, 둘뿐이다.**
+## 남은 blocker 둘 (2026-09-13 갱신)
+
+**(a) 사람이 파괴적 회차를 잡는 일.** `dva up` / `status` / `down --purge`는
+에이전트에게 허용되지 않는다.
+
+**(b) order 10 sigdock 게이트의 선행 조건 — 이 워크스테이션에서 이미 둘이 위반돼 있다.**
+plan `dev`의 첫 관문은 `scripts/sigdock-local-up.sh`이고 fail-closed다. 회차를 잡기
+**전에** 아래를 정리하지 않으면 compose에도 native에도 닿지 못하고 order 10에서 끝난다.
+
+- `SIGDOCK_CLIENTS_FILE` — `dva.yml`·`.env`·`.env.example` 어디에도 없다.
+  `env/templates/.env.template`와 `docs/LOCAL_EXECUTION_GUIDE.md`에만 있으므로 회차에서
+  따로 넣어야 한다. **위반 중.**
+- `sigdock-idp` compose 프로젝트의 컨테이너·네트워크가 0건일 것. 2026-09-13 실측으로
+  컨테이너 1건(`sigdock-idp-postgres-1`, exited)과 네트워크 1건(`sigdock-idp_default`)이
+  남아 있다 — 게이트가 "refusing to mutate resources this invocation does not own"으로
+  즉시 실패한다. 확인:
+  `docker ps -a --filter label=com.docker.compose.project=sigdock-idp`. **위반 중.**
+- 포트 11300에 리스너 없음, `TMPDIR` 아래 ownership marker 없음, 인접 체크아웃
+  `SIGDOCK_DEVBOX_DIR`(기본 `../sigdock-idp-devbox`) 존재, `lsof` 설치.
+- `SIGDOCK_IDP_ISSUER_PROFILE=fapi2`는 `dva.yml` 최상위 `vars:` 블록에 이미 있다 — 충족.
+
+**체크아웃 전제**: 로컬 primeno1-devbox가 `b432a01`이면 plan `dev`가 없어 unknown plan으로
+죽는다. `origin/master`(`0caeaf9` 이상)로 올리고 `dva ls`에 `dev`가 보이는지 확인한다.
+
+같은 내용이 하네스 `target_notes()`와 `docs/dogfood/primeno1.md`에도 있다 — 회차를 잡는
+사람이 어느 쪽을 먼저 열어도 같은 사실에 닿게 세 곳에 둔다.
 
 ## Completion Criteria
 

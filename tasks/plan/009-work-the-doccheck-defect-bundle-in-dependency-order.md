@@ -2,7 +2,7 @@
 id: PLAN-009
 title: "Work the task and doccheck defect bundle in dependency order"
 type: plan
-scope: "TASK-371, 344, 350, 343, 354, 338 — 여섯 장이 shared task progress contract, tools/doccheck, 또는 그 Makefile 연결을 고친다. 선언된 의존은 TASK-343 depends-on TASK-344와 TASK-354 depends-on TASK-371이다"
+scope: "TASK-371, 344, 350, 343, 354, 338, 377 — 일곱 장이 shared task progress contract, tools/doccheck, 그 Makefile 연결, 또는 게이트 연결 결정을 고친다. 선언된 의존은 TASK-343 depends-on TASK-344와 TASK-354 depends-on TASK-371이다"
 progress: 85
 total-tasks: 7
 completed-tasks: 6
@@ -13,11 +13,13 @@ created: 2026-09-09
 
 ## Goal
 
-여섯 장이 고아 상태로 보드에 흩어져 있었다. TASK-371은 shared task progress contract와
-DVA `planprogress`를 맞추고, 나머지 다섯 장은 `tools/doccheck` 또는 그 Makefile 연결을
-고친다. 선언된 의존은 TASK-343의 `depends-on: [TASK-344]`와 TASK-354의 `depends-on: [TASK-371]`다. 이
-문서가 이 여섯 장의 소유자이고, 소유하는 것은 우선순위가 아니라 **순서**다 —
-`PLAN-008 §Order`가 세운 형식을 그대로 따른다.
+처음 여섯 장이 고아 상태로 보드에 흩어져 있었다. TASK-371은 shared task progress
+contract와 DVA `planprogress`를 맞추고, 다섯 장(TASK-344·350·343·354·338)은
+`tools/doccheck` 또는 그 Makefile 연결을 고친다. 2026-09-13에 TASK-377이 더해져
+지금은 **일곱 장**이다 — 377은 TASK-354의 게이트 연결 결정에 필요한 사실만 모으고
+ordered lane 밖에 있다. 선언된 의존은 TASK-343의 `depends-on: [TASK-344]`와 TASK-354의
+`depends-on: [TASK-371]`다. 이 문서가 이 일곱 장의 소유자이고, 소유하는 것은 우선순위가
+아니라 **순서**다 — `PLAN-008 §Order`가 세운 형식을 그대로 따른다.
 
 ## 왜 병렬로 돌리면 안 되는가 — PLAN-008과 같은 모양
 
@@ -81,7 +83,7 @@ it changes PLAN-006 too; it may resume only after the separate receipt-contract 
 - TASK-343 — 파일명 번호 충돌 가드 완성 (P2, done 2026-09-10)
 - TASK-354 — 보드를 `ce task validate` 통과시키고 공유 게이트에 연결 (P2, 직접 CE 경계 조사는 완료했으나 [[ISSUE-001]]에 외부 차단, todo 유지)
 - TASK-338 — 링크의 written path 소멸을 보고 (P2, done 2026-09-10; live docs 25건을 0으로 고치고 archive 84건은 기록 보존)
-- TASK-377 — 게이트 연결 결정을 비용이 붙은 선택지 2개로 좁힘 (P2, todo 2026-09-13 신설). TASK-354를 대신 결정하지 않고, 결정에 필요한 사실만 모은다. ISSUE-001의 외부 차단과 **독립적으로** 끝날 수 있어 ordered lane 밖이다
+- TASK-377 — 게이트 연결 결정을 비용이 붙은 선택지 2개로 좁힘 (P2, **done 2026-09-13**). TASK-354를 대신 결정하지 않고 결정에 필요한 사실만 모았고, 결과는 `docs/65-ce-task-gate-attachment-options.md`에 있다 — 선택지 B(`branch.readiness`)로 결정됐다. ISSUE-001의 외부 차단과 **독립적으로** 끝났으므로 ordered lane 밖이다
 
 ## Rules
 

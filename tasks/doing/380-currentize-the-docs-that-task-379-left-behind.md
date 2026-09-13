@@ -53,6 +53,20 @@ TASK-312는 `tasks/done/`, TASK-311은 `tasks/_archive/done/`에 있다. dry-run
 3번(`tmp/`가 durable하지 않다)이다. 이 관측을 이슈에 기록한다. **이슈를 닫지 않는다** —
 외부 소유와 P0 판정은 그대로다.
 
+## D-5. 상한에 걸려 분리했다 (작업 중 발견)
+
+`docs/dogfood/primeno1.md`는 작업 시작 시점에 10028바이트였다. `tools/doccheck`의
+상한은 10240바이트이므로 여유가 **212바이트**였고, D-1의 갱신을 어떤 형태로 넣어도
+넘는다. `tools/doccheck/policy.go`는 per-file 예외를 명시적으로 거부한다 — "a document
+that cannot meet the limits is split, not exempted".
+
+그래서 2026-09-05 회차별 적용 이력을 `docs/dogfood/primeno1-migration-log.md`로 분리하고
+본 문서에는 현황·현재 상태·포인터만 남겼다. 옮긴 내용은 편집하지 않았다.
+
+이것은 이 카드만의 문제가 아니다 — 회차 기록이 누적되는 dogfood 리포트 여러 장이 상한에
+근접해 있고, [[TASK-328]]은 실기동 출력을 primeno1·familybook·flow-taskchain 셋에
+붙여야 한다. 그 구조적 조건은 [[ISSUE-009]]가 소유한다.
+
 ## Completion Criteria
 
 - [ ] `docs/dogfood/primeno1.md`의 검증 한계가 해소된 TASK-311/312 대신 실제 남은 blocker를 가리킨다 | verify: `/usr/bin/grep -q 'TASK-328' docs/dogfood/primeno1.md`
@@ -60,4 +74,5 @@ TASK-312는 `tasks/done/`, TASK-311은 `tasks/_archive/done/`에 있다. dry-run
 - [ ] PLAN-009의 `scope:`와 `## Goal`이 `children:` 일곱 장과 일치한다 | verify: `/usr/bin/grep -rq --include='009-work-the-doccheck-defect-bundle-in-dependency-order.md' 'TASK-377' tasks`
 - [ ] TASK-328 본문의 잔여 blocker가 사람 회차와 sigdock 선행조건 둘로 갱신된다 | verify: `/usr/bin/grep -rq --include='328-run-a-live-dogfood-verification-round-for-native-entries-and-composition-plans.md' 'SIGDOCK_CLIENTS_FILE' tasks`
 - [ ] ISSUE-001에 정본 digest 실증 관측이 기록되고 이슈는 열린 채 P0로 남는다 | verify: `/usr/bin/grep -rq --include='001-task-runtime-cannot-review-legacy-done-cards-without-verification-evidence.md' 'TASK-379' tasks`
-- [ ] 문서 게이트가 통과한다 | verify: `make doc-check`
+- [ ] `docs/dogfood/primeno1.md`가 10 KiB 상한 아래로 내려간다 | verify: `test 10240 -ge "$(/usr/bin/wc -c < docs/dogfood/primeno1.md)"`
+- [ ] 문서 게이트가 통과한다 | verify: `make doc-check` (regression-guard)

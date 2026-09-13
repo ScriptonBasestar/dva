@@ -47,7 +47,7 @@ P3으로 큐의 맨 뒤에 둔다. 뒤로 미루는 근거는 셋이다.
 
 ## Completion Criteria
 
-- [ ] `scope:`/`## Goal`의 `TASK-NNN` 집합이 `children:`을 초과하면 planprogress가 보고한다 | verify: `make doc-check`
-- [ ] 자식 수를 세는 산문 수사가 `total-tasks`와 어긋나면 보고한다 | verify: `make doc-check`
-- [ ] 현재 plan 네 장이 새 규칙 아래 전부 통과한다 | verify: `make doc-check`
-- [ ] 두 규칙에 회귀 테스트가 있다 | verify: `make test`
+- [ ] `scope:`/`## Goal`의 `TASK-NNN` 집합이 `children:`을 초과하면 planprogress가 보고한다 | verify: `go test ./tools/planprogress/`
+- [ ] 자식 수를 세는 산문 수사가 `total-tasks`와 어긋나면 보고한다 | verify: `go test ./tools/planprogress/`
+- [ ] 현재 plan 네 장이 새 규칙 아래 전부 통과한다 | verify: `make doc-check` (regression-guard)
+- [ ] 규칙을 어기는 fixture와 지키는 fixture가 둘 다 테스트에 있다 | verify: `go test ./tools/planprogress/`
