@@ -295,6 +295,49 @@ func dvaTransientsIgnored(configDir string) (ignored bool, decided bool) {
 	return dvaTransientsCovered(configDir, false)
 }
 
+// dvaModuleProbe is a stand-in for a module file, the same way dvaTransientProbes stands in for
+// the files DVA writes. Modules are `.sb/dva/<name>.yml` at exactly one level, and no rule that
+// distinguishes one module name from another is a rule anyone writes, so one name answers for
+// all of them.
+func dvaModuleProbe() string {
+	return path.Join(config.DotDirName, "probe.yml")
+}
+
+// dvaModulesBlocked reports whether the ignore rules in force also swallow DVA's modules, and
+// whether git was able to say.
+//
+// This is a second question, and it exists because the first one cannot detect the defect this
+// change is about. "Are the transients ignored?" is answered yes by `.sb/dva/` — the rule DVA
+// itself wrote until now — and also yes by the two lines it writes instead, so every predicate
+// that asks only that leaves a repository configured the old way looking perfectly healthy while
+// `git add .sb/dva/gates.yml` is refused. Fixing what DVA writes fixes new repositories only;
+// every repository that already ran `dva init` keeps the broken rule and hears nothing about it.
+//
+// Nothing here rewrites that rule. Replacing a line a person owns in a file a person owns is a
+// different act from appending one DVA is missing, and `dva doctor --fix` cannot do it in any
+// case: appending the correct two lines under `.sb/dva/` changes nothing, because git does not
+// descend into an excluded directory and the appended contents rules never apply. An automatic
+// fix that leaves the finding standing would append the same block on every run. So this reports,
+// names the edit, and stops.
+func dvaModulesBlocked(configDir string) (blocked bool, known bool) {
+	sources, decided := gitCheckIgnore(configDir, []string{dvaModuleProbe()})
+	if !decided {
+		return false, false
+	}
+	_, ignored := sources[dvaModuleProbe()]
+	return ignored, true
+}
+
+// blockedModules is deliberately not routed through failGitignore: that attaches ensureGitignore
+// as the repair, and ensureGitignore is correct to do nothing here. See dvaModulesBlocked.
+func blockedModules(r DoctorResult) DoctorResult {
+	r.Passed = false
+	r.Finding = fmt.Sprintf("transient state is ignored, but so are modules: %s is not addable, so DVA's modules feature is disabled here", dvaModuleProbe())
+	r.Fixable = false
+	r.FixHint = fmt.Sprintf("Replace the rule excluding %s/ itself with %s, which ignores the same transient state and leaves modules committable", config.DotDirName, defaultIgnoreAdvice())
+	return r
+}
+
 // dvaRepoDeclaresIgnore asks the narrower question: does the repository itself carry the rules,
 // so that a fresh clone has them too?
 //
@@ -395,14 +438,19 @@ func dvaRepoAlreadyDeclares(configDir, gitignoreContent string) bool {
 // that is in fact ignored, which is the harmless direction — an extra warning, never a silently
 // committed marker.
 //
-// The one glob read here does have a hole in the other direction, and it predates this: a
-// negation narrower than the exclusion, `!.sb/dva/p*` say, would re-include provision markers
-// while nothing below names that pattern, so this would report them ignored when git does not.
-// It is the same hole `.sb/` + `!.sb/d*` already had — an uninterpreted negation is invisible
-// whether or not the exclusion beside it is a glob. Both are closed on the git-backed path,
-// which is every working tree that has git; this reader runs only where it does not.
+// Reading the contents form costs something the directory form does not, and it is the reason
+// negationForfeitsContents exists. Excluding a directory makes every negation inside it inert —
+// git does not descend, so a negation this reader cannot parse cannot change the answer, and
+// leaving it unread is free. Excluding the contents leaves the directory itself un-excluded,
+// which is the whole point of the spelling and also removes that protection: a negation under
+// the prefix now decides real paths. Measured, `.sb/` + `!.sb/d*` has git ignoring all four
+// probes while `.sb/*` + `!.sb/dva` has git ignoring none of them. Answering both "ignored" —
+// as reading the contents form without reading the negations does — is not a missing warning,
+// it is a silently committed pid file. So the contents form is honoured only when no negation
+// in the file could reach a probe.
 func isDvaIgnored(content string) bool {
 	lines := strings.Split(content, "\n")
+	forfeit := negationForfeitsContents(lines, dvaTransientProbes())
 	for _, prefix := range ancestorsAndSelf(config.DotDirName) {
 		// The path's own spellings are asked first, and the order is load-bearing. Given
 		// `.sb/dva/` and `!.sb/dva/*` together, git excludes the directory and never
@@ -411,8 +459,55 @@ func isDvaIgnored(content string) bool {
 		if lastMatchExcludes(lines, pathSpellings(prefix)) {
 			return true
 		}
-		if lastMatchExcludes(lines, contentsSpellings(prefix)) {
+		if !forfeit && lastMatchExcludes(lines, contentsSpellings(prefix)) {
 			return true
+		}
+	}
+	return false
+}
+
+// negationForfeitsContents reports whether any negation line in the file could re-include one
+// of probes, in which case a contents exclusion must not be read as "ignored".
+//
+// It answers "could", not "does". The question git settles exactly is not worth reimplementing
+// here, and every uncertainty resolves toward forfeiting: an unparseable pattern, a `**` this
+// does not interpret, a negation that sits before the exclusion and would lose to it anyway.
+// Forfeiting makes DVA warn about a path that may well be ignored, which is the direction the
+// rest of this reader already errs in. Getting it wrong the other way commits state.
+//
+// A probe is reachable if the negation names it or any directory above it, because re-including
+// a directory is what lets git descend to what is inside. path.Match is the right matcher for
+// the anchored case: `*` does not cross `/` in either, which is precisely the property that
+// makes `!.sb/dva/*.yml` — the negation DVA itself writes — provably reach no probe, and so the
+// block DVA writes still reads back as ignored and ensureGitignore stays idempotent.
+func negationForfeitsContents(lines []string, probes []string) bool {
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if !strings.HasPrefix(line, "!") {
+			continue
+		}
+		pattern := strings.TrimSuffix(strings.TrimPrefix(strings.TrimPrefix(line, "!"), "/"), "/")
+		if pattern == "" {
+			continue
+		}
+		// `**` is git's cross-directory wildcard and path.Match has no equivalent, so it
+		// reads as two ordinary `*` and quietly matches less than git would. Unread.
+		if strings.Contains(pattern, "**") {
+			return true
+		}
+		anchored := strings.Contains(pattern, "/")
+		for _, probe := range probes {
+			for _, candidate := range ancestorsAndSelf(probe) {
+				if !anchored {
+					// A pattern with no slash is matched by git against every path
+					// component, not against the path.
+					candidate = path.Base(candidate)
+				}
+				matched, err := path.Match(pattern, candidate)
+				if err != nil || matched {
+					return true
+				}
+			}
 		}
 	}
 	return false
@@ -618,6 +713,9 @@ func checkGitignoreStatus(configDir string) DoctorResult {
 	// because what it decides is what to leave in the repository for everyone else.
 	if ignored, decided := dvaTransientsIgnored(configDir); decided {
 		if ignored {
+			if blocked, known := dvaModulesBlocked(configDir); known && blocked {
+				return blockedModules(r)
+			}
 			r.Passed = true
 			return r
 		}

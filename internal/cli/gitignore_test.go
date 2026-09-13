@@ -72,22 +72,45 @@ func TestIsDvaIgnored(t *testing.T) {
 		{"contents glob root-anchored", "/.sb/dva/*\n", true},
 		{"the block DVA writes", ".sb/dva/*\n!.sb/dva/*.yml\n", true},
 
-		// The negation that does undo it has to name the same thing. `!.sb/dva/*.yml`
-		// above re-includes a class DVA never writes, so it changes no answer; `!.sb/dva/*`
-		// re-includes everything and must.
+		// Reading the contents form means the negations beside it have to be read too, and
+		// these are the cases that say why. Each was measured against real git over
+		// dvaTransientProbes():
+		//
+		//	.sb/*      + !.sb/dva     → git ignores 0 of 4
+		//	.sb/dva/*  + !.sb/dva/p*  → git ignores 2 of 4 (pid and marker committable)
+		//	.sb/       + !.sb/d*      → git ignores 4 of 4
+		//
+		// The last one is the contrast that matters. An unread negation under a *directory*
+		// exclusion is inert — git does not descend, so it cannot change the answer, which
+		// is why this reader was safe ignoring globs before it read any. Under a *contents*
+		// exclusion the directory stays live and the same unread negation decides real
+		// paths. Answering "ignored" there is not a missing warning, it is a pid file in
+		// the commit. So a negation that could reach a probe forfeits the contents form.
+		{"negation re-including the dot dir from an ancestor", ".sb/*\n!.sb/dva\n", false},
+		{"negation narrower than the contents exclusion", ".sb/dva/*\n!.sb/dva/p*\n", false},
+		{"negation naming a marker class", ".sb/dva/*\n!.sb/dva/provisioned-*\n", false},
 		{"contents glob negated after being excluded", ".sb/dva/*\n!.sb/dva/*\n", false},
-		{"contents negation before the exclusion loses", "!.sb/dva/*\n.sb/dva/*\n", true},
+
+		// Forfeiting asks "could this negation reach a probe", not "does git let it", so a
+		// negation that git discards for sitting before the exclusion forfeits anyway. That
+		// is one extra warning on a file nobody writes, and the alternative is ordering
+		// logic whose only job is to make this reader agree with git on a case the
+		// git-backed path already answers.
+		{"a negation that git would discard forfeits anyway", "!.sb/dva/*\n.sb/dva/*\n", false},
 
 		// Directory exclusion outranks a negation on its contents: git does not descend
 		// into an excluded directory, so the negation never applies. This is why the path
-		// spellings are consulted before the contents spellings.
+		// spellings are consulted before the contents spellings, and why no forfeit is
+		// consulted on that branch.
 		{"directory exclusion beats a contents negation", ".sb/dva/\n!.sb/dva/*\n", true},
+		{"directory exclusion beats a negation on the directory's children", ".sb/\n!.sb/d*\n", true},
 
 		// Still not interpreted — pinned so the remaining limits stay a decision on record
 		// rather than an accident. Each makes DVA warn about a path git does ignore, which
 		// is the harmless direction.
 		{"other globs are not interpreted", ".sb/d*\n", false},
 		{"double-star anchoring is not interpreted", "**/.sb/\n", false},
+		{"double-star in a negation forfeits rather than being guessed at", ".sb/dva/*\n!**/probe.pid\n", false},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := isDvaIgnored(tt.content); got != tt.want {
@@ -696,6 +719,71 @@ func TestEnsureGitignoreKeepsModulesAddable(t *testing.T) {
 // "no .gitignore here" branch behind the read, unreachable in any real repository, and doctor
 // began telling first-run users to add a line to a file that does not exist. That is the
 // `dva init` → `dva doctor` path, so it is the first thing a new user sees.
+// TestDoctorReportsTheRuleThatBlocksModules covers the population this change would otherwise
+// miss entirely: a repository that already ran `dva init` under the old advice and carries
+// `.sb/dva/` today. Changing what DVA writes does nothing for it — ensureGitignore sees the
+// transients ignored and correctly declines to append — so without a second question the
+// repository is left with `git add` refusing its modules while doctor prints a pass.
+//
+// The assertions are paired on purpose. That the transients really are ignored is what makes
+// the case hard: any check that only asks the original question has already answered "healthy"
+// by the time this one is reached. And the git commands are real rather than faked, because the
+// claim under test is about what git does with a spelling, which a stub would only restate.
+func TestDoctorReportsTheRuleThatBlocksModules(t *testing.T) {
+	dir := t.TempDir()
+	initGitRepo(t, dir)
+	if err := os.WriteFile(filepath.Join(dir, ".gitignore"), []byte(defaultIgnoreSection+"\n"+config.DotDirName+"/\n"), 0o644); err != nil {
+		t.Fatalf("WriteFile .gitignore: %v", err)
+	}
+
+	if ignored, decided := dvaTransientsIgnored(dir); !decided || !ignored {
+		t.Fatalf("the premise of this test is that the old rule does ignore transients: ignored=%v decided=%v", ignored, decided)
+	}
+
+	// The user-visible symptom, from git rather than from a predicate of ours.
+	if err := os.MkdirAll(filepath.Join(dir, config.DotDirName), 0o755); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	module := filepath.Join(config.DotDirName, "gates.yml")
+	if err := os.WriteFile(filepath.Join(dir, module), []byte("x: 1\n"), 0o644); err != nil {
+		t.Fatalf("WriteFile module: %v", err)
+	}
+	add := exec.Command("git", "add", module)
+	add.Dir = dir
+	if out, err := add.CombinedOutput(); err == nil {
+		t.Fatalf("premise failed: git add %s succeeded under the old rule: %s", module, out)
+	}
+
+	r := checkGitignoreStatus(dir)
+	if r.Passed {
+		t.Fatalf("doctor passed a repository whose modules git refuses to add")
+	}
+	if !strings.Contains(r.Finding, "modules") {
+		t.Errorf("Finding = %q, want it to name modules as what is blocked", r.Finding)
+	}
+	if !strings.Contains(r.FixHint, defaultIgnoreAdvice()) {
+		t.Errorf("FixHint = %q, want it to name the rule to write instead (%s)", r.FixHint, defaultIgnoreAdvice())
+	}
+	// Not fixable, and that is the finding rather than an omission. Appending the correct
+	// rules below `.sb/dva/` changes nothing — git does not descend into an excluded
+	// directory — so an automatic fix here would report success, leave the finding standing,
+	// and append the same block again on the next run.
+	if r.Fixable || r.fixFunc != nil {
+		t.Errorf("the row must not claim to be auto-fixable: Fixable = %v, fixFunc set = %v", r.Fixable, r.fixFunc != nil)
+	}
+	if wrote, err := ensureGitignore(dir); err != nil || wrote {
+		t.Errorf("ensureGitignore(dir) = %v, %v; it must not append under an exclusion that makes the append inert", wrote, err)
+	}
+
+	// And the rule this change writes is the one that answers both questions.
+	if err := os.WriteFile(filepath.Join(dir, ".gitignore"), []byte(defaultIgnoreSection+"\n"+strings.Join(defaultIgnoreRules(), "\n")+"\n"), 0o644); err != nil {
+		t.Fatalf("WriteFile .gitignore: %v", err)
+	}
+	if fixed := checkGitignoreStatus(dir); !fixed.Passed {
+		t.Errorf("doctor still fails after the recommended edit: %q", fixed.Finding)
+	}
+}
+
 func TestGitignoreStatusNamesTheRightRemedy(t *testing.T) {
 	for _, tt := range []struct {
 		name        string
@@ -705,7 +793,13 @@ func TestGitignoreStatusNamesTheRightRemedy(t *testing.T) {
 	}{
 		{name: "no .gitignore at all", wantFinding: "no .gitignore here"},
 		{name: "a .gitignore that says nothing about it", gitignore: "node_modules/\n", wantFinding: "is NOT ignored"},
-		{name: "ignored through a glob git understands", gitignore: ".sb/dva/*\n", wantPass: true},
+		// Both lines, not one. `.sb/dva/*` on its own ignores the transients and the
+		// modules alike, so it is no longer a passing configuration — the row it produces
+		// is the modules finding, which TestDoctorReportsTheRuleThatBlocksModules covers.
+		// The case moved here rather than being deleted because what it was for, a rule
+		// git understands and this package's literal reader need not, is still worth
+		// pinning; the block DVA writes is that rule.
+		{name: "ignored through the rules DVA writes", gitignore: ".sb/dva/*\n!.sb/dva/*.yml\n", wantPass: true},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			dir := t.TempDir()
