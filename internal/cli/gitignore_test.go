@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path"
@@ -91,12 +92,22 @@ func TestIsDvaIgnored(t *testing.T) {
 		{"negation naming a marker class", ".sb/dva/*\n!.sb/dva/provisioned-*\n", false},
 		{"contents glob negated after being excluded", ".sb/dva/*\n!.sb/dva/*\n", false},
 
-		// Forfeiting asks "could this negation reach a probe", not "does git let it", so a
-		// negation that git discards for sitting before the exclusion forfeits anyway. That
-		// is one extra warning on a file nobody writes, and the alternative is ordering
-		// logic whose only job is to make this reader agree with git on a case the
-		// git-backed path already answers.
-		{"a negation that git would discard forfeits anyway", "!.sb/dva/*\n.sb/dva/*\n", false},
+		// A negation before the exclusion has already lost to it — last-matching-pattern-
+		// wins is the whole rule — so it is not scanned and does not forfeit. This case
+		// read false while the forfeit scanned the entire file, on the argument that one
+		// extra warning on a file nobody writes was cheaper than ordering logic. The cost
+		// turned out not to be a warning: a `.gitignore` opening with `!*` and carrying
+		// DVA's own block below it is ignored by git and was read as unignored here, so
+		// ensureGitignore appended the block again on every run.
+		{"a negation before the exclusion has already lost", "!.sb/dva/*\n.sb/dva/*\n", true},
+		{"a file-wide negation above DVA's own block", "!*\n.sb/dva/*\n!.sb/dva/*.yml\n", true},
+
+		// The same rule at the directory spelling. `.sb/` is not the end of the story when a
+		// later negation names `.sb` itself at a level git still reaches: measured, `!*`
+		// leaves all four probes addable, while `!.sb/d*` — naming only something inside the
+		// excluded directory — leaves all four ignored.
+		{"file-wide negation after a directory exclusion", ".sb/\n!*\n", false},
+		{"file-wide negation after the dot dir exclusion", ".sb/dva/\n!*\n", false},
 
 		// Directory exclusion outranks a negation on its contents: git does not descend
 		// into an excluded directory, so the negation never applies. These two assert
@@ -336,6 +347,64 @@ func TestGitignoreCheckAsksGit(t *testing.T) {
 // unaddable — a reader blind to it would warn about the rule DVA had just written, and
 // ensureGitignore would append that rule again on every run. So the case moved sides, and
 // something the reader genuinely cannot parse took its place to keep the other half honest.
+// TestEnsureGitignoreIsIdempotentWithoutGit is the test the forfeit rule needs, and the reason
+// it exists is that the forfeit rule is where this can go wrong without anyone noticing.
+//
+// ensureGitignore consults isDvaIgnored when git cannot answer. If the reader declines to
+// recognize the block DVA just wrote, DVA appends it again — every run, forever — and nothing
+// else in the package fails. The first version of the forfeit did exactly that for a `.gitignore`
+// containing `!*.log`, which is an ordinary thing to have beside a `logs/` rule: it matched the
+// log probe's basename, even though `.sb/dva/logs` is excluded and git never descends to it.
+//
+// The unrelated-negation cases are the point. Each is a negation that has nothing to do with
+// DVA, and a reader that forfeits on them writes three copies of its block after three runs.
+func TestEnsureGitignoreIsIdempotentWithoutGit(t *testing.T) {
+	for _, pre := range []string{
+		"",
+		"node_modules/\ndist/\n",
+		"*.log\n!important.log\n",
+		"build/\n!build/keep/\n",
+		"logs/\n!*.log\n",
+		"*.pid\n!probe\n",
+		"!*\n",
+		"secrets/\n!secrets/example.yml\n",
+	} {
+		t.Run(fmt.Sprintf("%q", pre), func(t *testing.T) {
+			dir := t.TempDir()
+			gitignorePath := filepath.Join(dir, ".gitignore")
+			if pre != "" {
+				if err := os.WriteFile(gitignorePath, []byte(pre), 0o644); err != nil {
+					t.Fatalf("WriteFile .gitignore: %v", err)
+				}
+			}
+
+			old := gitCheckIgnore
+			gitCheckIgnore = func(string, []string) (map[string]string, bool) { return nil, false }
+			defer func() { gitCheckIgnore = old }()
+
+			var wrote []bool
+			for range 3 {
+				w, err := ensureGitignore(dir)
+				if err != nil {
+					t.Fatalf("ensureGitignore: %v", err)
+				}
+				wrote = append(wrote, w)
+			}
+
+			after, err := os.ReadFile(gitignorePath)
+			if err != nil {
+				t.Fatalf("ReadFile .gitignore: %v", err)
+			}
+			if blocks := strings.Count(string(after), defaultIgnoreSection); blocks != 1 {
+				t.Errorf("wrote the block %d times over three runs (wrote=%v); .gitignore is now %q", blocks, wrote, after)
+			}
+			if wrote[1] || wrote[2] {
+				t.Errorf("wrote = %v, want only the first run to write", wrote)
+			}
+		})
+	}
+}
+
 func TestGitignoreFallsBackWhenGitCannotAnswer(t *testing.T) {
 	for _, tt := range []struct {
 		name      string

@@ -438,19 +438,20 @@ func dvaRepoAlreadyDeclares(configDir, gitignoreContent string) bool {
 // that is in fact ignored, which is the harmless direction — an extra warning, never a silently
 // committed marker.
 //
-// Reading the contents form costs something the directory form does not, and it is the reason
-// negationForfeitsContents exists. Excluding a directory makes every negation inside it inert —
-// git does not descend, so a negation this reader cannot parse cannot change the answer, and
-// leaving it unread is free. Excluding the contents leaves the directory itself un-excluded,
-// which is the whole point of the spelling and also removes that protection: a negation under
-// the prefix now decides real paths. Measured, `.sb/` + `!.sb/d*` has git ignoring all four
-// probes while `.sb/*` + `!.sb/dva` has git ignoring none of them. Answering both "ignored" —
-// as reading the contents form without reading the negations does — is not a missing warning,
-// it is a silently committed pid file. So the contents form is honoured only when no negation
-// in the file could reach a probe.
+// Negations have to be read, and negationReaches is where that happens. Measured, `.sb/` +
+// `!.sb/d*` has git ignoring all four probes while `.sb/*` + `!.sb/dva` has git ignoring none of
+// them. Answering both "ignored" — as reading the exclusions without reading the negations does
+// — is not a missing warning, it is a silently committed pid file.
+//
+// What separates those two is not the exclusion spelling but which paths the negation names.
+// An exclusion is honoured only when no negation below it names a path git would still reach:
+// the directory itself for `.sb/dva/`, its immediate children for `.sb/dva/*`. Excluding a
+// directory does buy something the contents form does not — a negation aimed strictly inside it
+// is inert, because git does not descend — but that protection stops at the directory's own
+// name, and `!*` names it.
 func isDvaIgnored(content string) bool {
 	lines := strings.Split(content, "\n")
-	forfeit := negationForfeitsContents(lines, dvaTransientProbes())
+	probes := dvaTransientProbes()
 	for _, prefix := range ancestorsAndSelf(config.DotDirName) {
 		// The two questions are independent — either answering yes is decisive, and
 		// swapping them changes nothing, which was verified by swapping them and running
@@ -459,32 +460,62 @@ func isDvaIgnored(content string) bool {
 		// line naming it negates, so the contents branch declines on its own. Said the
 		// other way, pathSpellings and contentsSpellings share no member, so no line can be
 		// read by both branches and no line can be decided twice.
-		if lastMatchExcludes(lines, pathSpellings(prefix)) {
+		//
+		// What differs between them is only which paths a negation would have to reach to
+		// undo the exclusion, because that is what each spelling excludes. `.sb/dva/`
+		// excludes the directory, so the one path is `.sb/dva` itself. `.sb/dva/*` excludes
+		// its immediate children, so the paths are those children. Measured: `.sb/` with
+		// `!*` leaves all four probes addable — `*` names `.sb` at a level git still reaches
+		// — while `.sb/` with `!.sb/d*` ignores all four, since that negation names only
+		// something inside the excluded directory and git never descends there.
+		if at, excludes := lastMatchExcludes(lines, pathSpellings(prefix)); excludes &&
+			!negationReaches(lines, at, []string{prefix}) {
 			return true
 		}
-		if !forfeit && lastMatchExcludes(lines, contentsSpellings(prefix)) {
+		if at, excludes := lastMatchExcludes(lines, contentsSpellings(prefix)); excludes &&
+			!negationReaches(lines, at, childrenOf(prefix, probes)) {
 			return true
 		}
 	}
 	return false
 }
 
-// negationForfeitsContents reports whether any negation line in the file could re-include one
-// of probes, in which case a contents exclusion must not be read as "ignored".
+// negationReaches reports whether any negation line after index at could re-include one of
+// candidates, in which case the exclusion that sits at at must not be read as "ignored".
 //
 // It answers "could", not "does". The question git settles exactly is not worth reimplementing
-// here, and every uncertainty resolves toward forfeiting: an unparseable pattern, a `**` this
-// does not interpret, a negation that sits before the exclusion and would lose to it anyway.
-// Forfeiting makes DVA warn about a path that may well be ignored, which is the direction the
-// rest of this reader already errs in. Getting it wrong the other way commits state.
+// here, and every uncertainty inside the scanned region resolves toward forfeiting: an
+// unparseable pattern, a `**` this does not interpret. Forfeiting makes DVA warn about a path
+// that may well be ignored, which is the direction the rest of this reader already errs in.
+// Getting it wrong the other way commits state.
 //
-// A probe is reachable if the negation names it or any directory above it, because re-including
-// a directory is what lets git descend to what is inside. path.Match is the right matcher for
-// the anchored case: `*` does not cross `/` in either, which is precisely the property that
-// makes `!.sb/dva/*.yml` — the negation DVA itself writes — provably reach no probe, and so the
-// block DVA writes still reads back as ignored and ensureGitignore stays idempotent.
-func negationForfeitsContents(lines []string, probes []string) bool {
-	for _, line := range lines {
+// Two things bound what is scanned, and both were learned by being wrong in the wide direction.
+// Neither costs an extra warning; both cost idempotency, because ensureGitignore consults this
+// reader when git cannot be asked, so a reader that cannot see the block DVA just wrote appends
+// it again — three copies after three runs of `dva init`.
+//
+// Position is the first. Last-matching-pattern-wins is the entire rule, so a negation earlier in
+// the file than the exclusion has already lost to it and cannot re-include anything. A
+// `.gitignore` opening with `!*` and carrying DVA's block below it has git ignoring all four
+// probes; scanning the whole file made this reader say otherwise.
+//
+// Depth is the second. `prefix/*` excludes prefix's immediate children — the `pids` directory,
+// not just the pid file inside it — so git stops at that level and a negation aimed deeper can
+// re-include nothing. An earlier version tested every ancestor of every probe, which made an
+// ordinary `!*.log` beside a `logs/` rule forfeit: it matches the log probe's basename, but
+// `.sb/dva/logs` is excluded and git never reaches it.
+//
+// path.Match is the matcher for the anchored case: `*` does not cross `/` in either, which is
+// what makes `!.sb/dva/*.yml` — the negation DVA itself writes — provably match no child, and so
+// the block DVA writes reads back as ignored.
+func negationReaches(lines []string, at int, candidates []string) bool {
+	if len(candidates) == 0 {
+		return false
+	}
+	for i, line := range lines {
+		if i <= at {
+			continue
+		}
 		line = strings.TrimSpace(line)
 		if !strings.HasPrefix(line, "!") {
 			continue
@@ -499,36 +530,58 @@ func negationForfeitsContents(lines []string, probes []string) bool {
 			return true
 		}
 		anchored := strings.Contains(pattern, "/")
-		for _, probe := range probes {
-			for _, candidate := range ancestorsAndSelf(probe) {
-				if !anchored {
-					// A pattern with no slash is matched by git against every path
-					// component, not against the path.
-					candidate = path.Base(candidate)
-				}
-				matched, err := path.Match(pattern, candidate)
-				if err != nil || matched {
-					return true
-				}
+		for _, candidate := range candidates {
+			if !anchored {
+				// A pattern with no slash is matched by git against a path component,
+				// not against the path.
+				candidate = path.Base(candidate)
+			}
+			matched, err := path.Match(pattern, candidate)
+			if err != nil || matched {
+				return true
 			}
 		}
 	}
 	return false
 }
 
+// childrenOf returns the immediate children of prefix that lie on the path to one of paths:
+// ".sb" → [".sb/dva"], ".sb/dva" → [".sb/dva/pids", ".sb/dva/logs", …]. A path not under prefix
+// contributes nothing, and prefix itself is not a child of prefix.
+func childrenOf(prefix string, paths []string) []string {
+	var children []string
+	for _, p := range paths {
+		rest, ok := strings.CutPrefix(p, prefix+"/")
+		if !ok || rest == "" {
+			continue
+		}
+		child := prefix + "/" + strings.SplitN(rest, "/", 2)[0]
+		if !slices.Contains(children, child) {
+			children = append(children, child)
+		}
+	}
+	return children
+}
+
 // lastMatchExcludes applies gitignore's last-matching-pattern-wins rule to one path: it
 // reports whether the last line naming that path excludes it rather than negates it, and
 // false when no line names it at all.
-func lastMatchExcludes(lines []string, forms map[string]bool) bool {
-	excluded := false
-	for _, line := range lines {
+//
+// It also reports where that line is, because "last" is the whole rule and the negation
+// scan needs the same yardstick: a negation earlier in the file than the exclusion being
+// relied on has already lost to it, and forfeiting on one costs idempotency for nothing.
+// at is -1 when no line names the path.
+func lastMatchExcludes(lines []string, forms map[string]bool) (at int, excludes bool) {
+	at = -1
+	for i, line := range lines {
 		line = strings.TrimSpace(line)
 		pattern := strings.TrimPrefix(line, "!")
 		if forms[pattern] {
-			excluded = line == pattern
+			at = i
+			excludes = line == pattern
 		}
 	}
-	return excluded
+	return at, excludes
 }
 
 // pathSpellings returns the .gitignore lines that name path, in each spelling git treats
