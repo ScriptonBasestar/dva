@@ -122,16 +122,18 @@ sigdock-local-runtime(script) -> compose -> api/frontend(native) -> gateway(nati
     (2026-09-13 이 워크스테이션 실측: 컨테이너 1건(sigdock-idp-postgres-1, exited),
     네트워크 1건(sigdock-idp_default) — 지금 돌리면 여기서 끝난다.)
   - 포트 11300에 리스너 없음, TMPDIR 아래 ownership marker 없음.
-  - $SIGDOCK_DEVBOX_DIR/dva.yml이 파일로 존재(기본 ../sigdock-idp-devbox). 디렉터리
-    존재가 아니라 그 안의 dva.yml을 본다.
+  - $SIGDOCK_DEVBOX_DIR(기본 ../sigdock-idp-devbox)가 cd 가능한 디렉터리일 것(:258),
+    그 안의 dva.yml이 파일로 존재할 것(:400). 별개 검사인데 실패 메시지가 같다
+    (adjacent SigDock devbox not found; 뒤쪽만 경로를 덧붙인다).
   - scripts/sigdock-local-contract.sh가 실행 가능(-x).
   - dva/docker/curl/lsof 네 바이너리가 PATH에 있을 것.
   - sigdock.localhost가 loopback 주소로만 해석될 것
     (require_loopback_provider_host, 내부적으로 python3을 쓴다).
   - SIGDOCK_IDP_ISSUER_PROFILE=fapi2 — 이것은 dva.yml 최상위 vars 블록에 이미 있다.
-  검사 순서: 바이너리 -> fapi2 -> loopback -> devbox dva.yml -> contract 실행 비트 ->
-  SIGDOCK_CLIENTS_FILE -> ownership marker -> 컨테이너 -> 네트워크 -> 포트 리스너.
-  위반 중인 둘은 6번과 8/9번이므로 앞 다섯 관문을 통과한 뒤에 실패한다.
+  검사 순서: devbox 디렉터리(:258) -> 바이너리 -> fapi2 -> loopback -> devbox dva.yml
+  -> contract 실행 비트 -> SIGDOCK_CLIENTS_FILE -> ownership marker -> 컨테이너 ->
+  네트워크 -> 포트 리스너. 위반 중인 둘은 7번과 9/10번이므로 앞 여섯 관문을 통과한
+  뒤에 실패한다.
 
 게이트를 넘긴 뒤에야 두 번째 표면이 나온다: api는 PRIMENO1_ENGINE_DIR(기본
 primeno1-engine-kt)에서 Gradle bootRun을, frontend는 primeno1-frontend에서 npm run dev를,

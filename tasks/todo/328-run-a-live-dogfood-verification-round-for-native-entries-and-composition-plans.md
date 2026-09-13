@@ -65,8 +65,10 @@ plan `dev`의 첫 관문은 `scripts/sigdock-local-up.sh`이고 fail-closed다. 
   즉시 실패한다. 확인:
   `docker ps -a --filter label=com.docker.compose.project=sigdock-idp`. **위반 중.**
 - 포트 11300에 리스너 없음, `TMPDIR` 아래 ownership marker 없음.
-- `$SIGDOCK_DEVBOX_DIR/dva.yml`이 **파일로** 존재할 것(기본 `../sigdock-idp-devbox`).
-  디렉터리 존재가 아니라 그 안의 `dva.yml`을 본다.
+- `$SIGDOCK_DEVBOX_DIR`(기본 `../sigdock-idp-devbox`)가 **cd 가능한 디렉터리**일 것
+  (`:258`), 그리고 그 안의 `dva.yml`이 **파일로** 존재할 것(`:400`). 둘은 별개 검사인데
+  **실패 메시지가 같다** — `adjacent SigDock devbox not found`이고 뒤쪽만 경로를 덧붙인다.
+  로그에서 이 문자열을 보면 어느 쪽인지 경로 유무로 갈라야 한다.
 - `scripts/sigdock-local-contract.sh`가 **실행 가능**할 것(`-x`). 체크아웃 방식에 따라
   실행 비트가 죽으면 여기서 죽는다.
 - `dva` · `docker` · `curl` · `lsof` 네 바이너리가 PATH에 있을 것. 2026-09-13 실측으로
@@ -76,9 +78,10 @@ plan `dev`의 첫 관문은 `scripts/sigdock-local-up.sh`이고 fail-closed다. 
   이 조건이 깨지면 보통 `/etc/hosts` 문제다.
 - `SIGDOCK_IDP_ISSUER_PROFILE=fapi2`는 `dva.yml` 최상위 `vars:` 블록에 이미 있다 — 충족.
 
-게이트가 실제로 검사하는 순서: 바이너리 4종 → fapi2 → loopback → devbox `dva.yml` →
-contract 실행 비트 → `SIGDOCK_CLIENTS_FILE` → ownership marker → sigdock-idp 컨테이너 →
-네트워크 → 포트 11300 리스너. **위반 중인 둘은 6번과 8·9번**이므로, 앞의 다섯 관문을
+게이트가 실제로 검사하는 순서: devbox 디렉터리(`:258`, 나머지보다 훨씬 앞이다) →
+바이너리 4종 → fapi2 → loopback → devbox `dva.yml` → contract 실행 비트 →
+`SIGDOCK_CLIENTS_FILE` → ownership marker → sigdock-idp 컨테이너 → 네트워크 →
+포트 11300 리스너. **위반 중인 둘은 7번과 9·10번**이므로, 앞의 여섯 관문을
 통과한 뒤에야 실패한다 — 로그에서 "여기까지는 됐다"로 오해하기 쉬운 자리다.
 
 **체크아웃 전제**: 로컬 primeno1-devbox가 `b432a01`이면 plan `dev`가 없어 unknown plan으로

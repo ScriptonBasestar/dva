@@ -43,8 +43,10 @@ $ find docs workflows -name '*.md' -type f -exec wc -c {} + \
 ```
 
 여섯 장 전부 **상한 아래**다(10240 미만) — 가장 빠듯한 `ref-artifacts.md`가 **6바이트**,
-그다음이 7 · 15 · 25바이트다. 즉 이 문서들은 게이트를 통과하지만 **한 글자도 더 들어가지
-않는다.** 한글 한 자가 UTF-8로 3바이트이므로 앞 네 장에는 한 자도 못 넣는다.
+그다음이 7 · 15 · 25바이트다. 검사는 `tools/doccheck/check.go:117`의
+`nbytes > maxDocBytes`이므로 정확히 10240바이트는 통과한다. 한글 한 자가 UTF-8로
+3바이트이니 앞 네 장이 아직 받을 수 있는 것은 각각 **2 · 2 · 5 · 8자**다 — 한 문장이
+아니라 한 단어도 안 되는 양이고, 그래서 이 문서들은 사실상 append-only 수명이 끝났다.
 
 `workflows/` 아래가 목록의 최상위라는 점에 주의한다 — `tools/doccheck/policy.go:31`의
 `sizeEnforced`는 `docs/`와 `workflows/` 둘 다를 대상으로 한다. 이 이슈의 초판은

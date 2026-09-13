@@ -5,10 +5,17 @@ type: docs
 priority: P2
 effort: S
 exec-tier: standard
-status: todo
+status: done
 created: 2026-09-13
 source: "TASK-379 완료 직후의 보드/문서 상태 재점검. 세 건 모두 하나의 원인 — 하네스와 카드는 움직였는데 그것을 읽는 문서가 따라오지 않았다"
 depends-on: []
+completion-summary: "TASK-379 뒤에 낡은 문서 세 곳을 현행화했다 — primeno1 리포트의 검증 한계(해소된 TASK-311/312 → 실제 blocker 둘), PLAN-009의 scope/Goal(여섯 장 → 일곱 장), TASK-328의 잔여 blocker. 상한 초과로 2026-09-05 이력을 primeno1-migration-log.md로 분리했고 그 systemic 조건은 ISSUE-009로 분리 기록했다"
+verification-status: verified
+verification-evidence: "완료 기준 8개의 verify 바인딩 전부 exit 0. make doc-check 0, make lint 0, bash -n + shellcheck 0, bash tools/dogfoodrun/dogfood-run.sh --plan primeno1 rc 0. ce task validate --all은 ISSUE-001 기존 5건(TASK-344/371/376/377/378)만 — 이 카드가 새 부채를 더하지 않는다"
+quality-review: pass
+quality-reviewed-at: 2026-09-13
+quality-review-evidence: "독립 리뷰 세션 review-380(Claude Opus 5, 저자 아님) 2라운드. 1라운드 conditional로 F1-F5, 이어서 F6까지 여섯 건 지적 — 전부 1차 출처에서 재도출해 수정. 2라운드 pass + 잔여 지적 R1/R2(non-blocking)도 같은 브랜치에서 접었다"
+quality-review-receipt: tmp/task-management/direct/queue-run/task-380-review-receipt.json
 ---
 
 ## Summary
@@ -89,10 +96,10 @@ that cannot meet the limits is split, not exempted".
   게이트가 실제로 요구하는 것 중 셋이 카드에도 `target_notes()`에도 없었다:
   `require_loopback_provider_host`(`sigdock.localhost`가 loopback으로만 해석), contract
   스크립트의 실행 비트, `dva`/`docker`/`curl` 바이너리(`lsof`만 적혀 있었다). 또
-  "인접 체크아웃 존재"는 부정확하다 — 게이트는 `$SIGDOCK_DEVBOX_DIR/dva.yml`을 파일로
-  본다. 셋 다 이 워크스테이션에서는 충족돼 있어 **위반 건수는 여전히 둘**이지만,
-  목록이 완전하다고 읽히면 안 된다. 카드와 하네스 양쪽에 추가하고 게이트의 실제 검사
-  순서도 적었다 — 위반 둘이 6번과 8/9번이라 앞 다섯 관문을 통과한 뒤에 죽는다.
+  "인접 체크아웃 존재"는 불완전하다 — 게이트는 `$SIGDOCK_DEVBOX_DIR/dva.yml`도 파일로
+  본다(이 문장 자체가 반대로 과했고, 아래 R2에서 다시 고쳤다). 셋 다 이 워크스테이션에서는
+  충족돼 있어 **위반 건수는 여전히 둘**이지만, 목록이 완전하다고 읽히면 안 된다. 카드와
+  하네스 양쪽에 추가하고 게이트의 실제 검사 순서도 적었다.
 - **F6 (informational) — 기준 하나가 절반만 기계 검증됐다.** 기준 2가 "재조준 **과**
   선행조건"을 요구하는데 바인딩은 `SIGDOCK_CLIENTS_FILE` 하나만 grep했다 — 재조준 쪽이
   사라져도 통과한다. 리뷰어가 손으로 확인해 실제로는 충족돼 있었지만, 통과가
@@ -102,17 +109,33 @@ that cannot meet the limits is split, not exempted".
   재현 절차를 ISSUE-001에 적었다(새 워크트리 → 6 → 복사 → 5). 원인을 제거하면 사라지는
   관측이라는 사실 자체가 이 이슈의 논점이다.
 
+### 2차 리뷰의 잔여 지적 둘 (pass, non-blocking — 같은 커밋에서 접었다)
+
+- **R1 (low) — ISSUE-009의 수사 한 문장이 자기 숫자와 맞지 않았다.** "앞 네 장에는 한 자도
+  못 넣는다"는 틀렸다. `tools/doccheck/check.go:117`은 `nbytes > maxDocBytes`이므로 정확히
+  10240바이트는 통과하고, 여유 6/7/15/25바이트는 한글 2/2/5/8자를 받는다. 실측치는 전부
+  옳았고 그 위에 얹은 문장만 과했다 — 측정 정밀도를 주제로 하는 이슈에서 특히 나쁘다.
+  숫자를 그대로 적는 형태로 고쳤다.
+- **R2 (low) — F4의 교정이 반대로 과했다.** 게이트는 디렉터리와 `dva.yml`을 **둘 다** 본다:
+  `sigdock-local-up.sh:258`이 `SIGDOCK_DEVBOX_DIR`을 cd 가능한 디렉터리로 요구하고,
+  `:400`이 그 안의 `dva.yml`을 파일로 요구한다. 원래 문장은 틀린 것이 아니라 불완전했다.
+  결과가 둘 더 있다 — (1) `:258`이 바이너리 검사보다 훨씬 앞이라 검사 순서의 진짜 머리가
+  빠져 있었고, 위반 둘은 6번·8/9번이 아니라 **7번·9/10번**이며 앞 **여섯** 관문을 통과한
+  뒤에 죽는다. (2) 두 검사가 **같은 실패 메시지**(`adjacent SigDock devbox not found`)를
+  쓰고 뒤쪽만 경로를 덧붙인다 — 로그 판독에서 갈라야 하는 자리라 목록에 적었다.
+  카드 328과 `target_notes()` 양쪽에 반영했다.
+
 세 곳 복제(카드 · `target_notes()` · 리포트)는 F4에서 비용이 실증됐다 — 빠진 항목이
 세 번 빠진다. 리포트 쪽은 이번에 포인터로 바꿔 두 곳으로 줄였고, 남은 두 곳의 단일화는
 이 카드 범위 밖이다.
 
 ## Completion Criteria
 
-- [ ] `docs/dogfood/primeno1.md`의 검증 한계가 해소된 TASK-311/312 대신 실제 남은 blocker를 가리킨다 | verify: `/usr/bin/grep -q 'TASK-328' docs/dogfood/primeno1.md`
-- [ ] 같은 문서가 order 10 sigdock 선행조건을 기록한다 | verify: `/usr/bin/grep -q 'SIGDOCK_CLIENTS_FILE' docs/dogfood/primeno1.md`
-- [ ] 같은 문서가 TASK-379의 plan `dev` 재조준을 기록한다 | verify: `/usr/bin/grep -q '하네스 재조준(TASK-379)' docs/dogfood/primeno1.md`
-- [ ] PLAN-009의 `scope:`와 `## Goal`이 `children:` 일곱 장과 일치한다 | verify: `/usr/bin/grep -rq --include='009-work-the-doccheck-defect-bundle-in-dependency-order.md' 'TASK-377' tasks`
-- [ ] TASK-328 본문의 잔여 blocker가 사람 회차와 sigdock 선행조건 둘로 갱신된다 | verify: `/usr/bin/grep -rq --include='328-run-a-live-dogfood-verification-round-for-native-entries-and-composition-plans.md' 'SIGDOCK_CLIENTS_FILE' tasks`
-- [ ] ISSUE-001에 정본 digest 실증 관측이 기록되고 이슈는 열린 채 P0로 남는다 | verify: `/usr/bin/grep -rq --include='001-task-runtime-cannot-review-legacy-done-cards-without-verification-evidence.md' 'TASK-379' tasks`
-- [ ] `docs/dogfood/primeno1.md`가 10 KiB 상한 아래로 내려간다 | verify: `test 10240 -ge "$(/usr/bin/wc -c < docs/dogfood/primeno1.md)"`
-- [ ] 문서 게이트가 통과한다 | verify: `make doc-check` (regression-guard)
+- [x] `docs/dogfood/primeno1.md`의 검증 한계가 해소된 TASK-311/312 대신 실제 남은 blocker를 가리킨다 | verify: `/usr/bin/grep -q 'TASK-328' docs/dogfood/primeno1.md`
+- [x] 같은 문서가 order 10 sigdock 선행조건을 기록한다 | verify: `/usr/bin/grep -q 'SIGDOCK_CLIENTS_FILE' docs/dogfood/primeno1.md`
+- [x] 같은 문서가 TASK-379의 plan `dev` 재조준을 기록한다 | verify: `/usr/bin/grep -q '하네스 재조준(TASK-379)' docs/dogfood/primeno1.md`
+- [x] PLAN-009의 `scope:`와 `## Goal`이 `children:` 일곱 장과 일치한다 | verify: `/usr/bin/grep -rq --include='009-work-the-doccheck-defect-bundle-in-dependency-order.md' 'TASK-377' tasks`
+- [x] TASK-328 본문의 잔여 blocker가 사람 회차와 sigdock 선행조건 둘로 갱신된다 | verify: `/usr/bin/grep -rq --include='328-run-a-live-dogfood-verification-round-for-native-entries-and-composition-plans.md' 'SIGDOCK_CLIENTS_FILE' tasks`
+- [x] ISSUE-001에 정본 digest 실증 관측이 기록되고 이슈는 열린 채 P0로 남는다 | verify: `/usr/bin/grep -rq --include='001-task-runtime-cannot-review-legacy-done-cards-without-verification-evidence.md' 'TASK-379' tasks`
+- [x] `docs/dogfood/primeno1.md`가 10 KiB 상한 아래로 내려간다 | verify: `test 10240 -ge "$(/usr/bin/wc -c < docs/dogfood/primeno1.md)"`
+- [x] 문서 게이트가 통과한다 | verify: `make doc-check` (regression-guard)
