@@ -8,7 +8,7 @@ exec-tier: standard
 status: todo
 created: 2026-09-06
 needs-human: true
-depends-on: [TASK-379]
+depends-on: [TASK-376, TASK-379]
 ---
 
 ## Summary

@@ -123,7 +123,7 @@ sigdock-local-runtime(script) -> compose -> api/frontend(native) -> gateway(nati
     네트워크 1건(sigdock-idp_default) — 지금 돌리면 여기서 끝난다.)
   - 포트 11300에 리스너 없음, TMPDIR 아래 ownership marker 없음, 인접 체크아웃
     SIGDOCK_DEVBOX_DIR(기본 ../sigdock-idp-devbox) 존재, lsof 설치.
-  - SIGDOCK_IDP_ISSUER_PROFILE=fapi2 — 이것은 dva.yml environment에 이미 있다.
+  - SIGDOCK_IDP_ISSUER_PROFILE=fapi2 — 이것은 dva.yml 최상위 vars 블록에 이미 있다.
 
 게이트를 넘긴 뒤에야 두 번째 표면이 나온다: api는 PRIMENO1_ENGINE_DIR(기본
 primeno1-engine-kt)에서 Gradle bootRun을, frontend는 primeno1-frontend에서 npm run dev를,

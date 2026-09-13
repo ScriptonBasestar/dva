@@ -3,9 +3,9 @@ id: PLAN-006
 title: "Work the devbox dogfood follow-up queue in dependency order"
 type: plan
 scope: "TASK-311..323 from the 2026-09-05 mydevbox migration, plus the needs-human cards that gate the rest"
-progress: 86
+progress: 89
 total-tasks: 29
-completed-tasks: 25
+completed-tasks: 26
 children: [TASK-339, TASK-340, TASK-328, TASK-329, TASK-312, TASK-313, TASK-317, TASK-311, TASK-324, TASK-314, TASK-316, TASK-320, TASK-322, TASK-315, TASK-318, TASK-323, TASK-249, TASK-307, TASK-309, TASK-319, TASK-321, TASK-345, TASK-346, TASK-347, TASK-348, TASK-351, TASK-376, TASK-378, TASK-379]
 target-date: "2026-10-31"
 created: 2026-09-05
@@ -74,7 +74,7 @@ created: 2026-09-05
 ## Session handoff (2026-09-05 밤)
 
 - 세션 1회차 종료 시점: 1~5·4a 통합 완료(master 2cb184e). 316은 분석만 카드에 기록, worktree 없음.
-- 다음 착수(2026-09-13 갱신): 318·323까지 닫혀 §Order의 기계적 항목은 전부 소진됐다. **남은 것은 10a 실기동(TASK-328)과 그 선행 TASK-379뿐**이고, 328은 사람이 실제로 돌려야 닫힐 카드다.
+- 다음 착수(2026-09-13 갱신): 318·323까지 닫혀 §Order의 기계적 항목은 전부 소진됐고, 선행 TASK-379(하네스 재조준)도 같은 날 닫혔다. **남은 것은 10a 실기동(TASK-328) 하나뿐**이고, 사람이 실제로 돌려야 닫힐 카드다.
   사람 결정 대기 4장(307, 309, 319, 321)은 2026-09-13 기준 **전부 완료**다(§Needs-human 참조).
   315 후속 345~348은 §Order에 편입하지 않고 compose 묶음으로 함께 처리.
 - 잔여 사람 작업: §Devbox integration state의 scripton-dashboard·familybook 2건과 TASK-328·348의
@@ -102,8 +102,9 @@ validate가 요구한다 — 둘은 다른 질문에 답한다.
 - TASK-315 — compose profiles: stack 러너 옵션과 PlanEntry profiles (done)
 - TASK-318 — 섹션 순서 자동 정렬 (done). 재리뷰가 파생시킨 8장은 **PLAN-008이 소유**한다
 - TASK-323 — 문서 의미 공백 (done)
-- TASK-328 — 실기동 검증 회차 (todo). §Order에 남은 미완 항목이고, 2026-09-13에
-  선행 TASK-379(하네스 재조준)가 앞에 붙었다
+- TASK-328 — 실기동 검증 회차 (todo). §Order에 남은 유일한 미완 항목이다. 선행
+  TASK-379(하네스 재조준)는 2026-09-13에 닫혔다 — 남은 blocker는 사람이 파괴적
+  회차를 잡는 것뿐이다
 
 ### §Needs-human에 놓인 4장 — 전부 완료
 
@@ -119,10 +120,16 @@ validate가 요구한다 — 둘은 다른 질문에 답한다.
 
 - TASK-376 — 실기동 하네스 (**done** 2026-09-13). 두 카드의 남은 일을 "파악하고
   조립하고 옮겨적기"에서 "실행하고 확인하기"로 줄였다. 파괴적 명령의 방아쇠는
-  여전히 사람이 당긴다. 하네스의 primeno1 스텝 재조준은 TASK-379가 잇는다.
+  여전히 사람이 당긴다. 하네스의 primeno1 스텝 재조준은 TASK-379가 이어 닫았다.
 - TASK-378 — familybook readiness 착지 검사 (**done** 2026-09-13). TASK-329의 선행
   조건을 사람의 기억에서 exit code로 옮겼다. 외부 저장소를 읽기만 한다.
   2026-09-13 실측은 exit 1 — 아직 착지하지 않았다.
+- TASK-379 — primeno1 하네스 재조준 (**done** 2026-09-13). primeno1-devbox
+  origin/master가 0caeaf9로 움직이며 native 엔트리와 plan `dev`가 들어와, 하네스가
+  대체재로 돌던 plan `external-db`를 `dev` 우선으로 바꿨다. 독립 리뷰가 더 값진 것을
+  냈다 — 실기동은 Gradle이 아니라 order 10의 sigdock 게이트에서 먼저 죽고, 그 선행
+  조건 둘(`SIGDOCK_CLIENTS_FILE`, 남아 있는 `sigdock-idp` 자원)이 오늘 이
+  워크스테이션에서 이미 위반이다. TASK-328 회차를 잡기 전에 사람이 치워야 한다.
 
 ### 남은 순서 미지정 1장 — TASK-329
 

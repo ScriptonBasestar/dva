@@ -5,7 +5,26 @@ type: chore
 priority: P2
 effort: S
 exec-tier: standard
-status: todo
+status: done
+completion-summary: "primeno1 하네스 스텝을 plan dev 우선으로 재조준하고, 실기동이 실제로 먼저 죽는 order 10 sigdock 게이트의 선행 조건을 노트에 기록했다."
+verification-status: verified
+verification-evidence:
+  - kind: automated
+    command-or-step: "bash -n tools/dogfoodrun/dogfood-run.sh && shellcheck tools/dogfoodrun/dogfood-run.sh"
+    result: "both exit 0"
+  - kind: automated
+    command-or-step: "bash tools/dogfoodrun/dogfood-run.sh --plan primeno1"
+    result: "rc 0; 출력에 `dva up dev`; docker 컨테이너 105->105 볼륨 791->791 이미지 192->192 네트워크 31->31 (파괴 없음)"
+  - kind: automated
+    command-or-step: "make doc-check && make lint"
+    result: "both exit 0"
+quality-review: pass
+quality-reviewed-at: 2026-09-13T21:05:00+09:00
+quality-review-evidence:
+  - "독립 리뷰(review-379)가 d0c1431에서 기준 5개와 게이트를 직접 재실행해 확인했다"
+  - "plan full 제거의 근거(dev와 full이 같은 compose 엔트리)를 origin/master:dva.yml 대조로 독립 확인했다"
+  - "sigdock 게이트의 fail-closed 선행 조건과 이 워크스테이션의 위반 상태를 독립 재측정했다"
+quality-review-receipt: tmp/task-management/direct/queue-run/task-379-review-receipt.json
 created: 2026-09-13
 source: "TASK-328의 외부 blocker를 재측정하다 발견. primeno1-devbox origin/master가 b432a01→0caeaf9로 움직이며 native 엔트리 6종과 plan `dev`가 들어왔고, 하네스는 아직 대체재 plan `external-db`를 돈다"
 depends-on: []
@@ -107,8 +126,9 @@ compose에서 끝나지 않고 Gradle bootRun · `npm run dev` · TLS 게이트 
   네트워크 1건(`sigdock-idp_default`)이 있다 — **오늘 돌리면 10초 안에 죽는다.**
 - 그 밖에 포트 11300 리스너 없음, ownership marker 없음, 인접
   `SIGDOCK_DEVBOX_DIR` 체크아웃, `lsof`가 필요하다.
-- 반면 `SIGDOCK_IDP_ISSUER_PROFILE=fapi2`는 `dva.yml` environment에 이미 있어 문제가
-  아니다.
+- 반면 `SIGDOCK_IDP_ISSUER_PROFILE=fapi2`는 `dva.yml` 최상위 `vars:` 블록에 이미 있어
+  문제가 아니다(리뷰가 잡은 표기 정정 — 처음에 `environment`라고 썼다. script 러너는
+  병합된 환경을 그대로 받으므로 동작은 같다).
 
 `target_notes`를 이 순서대로 다시 썼다. 노트가 존재하는 이유가 정확히 이것이다 —
 파괴적 앉은자리를 잡아 놓고 아무도 안 적어둔 선행 조건에서 죽는 일을 막는 것.
