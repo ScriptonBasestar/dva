@@ -111,19 +111,52 @@ target_notes() {
 `dva up dev`가 unknown plan으로 죽는다. 실기동 전에 primeno1-devbox를 origin/master로
 올려라 — `dva ls` 출력에 `dev`가 보이는지로 확인한다.
 
-**선행 조건: `dev`는 compose만 도는 회차가 아니다.** 엔트리 체인은
-sigdock-local-runtime(script) -> compose -> api/frontend(native) -> gateway(native)다.
-api는 PRIMENO1_ENGINE_DIR(기본 primeno1-engine-kt)에서 Gradle bootRun을, frontend는
-primeno1-frontend에서 npm run dev를, gateway는 scripts/sigdock-local-contract.sh와
-scripts/verify-sigdock-gateway-tls.sh를 먼저 통과해야 한다. 즉 Gradle 캐시·npm 설치·
-로컬 TLS 자재(GATEWAY_LOCAL_TLS_CA_FILE)가 없으면 compose가 아니라 native 단계에서
-멈춘다. api/gateway의 health check ready_timeout이 180초라 회차가 길다.
+**선행 조건: 회차는 order 10의 sigdock 게이트에서 먼저 죽는다.** 엔트리 체인은
+sigdock-local-runtime(script) -> compose -> api/frontend(native) -> gateway(native)이고,
+첫 관문인 scripts/sigdock-local-up.sh는 fail-closed다. 이 게이트가 요구하는 것:
+  - SIGDOCK_CLIENTS_FILE — dva.yml에도 .env에도 .env.example에도 없다.
+    env/templates/.env.template와 docs/LOCAL_EXECUTION_GUIDE.md에만 있으므로 회차에서
+    따로 넣어야 한다.
+  - sigdock-idp compose 프로젝트의 컨테이너·네트워크가 0건일 것. 하나라도 남아 있으면
+    "refusing to mutate resources this invocation does not own"으로 즉시 실패한다.
+    (2026-09-13 이 워크스테이션 실측: 컨테이너 1건(sigdock-idp-postgres-1, exited),
+    네트워크 1건(sigdock-idp_default) — 지금 돌리면 여기서 끝난다.)
+  - 포트 11300에 리스너 없음, TMPDIR 아래 ownership marker 없음, 인접 체크아웃
+    SIGDOCK_DEVBOX_DIR(기본 ../sigdock-idp-devbox) 존재, lsof 설치.
+  - SIGDOCK_IDP_ISSUER_PROFILE=fapi2 — 이것은 dva.yml environment에 이미 있다.
+
+게이트를 넘긴 뒤에야 두 번째 표면이 나온다: api는 PRIMENO1_ENGINE_DIR(기본
+primeno1-engine-kt)에서 Gradle bootRun을, frontend는 primeno1-frontend에서 npm run dev를,
+gateway는 scripts/sigdock-local-contract.sh와 scripts/verify-sigdock-gateway-tls.sh를
+통과해야 한다. Gradle 캐시·npm 설치·로컬 TLS 자재(GATEWAY_LOCAL_TLS_CA_FILE)가 여기서
+필요하다. api/gateway의 health check ready_timeout이 180초라 회차가 길다.
 
 plan `full`은 더 이상 돌지 않는다. `dev`의 compose 엔트리가 `full`과 같은 엔트리(같은
 compose 파일, 같은 프로젝트 `primeno1`)라 별도 회차가 새로 재는 것이 없다.
 `external-db`는 남긴다 — script 게이트 체인
 (external-db-contract -> compose-external-db -> api-external-db/stream-external-db)은
 `dev`가 지나지 않는 경로이고, 재조준 이전 회차와 비교할 기준선이기도 하다.
+
+native 엔트리 6종 중 5종을 덮는다: `dev`가 api/frontend/gateway를, `external-db`가
+api-external-db/stream-external-db를 돈다. `stream`은 어느 쪽도 돌지 않는다 — plan
+`dev-stream`(= `dev` + stream)에만 있다. 6종 전부가 필요하면 `up dev`를 `up dev-stream`
+으로 바꿔라. 게이트도 compose도 같고 Gradle bootRun 하나가 더 붙을 뿐이라 회차가
+늘지는 않는다. 여기서는 재조준 범위를 `dev`로 잡았다(TASK-379).
+
+`dev` 회차는 이 하네스가 스스로 정한 증거 기준 하나를 만족하지 못한다. 위 헤더는
+"검증 대상은 항상 이 저장소가 빌드한 바이너리"라고 선언하지만, sigdock 게이트 안의
+adjacent_dva()는 PATH의 `dva`를 부른다(이 워크스테이션에서는
+/Users/archmagece/go/bin/dva, version 0.2.0 commit b18f7831). plan `full`은 순수
+compose라 이 경로가 없었고 `dev`로 옮기며 새로 생겼다. 인접 SigDock 기동에만 쓰이므로
+리포트에서 "전부 이 저장소 바이너리로 쟀다"고 쓰지 마라.
+
+purge 미리보기가 `dev` 회차 전체를 덮지도 않는다. 아래 compose 프로젝트 목록은
+`dva down --purge`가 지우는 범위 그대로지만, `down dev --purge`는
+`sigdock-local-up.sh --down`도 부르고 그것은 `sigdock-idp` 프로젝트를 건드린다. 그쪽은
+자기 invocation이 만든 자원만 지우므로(down_owned + ownership marker) 데이터 손실
+위험은 아니다. 상태를 보려면 따로 조회하라 —
+`docker ps -a --filter label=com.docker.compose.project=sigdock-idp`. 위 fail-closed
+선행 조건을 확인하는 명령과 같은 것이다.
 
 compose 프로젝트 `primeno1`은 이 워크스테이션에서 실제로 쓰이는 개발 환경일 수 있다.
 purge 미리보기를 반드시 먼저 읽어라.

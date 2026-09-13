@@ -46,7 +46,7 @@ script 게이트 → compose 조합을 증명한다. `dev`도 `sigdock-local-run
 - [x] 하네스의 primeno1 스텝이 plan `dev`를 돈다 | verify: `/usr/bin/grep -qE 'up dev' tools/dogfoodrun/dogfood-run.sh`
 - [x] `dev` 회차가 `down dev --purge`로 정리된다 — 정리 없는 기동을 남기지 않는다 | verify: `/usr/bin/grep -qE 'down dev --purge' tools/dogfoodrun/dogfood-run.sh`
 - [x] `target_notes`가 대체재 문구를 더 이상 주장하지 않는다 | verify: `! /usr/bin/grep -q '아래 스텝은 아직 external-db다' tools/dogfoodrun/dogfood-run.sh`
-- [x] `--dry-run`이 재조준된 스텝을 출력하고 파괴적 명령을 실행하지 않는다 | verify: human — `--execute` 없이 돌린 출력에 `dva up dev`가 보이고 docker 컨테이너/볼륨 수가 전후 동일한지 확인한다
+- [x] 계획 출력(`--plan`, 인자 없는 기본 동작)이 재조준된 스텝을 출력하고 파괴적 명령을 실행하지 않는다 | verify: human — `--execute` 없이 돌린 출력에 `dva up dev`가 보이고 docker 컨테이너/볼륨/이미지/네트워크 수가 전후 동일한지 확인한다
 - [x] 기존 게이트 통과 | verify: `make doc-check` (regression-guard)
 
 ## 실행 기록 (2026-09-13)
@@ -68,9 +68,10 @@ plan `full`은 뺐다. `dev`의 `compose` 엔트리가 `full`의 그것과 **같
 compose 파일, 같은 프로젝트 `primeno1`. 회차를 하나 더 도는 값으로 새로 재는 것이
 없다. `external-db`는 위 결정대로 남겼다.
 
-카드 문구는 `--dry-run`이라고 썼지만 하네스의 실제 플래그는 `--plan`이며 인자 없는
-기본 동작이 그것이다(`--execute` 없이는 아무것도 실행되지 않는다). 4번 기준은 그
-`--plan`으로 확인했다.
+4번 기준은 처음에 `--dry-run`이라고 썼는데 하네스에는 그런 플래그가 없다. 실제 이름은
+`--plan`이고 인자 없는 기본 동작이 그것이다(`--execute` 없이는 아무것도 실행되지 않는다).
+리뷰 지적(5번)을 받아 기준 문구 자체를 고쳤다 — 실행 기록에만 적어 두면 기준 줄은
+계속 틀린 채로 남는다.
 
 측정:
 
@@ -87,6 +88,52 @@ compose 파일, 같은 프로젝트 `primeno1`. 회차를 하나 더 도는 값�
 `origin/master`(`0caeaf9`)로 올리지 않으면 unknown plan으로 죽는다. (b) `dev`는
 compose에서 끝나지 않고 Gradle bootRun · `npm run dev` · TLS 게이트 스크립트를 탄다.
 둘 다 회차를 잡는 사람이 읽어야 하는 것이라 스텝이 아니라 노트에 넣었다.
+
+## 리뷰 대응 (2026-09-13, review-379 — conditional)
+
+독립 리뷰가 기준 5개 전부 pass, `full` 제거 판단도 설정 대조로 확인했고, 컨테이너·볼륨
+외에 이미지·네트워크 수까지 재서 파괴 없음을 재확인했다. 실질 지적 둘을 반영했다.
+
+**1. 노트가 실기동이 죽을 자리를 틀리게 짚었다(high).** 초안은 "compose가 아니라 native
+단계에서 멈춘다"고 썼지만, 실제 첫 실패 표면은 order 10의 `sigdock-local-up.sh`다.
+직접 확인한 사실:
+
+- `[ -n "${SIGDOCK_CLIENTS_FILE:-}" ] || fail "SIGDOCK_CLIENTS_FILE is required"` —
+  이 변수는 `dva.yml`·`.env`·`.env.example` 어디에도 없다(각 0건).
+  `env/templates/.env.template`와 `docs/LOCAL_EXECUTION_GUIDE.md`에만 있다.
+- 게이트는 남의 자원에 대해 fail-closed다:
+  `pre-existing sigdock-idp containers detected` / `... project network detected`.
+  실측하니 이 워크스테이션에는 지금 컨테이너 1건(`sigdock-idp-postgres-1`, exited)과
+  네트워크 1건(`sigdock-idp_default`)이 있다 — **오늘 돌리면 10초 안에 죽는다.**
+- 그 밖에 포트 11300 리스너 없음, ownership marker 없음, 인접
+  `SIGDOCK_DEVBOX_DIR` 체크아웃, `lsof`가 필요하다.
+- 반면 `SIGDOCK_IDP_ISSUER_PROFILE=fapi2`는 `dva.yml` environment에 이미 있어 문제가
+  아니다.
+
+`target_notes`를 이 순서대로 다시 썼다. 노트가 존재하는 이유가 정확히 이것이다 —
+파괴적 앉은자리를 잡아 놓고 아무도 안 적어둔 선행 조건에서 죽는 일을 막는 것.
+
+**2. native 엔트리 6종 중 `stream`이 어디에도 안 걸린다(medium).** `dev`가
+api/frontend/gateway, `external-db`가 api-external-db/stream-external-db로 5종이고
+`stream`은 plan `dev-stream`에만 있다. `dev-stream`은 `dev`의 진부분집합 상위 —
+게이트도 compose도 같고 bootRun 하나가 더 붙는다. 다만 재조준 범위를 `dev`로 잡은 것은
+이 카드의 결정 사항이라 스텝은 `dev`로 두고, 6종 전부가 필요하면 `up dev-stream`으로
+바꾸면 된다는 것을 `target_notes`에 적었다. 6종 완주를 요구할지는 첫 기준을 소유한
+[[TASK-328]]이 회차를 잡을 때 정한다.
+
+**3~5 (low/informational)도 반영했다.** (3) sigdock 게이트의 `adjacent_dva()`가 PATH의
+`dva`(0.2.0, b18f7831)를 부른다 — 하네스 헤더가 스스로 "PATH의 dva는 증거가 되지
+못한다"고 선언한 그 경로다. plan `full`에는 없던 것이 `dev`로 옮기며 생겼으므로,
+리포트에서 전부 이 저장소 바이너리로 쟀다고 쓰지 말라고 노트에 적었다. (4)
+`down dev --purge`가 `sigdock-local-up.sh --down`도 부르므로 purge 미리보기의 프로젝트
+목록(`primeno1 primeno1-external-db`)이 회차 전체를 덮지 않는다. `sigdock-idp` 쪽은
+자기 invocation이 만든 자원만 지우므로(down_owned + ownership marker) 미리보기 범위를
+넓히는 대신 조회 명령을 노트에 적었다 — 1번의 선행 조건 확인 명령과 같은 것이다.
+(5) 4번 기준의 `--dry-run` 문구를 `--plan`으로 고쳤다.
+
+재검증(수정 후): `bash -n` 0, `shellcheck` 0, `--plan primeno1` rc 0
+(컨테이너 105→105, 볼륨 791→791, 이미지 192→192, 네트워크 31→31), `make doc-check` 0,
+`make lint` 0.
 
 ## Notes
 
