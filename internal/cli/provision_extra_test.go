@@ -73,7 +73,7 @@ func TestWriteProvisionMarker(t *testing.T) {
 	dir := t.TempDir()
 	writeProvisionMarker(dir, "setup")
 
-	markerFile := filepath.Join(dir, config.DotDirName, "provisioned-setup")
+	markerFile := filepath.Join(dir, config.DotDirName, provisionMarkerName("setup"))
 	if _, err := os.Stat(markerFile); os.IsNotExist(err) {
 		t.Error("expected marker file to be created")
 	}

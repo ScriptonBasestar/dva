@@ -2,6 +2,7 @@ package cli
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -346,7 +347,7 @@ func TestWriteAndClearProvisionMarker(t *testing.T) {
 
 	writeProvisionMarker(tmpDir, "setup")
 
-	markerFile := tmpDir + "/.sb/dva/provisioned-setup"
+	markerFile := filepath.Join(tmpDir, config.DotDirName, provisionMarkerName("setup"))
 	if _, err := os.Stat(markerFile); os.IsNotExist(err) {
 		t.Error("marker file should exist after writeProvisionMarker")
 	}

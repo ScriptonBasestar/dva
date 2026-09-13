@@ -48,7 +48,7 @@ var gitCheckIgnoreTimeout = 2 * time.Second
 // deeper — a `.yml` inside a cloned source stays ignored.
 //
 // Nothing DVA writes at runtime is re-included by that negation: the four classes are
-// `pids/*.pid`, `logs/*.log`, `sources/<entry>` and `provisioned-<profile>`, none of them a
+// `pids/*.pid`, `logs/*.log`, `sources/<entry>` and `provisioned-<profile>.marker`, none of them a
 // `.yml` at this level. dvaTransientProbes is the list, and the test over it is what keeps that
 // claim true as writers come and go.
 func defaultIgnoreRules() []string {
@@ -282,7 +282,7 @@ func gitignoreSourceIsShared(source string) bool {
 //
 // What this does NOT see is a transient that is already tracked. check-ignore does report a
 // tracked path as not ignored, but that behaviour cannot reach here: every probe is a synthetic
-// constant — `probe.pid`, `probe.log`, `probe`, `provisioned-probe` — and no writer produces
+// constant — `probe.pid`, `probe.log`, `probe`, `provisioned-probe.marker` — and no writer produces
 // those names, so no probe is ever a tracked path. A repository that already committed
 // `.sb/dva/pids/web.pid` and then wrote a correct rule passes every check in this file.
 //
@@ -315,7 +315,8 @@ func dvaTransientsIgnored(configDir string) (ignored bool, decided bool) {
 // gives: a literal keeps answering after the thing it names has moved.
 //
 // The marker class is the one that cannot be a bare spelling, and the reason is a collision this
-// package does not get to remove: markers have no extension, so `provisioned-*` matches the module
+// package does not get to remove, because it is already on disk in repositories: markers written
+// before they had an extension are bare, so `provisioned-*` matches the module
 // `.sb/dva/provisioned-base.yml` exactly as well as the marker `.sb/dva/provisioned-default`. A
 // module is content a person wrote and must commit. Reporting it here would be wrong twice over —
 // a finding on a healthy repository, and a hint that stages the deletion of the user's own file —
@@ -338,8 +339,14 @@ func dvaTransientClasses() []transientClass {
 		{name: path.Join(config.DotDirName, config.LogsDirName)},
 		{name: path.Join(config.DotDirName, config.SourcesDirName)},
 		{
-			name:    path.Join(config.DotDirName, provisionMarkerName("*")),
-			exclude: []string{":(exclude)" + path.Join(config.DotDirName, "*.yml")},
+			// The prefix, not provisionMarkerName("*"): that would spell `provisioned-*.marker`
+			// and stop finding the extensionless markers this check exists to find. Markers
+			// written before the extension are still on disk, still committed, and still the
+			// ones a repository needs told about. `provisioned-*` covers both, because git's
+			// `*` does not cross `/` but does match `.` — which is also why it reaches the
+			// module the exclusion then removes.
+			name:    path.Join(config.DotDirName, provisionMarkerPrefix+"*"),
+			exclude: []string{":(exclude)" + path.Join(config.DotDirName, "*"+moduleExt)},
 		},
 	}
 }

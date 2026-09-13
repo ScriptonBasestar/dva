@@ -1060,11 +1060,21 @@ func TestTrackedTransientsLeavesCommittedModulesAlone(t *testing.T) {
 		t.Fatalf("a committed module was reported as tracked transient state: answered=%v Finding=%q", answered, r.Finding)
 	}
 
-	marker := path.Join(config.DotDirName, provisionMarkerName("default"))
-	if err := os.WriteFile(filepath.Join(dir, marker), []byte("ok\n"), 0o644); err != nil {
-		t.Fatalf("WriteFile marker: %v", err)
+	// Both spellings, because the legacy one is what constrains the class. Markers written
+	// before they had an extension are still on disk in real repositories and are still the
+	// ones most likely to have been committed — a class narrowed to `provisioned-*.marker`
+	// would pass every assertion below on the current spelling alone while going quiet on
+	// exactly the repositories that need telling.
+	markers := []string{
+		path.Join(config.DotDirName, provisionMarkerName("default")),
+		path.Join(config.DotDirName, legacyProvisionMarkerName("legacy")),
 	}
-	gitInRepo(t, dir, "add", "-f", marker)
+	for _, marker := range markers {
+		if err := os.WriteFile(filepath.Join(dir, marker), []byte("ok\n"), 0o644); err != nil {
+			t.Fatalf("WriteFile marker: %v", err)
+		}
+		gitInRepo(t, dir, "add", "-f", marker)
+	}
 
 	r, answered := checkTrackedTransients(dir)
 	if !answered || r.Passed {
@@ -1073,8 +1083,10 @@ func TestTrackedTransientsLeavesCommittedModulesAlone(t *testing.T) {
 
 	specs := hintPathspecs(t, r.FixHint)
 	out := gitInRepo(t, dir, append([]string{"rm", "-r", "--cached", "--dry-run", "--"}, specs...)...)
-	if !strings.Contains(out, marker) {
-		t.Errorf("the recommended command would not remove the marker it reported: %q", out)
+	for _, marker := range markers {
+		if !strings.Contains(out, marker) {
+			t.Errorf("the recommended command would not remove the marker %q it reported: %s", marker, out)
+		}
 	}
 	if strings.Contains(out, module) {
 		t.Errorf("the recommended command would delete the user's module %q: %s", module, out)

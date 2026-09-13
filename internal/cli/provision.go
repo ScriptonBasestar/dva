@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"runtime"
 	"sort"
 	"strings"
@@ -666,64 +665,4 @@ func runShellCommandTo(e *config.Environment, cmdStr string, stdout, stderr io.W
 		c.Env = e.EnvSlice()
 	}
 	return c.Run()
-}
-
-// clearProvisionMarkers removes all provision marker files from .sb/dva/.
-// Called by `dva clean --volumes` so that provision suggestions reappear after a reset.
-func clearProvisionMarkers(configDir string) {
-	for _, m := range provisionMarkers(configDir) {
-		_ = os.Remove(m)
-	}
-}
-
-// provisionMarkers lists what clearProvisionMarkers would delete, as full paths.
-//
-// The probe-only half of the same walk, in the shape of portOwnerPIDs against reclaimPort:
-// `dva clean --dry-run` needs to name the files without removing them, and a preview that
-// re-derived the "provisioned-" prefix itself would be free to drift from the deletion it
-// claims to describe. Returns nil for an unreadable directory, which is the same silence
-// clearProvisionMarkers has always kept — a missing .sb/dva is the ordinary case on a
-// project that has never provisioned. TASK-166.
-// provisionMarkerName is the file name recording that a profile has been provisioned.
-//
-// The marker stays in the *invoked* project's dot-directory even for an imported profile:
-// it answers "has this project been provisioned", which is the question `dva up` asks of
-// the config it was run against, not of the child that owns the steps.
-//
-// The slash replacement is what makes an imported name usable as a file name at all.
-// Imports register canonically as `child/profile`, and filepath.Join then read that slash
-// as a directory component: MkdirAll had created only the dot-directory, so the write
-// failed with ENOENT and every imported provision run ended on a warning. The literal "/"
-// is the separator applySubprojectImports writes, on every platform. Shared with the
-// reader in compose.go so the two cannot spell the same profile differently (TASK-264).
-func provisionMarkerName(profile string) string {
-	return "provisioned-" + strings.ReplaceAll(profile, "/", "__")
-}
-
-func provisionMarkers(configDir string) []string {
-	markerDir := filepath.Join(configDir, config.DotDirName)
-	entries, err := os.ReadDir(markerDir)
-	if err != nil {
-		return nil
-	}
-	var found []string
-	for _, e := range entries {
-		if strings.HasPrefix(e.Name(), "provisioned-") {
-			found = append(found, filepath.Join(markerDir, e.Name()))
-		}
-	}
-	return found
-}
-
-// writeProvisionMarker creates a marker file indicating that a provision
-// profile has been run. Used by `dva up` to skip provision suggestions.
-func writeProvisionMarker(configDir, profile string) {
-	markerDir := filepath.Join(configDir, config.DotDirName)
-	if err := os.MkdirAll(markerDir, 0755); err != nil {
-		return
-	}
-	markerFile := filepath.Join(markerDir, provisionMarkerName(profile))
-	if err := os.WriteFile(markerFile, []byte(""), 0644); err != nil {
-		fmt.Fprintf(os.Stderr, "[warn] could not write provision marker: %v\n", err)
-	}
 }
