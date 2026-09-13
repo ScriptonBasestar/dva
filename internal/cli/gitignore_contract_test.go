@@ -24,6 +24,12 @@ import (
 // names it by the rules that were written. Reading the file means this test fails on a new site
 // added in the old spelling, which a test driving runInit would not, since that site is reached
 // only through template selection and disk state.
+//
+// One consequence for anyone mutation-testing this package: the read is os.ReadFile at run time,
+// so this is the only test here that sees the file on disk rather than what the compiler saw. A
+// mutation injected through `go test -overlay` is invisible to it and the package reports ok —
+// measured, not supposed. Every other test in this package is indifferent to which technique put
+// the mutation there; this one has to be a real edit or it confirms nothing.
 func TestEveryGitignoreNoticeNamesTheRules(t *testing.T) {
 	const source = "init_scaffold.go"
 	data, err := os.ReadFile(source)
@@ -56,6 +62,14 @@ func TestEveryGitignoreNoticeNamesTheRules(t *testing.T) {
 // ignore, which costs a warning. The opposite answer costs a pid file in the commit, and it is
 // the answer a well-meaning extension to the reader produces: reading one more exclusion spelling
 // without reading what re-includes it. That is how the contents form shipped broken.
+//
+// The safe direction is counted rather than shrugged at, and the count is logged rather than
+// asserted, because it is a standing invitation to make things worse. Roughly a fifth of these
+// files are cases where git ignores everything and the reader still warns — and every one of
+// them closes the same way, by teaching the reader one more exclusion spelling. Each such
+// spelling needs its own answer to "which paths would a negation have to reach", which is the
+// step that was skipped before. Anyone driving that number down should expect this test to be
+// the thing that stops them, and should treat it stopping them as the test working.
 func TestReaderNeverClaimsIgnoredWhereGitWouldCommit(t *testing.T) {
 	if _, err := exec.LookPath("git"); err != nil {
 		t.Skip("git not on PATH")
@@ -113,7 +127,7 @@ func TestReaderNeverClaimsIgnoredWhereGitWouldCommit(t *testing.T) {
 	gitignorePath := filepath.Join(repo, ".gitignore")
 	probes := dvaTransientProbes()
 
-	checked := 0
+	checked, underRead := 0, 0
 	for _, ex := range exclusions {
 		for _, neg := range negations {
 			for _, order := range orders {
@@ -151,8 +165,11 @@ func TestReaderNeverClaimsIgnoredWhereGitWouldCommit(t *testing.T) {
 					t.Errorf("reader says ignored but git leaves %s addable, for .gitignore %q",
 						strings.Join(addable, ", "), content)
 				}
+				if !isDvaIgnored(content) && len(addable) == 0 {
+					underRead++
+				}
 			}
 		}
 	}
-	t.Logf("checked %d .gitignore files against git", checked)
+	t.Logf("checked %d .gitignore files against git; %d under-read in the safe direction", checked, underRead)
 }
