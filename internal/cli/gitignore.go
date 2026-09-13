@@ -286,13 +286,102 @@ func gitignoreSourceIsShared(source string) bool {
 // those names, so no probe is ever a tracked path. A repository that already committed
 // `.sb/dva/pids/web.pid` and then wrote a correct rule passes every check in this file.
 //
-// That is a gap, not a decision, and it is worth stating because the gap is the worse half of
-// the hazard: an ignore rule stops the next commit, while a file already in the index keeps
-// being committed regardless of what .gitignore says. Closing it means asking a different
-// question — `git ls-files` against the real directory rather than check-ignore against
-// stand-ins — and gitProbe.Tracked in config_env_git.go is the seam that would answer it.
+// That is the worse half of the hazard — an ignore rule stops the next commit, while a file
+// already in the index keeps being committed regardless of what .gitignore says — and it is not
+// answerable here, because it is a different question: `git ls-files` against the real directory
+// rather than check-ignore against stand-ins. trackedTransients asks it, and doctor reports the
+// two as separate rows because they have separate repairs. Nothing below needs to account for
+// tracked files; a repository can be wrong in both ways at once and hear about both.
 func dvaTransientsIgnored(configDir string) (ignored bool, decided bool) {
 	return dvaTransientsCovered(configDir, false)
+}
+
+// dvaTransientPathspecs names the same four classes dvaTransientProbes stands in for, spelled as
+// pathspecs git can match against the index instead of as probe paths.
+//
+// The two lists exist for two different questions and cannot be one list. A probe is a path that
+// need not exist, because check-ignore matches a pattern against a name; a pathspec has to name
+// what is really there, because ls-files reports what the index holds. `probe.pid` answers the
+// first and is useless for the second — no writer produces that name, which is exactly why no
+// probe is ever tracked and why check-ignore's own tracked-path behaviour never fires here.
+//
+// So the classes are named one level up: the directory that holds the pid files rather than a
+// pid file, and a glob for the markers, which are files at this level and have no directory to
+// stand for them. Both spellings were measured against `git ls-files --cached --error-unmatch`:
+// the directory form exits 0 when anything inside it is tracked, the glob form exits 0 when any
+// marker is, and both exit non-zero when nothing matches.
+//
+// Every element is built from the constant its writer uses, for the reason dvaTransientProbes
+// gives: a literal keeps answering after the thing it names has moved.
+func dvaTransientPathspecs() []string {
+	return []string{
+		path.Join(config.DotDirName, config.PidsDirName),
+		path.Join(config.DotDirName, config.LogsDirName),
+		path.Join(config.DotDirName, config.SourcesDirName),
+		path.Join(config.DotDirName, provisionMarkerName("*")),
+	}
+}
+
+// trackedTransients reports which classes of transient state this repository has already
+// committed, and whether git was in a position to say.
+//
+// This is the question dvaTransientsIgnored structurally cannot ask. An ignore rule governs what
+// git will pick up next; it says nothing about what is already in the index, and git does not
+// apply .gitignore to a tracked path. A repository that committed `.sb/dva/pids/web.pid` once
+// and then wrote the perfect rule keeps committing every change to that file forever, while
+// every other check in this file reports it healthy.
+//
+// It goes through bridgeGit rather than running git here so the rows can be driven from a stub:
+// the interesting cases are combinations of tracked classes, and building a real repository per
+// combination would make the test slow enough that the combinations get dropped.
+//
+// Undecided is not a failure. Outside a repository there is no index to ask about, and without
+// git the question has no arbiter — in both cases doctor omits the row rather than printing a
+// pass it did not earn.
+func trackedTransients(configDir string) (tracked []string, decided bool) {
+	if !bridgeGit.InsideRepo(configDir) || !bridgeGit.Available() {
+		return nil, false
+	}
+	for _, spec := range dvaTransientPathspecs() {
+		if bridgeGit.Tracked(configDir, spec) {
+			tracked = append(tracked, spec)
+		}
+	}
+	return tracked, true
+}
+
+// checkTrackedTransients is doctor's row for that question, reported separately from the ignore
+// row because the two have separate repairs and a repository can need both.
+//
+// Not fixable, for the same reason blockedModules is not: the repair changes something a person
+// owns. `git rm --cached` rewrites the index and stages a deletion, which is a commit someone
+// has to mean to make — and on a shared branch it is a commit other people have to merge. The
+// row names the command and stops there.
+//
+// The finding names classes rather than paths. Which files are tracked is what `git ls-files`
+// is for; what a person needs from a diagnostic is which kind of state escaped and one command
+// that clears it.
+func checkTrackedTransients(configDir string) (DoctorResult, bool) {
+	tracked, decided := trackedTransients(configDir)
+	if !decided {
+		return DoctorResult{}, false
+	}
+
+	r := DoctorResult{Name: fmt.Sprintf("no transient state under %s/ is tracked in git", config.DotDirName)}
+	if len(tracked) == 0 {
+		r.Passed = true
+		return r, true
+	}
+
+	quoted := make([]string, 0, len(tracked))
+	for _, spec := range tracked {
+		quoted = append(quoted, "'"+spec+"'")
+	}
+	r.Passed = false
+	r.Finding = fmt.Sprintf("already committed, so .gitignore cannot stop it: %s", strings.Join(tracked, ", "))
+	r.Fixable = false
+	r.FixHint = fmt.Sprintf("Run: git rm -r --cached -- %s (the files stay on disk; commit the removal)", strings.Join(quoted, " "))
+	return r, true
 }
 
 // dvaModuleProbe is a stand-in for a module file, the same way dvaTransientProbes stands in for

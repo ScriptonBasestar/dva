@@ -178,6 +178,14 @@ func runDoctorChecks(c *config.Config) []DoctorResult {
 	// Built-in: Check if .sb/dva is ignored in .gitignore
 	results = append(results, checkGitignoreStatus(c.FileDir()))
 
+	// Built-in: transient state that is already committed, which the row above cannot see —
+	// an ignore rule governs the next commit, not the index. Conditional because the question
+	// has no answer outside a repository or without git, and a row that prints a pass it did
+	// not earn is worse than a row that is absent.
+	if r, answered := checkTrackedTransients(c.FileDir()); answered {
+		results = append(results, r)
+	}
+
 	// The application port-ownership check used to run here. It read
 	// `applications.<app>.port` (and the port implied by health.url/address) and asked
 	// lsof whether the process holding it was one dva had started — the condition that

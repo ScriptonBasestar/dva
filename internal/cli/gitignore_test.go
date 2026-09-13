@@ -905,6 +905,183 @@ func TestDoctorReportsTheRuleThatBlocksModules(t *testing.T) {
 	}
 }
 
+// TestTransientPathspecsAndProbesNameTheSameClasses is the coupling test between the two lists,
+// and it is here because they will drift otherwise: a new writer under the dot directory gets a
+// probe, because the ignore check fails loudly without one, and gets no pathspec, because the
+// tracked check stays quiet either way. Quiet is the failure mode worth a test.
+//
+// Exactly one, in both directions. A probe matched by two pathspecs means the classes overlap
+// and a finding would name the same state twice; a pathspec matched by no probe means it is
+// asking about something no writer produces, which is how a list goes stale without failing.
+func TestTransientPathspecsAndProbesNameTheSameClasses(t *testing.T) {
+	specs := dvaTransientPathspecs()
+	hits := make(map[string]int, len(specs))
+
+	for _, probe := range dvaTransientProbes() {
+		var matched []string
+		for _, spec := range specs {
+			glob, err := path.Match(spec, probe)
+			if err != nil {
+				t.Fatalf("pathspec %q is not a valid pattern: %v", spec, err)
+			}
+			if glob || strings.HasPrefix(probe, spec+"/") {
+				matched = append(matched, spec)
+				hits[spec]++
+			}
+		}
+		if len(matched) != 1 {
+			t.Errorf("probe %q is covered by %d pathspecs (%v), want exactly 1", probe, len(matched), matched)
+		}
+	}
+
+	for _, spec := range specs {
+		if hits[spec] == 0 {
+			t.Errorf("pathspec %q covers no probe, so nothing keeps it pointed at a real writer", spec)
+		}
+	}
+}
+
+// TestDoctorReportsTransientStateAlreadyCommitted uses a real repository because the claim is
+// about git: that a tracked file goes on being committed no matter how correct .gitignore is.
+// A stub restating that would prove only that the stub was written to agree.
+//
+// The premise is the whole point. The rules in force are the ones DVA writes, and the ignore row
+// passes — so this repository is healthy by every other measure in the package while a pid file
+// rides along in every commit.
+func TestDoctorReportsTransientStateAlreadyCommitted(t *testing.T) {
+	dir := t.TempDir()
+	initGitRepo(t, dir)
+	if err := os.WriteFile(filepath.Join(dir, ".gitignore"), []byte(defaultIgnoreSection+"\n"+strings.Join(defaultIgnoreRules(), "\n")+"\n"), 0o644); err != nil {
+		t.Fatalf("WriteFile .gitignore: %v", err)
+	}
+	pid := filepath.Join(config.DotDirName, config.PidsDirName, "web.pid")
+	if err := os.MkdirAll(filepath.Dir(filepath.Join(dir, pid)), 0o755); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, pid), []byte("4242\n"), 0o644); err != nil {
+		t.Fatalf("WriteFile pid: %v", err)
+	}
+	// -f is how it gets there in life too: someone committed it before the rule existed, or
+	// forced it past the rule once.
+	add := exec.Command("git", "add", "-f", pid)
+	add.Dir = dir
+	if out, err := add.CombinedOutput(); err != nil {
+		t.Fatalf("git add -f %s: %v: %s", pid, err, out)
+	}
+
+	if ignored, decided := dvaTransientsIgnored(dir); !decided || !ignored {
+		t.Fatalf("premise failed: the rules here must be the correct ones (ignored=%v decided=%v)", ignored, decided)
+	}
+	if r := checkGitignoreStatus(dir); !r.Passed {
+		t.Fatalf("premise failed: the ignore row must pass, or this repository is not the hard case: %q", r.Finding)
+	}
+
+	r, answered := checkTrackedTransients(dir)
+	if !answered {
+		t.Fatalf("the row was omitted inside a real repository with git available")
+	}
+	if r.Passed {
+		t.Fatalf("doctor passed a repository that commits a pid file on every change")
+	}
+	if !strings.Contains(r.Finding, path.Join(config.DotDirName, config.PidsDirName)) {
+		t.Errorf("Finding = %q, want it to name the class that is tracked", r.Finding)
+	}
+	if !strings.Contains(r.FixHint, "git rm") {
+		t.Errorf("FixHint = %q, want it to name the command that untracks", r.FixHint)
+	}
+	// Untracking is a commit someone has to mean to make, so the row must not offer to do it.
+	if r.Fixable || r.fixFunc != nil {
+		t.Errorf("the row must not claim to be auto-fixable: Fixable = %v, fixFunc set = %v", r.Fixable, r.fixFunc != nil)
+	}
+
+	// And it clears by the means the hint names, with the file still on disk.
+	rm := exec.Command("git", "rm", "-r", "--cached", "--quiet", "--", filepath.Join(config.DotDirName, config.PidsDirName))
+	rm.Dir = dir
+	if out, err := rm.CombinedOutput(); err != nil {
+		t.Fatalf("git rm --cached: %v: %s", err, out)
+	}
+	if cleared, _ := checkTrackedTransients(dir); !cleared.Passed {
+		t.Errorf("the row survived the repair it recommends: %q", cleared.Finding)
+	}
+	if _, err := os.Stat(filepath.Join(dir, pid)); err != nil {
+		t.Errorf("the repair removed the file from disk, which the hint promises it does not: %v", err)
+	}
+}
+
+// trackedProbeGit answers per pathspec, which fakeGit cannot: its `tracked` is one bool for
+// every target, and the cases worth testing here are which classes are tracked, not whether any
+// are. It records what it was asked so the test can state that the row asks about every class
+// rather than stopping at the first hit.
+type trackedProbeGit struct {
+	inside, available bool
+	tracked           map[string]bool
+	asked             []string
+}
+
+func (g *trackedProbeGit) InsideRepo(string) bool { return g.inside }
+func (g *trackedProbeGit) Available() bool        { return g.available }
+func (g *trackedProbeGit) Tracked(_, target string) bool {
+	g.asked = append(g.asked, target)
+	return g.tracked[target]
+}
+func (g *trackedProbeGit) Ignored(string, string) bool { return false }
+
+// TestTrackedTransientsRowOmittedWhenGitCannotAnswer covers the two states in which there is no
+// index to ask about. Both used to be a judgement call between "pass" and "fail", and neither is
+// either: doctor omits the row, because a pass here would be a claim nobody verified and a fail
+// would send someone looking for files that are not committed.
+func TestTrackedTransientsRowOmittedWhenGitCannotAnswer(t *testing.T) {
+	for _, tt := range []struct {
+		name              string
+		inside, available bool
+	}{
+		{name: "outside a repository", available: true},
+		{name: "inside a repository without git", inside: true},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			restore := bridgeGit
+			bridgeGit = &trackedProbeGit{inside: tt.inside, available: tt.available}
+			defer func() { bridgeGit = restore }()
+
+			if r, answered := checkTrackedTransients(t.TempDir()); answered {
+				t.Errorf("the row was reported anyway: Passed = %v, Finding = %q", r.Passed, r.Finding)
+			}
+		})
+	}
+}
+
+// TestTrackedTransientsAsksAboutEveryClass pins that the verdict is over the whole set. Stopping
+// at the first tracked class would report one and leave the others unmentioned, and a person who
+// untracks what the row names would then see it fire again with something new — the shape of
+// finding that teaches people the tool is unreliable.
+func TestTrackedTransientsAsksAboutEveryClass(t *testing.T) {
+	specs := dvaTransientPathspecs()
+	stub := &trackedProbeGit{
+		inside:    true,
+		available: true,
+		tracked:   map[string]bool{specs[0]: true, specs[len(specs)-1]: true},
+	}
+	restore := bridgeGit
+	bridgeGit = stub
+	defer func() { bridgeGit = restore }()
+
+	r, answered := checkTrackedTransients(t.TempDir())
+	if !answered || r.Passed {
+		t.Fatalf("answered = %v, Passed = %v; want a reported failure", answered, r.Passed)
+	}
+	if !slices.Equal(stub.asked, specs) {
+		t.Errorf("asked about %v, want every class in order: %v", stub.asked, specs)
+	}
+	for _, spec := range []string{specs[0], specs[len(specs)-1]} {
+		if !strings.Contains(r.Finding, spec) {
+			t.Errorf("Finding = %q, want it to name %q", r.Finding, spec)
+		}
+	}
+	if strings.Contains(r.Finding, specs[1]) {
+		t.Errorf("Finding = %q, want it to leave out the class that is not tracked (%q)", r.Finding, specs[1])
+	}
+}
+
 // TestTheModulesRowFiresOnlyWhereModulesExist pins the gate by changing one thing. The
 // repository is the same one TestDoctorReportsTheRuleThatBlocksModules builds — old rule in
 // force, git genuinely refusing a module — and the only edit between the two assertions is
