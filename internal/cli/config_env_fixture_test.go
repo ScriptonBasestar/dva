@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"sync"
 	"testing"
 
@@ -139,6 +140,11 @@ func (g *fakeGit) Available() bool { return g.available }
 
 func (g *fakeGit) Tracked(dir, target string) bool {
 	g.record("Tracked", dir, target)
+	return g.tracked
+}
+
+func (g *fakeGit) TrackedAny(dir string, specs ...string) bool {
+	g.record("TrackedAny", dir, strings.Join(specs, " "))
 	return g.tracked
 }
 

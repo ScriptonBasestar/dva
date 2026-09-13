@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bytes"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -23,6 +24,7 @@ type gitProbe interface {
 	InsideRepo(dir string) bool
 	Available() bool
 	Tracked(dir, target string) bool
+	TrackedAny(dir string, specs ...string) bool
 	Ignored(dir, target string) bool
 }
 
@@ -57,6 +59,28 @@ func (realGit) Available() bool {
 // boolean and git's stdout could name paths a diagnostic must not echo.
 func (realGit) Tracked(dir, target string) bool {
 	return gitQuiet(dir, "ls-files", "--cached", "--error-unmatch", "--", target)
+}
+
+// TrackedAny answers the same question as Tracked over a set of pathspecs, and it exists because
+// --error-unmatch cannot express one thing a caller needs: a positive spell with an exclusion
+// beside it. `--error-unmatch` is satisfied by the positive pathspec matching before the exclusion
+// is applied, so `.sb/dva/provisioned-*` with `:(exclude).sb/dva/*.yml` still exits 0 on a
+// repository whose only match is an excluded module — measured, not assumed. The predicate that
+// does survive exclusion is whether anything came out, so this one reads the output instead of the
+// exit code.
+//
+// Output is read, never returned. The caller gets a boolean for the same reason Tracked discards
+// stdout: git names paths, and a diagnostic that echoes them tells a reader something it could
+// have run git for while giving this seam a second, wider contract to keep.
+func (realGit) TrackedAny(dir string, specs ...string) bool {
+	args := append([]string{"ls-files", "--cached", "--"}, specs...)
+	cmd := exec.Command("git", args...)
+	cmd.Dir = dir
+	out, err := cmd.Output()
+	if err != nil {
+		return false
+	}
+	return len(bytes.TrimSpace(out)) > 0
 }
 
 func (realGit) Ignored(dir, target string) bool {

@@ -242,6 +242,21 @@ func initGitRepo(t *testing.T, dir string) {
 	}
 }
 
+// gitInRepo runs git in a repository initGitRepo made and returns its combined output, failing
+// the test on a non-zero exit. Returning the output matters for the cases that assert on what a
+// command would do — `git rm --dry-run` says everything it says on stdout.
+func gitInRepo(t *testing.T, dir string, args ...string) string {
+	t.Helper()
+
+	cmd := exec.Command("git", args...)
+	cmd.Dir = dir
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("git %v: %v: %s", args, err, out)
+	}
+	return string(out)
+}
+
 // TestGitignoreCheckAsksGit pins the rules the literal reader cannot parse and git can.
 //
 // Every case here was measured against git first. The pair `.sb/dva/*` + `!.sb/dva/*.yml` is
@@ -914,7 +929,11 @@ func TestDoctorReportsTheRuleThatBlocksModules(t *testing.T) {
 // and a finding would name the same state twice; a pathspec matched by no probe means it is
 // asking about something no writer produces, which is how a list goes stale without failing.
 func TestTransientPathspecsAndProbesNameTheSameClasses(t *testing.T) {
-	specs := dvaTransientPathspecs()
+	classes := dvaTransientClasses()
+	specs := make([]string, 0, len(classes))
+	for _, class := range classes {
+		specs = append(specs, class.name)
+	}
 	hits := make(map[string]int, len(specs))
 
 	for _, probe := range dvaTransientProbes() {
@@ -1008,6 +1027,82 @@ func TestDoctorReportsTransientStateAlreadyCommitted(t *testing.T) {
 	}
 }
 
+// TestTrackedTransientsLeavesCommittedModulesAlone is the case the marker glob gets wrong on its
+// own, and it is a real repository because the whole claim is about what git matches.
+//
+// Markers carry no extension, so `.sb/dva/provisioned-*` matches the module
+// `.sb/dva/provisioned-base.yml` as readily as the marker `.sb/dva/provisioned-default`. A module
+// is content a person wrote and has to commit. Reporting it would be a finding on a healthy
+// repository, and — the half that costs something — a hint that stages the deletion of that file.
+//
+// So both directions are asserted, and the second is asserted against git rather than against the
+// string: the command the row prints is run with --dry-run, and what it would remove is the
+// evidence. A test that only read the hint would keep passing if git stopped honouring pathspec
+// magic in `git rm`, which is the assumption the hint rests on.
+func TestTrackedTransientsLeavesCommittedModulesAlone(t *testing.T) {
+	dir := t.TempDir()
+	initGitRepo(t, dir)
+	if err := os.WriteFile(filepath.Join(dir, ".gitignore"), []byte(defaultIgnoreSection+"\n"+strings.Join(defaultIgnoreRules(), "\n")+"\n"), 0o644); err != nil {
+		t.Fatalf("WriteFile .gitignore: %v", err)
+	}
+	if err := os.MkdirAll(filepath.Join(dir, config.DotDirName), 0o755); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	module := path.Join(config.DotDirName, "provisioned-base.yml")
+	if err := os.WriteFile(filepath.Join(dir, module), []byte("interaction:\n  hello:\n    run: echo hi\n"), 0o644); err != nil {
+		t.Fatalf("WriteFile module: %v", err)
+	}
+	// No -f: the rules DVA writes leave modules committable, which is the point of writing two
+	// lines instead of one. If this add ever needs forcing, the premise has moved.
+	gitInRepo(t, dir, "add", module)
+
+	if r, answered := checkTrackedTransients(dir); !answered || !r.Passed {
+		t.Fatalf("a committed module was reported as tracked transient state: answered=%v Finding=%q", answered, r.Finding)
+	}
+
+	marker := path.Join(config.DotDirName, provisionMarkerName("default"))
+	if err := os.WriteFile(filepath.Join(dir, marker), []byte("ok\n"), 0o644); err != nil {
+		t.Fatalf("WriteFile marker: %v", err)
+	}
+	gitInRepo(t, dir, "add", "-f", marker)
+
+	r, answered := checkTrackedTransients(dir)
+	if !answered || r.Passed {
+		t.Fatalf("a committed marker went unreported: answered=%v Passed=%v", answered, r.Passed)
+	}
+
+	specs := hintPathspecs(t, r.FixHint)
+	out := gitInRepo(t, dir, append([]string{"rm", "-r", "--cached", "--dry-run", "--"}, specs...)...)
+	if !strings.Contains(out, marker) {
+		t.Errorf("the recommended command would not remove the marker it reported: %q", out)
+	}
+	if strings.Contains(out, module) {
+		t.Errorf("the recommended command would delete the user's module %q: %s", module, out)
+	}
+}
+
+// hintPathspecs recovers the pathspecs out of the printed command, so the test runs what a person
+// reading the row would paste rather than what the code meant to print.
+func hintPathspecs(t *testing.T, hint string) []string {
+	t.Helper()
+	_, rest, ok := strings.Cut(hint, "-- ")
+	if !ok {
+		t.Fatalf("FixHint = %q, want it to name pathspecs after --", hint)
+	}
+	rest, _, ok = strings.Cut(rest, " (")
+	if !ok {
+		t.Fatalf("FixHint = %q, want the parenthetical the pathspecs end at", hint)
+	}
+	specs := strings.Fields(rest)
+	for i, spec := range specs {
+		specs[i] = strings.Trim(spec, "'")
+	}
+	if len(specs) == 0 {
+		t.Fatalf("FixHint = %q, want at least one pathspec", hint)
+	}
+	return specs
+}
+
 // trackedProbeGit answers per pathspec, which fakeGit cannot: its `tracked` is one bool for
 // every target, and the cases worth testing here are which classes are tracked, not whether any
 // are. It records what it was asked so the test can state that the row asks about every class
@@ -1018,11 +1113,17 @@ type trackedProbeGit struct {
 	asked             []string
 }
 
-func (g *trackedProbeGit) InsideRepo(string) bool { return g.inside }
-func (g *trackedProbeGit) Available() bool        { return g.available }
-func (g *trackedProbeGit) Tracked(_, target string) bool {
-	g.asked = append(g.asked, target)
-	return g.tracked[target]
+func (g *trackedProbeGit) InsideRepo(string) bool        { return g.inside }
+func (g *trackedProbeGit) Available() bool               { return g.available }
+func (g *trackedProbeGit) Tracked(_, target string) bool { return g.tracked[target] }
+
+// TrackedAny keys on the whole pathspec list, not on the class name, so a class that loses its
+// exclusion asks a question this stub has no answer for and the row goes quiet — which is what
+// makes the recorded list evidence about the query rather than about the class names.
+func (g *trackedProbeGit) TrackedAny(_ string, specs ...string) bool {
+	key := strings.Join(specs, " ")
+	g.asked = append(g.asked, key)
+	return g.tracked[key]
 }
 func (g *trackedProbeGit) Ignored(string, string) bool { return false }
 
@@ -1055,7 +1156,11 @@ func TestTrackedTransientsRowOmittedWhenGitCannotAnswer(t *testing.T) {
 // untracks what the row names would then see it fire again with something new — the shape of
 // finding that teaches people the tool is unreliable.
 func TestTrackedTransientsAsksAboutEveryClass(t *testing.T) {
-	specs := dvaTransientPathspecs()
+	classes := dvaTransientClasses()
+	specs := make([]string, 0, len(classes))
+	for _, class := range classes {
+		specs = append(specs, strings.Join(class.pathspecs(), " "))
+	}
 	stub := &trackedProbeGit{
 		inside:    true,
 		available: true,
@@ -1072,13 +1177,20 @@ func TestTrackedTransientsAsksAboutEveryClass(t *testing.T) {
 	if !slices.Equal(stub.asked, specs) {
 		t.Errorf("asked about %v, want every class in order: %v", stub.asked, specs)
 	}
-	for _, spec := range []string{specs[0], specs[len(specs)-1]} {
-		if !strings.Contains(r.Finding, spec) {
-			t.Errorf("Finding = %q, want it to name %q", r.Finding, spec)
+	for _, class := range []transientClass{classes[0], classes[len(classes)-1]} {
+		if !strings.Contains(r.Finding, class.name) {
+			t.Errorf("Finding = %q, want it to name %q", r.Finding, class.name)
 		}
 	}
-	if strings.Contains(r.Finding, specs[1]) {
-		t.Errorf("Finding = %q, want it to leave out the class that is not tracked (%q)", r.Finding, specs[1])
+	if strings.Contains(r.Finding, classes[1].name) {
+		t.Errorf("Finding = %q, want it to leave out the class that is not tracked (%q)", r.Finding, classes[1].name)
+	}
+	// The hint is the destructive half, so it is asserted against the query rather than against
+	// the class: an exclusion dropped here is a staged deletion of whatever it was protecting.
+	for _, spec := range classes[len(classes)-1].pathspecs() {
+		if !strings.Contains(r.FixHint, "'"+spec+"'") {
+			t.Errorf("FixHint = %q, want it scoped by %q exactly as the query was", r.FixHint, spec)
+		}
 	}
 }
 

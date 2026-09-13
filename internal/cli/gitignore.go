@@ -296,7 +296,7 @@ func dvaTransientsIgnored(configDir string) (ignored bool, decided bool) {
 	return dvaTransientsCovered(configDir, false)
 }
 
-// dvaTransientPathspecs names the same four classes dvaTransientProbes stands in for, spelled as
+// dvaTransientClasses names the same four classes dvaTransientProbes stands in for, spelled as
 // pathspecs git can match against the index instead of as probe paths.
 //
 // The two lists exist for two different questions and cannot be one list. A probe is a path that
@@ -313,12 +313,34 @@ func dvaTransientsIgnored(configDir string) (ignored bool, decided bool) {
 //
 // Every element is built from the constant its writer uses, for the reason dvaTransientProbes
 // gives: a literal keeps answering after the thing it names has moved.
-func dvaTransientPathspecs() []string {
-	return []string{
-		path.Join(config.DotDirName, config.PidsDirName),
-		path.Join(config.DotDirName, config.LogsDirName),
-		path.Join(config.DotDirName, config.SourcesDirName),
-		path.Join(config.DotDirName, provisionMarkerName("*")),
+//
+// The marker class is the one that cannot be a bare spelling, and the reason is a collision this
+// package does not get to remove: markers have no extension, so `provisioned-*` matches the module
+// `.sb/dva/provisioned-base.yml` exactly as well as the marker `.sb/dva/provisioned-default`. A
+// module is content a person wrote and must commit. Reporting it here would be wrong twice over —
+// a finding on a healthy repository, and a hint that stages the deletion of the user's own file —
+// so the class carries an exclusion that the query and the repair command both have to use.
+type transientClass struct {
+	name    string   // what doctor reports: the class, in the spelling a person would recognise
+	exclude []string // pathspecs that must not count as transient state, applied with the name
+}
+
+// pathspecs is what git is asked, and it is also what any suggested repair must be scoped to.
+// Keeping them one function means an exclusion cannot be added to the question and forgotten in
+// the command — which is the failure that would matter, since the command deletes.
+func (c transientClass) pathspecs() []string {
+	return append([]string{c.name}, c.exclude...)
+}
+
+func dvaTransientClasses() []transientClass {
+	return []transientClass{
+		{name: path.Join(config.DotDirName, config.PidsDirName)},
+		{name: path.Join(config.DotDirName, config.LogsDirName)},
+		{name: path.Join(config.DotDirName, config.SourcesDirName)},
+		{
+			name:    path.Join(config.DotDirName, provisionMarkerName("*")),
+			exclude: []string{":(exclude)" + path.Join(config.DotDirName, "*.yml")},
+		},
 	}
 }
 
@@ -338,13 +360,13 @@ func dvaTransientPathspecs() []string {
 // Undecided is not a failure. Outside a repository there is no index to ask about, and without
 // git the question has no arbiter — in both cases doctor omits the row rather than printing a
 // pass it did not earn.
-func trackedTransients(configDir string) (tracked []string, decided bool) {
+func trackedTransients(configDir string) (tracked []transientClass, decided bool) {
 	if !bridgeGit.InsideRepo(configDir) || !bridgeGit.Available() {
 		return nil, false
 	}
-	for _, spec := range dvaTransientPathspecs() {
-		if bridgeGit.Tracked(configDir, spec) {
-			tracked = append(tracked, spec)
+	for _, class := range dvaTransientClasses() {
+		if bridgeGit.TrackedAny(configDir, class.pathspecs()...) {
+			tracked = append(tracked, class)
 		}
 	}
 	return tracked, true
@@ -373,12 +395,20 @@ func checkTrackedTransients(configDir string) (DoctorResult, bool) {
 		return r, true
 	}
 
+	// The hint repeats the exclusions the query used, not just the class names. git rm honours
+	// pathspec magic, so the same pair that kept a committed module out of the finding keeps it
+	// out of the staged deletion — measured against `git rm -r --cached --dry-run`. A hint that
+	// narrowed back to the bare glob would delete the file the finding was careful not to name.
+	names := make([]string, 0, len(tracked))
 	quoted := make([]string, 0, len(tracked))
-	for _, spec := range tracked {
-		quoted = append(quoted, "'"+spec+"'")
+	for _, class := range tracked {
+		names = append(names, class.name)
+		for _, spec := range class.pathspecs() {
+			quoted = append(quoted, "'"+spec+"'")
+		}
 	}
 	r.Passed = false
-	r.Finding = fmt.Sprintf("already committed, so .gitignore cannot stop it: %s", strings.Join(tracked, ", "))
+	r.Finding = fmt.Sprintf("already committed, so .gitignore cannot stop it: %s", strings.Join(names, ", "))
 	r.Fixable = false
 	r.FixHint = fmt.Sprintf("Run: git rm -r --cached -- %s (the files stay on disk; commit the removal)", strings.Join(quoted, " "))
 	return r, true
