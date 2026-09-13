@@ -321,6 +321,11 @@ func dvaTransientsIgnored(configDir string) (ignored bool, decided bool) {
 // module is content a person wrote and must commit. Reporting it here would be wrong twice over —
 // a finding on a healthy repository, and a hint that stages the deletion of the user's own file —
 // so the class carries an exclusion that the query and the repair command both have to use.
+//
+// One thing the coupling below does not buy: `name` is both what a person reads and what git is
+// asked, so a name that is not itself a valid pathspec would quietly mean one thing to the
+// reader and another to ls-files. Every class today is a literal path or a path with one
+// trailing `*`, so nothing is exposed — but a name spelled for readability would be.
 type transientClass struct {
 	name    string   // what doctor reports: the class, in the spelling a person would recognise
 	exclude []string // pathspecs that must not count as transient state, applied with the name
@@ -367,12 +372,24 @@ func dvaTransientClasses() []transientClass {
 // Undecided is not a failure. Outside a repository there is no index to ask about, and without
 // git the question has no arbiter — in both cases doctor omits the row rather than printing a
 // pass it did not earn.
+//
+// The two guards cannot carry that alone, which is why each class reports whether git answered.
+// InsideRepo is an Lstat and Available is a LookPath, so neither of them sees a corrupt index, a
+// gitdir pointer aimed at a directory that has been moved, or a permission error — git exits 128
+// and the guards never fire. Treating that as "nothing is tracked" would affirm the row rather
+// than omit it, which is the failure this check was written to avoid, so one unanswered class
+// makes the whole row undecided. Not "the classes git could answer for", because a partial
+// verdict is still reported as a complete one.
 func trackedTransients(configDir string) (tracked []transientClass, decided bool) {
 	if !bridgeGit.InsideRepo(configDir) || !bridgeGit.Available() {
 		return nil, false
 	}
 	for _, class := range dvaTransientClasses() {
-		if bridgeGit.TrackedAny(configDir, class.pathspecs()...) {
+		isTracked, known := bridgeGit.TrackedAny(configDir, class.pathspecs()...)
+		if !known {
+			return nil, false
+		}
+		if isTracked {
 			tracked = append(tracked, class)
 		}
 	}
@@ -445,7 +462,15 @@ func dvaModuleProbe() string {
 // descend into an excluded directory and the appended contents rules never apply. An automatic
 // fix that leaves the finding standing would append the same block on every run. So this reports,
 // names the edit, and stops.
+// The guard is the same pair dvaTransientsCovered asks, and it is here for construction rather
+// than for outcome. A module root outside any repository already answered known=false, because
+// git exits 128 and gitCheckIgnore reports that as undecided — right answer, reached by accident.
+// Asking first makes the undecided path the one the code chose, and it is what keeps the answer
+// right if gitCheckIgnore's error handling is ever loosened.
 func dvaModulesBlocked(configDir string) (blocked bool, known bool) {
+	if !bridgeGit.InsideRepo(configDir) || !bridgeGit.Available() {
+		return false, false
+	}
 	sources, decided := gitCheckIgnore(configDir, []string{dvaModuleProbe()})
 	if !decided {
 		return false, false

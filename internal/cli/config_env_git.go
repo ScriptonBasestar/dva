@@ -24,7 +24,7 @@ type gitProbe interface {
 	InsideRepo(dir string) bool
 	Available() bool
 	Tracked(dir, target string) bool
-	TrackedAny(dir string, specs ...string) bool
+	TrackedAny(dir string, specs ...string) (any, known bool)
 	Ignored(dir, target string) bool
 }
 
@@ -72,15 +72,25 @@ func (realGit) Tracked(dir, target string) bool {
 // Output is read, never returned. The caller gets a boolean for the same reason Tracked discards
 // stdout: git names paths, and a diagnostic that echoes them tells a reader something it could
 // have run git for while giving this seam a second, wider contract to keep.
-func (realGit) TrackedAny(dir string, specs ...string) bool {
+//
+// It returns `known` where Tracked returns a bare bool, and the difference is which direction
+// false points. For Tracked, false means "not tracked", and a git that could not answer
+// collapsing into that is the refusing direction — the caller treats the target as needing a
+// rule. Here false means "no transient state is committed", which is a clean bill of health, so
+// the same collapse turns every git failure into a pass nobody verified. That is not theoretical:
+// a `.git` file pointing at a gitdir that is gone — a moved submodule or worktree — satisfies
+// InsideRepo, which is an Lstat and not a git call, and Available, which is a LookPath, while
+// git itself exits 128. Measured: a real `.sb/dva/pids/web.pid` on disk, and the row printed a
+// pass.
+func (realGit) TrackedAny(dir string, specs ...string) (any, known bool) {
 	args := append([]string{"ls-files", "--cached", "--"}, specs...)
 	cmd := exec.Command("git", args...)
 	cmd.Dir = dir
 	out, err := cmd.Output()
 	if err != nil {
-		return false
+		return false, false
 	}
-	return len(bytes.TrimSpace(out)) > 0
+	return len(bytes.TrimSpace(out)) > 0, true
 }
 
 func (realGit) Ignored(dir, target string) bool {

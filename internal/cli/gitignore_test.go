@@ -1122,7 +1122,11 @@ func hintPathspecs(t *testing.T, hint string) []string {
 type trackedProbeGit struct {
 	inside, available bool
 	tracked           map[string]bool
-	asked             []string
+	// unanswerable keys the pathspec lists git refuses to answer, which is the state neither
+	// guard above can reach: InsideRepo is an Lstat and Available is a LookPath, so a broken
+	// gitdir passes both and only the per-class answer can carry the refusal.
+	unanswerable map[string]bool
+	asked        []string
 }
 
 func (g *trackedProbeGit) InsideRepo(string) bool        { return g.inside }
@@ -1132,10 +1136,13 @@ func (g *trackedProbeGit) Tracked(_, target string) bool { return g.tracked[targ
 // TrackedAny keys on the whole pathspec list, not on the class name, so a class that loses its
 // exclusion asks a question this stub has no answer for and the row goes quiet — which is what
 // makes the recorded list evidence about the query rather than about the class names.
-func (g *trackedProbeGit) TrackedAny(_ string, specs ...string) bool {
+func (g *trackedProbeGit) TrackedAny(_ string, specs ...string) (any, known bool) {
 	key := strings.Join(specs, " ")
 	g.asked = append(g.asked, key)
-	return g.tracked[key]
+	if g.unanswerable[key] {
+		return false, false
+	}
+	return g.tracked[key], true
 }
 func (g *trackedProbeGit) Ignored(string, string) bool { return false }
 
@@ -1160,6 +1167,78 @@ func TestTrackedTransientsRowOmittedWhenGitCannotAnswer(t *testing.T) {
 				t.Errorf("the row was reported anyway: Passed = %v, Finding = %q", r.Passed, r.Finding)
 			}
 		})
+	}
+}
+
+// TestTrackedTransientsRowOmittedWhenAClassGoesUnanswered is the third state, and it is the one
+// the two guards above cannot reach. A `.git` file whose gitdir has moved satisfies InsideRepo,
+// which is an Lstat, and Available, which is a LookPath; only git knows, and it exits 128. If
+// that collapsed into "not tracked" the row would print a pass over committed state.
+//
+// Each class is asserted separately: the row is undecided when ANY class goes unanswered, not
+// only when the first does, because a verdict assembled from the classes git happened to answer
+// is still printed as a verdict over all of them.
+func TestTrackedTransientsRowOmittedWhenAClassGoesUnanswered(t *testing.T) {
+	classes := dvaTransientClasses()
+	for i, class := range classes {
+		t.Run(class.name, func(t *testing.T) {
+			key := strings.Join(class.pathspecs(), " ")
+			stub := &trackedProbeGit{
+				inside:       true,
+				available:    true,
+				unanswerable: map[string]bool{key: true},
+			}
+			// Every other class reports tracked state, so a row that appears cannot be
+			// explained as "nothing was found" — it could only be a verdict reached without
+			// this class.
+			stub.tracked = map[string]bool{}
+			for j, other := range classes {
+				if j != i {
+					stub.tracked[strings.Join(other.pathspecs(), " ")] = true
+				}
+			}
+
+			restore := bridgeGit
+			bridgeGit = stub
+			defer func() { bridgeGit = restore }()
+
+			if r, answered := checkTrackedTransients(t.TempDir()); answered {
+				t.Errorf("row reported while git could not answer for %q: Passed = %v, Finding = %q",
+					class.name, r.Passed, r.Finding)
+			}
+		})
+	}
+}
+
+// TestTrackedTransientsRowOmittedOnABrokenGitdir is the same state through real git, because the
+// stub above can only prove that trackedTransients honours an unknown — not that realGit ever
+// produces one. A `.git` file is how a worktree or submodule records its gitdir, and a stale
+// pointer is the ordinary way this happens to someone.
+func TestTrackedTransientsRowOmittedOnABrokenGitdir(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git not installed")
+	}
+	dir := t.TempDir()
+	gitdir := filepath.Join(dir, "gone")
+	if err := os.WriteFile(filepath.Join(dir, ".git"), []byte("gitdir: "+gitdir+"\n"), 0o644); err != nil {
+		t.Fatalf("WriteFile .git: %v", err)
+	}
+	// Real transient state on disk, so a pass would be wrong on the merits and not merely
+	// unverified.
+	pids := filepath.Join(dir, config.DotDirName, config.PidsDirName)
+	if err := os.MkdirAll(pids, 0o755); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(pids, "web.pid"), []byte("1\n"), 0o644); err != nil {
+		t.Fatalf("WriteFile pid: %v", err)
+	}
+
+	if !bridgeGit.InsideRepo(dir) || !bridgeGit.Available() {
+		t.Fatalf("premise failed: the guards already refuse this fixture, so it proves nothing")
+	}
+
+	if r, answered := checkTrackedTransients(dir); answered {
+		t.Errorf("row reported on a repository git cannot read: Passed = %v, Finding = %q", r.Passed, r.Finding)
 	}
 }
 
