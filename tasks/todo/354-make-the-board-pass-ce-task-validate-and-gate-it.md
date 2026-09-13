@@ -174,9 +174,9 @@ CI가 `ce`를 provision하지 않는다는 재현 명령, `.gz-git.yaml`의 `bra
 
 ## 결정 기록
 
-**아직 적히지 않은 것 — §Completion Criteria 5번이 요구하는 내용이다.** 게이트를 어디에
-붙일지(`make doc-check` vs `.gz-git.yaml`)와 CI에서 `ce`가 해결되는지는 **미결정**이다.
-아래는 §작업 1~3을 실행하며 실제로 내린 결정들이고, 5번 기준을 만족시키지 않는다.
+**결정됐다(2026-09-13, 아래 8번).** 붙일 자리는 `.gz-git.yaml`의 `branch.readiness`
+계약이고, CI에서 `ce`는 해결되지 않는다. 1~7번은 §작업 1~3을 실행하며 내린 하위
+결정들이고, 5번 기준을 만족시키는 것은 8번이다.
 
 **1. `type: decision` → `docs`, `idea`가 아니다.** done/334의 `type`만 바꿔 실측했다.
 `docs`는 `✅ Valid (no errors or warnings)`, `idea`와 `decision`은 `❌ Invalid type`.
@@ -244,14 +244,124 @@ validate는 자기 경로만 검사하므로 이건 거부되지 않았지만 �
 4번 exit 1(채택된 readiness 선언 없음). 5번의 판단 근거는 위에 기록했지만 6번의
 failure-injection은 실행할 저장소 게이트가 아직 없으므로 미완료다.
 
+**8. 2026-09-13 최종 결정 — `branch.readiness` 계약을 채택한다(선택지 B). `make doc-check`
+연결(선택지 A)은 비용이 큰 것이 아니라 불가능하다.**
+
+[[TASK-377]]이 [docs/65](../../docs/65-ce-task-gate-attachment-options.md)에 두 선택지의
+비용을 나란히 적었다. 그 문서가 확인하지 못한 사실 하나가 A를 선택지에서 아예 탈락시킨다.
+
+`ce`의 Go 모듈 경로는 `github.com/archmagece/ce-agent-kit`지만 **실제 원격은 GitHub이
+아니다**:
+
+```
+$ go version -m ~/go/bin/ce | /usr/bin/grep '^\smod'
+        mod     github.com/archmagece/ce-agent-kit      v0.8.5-0.20260913033628-df1f896f4935
+$ git -C ~/mywork/ce/ce-agent-kit remote get-url origin
+ssh://git@gitlab.polypia.net:2224/archmagece/ce-agent-kit.git
+$ gh repo view archmagece/ce-agent-kit
+(resolve 실패 — GitHub에 그 저장소는 없다)
+```
+
+DVA의 CI는 GitHub Actions `ubuntu-latest`이고 원격은 `git@github.com:ScriptonBasestar/dva.git`
+이다. 즉 A를 쓰려면 **문서 게이트 하나를 돌리려고 hosted GitHub CI에 사설 GitLab
+배포 자격증명을 심어야 한다.** docs/65 §2.1이 남긴 "CI에서 `ce`가 해결되는가"의 답은
+**아니오이고, 설치 단계를 추가해서 해결할 수 있는 종류의 아니오가 아니다.** 이것이
+§Completion Criteria 5번이 요구하는 "CI의 `ce` 해결 여부" 확인 결과다.
+
+개인 정책도 같은 자리를 지목한다 — 저장소 로컬 check 타깃은 그 저장소의 소스를
+채점할 뿐 보드를 채점할 수 없고, 보드 판정은 통합 도구에 선언한 readiness 러너의
+몫이며 그 러너는 판정을 공유 `ce task gate`에 위임한다. 측정과 정책이 같은 답을 낸다.
+
+**단계를 나눈다: 러너는 지금 쓰고, 선언은 [[ISSUE-001]] 해소 뒤에 한다.** `ce task gate`는
+오늘도 exit 1이므로(receipt 없는 done blocker) 지금 `.gz-git.yaml`에 선언하면
+`gz-git integrate check`가 첫날부터 빨간불이고 이 작업 흐름 자체가 막힌다. 그래서 이
+커밋은 `.gz-git/readiness/check`만 넣고 `.gz-git.yaml`은 건드리지 않는다. 채택은
+대화형 `gz-git integrate bootstrap plan|apply` 한 번이 남는다.
+
+**docs/65가 적지 못한 러너 계약 사실 — 러너는 언제나 exit 0 해야 한다.**
+`pkg/integrate/readiness.go`의 `executeReadinessWithTimeout`은 러너의 종료 코드가 0이
+아니면 stdout을 아예 읽지 않고 `runner failed: <stderr>`로 처리해 판정을
+`unavailable`로 만든다. 즉 `ce task gate`의 exit 1을 그대로 전달하면 **"보드가
+빨간불"이 "게이트가 고장"으로 바뀐다.** 판정은 오직 JSON의 `status` 필드가 나른다.
+`ce task gate`는 이 계약에 맞게 설계돼 있어서 exit 0/1/2가 `ready`/`not_ready`/
+`unavailable`에 1:1 대응하고 `--dir`로 판정 대상을 받는다 — 러너는 그 사상만 옮긴다.
+
+판정 대상은 cwd(target worktree)가 아니라 `--source-dir`다. gz-git이 러너 실행 파일을
+target에서 꺼내는 이유는 task 브랜치가 자기 게이트를 고쳐 쓸 수 없게 하려는 것이고,
+채점 대상은 들어올 쪽이기 때문이다. 러너는 `ce task gate --dir "$source_dir"`를 부른다.
+
+**러너 실측(2026-09-13, `.gz-git/readiness/check`)** — 고정 V1 인자로 직접 실행했다.
+`gz-git integrate check`를 통한 실행은 아니다(개인 정책 훅이 에이전트의 직접 호출을
+차단한다). 모든 경우가 세 키 JSON을 내고 exit 0 한다:
+
+| 경우 | status | summary |
+|---|---|---|
+| 정상(현재 보드) | `not_ready` | `ce task gate: {…"detail": "5 task(s) failed validation"…}` |
+| `--result-format text` | `unavailable` | `unsupported --result-format: text` |
+| 알 수 없는 인자 | `unavailable` | `unexpected argument: --bogus` |
+| `--source-dir` 없음/디렉토리 아님 | `unavailable` | `--source-dir is required` / `… is not a directory: …` |
+| `ce` 부재(`env -i PATH=/usr/bin:/bin`) | `unavailable` | `ce is not on PATH: the shared task gate cannot be reached` |
+
+`ce` 부재를 `not_ready`가 아니라 `unavailable`로 낸 것은 의도다 — 보드가 나쁜 것이
+아니라 잴 수 없는 것이고, 계약도 그 둘을 구분한다.
+
+출력은 계약 파서(`parseReadinessResult`)의 조건 — UTF-8 유효, 정확히 세 키,
+`version:1`, status 3종, summary 비어 있지 않고 4096바이트 이하이며 제어문자 없음 —
+을 전부 통과하는지 케이스마다 검사했다. 4000바이트 절단이 UTF-8 문자나 이스케이프
+시퀀스 한가운데를 자르는 경우(한글 2000회, 역슬래시 100개 꼬리, 따옴표 혼합 3.4 KB)도
+포함했고 전부 유효한 JSON이었다.
+
+작성 중 실제로 두 번 깨졌고 둘 다 고쳤다. 기록해 둔다 — 둘 다 조용히 실패하는 종류다:
+- `emit`이 `tr`·`cut`에 의존했다. `ce`도 PATH도 없는 상황이 정확히 이 함수를 부르는
+  경로인데, 그때 `tr`도 없어서 `{"status":"not_ready","summary":"not_ready"}`라는
+  **틀린 판정**을 냈다. 지금은 전부 bash 파라미터 확장이다.
+- 제어문자 제거 `[$'\001'-$'\037']`가 C 로케일에서만 개행을 잡는다(bash 3.2). gz-git이
+  `LC_ALL=C`를 걸어 주지만 정확성을 호출자 환경에 기대면 다른 경로로 부르는 순간
+  깨진다 — 실제로 그렇게 깨져 개행이 JSON 문자열 안에 남았다. 러너가 직접 건다.
+
+**§Completion Criteria 6번 — failure injection 실측.** `type: fix` 카드
+`999-injected-violation-probe.md`를 `todo` 존에 심고 게이트를 돌렸다. (경로를 산문에
+그대로 적지 않는다 — `make doc-check`이 산문의 `tasks/…` 문자열을 실재하는 카드로
+해석해 broken link로 잡는다. 프로브는 지웠으므로 해석될 카드가 없다.)
+
+```
+$ ce task gate --dir .          # 프로브 있음
+Validating: tasks/todo/999-injected-violation-probe.md
+  ❌ Invalid type "fix" for task
+  ❌ Invalid: 1 error(s), 0 warning(s)
+Summary: 74 valid, 6 invalid (total: 80)
+NOT READY — task_validate_failed (validate)
+$ echo $?
+1
+```
+
+러너를 통해 같은 상태를 재면 `not_ready`에 `"6 task(s) failed validation"`이 실린다.
+프로브를 지우면 같은 자리가 `5 task(s) failed validation`으로 돌아간다. 심은 카드는
+지웠고 워킹트리에 남지 않았다.
+
+**이 기준의 문언과 계약이 어긋나는 지점을 적어 둔다.** 6번은 "게이트가 **rc≠0**으로 그
+경로를 출력"할 것을 요구하지만, contract-v1 러너는 위에 적었듯 **언제나 exit 0**이고
+판정은 JSON `status`가 나른다. 또 러너 summary에는 실패 **건수**가 실리고 경로는
+실리지 않는다 — 경로를 실으려면 러너가 `ce task validate`를 따로 돌려 출력을 골라야
+하고, 그것은 이 카드가 피하려는 "판정 재구현"의 시작이다. 기준이 요구하는 실질 —
+심은 위반이 잡히고 그 경로가 지목된다 — 은 `ce task gate --dir <dir>`가 rc 1과 함께
+충족하고, 그것이 not_ready를 본 사람이 다음에 돌리는 명령이다. 이 어긋남은 기준을
+쓸 당시 붙일 자리가 미정이었던 데서 왔다.
+
+**바인딩 현황(2026-09-13 실측)**: 1번 exit 1(receipt blocker — [[ISSUE-001]]),
+2·3·7번 exit 0, 4번 exit 1(`.gz-git.yaml`에 아직 선언하지 않았다 — 위 단계 분리에
+따른 의도된 상태다), 5·6번 충족(이 절). **이 카드는 ISSUE-001 해소 전까지 완료
+불가라는 판정이 그대로다.** 남은 것은 ISSUE-001 해소 → 대화형 bootstrap 1회다.
+
+
 ## Completion Criteria
 
 - [ ] `ce task gate`가 보드 전체에 대해 ready로 종료한다 | verify: `ce task gate`
 - [ ] `type: fix`와 `type: decision`이 보드에서 사라진다 (스코프는 살아 있는 zone만이다 — `_archive`는 역사적 코퍼스이고 `type: fix` 61장을 포함해 이 카드의 범위 밖이다. 경계는 실수가 아니라 의도다: `ce task validate`도 `_archive`는 돌지 않고, 닫힌 기록을 grep 통과시키려 고쳐 쓰는 것은 TASK-350이 말하는 기록 위조다. 그래서 이 카드를 TASK-367보다 먼저 끝낸다, §작업 1번 순서 참조) | verify: `! /usr/bin/grep -rqE '^type: (fix|decision)$' tasks/todo tasks/done tasks/plan`
 - [ ] `## Acceptance Criteria`가 보드에서 사라진다 (regression-guard — 착수 시점에 이미 0장) | verify: `! /usr/bin/grep -rq '^## Acceptance Criteria$' tasks/todo tasks/done tasks/plan`
 - [ ] 저장소 게이트가 `ce task gate`를 호출한다 — validate를 재구현하지 않는다. `## 게이트 연결`이 제시한 두 붙일 자리(`make doc-check` 또는 통합 러너 선언 `.gz-git.yaml`) 중 사람이 어느 쪽을 골라도 이 바인딩은 만족되어야 한다 — 한쪽만 하드코딩하지 않는다. 주석에서 명령을 언급하는 것만으로는 통과하지 않는다 — 실제 호출 줄이어야 한다 | verify: `/usr/bin/grep -rhE 'ce task gate' Makefile .gz-git.yaml 2>/dev/null | /usr/bin/grep -qvE '^\s*#'`
-- [ ] 게이트를 어디에 붙였는지와 CI의 `ce` 해결 여부가 근거와 함께 기록됐다 | verify: human — 이 카드 `## 결정 기록` 절에 선택과 그 근거, 그리고 CI에서 `ce`가 해결되는지 확인한 결과가 적혀 있는지 확인
-- [ ] 위반 카드를 심으면 게이트가 그 경로를 지목하며 실패한다 | verify: human — `type: fix` 카드 하나를 심고 저장소 게이트가 rc≠0으로 그 경로를 출력한 기록이 `## 결정 기록`에 있다
+- [x] 게이트를 어디에 붙였는지와 CI의 `ce` 해결 여부가 근거와 함께 기록됐다 | verify: human — 이 카드 `## 결정 기록` 절에 선택과 그 근거, 그리고 CI에서 `ce`가 해결되는지 확인한 결과가 적혀 있는지 확인
+- [x] 위반 카드를 심으면 게이트가 그 경로를 지목하며 실패한다 | verify: human — `type: fix` 카드 하나를 심고 저장소 게이트가 rc≠0으로 그 경로를 출력한 기록이 `## 결정 기록`에 있다
 - [ ] 기존 게이트 통과 | verify: `make doc-check` (regression-guard)
 
 ## Notes

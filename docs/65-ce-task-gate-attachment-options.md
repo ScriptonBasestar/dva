@@ -1,8 +1,8 @@
 # 65. `ce task gate` 연결 지점 — 비용이 붙은 두 선택지
 
-> 상태: **결정 대기** (TASK-377, 2026-09-13). 이 문서는 고르지 않는다. 사람이 고를 수
-> 있도록 두 선택지의 비용만 같은 항목으로 나란히 적는다. 결정과 실제 연결은
-> `tasks/todo/354-make-the-board-pass-ce-task-validate-and-gate-it.md`가 소유한다.
+> 상태: **결정됨 — B(`branch.readiness`)** (2026-09-13). 근거와 실측은 결정을 소유하는
+> `tasks/todo/354-make-the-board-pass-ce-task-validate-and-gate-it.md` §결정 기록 8번에
+> 있다. 이 문서는 그 결정이 딛고 선 비용 비교로 남는다.
 
 ## 1. 기준선 — 아무 데도 붙이지 않는다
 
@@ -28,6 +28,14 @@ $ /usr/bin/grep -nE 'uses:|run:' .github/workflows/ci.yml
 `golangci/golangci-lint-action`, `goreleaser/goreleaser-action`과 `make` 타깃뿐이다.
 `ce` 바이너리를 설치하는 step은 없다. **TASK-354가 "붙이기 전에 확인할 것"으로 남긴
 질문의 답은 아니오다.**
+
+**설치 step을 추가해서 해결할 수 있는 종류의 아니오가 아니다(2026-09-13 추가).** `ce`의
+모듈 경로는 `github.com/archmagece/ce-agent-kit`지만 실제 원격은 GitHub이 아니라 사설
+자체호스팅 GitLab이다 — `git remote get-url origin`은
+`ssh://git@gitlab.polypia.net:2224/archmagece/ce-agent-kit.git`이고
+`gh repo view archmagece/ce-agent-kit`는 resolve에 실패한다. DVA CI는 GitHub-hosted
+`ubuntu-latest`이므로, A를 쓰려면 문서 게이트 하나를 돌리려고 hosted CI에 사설 GitLab
+자격증명을 심어야 한다. **A는 비용이 큰 것이 아니라 불가능하다.**
 
 ### 2.2 `.gz-git.yaml`은 있고, readiness 선언만 없다
 
@@ -78,6 +86,11 @@ target과 source를 각각 격리된 detached worktree로 꺼낸 뒤, **target �
 ```
 <runner> --source-dir <dir> --source-sha <sha> --target-sha <sha> --result-format json-v1
 ```
+
+**러너는 언제나 exit 0 해야 한다(2026-09-13 추가).** `executeReadinessWithTimeout`은
+종료 코드가 0이 아니면 stdout을 읽지 않고 `runner failed: <stderr>`로 판정을
+`unavailable` 처리한다. `ce task gate`의 exit 1을 그대로 전달하면 "보드가 빨간불"이
+"게이트가 고장"으로 바뀐다 — 판정은 오직 아래 `status` 필드가 나른다.
 
 runner는 stdout에 정확히 세 필드의 JSON을 낸다:
 `{"version":1,"status":"ready|not_ready|unavailable","summary":"..."}`. 필드가 더 있거나
@@ -136,5 +149,7 @@ B는 gz-git 쪽 `branch.readiness`를 말한다.
   `9398a41`(2026-09-09)이다. `readiness` 블록은 설치본의 `gz-git schema` 출력에도 있으므로
   선언의 형태 자체는 두 리비전 모두에서 확인됐지만, 하루치 커밋의 동작 차이는 확인하지
   않았다.
-- **DVA용 runner 스크립트를 실제로 쓰는 데 드는 비용은 미측정이다.** 표의 B열 "채택 비용"은
-  계약이 요구하는 산출물 목록이지 작성 시간의 측정치가 아니다.
+- ~~**DVA용 runner 스크립트를 실제로 쓰는 데 드는 비용은 미측정이다.**~~ 2026-09-13에
+  `.gz-git/readiness/check`를 실제로 작성해 해소했다. 실측은 TASK-354 §결정 기록 8번에
+  있다 — 계약 자체는 얇지만 조용히 틀리는 자리가 둘 있었다(`emit`의 외부 명령 의존,
+  로케일에 걸린 제어문자 제거).

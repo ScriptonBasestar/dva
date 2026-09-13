@@ -1,0 +1,95 @@
+#!/bin/bash
+# check: gz-git branch.readiness 러너 — 보드 판정을 `ce task gate`에 위임한다
+# 용도: `gz-git integrate check`가 target 쪽에서 실행하는 json-v1 계약 러너.
+#       이 스크립트는 아무것도 판정하지 않는다 — 프로토콜(인자 형태·출력 형식·
+#       종료 코드 규약)만 지키고 판정은 공유 게이트 `ce task gate`가 낸다.
+# 사용법: check --source-dir <dir> --source-sha <sha> --target-sha <sha> --result-format json-v1
+#
+# 계약(gzh-cli-gitforge pkg/integrate/readiness.go):
+#   - stdout은 정확히 세 키의 JSON 객체다: version·status·summary. 키가 더 있거나
+#     모자라면 `runner result has unknown or missing fields`로 거부된다.
+#   - status는 ready|not_ready|unavailable 셋 중 하나다.
+#   - **종료 코드는 언제나 0이어야 한다.** 0이 아니면 gz-git이 stdout을 읽지 않고
+#     `runner failed: <stderr>`로 판정을 unavailable 처리한다. 즉 not_ready를
+#     종료 코드로 전달하면 "보드가 빨간불"이 "게이트가 고장"으로 바뀐다.
+#   - cwd는 target worktree이고 판정 대상은 --source-dir(통합될 쪽)이다.
+#   - summary는 비어 있지 않은 4096바이트 이하 문자열이고 제어문자를 포함할 수 없다.
+
+set -u
+
+# LC_ALL=C를 여기서 건다. gz-git의 readinessEnv도 이걸 덮어쓰지만, 정확성을 호출자
+# 환경에 기대면 다른 경로로 부르는 순간 조용히 깨진다 — 실제로 그렇게 깨졌다.
+# bash 3.2에서 `[$'\001'-$'\037']` 범위는 C 로케일에서만 개행을 잡는다.
+export LC_ALL=C LANG=C
+
+emit() {
+  # $1=status $2=summary. summary를 JSON 문자열 하나로 안전하게 만든다 —
+  # 계약이 제어문자를 거부하고, 이스케이프 없는 따옴표는 객체를 깨뜨린다.
+  #
+  # 외부 명령을 쓰지 않는다. 이 함수는 `ce`도 PATH도 없을 때 부르는 마지막 경로라서
+  # tr·cut에 기대면 정확히 보고해야 할 상황에서 같이 무너진다 — 실제로 초안이
+  # 그렇게 깨졌다. 아래는 전부 bash 파라미터 확장이다.
+  local status="$1" summary="$2"
+  summary="${summary//[$'\001'-$'\037'$'\177']/ }"
+  # 치환이 아니라 이스케이프다. `"`를 `'`로 바꾸면 보고해야 할 텍스트가 조용히
+  # 달라진다 — 게이트가 내는 JSON이 `/'status/'`처럼 읽히게 됐던 게 그 결과다.
+  # 역슬래시를 먼저 처리해야 뒤이어 넣는 이스케이프가 다시 이스케이프되지 않는다.
+  summary="${summary//\\/\\\\}"
+  summary="${summary//\"/\\\"}"
+  # 공백 런 축약: 제어문자를 공백으로 바꾼 자리가 길게 벌어진다.
+  while [ "$summary" != "${summary//  / }" ]; do summary="${summary//  / }"; done
+  # 바이트 단위로 자른다(LC_ALL=C). 자른 자리가 UTF-8 문자 중간이면 계약의
+  # utf8.Valid 검사에서 통째로 거부되므로, 잘린 꼬리를 걷어낸다.
+  if [ "${#summary}" -gt 4000 ]; then
+    summary="${summary:0:4000}"
+    while [ -n "$summary" ] && [ -z "${summary##*[$'\200'-$'\277']}" ]; do
+      summary="${summary%?}"
+    done
+    [ -z "${summary##*[$'\300'-$'\377']}" ] && summary="${summary%?}"
+    # 자른 자리가 이스케이프 시퀀스 한가운데면 끝에 홀수 개의 역슬래시가 남고,
+    # 그 역슬래시가 닫는 따옴표를 삼켜 객체가 깨진다. 홀수면 하나 뺀다.
+    local tail="${summary##*[!\\]}"
+    [ $(( ${#tail} % 2 )) -eq 1 ] && summary="${summary%?}"
+  fi
+  summary="${summary#"${summary%%[! ]*}"}"
+  summary="${summary%"${summary##*[! ]}"}"
+  [ -n "$summary" ] || summary="$status"
+  printf '{"version":1,"status":"%s","summary":"%s"}\n' "$status" "$summary"
+  exit 0
+}
+
+source_dir=""
+result_format=""
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --source-dir)     source_dir="${2-}"; shift 2 || emit unavailable "--source-dir has no value" ;;
+    --source-sha)     shift 2 || emit unavailable "--source-sha has no value" ;;
+    --target-sha)     shift 2 || emit unavailable "--target-sha has no value" ;;
+    --result-format)  result_format="${2-}"; shift 2 || emit unavailable "--result-format has no value" ;;
+    *)                emit unavailable "unexpected argument: $1" ;;
+  esac
+done
+
+# 알 수 없는 형식을 요구받으면 추측하지 않는다 — json-v1로 답해 놓고 다른 형식을
+# 요청받았다고 침묵하는 편이 더 나쁘다.
+[ "$result_format" = "json-v1" ] || emit unavailable "unsupported --result-format: ${result_format:-<missing>}"
+[ -n "$source_dir" ] || emit unavailable "--source-dir is required"
+[ -d "$source_dir" ] || emit unavailable "--source-dir is not a directory: $source_dir"
+
+# PATH는 상속된다(readinessEnv는 BASH_ENV·ENV·CDPATH·PROMPT_COMMAND·GIT_* 만 제거한다).
+# ce가 없으면 not_ready가 아니라 unavailable이다 — 보드가 나쁜 것이 아니라 잴 수 없는 것이다.
+command -v ce >/dev/null 2>&1 || emit unavailable "ce is not on PATH: the shared task gate cannot be reached"
+
+out=$(ce task gate --dir "$source_dir" --json 2>&1)
+rc=$?
+
+# 판정은 종료 코드가 낸다. --json 본문은 요약을 사람이 읽을 수 있게 만드는 데만 쓴다.
+detail="${out//[$'\001'-$'\037'$'\177']/ }"
+
+case "$rc" in
+  0) emit ready       "ce task gate: ${detail:-board ready}" ;;
+  1) emit not_ready   "ce task gate: ${detail:-board not ready}" ;;
+  2) emit unavailable "ce task gate could not judge: ${detail:-no detail}" ;;
+  *) emit unavailable "ce task gate exited $rc: ${detail:-no detail}" ;;
+esac
