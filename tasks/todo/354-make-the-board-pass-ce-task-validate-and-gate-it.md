@@ -14,6 +14,9 @@ depends-on: [TASK-371]
 
 ## Summary
 
+남은 `needs-human` 결정 1건의 사실 근거는 [[TASK-377]]이 비용이 붙은 선택지 2개로
+좁힌다. 그 카드는 결정하지 않으며, [[ISSUE-001]]의 외부 차단과 독립적으로 먼저 끝난다.
+
 **현재 상태(2026-09-10, `af7f6e6`, CE 0.8.4 `8034cc4`)**: `ce task gate
 --json`은 `task_validate_failed`로 exit 1 한다. `ce task validate --all`의 현재
 모수는 67장이고 65장은 valid, 2장은 invalid다. 실패 카드는

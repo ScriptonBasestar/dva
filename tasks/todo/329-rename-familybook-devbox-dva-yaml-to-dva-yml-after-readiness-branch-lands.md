@@ -12,6 +12,9 @@ needs-human: true
 
 ## Summary
 
+착지 관측은 [[TASK-378]]이 exit code로 답하는 검사로 고정한다. 이 카드는 그 검사가
+0으로 끝난 뒤에 착수한다 — 사람이 기억해 두었다가 확인할 일이 아니다.
+
 familybook-devbox still uses the legacy `dva.yaml` filename, which `dva validate` accepts with a
 warning (TASK-304). This card was filed as "blocked until the readiness-contract branch lands",
 but that branch is gone.

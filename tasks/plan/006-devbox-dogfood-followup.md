@@ -3,10 +3,10 @@ id: PLAN-006
 title: "Work the devbox dogfood follow-up queue in dependency order"
 type: plan
 scope: "TASK-311..323 from the 2026-09-05 mydevbox migration, plus the needs-human cards that gate the rest"
-progress: 88
-total-tasks: 26
+progress: 82
+total-tasks: 28
 completed-tasks: 23
-children: [TASK-339, TASK-340, TASK-328, TASK-329, TASK-312, TASK-313, TASK-317, TASK-311, TASK-324, TASK-314, TASK-316, TASK-320, TASK-322, TASK-315, TASK-318, TASK-323, TASK-249, TASK-307, TASK-309, TASK-319, TASK-321, TASK-345, TASK-346, TASK-347, TASK-348, TASK-351]
+children: [TASK-339, TASK-340, TASK-328, TASK-329, TASK-312, TASK-313, TASK-317, TASK-311, TASK-324, TASK-314, TASK-316, TASK-320, TASK-322, TASK-315, TASK-318, TASK-323, TASK-249, TASK-307, TASK-309, TASK-319, TASK-321, TASK-345, TASK-346, TASK-347, TASK-348, TASK-351, TASK-376, TASK-378]
 target-date: "2026-10-31"
 created: 2026-09-05
 ---
@@ -110,13 +110,24 @@ validate가 요구한다 — 둘은 다른 질문에 답한다.
 - TASK-319 — native entry ergonomics (done 2026-09-12)
 - TASK-321 — destructive interaction agent-deny (done)
 
+### 착수 비용을 걷어내는 준비 2장 (2026-09-13 신설)
+
+두 장 모두 자기 뒤의 카드를 대신 수행하지 않는다. 앞의 카드가 미뤄지는 **이유**를
+없앨 뿐이다 — 하나는 착수 비용, 하나는 사람의 기억.
+
+- TASK-376 — 실기동 하네스 (todo). TASK-328·348을 막지 않고 **먼저 끝날 수 있다**.
+  두 카드의 남은 일을 "파악하고 조립하고 옮겨적기"에서 "실행하고 확인하기"로 줄인다.
+  파괴적 명령의 방아쇠는 여전히 사람이 당긴다.
+- TASK-378 — familybook readiness 착지 검사 (todo). TASK-329의 선행 조건을 사람의
+  기억에서 exit code로 옮긴다. 외부 저장소를 읽기만 한다.
+
 ### 남은 순서 미지정 1장 — TASK-329
 
 완료된 TASK-249·339·340은 더 이상 실행 순서를 필요로 하지 않고, compose 번들은 아래
 §Compose follow-up sequence가 소유한다. 이 plan의 미완 자식 중 §Order·§Needs-human 어느
 쪽에도 아직 놓이지 않은 것은 TASK-329 하나다.
 
-- TASK-329 — familybook devbox `dva.yaml` → `dva.yml` rename (todo). 외부 readiness 브랜치가
+- TASK-329 — familybook devbox `dva.yaml` → `dva.yml` rename (todo). 착지 관측은 TASK-378이 담당한다. 외부 readiness 브랜치가
   실제로 착지했는지 확인한 뒤에만 다시 순서를 부여한다. 그 전에는 다른 plan 자식이나 내부
   코드 작업의 선행 조건으로 취급하지 않는다.
 

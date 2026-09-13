@@ -12,6 +12,9 @@ needs-human: true
 
 ## Summary
 
+실기동 준비와 pre-TASK-315 대조군 바이너리 고정은 [[TASK-376]]이 맡는다. 이 카드에
+남는 것은 실행과, 그 출력을 이 카드 `## Evidence`에 붙이는 일이다.
+
 TASK-315 shipped `plans.*.entries[].profiles` on evidence that is argv-level only. The review
 that cleared it said so directly rather than letting a `pass` imply more than it measured, and
 this card closes the gap it named.

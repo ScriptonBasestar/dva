@@ -12,6 +12,9 @@ needs-human: true
 
 ## Summary
 
+실기동 준비는 [[TASK-376]]이 맡는다 — 대상 3개의 명령 순서, `down --purge` 미리보기,
+리포트에 그대로 붙는 출력 형식까지. 이 카드에 남는 것은 **실행과 확인**이다.
+
 All devbox migrations so far were verified only with `dva validate` and `--dry-run` lifecycle verbs (agent constraint). This round runs the real verbs against the migrated configs: primeno1's six native entries (gate chain plus `exec`) and the familybook / flow-taskchain composition plans, using `dva up`, `dva status`, and `dva down --purge`, and attaches the exit codes and trimmed output to each project's report under `docs/dogfood/`. Any defect found is promoted to its own card. This is PLAN-006 row 10a; unblocked since TASK-311 (plan logs build scope) landed. Requires a human-operated session because lifecycle verbs beyond `--dry-run` are not permitted for agents.
 
 ## Completion Criteria
