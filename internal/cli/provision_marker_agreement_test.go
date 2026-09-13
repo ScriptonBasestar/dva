@@ -83,7 +83,7 @@ func TestDoctorAndPurgeAgreeOnWhatAMarkerIs(t *testing.T) {
 	class := markerTransientClass(t)
 	out := gitInRepo(t, dir, append([]string{"ls-files", "--cached", "--"}, class.pathspecs()...)...)
 	fromDoctor := map[string]bool{}
-	for _, line := range strings.Fields(out) {
+	for line := range strings.FieldsSeq(out) {
 		fromDoctor[line] = true
 	}
 
