@@ -33,8 +33,40 @@ const (
 // once for the deadline, once for WaitDelay — every run.
 var gitCheckIgnoreTimeout = 2 * time.Second
 
-func defaultIgnorePath() string {
-	return config.DotDirName + "/"
+// defaultIgnoreRules is the block DVA writes, and it is two lines rather than one because one
+// line cannot express what DVA needs. `.sb/dva/` — what this wrote until now — excludes the
+// directory, and git does not descend into an excluded directory, so no later negation can
+// reach back inside it. That is not a subtlety about spelling; it means the rule DVA itself
+// recommended made DVA's own modules feature unusable. `.sb/dva/<name>.yml` is hand-authored
+// configuration that belongs in the commit, and under the old rule `git add` refused it
+// without `-f`. A repository that had already committed one kept it (git does not apply
+// .gitignore to tracked files) and then silently could not add the second.
+//
+// Excluding the contents instead leaves the directory itself un-excluded, which is the only
+// arrangement in which the negation on the next line has anything to attach to. `*` does not
+// cross `/`, so `!.sb/dva/*.yml` re-includes modules at the one level DVA puts them and nothing
+// deeper — a `.yml` inside a cloned source stays ignored.
+//
+// Nothing DVA writes at runtime is re-included by that negation: the four classes are
+// `pids/*.pid`, `logs/*.log`, `sources/<entry>` and `provisioned-<profile>`, none of them a
+// `.yml` at this level. dvaTransientProbes is the list, and the test over it is what keeps that
+// claim true as writers come and go.
+func defaultIgnoreRules() []string {
+	dir := config.DotDirName
+	return []string{dir + "/*", "!" + dir + "/*.yml"}
+}
+
+// defaultIgnoreAdvice spells the same block for the messages that tell a person what to write.
+// It reads defaultIgnoreRules rather than restating it: the advice and the automatic fix
+// disagreeing is the failure this whole change is about, and two independent spellings of one
+// rule is how that disagreement gets reintroduced.
+func defaultIgnoreAdvice() string {
+	rules := defaultIgnoreRules()
+	quoted := make([]string, 0, len(rules))
+	for _, rule := range rules {
+		quoted = append(quoted, "'"+rule+"'")
+	}
+	return strings.Join(quoted, " + ")
 }
 
 // ensureGitignore ensures that the .gitignore file contains the necessary entries for DVA.
@@ -48,7 +80,7 @@ func defaultIgnorePath() string {
 // answer changing, since doctor's fix discards it.
 func ensureGitignore(configDir string) (bool, error) {
 	gitignorePath := filepath.Join(configDir, ".gitignore")
-	ignorePath := defaultIgnorePath()
+	ignoreRules := strings.Join(defaultIgnoreRules(), "\n")
 
 	// Read first, ask second, write last. The order matters: the two branches below used to
 	// ask different questions — the missing-file branch wrote without consulting git at all
@@ -67,7 +99,7 @@ func ensureGitignore(configDir string) (bool, error) {
 
 	if os.IsNotExist(readErr) {
 		// No .gitignore, creating a new one
-		created := fmt.Sprintf("%s\n%s\n", defaultIgnoreSection, ignorePath)
+		created := fmt.Sprintf("%s\n%s\n", defaultIgnoreSection, ignoreRules)
 		if err := os.WriteFile(gitignorePath, []byte(created), 0644); err != nil {
 			return false, fmt.Errorf("failed to create .gitignore: %w", err)
 		}
@@ -87,7 +119,7 @@ func ensureGitignore(configDir string) (bool, error) {
 		}
 	}
 
-	ignoreBlock := fmt.Sprintf("\n%s\n%s\n", defaultIgnoreSection, ignorePath)
+	ignoreBlock := fmt.Sprintf("\n%s\n%s\n", defaultIgnoreSection, ignoreRules)
 	if _, err := f.WriteString(ignoreBlock); err != nil {
 		return false, fmt.Errorf("failed to append to .gitignore: %w", err)
 	}
@@ -351,14 +383,35 @@ func dvaRepoAlreadyDeclares(configDir, gitignoreContent string) bool {
 // before — reports "already ignored" for the second case above and suppresses the warning
 // while git leaves the markers committable.
 //
-// This still stops short of implementing gitignore semantics: globs (".sb/*"), non-root
-// anchoring ("**/.sb/"), and .git/info/exclude stay uninterpreted. Every one of those gaps
-// makes DVA warn about a path that is in fact ignored, which is the harmless direction — an
-// extra warning, never a silently committed marker.
+// One glob form is read, and only because DVA writes it. defaultIgnoreRules spells the rule
+// `.sb/dva/*`, since excluding the directory itself would make DVA's modules unaddable; a reader
+// that could not see that spelling would report DVA's own freshly-written block as missing, and
+// ensureGitignore — which consults this when git cannot be asked — would append the same block
+// on every run. Directory-contents exclusion answers this predicate the same way directory
+// exclusion does: the transients live under the directory either way.
+//
+// This still stops short of implementing gitignore semantics: other globs, non-root anchoring
+// ("**/.sb/"), and .git/info/exclude stay uninterpreted. Those gaps make DVA warn about a path
+// that is in fact ignored, which is the harmless direction — an extra warning, never a silently
+// committed marker.
+//
+// The one glob read here does have a hole in the other direction, and it predates this: a
+// negation narrower than the exclusion, `!.sb/dva/p*` say, would re-include provision markers
+// while nothing below names that pattern, so this would report them ignored when git does not.
+// It is the same hole `.sb/` + `!.sb/d*` already had — an uninterpreted negation is invisible
+// whether or not the exclusion beside it is a glob. Both are closed on the git-backed path,
+// which is every working tree that has git; this reader runs only where it does not.
 func isDvaIgnored(content string) bool {
 	lines := strings.Split(content, "\n")
 	for _, prefix := range ancestorsAndSelf(config.DotDirName) {
+		// The path's own spellings are asked first, and the order is load-bearing. Given
+		// `.sb/dva/` and `!.sb/dva/*` together, git excludes the directory and never
+		// descends, so the negation on its contents never applies; reading the contents
+		// form first would let that negation win an argument git does not give it.
 		if lastMatchExcludes(lines, pathSpellings(prefix)) {
+			return true
+		}
+		if lastMatchExcludes(lines, contentsSpellings(prefix)) {
 			return true
 		}
 	}
@@ -388,6 +441,24 @@ func pathSpellings(path string) map[string]bool {
 		return forms
 	}
 	for _, form := range []string{path, path + "/", "/" + path, "/" + path + "/"} {
+		forms[form] = true
+	}
+	return forms
+}
+
+// contentsSpellings returns the .gitignore lines that exclude everything inside path rather
+// than path itself: ".sb/dva" → ".sb/dva/*" and "/.sb/dva/*".
+//
+// Kept apart from pathSpellings because the two name different things and only happen to
+// answer this predicate alike. Folding them together would also fold their negations together,
+// and `!.sb/dva/` and `!.sb/dva/*` are not interchangeable — the first negates a directory, the
+// second its contents, and git resolves them at different points.
+func contentsSpellings(path string) map[string]bool {
+	forms := make(map[string]bool, 2)
+	if path == "" {
+		return forms
+	}
+	for _, form := range []string{path + "/*", "/" + path + "/*"} {
 		forms[form] = true
 	}
 	return forms
@@ -495,7 +566,7 @@ func checkGitignoreForWarning(configDir string) {
 	}
 
 	fmt.Fprintf(os.Stderr, "⚠️  [warn] %s/ is not in your .gitignore. Transient markers might be committed.\n", config.DotDirName)
-	fmt.Fprintf(os.Stderr, "         Run 'dva doctor --fix' to auto-fix or add '%s/' to .gitignore manually.\n\n", config.DotDirName)
+	fmt.Fprintf(os.Stderr, "         Run 'dva doctor --fix' to auto-fix or add %s to .gitignore manually.\n\n", defaultIgnoreAdvice())
 }
 
 // failGitignore marks the row failed with the finding and remedy its branch found, and attaches
@@ -530,11 +601,11 @@ func checkGitignoreStatus(configDir string) DoctorResult {
 		if _, err := os.Stat(gitignorePath); os.IsNotExist(err) {
 			return failGitignore(r, configDir,
 				fmt.Sprintf("no .gitignore here, so %s/ is not ignored", config.DotDirName),
-				fmt.Sprintf("Create .gitignore and add '%s/' to avoid committing transient state", config.DotDirName))
+				fmt.Sprintf("Create .gitignore and add %s to avoid committing transient state", defaultIgnoreAdvice()))
 		}
 		return failGitignore(r, configDir,
 			fmt.Sprintf("%s/ is NOT ignored in .gitignore", config.DotDirName),
-			fmt.Sprintf("Add '%s/' to .gitignore to avoid committing transient state", config.DotDirName))
+			fmt.Sprintf("Add %s to .gitignore to avoid committing transient state", defaultIgnoreAdvice()))
 	}
 
 	// git is asked before the file is read, because it applies rules this function cannot

@@ -59,9 +59,35 @@ func TestIsDvaIgnored(t *testing.T) {
 		{"negation alone excludes nothing", "!.sb/\n", false},
 		{"unrelated negation is not a match", ".sb/\n!dist/\n", true},
 
-		// Not interpreted on purpose — documented as out of scope in TASK-065. Pinned so
-		// the limitation is a decision on record rather than an accident.
-		{"glob is not interpreted", ".sb/*\n", false},
+		// One glob form is read, and only this one: the contents-exclusion that
+		// defaultIgnoreRules writes. Excluding a directory's contents puts the transients
+		// out of reach exactly as excluding the directory does, so this predicate answers
+		// both alike — at the ancestor as well as at the dot directory itself.
+		//
+		// It is read because DVA writes it. Without these cases ensureGitignore would
+		// consult this reader, fail to see the block it had just written, and append the
+		// same two lines on every run of `dva init` on a machine where git cannot be asked.
+		{"contents glob at the dot dir", ".sb/dva/*\n", true},
+		{"contents glob at an ancestor", ".sb/*\n", true},
+		{"contents glob root-anchored", "/.sb/dva/*\n", true},
+		{"the block DVA writes", ".sb/dva/*\n!.sb/dva/*.yml\n", true},
+
+		// The negation that does undo it has to name the same thing. `!.sb/dva/*.yml`
+		// above re-includes a class DVA never writes, so it changes no answer; `!.sb/dva/*`
+		// re-includes everything and must.
+		{"contents glob negated after being excluded", ".sb/dva/*\n!.sb/dva/*\n", false},
+		{"contents negation before the exclusion loses", "!.sb/dva/*\n.sb/dva/*\n", true},
+
+		// Directory exclusion outranks a negation on its contents: git does not descend
+		// into an excluded directory, so the negation never applies. This is why the path
+		// spellings are consulted before the contents spellings.
+		{"directory exclusion beats a contents negation", ".sb/dva/\n!.sb/dva/*\n", true},
+
+		// Still not interpreted — pinned so the remaining limits stay a decision on record
+		// rather than an accident. Each makes DVA warn about a path git does ignore, which
+		// is the harmless direction.
+		{"other globs are not interpreted", ".sb/d*\n", false},
+		{"double-star anchoring is not interpreted", "**/.sb/\n", false},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := isDvaIgnored(tt.content); got != tt.want {
@@ -277,6 +303,13 @@ func TestGitignoreCheckAsksGit(t *testing.T) {
 //
 // The fallback is the literal reader, so a plainly-spelled rule still suppresses the warning
 // where git is missing entirely.
+//
+// The block DVA writes belongs in the quiet half, and it did not always: `.sb/dva/*` +
+// `!.sb/dva/*.yml` stood here as the example of a rule the reader could not parse, back when
+// DVA wrote `.sb/dva/` instead. Once DVA writes the glob — it must, or its own modules become
+// unaddable — a reader blind to it would warn about the rule DVA had just written, and
+// ensureGitignore would append that rule again on every run. So the case moved sides, and
+// something the reader genuinely cannot parse took its place to keep the other half honest.
 func TestGitignoreFallsBackWhenGitCannotAnswer(t *testing.T) {
 	for _, tt := range []struct {
 		name      string
@@ -284,7 +317,8 @@ func TestGitignoreFallsBackWhenGitCannotAnswer(t *testing.T) {
 		wantWarn  bool
 	}{
 		{"literal reader still recognizes its own spelling", ".sb/dva/\n", false},
-		{"and still warns on what it cannot read", ".sb/dva/*\n!.sb/dva/*.yml\n", true},
+		{"and the block DVA writes", ".sb/dva/*\n!.sb/dva/*.yml\n", false},
+		{"and still warns on what it cannot read", "**/.sb/\n", true},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			dir := t.TempDir()
@@ -369,16 +403,24 @@ func TestGitCheckIgnoreGivesUpOnAStalledGit(t *testing.T) {
 	}
 }
 
-// TestDvaTransientProbesCoverEveryWriter guards the list against silently shrinking. The
-// verdict is unanimous over these four paths, so a probe dropped here does not fail anything —
-// it widens the set of configurations that pass, which is the direction that goes unnoticed.
+// TestDvaTransientProbesCoverEveryWriter pins the list to the writers in both directions.
+//
+// A dropped probe is the direction that goes unnoticed: the verdict is unanimous over these
+// paths, so losing one fails nothing — it widens the set of configurations that pass.
+//
+// An added or altered probe is the direction this test used to miss entirely, because it asked
+// only whether each expected path was present. Both are now errors, and the second matters as
+// much as the first here: a probe is a claim that some writer produces paths of that shape, and
+// defaultIgnoreRules rests on that claim being exhaustive — `!.sb/dva/*.yml` is safe only
+// because no writer puts a `.yml` at that level. A probe nobody writes makes the list say
+// something about DVA that is not true, and a rule derived from it inherits the untruth.
 //
 // Each expectation is rebuilt from the constant its writer uses rather than spelled out, so a
 // renamed directory moves both sides together and this test keeps testing the same thing.
 func TestDvaTransientProbesCoverEveryWriter(t *testing.T) {
 	probes := dvaTransientProbes()
 
-	for _, want := range []struct {
+	writers := []struct {
 		what string
 		path string
 	}{
@@ -386,10 +428,37 @@ func TestDvaTransientProbesCoverEveryWriter(t *testing.T) {
 		{"log files", path.Join(config.DotDirName, config.LogsDirName, "probe.log")},
 		{"git source clones", path.Join(config.DotDirName, config.SourcesDirName, "probe")},
 		{"provision markers", path.Join(config.DotDirName, provisionMarkerName("probe"))},
-	} {
+	}
+
+	expected := make(map[string]string, len(writers))
+	for _, want := range writers {
+		expected[want.path] = want.what
 		if !slices.Contains(probes, want.path) {
 			t.Errorf("no probe for %s: %q missing from %q", want.what, want.path, probes)
 		}
+	}
+
+	// The other direction. A probe here that no writer above accounts for is either a real
+	// writer this test has not learned about — in which case the entry belongs in `writers`
+	// with the constant it comes from — or a path nothing produces, which leaves the checker
+	// asking git about a shape that cannot occur.
+	seen := make(map[string]bool, len(probes))
+	for _, probe := range probes {
+		if _, ok := expected[probe]; !ok {
+			t.Errorf("probe %q matches no known writer; add the writer to this test or drop "+
+				"the probe", probe)
+		}
+		// Duplicates would not change the unanimous verdict, so nothing else would catch
+		// one; it is still a list that has stopped meaning one entry per class.
+		if seen[probe] {
+			t.Errorf("probe %q listed twice in %q", probe, probes)
+		}
+		seen[probe] = true
+	}
+
+	if len(probes) != len(writers) {
+		t.Errorf("dvaTransientProbes returned %d probes for %d writers: %q",
+			len(probes), len(writers), probes)
 	}
 
 	// Forward slashes even on Windows: these go to git, which uses them everywhere.
@@ -531,6 +600,92 @@ func TestEnsureGitignoreWritesWhatACloneWouldLack(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// TestEnsureGitignoreKeepsModulesAddable is the acceptance test for what DVA writes, and it
+// asks git rather than inspecting the text, because the defect it covers was invisible in the
+// text. The old rule, `.sb/dva/`, reads as an obviously correct way to discard a scratch
+// directory. What it actually does is exclude the directory, and git does not descend into an
+// excluded directory — so `.sb/dva/gates.yml`, which is hand-authored configuration DVA reads
+// and expects in the commit, could not be added without `-f`. DVA's own advice disabled DVA's
+// modules feature, and `dva doctor --fix` applied it automatically.
+//
+// The failure had a shape that kept it quiet. A repository that committed its first module
+// before running the fix kept it, because git does not apply .gitignore to tracked files; only
+// the *next* module was refused, in a `git add` that reported nothing and exited 0. So the
+// two halves are asserted separately below: transients ignored is the rule's purpose, modules
+// addable is the thing it must not cost.
+func TestEnsureGitignoreKeepsModulesAddable(t *testing.T) {
+	dir := t.TempDir()
+	initGitRepo(t, dir)
+
+	if _, err := ensureGitignore(dir); err != nil {
+		t.Fatalf("ensureGitignore: %v", err)
+	}
+
+	// check-ignore needs nothing on disk, but `git add` does, so the module is written for
+	// real — the refusal this test is about is one `git add` reports, not one a pattern match
+	// predicts.
+	modulePath := filepath.Join(dir, config.DotDirName, "gates.yml")
+	if err := os.MkdirAll(filepath.Dir(modulePath), 0o755); err != nil {
+		t.Fatalf("MkdirAll module dir: %v", err)
+	}
+	if err := os.WriteFile(modulePath, []byte("checks: {}\n"), 0o644); err != nil {
+		t.Fatalf("WriteFile module: %v", err)
+	}
+
+	sources, decided := gitCheckIgnore(dir, dvaTransientProbes())
+	if !decided {
+		t.Fatalf("git could not answer in a repository this test created")
+	}
+	for _, probe := range dvaTransientProbes() {
+		if _, ok := sources[probe]; !ok {
+			gitignore, _ := os.ReadFile(filepath.Join(dir, ".gitignore"))
+			t.Errorf("%q is not ignored under the rule DVA wrote:\n%s", probe, gitignore)
+		}
+	}
+
+	// The half the old rule failed. `git add` on an ignored path without `-f` fails, and that
+	// is the exact command a person adding a module runs.
+	modulePathInRepo := path.Join(config.DotDirName, "gates.yml")
+	if ignored, _ := gitCheckIgnore(dir, []string{modulePathInRepo}); len(ignored) != 0 {
+		gitignore, _ := os.ReadFile(filepath.Join(dir, ".gitignore"))
+		t.Errorf("%q is ignored, so `git add` refuses it without -f; DVA reads it as "+
+			"configuration. Rule written:\n%s", modulePathInRepo, gitignore)
+	}
+
+	add := exec.Command("git", "add", modulePathInRepo)
+	add.Dir = dir
+	if out, err := add.CombinedOutput(); err != nil {
+		t.Errorf("git add %q: %v: %s", modulePathInRepo, err, out)
+	}
+
+	// Writing is not enough; the writer must also recognize what it wrote. Without the
+	// contents-glob form in the literal reader this second call appends the block again,
+	// and does so on every subsequent `dva init` in any tree where git cannot be asked.
+	before, err := os.ReadFile(filepath.Join(dir, ".gitignore"))
+	if err != nil {
+		t.Fatalf("ReadFile .gitignore: %v", err)
+	}
+	wrote, err := ensureGitignore(dir)
+	if err != nil {
+		t.Fatalf("ensureGitignore (second call): %v", err)
+	}
+	after, err := os.ReadFile(filepath.Join(dir, ".gitignore"))
+	if err != nil {
+		t.Fatalf("ReadFile .gitignore: %v", err)
+	}
+	if wrote || string(after) != string(before) {
+		t.Errorf("second ensureGitignore wrote = %v and left %q, want no change from %q",
+			wrote, after, before)
+	}
+	// The same question with git taken away, which is the path that actually regressed:
+	// dvaRepoAlreadyDeclares consults git first and would mask a reader that cannot see the
+	// rule. isDvaIgnored is that reader, asked directly.
+	if !isDvaIgnored(string(after)) {
+		t.Errorf("the literal reader does not recognize the block DVA wrote, so a tree "+
+			"without git re-appends it every run:\n%s", after)
 	}
 }
 
