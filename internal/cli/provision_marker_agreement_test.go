@@ -41,6 +41,12 @@ func markerTransientClass(t *testing.T) transientClass {
 // Both sides are also checked against the table, not only against each other, because two
 // predicates that drift together are still wrong and agreeing about it proves nothing.
 //
+// The invariant holds over tracked files and only those, which is why every case below is staged
+// with `git add -f`. Doctor reads the index and `--purge` reads the disk, so an untracked
+// `.sb/dva/provisioned-untracked` is deleted by purge and invisible to doctor — correct, since an
+// untracked marker is the ordinary case and doctor's row is about committed state. Widening this
+// fixture with an unstaged file would therefore look like a disagreement and would not be one.
+//
 // The directory case is why the pathspec carries `:(glob)`. A pathspec wildcard is matched
 // without pathname semantics, so a bare `.sb/dva/provisioned-*` matches
 // `.sb/dva/provisioned-things/a.txt` — measured, and the opposite of what gitignore's `*` does

@@ -24,7 +24,7 @@ type gitProbe interface {
 	InsideRepo(dir string) bool
 	Available() bool
 	Tracked(dir, target string) bool
-	TrackedAny(dir string, specs ...string) (any, known bool)
+	TrackedAny(dir string, specs ...string) (tracked, known bool)
 	Ignored(dir, target string) bool
 }
 
@@ -82,7 +82,7 @@ func (realGit) Tracked(dir, target string) bool {
 // InsideRepo, which is an Lstat and not a git call, and Available, which is a LookPath, while
 // git itself exits 128. Measured: a real `.sb/dva/pids/web.pid` on disk, and the row printed a
 // pass.
-func (realGit) TrackedAny(dir string, specs ...string) (any, known bool) {
+func (realGit) TrackedAny(dir string, specs ...string) (tracked, known bool) {
 	args := append([]string{"ls-files", "--cached", "--"}, specs...)
 	cmd := exec.Command("git", args...)
 	cmd.Dir = dir

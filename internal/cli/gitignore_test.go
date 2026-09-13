@@ -1136,7 +1136,7 @@ func (g *trackedProbeGit) Tracked(_, target string) bool { return g.tracked[targ
 // TrackedAny keys on the whole pathspec list, not on the class name, so a class that loses its
 // exclusion asks a question this stub has no answer for and the row goes quiet — which is what
 // makes the recorded list evidence about the query rather than about the class names.
-func (g *trackedProbeGit) TrackedAny(_ string, specs ...string) (any, known bool) {
+func (g *trackedProbeGit) TrackedAny(_ string, specs ...string) (tracked, known bool) {
 	key := strings.Join(specs, " ")
 	g.asked = append(g.asked, key)
 	if g.unanswerable[key] {
