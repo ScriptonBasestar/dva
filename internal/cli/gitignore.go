@@ -338,6 +338,19 @@ func (c transientClass) pathspecs() []string {
 	return append([]string{c.name}, c.exclude...)
 }
 
+// authoredExclusions spells isProvisionMarker's content test as pathspecs, so doctor's question
+// and `--purge`'s deletion are derived from one list rather than kept in step by hand. They have
+// to agree in both directions: a file doctor reports and purge will not delete is a finding
+// naming something DVA does not manage, and one purge deletes without doctor reporting it is a
+// deletion nobody was warned about.
+func authoredExclusions() []string {
+	specs := make([]string, 0, len(authoredExts))
+	for _, ext := range authoredExts {
+		specs = append(specs, ":(exclude)"+path.Join(config.DotDirName, "*"+ext))
+	}
+	return specs
+}
+
 func dvaTransientClasses() []transientClass {
 	return []transientClass{
 		{name: path.Join(config.DotDirName, config.PidsDirName)},
@@ -349,9 +362,9 @@ func dvaTransientClasses() []transientClass {
 			// written before the extension are still on disk, still committed, and still the
 			// ones a repository needs told about. `provisioned-*` covers both, because git's
 			// `*` does not cross `/` but does match `.` — which is also why it reaches the
-			// module the exclusion then removes.
+			// authored files the exclusions then remove.
 			name:    path.Join(config.DotDirName, provisionMarkerPrefix+"*"),
-			exclude: []string{":(exclude)" + path.Join(config.DotDirName, "*"+moduleExt)},
+			exclude: authoredExclusions(),
 		},
 	}
 }

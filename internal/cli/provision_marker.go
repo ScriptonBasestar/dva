@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/ScriptonBasestar/dva/internal/config"
@@ -25,10 +26,31 @@ const (
 	// module.
 	provisionMarkerExt = ".marker"
 
-	// moduleExt is the one spelling the module loader reads (see internal/config). A marker is
-	// told apart from a module by this and nothing else, so the two must not drift.
+	// moduleExt is the one spelling the module loader reads (see internal/config).
 	moduleExt = ".yml"
 )
+
+// authoredExts are the extensions that say a file in the dot directory is something a person
+// wrote. Nothing here is deletable by --purge and nothing here is transient state doctor should
+// report, whatever its name looks like.
+//
+// It is wider than moduleExt on purpose, and the extra two are not hypothetical. The loader reads
+// only `.yml`, so a module misspelled `.yaml` — the commoner spelling everywhere else — is already
+// inert, and a person debugging that has DVA quietly deleting the file when they run `--purge` to
+// reset state. `.md` is the note somebody leaves next to their config. Both carry the marker
+// prefix as readily as `provisioned-base.yml` did, which is the collision that started all of
+// this, one letter apart.
+//
+// A legacy marker for a profile named `setup-v1.0` has extension `.0`, is in none of these, and
+// is still cleared — which is the case a positive "looks like a marker" rule strands.
+var authoredExts = []string{moduleExt, ".yaml", ".md"}
+
+// authoredFile reports whether a name in the dot directory is content rather than a marker. It is
+// the one predicate both the deletion in this file and doctor's pathspec in gitignore.go are
+// built from, so the two cannot disagree about what a marker is.
+func authoredFile(name string) bool {
+	return slices.Contains(authoredExts, filepath.Ext(name))
+}
 
 // provisionMarkerName is the file name recording that a profile has been provisioned.
 //
@@ -69,13 +91,17 @@ func provisionMarkerExists(configDir, profile string) bool {
 
 // isProvisionMarker decides what clearProvisionMarkers is allowed to delete, and it is
 // written as an exclusion rather than as a shape: every non-directory carrying the prefix
-// is a marker except a module. A positive rule — "ends in .marker, or has no extension" —
-// reads tighter but quietly abandons a legacy marker for a profile whose name contains a
-// dot, which would then survive `--purge` and suppress provisioning forever.
+// is a marker except authored content. A positive rule — "ends in .marker, or has no
+// extension" — reads tighter but quietly abandons a legacy marker for a profile whose name
+// contains a dot, which would then survive `--purge` and suppress provisioning forever.
+//
+// Directories are not markers whatever they are called. DVA writes markers as flat files, so
+// a `provisioned-*` directory is someone else's, and deleting into it is not this command's
+// business.
 func isProvisionMarker(e fs.DirEntry) bool {
 	return !e.IsDir() &&
 		strings.HasPrefix(e.Name(), provisionMarkerPrefix) &&
-		filepath.Ext(e.Name()) != moduleExt
+		!authoredFile(e.Name())
 }
 
 // provisionMarkers lists what clearProvisionMarkers would delete, as full paths.
