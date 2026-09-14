@@ -1,0 +1,46 @@
+{
+  "reviewed-card-sha256": "29e2ab55ea8b81a93a32f2480665d6e156dc24d04ad14f043fa5092ff290b32a",
+  "digest-kind": "ce-canonical-card-digest",
+  "digest-note": "CE canonical digest, not a plain file sha256. It excludes quality-review, quality-reviewed-at, quality-review-receipt and review_status, so it survives closing and pointer retargeting. quality-review-evidence and the body ARE covered: both were finalised before this digest was taken.",
+  "task": "TASK-344",
+  "title": "Harden frontmatter value parsing against trailing comments and repeated keys",
+  "reviewer": "review-344 (independent; did not author the change)",
+  "verdict": "pass",
+  "verdict-final": true,
+  "reviewed-at": "2026-09-14T11:45:00+09:00",
+  "date": "2026-09-14",
+  "issued-by": "TASK-384",
+  "backdating-statement": "This is the first independent review of TASK-344 on record. The card was closed 2026-09-10 and its verification-evidence asserted an 'independent parser review' that left no artifact; TASK-384 retracted that claim rather than let this receipt appear to corroborate it. Nothing here is backdated: the review ran 2026-09-14.",
+  "branch": "dev/claude/mbp/chore/384",
+  "commits-reviewed": [
+    { "sha": "5173a13", "subject": "fix(doccheck): harden frontmatter parsing", "at": "2026-09-10 12:55:24 +0900", "files": "tools/doccheck/{cardstatus.go,archive.go,cardids.go,cardstatus_test.go}" }
+  ],
+  "criteria-results": [
+    { "n": 1, "criterion": "트레일링 # 주석이 값에서 제거된다", "verify": "/usr/bin/grep -rq 'func TestFrontmatterValueDropsTrailingComment(' tools/doccheck", "result": "pass", "exit": 0, "anchor": "tools/doccheck/cardstatus_test.go:157" },
+    { "n": 2, "criterion": "인용부호 안의 #는 보존된다", "verify": "/usr/bin/grep -rq 'func TestQuotedValueKeepsItsHash(' tools/doccheck", "result": "pass", "exit": 0, "anchor": "tools/doccheck/cardstatus_test.go:167" },
+    { "n": 3, "criterion": "반복 키가 조용히 첫 값으로 해소되지 않고 보고된다", "verify": "/usr/bin/grep -rq 'func TestRepeatedFrontmatterKeyIsReported(' tools/doccheck", "result": "pass", "exit": 0, "anchor": "tools/doccheck/cardstatus_test.go:197" },
+    { "n": 4, "criterion": "cardStatus와 hasCanonicalField가 강화된 헬퍼를 공유한다", "verify": "/usr/bin/grep -rq 'func TestCardStatusAndCanonicalFieldShareParser(' tools/doccheck", "result": "pass", "exit": 0, "anchor": "tools/doccheck/cardstatus_test.go:209" }
+  ],
+  "criteria-binding-caveat": "All four bindings test for the DECLARATION of a test function, not its result. The reviewer closed that gap by running go test ./tools/doccheck/... (exit 0) and reading all four test bodies to confirm they assert real behaviour. Recorded as a non-blocking finding on the card.",
+  "evidence-commands": [
+    { "command": "go test ./tools/doccheck/...", "result": "exit 0 — ok github.com/ScriptonBasestar/dva/tools/doccheck 1.703s" },
+    { "command": "make doc-check", "result": "exit 0 — cilabels OK, flowcheck OK, planprogress OK, yaml_example_errors 0" },
+    { "command": "go run ./tools/doccheck <two-card fixture with a duplicated id carrying a trailing comment>", "result": "card_ids: 1 (duplicate: 1); DUP-ID TASK-331 claimed by 2 cards; doc-check: FAIL; exit status 1 — the bypass the card was closed on is independently reproduced as closed" },
+    { "command": "frontmatterValue probed over 10 inputs in an isolated copy of the package", "result": "'TASK-331 # note'->'TASK-331'; 'TASK-331#note'->'TASK-331#note'; '\"release #1\" # catalog'->'release #1'; \"'a # b'\"->'a # b'; 'todo\t# tab comment'->'todo'; '#'->''" }
+  ],
+  "findings": [
+    { "id": 1, "severity": "medium", "summary": "The card's verification-evidence asserted an 'independent parser review' with no artifact, no receipt and no reviewer", "status": "corrected by TASK-384 in the same commit as this receipt", "note": "Does not lower the verdict: the finding is about the evidence record, not the code. It is the reason the card needed reopening." },
+    { "id": 2, "severity": "low", "summary": "Repeated-key detection is per-queried-key; a duplicated key nothing queries (e.g. title:) stays silent", "anchor": "tools/doccheck/cardstatus.go:55-73", "status": "recorded on the card as a deliberate scope boundary", "verified-by-lead": "re-read at source: frontmatterField continues past any line whose key != want, so detection cannot reach unqueried keys" },
+    { "id": 3, "severity": "low", "summary": "Double-quoted escape sequences are not unescaped, so values differ from a real YAML parse", "anchor": "tools/doccheck/cardstatus.go:75-99", "status": "recorded; harmless while the helper serves only id/type/status" },
+    { "id": 4, "severity": "low", "summary": "All four completion-criteria bindings are existence greps on a test name, not on a test result", "anchor": "tasks/done/344-*.md:29-32", "status": "recorded; gap closed in this review by running the tests and reading their bodies" },
+    { "id": 5, "severity": "informational", "summary": "The blocks: [TASK-343] edge is genuine and correctly directed", "verification": "TASK-343 reciprocally declares depends-on: [TASK-344]; commit order honours it (5173a13 12:55:24, then 5dfb9bc 13:57:14 the same day)" }
+  ],
+  "merits-summary": "Trailing comments handled with the correct YAML rule (a # only starts a comment after whitespace — verified at stripFrontmatterComment, cardstatus.go:118-128). Quoted # preserved, with unterminated/mismatched quotes left intact rather than guessed. Repeated keys rejected as an error rather than first-wins or last-wins, matching strict YAML. Error propagation checked at all four call sites. The card's stated scope discipline ('this is deliberately not a YAML parser') is honoured by the implementation.",
+  "not-certified": [
+    "make lint and the full make test were not run by the reviewer",
+    "the pre-fix binary's behaviour was not re-measured; what was measured is that the post-fix binary catches the bypass"
+  ],
+  "lead-verification": "dva-75 independently re-ran all four bindings (rc=0 each), go test ./tools/doccheck/... (rc=0), make doc-check (rc=0), confirmed both cited commit shas resolve, and re-read frontmatterField and stripFrontmatterComment at source to confirm findings 2 and the whitespace rule. Exit codes measured without pipelines.",
+  "files-modified-by-reviewer": "none",
+  "reviewed-card-path": "tasks/done/344-harden-frontmatter-value-parsing-against-comments-and-repeats.md"
+}
