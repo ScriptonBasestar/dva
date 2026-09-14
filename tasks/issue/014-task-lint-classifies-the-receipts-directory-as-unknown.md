@@ -10,6 +10,7 @@ created: 2026-09-14
 discovered-in: "TASK-381 (check-plan-prose-against-plan-frontmatter) 종료 중 ce task lint 실행"
 discovered-at: 2026-09-14
 source: "TASK-381 종료 확인 중 ce task lint의 DIRS 표에서 receipts/가 unknown 0건으로 나오는 것을 발견"
+upstream-ref: ""
 ---
 
 ## Summary
@@ -68,6 +69,12 @@ Resolution Criteria가 지금 이 위치의 존재에 결속되어 있다.
 
 소유는 외부다 — `ce task lint`는 ce-workbook/task_management 소속이다.
 [[ISSUE-004]] 선례에 따라 여기에 기록한다.
+
+## 소유권 — 상류다 (2026-09-15 명시)
+
+`ce task lint`의 DIRS 분류 어휘는 `ce-workbook/task_management` 소유다 — Impact가
+"소유는 외부다"로 적는다([[ISSUE-004]] 선례). 기준 전부가 lint 분류 어휘의 변경이므로
+이 저장소가 고칠 부분은 없다. 보고 자리는 [[TASK-395]]가 만든다.
 
 ## Resolution Criteria
 

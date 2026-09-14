@@ -10,6 +10,7 @@ severity: medium
 discovered-in: "2026-09-13 task:run-all loop termination"
 discovered-at: 2026-09-13
 created: 2026-09-13
+upstream-ref: ""
 ---
 
 ## Summary
@@ -75,6 +76,12 @@ needs, and lets an agent loop terminate on the verdict.
 `needs-human: true` in frontmatter should be the discriminator, since it is
 declared rather than inferred; the `verify: human —` prefix is corroborating
 evidence and a reasonable source for a warning when the two disagree.
+
+## 소유권 — 상류다 (2026-09-15 명시)
+
+preflight는 `ce-workbook/task_management` 소유다 — Summary가 "Owner is external"로
+적는다. 기준 전부가 상류가 needs-human 카드를 runnable과 구분해 내는 동작을 요구한다.
+보고 자리는 [[TASK-395]]가 만든다.
 
 ## Resolution Criteria
 

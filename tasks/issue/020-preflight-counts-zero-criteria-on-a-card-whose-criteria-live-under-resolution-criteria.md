@@ -9,6 +9,7 @@ created: 2026-09-14
 discovered-in: "2026-09-14 보드 현행화 — `ce task preflight --zone done`이 두 장을 no-criteria로 막았다"
 discovered-at: 2026-09-14
 source: "TASK-354의 §Notes가 같은 형태를 한 번 기록했고, 이번 전수 측정에서 재현됐다"
+upstream-ref: ""
 ---
 
 ## Summary
@@ -56,7 +57,7 @@ $ ce task validate tasks/done/002-…
 모르는 것이지 카드가 틀린 것이 아니다.** 카드를 고쳐 검사를 통과시키지 않는다 —
 이 저장소의 기존 판단([[TASK-350]]의 vacuous 바인딩 거부와 같은 계열)이다.
 
-## Ownership — 상류다
+## 소유권 — 상류다 (2026-09-15 명시)
 
 `preflight`는 ce-agent-kit이 소유한다. DVA는 관측을 잃지 않도록 카드만 세운다
 ([[ISSUE-004]] 선례). 여기에 로컬 우회 검사를 만들지 않는다.

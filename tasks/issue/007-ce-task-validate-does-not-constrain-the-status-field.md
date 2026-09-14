@@ -10,6 +10,7 @@ severity: medium
 discovered-in: "2026-09-13 board currentization review"
 discovered-at: 2026-09-13
 created: 2026-09-13
+upstream-ref: ""
 ---
 
 ## Summary
@@ -88,6 +89,14 @@ polices on its own.
 Sequencing matters: DVA must not delete its local sweep before the shared one
 lands and is observed rejecting the same inputs. Until then the duplication is
 the safe state.
+
+## 소유권 — 갈린다 (2026-09-15 명시)
+
+규칙 이전과 검사 제거가 짝이다. 기준 1·2(zone/status 제약의 `ce task validate` 이전)은
+상류(`ce-workbook/task_management`) 소유고, 기준 3(`tools/doccheck`의 checkCardStatus
+sweep 제거)은 이 저장소 소유다. 순서 제약은 카드가 이미 정한다 — 상류 검사가 착지하는
+것을 관측하기 전까지 로컬 sweep을 지우지 않는다. 상류 절반의 보고 자리는 [[TASK-395]]가
+만든다.
 
 ## Resolution Criteria
 

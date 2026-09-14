@@ -126,6 +126,12 @@ doccheck 어디에도 `[[...]]`를 읽는 코드가 없다.
 `TASK-388`로 개명해 해소했다(아래 Related). 늦게 발견됐다면 이미 통합된 참조
 양쪽을 풀어야 했다.
 
+## 소유권 — 이 저장소다 (2026-09-15 명시)
+
+잡을 수 있는 것은 게이트가 아니라 절차다 — 열린 기준 2·3은 AGENTS.md의 발급 규칙
+정립과 개명 절차 문서화, 즉 보드 관행이다. Related가 [[ISSUE-011]]과 대비해 이 카드는
+상류 소유가 아님을 명시한다.
+
 ## Resolution Criteria
 
 - [x] 중복 카드 id를 재는 검사가 `make doc-check`에 있다 — **이슈 작성 시점에 이미 충족돼 있었다**(`c69653e`, 2026-09-07) | verify: `/usr/bin/grep -q 'func checkDuplicateCardIDs' tools/doccheck/cardids.go`

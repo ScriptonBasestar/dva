@@ -10,6 +10,7 @@ severity: medium
 discovered-in: "TASK-312 done-review and TASK-354 gate currentization"
 discovered-at: 2026-09-10
 created: 2026-09-10
+upstream-ref: ""
 ---
 
 ## Summary
@@ -386,6 +387,13 @@ sha256은 `blocks:` 없는 카드에서만 조용할 뿐이고, 그 조용함은
   `reviewed-card-sha256` matches CE's canonical card digest. Upstream fixtures
   cover all three shapes: missing evidence (`TASK-312`), prose evidence
   (`TASK-344`/`TASK-371`), and a current controller-created card.
+
+## 소유권 — 상류다 (2026-09-15 명시)
+
+검증 계약의 정본은 상류에 있다 — Priority 절이 "ce-agent-kit still owns the canonical
+digest … ce-workbook/task_management still owns the legacy controller dialect"로 적는다.
+이 저장소 절반에 해당하던 기준들은 TASK-388·TASK-384로 이미 닫혔고, 남은 기준은 전부
+상류 검증 계약에 묶여 있다. 보고 자리는 [[TASK-395]]가 만든다.
 
 ## Resolution Criteria
 

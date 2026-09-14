@@ -9,6 +9,7 @@ created: 2026-09-14
 discovered-in: "ISSUE-005 P1 강등 (2026-09-14, ce-agent-kit 0.8.4)"
 discovered-at: 2026-09-14
 source: "ISSUE-005를 P1에서 내리려다 validate가 P3를 거부"
+upstream-ref: ""
 ---
 
 ## Summary
@@ -44,7 +45,7 @@ canonicalEnumRule{name: "priority", allowed: []string{"P0", "P1", "P2"}}
 priority로 정렬한 큐가 실제 급함과 어긋난다. **잘못된 값이 아니라 없는 값이
 문제다** — 없는 칸은 옆 칸으로 새고, 새어 들어간 칸은 원래 재던 것을 못 재게 된다.
 
-## Ownership — 상류다
+## 소유권 — 상류다 (2026-09-15 명시)
 
 규칙은 ce-agent-kit이 소유한다. DVA는 이 관측을 잃지 않도록 카드만 세운다
 ([[ISSUE-004]] 선례). 여기서 로컬 우회 검사를 만들지 않는다.

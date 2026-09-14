@@ -87,6 +87,12 @@ $ find docs workflows -name '*.md' -type f -exec wc -c {} + \
 3. dogfood 리포트를 size-enforced 범위에서 빼는 것은 **권하지 않는다** — 상한이
    존재하는 이유(읽히지 않는 문서를 만들지 않는다)가 누적 리포트에도 그대로 적용된다.
 
+## 소유권 — 이 저장소다 (2026-09-15 명시)
+
+상한 구현 자체가 이 저장소 도구다 — `tools/doccheck/policy.go`의 크기 상한과 그 신호
+확장 모두 여기서 고친다. 기준도 doccheck 테스트와 `docs/dogfood/README.md` 규약
+문서화뿐이다.
+
 ## Resolution Criteria
 
 - [ ] 상한 근접 문서 목록이 재현 가능한 명령으로 남는다 | verify: human — 이 이슈에 측정 명령과 그 출력이 있다

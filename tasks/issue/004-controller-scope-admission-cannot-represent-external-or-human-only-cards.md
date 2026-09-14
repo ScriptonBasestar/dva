@@ -10,6 +10,7 @@ severity: medium
 discovered-in: "2026-09-10 direct queue-run preflight"
 discovered-at: 2026-09-10
 created: 2026-09-10
+upstream-ref: ""
 ---
 
 ## Summary
@@ -64,6 +65,12 @@ execution or a controller-owned route transition can occur.
   external or human-only card ahead of implementation-scope validation.
 - `next_check`: bound `queue_preflight` exits 0 for DVA without permitting
   `tasks/`, absolute paths, parent traversals, or globbed executor scopes.
+
+## 소유권 — 상류다 (2026-09-15 명시)
+
+큐 preflight·선정·allowed-path 검증은 `ce-workbook/task_management` 소유다 — P1
+Blocker의 `owner` 항목이 그대로 적는다. 세 기준 전부가 상류 selection 테스트와 회귀를
+검증 대상으로 요구한다. 보고 자리는 [[TASK-395]]가 만든다.
 
 ## Resolution Criteria
 

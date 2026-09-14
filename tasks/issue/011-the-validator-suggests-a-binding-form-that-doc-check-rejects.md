@@ -9,6 +9,7 @@ created: 2026-09-14
 discovered-in: "TASK-386 (dev/claude/mbp/fix/quote-unbackticked-verify-bindings, b53b713)"
 discovered-at: 2026-09-14
 source: "TASK-386 리뷰(review-386)의 informational 지적. 두 검사가 같은 바인딩에 대해 반대 형태를 요구한다"
+upstream-ref: ""
 ---
 
 ## Summary
@@ -64,6 +65,12 @@ review-386이 (1)의 재현을 독립적으로 확인했다 — scratchpad 사�
 만나는 사람(또는 에이전트)이 한 번 왕복하는 것뿐이다. 다만 **바인딩의 요점이
 "주장을 기계가 재게 하는 것"인데 그 기계의 조언이 다른 기계와 어긋난다**는 점에서,
 이 저장소가 바인딩에 거는 신뢰와 방향이 반대다.
+
+## 소유권 — 상류다 (2026-09-15 명시)
+
+열린 기준 1(validator의 권장 문구)은 상류 소유다. 기준 2(AGENTS.md 명시)는 이 저장소가
+이미 닫았지만 카드 스스로 그것을 우회로로 규정한다 — Related가 이 결함을 "상류 런타임이
+소유한 결함" 계열로 자기 규정한다. 보고 자리는 [[TASK-395]]가 만든다.
 
 ## Resolution Criteria
 

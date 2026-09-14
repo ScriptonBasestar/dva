@@ -10,6 +10,7 @@ severity: low
 discovered-in: "2026-09-13 board currentization review"
 discovered-at: 2026-09-13
 created: 2026-09-13
+upstream-ref: ""
 ---
 
 ## Summary
@@ -122,6 +123,12 @@ status field of its own, and states carries the derived status for those same re
 통합하면 런처가 워크트리·브랜치·원격 브랜치를 스스로 회수하고, CE는 그 실행을
 reconciliation으로 닫으며 `next: no action required`를 붙인다. 낱말만 보고 실패로
 읽어 다시 정리하려 들지 말 것.
+
+## 소유권 — 상류다 (2026-09-15 명시)
+
+`run-*`과 그 레지스트리는 `ce-agent-kit`과 `ce-workbook/task_management` 소유다 —
+Summary가 "Owner is external … the fix lands upstream"으로 적는다. 남은 기준 1(영수증
+스키마의 terminal-state 필드)도 상류 착지다. 보고 자리는 [[TASK-395]]가 만든다.
 
 ## Resolution Criteria
 

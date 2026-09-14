@@ -10,6 +10,7 @@ created: 2026-09-14
 discovered-in: "TASK-381 (check-plan-prose-against-plan-frontmatter)"
 discovered-at: 2026-09-14
 source: "TASK-381 종료 중 ce task move가 status: todo를 done으로 옮기며 frontmatter를 갱신하지 않는 것을 발견"
+upstream-ref: ""
 ---
 
 ## Summary
@@ -72,6 +73,12 @@ ISSUE-007은 바로 그 검사가 잘못된 저장소에 있다고 주장한다.
 소유는 외부다 — `ce task move`는 ce-workbook/task_management 소속이다.
 [[ISSUE-004]] 선례에 따라 여기에 기록한다: DVA에서 관찰된 상류 런타임의 결함을
 잃지 않기 위해 DVA 카드로 남기고, 수정은 상류에서 이루어진다.
+
+## 소유권 — 상류다 (2026-09-15 명시)
+
+`ce task move`는 `ce-workbook/task_management` 소속이다 — Impact가 "소유는 외부다 …
+수정은 상류에서 이루어진다"로 적는다([[ISSUE-004]] 선례). 보고 자리는 [[TASK-395]]가
+만든다.
 
 ## Resolution Criteria
 

@@ -10,6 +10,7 @@ severity: medium
 discovered-in: "2026-09-13 TASK-378 integration"
 discovered-at: 2026-09-13
 created: 2026-09-13
+upstream-ref: ""
 ---
 
 ## Summary
@@ -113,6 +114,12 @@ on its own: a rebase can conflict, and CLAUDE.md requires stopping on
 conflicts rather than silently choosing a side. And the existing recovery
 message should stay for the case it actually describes — a genuinely
 incomplete reclaim — instead of being repurposed as the message for both.
+
+## 소유권 — 상류다 (2026-09-15 명시)
+
+`run-finish`의 verdict 메시지는 `ce` 런타임 소유다 — Notes가 "cannot be fixed in this
+repository"로 적는다. 기준 전부가 메시지 변경이므로 이 저장소가 고칠 부분은 없다.
+보고 자리는 [[TASK-395]]가 만든다.
 
 ## Resolution Criteria
 
