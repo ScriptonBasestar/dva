@@ -218,6 +218,40 @@ controller를 발급기로 쓸 때만** 발생한다. DVA가 실제로 쓰는 �
 **이 이슈의 P0 사유는 좁아졌다.** 보드가 빨간불인 이유는 이제 런타임 결함이 아니라
 "검토되지 않은 done blocker 두 장"이다.
 
+## 2026-09-14: pin은 카드를 닫는 행위 자체로 무효화된다 — 구조적 드리프트
+
+durable 경로가 열리면서 새로 보이게 된 것이 하나 있다. **리뷰 시점에 박은 pin은
+카드를 닫는 순간 거의 항상 틀어진다.** 우연이 아니라 절차의 구조다.
+
+리뷰어는 `tasks/doing/`에 있는 카드를 읽고 그 바이트의 sha256을 receipt에
+`reviewed-card-sha256`으로 박는다. 그 판정을 받아 카드를 닫으면 저자가 하는 일은
+정확히 둘이다 — 프론트매터에 `quality-review` 3줄(`quality-review`,
+`quality-reviewed-at`, `quality-review-evidence`)을 더하고, 파일을 `done/`으로 옮긴다.
+**앞쪽이 바이트를 바꾼다.** `quality-review-receipt` 줄만은 digest에서 빠지지만(아래
+실측 참조) 나머지 셋은 빠지지 않는다.
+
+두 건 실측(2026-09-14):
+
+| 카드 | receipt가 박은 pin | 닫힌 카드의 실제 sha256 |
+|---|---|---|
+| TASK-388 | `3edee27d…2872` | `fce997be…b0ad` |
+| TASK-386 | `9993f021…d463` | `e57dae0d…d143` |
+
+`quality-review-receipt` 필드만 다시 겨누는 것은 digest를 깨지 않는다 — 이것도 직접
+쟀다. [[TASK-388]]이 포인터 18개를 옮기면서 봉인된 카드를 하나도 깨뜨리지 않은 것이
+같은 사실의 다른 얼굴이다.
+
+**왜 게이트가 조용한가.** 이 pin들은 `blocks:`를 선언하지 않은 카드의 것이고,
+`ce task validate`는 `blocks:`가 없으면 receipt 검사에 도달하지 않는다
+(`tools/…/validator_receipt.go`의 조기 return). 그래서 `tasks/done/386-…md`는 pin이
+이미 어긋난 채로도 `✅ Valid`다. **드리프트가 없어서 조용한 것이 아니라 아무도 재지
+않아서 조용하다.** [[ISSUE-010]]이 그 비대칭을 소유한다.
+
+**그러므로 pin의 의미를 이렇게 읽어야 한다**: `blocks:`를 선언한 카드에서 pin은
+"리뷰 이후 본문이 바뀌지 않았다"를 보증하고, 선언하지 않은 카드에서 pin은
+**"리뷰어가 어느 바이트를 읽었는지"를 기록하는 provenance일 뿐 불변식이 아니다.**
+후자를 전자처럼 읽으면 없는 보증을 믿게 된다.
+
 ## Reproduction
 
 1. At DVA `af7f6e6`, run `ce task gate --json`; it returns

@@ -35,29 +35,88 @@ tasks/todo/381-check-plan-prose-against-plan-frontmatter.md
 tasks/todo/383-diagnose-a-missing-image-that-compose-cannot-build.md
 ```
 
-리베이스 직후 같은 브랜치에 383이 둘 있었고 `ce task validate`도 `make doc-check`도
-이를 오류로 내지 않았다. **중복 id를 재는 게이트가 없다.**
+### 정정 (2026-09-14) — 중복 id 검사는 있고, 실제로 잡는다
+
+이 절은 원래 "리베이스 직후 383이 둘 있었는데 `ce task validate`도 `make doc-check`도
+오류를 내지 않았다 — 중복 id를 재는 게이트가 없다"고 적었다. **틀렸다.**
+`tools/doccheck/cardids.go:44`의 `checkDuplicateCardIDs`가 `check.go:244`에서 호출되고,
+커밋 `c69653e` "fix(doccheck): report task ids claimed by more than one card"는
+**2026-09-07**로 이 충돌보다 일주일 앞선다. 그 함수의 주석이 이번 시나리오를 그대로
+적고 있다 — *"a worker numbering a new card from the highest id it could see picked ids
+already taken on master."* 파일명 번호 중복 검사도 함께 있다.
+
+직접 쟀다. `tasks/todo/`에 `id: TASK-388`인 스크래치 카드를 하나 떨구고 `make doc-check`:
+
+```
+card_ids:            401 (duplicate: 1)
+filename_numbers:    397 (duplicate: 0)
+  DUP-ID   TASK-388 is claimed by 2 cards: tasks/done/388-....md, tasks/todo/999-probe-duplicate-id.md
+doc-check: FAIL
+```
+
+프로브를 지우면 rc=0으로 돌아온다. **게이트는 있고 작동한다.**
+
+### 그러면 왜 초록불이었나 — 두 카드가 한 트리에 같이 있던 적이 없어서다
+
+원래 서술의 관측("리베이스 직후 둘이 나란히 있었다")이 실제로 성립한 창은 없었거나
+그 창에서 `make doc-check`이 돌지 않았다. 어느 쪽이든 결론은 같고, 이것이 이 이슈의
+**진짜** 결함이다: 충돌은 두 브랜치의 **합집합에서만** 존재했다. 각 체크아웃은 자기
+쪽 383만 보고, 둘 다 정당하게 초록불이다. **체크아웃 단위 게이트로는 원리적으로 잡을
+수 없다** — 발급이 경쟁하는 순간과 두 파일이 한 트리에서 만나는 순간 사이에 시차가
+있고, 뒤쪽이 오기 전에 사람이 개명하면 게이트는 아무것도 못 본다.
 
 ## 왜 조용한가
 
-`make doc-check`의 `planprogress`는 `children:`에 적힌 id를 센다. 같은 id가 둘이면
-어느 파일을 가리키는지가 모호해지지만, 계수는 여전히 맞으므로 통과한다. `[[TASK-NNN]]`
-wikilink도 검사되지 않는다. 즉 충돌은 **사람이 눈으로 보거나, 나중에 잘못된 카드가
-링크를 따라 열릴 때** 드러난다.
+중복 id 검사(위 §Evidence)는 **한 트리 안의** 중복만 잰다. 이 충돌은 두 브랜치에
+하나씩 있었으므로 어느 체크아웃에서도 중복이 아니었다. 그리고 발견 즉시 개명했으므로
+둘이 한 트리에서 만나는 순간도 오지 않았다 — 게이트는 정직하게 초록불이었다.
+
+`[[TASK-NNN]]` wikilink는 별개로 전혀 검사되지 않는다. `tools/doccheck/markdown.go:15`가
+추출하는 것은 인라인 링크 `[text](target)`와 참조 정의 `[label]: target` 둘뿐이고
+doccheck 어디에도 `[[...]]`를 읽는 코드가 없다.
+
+## 개명이 남긴 것 — 존재 검사로는 잡을 수 없는 오조준
+
+충돌을 개명으로 해소하면 **옛 id를 가리키던 참조가 전부 다른 카드로 재바인딩된다.**
+383은 살아 있는 번호이므로 이것은 깨진 링크가 아니라 **멀쩡히 풀리는 틀린 링크**다.
+
+2026-09-14 기준 남은 인스턴스는 `tasks/done/386-quote-the-two-unbackticked-verify-bindings.md`
+두 자리다.
+
+| 위치 | 형태 | wikilink 검사로 잡히나 |
+|---|---|---|
+| `:14` | `verification-evidence:` 프론트매터 안의 맨 `TASK-383` | 아니오 — wikilink가 아니다 |
+| `:74` | 본문의 `[[TASK-383]]` | 아니오 — `tasks/todo/383-diagnose-…md`로 정상 resolve된다 |
+
+둘 다 고칠 수 없다. 그 카드는 receipt로 봉인돼 master에 통합됐다 — [[ISSUE-010]]이
+소유한 "봉인된 카드에 정정 경로가 없다"의 인스턴스다. `tasks/plan/007`과 TASK-385
+카드의 같은 오조준은 봉인 전이라 [[TASK-385]]에서 겨눴다.
+
+**그러므로 dangling-wikilink 검사를 해법으로 적으면 안 된다.** 계기가 된 사례를 잡지
+못하는 규칙이고, [[TASK-385]]가 [[TASK-381]]에 대해 기록한 것과 똑같은 함정이다.
+잡을 수 있는 것은 게이트가 아니라 절차다 — **개명 시점에 in-tree의 옛 id 참조를
+일괄로 훑어 재조준하거나 명시적으로 면제한다.**
 
 ## Reproduction
 
 1. 워크트리 A에서 보드 최대 id가 N임을 보고 카드 N+1을 만든다.
 2. 같은 시각 워크트리 B에서도 같은 것을 본다 — A의 카드는 아직 커밋되지 않았거나
    커밋됐어도 B의 base에 없다 — 그래서 B도 N+1을 만든다.
-3. 둘 다 master에 통합한다. 충돌 없이 병합된다.
-4. `ce task validate --all` · `make doc-check` 모두 통과한다.
+3. **각 워크트리에서 `ce task validate --all`과 `make doc-check`을 돌린다. 둘 다
+   통과한다** — 각자 자기 쪽 N+1만 보이므로 중복이 아니다. 이것이 잡히지 않는 창이다.
+4. 한쪽이 먼저 통합된다. 나머지 쪽은 리베이스하면 두 파일이 충돌 없이 나란히 놓인다.
+5. 그 상태에서 `make doc-check`을 돌리면 **이제는 잡힌다**: `DUP-ID TASK-N+1 is
+   claimed by 2 cards`, `doc-check: FAIL`. 위 §Evidence의 실측이 이 단계다.
+6. 5단계 전에 사람이 개명하면 게이트는 끝까지 아무것도 보지 못한다 — 실제로 일어난
+   경로가 이것이다.
 
 ## Expected vs Actual
 
-- Expected: 같은 id를 가진 카드가 둘 이상이면 게이트가 막는다. 또는 발급이 애초에
-  경쟁하지 않는 방식(예약, 해시, 브랜치별 접두사 등)으로 이뤄진다.
-- Actual: 둘 다 조용히 성립하고, 통합 이후 어느 쪽이 `TASK-383`인지 알 수 없다.
+- Expected: 발급이 애초에 경쟁하지 않는 방식(예약, 해시, 브랜치별 접두사 등)으로
+  이뤄진다 — 두 브랜치가 같은 번호를 **고르지 않는다.**
+- Actual: 둘 다 조용히 같은 번호를 고른다. 사후 검사(`DUP-ID`)는 두 파일이 한 트리에서
+  만난 뒤에만 작동하고, 그 전에 개명하면 영영 작동하지 않는다. 검사는 안전망이지
+  발급 규칙이 아니다.
 
 ## Impact
 
@@ -69,10 +128,14 @@ wikilink도 검사되지 않는다. 즉 충돌은 **사람이 눈으로 보거�
 
 ## Resolution Criteria
 
-- [ ] 중복 카드 id를 재는 검사가 `make doc-check`에 있다.
-- [ ] 발급 규칙이 병렬 워크트리에서 충돌하지 않도록 정해지고 `AGENTS.md`에 적혀 있다.
+- [x] 중복 카드 id를 재는 검사가 `make doc-check`에 있다 — **이슈 작성 시점에 이미 충족돼 있었다**(`c69653e`, 2026-09-07) | verify: `/usr/bin/grep -q 'func checkDuplicateCardIDs' tools/doccheck/cardids.go`
+- [ ] 발급 규칙이 병렬 워크트리에서 충돌하지 않도록 정해지고 `AGENTS.md`에 적혀 있다 | verify: `human — AGENTS.md의 발급 규칙을 읽고, 두 워크트리가 서로를 보지 못하는 상태에서도 같은 번호를 고르지 않는지 확인`
+- [ ] 카드 개명 절차가 옛 id 참조 일괄 훑기를 포함한다 | verify: `human — 절차 문서를 읽고, 봉인된 카드에 도달하지 못하는 경우의 처리까지 적혀 있는지 확인`
 
 ## Related
 
 - [[TASK-388]] — 충돌한 쪽. 이 이슈를 발견한 작업이며, 개명으로 인스턴스를 해소했다.
 - [[ISSUE-011]] — 같은 계열(게이트가 재지 않아 조용한 결함)이지만 그쪽은 상류 소유다.
+- [[ISSUE-010]] — 개명이 남긴 `done/386`의 오조준 둘을 고칠 수 없는 이유를 소유한다.
+- [[TASK-385]] — 봉인 전이던 두 자리를 `[[TASK-388]]`로 겨눈 작업.
+- [[TASK-389]] — 이 정정을 실은 작업.
