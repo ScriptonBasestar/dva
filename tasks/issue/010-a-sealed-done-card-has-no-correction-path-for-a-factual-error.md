@@ -15,7 +15,11 @@ created: 2026-09-14
 ## Summary
 
 **`blocks:`를 선언한** done 카드에 한해, `quality-review-receipt`가 가리키는 파일이
-읽히면 **카드 전체가 digest로 봉인된다.** 두 조건은 둘 다 필요하다. `blocks:`가 없으면
+읽히면 **카드 전체가 digest로 봉인된다.** 조건은 셋이고 전부 필요하다 —
+`validator_receipt.go`의 조기 return 셋에 하나씩 대응한다. 첫째는 카드 파일이
+**`tasks/done/` 아래에 있을 것**이다(`:38`은 `zoneFromPath(path)`를 보지
+`status:` 필드를 보지 않는다 — `status: done`이어도 파일이 `tasks/doing/`에
+있으면 검사는 실행되지 않는다). 나머지 둘이 아래다. `blocks:`가 없으면
 `ce task validate`는 receipt 검사에 도달조차 하지 않는다 — `tasks/done/386-…md`는
 무수정 상태에서 이미 pinned digest와 현재 바이트가 어긋나 있는데도, 본문에 한 줄을
 덧붙여도 `✅ Valid`다. 근거는 이 저장소 안에 이미 있다: TASK-386 receipt의
