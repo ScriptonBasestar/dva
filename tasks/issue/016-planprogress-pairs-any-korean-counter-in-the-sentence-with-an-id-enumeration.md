@@ -127,7 +127,7 @@ CI에서 떨어진다. `prose.go`의 설계 의도(파일 코멘트)와 실제 �
       통과한다. 명령이 `-v`와 PASS 줄 grep을 거치는 이유는 `go test -run`이
       0건 매치일 때 `[no tests to run]`과 함께 exit 0을 내기 때문이다 — 재현을
       지우는 것으로는 이 기준을 만족시킬 수 없다 | verify: `sh -c 'go test
-      -tags=knownbroken -run "^TestIssue016FalsePositives$" -v ./tools/planprogress/ 2>&1 | grep -qE
+      -tags=knownbroken -run "^TestIssue016FalsePositives$" -v ./tools/planprogress/ 2>&1 | /usr/bin/grep -qE
       "^--- PASS: TestIssue016FalsePositives "'`
 - [ ] 좁히는 방식(카운터 어휘를 `장`으로만 제한, 괄호/백틱 구간 제외, 또는
       다른 방식)이 결정되고 `prose.go`의 파일 코멘트가 그 결정과 실제 동작을
@@ -139,8 +139,8 @@ CI에서 떨어진다. `prose.go`의 설계 의도(파일 코멘트)와 실제 �
       남아있는지 확인
 - [ ] 이 결함의 재현이 기본 테스트 스위트로 옮겨졌다 — `TestIssue016FalsePositives`가
       `prose_test.go`에 있고 `known_issues_test.go`에는 남아 있지 않다(태그를
-      지우는 것만으로는 만족되지 않는다) | verify: `grep -q 'TestIssue016FalsePositives'
-      tools/planprogress/prose_test.go && ! grep -q 'TestIssue016FalsePositives'
+      지우는 것만으로는 만족되지 않는다) | verify: `/usr/bin/grep -q 'TestIssue016FalsePositives'
+      tools/planprogress/prose_test.go && ! /usr/bin/grep -q 'TestIssue016FalsePositives'
       tools/planprogress/known_issues_test.go`
 
 ## Related
