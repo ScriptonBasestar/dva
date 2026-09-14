@@ -6,12 +6,16 @@ GitHub tag와 Release 생성은 승인된 commit의 clean detached worktree에�
 
 ## 준비
 
-1. 릴리스 commit을 source branch에 통합하고 push한 뒤 local/remote tip과 같은지 확인합니다.
-2. 그 commit에 lightweight tag를 만들되 별도로 push하지 않습니다. GoReleaser가 공개 과정에서
+1. `CHANGELOG.md`의 `## [Unreleased]`를 `## [<version>] - <YYYY-MM-DD>` 섹션으로 확정하고
+   비어 있는 `## [Unreleased]`를 다시 올립니다. **tag를 만들기 전에** 끝냅니다 — tag 이후에는
+   그 릴리스의 내용이 어디에도 기록되지 않은 채로 공개됩니다. 이 단계를 건너뛰어 쌓이는 드리프트는
+   `make doc-check`의 `changelogcheck`가 릴리스 시점이 아니라 상시로 잡습니다.
+2. 릴리스 commit을 source branch에 통합하고 push한 뒤 local/remote tip과 같은지 확인합니다.
+3. 그 commit에 lightweight tag를 만들되 별도로 push하지 않습니다. GoReleaser가 공개 과정에서
    tag와 Release를 함께 생성합니다.
-3. 해당 tag의 clean detached worktree를 만들고 그 루트로 이동합니다.
-4. 검토된 release notes의 절대 경로와 SHA-256을 기록합니다.
-5. `mise`가 고정한 GoReleaser를 사용합니다. 전용 fine-grained token은 대상 저장소의
+4. 해당 tag의 clean detached worktree를 만들고 그 루트로 이동합니다.
+5. 검토된 release notes의 절대 경로와 SHA-256을 기록합니다.
+6. `mise`가 고정한 GoReleaser를 사용합니다. 전용 fine-grained token은 대상 저장소의
    Contents read/write 권한을 가져야 하며 명령 환경에만 주입합니다.
 
 아래 값은 해당 릴리스에 맞게 바꿉니다.

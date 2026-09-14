@@ -4,6 +4,91 @@ All notable changes to DVA are documented here.
 
 ## [Unreleased]
 
+### Added
+- **stack 엔트리의 `optional`·`primary`와 `runners.native.post_build`** (TASK-319): 네 건의
+  dogfood 마이그레이션에서 나온 native 엔트리 표현력 결함을 덮습니다. `optional: true`인
+  엔트리는 선언된 디렉토리가 없으면 plan 해석 단계에서 **그 엔트리만** 빠지므로, 체크아웃되지
+  않은 subproject 하나가 plan 전체를 실패시키지 않습니다 — 봐주는 것은 없는 디렉토리뿐이고
+  런타임 실패는 그대로 실패입니다. `post_build`는 build 성공 뒤 같은 dir/env에서 돌고, build가
+  실패하면 건너뛰며, 자신이 실패하면 빌드를 실패시킵니다. `primary: true`는 대표 엔트리 선택을
+  `order`·이름순 추론 대신 명시하게 합니다(둘 이상이면 warning + 이름순 첫 번째)
+  ([USAGE.md](USAGE.md))
+- **interaction `destructive:`와 agent-deny 투영** (TASK-321): 데이터 손실을 유발할 수 있는
+  interaction에 `destructive: true`를 선언하면 자식 서브커맨드가 이를 상속하고
+  (`destructive: false`로 끌 수 있습니다), `dva agent-deny install --scope project`가 해당
+  명령들에 대한 `Bash(dva <name> *)`·`Bash(dva run <name> *)` deny 패턴을 Claude Code
+  설정으로 투영합니다 ([USAGE.md](USAGE.md#interaction-파괴적-명령과-agent-deny-destructive))
+- **plan `alias`와 단일 부모 `extends`** (TASK-307): `alias`는 다른 plan을 그대로 가리키는
+  별칭이고(`description` 외의 필드와 공존 불가, 체인·자기참조·미정의 참조는 검증 에러),
+  `extends`는 부모를 기반으로 필드를 덮어씁니다 — 스칼라는 자식 우선, `vars`는 키 병합,
+  `entries`는 `name`으로 매칭해 같은 이름이면 서비스 합집합이 아니라 통째로 교체합니다.
+  단일 부모, 깊이 3단계, `composes:` plan은 `extends` 불가입니다
+  ([USAGE.md](USAGE.md))
+- **interaction 훅을 plan 단위로 좁히는 `plans:` 필터** (TASK-331): `interaction.up.after`가
+  커맨드 이름에만 묶여 있어 plan이 둘 이상이면 모든 plan의 `dva up`에서 훅이 돌았습니다.
+  훅 항목의 `plans:`가 그 훅이 붙을 plan을 고르며, `plans:` 없는 항목은 이전처럼 전체에
+  적용됩니다
+- **억제를 침묵이 아니라 선언으로 만드는 수단** (TASK-309): 루트 자동탐지 규칙에만 적용되는
+  `drift_ignore` glob과, 소스 종류 단위 opt-out인 `suggestions: {makefile, package_json}`이
+  추가됐습니다. 선언됐는데 없는 파일이나 없는 서비스를 참조하는 interaction은 `dva up`이
+  깨지는 상태이므로 억제 대상이 아닙니다
+- **import한 plan·provision 프로파일의 identity 노출** (TASK-366): `dva manifest`,
+  `dva ls --json`, `dva provision --list --json`이 import된 plan과 provision 프로파일에도
+  `owner`/`aliases`/`alias_of`를 실어 보냅니다 — TASK-333이 interaction에 한 것과 같은 모양입니다
+- **compose가 만들 수도 pull 할 수도 없는 이미지를 진단합니다**: `compose up` 실패 뒤
+  `compose config --format json`으로 `build:` 없이 `image:`만 선언한 서비스를 찾고
+  `docker image inspect`로 로컬에 없는 것을 골라 `MissingLocalImageError`로 보고합니다.
+  `DockerDaemonError`·`ComposeConfigError`에 이은 세 번째 구성원이며, **판정이 아니라 후보
+  목록**입니다 — compose가 첫 거부 이후 남은 pull을 취소하므로 원인 이미지와 그 여파를
+  존재 여부만으로 구별할 수 없습니다. 프로브는 성공한 up에서는 돌지 않고, `up`이 고른 서비스
+  범위로 한정되며, 전체 진단에 20초 deadline이 걸려 멈춘 데몬이 `dva up`을 붙잡지 못합니다
+- **`dva doctor`가 이미 커밋된 transient 상태를 보고합니다**: ignore 규칙은 다음 커밋을
+  규율할 뿐 index에는 아무 말도 하지 않으므로, 규칙이 생기기 전에(혹은 `-f`로) 커밋된
+  `.sb/dva/` 경로는 계속 커밋되면서도 기존 검사 전부에서 건강하게 보였습니다. doctor가 이제
+  추적 중인 transient 경로를 찾아 `git rm -r --cached` 조치를 함께 출력합니다
+- **`dva init`이 native 선언을 탐지하고 dry run에서 생성될 config를 보여줍니다**: 탐지된
+  native 선언에서 엔트리를 만들고, `--dry-run`은 무엇을 쓸지 미리보기로 출력합니다
+- **semantic 경고 2종**: plan 엔트리의 `profiles:`가 그 엔트리의 compose 파일이 정의하지 않는
+  프로파일을 가리키면 사용 가능한 이름과 함께 경고하고(`include`/`extends`로 전체 집합을 알 수
+  없는 경우는 경고하지 않습니다), 중복된 compose hook 후보를 경고합니다. `--strict`에서는
+  exit 1이 됩니다
+
+### Changed
+- **provision 마커가 `provisioned-<profile>.marker`로 기록됩니다**: 마커와 모듈이 같은 dot
+  디렉토리에 있고 둘 다 사람이 고른 문자열로 이름이 붙어, `provisioned-*`가 사용자의
+  `provisioned-base.yml` 모듈을 마커로 오인해 `dva down --purge`가 그것을 지웠습니다. 확장자
+  없는 옛 철자는 **읽기 전용으로만** 유지되므로 옛 이름으로 provision 한 저장소가 다시 돌라는
+  안내를 받지 않고, 마이그레이션은 하지 않습니다 — `--purge`가 지우면 다음 실행이 새 이름으로
+  씁니다. `--purge`가 지울 수 있는 범위도 `.yml`/`.yaml`/`.md` 같은 사람이 쓴 확장자를 제외하는
+  쪽으로 좁혀졌습니다
+- **doctor의 gitignore 진단이 모듈 루트마다 따로 판정합니다**: 루트만 묻던 게이트는 monorepo
+  에서 틀린 자리를 봤습니다 — subproject가 자기 디렉토리 아래 모듈을 두면 루트는 모듈이 없어
+  보였고 blocked-modules 행이 실제 발견 위에서 침묵했습니다. 이제 각 루트가 자기 모듈과 자기
+  probe로 판정되고, finding은 막힌 루트를 config 디렉토리 기준 상대 경로로 이름 짓습니다.
+  git이 답하지 못한 클래스는 행 전체를 **미판정**으로 만듭니다 — 부분 판정을 네 클래스 전체에
+  대한 판정으로 출력하지 않습니다
+- **USAGE.md의 `yaml dva.yml` 예제가 CI에서 검증됩니다** (TASK-357): `yamlcheck`가 표시된
+  블록을 schema와 semantic 경고 규칙에 통과시키며, 하드 에러 0·경고 0을 요구합니다. 주석이
+  달린 블록이 0개면 무효한 통과를 막기 위해 실패합니다
+
+### Fixed
+- **`dva config migrate`가 원본 포매팅을 보존합니다**: CRLF 구분자와 균일 CRLF 출력, 끝에 붙은
+  주석 문단, keep-chomp(`|+`) 스칼라의 빈 줄이 그대로 남습니다. 표현할 수 없는 섹션 순서는
+  이유를 설명하고, anchor가 걸린 섹션의 안전하지 않은 재정렬은 차단합니다
+- **optional 엔트리 skip이 모든 plan verb에서 보고됩니다**: 일부 verb만 경고를 내고 나머지는
+  조용히 건너뛰어, 같은 상태가 서 있는 위치에 따라 다르게 보였습니다. 경고는 각 verb가 거부하기
+  전에 나오고, `--dry-run` 바깥에서도 나오며, composition 레벨의 build/logs 경고도 복구됐습니다.
+  skip 판정은 선언 shape 전체(`dir:`의 모든 형태)와 **선택된 runner** 기준으로 이뤄집니다
+- **`drift_ignore`가 symlink된 config 디렉토리를 통과합니다**
+- **라우팅 불가능한 import에 대한 경고가 유지됩니다**
+- **`dva logs`가 script 타겟을 대상에서 제외합니다** — 로그가 없는 대상을 묻지 않습니다
+- **compose 엔트리가 하나일 때 이름 매칭이 그 엔트리를 소비합니다**
+- **git 호출에 시간 제한이 걸려 멈춘 git이 모든 커맨드를 붙잡지 못합니다**
+- **doctor의 transient 클래스가 디렉토리로 새지 않습니다**: 와일드카드를 가진 pathspec은
+  pathname 의미 없이 매칭되어 `*`가 `/`를 넘었고, `provisioned-*`가 커밋된 디렉토리를 잡아
+  `--purge`가 절대 건드리지 않을 경로에 대해 `git rm -r --cached`를 출력했습니다. `:(glob)`으로
+  pathname 의미를 되돌렸습니다
+
 ## [0.2.0] - 2026-09-09
 
 ### Changed
