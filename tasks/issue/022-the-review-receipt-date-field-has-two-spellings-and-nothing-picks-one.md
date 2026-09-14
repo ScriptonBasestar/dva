@@ -8,6 +8,7 @@ severity: low
 created: 2026-09-14
 discovered-at: 2026-09-14
 discovered-in: "TASK-393 (2026-09-14)"
+upstream-ref: ""
 ---
 
 ## Summary

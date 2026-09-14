@@ -8,6 +8,7 @@ severity: low
 created: 2026-09-14
 discovered-at: 2026-09-14
 discovered-in: "TASK-393 independent review — reviewer noticed a gate advisory nobody had registered"
+upstream-ref: ""
 ---
 
 ## Summary
@@ -36,6 +37,27 @@ $ for f in $(find tasks -maxdepth 2 -name '*.md' -not -path 'tasks/_archive/*' -
 ```
 
 일곱 장 중 **다섯 장이 `done` 존**이고 둘이 살아 있는 카드다.
+
+### 2026-09-15 재측정
+
+게이트 계량이 `4`에서 `5`로 늘었다(명단 변화 없음 — 게이트가 세는 것은 `done`
+존 다섯 장이고, kind-dir인 issue/plan 두 장은 검증되되 예산 계량에는 들지
+않는다). 관측:
+
+```
+$ ce task gate 2>&1 | /usr/bin/grep oversized
+    5  oversized                card is larger than the context budget (> 20000 bytes)
+```
+
+## 처분 — 2026-09-15 기록
+
+위 소유권 표의 셋째 줄("사실상 아무도")에 대한 이 보드의 결정: **done 다섯 장의
+처분은 `done-finalize`다.** finalize는 카드를 제거하지만 증거는 Git 이력과
+receipts가 보존하므로, "봉인 대 예산" 충돌은 카드를 줄이지 않고 내보내는 것으로
+끝난다. 순서는 각 카드의 done-review 요건이 성립하는 대로. 단 TASK-391/393/394가
+[[ISSUE-024]]의 소유 정합성 차단에 걸려 있으므로, 그 게이트이 풀리는 것이
+나머지 대량 처분의 실질 선행 조건이다. 이 결정으로 아래 기준 2(다섯 장의 처분
+결정 기록)는 충족되고, 실행은 별도 작업으로 진행한다.
 
 ## Reproduction
 
