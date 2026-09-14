@@ -141,8 +141,11 @@ F5b는 인식 자체를 막아 검사를 통째로 끈다 — [[ISSUE-018]]이 �
 - [ ] `tools/planprogress/known_issues_test.go`의 `TestIssue017Deduplication`
       (`TASK-1, 1, 2` → 두 장)이 통과한다 — `findEnumerations`가 중복 id를
       제거한다는 뜻이다. 이 바인딩은 구성상 지금은 실패하며, 결함이 고쳐졌을
-      때만 통과한다 | verify: `go test -tags=knownbroken -run
-      TestIssue017Deduplication ./tools/planprogress/`
+      때만 통과한다. 명령이 `-v`와 PASS 줄 grep을 거치는 이유는 `go test -run`이
+      0건 매치일 때 `[no tests to run]`과 함께 exit 0을 내기 때문이다 — 재현을
+      지우는 것으로는 이 기준을 만족시킬 수 없다 | verify: `sh -c 'go test
+      -tags=knownbroken -run "^TestIssue017Deduplication$" -v ./tools/planprogress/ 2>&1 | grep -qE
+      "^--- PASS: TestIssue017Deduplication "'`
 - [ ] 역방향/과대 범위(`maxRangeSpan` 초과 포함)를 어떻게 다룰지 — 조용히
       건너뛰되 뒤 나열은 보존, 결함으로 보고, 또는 다른 처리 — 결정되고,
       `TestFindEnumerations`의 `"reversed range is ignored"` 기대값이 그
