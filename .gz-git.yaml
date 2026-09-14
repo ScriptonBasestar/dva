@@ -27,3 +27,30 @@ branch:
     - master
   taskPattern:
     - dev/*/*/*
+
+# `readiness`는 이 저장소가 통합 게이트를 **target 쪽 소유**로 선언하는 계약이다
+# (gzh-cli-gitforge `pkg/config/readiness.go`, V1). 필드는 정확히 둘만 허용된다 —
+# `version`과 `runner`. 셋째 키를 넣거나 하나를 빼면 파서가 문서 전체를
+# `branch.readiness has unknown or missing fields`로 거부한다. 실행 표면이 없는
+# 것은 의도된 설계다: command·args·env·cwd 필드가 없으므로 호출자가 무엇을
+# 실행할지 고를 수 없고, runner 경로도 `.gz-git/readiness/` 안으로 강제된다.
+#
+# 이 선언이 없는 동안 `gz-git integrate check`는 매번
+# `WARN readiness contract — legacy head-owned gate`를 냈다. 그것은 "게이트가
+# 통과했다"가 아니라 "판정할 계약이 없어 통합하는 쪽 HEAD의 make 타깃을 믿었다"는
+# 뜻이다. 계약이 있으면 판정 주체가 **통합 대상 브랜치(master)가 소유한 러너**로
+# 바뀌고, 러너는 `--source-dir`(통합될 쪽)을 대상으로 `ce task gate`에 판정을
+# 위임한다. 러너 자신은 아무것도 판정하지 않는다.
+#
+# 도입에는 `gz-git integrate bootstrap plan|apply` 한 번이 필요했다. 평범한 태스크
+# 브랜치로는 들어올 수 없다 — `checkReadinessContract`가 target(master)에 계약이
+# 없고 source에만 있으면 `bootstrap required: target has no readiness contract`로
+# 통합을 막기 때문이다. 도입 이후에는 master에서 잘라낸 브랜치가 계약을 그대로
+# 물려받으므로 추가 조치가 없다. 다만 **도입 이전에 잘라낸 브랜치**는 source에
+# 계약이 없어 거부되므로, 통합 전에 master 위로 rebase해야 한다.
+#
+# 러너가 `ce`를 PATH에서 찾지 못하면 `not_ready`가 아니라 `unavailable`을 낸다 —
+# 보드가 나쁜 것이 아니라 잴 수 없는 것이라는 구분이고, 어느 쪽이든 통합은 막힌다.
+  readiness:
+    version: 1
+    runner: .gz-git/readiness/check
