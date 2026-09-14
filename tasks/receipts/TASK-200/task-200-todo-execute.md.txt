@@ -1,0 +1,20 @@
+# TASK-200 todo-execute evidence
+
+- action: todo-execute
+- prior-state: todo
+- resulting-state: done
+- changed path: `docs/51-flowcheck-rules.md`
+- corrections:
+  - opening distinguishes silent exit-0 defects from shell-policy batch failures
+  - scope names `param-type` and `exit-if-empty`
+  - gate-skip-prompt lists seven exact field names
+  - bare-word four-command set is described as this rule's triggers, not all blocked commands
+  - unguarded-report names both jq and tmp conditions plus missing `jq -e -s`
+  - sample summary is one byte-identical line
+- verification:
+  - source rule ids: 16; each documented
+  - exact prompt field source count: 7; document lists 7
+  - flowcheck summary line comparison: identical
+  - page size: 120 lines, 9,027 bytes
+  - `make doc-check`: pass; doccheck, cilabels, and flowcheck all pass
+  - `git diff --check`: pass

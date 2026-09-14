@@ -1,0 +1,22 @@
+# TASK-221 todo-execute evidence
+
+- Added the shared verify-binding extractor and `checkBindingTool` command-position lexer.
+- Added four population tests plus bare grep, bare find, and absolute controls.
+- Rewrote 126 existing mechanical binding lines to `/usr/bin/grep` or `/usr/bin/find`;
+  two first-pass rewrites inside normal human prose were reverted.
+- Full declared population: 171 including TASK-221's four self-checks; bare: 0.
+- Close census excluding TASK-221: precursor 127/168 bare; final 0/167.
+- Transition accounting: 126 effective tool rewrites, TASK-197 malformed-human reclassification
+  removes one wrapped/bare span, and no new span enters.
+- TASK-025: `offenders=0 over 1 swept lines`; inert anchor count 0; printed denominator count 1.
+- TASK-067 symlink probe: recursive rc=1/missed, explicit symlink rc=0/found, combined binding
+  rc=1; regular-file recursive probe rc=0/found. Both planted lines removed line-scoped.
+- Scratch card with bare grep/find: doccheck rc=1, two findings; absolute control clean.
+- `go test ./tools/doccheck -count=1`: pass.
+- `dva test`: pass with race and coverage on clean rerun.
+- `dva lint`: pass.
+- First done-review failed on inverted human syntax and quoted/escaped/redirection gaps.
+- Rework tests cover normal vs backticked human, quoted/part-quoted/escaped commands,
+  pipeline/substitution/redirection/noglob forms, quoted argv, absolute controls, and corpus floor.
+- `make doc-check`: pass; `wrapped_tool_bindings: 171`, `bare_tool_bindings: 0`.
+- `git diff --check`: pass.

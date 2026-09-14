@@ -48,7 +48,7 @@ DVA는 개발 환경 오케스트레이터입니다. 핵심 방향은 `stack:`�
 `ce task validate`가 그 파일을 읽어 `reviewed-card-sha256`을 카드의 정본 digest와
 대조한다. 경로는 `tasks/receipts/<TASK-ID>/done-review-<sha>.json`이며 Git이 추적한다.
 `tmp/` 아래에 두면 그것을 만든 체크아웃에서만 유효해 카드의 판정이 재현되지 않는다
-(TASK-383). 규칙과 근거는 `tasks/receipts/README.md`.
+(TASK-388). 규칙과 근거는 `tasks/receipts/README.md`.
 
 ## Repository Map
 

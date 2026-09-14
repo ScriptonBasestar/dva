@@ -37,3 +37,30 @@ tasks/receipts/<TASK-ID>/done-review-<reviewed-card-sha256>.json
   기계적으로는 통과시킬 수 있다. digest는 "이 카드 내용에 대해 검토했다"를 고정할 뿐
   검토가 실재했는지는 말하지 않는다.
 - 리뷰어는 구현 세션과 달라야 한다. 판정 형식은 `AGENTS.md` §Task completion review.
+
+
+## `evidence-path`를 따라가지 말 것 — 출처 기록이지 경로가 아니다
+
+`tasks/_archive/`에서 옮겨 온 controller 형식 receipt 12건(TASK-197, 200, 208, 209,
+212, 214, 215, 220, 221, 222, 223, 224)은 본문에 판정을 담지 않고
+`evidence-path` + `evidence-sha256`으로 사람이 읽는 리뷰 기록을 가리킨다. 그
+`evidence-path` 값은 리뷰 당시의 로컬 경로(`tmp/…`)이고, `tmp/`는 gitignore되므로
+**이 저장소에서 그 경로는 해석되지 않는다.**
+
+receipt 본문은 한 바이트도 고치지 않는 것이 규칙이므로 그 필드는 그대로 두었다.
+대신 같은 바이트의 증거 파일을 **receipt 바로 옆에** 원래 파일명으로 커밋했다:
+
+```
+tasks/receipts/TASK-197/done-review-68f7dc53….json     ← receipt
+tasks/receipts/TASK-197/task-197-done-review.md.txt    ← evidence-sha256이 고정한 바로 그 바이트
+```
+
+**`.txt` 접미사는 장식이 아니라 필수다.** `ce task validate --all`은 `tasks/`
+아래의 모든 `.md`를 카드로 읽는다. 증거 파일을 원래 이름(`.md`)으로 두면 12개가
+전부 카드로 집계돼 보드가 `86 valid / 14 invalid (total: 100)`으로 무너진다 —
+실측했다. 확장자를 바꿔도 파일 바이트는 그대로이므로 `evidence-sha256` 대조는
+계속 통과한다(12/12 확인). 즉 **이 디렉토리에 `.md`를 두지 말 것.**
+
+옮기기 전 12건 전부 `evidence-sha256`과 실제 파일의 sha256을 대조해 일치를
+확인했다. 즉 `evidence-path`는 **어디서 왔는지**를 말하고, 같은 디렉토리가
+**지금 어디 있는지**를 말한다.

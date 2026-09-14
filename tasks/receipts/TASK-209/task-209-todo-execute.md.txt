@@ -1,0 +1,12 @@
+# TASK-209 todo-execute evidence
+
+- Added distinct accepted-here and plan-path flag sets to `rejectUnknownFlags`.
+- Split inline values before message construction and suggestion matching.
+- Added positive and negative wording assertions plus `--var=FOO=bar` coverage.
+- `go test ./internal/cli/ -count=1`: pass.
+- `dva test`: pass (race and coverage).
+- `dva lint`: pass.
+- `make doc-check`: pass.
+- `make build`: pass.
+- Rebuilt runtime: `restart --no-wait` and `restart --var=FOO=bar` both rc=1;
+  both show plan placement, and the inline form suggests `dva restart <plan> --var`.

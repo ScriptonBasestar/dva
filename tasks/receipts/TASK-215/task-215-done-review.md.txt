@@ -1,0 +1,9 @@
+# TASK-215 done-review evidence
+
+- reviewed_at: `2026-08-26T11:34:19+09:00`
+- verdict: `pass`
+- transition: `done -> done` (`reviewed` phase)
+- findings: none
+- follow_ups: none
+
+Independent review confirmed recognized selector flags are rejected in value slots before TASK-214 validation or lifecycle effects, diagnostics name both tokens, consumption is safe, and unrecognized leading-dash values remain valid. Targeted tests and `git diff --check` passed; full gates are bound in the todo-execute evidence.

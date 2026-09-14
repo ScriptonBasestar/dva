@@ -1,0 +1,11 @@
+# TASK-208 todo-execute evidence
+
+- Changed only comments in the four scoped `internal/cli` files.
+- Stale 12-call-site grep: zero matches.
+- Re-derived six calls with the extraction recorded in the card.
+- Classification: `up`, `teardownCommon`, `restart` reject leftovers; the `down`/`stop`
+  reparses inherit the helper's rejection; `build` is deliberate passthrough.
+- `go test ./internal/cli/ -count=1`: pass.
+- `dva test`: pass (race and coverage).
+- `make doc-check`: pass.
+- `git diff --check`: pass.

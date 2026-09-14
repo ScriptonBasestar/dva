@@ -1,0 +1,25 @@
+# TASK-220 todo-execute evidence
+
+- action: todo-execute
+- prior-state: todo
+- resulting-state: done
+- implementation:
+  - added `tools/doccheck/binding_portability.go` and its focused test suite
+  - integrated three portability counters and file:line diagnostics into `tools/doccheck`
+  - repaired checkout-specific and escaped-pipe bindings in archived task cards
+  - reclassified the eight actionable personal-corpus cards as human evidence; retained the guarded TASK-060 and TASK-066 bindings
+- measured population:
+  - current personal-corpus population before disposition: 19 bindings in 10 cards
+  - already portable guards: TASK-060 and TASK-066
+  - actionable population: 17 bindings in 8 cards, all reclassified without deleting recorded counts
+- fail-closed probe:
+  - planted one escaped pipe, one legacy checkout path, and one unguarded `~/mydevbox` binding in a scratch task card
+  - `go run ./tools/doccheck` failed and reported counters `1/1/1` with all three file:line diagnostics
+  - removed the scratch card before final validation
+- verification:
+  - `go test ./tools/doccheck -count=1`: pass
+  - declaration criterion: `declarations=1`
+  - test-source criterion: `test_funcs=4`
+  - `make doc-check`: pass; portability counters `0/0/0`, 279 Markdown files, 552 links, 1,151 test functions, flowcheck pass
+  - `dva lint`: pass; 294 Go files formatted, 0 issues
+  - `git diff --check`: pass

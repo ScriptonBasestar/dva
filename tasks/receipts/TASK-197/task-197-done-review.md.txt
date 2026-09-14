@@ -1,0 +1,22 @@
+# TASK-197 done-review evidence
+
+- reviewed_at: `2026-08-26T11:16:39+09:00`
+- action: `done-review`
+- source_phase: `soft`
+- verdict: `pass`
+- transition: `done -> done` (`reviewed` phase)
+
+The first review result was rejected because it proposed `done -> _archive`, non-canonical fields, and a non-empty follow-up. After re-scan, the corrected read-only proposal satisfied the action contract.
+
+Observed evidence:
+
+- `go test ./internal/cli -count=1`: pass
+- `make doc-check`: pass
+- `git diff --check`: pass
+- documentation `config migrate` count: `5`
+- CLI deprecation-horizon match count: `2`
+- external corpus: `25` total, `4` converted, `14` with `Left for you`, `13` planless-order configs / `27` items, `0` failures
+- repository examples: `16` total, `0` converted, `1` with `Left for you`, `1` planless-order config / `3` items, `0` failures
+- no migration command used `--write`
+- findings: none
+- follow-ups: none

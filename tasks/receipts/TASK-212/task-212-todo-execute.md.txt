@@ -1,0 +1,10 @@
+# TASK-212 todo-execute evidence
+
+- Updated only the canonical schema reference.
+- `make generate` changed only `internal/cli/library_reference.txt` as the generated copy.
+- The replacement covers no plans, a lone implicit plan, explicit default, and ambiguous
+  multi-plan refusal.
+- Stale phrase count is zero in both canonical and generated files.
+- `dva check-generate`: pass.
+- `make doc-check`: pass.
+- `git diff --check`: pass.

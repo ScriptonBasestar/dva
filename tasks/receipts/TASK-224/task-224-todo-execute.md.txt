@@ -1,0 +1,26 @@
+# TASK-224 todo-execute evidence
+
+- action: todo-execute
+- prior-state: todo
+- resulting-state: done
+- resolution:
+  - double terminator has no legitimate build passthrough meaning and must meet the same plan guard as bare build
+  - build consumes one leading separator at its own call site; shared helper remains one-slot only
+  - triple terminator deliberately leaves backend argv `build -- --`
+- implementation:
+  - added `remaining = dropLeadingTerminator(remaining)` after build's flag parser
+  - added differential guard and backend-tail regression tests
+- runtime probe on two plans without default_plan:
+  - bare build: rc=1, `multiple plans configured; specify one: dva build <p1|p2>`
+  - `build -- --`: same message and rc=1
+  - `build -- web`: backend tail `<build> <web>`, rc=0 from stub
+  - `build -- --no-cache`: backend tail `<build> <--no-cache>`, rc=0 from stub
+  - `build -- -- --`: backend tail `<build> <--> <-->`, rc=0 from stub
+- verification:
+  - required test declaration count: `1`
+  - focused and full internal/cli tests: pass
+  - `dva test`: pass with race and coverage across all packages
+  - `dva lint`: pass; 294 Go files formatted, 0 issues
+  - `make build`: pass
+  - `make doc-check`: pass; 279 Markdown files, 552 links, 1,156 test functions, flowcheck pass
+  - `git diff --check`: pass

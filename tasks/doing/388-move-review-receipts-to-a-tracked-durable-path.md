@@ -1,5 +1,5 @@
 ---
-id: TASK-383
+id: TASK-388
 title: "Move review receipts to a tracked durable path under tasks/receipts/"
 type: bug
 priority: P1
@@ -12,6 +12,12 @@ depends-on: []
 ---
 
 ## Summary
+
+> **번호가 383에서 388로 바뀌었다 (2026-09-14).** 이 작업이 진행되는 동안 다른
+> 세션이 `276988b`으로 `tasks/todo/383-diagnose-a-missing-image-that-compose-cannot-build.md`를
+> 올렸다. 두 세션이 각자의 워크트리에서 보드 최대 id를 382로 보고 똑같이 383을
+> 골랐다. 이미 통합된 쪽이 383을 유지하고 이쪽이 개명했다. 원인은 [[ISSUE-012]]가
+> 소유한다 — 리뷰 기록과 receipt가 `TASK-383`으로 부르는 대상은 이 카드다.
 
 [[ISSUE-001]] §Summary 3번은 "receipt가 `tmp/` 아래 있고 `.gitignore:51`이 그것을
 무시하므로 카드의 유효성이 체크아웃마다 다르다"이고, 그 해소를 **외부 소유**
@@ -82,7 +88,7 @@ Summary: 84 valid, 2 invalid (total: 86)
 ```
 
 같은 시점 master는 `82 valid, 2 invalid (total: 84)`다. 차이 2는 드리프트가 아니라
-이 브랜치가 더한 카드 둘(TASK-383 자신과 TASK-384)이다.
+이 브랜치가 더한 카드 둘(TASK-388 자신과 TASK-384)이다.
 
 남은 2건은 TASK-344·371이고 사유가 다르다 — 경로가 아니라 **receipt 자체가 없다**.
 그것은 [[TASK-384]]가 소유한다.
@@ -105,6 +111,33 @@ documents are kept as history, not maintained"로 건너뛰고 `--all` 집계에
 바뀐 줄은 `quality-review-receipt:` **한 줄뿐**이다 — CE 정본 digest가 그 필드를 제외하고
 계산되므로 봉인은 깨지지 않는다.
 
+### 안쪽 포인터도 함께 옮겼다 — 다만 receipt 본문은 여전히 고치지 않는다
+
+아카이브 12건은 controller가 만든 3필드 receipt라 live done 6건과 형태가 다르다.
+6건은 `findings`/`checks-run`을 본문에 담은 자기완결형이지만, 12건은
+`evidence-path` + `evidence-sha256`으로 **바깥 파일**을 가리킨다 — 그 경로가
+`tmp/task-management/direct/queue-run/task-<N>-{done-review,todo-execute}.md`다.
+
+카드→receipt만 옮기면 바깥 포인터만 내구적이 되고 안쪽 포인터는 그대로 `tmp/`에
+남는다. 이 절이 12건을 옮긴 이유로 든 것이 바로 "아무도 다시 검증하지 않으므로
+포인터가 끊긴 것을 알아챌 기회 자체가 없다"인데, 그 상태가 receipt 안에 그대로
+남아 있게 된다. 그래서 12개 증거 파일도 `tasks/receipts/TASK-<N>/` 아래 원래
+파일명 그대로 함께 커밋했다. 복사 전에 12건 모두 receipt가 고정한
+`evidence-sha256`과 실제 파일의 sha256을 대조했고 12/12 일치했다.
+
+**`evidence-path` 필드 자체는 고치지 않았다.** receipt 본문을 한 바이트도 고치지
+않는다는 위 절의 규칙이 여기에도 적용된다 — 그 필드는 리뷰 시점에 파일이 실제로
+있던 자리를 적은 것이고, 그것을 나중에 고치는 것은 판정을 고치는 것과 같은 종류의
+행위다. 그러므로 **`evidence-path`는 읽는 사람이 따라갈 경로가 아니라 출처
+기록이고, 같은 바이트는 receipt 옆에 있다.** 이 한계를
+`tasks/receipts/README.md`에도 적었다.
+
+증거 파일은 `task-197-done-review.md.txt`처럼 `.txt`를 덧붙여 커밋했다. 원래 이름
+그대로 두었더니 `ce task validate --all`이 12개를 전부 **카드로 읽어**
+`86 valid / 14 invalid (total: 100)`이 됐다 — `tasks/` 아래의 모든 `.md`가 카드
+후보다. 확장자는 바이트를 바꾸지 않으므로 `evidence-sha256` 대조는 그대로
+통과한다(12/12). 이 제약도 README에 적었다.
+
 ## Completion Criteria
 
 - [x] `tasks/` 전체에서 `tmp/`를 가리키는 receipt 포인터가 하나도 남지 않았다 | verify: `! /usr/bin/grep -rn '^quality-review-receipt: tmp/' tasks`
@@ -113,4 +146,4 @@ documents are kept as history, not maintained"로 건너뛰고 `--all` 집계에
 - [x] `tmp/`가 없는 체크아웃에서 validate 실패가 6에서 2로 줄고, 남은 2건은 TASK-344·371이다 | verify: `ce task validate --all`
 - [x] 문서 게이트가 새 디렉토리를 받아들인다 | verify: `make doc-check` (regression-guard)
 - [x] 경로 관례가 AGENTS.md와 `tasks/receipts/README.md`에 적혀 있다 | verify: `/usr/bin/grep -q 'tasks/receipts' AGENTS.md`
-- [x] ISSUE-001이 3번의 소유권 정정을 반영한다 | verify: `/usr/bin/grep -rq --include='001-task-runtime-cannot-review-legacy-done-cards-without-verification-evidence.md' 'TASK-383' tasks`
+- [x] ISSUE-001이 3번의 소유권 정정을 반영한다 | verify: `/usr/bin/grep -rq --include='001-task-runtime-cannot-review-legacy-done-cards-without-verification-evidence.md' 'TASK-388' tasks`

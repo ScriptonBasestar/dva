@@ -7,8 +7,8 @@ effort: M
 exec-tier: strong
 status: todo
 created: 2026-09-14
-source: "TASK-383이 durable 경로를 열자 보드의 남은 실패 2건의 사유가 경로가 아니라 receipt 부재로 좁혀졌다"
-depends-on: [TASK-383]
+source: "TASK-388이 durable 경로를 열자 보드의 남은 실패 2건의 사유가 경로가 아니라 receipt 부재로 좁혀졌다"
+depends-on: [TASK-388]
 ---
 
 ## Summary
@@ -22,7 +22,7 @@ tasks/done/371-align-planprogress-with-the-shared-progress-contract.md
   ❌ Done card blocks TASK-354 but declares no quality-review-receipt
 ```
 
-[[TASK-383]] 이전에는 이 둘을 "durable 경로가 없어서 못 고친다"고 읽을 수 있었다. 이제
+[[TASK-388]] 이전에는 이 둘을 "durable 경로가 없어서 못 고친다"고 읽을 수 있었다. 이제
 경로는 있다. 남은 것은 **검토 자체**다. 두 카드는 2026-09-10에 닫혔고 독립 리뷰 기록이
 없다. 각 카드의 `verification-evidence`는 산문이며 파일을 가리키지 않는다.
 

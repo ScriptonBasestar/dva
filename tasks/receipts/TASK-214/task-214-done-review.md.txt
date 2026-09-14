@@ -1,0 +1,9 @@
+# TASK-214 done-review evidence
+
+- reviewed_at: `2026-08-26T11:27:27+09:00`
+- verdict: `pass`
+- transition: `done -> done` (`reviewed` phase)
+- findings: none
+- follow_ups: none
+
+The independent review re-ran the targeted CLI and lifecycle tests, inspected the actual three-file implementation diff, and confirmed that include and exclude tags are validated before lifecycle side effects. Matching tag and comma-list controls remain effective. Full `dva test`, `dva lint`, and `make doc-check` evidence is recorded in the todo-execute receipt.

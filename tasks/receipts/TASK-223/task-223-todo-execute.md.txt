@@ -1,0 +1,30 @@
+# TASK-223 todo-execute evidence
+
+- action: todo-execute
+- prior-state: todo
+- resulting-state: done
+- product ruling:
+  - `-` remains a supported interaction and entry name
+  - dynamic shorthand preserves explicit `run` token order; it does not partition or hoist argv
+  - `dva run` has no `-M`/`-E`; the card criterion was corrected to real root/run flags after source, canonical docs, actual binary, and independent judge agreed
+- implementation:
+  - `isFlag("-")` now returns false, matching `isFlagToken`
+  - extracted pure `dynamicRunArgs`; recognized shorthand prepends only `run`
+  - retained and updated the named dash predicate test
+  - added `TestSugarFormAgreesWithExplicitRun` and original-order regression cases
+- runtime probe:
+  - `dva greet -`: rc=0, `RAN_GREET_with=[-]`
+  - `dva run greet -`: rc=0, `RAN_GREET_with=[-]`
+  - `dva greet --debug`: rc=0, debug log plus `RAN_GREET_with=[]`
+  - `dva greet -e`: rc=0, explain plan resolves `./greet.sh`
+  - shorthand and explicit `-M dev`: both rc=1 with unknown shorthand `M`
+  - shorthand and explicit `-- -M dev`: both rc=0, `RAN_GREET_with=[-M,dev]`
+  - `dva -`: rc=0, `RAN_DASH_with=[]`
+- verification:
+  - named differential test source count: `1`
+  - focused TASK-223 tests: pass
+  - `dva test`: pass with race and coverage across all packages
+  - `dva lint`: pass; 294 Go files formatted, 0 issues
+  - `make build`: pass
+  - `make doc-check`: pass; 279 Markdown files, 552 links, 1,154 test functions, flowcheck pass
+  - `git diff --check`: pass

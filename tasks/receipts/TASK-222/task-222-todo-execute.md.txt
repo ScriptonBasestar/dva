@@ -1,0 +1,29 @@
+# TASK-222 todo-execute evidence
+
+- action: todo-execute
+- prior-state: todo
+- resulting-state: done
+- implementation:
+  - replaced all ten `strings.Fields((s|step).Compose{Exec,Run})` calls with `dvaexec.SplitCommand`
+  - added argv-slice regression coverage for quoted `compose_exec`, quoted `compose_run`, and sibling `run` with `shell: false`
+  - corrected the canonical schema reference and regenerated `internal/cli/library_reference.txt`
+  - added an inner-quoted compose step to `examples/provision-step-syntax.yml`
+- criterion evidence:
+  - split sites: `Fields=0 of 10`
+  - named test functions: `1`
+  - test files setting quoted `ComposeRun`: `1 over 89`
+  - false runtime claim: source `0`, generated `0`
+  - examples: `16`, inner-quoted compose examples: `1`
+- runtime probe:
+  - binary SHA-256: `562e3bd00d92a82d5c014e980586c94368e3ad2677725bccc0b8b768a10bda2f`
+  - quoted compose_exec and sibling run: both `ARGC=7`; payload slots `<sh>`, `<-c>`, `<echo a b>`
+  - newline compose_exec and sibling run: both `ARGC=6`; newline remains inside one argument
+  - probe inputs and argv-printing stub retained under `tmp/task-management/direct/queue-run/task-222-probe/`
+- verification:
+  - `go test ./internal/runner -run TestComposeStepQuoting -count=1`: pass
+  - `dva test`: pass with race and coverage across all packages
+  - `dva lint`: pass; 294 Go files formatted, 0 issues
+  - `dva check-generate`: pass
+  - `make build`: pass
+  - `make doc-check`: pass; 279 Markdown files, 552 links, 1,152 test functions, flowcheck pass
+  - `git diff --check`: pass
