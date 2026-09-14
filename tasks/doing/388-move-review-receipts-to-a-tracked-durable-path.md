@@ -134,9 +134,11 @@ documents are kept as history, not maintained"로 건너뛰고 `--all` 집계에
 
 증거 파일은 `task-197-done-review.md.txt`처럼 `.txt`를 덧붙여 커밋했다. 원래 이름
 그대로 두었더니 `ce task validate --all`이 12개를 전부 **카드로 읽어**
-`86 valid / 14 invalid (total: 100)`이 됐다 — `tasks/` 아래의 모든 `.md`가 카드
-후보다. 확장자는 바이트를 바꾸지 않으므로 `evidence-sha256` 대조는 그대로
-통과한다(12/12). 이 제약도 README에 적었다.
+`86 valid / 14 invalid (total: 100)`이 됐다 — `tasks/` 아래에서 `README.md`를
+제외한 모든 `.md`가 카드 후보다. 면제는 디렉토리가 아니라 파일명에 걸린다:
+`tasks/receipts/README.md` 자신이 유일한 예외이고, 실측하면 `_archive`를 뺀 `.md`
+파일 수가 카드 수보다 정확히 하나 많다. 확장자는 바이트를 바꾸지 않으므로
+`evidence-sha256` 대조는 그대로 통과한다(12/12). 이 제약도 README에 적었다.
 
 ## Completion Criteria
 
@@ -146,4 +148,6 @@ documents are kept as history, not maintained"로 건너뛰고 `--all` 집계에
 - [x] `tmp/`가 없는 체크아웃에서 validate 실패가 6에서 2로 줄고, 남은 2건은 TASK-344·371이다 | verify: `ce task validate --all`
 - [x] 문서 게이트가 새 디렉토리를 받아들인다 | verify: `make doc-check` (regression-guard)
 - [x] 경로 관례가 AGENTS.md와 `tasks/receipts/README.md`에 적혀 있다 | verify: `/usr/bin/grep -q 'tasks/receipts' AGENTS.md`
+- [x] 증거 파일 12건이 receipt에 박힌 `evidence-sha256`과 일치한다 | verify: `human — 12/12 대조, 이 카드의 _archive 절에 기록`
+- [x] `tasks/receipts/` 아래에 카드로 읽히는 `.md`가 없다 | verify: `! /usr/bin/find tasks/receipts -name '*.md' -not -name 'README.md' | /usr/bin/grep -q .` (regression-guard)
 - [x] ISSUE-001이 3번의 소유권 정정을 반영한다 | verify: `/usr/bin/grep -rq --include='001-task-runtime-cannot-review-legacy-done-cards-without-verification-evidence.md' 'TASK-388' tasks`
