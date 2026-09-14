@@ -11,6 +11,9 @@ created: 2026-09-14
 discovered-in: "review-381 independent review of TASK-381 (2026-09-14)"
 discovered-at: 2026-09-14
 source: "review-381의 conditional 판정, F1/F2/F3. 세 지적 모두 count/enumeration 짝짓기 규칙이라는 한 지점에서 나온다"
+resolution: fixed
+resolved-at: 2026-09-14T08:48:11Z
+resolution-summary: "Resolved as fixed by TASK-391."
 ---
 
 ## Summary
@@ -132,7 +135,7 @@ CI에서 떨어진다. `prose.go`의 설계 의도(파일 코멘트)와 실제 �
 
 ## Resolution Criteria
 
-- [ ] `tools/planprogress/known_issues_test.go`의 `TestIssue016FalsePositives`
+- [x] `tools/planprogress/known_issues_test.go`의 `TestIssue016FalsePositives`
       (F1의 세 문장)가 통과한다 — 카운터 어휘 또는 짝짓기 규칙이 좁혀졌다는
       뜻이다. 이 바인딩은 구성상 지금은 실패하며, 결함이 고쳐졌을 때만
       통과한다. 명령이 `-v`와 PASS 줄 grep을 거치는 이유는 `go test -run`이
@@ -140,19 +143,46 @@ CI에서 떨어진다. `prose.go`의 설계 의도(파일 코멘트)와 실제 �
       지우는 것으로는 이 기준을 만족시킬 수 없다 | verify: `sh -c 'go test
       -tags=knownbroken -run "^TestIssue016FalsePositives$" -v ./tools/planprogress/ 2>&1 | /usr/bin/grep -qE
       "^--- PASS: TestIssue016FalsePositives "'`
-- [ ] 좁히는 방식(카운터 어휘를 `장`으로만 제한, 괄호/백틱 구간 제외, 또는
+- [x] 좁히는 방식(카운터 어휘를 `장`으로만 제한, 괄호/백틱 구간 제외, 또는
       다른 방식)이 결정되고 `prose.go`의 파일 코멘트가 그 결정과 실제 동작을
       정확히 반영한다 | verify: human — 코멘트를 읽고 F1의 세 문장 각각에 대해
       코멘트가 서술하는 동작과 코드 동작이 일치하는지 확인
-- [ ] F2(부분 나열 + "나머지")와 F3(다중 나열 중 최근접이 아닌 것과의 오짝짓기)가
+- [x] F2(부분 나열 + "나머지")와 F3(다중 나열 중 최근접이 아닌 것과의 오짝짓기)가
       이 카드 안에서 각각 받아들여지거나 반려된 근거와 함께 처리된다 | verify:
       human — 두 지적 각각에 대해 이 카드 또는 후속 카드에 결정과 근거가
       남아있는지 확인
-- [ ] 이 결함의 재현이 기본 테스트 스위트로 옮겨졌다 — `TestIssue016FalsePositives`가
+- [x] 이 결함의 재현이 기본 테스트 스위트로 옮겨졌다 — `TestIssue016FalsePositives`가
       `prose_test.go`에 있고 `known_issues_test.go`에는 남아 있지 않다(태그를
       지우는 것만으로는 만족되지 않는다) | verify: `/usr/bin/grep -q 'TestIssue016FalsePositives'
       tools/planprogress/prose_test.go && ! /usr/bin/grep -q 'TestIssue016FalsePositives'
       tools/planprogress/known_issues_test.go`
+
+## 2026-09-14 처분 — F1은 닫혔고 F2·F3는 각각 다른 이유로 안 닫혔다
+
+[[TASK-391]]이 고쳤고 `review-planprogress`가 독립 검증했다. 세 지적의 결말이
+서로 다르므로 따로 적는다.
+
+**F1 — 고쳤다.** 좁히는 방식은 **카운터 어휘 제한**을 택했다: 카드를 세는 분류사는
+이 코퍼스에서 `장` 하나뿐이고, `개`·`건`은 필드·문서·저장소를 센다. 그 결정이
+`cardCounter` 상수로 코드에 적혀 있고, 네 계획 전체를 훑어 이 선택이 오늘 참
+양성을 하나도 잃지 않음을 확인했다(`8장`·`일곱 장`·`58장`은 카드를 세고,
+`23개 devbox 저장소`·`결함 3건`·`필드 32개`·`문서 84건`은 아니다). 대가는 정직하게
+적어 둔다 — **`5개`라고 쓰는 첫 저자부터 이 검사는 조용히 꺼진다.** 코퍼스에
+맞춘 선택이지 규칙에서 나온 선택이 아니다.
+
+**F2 — 반려한다.** "부분 나열 + 나머지"형 문장을 옳게 통과시키려면 그 문장이
+세는 집합이 무엇인지를 판정해야 하는데, 그것은 정규식으로 결정 가능한 성질이
+아니다. `prose.go`의 파일 코멘트가 이 경계를 이미 명시적으로 긋고 있다("What this
+deliberately does NOT do"). 남는 위험은 그대로다 — 그런 scope에 `13장`을 더하면
+옳은 카드가 떨어진다. 그 위험을 없애는 대신 **기록으로 남기는 쪽**을 택했다:
+없앨 수 없는 것을 없앴다고 적는 것이 더 나쁘다.
+
+**F3 — 좁혔을 뿐 없애지 못했다. [[ISSUE-021]]로 넘긴다.** 대칭 짝짓기는 한 문장의
+모든 나열이 함께 붉어지는 것을 막지만, 지목된 하나가 그 수의 주어라는 것을
+보장하지 않는다. 어순만 바꾼 반례가 `review-planprogress`의 측정으로 나왔고,
+`prose.go`의 파일 코멘트가 이 한계를 이제 명시한다 — 그 전까지 코멘트는 이 부류가
+사라졌다고 적고 있었고, 그것은 틀린 서술이었다. 코멘트를 고친 것이 이 카드가
+남기는 마지막 변경이다.
 
 ## Related
 

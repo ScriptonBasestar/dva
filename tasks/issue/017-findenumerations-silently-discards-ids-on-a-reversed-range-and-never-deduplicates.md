@@ -159,7 +159,7 @@ F5b는 인식 자체를 막아 검사를 통째로 끈다 — [[ISSUE-018]]이 �
 
 ## Resolution Criteria
 
-- [ ] `tools/planprogress/known_issues_test.go`의 `TestIssue017Deduplication`
+- [x] `tools/planprogress/known_issues_test.go`의 `TestIssue017Deduplication`
       (`TASK-1, 1, 2` → 두 장)이 통과한다 — `findEnumerations`가 중복 id를
       제거한다는 뜻이다. 이 바인딩은 구성상 지금은 실패하며, 결함이 고쳐졌을
       때만 통과한다. 명령이 `-v`와 PASS 줄 grep을 거치는 이유는 `go test -run`이
@@ -178,11 +178,47 @@ F5b는 인식 자체를 막아 검사를 통째로 끈다 — [[ISSUE-018]]이 �
       장이 남았다`, TASK-9는 자식이 아님)을 Goal로 주면 `checkPlanProse`가
       결함을 내거나 스킵 사실을 알리는 것으로 확인한다 | verify: human — probe
       P5 픽스처를 넣고 결과를 확인
-- [ ] 이 결함의 재현이 기본 테스트 스위트로 옮겨졌다 — `TestIssue017Deduplication`가
+- [x] 이 결함의 재현이 기본 테스트 스위트로 옮겨졌다 — `TestIssue017Deduplication`가
       `prose_test.go`에 있고 `known_issues_test.go`에는 남아 있지 않다(태그를
       지우는 것만으로는 만족되지 않는다) | verify: `/usr/bin/grep -q 'TestIssue017Deduplication'
       tools/planprogress/prose_test.go && ! /usr/bin/grep -q 'TestIssue017Deduplication'
       tools/planprogress/known_issues_test.go`
+
+## 2026-09-14 처분 — 제목의 뒤 절반만 닫혔다
+
+이 카드의 제목은 "역방향 범위에서 id를 조용히 버리고 **그리고** 중복을 제거하지
+않는다"였다. [[TASK-391]]이 닫은 것은 뒤 절반뿐이다.
+
+**중복 제거 — 고쳤다.** `findEnumerations`가 `seen` 맵으로 id를 한 번만 모은다.
+재현 `TestIssue017Deduplication`이 `knownbroken` 태그를 떼고 기본 스위트로
+옮겨졌다. `review-planprogress`가 확인했다 — 원래 단언은 그대로 남고 거기에
+`checkPlanProse` 단언이 **더해졌다**. 완화가 아니라 강화다.
+
+**역방향 범위 — 안 닫혔다.** 오늘 `ca5157c` 위에서 직접 측정했다:
+
+```
+findEnumerations("TASK-9..1, 2")              -> []
+findEnumerations("TASK-365..358, 366, 367")   -> []
+```
+
+두 번째가 이 결함의 진짜 모양이다. `366, 367`은 멀쩡한 멤버십 주장인데 앞의 잘못
+쓰인 범위 하나 때문에 통째로 사라진다. 위 기준 2가 요구하는 것은 결정 **그리고**
+`"reversed range is ignored"` 기대값의 갱신인데, 후자를 하지 않았으므로 기준을
+체크하지 않는다. 측정 없이 미룬 것이 아니라, 측정한 결과를 근거와 함께
+[[ISSUE-021]]로 옮겼다.
+
+**위키링크 나열 — 안 닫혔다.** P5 probe를 그대로 돌렸다:
+
+```
+findEnumerations("[[TASK-1]], [[TASK-9]] 두 장이 남았다")  -> []
+```
+
+인식하지도, 건너뛴다고 알리지도 않는다. 보드 산문이 카드를 위키링크로 가리키는
+것이 관례라는 점에서 이 침묵은 좁은 예외가 아니다. 같은 이유로 [[ISSUE-021]]에
+C로 실었다.
+
+**그래서 이 카드는 열려 있다.** 기계 기준 둘은 초록이고 사람 기준 둘은 붉다.
+절반이 고쳐졌다고 전체를 닫으면 남은 절반이 초록 뒤로 사라진다.
 
 ## Related
 

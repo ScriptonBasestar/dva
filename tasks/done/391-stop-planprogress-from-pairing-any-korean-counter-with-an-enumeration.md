@@ -5,7 +5,11 @@ type: bug
 priority: P2
 effort: S
 exec-tier: strong
-status: todo
+status: done
+quality-review: pass
+quality-review-date: 2026-09-14
+quality-review-session: review-planprogress (independent subagent; implementer was fix-planprogress)
+quality-review-evidence: "verdict SOUND WITH CAVEATS. 7개 기준 바인딩 전부 rc0 (knownbroken 부재; ISSUE-016·017 재현이 prose_test.go에 존재; cardCounter·nearestEnum 존재; go test ./tools/planprogress/; make doc-check; make lint). 리뷰어가 재현 4건이 삭제가 아니라 이동임을 HEAD 대비 diff로 확인했고 단언이 완화 없이 추가만 됐음을 확인했다. 카브아트 둘은 이 카드의 기준 밖이며 ISSUE-021로 분리됐다 — (1) 대칭 짝짓기가 F3를 좁힐 뿐 없애지 못한다(어순 반례 측정됨), (2) 장-한정 narrowing은 코퍼스 적합이라 5개라고 쓰는 첫 저자부터 검사가 꺼진다(오늘 참 양성 손실 0건으로 측정)"
 created: 2026-09-14
 source: "ISSUE-016·017을 파일할 때 재현을 `//go:build knownbroken` 뒤에 빨갛게 심어 뒀다. 태그를 떼는 것이 수정의 기계적 증명이다"
 depends-on: []
@@ -40,13 +44,13 @@ depends-on: []
 
 ## Completion Criteria
 
-- [ ] `knownbroken` 빌드 태그가 `tools/planprogress`에서 사라진다 — 빨간 재현이 기본 테스트에 들어왔다는 뜻이다 | verify: `! /usr/bin/grep -rq 'go:build knownbroken' tools/planprogress`
-- [ ] 그 재현들이 삭제가 아니라 이동으로 살아 있다 | verify: `/usr/bin/grep -q 'ISSUE-016' tools/planprogress/prose_test.go && /usr/bin/grep -q 'ISSUE-017' tools/planprogress/prose_test.go`
-- [ ] 카드를 세는 분류사가 코드에 명시적으로 적혀 있다 — 암묵 규칙으로 남기지 않는다 | verify: `/usr/bin/grep -q 'cardCounter' tools/planprogress/prose.go`
-- [ ] 짝짓기가 대칭이라는 근거가 코드에 남는다 | verify: `/usr/bin/grep -q 'nearestEnum' tools/planprogress/prose.go`
-- [ ] 패키지 테스트 전부 통과 | verify: `go test ./tools/planprogress/`
-- [ ] 산문 검사가 살아 있는 plan 코퍼스에서 여전히 초록 | verify: `make doc-check` (regression-guard)
-- [ ] 저장소 게이트 통과 | verify: `make lint` (regression-guard)
+- [x] `knownbroken` 빌드 태그가 `tools/planprogress`에서 사라진다 — 빨간 재현이 기본 테스트에 들어왔다는 뜻이다 | verify: `! /usr/bin/grep -rq 'go:build knownbroken' tools/planprogress`
+- [x] 그 재현들이 삭제가 아니라 이동으로 살아 있다 | verify: `/usr/bin/grep -q 'ISSUE-016' tools/planprogress/prose_test.go && /usr/bin/grep -q 'ISSUE-017' tools/planprogress/prose_test.go`
+- [x] 카드를 세는 분류사가 코드에 명시적으로 적혀 있다 — 암묵 규칙으로 남기지 않는다 | verify: `/usr/bin/grep -q 'cardCounter' tools/planprogress/prose.go`
+- [x] 짝짓기가 대칭이라는 근거가 코드에 남는다 | verify: `/usr/bin/grep -q 'nearestEnum' tools/planprogress/prose.go`
+- [x] 패키지 테스트 전부 통과 | verify: `go test ./tools/planprogress/`
+- [x] 산문 검사가 살아 있는 plan 코퍼스에서 여전히 초록 | verify: `make doc-check` (regression-guard)
+- [x] 저장소 게이트 통과 | verify: `make lint` (regression-guard)
 
 ## Sources
 
