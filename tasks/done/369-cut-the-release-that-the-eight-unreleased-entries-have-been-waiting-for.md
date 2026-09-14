@@ -245,7 +245,7 @@ CHANGELOG 항목이 되고, 게시된 노트를 고쳐 쓰는 방식으로 처�
 - [x] `internal/config/version.go`의 `Version`이 0.1.48을 떠났다 | verify: `! /usr/bin/grep -q 'Version = "0.1.48"' internal/config/version.go`
 - [x] README·USAGE의 설치 안내가 새 태그를 가리킨다 | verify: `! /usr/bin/grep -q 'dva@v0.1.48' README.md USAGE.md`
 - [x] CHANGELOG `## [Unreleased]`가 비었다 — 항목이 버전 헤딩으로 옮겨졌다 | verify: `! /usr/bin/sed -n '/^## \[Unreleased\]/,/^## \[0/p' CHANGELOG.md | /usr/bin/grep -q '^- '`
-- [x] `release-notes/v<새 버전>.md`가 존재하고 비어 있지 않다 — `release-preflight`의 필수 입력 | verify: `v=$(/usr/bin/grep -E '^[[:space:]]+Version = ' internal/config/version.go | /usr/bin/cut -d'"' -f2); /bin/test "$v" != 0.1.48 && /usr/bin/grep -q . "release-notes/v$v.md"`
+- [x] `release-notes/v<새 버전>.md`가 존재하고 비어 있지 않다 — `release-preflight`의 필수 입력 | verify: `v=$(/usr/bin/grep -E '^[[:space:]]+Version = ' internal/config/version.go | /usr/bin/cut -d'"' -f2) && /bin/test -n "$v" && /bin/test "$v" != 0.1.48 && /usr/bin/grep -q . "release-notes/v$v.md"`
 - [x] `EnvBridgeIntroducedVersion`이 `0.1.48` 그대로다 — 일괄 sed를 잡는 가드 | verify: `/usr/bin/grep -q 'EnvBridgeIntroducedVersion = "0.1.48"' internal/config/env_bridge.go`
 - [x] 릴리스 아티팩트 게이트 통과 | verify: `make release-check`
 - [x] 버전 번호(0.1.49 vs 0.2.0)를 breaking change에 비추어 정하고 근거를 남겼다 | verify: human — 이 카드 `## 결정 기록`에 고른 번호와 근거가 적혀 있는지 확인
