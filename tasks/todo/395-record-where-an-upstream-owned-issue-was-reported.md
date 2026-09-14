@@ -9,6 +9,9 @@ status: todo
 created: 2026-09-14
 source: "2026-09-14 보드 현행화 — 상류 소유 이슈 다수, 보고 흔적 0장"
 depends-on: []
+completion-summary: "상류 소유 이슈에 `upstream-ref:` 필드를 두고 값이 비어 있으면 doccheck가 세는 자리와 계량기를 만들었다(채널은 2026-09-15 ce-agent-kit 저장소 이슈로 확정). 24장 이슈 카드 전부에 `## 소유권` 절을 명시했고, 그중 상류·갈림 11장에 빈 `upstream-ref:`를 두어 계량기가 잡는다. 측정 결과 ownership_unmarked 0 / upstream_owned 15 / upstream_unref 15 — 게이트는 초록인 채로 미보고 상류 카드가 매 실행마다 보인다"
+verification-status: verified
+verification-evidence: "완료 기준 7개의 verify 바인딩 전부 bare 실행 exit 0 (09f681b). 기준 1: `## 소유권` 절 보유 24장 = 이슈 카드 24장, 파일별 정확히 1절. 기준 2–4: grep·TestUpstreamRef 세 축 테스트 존재. 기준 5: go test ./tools/doccheck/ 2.489s ok. 기준 6–7: make doc-check OK, GOSUMDB=sum.golang.org make lint 0 issues. ce task gate READY"
 ---
 
 ## Summary
@@ -71,14 +74,14 @@ frontmatter를 읽고 zone 규칙(`status:`가 zone과 맞는지)을 판정하�
 
 ## Completion Criteria
 
-- [ ] 상류 소유 여부가 모든 이슈 카드에 표기된다 | verify: human — `## 소유권`
+- [x] 상류 소유 여부가 모든 이슈 카드에 표기된다 | verify: human — `## 소유권`
       절이 있는 카드 수와 이슈 카드 총 수를 세어 둘이 같은지 확인한다
-- [ ] `upstream-ref:` frontmatter 필드가 상류 소유 카드에 존재한다 | verify: `/usr/bin/grep -rlq 'upstream-ref:' tasks/issue`
-- [ ] doccheck가 값 없는 상류 소유 카드를 센다 | verify: `/usr/bin/grep -rq 'upstream-ref' tools/doccheck`
-- [ ] 그 검사에 세 축 테스트가 있다 — 값 없으면 nonzero, 값 있으면 zero | verify: `/usr/bin/grep -rq 'TestUpstreamRef' tools/doccheck`
-- [ ] doccheck 패키지 테스트 전부 통과 | verify: `go test ./tools/doccheck/`
-- [ ] 문서 게이트가 초록 | verify: `make doc-check` (regression-guard)
-- [ ] 저장소 게이트 통과 | verify: `make lint` (regression-guard)
+- [x] `upstream-ref:` frontmatter 필드가 상류 소유 카드에 존재한다 | verify: `/usr/bin/grep -rlq 'upstream-ref:' tasks/issue`
+- [x] doccheck가 값 없는 상류 소유 카드를 센다 | verify: `/usr/bin/grep -rq 'upstream-ref' tools/doccheck`
+- [x] 그 검사에 세 축 테스트가 있다 — 값 없으면 nonzero, 값 있으면 zero | verify: `/usr/bin/grep -rq 'TestUpstreamRef' tools/doccheck`
+- [x] doccheck 패키지 테스트 전부 통과 | verify: `go test ./tools/doccheck/`
+- [x] 문서 게이트가 초록 | verify: `make doc-check` (regression-guard)
+- [x] 저장소 게이트 통과 | verify: `make lint` (regression-guard)
 
 ## Sources
 
