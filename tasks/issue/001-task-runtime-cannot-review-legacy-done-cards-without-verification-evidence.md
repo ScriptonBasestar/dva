@@ -218,39 +218,75 @@ controller를 발급기로 쓸 때만** 발생한다. DVA가 실제로 쓰는 �
 **이 이슈의 P0 사유는 좁아졌다.** 보드가 빨간불인 이유는 이제 런타임 결함이 아니라
 "검토되지 않은 done blocker 두 장"이다.
 
-## 2026-09-14: pin은 카드를 닫는 행위 자체로 무효화된다 — 구조적 드리프트
+## 2026-09-14: pin이 버티느냐는 receipt가 **어느 digest**를 박았는지가 정한다
 
-durable 경로가 열리면서 새로 보이게 된 것이 하나 있다. **리뷰 시점에 박은 pin은
-카드를 닫는 순간 거의 항상 틀어진다.** 우연이 아니라 절차의 구조다.
+durable 경로가 열리면서 새로 보이게 된 것이 있다. receipt의 `reviewed-card-sha256`에
+박히는 값이 두 종류이고, **둘 중 하나만 카드를 닫는 과정을 견딘다.**
 
-리뷰어는 `tasks/doing/`에 있는 카드를 읽고 그 바이트의 sha256을 receipt에
-`reviewed-card-sha256`으로 박는다. 그 판정을 받아 카드를 닫으면 저자가 하는 일은
-정확히 둘이다 — 프론트매터에 `quality-review` 3줄(`quality-review`,
-`quality-reviewed-at`, `quality-review-evidence`)을 더하고, 파일을 `done/`으로 옮긴다.
-**앞쪽이 바이트를 바꾼다.** `quality-review-receipt` 줄만은 digest에서 빠지지만(아래
-실측 참조) 나머지 셋은 빠지지 않는다.
+**"pin"이라는 한 단어가 두 값을 덮는다. 먼저 갈라 둔다.**
 
-두 건 실측(2026-09-14):
+- **canonical digest** — CE가 프론트매터를 정규화해 내는 값(`canonicalCardDigest`,
+  `ce-agent-kit .../internal/usecase/task/card_digest.go`). `ce task validate`가
+  `blocks:` 카드에서 비교하는 값은 **이것 하나**다.
+- **plain file sha256** — 카드 파일 바이트를 그대로 해싱한 값. 계산은 쉽지만
+  validator가 비교하는 값이 아니다.
 
-| 카드 | receipt가 박은 pin | 닫힌 카드의 실제 sha256 |
+### canonical digest는 무엇을 덮지 않는가
+
+`reviewSubjectExcluded()`가 digest 대상에서 빼는 프론트매터 키는 넷이다 —
+`quality-review`, `quality-reviewed-at`, `quality-review-receipt`, `review_status`.
+소스 주석이 이유를 적는다: digest는 판정이 **쓰이기 전에** 계산 가능해야 하고, 판정이
+digest에 들어가면 판정을 쓰는 행위가 판정 대상을 바꿔 어떤 receipt도 자기 카드와
+맞을 수 없다.
+
+카드를 닫을 때 저자가 더하는 `quality-review*` 줄은 **넷**이다. 그중 셋은 위 목록에
+있어 digest를 움직이지 않는다. 하나 — **`quality-review-evidence`는 의도적으로
+제외돼 있지 않다.** 같은 주석이 이유를 밝힌다: 그것은 리뷰어가 내세운 근거이고,
+근거를 나중에 고칠 수 있게 두면 receipt가 지키려던 것 대부분이 사라진다. 대가는
+순서 제약이다 — **evidence를 먼저 쓰고 digest를 뜬다.**
+
+### 그래서 닫는 행위는 pin을 깨지 않는다 — 실측
+
+`blocks:`를 선언하고 receipt가 읽히는 done 카드 넷을 직접 쟀다. 넷 다 pin이 현재
+파일의 plain sha256과 **일치하지 않는데** `ce task validate`는 넷 다 `✅ Valid`다.
+pin이 canonical digest이기 때문이다.
+
+| 카드 | pin | 파일 plain sha256 | validate |
+|---|---|---|---|
+| TASK-376 | `9515457848…` | `d0e4088c1848…` | ✅ |
+| TASK-377 | `dc496420ce32…` | `9b0957446fd1…` | ✅ |
+| TASK-378 | `9d7f1dc95a31…` | `3b83f103b781…` | ✅ |
+| TASK-379 | `d8827926379c…` | `ad71ede7f868…` | ✅ |
+
+넷 다 닫힌 카드다. **닫는 것이 구조적으로 pin을 무효화한다면 이 넷이 존재할 수
+없다.** 더 나아가 [[TASK-388]]의 `f84259c`는 이 넷을 포함해 포인터 줄을 다시
+겨눴는데 하나도 깨지지 않았다 — `quality-review-receipt`가 제외 목록에 있다는 사실의
+다른 얼굴이다.
+
+### 그러면 386·388의 어긋남은 무엇인가
+
+| 카드 | receipt가 박은 pin | 닫힌 카드의 plain sha256 |
 |---|---|---|
 | TASK-388 | `3edee27d…2872` | `fce997be…b0ad` |
 | TASK-386 | `9993f021…d463` | `e57dae0d…d143` |
 
-`quality-review-receipt` 필드만 다시 겨누는 것은 digest를 깨지 않는다 — 이것도 직접
-쟀다. [[TASK-388]]이 포인터 18개를 옮기면서 봉인된 카드를 하나도 깨뜨리지 않은 것이
-같은 사실의 다른 얼굴이다.
+이 둘의 pin은 canonical이 아니라 **plain file sha256**이다. 그래서 카드가 조금이라도
+바뀌면 어긋나고, 어긋난 뒤 되돌릴 방법도 없다. **이것은 절차의 구조가 아니라 receipt를
+쓸 때의 선택이다.** 그리고 더 나쁜 성질이 있다 — plain sha256은 `blocks:` 카드에서
+canonical digest와 **원리적으로 같아질 수 없으므로**, 지금 386·388에 `blocks:`가
+붙는 순간 되돌릴 수 없는 하드에러가 된다.
 
-**왜 게이트가 조용한가.** 이 pin들은 `blocks:`를 선언하지 않은 카드의 것이고,
-`ce task validate`는 `blocks:`가 없으면 receipt 검사에 도달하지 않는다
-(`tools/…/validator_receipt.go`의 조기 return). 그래서 `tasks/done/386-…md`는 pin이
-이미 어긋난 채로도 `✅ Valid`다. **드리프트가 없어서 조용한 것이 아니라 아무도 재지
-않아서 조용하다.** [[ISSUE-010]]이 그 비대칭을 소유한다.
+**왜 지금은 조용한가.** 이 둘은 `blocks:`를 선언하지 않았고 `ce task validate`는
+`blocks:`가 없으면 receipt 검사에 도달하지 않는다(`validator_receipt.go`의 조기
+return). 그래서 `tasks/done/386-…md`는 pin이 어긋난 채로도 `✅ Valid`다. **드리프트가
+없어서 조용한 것이 아니라 아무도 재지 않아서 조용하다.** [[ISSUE-010]]이 그 비대칭을
+소유한다.
 
-**그러므로 pin의 의미를 이렇게 읽어야 한다**: `blocks:`를 선언한 카드에서 pin은
-"리뷰 이후 본문이 바뀌지 않았다"를 보증하고, 선언하지 않은 카드에서 pin은
-**"리뷰어가 어느 바이트를 읽었는지"를 기록하는 provenance일 뿐 불변식이 아니다.**
-후자를 전자처럼 읽으면 없는 보증을 믿게 된다.
+### 규칙
+
+receipt를 쓸 때 `reviewed-card-sha256`에는 **canonical digest를 박는다.** plain
+sha256은 `blocks:` 없는 카드에서만 조용할 뿐이고, 그 조용함은 보증이 아니라 검사
+부재다.
 
 ## Reproduction
 

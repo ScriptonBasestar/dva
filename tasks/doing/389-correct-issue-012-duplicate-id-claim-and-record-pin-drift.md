@@ -69,7 +69,7 @@ validator가 검사에 도달하지 않아 조용할 뿐이다.
 ## Completion Criteria
 
 - [x] ISSUE-012가 중복 id 검사의 실재와 커밋을 기록한다 | verify: `/usr/bin/grep -rq --include='012-*.md' 'checkDuplicateCardIDs' tasks`
-- [ ] ISSUE-012의 Resolution Criteria가 존재 검사가 아니라 발급 규칙과 개명 절차를 요구한다 | verify: `human — §Resolution Criteria를 읽고, dangling wikilink 검사를 해법으로 적은 항목이 없는지 확인`
+- [x] ISSUE-012의 Resolution Criteria가 존재 검사가 아니라 발급 규칙과 개명 절차를 요구한다 | verify: `human — §Resolution Criteria를 읽고, dangling wikilink 검사를 해법으로 적은 항목이 없는지 확인`
 - [x] ISSUE-012가 봉인돼 못 고치는 두 자리를 기록한다 | verify: `/usr/bin/grep -rq --include='012-*.md' 'ISSUE-010' tasks`
 - [x] ISSUE-001이 pin 드리프트 실측 두 건을 기록한다 | verify: `/usr/bin/grep -rq --include='001-*.md' '3edee27d' tasks`
 - [x] 문서 게이트가 통과한다 | verify: `make doc-check` (regression-guard)
