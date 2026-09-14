@@ -95,6 +95,40 @@ B·C는 초록이 무엇을 뜻하는지 모르게 만든다는 점에서 A보�
       있다 | verify: `/usr/bin/grep -q 'TASK-1\]\]' tools/planprogress/prose_test.go`
 - [ ] 패키지 테스트와 문서 게이트가 통과한다 | verify: `go test ./tools/planprogress/ && make doc-check`
 
+## 부가 관찰 — 바인딩을 달지 않은 둘 (2026-09-14)
+
+`review-planprogress`의 리뷰 후반부가 낸 minor 둘이다. **A·B·C와 달리 오판이
+아니다** — 검사의 답은 옳고, 그 답을 설명하는 말이 실제보다 크다. 결함이 아닌 것에
+기준을 다는 것은 기준을 장식으로 만드는 일이라 바인딩 없이 관찰로만 남긴다.
+
+**D — `findCountPhrases`의 개/건 출력은 오늘 아무 데도 닿지 않는다.** 유일한 프로덕션
+호출부가 곧바로 `cardCounts(...)`로 감싼다(`prose.go:102`). 그래서 파일 코멘트의
+"the narrowing lives in the pairing, not in the vocabulary"는 구조적으로는 참이지만
+관측 가능한 차이가 없다 — 개/건 매치는 테스트에만 보인다. 어휘가 아니라 짝짓기에서
+거른다는 설계는 나중에 `건`이 카드를 세는 코퍼스가 오면 값을 하지만, 그 날이 오기
+전까지 이 문장은 실제보다 무겁게 읽힌다. 직접 측정:
+
+```
+$ /usr/bin/grep -n 'findCountPhrases(' tools/planprogress/prose.go
+102:		counts := cardCounts(findCountPhrases(sentence))
+213:func findCountPhrases(sentence string) []countMatch {
+```
+
+**E — 중복 제거 후 "enumeration of 1"이 나올 수 있다.** `len(ids) >= 2` 판정이 중복
+제거 **전**의 raw run에서 이뤄지기 때문이다. 측정:
+
+```
+findCountedEnumerations("TASK-1, 1 두 장이다")
+  -> {ids: ["TASK-1"], count: 2, text: "TASK-1, 1"}
+  -> counts 2 card(s) beside an enumeration of 1
+```
+
+**판정 자체는 옳다** — 산문이 두 장이라 말하면서 한 장만 이름을 댔으니 결함이
+맞다. 어색한 것은 메시지다: 이 파일은 enumeration을 "id 둘 이상"으로 정의해 놓고
+"enumeration of 1"을 출력한다. 고친다면 메시지 문구이지 판정 로직이 아니며, 지금
+그것을 고치면 `TestCheckPlanProse`의 기대 문자열을 건드리게 된다 — A·B·C를 다룰
+때 같은 파일을 열므로 그때 함께 보는 편이 낫다.
+
 ## Related
 
 - [[ISSUE-016]] — F1은 닫혔고 F3의 잔여분이 여기 A로 왔다.
