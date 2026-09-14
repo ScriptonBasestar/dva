@@ -7,11 +7,11 @@ effort: S
 exec-tier: standard
 status: done
 created: 2026-09-14
-source: "2026-09-14 보드 점검. PLAN-007의 마지막 재측정은 2026-09-10의 46장/9장이고 현재는 68장/29장이다. 그 사이에 닫힌 PLAN-008이 자식 8장을 리뷰되지 않은 채 done에 남겼다"
+source: "2026-09-14 보드 점검. PLAN-007의 마지막 재측정은 2026-09-10의 46장/9장이고 master 8b56802 기준으로는 70장/39장이다. 그 사이에 닫힌 PLAN-008이 자식 8장을 리뷰되지 않은 채 done에 남겼다"
 depends-on: []
 completion-summary: "리뷰되지 않은 done 39장의 소유권을 2026-09-14 기준으로 재측정해 PLAN-007에 표로 남겼다. PLAN-008이 진척 100%로 닫히면서 자식 8장을 리뷰 없이 남긴 사실을 그 계획 본문에 기록했고, 소유자 없는 9장과 합쳐 17장을 레거시로 선언했다(소급 리뷰 없음). PLAN-006 §Session handoff의 잔여 단언에 범위를 명시했고, 그 사례를 TASK-381이 제안한 규칙 둘 중 어느 것으로도 잡지 못한다는 분석과 함께 그 카드에 기록했다"
 verification-status: verified
-verification-evidence: "기계 바인딩 4개 exit 0, make doc-check rc=0. 39/68 수치는 첫 프론트매터 블록만 읽는 awk로 재측정했고 카드 id 39개가 초안과 완전히 일치했다. PLAN-008 자식 8장의 quality-review 부재는 grep -c로 8건 모두 0을 확인했다. §Session handoff 문장은 육안 확인 — 수정 후 문장이 §Order 범위임을 명시하고 frontmatter 26/29와 나머지 두 장(TASK-348, TASK-329)을 함께 적는다"
+verification-evidence: "기계 바인딩 4개 exit 0, make doc-check rc=0. 39/70 수치(master 8b56802 기준)는 첫 프론트매터 블록만 읽는 awk로 재측정했고 카드 id 39개가 초안과 완전히 일치했다. PLAN-008 자식 8장의 quality-review 부재는 grep -c로 8건 모두 0을 확인했다. §Session handoff 문장은 육안 확인 — 수정 후 문장이 §Order 범위임을 명시하고 frontmatter 26/29와 나머지 두 장(TASK-348, TASK-329)을 함께 적는다"
 quality-review: pass
 quality-reviewed-at: 2026-09-14
 quality-review-evidence: "독립 리뷰 review-385(Claude Opus 5, 저자 아님) 2라운드 pass. 1라운드 conditional의 지적 셋을 접은 뒤 리뷰어가 세 수정을 각각 대상 문서의 행 번호까지 짚어 재확인했다 — PLAN-007의 인용문 154행 대 대상 절 165행(방향 정정 확인), PLAN-006의 §Children 144행·항목 4가 150행이고 §Devbox integration state(52~72행)는 348을 언급하지 않음(옛 포인터가 틀렸음 확인). 리베이스 후 센서스 수치(68/39, 17/8/5/0/9, orphan 9, parent 0건)가 전부 불변임을 재측정했고 신규 validate 실패 0건을 확인했다. 리뷰어가 스크래치 프로브로 CE canonical digest를 실제로 뽑아 평문 sha256과 다름을 실측해, TASK-382의 '이 저장소에서 canonical digest를 만들 수 없다'는 단언을 '만들 수 없는 것은 validator가 건너뛰는 카드뿐'으로 정정했다"
@@ -20,7 +20,9 @@ quality-review-receipt: tasks/receipts/TASK-385/done-review-03475cc92318d9f35bc4
 
 ## Summary
 
-`tasks/done/`에 68장이 있고 그중 **39장**에 `quality-review` 키가 없다. [[PLAN-007]]의
+**2026-09-14, master `8b56802` 기준** `tasks/done/`에 70장이 있고 그중 **39장**에
+`quality-review` 키가 없다. 분모에 기준 커밋을 붙이는 이유는 §리뷰 4라운드에 있다 —
+이 수는 통합할 때마다 자라므로 날짜만으로는 검증할 수 없다. [[PLAN-007]]의
 마지막 재측정(2026-09-10)은 "46장, `quality-review` 보유 9장"이고 소유권 배분도 그 시점
 것이다. 숫자와 배분이 둘 다 낡았다.
 
@@ -82,7 +84,7 @@ quality-review-receipt: tasks/receipts/TASK-385/done-review-03475cc92318d9f35bc4
 
 ## 리뷰 지적 둘 — 범위를 밝히려던 카드가 범위를 틀리게 짚었다
 
-review-385가 수치 주장은 전부 독립 재측정으로 참임을 확인했고(68/39, 배분 17/8/5/0/9,
+review-385가 수치 주장은 전부 독립 재측정으로 참임을 확인했고(39, 배분 17/8/5/0/9,
 카드 목록까지 문자 단위 일치, `parent:` 부재, PLAN-006 잔여 3장 = 328/348/329),
 틀린 것은 **절 귀속 인용 둘**이었다.
 
@@ -117,3 +119,26 @@ review-385가 수치 주장은 전부 독립 재측정으로 참임을 확인했
 - [x] PLAN-006의 굵은 문장이 자기 범위를 밝힌다 | verify: `human — §Session handoff를 읽고 §Order 범위임이 문장 안에서 읽히는지 확인`
 - [x] TASK-381이 자기 규칙 둘 다 이 사례를 잡지 못한다는 것을 기록한다 | verify: `/usr/bin/grep -rq --include='381-*.md' '둘 다 잡지 못한다' tasks`
 - [x] 문서 게이트가 통과한다 | verify: `make doc-check` (regression-guard)
+
+## 리뷰 4라운드가 잡은 것 — 분모에는 유효기간이 있다
+
+리뷰어가 리베이스 대상에 대고 센서스를 **다시 쟀다.** 2라운드 수치를 그대로
+들고 오지 않았기 때문에 잡혔다: `tasks/done/`은 이 카드가 "68장"이라고 적은 뒤
+`b4b1f20`에서 69장, `19860c2`에서 70장이 됐고, **이 카드를 닫는 행위 자체가 그중
+한 장을 더했다.** master `8b56802`로 리베이스한 지금은 71장이다.
+
+분자 39, 배분 17/8/5/0/9, orphan 9장, `parent:` 0건은 모든 커밋에서 정확하다.
+**틀린 것은 분모 하나뿐이었다.** 그리고 68을 70으로 고치는 것은 한 커밋어치
+정확도만 사고 다음 통합에서 다시 썩는다.
+
+그래서 값이 아니라 **기준을 적는 쪽**으로 고쳤다 — `2026-09-14, master 8b56802`.
+그러면 나중에 `git ls-tree -r --name-only 8b56802 tasks/done` 한 줄로 검증되고,
+낡았다는 사실이 조용히가 아니라 읽히게 된다. 이것이 이 카드가 애초에 고치려던
+결함(2026-09-10 스냅샷이 낡아 오해를 만든 것)의 재발 방지다.
+
+같은 처방이 receipt에도 적용된다. 리뷰어가 실측으로 보인 것: 파일명이
+`sha256(카드)`를 담고 카드가 그 파일명을 담으므로 **재핀은 고정점 요구이고
+수렴하지 않는다.** `19860c2`의 카드는 `66e0c237…`인데, 포인터 줄만 그 이름으로
+고치면 카드는 `8343f407…`이 된다. 그러므로 receipt의 digest는 **"리뷰된
+리비전"을 이름하는 것**으로 읽는다 — 현재 카드 바이트와 같을 것을 요구하지
+않는다. 같은 사실의 구조적 기술은 [[ISSUE-001]]이 소유한다.
