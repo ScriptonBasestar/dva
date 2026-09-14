@@ -14,8 +14,11 @@ created: 2026-09-14
 
 ## Summary
 
-`quality-review-receipt`를 단 done 카드는 **카드 전체가 digest로 봉인된다.** 봉인에서
-빠지는 필드는 `quality-review-receipt` 자신 하나뿐이다. 그래서 카드에 남은 사실관계
+`quality-review-receipt`를 단 done 카드는 **카드 전체가 digest로 봉인된다.**
+`quality-review-receipt` 자신은 봉인에서 빠진다 — 아래 §Evidence의 프로브 둘이
+그 한 필드에 대해 양방향으로 확인한 것이고, **다른 필드도 빠지는지는 재지 않았다.**
+digest 범위의 정본은 이 저장소가 아니라 `ce` 쪽에 있고, 여기서 관측할 수 있는 것은
+"이 필드는 빠진다"와 "본문 한 줄을 더하면 깨진다"까지다. 그래서 카드에 남은 사실관계
 오류를 편집으로 정정하면 receipt가 깨지고 카드가 invalid가 된다.
 
 이것은 결함이 아니다 — 편집으로 고칠 수 있는 봉인은 봉인이 아니다. 결함은 **정정
@@ -39,6 +42,12 @@ $ git checkout -- tasks/done/376-*.md && ce task validate tasks/done/376-*.md
 ✅ Valid (no errors or warnings)
 ```
 
+반대 방향도 쟀다. 같은 카드에서 `quality-review-receipt` **그 한 줄만** 다른 경로로
+바꾸고(같은 바이트의 receipt를 `tmp/probe-376.json`에 복사해 두고 포인터를 그쪽으로
+돌렸다) 다시 validate하면 `✅ Valid`다. 즉 본문 한 줄을 더하면 깨지는 봉인이 이
+필드의 값 변경에는 반응하지 않는다 — `tasks/receipts/` 이관([[TASK-388]])이 18장의
+포인터를 고치면서도 봉인을 깨지 않은 근거가 이것이다.
+
 구체적 오류: TASK-376의 `quality-review-evidence`가 "Low 5건을 같은 브랜치에서 전부
 수정했다"고 적는다. Low 하나(`:441/:446` 트랩 부재 + `:394` 대조군 캐시)는 두 지적을 한
 줄에 담고 있었고 후반부만 닫혔다. 전반부는 [[TASK-387]]이 "적용하지 않는다"로 판정하고
@@ -49,9 +58,19 @@ $ git checkout -- tasks/done/376-*.md && ce task validate tasks/done/376-*.md
 원칙적으로는 재리뷰가 정답이다: 새 리뷰어가 카드를 다시 읽고 새 receipt를 발급한다.
 하지만 그러려면 **이미 통합된 done 카드를 다시 리뷰 대상으로 올리는 절차**가 있어야
 하고, 지금 보드에는 없다. [[TASK-384]]가 TASK-344/371에 대해 정확히 그 절차를 한 번
-수행하므로, 그 절차가 일반화 가능한 형태로 남는지가 이 이슈의 선행 조건이다.
+수행하도록 **계획돼 있다** — 2026-09-14 기준 그 카드는 아직 master에 없고
+([[TASK-388]]의 브랜치에만 있다) 착수되지도 않았다. 따라서 "그 절차가 일반화 가능한
+형태로 남는지"는 오늘 확인된 사실이 아니라 앞으로 확인할 것이고, 이 이슈는 그것을
+기다린다. TASK-384가 끝나기 전에는 여기에 적을 절차가 없다.
 
 ## Reproduction
+
+**선행 조건.** 고른 카드의 `quality-review-receipt` 경로가 **현재 체크아웃에서 실제로
+읽혀야 한다.** TASK-376의 포인터는 gitignore된 `tmp/` 아래이므로(→ [[ISSUE-001]],
+[[TASK-388]]이 소유), 깨끗한 워크트리에서 아래 절차를 그대로 돌리면 3단계가
+digest 불일치가 아니라 `quality-review-receipt ... cannot be read`를 낸다. 그것은
+이 이슈가 말하는 결함이 아니라 다른 결함이다. 주 체크아웃에서 receipt를 복사해
+넣은 뒤 시작하거나, receipt가 추적 경로에 있는 카드를 고른다.
 
 1. receipt를 단 done 카드를 고른다 — 예: `tasks/done/376-prepare-a-rehearsed-dogfood-run-harness-for-the-live-verification-round.md`.
 2. 그 카드에 아무 문자나 한 줄 덧붙인다: `printf '\n<!-- probe -->\n' >> <card>`.
@@ -69,14 +88,19 @@ $ git checkout -- tasks/done/376-*.md && ce task validate tasks/done/376-*.md
 
 ## Impact
 
-낮다 — 오늘 알려진 인스턴스는 TASK-376 하나이고, 틀린 문장은 완료 판정이 아니라 리뷰
+**깨끗한 체크아웃에서는 봉인이 아예 동작하지 않는다.** 오늘 receipt를 단 done 카드
+대부분의 포인터가 `tmp/` 아래라, 새 워크트리에서는 digest 검사에 도달하기 전에
+"cannot be read"로 끝난다 — 위조를 막는 장치가 켜져 있지도 않은 상태다. 이 선행
+결함은 [[TASK-388]]이 닫는다.
+
+그 위에서, 낮다 — 오늘 알려진 인스턴스는 TASK-376 하나이고, 틀린 문장은 완료 판정이 아니라 리뷰
 요약의 범위 서술이다. 다만 **보드가 커질수록 조용히 늘어나는 종류의 부채**다. 봉인된
 카드의 수는 단조 증가하고, 그중 사실관계가 낡는 카드의 비율은 0이 아니다.
 
 ## Resolution Criteria
 
 - [ ] 봉인된 done 카드의 사실관계 정정 절차가 문서로 존재한다 | verify: `human — 절차 문서를 읽고, 위조(리뷰 없이 digest 갱신)와 구분되는 지점이 명시돼 있는지 확인`
-- [ ] TASK-376의 `quality-review-evidence`가 Low 한 건의 전반부 미적용을 반영한다 | verify: `/usr/bin/grep -rq --include='376-*.md' '미적용' tasks`
+- [ ] TASK-376의 `quality-review-evidence`가 Low 한 건의 전반부 미적용을 반영한다 | verify: `human — 376의 quality-review-evidence를 읽고, '전부 수정했다'가 사라졌는지와 미적용 한 건이 어느 지적인지 문장 안에서 읽히는지 확인`
 
 ## Related
 
