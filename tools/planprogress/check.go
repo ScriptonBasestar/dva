@@ -114,6 +114,11 @@ type plan struct {
 	hasCompleted   bool
 	progress       int
 	hasProgress    bool
+
+	// scope and goal are the two prose regions checked against the frontmatter above
+	// (TASK-381). Both may be empty; a plan card is not required to carry either.
+	scope string
+	goal  string
 }
 
 var frontmatterFieldRE = regexp.MustCompile(`^([A-Za-z][A-Za-z0-9_-]*):\s*(.*)$`)
@@ -178,6 +183,8 @@ func parsePlan(data string) (plan, error) {
 		switch key {
 		case "id":
 			p.id = strings.Trim(val, `"'`)
+		case "scope":
+			p.scope = strings.Trim(val, `"'`)
 		case "children":
 			children, err := parseChildren(val)
 			if err != nil {
@@ -204,7 +211,30 @@ func parsePlan(data string) (plan, error) {
 			p.progress, p.hasProgress = n, true
 		}
 	}
+	p.goal = extractSection(lines[end+1:], "## Goal")
 	return p, nil
+}
+
+// extractSection returns the body of one "## Heading" section, ending at the next heading of
+// the same or a higher level. An absent section yields an empty string, which every prose
+// check treats as nothing to say rather than as a defect.
+func extractSection(body []string, heading string) string {
+	var out []string
+	in := false
+	for _, line := range body {
+		trimmed := strings.TrimRight(line, " \t\r")
+		if in && strings.HasPrefix(trimmed, "## ") {
+			break
+		}
+		if trimmed == heading {
+			in = true
+			continue
+		}
+		if in {
+			out = append(out, line)
+		}
+	}
+	return strings.TrimSpace(strings.Join(out, "\n"))
 }
 
 // parseChildren parses a bracketed, comma-separated frontmatter value such as
@@ -294,6 +324,8 @@ func checkPlan(p plan, idx taskIndex) []string {
 			defects = append(defects, fmt.Sprintf("%s (%s): progress=%d, want %d (completed-tasks*100/total-tasks, truncated)", name, p.path, p.progress, wantProgress))
 		}
 	}
+
+	defects = append(defects, checkPlanProse(p, name)...)
 
 	return defects
 }
