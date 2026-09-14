@@ -1,24 +1,24 @@
 {
   "reviewed-card-path": "tasks/done/385-currentize-plan-ownership-for-unreviewed-done.md",
-  "reviewed-card-sha256": "66e0c2370423ae3576d302378cae56dd1a46552e62c72d3dfeac6e596454d5a5",
-  "reviewed-card-sha256-algorithm": "plain sha256 over the card file bytes at commit 19860c2 (`git show 19860c2:tasks/done/385-...md | shasum -a 256`). This is NOT the CE canonical review digest. The card declares no blocks:, so ce task validate never reaches the quality-review-receipt check and never computes a canonical digest for it — verified by contrast with tasks/done/376-...md, which declares `blocks: [TASK-328, TASK-348]` and whose receipt path IS read and reported unreadable. The canonical digest was confirmed by probe to be a different function of the card entirely; see canonical-digest-probe.",
+  "reviewed-card-sha256": "83e9208d1743f564565bffe85d396be4ce6c73ecae71c5cfc9223f593673e6e8",
+  "reviewed-card-sha256-algorithm": "plain sha256 over the card file bytes at commit 38ee08c (`git show 38ee08c:tasks/done/385-...md | shasum -a 256`). NOT the CE canonical review digest: the card declares no blocks:, so ce task validate never reaches the quality-review-receipt check for it — verified by contrast with tasks/done/376-*.md, which declares blocks: and whose receipt path IS read. Under reading (a) adopted in F7, this digest names THE REVISION THAT WAS REVIEWED and is not expected to equal the card's bytes after any later edit.",
   "task": "TASK-385",
   "title": "Currentize the plan ownership record for the unreviewed done backlog",
   "reviewer": "review-385 (Claude Opus 5, independent; did not author the work under review)",
-  "verdict": "conditional",
-  "verdict-final": false,
-  "verdict-condition": "unchanged from round 3: PLAN-007:116 and four places in the card say tasks/done/ holds 68 cards. It held 69 at b4b1f20 and holds 70 at 19860c2 — the closing commit moved it again by landing this very card in tasks/done/. The 39 unreviewed, the 17/8/5/0/9 split, the 9 orphans and the zero parent: keys are exact at every commit. Fix is one line — see F5.",
+  "verdict": "pass",
+  "verdict-final": true,
   "verdict-history": [
     "round 1 (99e9ce3): conditional — F1 and F2, two wrong section attributions, plus non-blocking F3 on weak verify bindings.",
     "round 2 (bdaea43, after rebase onto master 276988b): pass — F1/F2/F3 folds re-read in the folded text and verified line by line; every number re-measured and unchanged.",
     "round 3 (b4b1f20, after rebase onto master 29f745b): conditional — the card content is unchanged from round 2 and still passes, but the board moved underneath it. Found by re-measuring the census against the rebase target rather than carrying round 2's figure forward; re-measuring again after the close showed the same number drifting a second time.",
-    "round 4 (19860c2, the closing commit): conditional, unchanged. Re-read the final bytes because the close added content that no round had reviewed — two wikilink retargets and a new section. Both are accurate and neither changes the verdict. F5 is untouched by the close and still stands; the round-3 message reporting it crossed with the lead's close."
+    "round 4 (19860c2, the closing commit): conditional, unchanged. Re-read the final bytes because the close added content that no round had reviewed — two wikilink retargets and a new section. Both are accurate and neither changes the verdict. F5 is untouched by the close and still stands; the round-3 message reporting it crossed with the lead's close.",
+    "round 5 (38ee08c, rebased onto master 8b56802): PASS. F5 folded the way the evidence pointed — the basis commit is now stated rather than the value patched. Re-measured the cited basis from scratch: master 8b56802 holds exactly 70 done cards and 39 without quality-review, by two independent methods returning identical file lists. No condition remains."
   ],
   "reviewed-at": "2026-09-14",
   "branch": "dev/claude/mbp/docs/currentize-plan-ownership-for-unreviewed-done",
-  "base": "master 29f745b (rebased twice during review: 658b4e4 -> 276988b -> 29f745b)",
-  "head-reviewed": "19860c2 (the closing commit; supersedes the b4b1f20 pin)",
-  "review-rounds": 4,
+  "base": "master 8b56802",
+  "head-reviewed": "38ee08c (supersedes the 19860c2 pin)",
+  "review-rounds": 5,
   "diff-scope": {
     "commits": [
       "85944de (the census commit)",
@@ -36,7 +36,7 @@
   "findings": [
     {
       "id": "F5",
-      "status": "open — the condition. NOT addressed by the close at 19860c2, which left PLAN-007:116 and the card body at 68.",
+      "status": "CLOSED at 38ee08c",
       "severity": "minor factual, but in scope because this card's entire subject is an accurate census",
       "file": "tasks/plan/007-done-backlog-triage.md:116, and tasks/doing/385-...md lines 10 (source), 14 (verification-evidence), 23 (Summary)",
       "text": "오늘 `tasks/done/`은 **68장**이고 그중 `quality-review` 키가 없는 카드가 **39장**이다",
@@ -45,7 +45,10 @@
       "cause": "the denominator counts a zone that grows on every integration, so it goes stale without anyone editing the sentence. TASK-386 integrated at 29f745b added one; closing TASK-385 itself added another. Both new cards carry quality-review keys, so the unreviewed numerator never moved.",
       "why-it-matters-here": "the section this text sits in is titled '숫자와 배분이 둘 다 낡았다' and exists precisely because the previous dated snapshot (2026-09-10, 46장/9장) went stale and misled. Landing a new snapshot that is already off by one on the day it is written repeats that pattern one notch smaller, in the document that records the lesson.",
       "suggested": "state the basis commit, not only the date: '2026-09-14, <sha> 기준 tasks/done/ N장'. Updating 68 to 70 alone buys one commit of accuracy and then rots again — the card's own closing commit already falsified it once. Pinning the commit makes the snapshot checkable later and makes its staleness legible instead of silent.",
-      "reviewer-note": "this is a judgement call the lead may reasonably overrule. The text is a dated measurement that was true when taken, and documents of this kind carry dated snapshots routinely. The reviewer declines to certify a figure measured as wrong at the commit under review, but would accept the snapshot as written if the basis commit is stated alongside the date."
+      "reviewer-note": "this is a judgement call the lead may reasonably overrule. The text is a dated measurement that was true when taken, and documents of this kind carry dated snapshots routinely. The reviewer declines to certify a figure measured as wrong at the commit under review, but would accept the snapshot as written if the basis commit is stated alongside the date.",
+      "resolution": "folded as a basis statement, not a value patch, at all five sites: tasks/plan/007-done-backlog-triage.md:116, and the card's source:, verification-evidence:, §Summary first sentence, and line 85 (denominator dropped there, leaving only the figures that do not expire). A new section, '## 리뷰 4라운드가 잡은 것 — 분모에는 유효기간이 있다', records why.",
+      "reverification": "the cited basis was re-measured from scratch, not accepted: `git ls-tree -r --name-only 8b56802 tasks/done | grep -c '\\.md$'` -> 70, and the first-frontmatter-block awk over those blobs -> 39. Cross-checked with a naive whole-file grep -> 39, and `diff` of the two file lists is empty. The claim '39/70 at master 8b56802' is exact.",
+      "why-the-fix-is-right": "choosing master rather than a branch commit is the correct call and avoids a second fixed point: a card cannot cite its own branch tip, since committing the citation moves the tip. master 8b56802 is fixed outside this branch and independently checkable. The lead's own evidence confirms the reviewer's objection to a value patch: this branch's tasks/done/ is already at 71 after the rebase (verified), so patching 68 to 70 would have been wrong again within one integration."
     },
     {
       "id": "F1",
@@ -80,23 +83,33 @@
     },
     {
       "id": "F6",
-      "status": "open, informational — reported, not blocking",
+      "status": "partially resolved at 38ee08c",
       "severity": "informational",
       "file": "tasks/done/385-...md:104-110 (§리뷰 뒤에 링크 하나를 다시 겨눴다), tasks/plan/007-done-backlog-triage.md:162",
       "observation": "the new section resolves one dangling-reference class by creating three more. [[TASK-388]], [[ISSUE-012]] and [[ISSUE-010]] are all absent from this branch: no card declares those ids, and tasks/issue/ runs 001, 004-009, 011 with no 010 and no 012.",
       "is-it-a-defect": "mostly no, and the change is still an improvement. The retarget trades a link that resolved to the WRONG card for links that resolve to NOTHING. A dangling reference is visibly broken; a silently mis-resolving one is not, and the section exists precisely because the mis-resolving kind went unnoticed. Forward references to in-flight cards on unmerged branches are normal on this board.",
       "what-to-watch": "the retarget only becomes correct when the TASK-388 branch integrates, and it breaks again if that card is renumbered a second time by the same collision mechanism (ISSUE-012). Worth confirming at integration rather than assuming.",
-      "suggested": "no change required. If ISSUE-010 and ISSUE-012 do not exist on any branch, they should be created or the citations dropped, since the section leans on ISSUE-010 to justify leaving done/386 unfixed."
+      "suggested": "no change required. If ISSUE-010 and ISSUE-012 do not exist on any branch, they should be created or the citations dropped, since the section leans on ISSUE-010 to justify leaving done/386 unfixed.",
+      "update": "[[TASK-388]] now resolves in-tree — TASK-388 integrated into master 8b56802. [[ISSUE-010]] (TASK-387 branch) and [[ISSUE-012]] (TASK-389 branch) remain unintegrated forward references, deliberately left. The ISSUE-010 citation still carries weight, since the card leans on it to justify leaving done/386 unfixed; it should land."
     },
     {
       "id": "F7",
-      "status": "open — structural, owned by TASK-388's naming convention, not by this card",
+      "status": "accepted — reading (a) adopted at 38ee08c; structural description owned by ISSUE-001",
       "severity": "medium (design), zero impact on this card's correctness",
       "finding": "the receipt naming convention is unsatisfiable by construction whenever the card points at its own receipt by filename.",
       "why": "the filename embeds sha256(card), and the card's bytes embed the filename. Naming the receipt after the final card's digest therefore changes the final card's digest.",
       "demonstration": "the card at 19860c2 digests to 66e0c237... while its quality-review-receipt: line still names done-review-03475cc9....json. Rewriting only that line to name done-review-66e0c237....json makes the card digest to 8343f407e58d8380fb3ca2eb996f992ea82e3f8c42e8083b506aea74a94d70f5 — a third value. Each re-pin invalidates itself. This is a fixed-point requirement, not a workflow awkwardness, and no amount of re-issuing converges.",
       "resolution": "pick one of two coherent readings. (a) The digest names the REVISION THAT WAS REVIEWED, and is not expected to equal the current card — this receipt adopts (a). (b) Drop the digest from the filename and carry it as a field inside the receipt, leaving the pointer stable. (a) costs one sentence in TASK-388; (b) costs a rename convention.",
-      "consequence-for-this-close": "if the lead updates the card's pointer to this receipt's new filename, the card's final digest becomes 8343f407..., stated here in advance so the drift is recorded rather than discovered later. That prediction is the receipt-level version of F5's remedy: name the basis, do not let the number rot silently."
+      "consequence-for-this-close": "if the lead updates the card's pointer to this receipt's new filename, the card's final digest becomes 8343f407..., stated here in advance so the drift is recorded rather than discovered later. That prediction is the receipt-level version of F5's remedy: name the basis, do not let the number rot silently.",
+      "disposition": "the card's new section records the fixed-point measurement and states that a receipt digest names the reviewed revision. The general statement went to ISSUE-001 via the TASK-389 branch rather than into TASK-388's card, which is sealed and integrated — correct placement, since editing a sealed card is the very gap ISSUE-010 describes."
+    },
+    {
+      "id": "F8",
+      "status": "open, informational — no action needed on this card",
+      "severity": "informational",
+      "observation": "the new section cites b4b1f20 and 19860c2 as evidence for the 69 and 70 counts. Both are pre-rebase commits, no longer reachable from any ref on this branch (`git merge-base --is-ancestor 19860c2 HEAD` fails; the objects survive only until gc).",
+      "why-it-is-not-a-defect": "those two citations are narrative — they recount how the drift was found. The load-bearing citation is master 8b56802, which IS permanently reachable and is what the fix rests on. The section would read correctly even if the two orphaned shas were dropped.",
+      "note": "worth knowing only because the section's own thesis is 'cite a basis that can be checked later'. Two of its shas cannot be, though the one that matters can."
     }
   ],
   "checks-run": [
@@ -158,11 +171,8 @@
     }
   ],
   "baseline-comparison": {
-    "verdict": "this branch introduces NO new validation failure",
-    "shared": "TASK-344 and TASK-371 fail identically in both, with 'Done card blocks X but declares no quality-review-receipt'. Owned by TASK-384.",
-    "delta-explained": "the four extra failures in the worktree (376-379) are all 'quality-review-receipt tmp/task-management/direct/queue-run/task-37N-review-receipt.json cannot be read'. .gitignore:51 is `tmp/`, so those receipts exist only in the primary checkout and never travel to a worktree. This branch touches none of those four cards. Owned by TASK-388.",
-    "arithmetic": "88 total vs 87 is the one new card, TASK-385 itself, which validates clean. 82 valid vs 85 is 85 + 1 new card - 4 worktree-only failures.",
-    "earlier-rounds": "the same comparison held at both earlier bases: round 1 worktree 79/6/85 vs primary 82/2/84 at 658b4e4; round 2 worktree 80/6/86 vs primary 83/2/85 at 276988b. Same shape, same four explained failures, every round."
+    "verdict": "this branch introduces NO new validation failure — and for the first time the branch and the base fail on exactly the same two cards.",
+    "history": "round 1 worktree 79/6/85 vs primary 82/2/84 at 658b4e4; round 2 80/6/86 vs 83/2/85 at 276988b; rounds 3-4 82/6/88 vs 85/2/87 at 29f745b; round 5 89/2/91 vs 88/2/90 at 8b56802. The six-versus-two gap closed exactly when the durable receipt path integrated, as predicted."
   },
   "numbers-reverified": {
     "method-note": "every figure was re-derived from primary data at each round rather than carried forward, which is how F5 was caught. Censuses were cross-checked with a method different from the implementer's awk, per the review brief.",
@@ -230,10 +240,13 @@
     "ce-version": "ce 0.8.4 as installed on this workstation"
   },
   "staleness-warning": {
-    "scope": "this receipt pins the card as it stands at 19860c2 — tasks/done/, status done, digest 66e0c237...",
-    "known-drift": "the card's quality-review-receipt: line still names the superseded done-review-03475cc9....json. Updating it to this receipt's filename is correct and makes the card digest 8343f407... — see F7, which explains why no filename choice makes that converge.",
-    "reading-adopted": "the filename names THE REVISION THAT WAS REVIEWED (19860c2), not the card's current bytes after any subsequent pointer edit. Under that reading this receipt is stable and does not need reissuing again.",
-    "superseded": "done-review-03475cc9....json (round 3, pinned the doing card at b4b1f20) and done-review-4d810dde....json (round 1, already removed at 19860c2). One card should carry one live receipt."
+    "scope": "pins the card at 38ee08c, digest 83e9208d...",
+    "expected-drift": "the lead plans to update quality-review-evidence to the round-4/5 content and repoint quality-review-receipt at this file. Both edits change the card's bytes away from 83e9208d. Under reading (a) that is expected and correct — this receipt names the revision reviewed, not the card's current bytes. No further reissue is needed.",
+    "superseded": [
+      "done-review-66e0c237....json (round 4, pinned 19860c2)",
+      "done-review-03475cc9....json (round 3, removed)",
+      "done-review-4d810dde....json (round 1, removed)"
+    ]
   },
   "superseded-receipts": {
     "done-review-4d810ddeedcb9c88e71d855fc3bd7021efb3a9bdfbb6999f4e0e583ca2b29410.json": "the round-1 receipt, pinning the card at 99e9ce3 with a conditional verdict. The reviewer asked for its deletion; it is staged as deleted in the working tree at the time of writing. Correct — one card should carry one live receipt, and that one pinned a digest the card no longer had."
@@ -263,8 +276,8 @@
     "effect-on-this-review": "the reviewed diff cites [[TASK-383]] in tasks/plan/007-done-backlog-triage.md and in the card, meaning the receipt-path card. That reading was correct when authored; after the rebases those links resolve in-tree to the compose-image card instead. Not charged against TASK-385, but the two citations should be re-pointed once the collision is settled."
   },
   "files-modified-by-reviewer": [
-    "tasks/receipts/TASK-385/done-review-66e0c237...json (this receipt)",
-    "tasks/receipts/TASK-385/done-review-03475cc9...json (superseded; the lead removes it)"
+    "tasks/receipts/TASK-385/done-review-83e9208d...json (this receipt)",
+    "tasks/receipts/TASK-385/done-review-66e0c237...json (superseded; the lead removes it)"
   ],
   "round-4-new-content-verification": {
     "why": "the close added content no earlier round had seen. The lead flagged this rather than letting it ride, which is the right call — (c) frontmatter and (d) zone move were predicted by the round-3 receipt, but (a) and (b) were not reviewed.",
@@ -286,5 +299,21 @@
     },
     "c-frontmatter-and-d-zone-move": "as predicted by the round-3 receipt. One note: quality-review: pass records the round-2 verdict at bdaea43, which was accurate when given. The standing verdict at 19860c2 is conditional on F5, so that field and its evidence line should follow whatever the lead decides about F5.",
     "f1-residual-fold": "landed at 19860c2 and verified in the folded text: tasks/plan/007-done-backlog-triage.md:154 now reads '아래 §`waived` 절이 상류에 추가됐다 48장에 대해 기록한 함정'. The garden-path reading of 추가됐다가 is gone and the referenced section is still below at line 165."
+  },
+  "reissue-rationale": "This supersedes the 66e0c237 receipt because NEW CONTENT was reviewed (the F5 fold across five sites plus a new section), not because the card's pointer moved. That distinction is what makes reissuing terminate: re-pinning to chase the card's own pointer edit is the non-converging move described in F7; issuing one receipt per reviewed revision is not. The lead's planned quality-review-evidence edit will move the card's digest away from 83e9208d again, and under reading (a) that is expected and requires no further receipt.",
+  "round-5-verification": {
+    "f5-fold": "verified at all five sites from the diff 652233e..38ee08c; no bare 68 survives in either file.",
+    "basis-re-measured": "master 8b56802 -> 70 done cards, 39 without quality-review. Two methods, identical lists.",
+    "branch-tip-now": "71 done cards at 38ee08c, confirming a value patch would already be stale.",
+    "unchanged-figures": "39 numerator, 17/8/5/0/9 split, 9 orphans, zero parent: keys — re-derived and exact, as at every prior round.",
+    "new-section-claims": "the 69-at-b4b1f20, 70-at-19860c2, 71-after-rebase and 66e0c237->8343f407 figures are all this reviewer's own measurements, reproduced here and correct."
+  },
+  "gates": {
+    "make doc-check": "rc=0",
+    "make lint": "rc=0",
+    "ce task validate --all (branch 38ee08c)": "rc=1 — 89 valid, 2 invalid (total 91)",
+    "ce task validate --all (primary checkout, master 8b56802, clean)": "rc=1 — 88 valid, 2 invalid (total 90)",
+    "delta": "+1 valid and +1 total is TASK-385's own card, which validates clean. The two failures are identical in both: TASK-344 (blocks TASK-343) and TASK-371 (blocks TASK-354), each 'Done card blocks X but declares no quality-review-receipt'. Owned by TASK-384.",
+    "notable": "the four tmp/-pointer failures present in every earlier round are GONE, because TASK-388 integrated the durable receipt path into master. This retroactively confirms the round-1 diagnosis that those four were a checkout artifact of .gitignore:51 and never a regression from this branch."
   }
 }

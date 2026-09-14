@@ -14,8 +14,8 @@ verification-status: verified
 verification-evidence: "기계 바인딩 4개 exit 0, make doc-check rc=0. 39/70 수치(master 8b56802 기준)는 첫 프론트매터 블록만 읽는 awk로 재측정했고 카드 id 39개가 초안과 완전히 일치했다. PLAN-008 자식 8장의 quality-review 부재는 grep -c로 8건 모두 0을 확인했다. §Session handoff 문장은 육안 확인 — 수정 후 문장이 §Order 범위임을 명시하고 frontmatter 26/29와 나머지 두 장(TASK-348, TASK-329)을 함께 적는다"
 quality-review: pass
 quality-reviewed-at: 2026-09-14
-quality-review-evidence: "독립 리뷰 review-385(Claude Opus 5, 저자 아님) 2라운드 pass. 1라운드 conditional의 지적 셋을 접은 뒤 리뷰어가 세 수정을 각각 대상 문서의 행 번호까지 짚어 재확인했다 — PLAN-007의 인용문 154행 대 대상 절 165행(방향 정정 확인), PLAN-006의 §Children 144행·항목 4가 150행이고 §Devbox integration state(52~72행)는 348을 언급하지 않음(옛 포인터가 틀렸음 확인). 리베이스 후 센서스 수치(68/39, 17/8/5/0/9, orphan 9, parent 0건)가 전부 불변임을 재측정했고 신규 validate 실패 0건을 확인했다. 리뷰어가 스크래치 프로브로 CE canonical digest를 실제로 뽑아 평문 sha256과 다름을 실측해, TASK-382의 '이 저장소에서 canonical digest를 만들 수 없다'는 단언을 '만들 수 없는 것은 validator가 건너뛰는 카드뿐'으로 정정했다"
-quality-review-receipt: tasks/receipts/TASK-385/done-review-03475cc92318d9f35bc4b0b333466829b4154081aee7f8eed9fd6abe140d4a1a.json
+quality-review-evidence: "독립 리뷰 review-385(Claude Opus 5, 저자 아님) 5라운드. 4라운드에서 리뷰어가 2라운드 수치를 이월하지 않고 리베이스 대상에 대고 센서스를 다시 재서 conditional(F5)을 냈다 — 카드가 tasks/done/을 68장이라 적었으나 b4b1f20에서 69, 19860c2에서 70이었고 이 카드를 닫는 행위 자체가 한 장을 더했다. 값 패치 대신 기준 커밋을 적는 쪽으로 접었고, 5라운드에서 리뷰어가 master 8b56802에 대고 39/70을 두 방법(프론트매터 awk, 전체 grep)으로 교차 재측정해 pass로 올렸다. 분자 39·배분 17/8/5/0/9·orphan 9·parent 0건은 다섯 라운드 모든 커밋에서 정확했고 틀린 것은 분모 하나였다. 게이트 재실행: doc-check 0, lint 0, validate --all 89/2/91 대 master 88/2/90 — 델타는 이 카드 자신이고 실패 2건(344·371)은 base와 동일"
+quality-review-receipt: tasks/receipts/TASK-385/done-review-83e9208d1743f564565bffe85d396be4ce6c73ecae71c5cfc9223f593673e6e8.json
 ---
 
 ## Summary
@@ -124,8 +124,13 @@ review-385가 수치 주장은 전부 독립 재측정으로 참임을 확인했
 
 리뷰어가 리베이스 대상에 대고 센서스를 **다시 쟀다.** 2라운드 수치를 그대로
 들고 오지 않았기 때문에 잡혔다: `tasks/done/`은 이 카드가 "68장"이라고 적은 뒤
-`b4b1f20`에서 69장, `19860c2`에서 70장이 됐고, **이 카드를 닫는 행위 자체가 그중
-한 장을 더했다.** master `8b56802`로 리베이스한 지금은 71장이다.
+69장, 70장으로 자랐고 **이 카드를 닫는 행위 자체가 그중 한 장을 더했다.** master
+`8b56802`로 리베이스한 지금은 71장이다.
+
+(69·70을 관측한 두 커밋의 sha는 일부러 적지 않는다. 리베이스 전 커밋이라 이
+브랜치 어느 ref에서도 도달 불가능하고, gc가 돌면 사라진다. 이 절의 논지가
+"나중에 검증되는 기준을 적어라"인데 검증 안 되는 sha를 근거로 들면 자기모순이다.
+검증되는 인용은 master `8b56802` 하나이고 그것으로 충분하다 — 리뷰어의 F8.)
 
 분자 39, 배분 17/8/5/0/9, orphan 9장, `parent:` 0건은 모든 커밋에서 정확하다.
 **틀린 것은 분모 하나뿐이었다.** 그리고 68을 70으로 고치는 것은 한 커밋어치
