@@ -19,8 +19,30 @@
 #
 # CANNOT DETERMINE은 NOT LANDED가 아니다. 판정 불가를 "아직"으로 보고하면
 # 이 검사가 사람의 기억을 대체할 수 없다.
+#
+# 신뢰 가정: 이 검사는 familybook origin/develop이 소유한 readiness runner를 **실행한다**.
+# 그 내용을 검증하지 않으므로, origin/develop에 쓸 수 있는 사람은 이 스크립트를 돌리는
+# 사람의 계정으로 코드를 실행할 수 있다. 그 저장소를 이미 신뢰하는 환경에서만 쓴다.
+# 실행 자체는 임시 fixture 안에 가두고, stdin을 끊고, 시간 상한을 두고, git 환경변수를
+# 제거해 최소한 "조용히 다른 저장소를 건드리는" 경로는 막는다.
 
 set -u
+set -o pipefail
+
+# 호출자 환경에 남은 git 변수를 제거한다. GIT_DIR은 저장소 탐색에서 `-C`를 이긴다 —
+# 남겨 두면 fixture 대신 호출자의 저장소를 읽고 쓰게 된다. 자격증명 프롬프트도 막는다:
+# 비대화형에서 fetch가 멈추면 검사가 판정 없이 매달린다.
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY \
+  GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_CONFIG GIT_CONFIG_GLOBAL GIT_CEILING_DIRECTORIES
+export GIT_TERMINAL_PROMPT=0
+
+# timeout(1)은 GNU coreutils라 macOS 기본에는 없다. 있으면 쓰고, 없으면 상한 없이 돈다.
+RUNNER_TIMEOUT=()
+if command -v timeout >/dev/null 2>&1; then
+  RUNNER_TIMEOUT=(timeout 120)
+elif command -v gtimeout >/dev/null 2>&1; then
+  RUNNER_TIMEOUT=(gtimeout 120)
+fi
 
 readonly EXIT_LANDED=0
 readonly EXIT_NOT_LANDED=1
@@ -37,7 +59,7 @@ cleanup() {
   [[ -n $workdir && -d $workdir && $workdir == "${TMPDIR:-/tmp}"* ]] && rm -rf "$workdir"
   return 0
 }
-trap cleanup EXIT
+trap cleanup EXIT INT TERM HUP
 
 usage() {
   # 행 번호를 박지 않는다 — 헤더가 길어지면 범위가 코드까지 삼킨다.
@@ -60,6 +82,12 @@ while (( $# )); do
   esac
   shift
 done
+
+# --offline은 원격에 접속하지 않는다. --url과 함께 오면 둘 중 하나는 조용히 무시되는데,
+# 어느 쪽이 무시됐는지 출력만 보고는 알 수 없다 — 판정 불가로 끊는다.
+if (( offline )) && [[ -n $url ]]; then
+  unknown '--offline and --url are mutually exclusive: --offline never contacts a remote'
+fi
 
 command -v git >/dev/null 2>&1 || unknown 'git is not on PATH'
 
@@ -89,8 +117,11 @@ else
     || unknown 'cannot initialize the temporary repository'
   git -C "$workdir/mirror" remote add origin "$url" \
     || unknown 'cannot configure the temporary remote'
-  if ! git -C "$workdir/mirror" fetch -q --depth=1 --filter=blob:none origin develop 2>"$workdir/fetch.err"; then
-    if ! git -C "$workdir/mirror" fetch -q --depth=1 origin develop 2>>"$workdir/fetch.err"; then
+  # 죽은 연결에는 상한을 둔다. 끊기지 않고 느려지기만 하는 연결은 timeout 없이는
+  # 영원히 기다린다 — 판정 불가로 끝나는 편이 매달려 있는 것보다 낫다.
+  fetch_limits=(-c http.lowSpeedLimit=1000 -c http.lowSpeedTime=30)
+  if ! git -C "$workdir/mirror" "${fetch_limits[@]}" fetch -q --depth=1 --filter=blob:none origin develop 2>"$workdir/fetch.err"; then
+    if ! git -C "$workdir/mirror" "${fetch_limits[@]}" fetch -q --depth=1 origin develop 2>>"$workdir/fetch.err"; then
       printf '%s\n' "$(<"$workdir/fetch.err")" >&2
       unknown "cannot fetch develop from $url (no network, or no access)"
     fi
@@ -134,7 +165,9 @@ build_fixture() {
         return 2
         ;;
       120000)
-        mkdir -p "$dir/${path%/*}" 2>/dev/null
+        # `${path%/*}`는 path에 /가 없으면 path 그대로다. 루트 심볼릭 링크에서
+        # 그대로 mkdir하면 링크와 같은 이름의 디렉토리가 먼저 생겨 ln이 실패한다.
+        [[ $path == */* ]] && { mkdir -p "$dir/${path%/*}" || return 1; }
         ln -s placeholder "$dir/$path" || return 1
         ;;
       *)
@@ -148,33 +181,47 @@ build_fixture() {
   # runner 본체만 실제 내용으로 채운다. 판정하려는 대상이 바로 이 파일이다.
   git -C "$source_repo" archive "$commit" "$runner_path" | tar -x -C "$dir" || return 1
   git -C "$dir" init -q -b main --template= . || return 1
-  git -C "$dir" -c core.hooksPath=/dev/null add -A || return 1
+  # 전역 excludesFile/attributesFile을 끊는다. 사용자의 ~/.gitignore_global 한 줄이
+  # fixture에서 파일을 통째로 빠뜨리면, runner는 그것을 "required 누락"으로 읽고
+  # 이 검사는 그 결과를 "dva.yml 거부"로 잘못 보고한다.
+  git -C "$dir" -c core.hooksPath=/dev/null \
+    -c core.excludesFile=/dev/null -c core.attributesFile=/dev/null \
+    add -A || return 1
   git -C "$dir" -c core.hooksPath=/dev/null \
     -c user.name=readiness-probe -c user.email=readiness-probe@invalid \
     commit -q --no-gpg-sign -m fixture || return 1
 }
 
 run_runner() {
-  # run_runner <dir> -> runner가 stdout에 낸 JSON의 status
-  local dir=$1 sha out
+  # run_runner <dir> <stderr-file> -> runner가 stdout에 낸 JSON의 status
+  local dir=$1 errfile=$2 sha out
   sha=$(git -C "$dir" rev-parse HEAD) || return 1
-  out=$(bash "$dir/$runner_path" \
+  # stdin을 끊고 시간 상한을 둔다. runner는 외부 저장소가 소유한 코드라 이 스크립트가
+  # 내용을 검증하지 않는다 — 입력을 기다리거나 멈추면 검사가 통째로 매달린다.
+  out=$(${RUNNER_TIMEOUT[@]+"${RUNNER_TIMEOUT[@]}"} bash "$dir/$runner_path" \
     --source-dir "$dir" --source-sha "$sha" --target-sha "$sha" \
-    --result-format json-v1 2>"$dir/../runner.err") || return 1
+    --result-format json-v1 </dev/null 2>"$errfile") || return 1
   printf '%s' "$out" | sed -n 's/.*"status":"\([a-z_]*\)".*/\1/p'
 }
 
 probe() {
   # probe <config-filename> -> status 문자열
+  # stderr는 probe마다 따로 받는다. 한 파일을 공유하면 두 번째 probe가 첫 번째의
+  # 실패 원인을 덮어써, harness_failure의 이유가 남지 않는다.
   local config=$1
-  local dir=$workdir/fixture-$config rc
+  local dir=$workdir/fixture-$config errfile=$workdir/runner-$config.err rc
   build_fixture "$dir" "$config"
   rc=$?
   if (( rc != 0 )); then
     printf 'harness_failure\n'
     return
   fi
-  run_runner "$dir" || printf 'harness_failure\n'
+  run_runner "$dir" "$errfile" || {
+    # 원인을 삼키지 않는다. harness_failure만 남기면 runner가 왜 죽었는지 알 수 없다.
+    printf 'runner failed for %s:\n' "$config" >&2
+    [[ -s $errfile ]] && sed -n '1,10p' "$errfile" >&2
+    printf 'harness_failure\n'
+  }
 }
 
 status_yml=$(probe dva.yml)
@@ -193,7 +240,7 @@ fi
 # 두 fixture가 모두 실패하면 원인은 파일명이 아니다 — fixture가 ready 기준선을
 # 재현하지 못한 것이므로 dva.yml 결과에 의미가 없다.
 if [[ $status_yml != ready && $status_yaml != ready ]]; then
-  unknown "the runner rejected both filenames ($status_yml / $status_yaml) — the probe could not reproduce a ready baseline, so this says nothing about dva.yml"
+  unknown "neither fixture reached ready ($status_yml / $status_yaml) — the probe could not reproduce a ready baseline, so this says nothing about dva.yml"
 fi
 
 if [[ $status_yml == not_ready || $status_yaml == not_ready ]]; then

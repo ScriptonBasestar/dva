@@ -24,7 +24,7 @@ CONTROL_COMMIT="275c8c98"
 
 TARGETS="primeno1 familybook flow-taskchain task348"
 
-RUN_TS=$(date +%Y-%m-%d)
+RUN_TS=$(date +'%Y-%m-%d %H:%M:%S')
 OUT_DIR="$REPO_ROOT/tmp/dogfood-run"
 CONTROL_SRC_DIR="$OUT_DIR/control-$CONTROL_COMMIT"
 
@@ -263,11 +263,28 @@ steps_for() {
 # purge 미리보기 — 전부 읽기 전용 docker 조회다
 # ---------------------------------------------------------------------------
 
+PREVIEW_FAILED=0 # 미리보기 조회가 한 번이라도 실패하면 1
+
 # 한 줄도 없으면 그 사실을 적는다. 빈 목록과 "조회하지 않았다"는 구별되어야 한다.
 preview_list() {
-	local heading="$1" out
+	local heading="$1" out err status
 	shift
-	out=$("$@" 2>&1 | sed '/^[[:space:]]*$/d' || true)
+	err=$(mktemp "${TMPDIR:-/tmp}/dogfood-preview.XXXXXX")
+	set +e
+	out=$("$@" 2>"$err")
+	status=$?
+	set -e
+	# stderr를 stdout에 합치지 않는다. 합치면 `Cannot connect to the Docker daemon`이
+	# 자원 이름처럼 들여쓰기돼 나와, 사람이 유일하게 의존하는 안전 점검이 거짓 안심을 준다.
+	if [ "$status" -ne 0 ]; then
+		PREVIEW_FAILED=1
+		printf '  %s: ** 조회 실패 (exit %d): %s **\n' "$heading" "$status" \
+			"$(sed '/^[[:space:]]*$/d' "$err" | head -n 2 | tr '\n' ' ')"
+		rm -f "$err"
+		return 0
+	fi
+	rm -f "$err"
+	out=$(printf '%s\n' "$out" | sed '/^[[:space:]]*$/d')
 	if [ -z "$out" ]; then
 		printf '  %s: (없음)\n' "$heading"
 	else
@@ -290,7 +307,8 @@ preview_project() {
 	local project="$1" filter="com.docker.compose.project=$1"
 	printf '### compose project: %s\n' "$project"
 	if ! command -v docker >/dev/null 2>&1; then
-		printf '  (docker 없음 — 미리보기 불가)\n'
+		PREVIEW_FAILED=1
+		printf '  ** docker 없음 — 미리보기 불가 **\n'
 		return 0
 	fi
 	preview_list containers docker ps -a --filter "label=$filter" --format '{{.Names}}  [{{.State}}]  {{.Image}}'
@@ -369,6 +387,8 @@ EOF
 # ---------------------------------------------------------------------------
 
 STEP_ROWS=""     # 리포트 표의 행
+LAST_STATUS=0    # 직전 스텝의 exit code
+STEP_WARNINGS="" # 리포트 표 위에 남길 경고
 STEP_LOG_FILE="" # 이번 실행의 전체 출력
 
 run_step() {
@@ -377,7 +397,10 @@ run_step() {
 
 	printf '\n=== [%s] %s\n--- %s\n' "$class" "$label" "$cmd" | tee -a "$STEP_LOG_FILE"
 	set +e
-	out=$(cd "$dir" && eval "$cmd" 2>&1)
+	# stdin을 끊는다. 스텝 루프는 `done < <(steps_for ...)`로 돌기 때문에, 여기서
+	# stdin을 물려주면 실행되는 명령이 남은 스텝 줄을 읽어 삼킬 수 있다 — 회차가
+	# 조용히 절단되고 리포트 표에는 그 사실이 남지 않는다.
+	out=$(cd "$dir" && eval "$cmd" </dev/null 2>&1)
 	status=$?
 	set -e
 	printf '%s\n' "$out" | tee -a "$STEP_LOG_FILE" >/dev/null
@@ -385,7 +408,9 @@ run_step() {
 	printf 'exit=%d\n' "$status" | tee -a "$STEP_LOG_FILE"
 
 	last=$(printf '%s\n' "$out" | sed '/^$/d' | tail -n 1 | cut -c1-90 | tr '|' '/')
-	STEP_ROWS="${STEP_ROWS}| \`${cmd}\` | ${status} | ${last} |"$'\n'
+	# cmd도 소독한다. 스텝 명령에 `|`가 하나라도 들어오면 표가 조용히 깨진다.
+	STEP_ROWS="${STEP_ROWS}| \`$(printf '%s' "$cmd" | tr '|' '/')\` | ${status} | ${last} |"$'\n'
+	LAST_STATUS="$status"
 	return 0
 }
 
@@ -396,8 +421,15 @@ build_control_binary() {
 		return 0
 	fi
 	# git archive는 저장소 상태를 바꾸지 않는다 — worktree/checkout 없이 트리만 꺼낸다.
+	# 중단된 이전 실행이 남긴 부분 트리 위에 덮어쓰지 않는다: [ -x bin/dva ] 캐시는
+	# "빌드 성공"이 아니라 "파일 존재"만 보므로, 풀기 전에 지우고 시작한다.
+	rm -rf "$CONTROL_SRC_DIR"
 	mkdir -p "$CONTROL_SRC_DIR"
-	git -C "$REPO_ROOT" archive "$CONTROL_COMMIT" | tar -x -C "$CONTROL_SRC_DIR"
+	# pipefail이 없으면 tar만 보게 되고, 빈 입력에 tar는 0을 낸다 — 실패가 마스킹된다.
+	if ! (set -o pipefail && git -C "$REPO_ROOT" archive "$CONTROL_COMMIT" | tar -x -C "$CONTROL_SRC_DIR"); then
+		rm -rf "$CONTROL_SRC_DIR"
+		die "대조군 트리를 꺼내지 못했다: $CONTROL_COMMIT"
+	fi
 	# COMMIT은 명시적으로 넘긴다. 추출한 트리가 저장소 tmp/ 안에 있어 `git rev-parse HEAD`가
 	# 현재 브랜치 HEAD를 집어 대조군 바이너리에 잘못된 커밋을 새기기 때문이다.
 	make -C "$CONTROL_SRC_DIR" build COMMIT="$CONTROL_COMMIT"
@@ -415,8 +447,9 @@ emit_report() {
 - 대상: \`$(target_dir "$target")/$(target_config "$target")\`
 - 하네스: \`tools/dogfoodrun/dogfood-run.sh --execute $target\`
 - compose 프로젝트: $(target_projects "$target")
-- 전체 출력: \`$STEP_LOG_FILE\`
+- 전체 출력: \`${STEP_LOG_FILE#"$REPO_ROOT"/}\`
 
+$(if [ -n "$STEP_WARNINGS" ]; then printf '%b\n' "$STEP_WARNINGS"; fi)
 | 명령 | exit | 마지막 출력 줄 |
 |------|------|----------------|
 $STEP_ROWS
@@ -441,15 +474,23 @@ execute_target() {
 	STEP_LOG_FILE="$OUT_DIR/$target-$(date +%Y%m%d-%H%M%S).log"
 	: >"$STEP_LOG_FILE"
 	STEP_ROWS=""
+	STEP_WARNINGS=""
 
 	# 미리보기가 먼저다. 이 시점까지 실행된 것은 docker 읽기 전용 조회뿐이다.
-	preview_target "$target" | tee "$OUT_DIR/$target-preview.txt"
+	# `| tee`가 아니라 리다이렉트인 이유: 파이프라인은 서브셸이라 PREVIEW_FAILED가
+	# 거기 갇혀, 조회가 실패해도 이 함수는 성공으로 읽는다.
+	PREVIEW_FAILED=0
+	preview_target "$target" >"$OUT_DIR/$target-preview.txt"
+	cat "$OUT_DIR/$target-preview.txt"
+	if [ "$PREVIEW_FAILED" -ne 0 ]; then
+		die "purge 미리보기 조회가 실패했다 — 무엇이 지워질지 모르는 채로 실행하지 않는다"
+	fi
 	printf '\n실행할 단계:\n'
 	steps_for "$target" | awk -F'|' '{printf "  [%s] %s\n", $1, $3}'
 
 	if [ "$assume_yes" != "yes" ]; then
 		printf '\n위 목록이 지워진다. 계속하려면 정확히 "yes"를 입력하라: '
-		read -r answer
+		read -r answer || die "확인 입력을 읽을 수 없다 (비대화형 stdin). --assume-yes를 쓰거나 터미널에서 실행하라"
 		[ "$answer" = "yes" ] || die "취소됨 — 아무것도 실행하지 않았다"
 	fi
 
@@ -458,9 +499,26 @@ execute_target() {
 		build_control_binary
 	fi
 
+	local start_failed=0
 	while IFS='|' read -r class label cmd; do
 		[ -n "$class" ] || continue
+		# 기동이 실패한 뒤의 teardown은 "정리"가 아니다. 어디까지 올라갔는지 모르는
+		# 상태에서 named volume과 network를 지우는 것이라, 한 번 더 묻는다.
+		if [ "$class" = "destructive" ] && [ "$start_failed" -eq 1 ]; then
+			STEP_WARNINGS="${STEP_WARNINGS}- 기동 스텝이 실패한 뒤 파괴적 스텝 \`${label}\`에 도달했다.\n"
+			if [ "$assume_yes" != "yes" ]; then
+				printf '\n기동이 실패했다. 파괴적 스텝 [%s]을 그래도 실행하려면 "yes": ' "$label"
+				read -r answer || die "확인 입력을 읽을 수 없다 (비대화형 stdin). --assume-yes를 쓰거나 터미널에서 실행하라"
+				if [ "$answer" != "yes" ]; then
+					STEP_ROWS="${STEP_ROWS}| \`${cmd}\` | skipped | 기동 실패 후 사람이 건너뛰었다 |"$'\n'
+					continue
+				fi
+			fi
+		fi
 		run_step "$target" "$class" "$label" "$cmd"
+		if [ "$class" = "start" ] && [ "$LAST_STATUS" -ne 0 ]; then
+			start_failed=1
+		fi
 	done < <(steps_for "$target")
 
 	emit_report "$target"
@@ -492,6 +550,7 @@ main() {
 			mode="execute"
 			shift
 			[ $# -gt 0 ] || die "--execute는 대상 이름이 필요하다 (대상: $TARGETS)"
+			[ -z "$target" ] || die "대상은 하나만 지정한다: $target vs $1"
 			target="$1"
 			;;
 		--assume-yes)
@@ -501,6 +560,9 @@ main() {
 			die "unknown flag: $arg"
 			;;
 		*)
+			# 대상을 두 번 받지 않는다. 받아 버리면 뒤에 붙은 bare word가 --execute의
+			# 파괴 대상을 조용히 갈아치운다.
+			[ -z "$target" ] || die "대상은 하나만 지정한다: $target vs $arg"
 			target="$arg"
 			;;
 		esac
@@ -517,7 +579,8 @@ main() {
 	case "$mode" in
 	list)
 		local t
-		for t in $TARGETS; do
+		# shellcheck disable=SC2086 # selected는 공백으로 나뉜 대상 목록이다
+		for t in $selected; do
 			printf '%-16s %s (%s) → %s\n' "$t" "$(target_dir "$t")" "$(target_config "$t")" "$(target_projects "$t")"
 		done
 		;;

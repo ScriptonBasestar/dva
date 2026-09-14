@@ -79,7 +79,7 @@ $ gz-git schema | /usr/bin/grep -A 6 'Target-owned integration gate'
 mode `100755`인 blob, `.gz-git/readiness`는 tree, manifest(`.gz-git.yaml`)는
 `100644`/`100755`이고 64 KiB 이하.
 
-**언제 무엇이 호출되는가** (`pkg/integrate/readiness.go:199`): `gz-git integrate check`가
+**언제 무엇이 호출되는가** (`executeReadinessWithTimeout`, `pkg/integrate/readiness.go:196`): `gz-git integrate check`가
 target과 source를 각각 격리된 detached worktree로 꺼낸 뒤, **target 쪽** runner를 아래
 고정 인자로 실행한다. cwd는 target worktree, 타임아웃 15분, stdout/stderr 각 1 MiB 상한.
 
@@ -100,7 +100,9 @@ runner는 stdout에 정확히 세 필드의 JSON을 낸다:
 **같을 때만** runner를 돌린다. 다르면 `readiness contract changed between target and
 source`로 실패한다 — task 브랜치가 계약을 건드리면 통합이 막힌다는 뜻이다. 양쪽 모두
 계약이 없으면 `GateMode`가 `legacy-make`가 되고 `legacy head-owned gate` 경고만 남는다.
-**이것이 오늘 DVA의 상태다.**
+**이것이 오늘 DVA의 상태다** — 러너 파일(`.gz-git/readiness/check`)은 이미 트래킹되지만
+`.gz-git.yaml`에 `branch.readiness` 선언이 없어 계약은 아직 성립하지 않는다. 채택이
+끝난 것이 아니라 절반만 와 있는 상태다.
 
 `readinessEnv`(같은 파일 324행)는 `BASH_ENV`, `ENV`, `CDPATH`, `PROMPT_COMMAND`,
 `GIT_DIR`, `GIT_WORK_TREE`, `GIT_INDEX_FILE`만 제거하고 `LC_ALL=C`/`LANG=C`를 덮어쓴다.
@@ -130,13 +132,15 @@ B는 gz-git 쪽 `branch.readiness`를 말한다.
 
 | 항목 | 기준선: 붙이지 않는다 | A: `make doc-check`에 붙인다 | B: `branch.readiness` 계약을 채택한다 |
 |---|---|---|---|
-| 채택 비용 | 0 | Makefile 한 줄 | runner 스크립트 신규 작성(`.gz-git/readiness/check`, mode 100755, json-v1 출력) + `.gz-git.yaml` 3줄 + 대화형 bootstrap plan/apply 1회. 이후 모든 task 브랜치가 같은 계약 tree를 실어야 한다 |
+| 채택 비용 | 0 | **불가능** — hosted CI에 사설 GitLab 자격증명을 심어야 한다 (§2.1) | runner 스크립트는 **이미 작성됨**(`b3c8a6b`) — 남은 비용은 `.gz-git.yaml` 3줄 + 대화형 bootstrap plan/apply 1회. 이후 모든 task 브랜치가 같은 계약 tree를 실어야 한다 |
 | `ce` 부재 시 동작 | 무관 — 아무도 부르지 않는다 | `make doc-check`이 실패한다. `ce`가 없는 hosted CI에서는 **항상** 실패한다 | runner가 `unavailable`을 내거나 비정상 종료한다. 둘 다 `gz-git integrate check` 실패로 귀결되고, `ce`를 설치하지 않은 CI와 `make doc-check`은 영향받지 않는다 |
 | 깨지는 범위 | 없음. 대신 보드 드리프트가 계속 감지되지 않는다 | CI job 전체 + 모든 기여자의 로컬 `make doc-check`. 게이트가 문서 품질이 아니라 `ce` 설치 여부에 묶인다 | 통합 경로만. 빌드·테스트·문서 게이트는 불변 |
 | 되돌리는 비용 | — | 한 줄 revert, 커밋 1개 | `gz-git integrate readiness update`의 대화형 plan/apply를 한 번 더 태워야 한다. 커밋 revert 하나로 끝나지 않는다 |
 
-두 선택지 모두 **지금 붙이면 첫날부터 빨간불이다.** `ce task gate`는 오늘도 exit 1이고
-(`summary: task_validate_failed`), 원인은 receipt 없는 done blocker 둘이다 —
+두 선택지 모두 **지금 붙이면 첫날부터 빨간불이다.** `ce task gate`는 2026-09-13 기준으로도
+exit 1이고(`summary: task_validate_failed`), 원인은 receipt 없는 done blocker다. 건수는
+보드를 정리할 때마다 움직이므로 여기에 박지 않는다 — 현재 값은 `ce task validate --all`이
+낸다. 이것은
 `tasks/issue/001-task-runtime-cannot-review-legacy-done-cards-without-verification-evidence.md`가 P0로 소유한
 외부 blocker다. 순서는 ISSUE-001 → 이 문서의 결정 → TASK-354다.
 

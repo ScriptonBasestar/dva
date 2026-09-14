@@ -9,6 +9,10 @@ status: done
 created: 2026-09-13
 source: "2026-09-13 사람 작업 분류 — TASK-329는 외부 사건 대기이고, 그 사건의 관측은 사람이 기억할 일이 아니다"
 blocks: [TASK-329]
+quality-review: conditional
+quality-reviewed-at: 2026-09-14
+quality-review-evidence: "독립 리뷰 review-378(core:code-reviewer, 저자 아님). Critical 0 / High 1 / Medium 4 / Low 3. High 1건(호출자 환경의 GIT_DIR 등이 -C를 이겨 fixture 대신 호출자 저장소를 읽을 수 있음)과 Medium 4건(루트 심볼릭 링크에서 자기 이름 디렉터리 생성, 전역 excludesFile이 fixture 트리를 바꿈, probe 둘이 stderr 파일을 공유해 실패 원인이 덮임, 외부 소유 러너에 stdin·시간 상한 없음), Low 3건을 같은 브랜치에서 전부 수정했다. 수정 후 --offline 실주행이 dva.yaml=ready / dva.yml=not_ready로 판정력을 보존함을 확인했고 familybook 저장소는 status 0줄·origin/develop ref 불변이었다. 네트워크 경로(기본 모드)는 원격 fetch를 수반해 이 회차에서 실행하지 않았다 — conditional의 근거가 이것이다"
+quality-review-receipt: tmp/task-management/direct/queue-run/task-378-review-receipt.json
 ---
 
 ## Summary

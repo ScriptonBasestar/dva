@@ -9,6 +9,10 @@ status: done
 created: 2026-09-13
 source: "2026-09-13 사람 작업 분류 — TASK-328·348이 미뤄지는 이유가 결정 부재가 아니라 착수 비용임이 드러났다"
 blocks: [TASK-328, TASK-348]
+quality-review: conditional
+quality-reviewed-at: 2026-09-14
+quality-review-evidence: "독립 리뷰 review-376(core:code-reviewer, 저자 아님). Critical 0 / High 2 / Medium 3 / Low 5. High 2건(스텝 루프의 stdin 삼킴, bare word가 --execute 대상을 덮어씀)과 Medium 2건(purge 미리보기가 docker 오류를 자원 목록처럼 출력, 기동 실패 후 파괴적 스텝 강행), Low 5건을 같은 브랜치에서 전부 수정했다. 세 번째 Medium(카드 Evidence staleness)은 인자 없는 출력 블록을 현재 출력으로 재생성하고 primeno1 항목을 TASK-379 재조준 사실로 대체해 닫았다. --execute 경로는 이 워크스테이션이 컨테이너 105개가 도는 살아있는 개발 환경이라 여전히 정적 리뷰로만 닫았다 — conditional의 근거가 이것이다"
+quality-review-receipt: tmp/task-management/direct/queue-run/task-376-review-receipt.json
 ---
 
 ## Summary
@@ -96,6 +100,11 @@ pre-TASK-315 바이너리로는 빌드되지 않음을 같은 실행에서 보�
 | 대조군 `dva --dry-run build gated` | 0 | argv에 `--profile` **없음** |
 | `make doc-check` | 0 | doccheck·cilabels·flowcheck·planprogress·yamlcheck 전부 OK |
 
+2026-09-14 재확인(리뷰 지적 반영 후): 인자 없음 / `--list` / `--list familybook` /
+`--plan familybook` / `--plan task348` / `--preview` / `--preview flow-taskchain` 전부 exit 0,
+docker 상태(컨테이너 105 · 볼륨 791 · 네트워크 31)는 실행 전후 동일했다. 대상을 두 번
+넘기면(`--list familybook flow-taskchain`) exit 1로 거부된다.
+
 argv 비교 원문:
 
 ```text
@@ -121,6 +130,11 @@ PLAN-006은 TASK-315의 착지점으로 `5f2d85d3`을 적었지만, `5f2d85d3`(�
 
 ### 인자 없이 실행한 출력 (파괴적 명령 0건)
 
+2026-09-14에 재생성했다. 아래는 현재 `tools/dogfoodrun/dogfood-run.sh`가 인자 없이
+내는 출력 그대로이며, 저장소 절대 경로만 `<REPO_ROOT>`로 치환했다 — worktree 경로를
+박아 두면 통합과 동시에 다시 낡기 때문이다. `[파괴적]`으로 표시된 줄은 계획일 뿐
+실행되지 않았다.
+
 ```text
 dogfood-run.sh — 계획만 출력했다. 아무것도 실행하지 않았다.
 실행하려면: dogfood-run.sh --execute <TARGET>
@@ -134,32 +148,90 @@ TASK-348 대조군 커밋: 275c8c98 (d79ceaeb^ — PlanEntry.Profiles 도입 직
   리포트        : docs/dogfood/primeno1.md
   compose 프로젝트: primeno1 primeno1-external-db
   선행 확인:
-    TASK-328은 "native 엔트리 6종(gate 체인 + exec)"을 말하지만, 현재 primeno1-devbox
-    master(b432a01)의 dva.yml에는 native stack 엔트리가 하나도 없다. docs/dogfood/primeno1.md의
-    "권장안 적용" 절이 기록한 native 6종 + plan `dev`는 devbox 저장소에 반영되지 않았고,
-    gate 체인 + `exec` 핸드오프는 여전히 interaction api-run/api-run.gateway 안에 있다.
-    따라서 이 하네스가 도는 gate 체인은 plan `external-db`의 script 엔트리
-    (external-db-contract → compose-external-db)다. native 엔트리 검증은 devbox 설정이
-    먼저 바뀌어야 가능하다.
+    아래 스텝은 TASK-328 첫 기준의 대상이다 — plan `dev`를 먼저 돌고 `external-db`를
+    이어 돈다(TASK-379로 재조준했다).
+    
+    **선행 조건: 체크아웃이 origin/master여야 한다.** plan `dev`는 0caeaf9에서 들어왔다.
+    작성 시점의 로컬 체크아웃 b432a01에는 native 엔트리가 0건이고 plan `dev`도 없어
+    `dva up dev`가 unknown plan으로 죽는다. 실기동 전에 primeno1-devbox를 origin/master로
+    올려라 — `dva ls` 출력에 `dev`가 보이는지로 확인한다.
+    
+    **선행 조건: 회차는 order 10의 sigdock 게이트에서 먼저 죽는다.** 엔트리 체인은
+    sigdock-local-runtime(script) -> compose -> api/frontend(native) -> gateway(native)이고,
+    첫 관문인 scripts/sigdock-local-up.sh는 fail-closed다. 이 게이트가 요구하는 것:
+      - SIGDOCK_CLIENTS_FILE — dva.yml에도 .env에도 .env.example에도 없다.
+        env/templates/.env.template와 docs/LOCAL_EXECUTION_GUIDE.md에만 있으므로 회차에서
+        따로 넣어야 한다.
+      - sigdock-idp compose 프로젝트의 컨테이너·네트워크가 0건일 것. 하나라도 남아 있으면
+        "refusing to mutate resources this invocation does not own"으로 즉시 실패한다.
+        (2026-09-13 이 워크스테이션 실측: 컨테이너 1건(sigdock-idp-postgres-1, exited),
+        네트워크 1건(sigdock-idp_default) — 지금 돌리면 여기서 끝난다.)
+      - 포트 11300에 리스너 없음, TMPDIR 아래 ownership marker 없음.
+      - $SIGDOCK_DEVBOX_DIR(기본 ../sigdock-idp-devbox)가 cd 가능한 디렉터리일 것(:258),
+        그 안의 dva.yml이 파일로 존재할 것(:400). 별개 검사인데 실패 메시지가 같다
+        (adjacent SigDock devbox not found; 뒤쪽만 경로를 덧붙인다).
+      - scripts/sigdock-local-contract.sh가 실행 가능(-x).
+      - dva/docker/curl/lsof 네 바이너리가 PATH에 있을 것.
+      - sigdock.localhost가 loopback 주소로만 해석될 것
+        (require_loopback_provider_host, 내부적으로 python3을 쓴다).
+      - SIGDOCK_IDP_ISSUER_PROFILE=fapi2 — 이것은 dva.yml 최상위 vars 블록에 이미 있다.
+      검사 순서: devbox 디렉터리(:258) -> 바이너리 -> fapi2 -> loopback -> devbox dva.yml
+      -> contract 실행 비트 -> SIGDOCK_CLIENTS_FILE -> ownership marker -> 컨테이너 ->
+      네트워크 -> 포트 리스너. 위반 중인 둘은 7번과 9/10번이므로 앞 여섯 관문을 통과한
+      뒤에 실패한다.
+    
+    게이트를 넘긴 뒤에야 두 번째 표면이 나온다: api는 PRIMENO1_ENGINE_DIR(기본
+    primeno1-engine-kt)에서 Gradle bootRun을, frontend는 primeno1-frontend에서 npm run dev를,
+    gateway는 scripts/sigdock-local-contract.sh와 scripts/verify-sigdock-gateway-tls.sh를
+    통과해야 한다. Gradle 캐시·npm 설치·로컬 TLS 자재(GATEWAY_LOCAL_TLS_CA_FILE)가 여기서
+    필요하다. api/gateway의 health check ready_timeout이 180초라 회차가 길다.
+    
+    plan `full`은 더 이상 돌지 않는다. `dev`의 compose 엔트리가 `full`과 같은 엔트리(같은
+    compose 파일, 같은 프로젝트 `primeno1`)라 별도 회차가 새로 재는 것이 없다.
+    `external-db`는 남긴다 — script 게이트 체인
+    (external-db-contract -> compose-external-db -> api-external-db/stream-external-db)은
+    `dev`가 지나지 않는 경로이고, 재조준 이전 회차와 비교할 기준선이기도 하다.
+    
+    native 엔트리 6종 중 5종을 덮는다: `dev`가 api/frontend/gateway를, `external-db`가
+    api-external-db/stream-external-db를 돈다. `stream`은 어느 쪽도 돌지 않는다 — plan
+    `dev-stream`(= `dev` + stream)에만 있다. 6종 전부가 필요하면 `up dev`를 `up dev-stream`
+    으로 바꿔라. 게이트도 compose도 같고 Gradle bootRun 하나가 더 붙을 뿐이라 회차가
+    늘지는 않는다. 여기서는 재조준 범위를 `dev`로 잡았다(TASK-379).
+    
+    `dev` 회차는 이 하네스가 스스로 정한 증거 기준 하나를 만족하지 못한다. 위 헤더는
+    "검증 대상은 항상 이 저장소가 빌드한 바이너리"라고 선언하지만, sigdock 게이트 안의
+    adjacent_dva()는 PATH의 `dva`를 부른다(이 워크스테이션에서는
+    /Users/archmagece/go/bin/dva, version 0.2.0 commit b18f7831). plan `full`은 순수
+    compose라 이 경로가 없었고 `dev`로 옮기며 새로 생겼다. 인접 SigDock 기동에만 쓰이므로
+    리포트에서 "전부 이 저장소 바이너리로 쟀다"고 쓰지 마라.
+    
+    purge 미리보기가 `dev` 회차 전체를 덮지도 않는다. 아래 compose 프로젝트 목록은
+    `dva down --purge`가 지우는 범위 그대로지만, `down dev --purge`는
+    `sigdock-local-up.sh --down`도 부르고 그것은 `sigdock-idp` 프로젝트를 건드린다. 그쪽은
+    자기 invocation이 만든 자원만 지우므로(down_owned + ownership marker) 데이터 손실
+    위험은 아니다. 상태를 보려면 따로 조회하라 —
+    `docker ps -a --filter label=com.docker.compose.project=sigdock-idp`. 위 fail-closed
+    선행 조건을 확인하는 명령과 같은 것이다.
+    
     compose 프로젝트 `primeno1`은 이 워크스테이션에서 실제로 쓰이는 개발 환경일 수 있다.
     purge 미리보기를 반드시 먼저 읽어라.
   단계:
     [읽기]   validate
-             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva validate
-    [읽기]   plan list
-             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva ls
-    [기동]   up full
-             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva up full
-    [읽기]   status
-             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva status
-    [파괴적] down full --purge
-             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva down full --purge --force
-    [기동]   up external-db (script gate → compose)
-             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva up external-db
+             <REPO_ROOT>/bin/dva validate
+    [읽기]   plan list — dev가 보여야 한다 (없으면 체크아웃이 낡았다)
+             <REPO_ROOT>/bin/dva ls
+    [기동]   up dev (sigdock 게이트 → compose → native api/frontend → gateway)
+             <REPO_ROOT>/bin/dva up dev
+    [읽기]   status (native 엔트리 포함)
+             <REPO_ROOT>/bin/dva status
+    [파괴적] down dev --purge
+             <REPO_ROOT>/bin/dva down dev --purge --force
+    [기동]   up external-db (script 게이트 → compose → native)
+             <REPO_ROOT>/bin/dva up external-db
     [읽기]   status (gate chain)
-             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva status
+             <REPO_ROOT>/bin/dva status
     [파괴적] down external-db --purge
-             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva down external-db --purge --force
+             <REPO_ROOT>/bin/dva down external-db --purge --force
 
 ## familybook
   작업 디렉토리 : /Users/archmagece/mydevbox/familybook-devbox
@@ -173,15 +245,15 @@ TASK-348 대조군 커밋: 275c8c98 (d79ceaeb^ — PlanEntry.Profiles 도입 직
     native plan이라 purge 대상이 아니다.
   단계:
     [읽기]   validate
-             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva validate
+             <REPO_ROOT>/bin/dva validate
     [읽기]   plan list
-             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva ls
+             <REPO_ROOT>/bin/dva ls
     [기동]   up hybrid (composition)
-             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva up hybrid
+             <REPO_ROOT>/bin/dva up hybrid
     [읽기]   status
-             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva status
+             <REPO_ROOT>/bin/dva status
     [파괴적] down hybrid --purge (scoped to infra)
-             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva down hybrid --purge --project infra --force
+             <REPO_ROOT>/bin/dva down hybrid --purge --project infra --force
 
 ## flow-taskchain
   작업 디렉토리 : /Users/archmagece/mydevbox/flow-taskchain-devbox
@@ -193,19 +265,19 @@ TASK-348 대조군 커밋: 275c8c98 (d79ceaeb^ — PlanEntry.Profiles 도입 직
     자식 저장소의 native plan이며 purge 대상이 아니다.
   단계:
     [읽기]   validate
-             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva validate
+             <REPO_ROOT>/bin/dva validate
     [읽기]   plan list
-             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva ls
+             <REPO_ROOT>/bin/dva ls
     [기동]   up local-dev (composition)
-             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva up local-dev
+             <REPO_ROOT>/bin/dva up local-dev
     [읽기]   status
-             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva status
+             <REPO_ROOT>/bin/dva status
     [파괴적] down local-dev --purge (scoped to local-infra)
-             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva down local-dev --purge --project local-infra --force
+             <REPO_ROOT>/bin/dva down local-dev --purge --project local-infra --force
 
 ## task348
-  작업 디렉토리 : /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/tools/dogfoodrun/fixtures/task348-profile-build
-  설정 파일     : /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/tools/dogfoodrun/fixtures/task348-profile-build/dva.yml
+  작업 디렉토리 : <REPO_ROOT>/tools/dogfoodrun/fixtures/task348-profile-build
+  설정 파일     : <REPO_ROOT>/tools/dogfoodrun/fixtures/task348-profile-build/dva.yml
   리포트        : tasks/todo/348-confirm-plan-profiles-reach-a-real-docker-build-not-just-argv.md
   compose 프로젝트: dva-dogfood-task348
   선행 확인:
@@ -215,31 +287,31 @@ TASK-348 대조군 커밋: 275c8c98 (d79ceaeb^ — PlanEntry.Profiles 도입 직
     두 바이너리 모두 로드할 수 있게 맞춰 두었다.
   단계:
     [읽기]   current validate
-             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva validate
+             <REPO_ROOT>/bin/dva validate
     [읽기]   control validate — schema는 profiles를 거부한다 (exit 1 기대)
-             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/tmp/dogfood-run/control-275c8c98/bin/dva validate
+             <REPO_ROOT>/tmp/dogfood-run/control-275c8c98/bin/dva validate
     [읽기]   argv: current, gated (--profile rust 있어야 한다)
-             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva --dry-run build gated
+             <REPO_ROOT>/bin/dva --dry-run build gated
     [읽기]   argv: control, gated (--profile 없어야 한다)
-             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/tmp/dogfood-run/control-275c8c98/bin/dva --dry-run build gated
+             <REPO_ROOT>/tmp/dogfood-run/control-275c8c98/bin/dva --dry-run build gated
     [읽기]   출발점: 이미지가 없어야 한다 (exit 1 기대)
              docker image inspect dva-dogfood-task348-gated:latest
     [기동]   대조군 빌드: control, gated
-             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/tmp/dogfood-run/control-275c8c98/bin/dva build gated
+             <REPO_ROOT>/tmp/dogfood-run/control-275c8c98/bin/dva build gated
     [읽기]   대조군 이후에도 이미지 없음 (exit 1 기대)
              docker image inspect dva-dogfood-task348-gated:latest
     [기동]   프로필 없는 플랜: current, legacy
-             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva build legacy
+             <REPO_ROOT>/bin/dva build legacy
     [읽기]   legacy 이후에도 이미지 없음 (exit 1 기대)
              docker image inspect dva-dogfood-task348-gated:latest
     [기동]   실제 빌드: current, gated
-             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva build gated
+             <REPO_ROOT>/bin/dva build gated
     [읽기]   이미지 생성 확인 (exit 0 기대)
              docker image inspect --format '{{.Id}} {{.Created}}' dva-dogfood-task348-gated:latest
     [읽기]   빌드 결과물 확인
              docker run --rm dva-dogfood-task348-gated:latest cat /task348-marker
     [파괴적] 픽스처 teardown (프로젝트·볼륨·local 이미지 제거)
-             /Users/archmagece/worktrees/misc/dva/claude__mbp__chore__dogfood-run-harness/bin/dva down gated --purge --force
+             <REPO_ROOT>/bin/dva down gated --purge --force
     [읽기]   teardown 후 이미지 없음 (exit 1 기대)
              docker image inspect dva-dogfood-task348-gated:latest
 
@@ -318,24 +390,32 @@ TASK-348 대조군 커밋: 275c8c98 (d79ceaeb^ — PlanEntry.Profiles 도입 직
 `docs/dogfood/*.md`에는 아직 `실기동` 절이 없어서 이 하네스가 그 형식을 정의한다.
 
 ````text
-## 실기동 (<타임스탬프>, dva version X.Y.Z)
+================ 아래 블록을 <리포트 경로> 에 그대로 붙인다 ================
+
+## 실기동 (<YYYY-MM-DD HH:MM:SS>, <dva version 첫 줄>)
 
 - 대상: `<devbox>/dva.yml`
 - 하네스: `tools/dogfoodrun/dogfood-run.sh --execute <TARGET>`
 - compose 프로젝트: <프로젝트 목록>
 - 전체 출력: `tmp/dogfood-run/<TARGET>-<ts>.log`
 
+<경고가 있으면 여기 — 예: 기동 실패 후 파괴적 스텝에 도달했다>
 | 명령 | exit | 마지막 출력 줄 |
 |------|------|----------------|
 | ... | ... | ... |
 
 ### 선행 확인
+
 ...
 
 ### purge 미리보기 (파괴적 단계 실행 전)
+
 ```text
 ...
 ```
+
+================================ 블록 끝 ================================
+
 ````
 
 실제로 채워진 블록은 `--execute`를 돌려야 나오므로 이 카드에는 없다. 실기동 회차에서
@@ -346,12 +426,17 @@ TASK-348 대조군 커밋: 275c8c98 (d79ceaeb^ — PlanEntry.Profiles 도입 직
 - `--execute` 경로 전체(`up`/`down --purge`/`build`)는 이 워크스테이션이 컨테이너 105개가
   도는 살아있는 개발 환경이라 실행하지 않았다. 이 카드의 안전 계약상 실행은 사람의
   명시적 opt-in에서만 일어난다.
-- **primeno1의 native 엔트리는 존재하지 않는다.** TASK-328은 "native 엔트리 6종(gate 체인
-  + exec)"을 전제하지만 `primeno1-devbox` master(`b432a01`)의 `dva.yml`에는 native stack
-  엔트리가 하나도 없다. `docs/dogfood/primeno1.md`의 "권장안 적용" 절이 기록한 native 6종과
-  plan `dev`는 devbox 저장소에 반영되지 않았고, gate 체인과 `exec` 핸드오프는 여전히
-  interaction `api-run`/`api-run.gateway` 안에 있다. 그래서 하네스는 plan `external-db`의
-  script 엔트리 gate 체인을 대신 돈다. native 엔트리 검증은 devbox 설정이 먼저 바뀌어야
-  가능하다 — TASK-328의 해당 항목은 이 하네스로 닫을 수 없다.
+- **primeno1의 native 엔트리는 착지했고, 하네스는 그에 맞춰 재조준됐다(TASK-379).**
+  이 카드를 처음 쓸 때는 `primeno1-devbox` master(`b432a01`)에 native stack 엔트리가 0건이라
+  "native 엔트리 검증은 이 하네스로 닫을 수 없다"고 적었다. 그 서술은 더 이상 맞지 않는다 —
+  `afb13c7`("chore(tasks): record that primeno1 native entries actually landed")이 착지를
+  기록했고, 하네스는 plan `full` 대신 `dev`를 돌도록 바뀌어 native 엔트리 6종 중 5종을
+  덮는다(`dev`가 api/frontend/gateway, `external-db`가 api-external-db/stream-external-db).
+  남은 하나는 `stream`이며 plan `dev-stream`에만 있다 — 필요하면 `up dev`를 `up dev-stream`
+  으로 바꾼다. 대신 **새로운 선행 조건이 생겼다**: 체크아웃이 `origin/master`여야 하고
+  (plan `dev`는 `0caeaf9`에서 들어왔다), 회차는 order 10의 fail-closed sigdock 게이트를
+  먼저 통과해야 한다. 그 게이트가 요구하는 항목과 현재 이 워크스테이션이 위반 중인 둘은
+  하네스의 `--plan primeno1` 선행 확인에 그대로 나열돼 있다.
+
 - `familybook-devbox`의 설정 파일은 아직 `dva.yaml`이다 (TASK-329 개명 대기). 하네스는
   현재 이름을 그대로 읽는다.
