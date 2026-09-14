@@ -85,7 +85,7 @@ tasks/done/379-retarget-the-primeno1-dogfood-steps-at-plan-dev.md
 `tmp/` 아래 있고 DVA의 `.gitignore`가 `tmp/`를 무시한다. 즉 receipt를 만든 워크트리
 밖에서는 존재하지 않는 파일을 카드가 가리킨다. durable한 경로
 (`tasks/receipts/<TASK-ID>/`)와 그 발급 절차는 여전히 `ce-agent-kit`/`ce-workbook`이
-소유하며, §P0 Blocker의 owner·next_action·next_check는 그대로다.
+소유하며, §Priority(당시 제목 §P0 Blocker)의 owner·next_action·next_check는 그대로다.
 
 ### 3번이 얼마나 실제인지 — 같은 날 실측됐다
 
@@ -359,9 +359,10 @@ sha256은 `blocks:` 없는 카드에서만 조용할 뿐이고, 그 조용함은
 
   남은 criterion 1·2는 `ce-agent-kit`(validator 계약)과
   `ce-workbook/task_management`(legacy controller dialect)가 소유한다. **이 보드는
-  그 진척을 강제할 수 없다.** PLAN-007 §External이 정한 대로 그런 항목은 닫지 않고
-  낮춘다 — 닫으면 상류 결함이 기록에서 사라지고, P0로 두면 초록 게이트 옆에서
-  P0가 상시 켜져 있어 우선순위 신호가 죽는다.
+  그 진척을 강제할 수 없다**(PLAN-007 §External이 같은 이유로 그쪽 두 항목에 카드를
+  두지 않았다). 그렇다고 닫지는 않는다 — 닫으면 상류 결함이 기록에서 사라지고, P0로
+  두면 초록 게이트 옆에서 P0가 상시 켜져 있어 우선순위 신호가 죽는다. 낮추고 열어
+  두는 이 선택은 §External이 정한 규칙이 아니라 이 이슈가 여기서 내리는 판단이다.
 - `owner`: **DVA, for what is left.** The durable output path is no longer
   externally owned — TASK-388 closed it inside this repository at
   `tasks/receipts/<TASK-ID>/done-review-<sha>.json`, because the validator

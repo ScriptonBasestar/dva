@@ -1,0 +1,54 @@
+{
+  "reviewed-card-path": "tasks/todo/390-delegate-the-unreviewed-done-inventory-to-ce-task-lint-and-downgrade-issue-001.md",
+  "reviewed-card-sha256": "669c8cd14accb74aa24c236d34916ef1eb3cd8282a1da1f83ae6ecad155a8191",
+  "reviewed-card-sha256-algorithm": "plain sha256 over the card file bytes as they stood at 5889fc3 — the exact revision the reviewer judged. NOT the CE canonical digest: this card declares no blocks:, so ce task validate never reaches the quality-review-receipt check and prints no canonical digest. Pinning the reviewed revision rather than the closing revision keeps the value non-circular: the closing commit adds the pointer line that names this file.",
+  "task": "TASK-390",
+  "title": "Delegate the unreviewed-done inventory to ce task lint and downgrade ISSUE-001",
+  "reviewer": "review-390 (Claude Opus 5, independent; did not author the work under review)",
+  "verdict": "conditional",
+  "verdict-final": true,
+  "conditions-status": "all four findings applied by the author on the same branch before close; see the card's §리뷰 지적 넷 section",
+  "reviewed-at": "2026-09-14",
+  "branch": "dev/claude/mbp/docs/tasks-todo-390-delegate-the-unreviewed-done-inventory-to-ce-task-lint-and-downgrade-issue-001-md",
+  "base": "master 6fd352a",
+  "head-reviewed": "5889fc3",
+  "review-rounds": 1,
+  "diff-scope": {
+    "commits": ["5889fc3"],
+    "files": [
+      "tasks/todo/390-...md (new)",
+      "tasks/issue/001-task-runtime-cannot-review-legacy-done-cards-without-verification-evidence.md (priority P0->P2, criterion 4 retraction, heading rename)",
+      "tasks/plan/007-done-backlog-triage.md (2026-09-14 section retitled and scoped)"
+    ],
+    "verdict": "no source, tooling or unrelated doc touched"
+  },
+  "gates": {
+    "ce task gate": 0,
+    "ce task gate --json": "status=ready, validate/lint/preflight all pass",
+    "ce task validate --all": "0 (95 valid, 0 invalid)",
+    "ce task lint": "UNFINALIZED DONE (37 card(s) in done/ with no quality-review verdict)",
+    "make build": 0,
+    "make test": 0,
+    "make lint": 0,
+    "make doc-check": 0,
+    "completion-criteria-bindings": "all run bare, never piped; every one exit 0"
+  },
+  "claims-independently-remeasured": [
+    "ce task gate --help confirms lint is one of gate's three steps, so the delegated count is re-measured every gate run",
+    "counts re-derived from git blobs with the card's own awk: 8b56802 = 70 done / 39 unreviewed; 6fd352a = 74 / 37 — both commits dated 2026-09-14, both master ancestors",
+    "ISSUE-001 is priority P2, status todo; criteria 1 and 2 are genuinely upstream (ce-workbook controller run; ce-agent-kit validator contract tests)",
+    "receipts for TASK-344 and TASK-371 pin values that differ from the files' plain sha256; a one-line body append made ce task validate print a canonical-digest mismatch for both, and both validate clean once reverted — CE computes the digest itself and agrees with the pin",
+    "no information was lost in the ISSUE-001 rewrite: the retracted p0_reason survives verbatim as a labelled bullet and the retracted criterion-4 wording is quoted inside its replacement",
+    "all bindings comply with AGENTS.md:207-213 — backtick-wrapped, /usr/bin/grep not bare grep, the bare make target carries (regression-guard), no volatile zone path named"
+  ],
+  "findings": [
+    {"id": "F1", "severity": "medium", "where": "tasks/issue/001-...md:362-363 and tasks/todo/390-...md:55-56", "defect": "attributed to PLAN-007 §External a rule it does not state (close vs downgrade); §External's actual directive for upstream-owned items is to create no card at all", "applied": "attribution removed; the supported half (this board cannot force upstream progress) kept; the downgrade-not-close choice now stated as ISSUE-001's own judgement"},
+    {"id": "F2", "severity": "medium", "where": "tasks/plan/007-done-backlog-triage.md:102-103", "defect": "§2026-09-10 still asserts 46 cards / 9 reviewed in the present tense; the one sentence that superseded those numbers was deleted by 5889fc3", "applied": "stale marker prepended in the board's existing > **낡음 (date)** form"},
+    {"id": "F3", "severity": "low", "where": "tasks/issue/001-...md:88", "defect": "points at §P0 Blocker, a heading this commit renamed to §Priority; make doc-check does not check section references", "applied": "old name kept in parentheses alongside the new one; the two hits under TASK-388's digest-pinned receipt deliberately left alone"},
+    {"id": "F4", "severity": "low", "where": "tasks/todo/390-...md:67-68", "defect": "criterion 1 asserted two things but bound only one, so the snapshot scoping could regress silently", "applied": "criterion split in two, one binding per assertion; criterion 2's literal-only gap left to TASK-350, which owns that family"}
+  ],
+  "reviewer-probe": {
+    "what": "appended one comment line to tasks/done/344-*.md and tasks/done/371-*.md to prove the digest pin is enforced, then reverted both with git checkout --",
+    "result": "both trees clean, HEAD unchanged at 5889fc3; no corrective edit was made by the reviewer"
+  }
+}
