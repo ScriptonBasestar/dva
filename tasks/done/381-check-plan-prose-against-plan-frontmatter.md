@@ -7,6 +7,11 @@ effort: S
 exec-tier: standard
 status: done
 created: 2026-09-13
+quality-review: conditional
+quality-reviewed-at: 2026-09-14
+quality-review-evidence: "review-381(독립 리뷰어, 작업 미참여)이 네 기준을 전부 재실행하고 결함 세 형태를 독립적으로 재파종해 셋 다 rc=1로 발화함을 확인했다. 판정은 conditional — 게이트는 공허하지 않으나 범용 수량사(개·건)를 카드 계수로 읽는 오탐 클래스가 남아 있고, 그 형태의 산문이 PLAN-007·009에 이미 존재한다. 미해결 발견은 ISSUE-016·017·018로 분리했다."
+quality-review-receipt: tasks/receipts/TASK-381/done-review-d2dfbf1cad8e23ac69e7812c3128ada95e944faf60db679402816f371849f9e7.json
+reviewed-card-sha256-algorithm: "plain-file-sha256 of the reviewed revision (27c4dfe). TASK-381 declares no blocks:, so ce task validate never reaches the receipt check and no CE canonical digest is obtainable for this card."
 source: "PLAN-009의 산문/frontmatter 불일치(TASK-380 D-2)를 사람이 눈으로 발견. 같은 형태를 보는 기계가 없다"
 depends-on: []
 ---
@@ -125,6 +130,77 @@ planprogress: FAIL  (rc=1)
 두 번째 프로브가 실제 결함을 하나 잡았다: 범위 분기가 뒤따르는 구분자 런을 소비하지 않아
 `TASK-358..365, 999`의 `999`가 통째로 무시됐다. 수정하고 회귀 테스트로 고정했다
 (`TestFindEnumerations/range_continued_by_a_run`).
+
+## 독립 리뷰 (2026-09-14, `review-381`)
+
+작업에 참여하지 않은 리뷰어가 판정했다. **판정: `conditional`, final.**
+영수증: `tasks/receipts/TASK-381/done-review-d2dfbf1c….json`.
+
+### 기준 네 개 — 전부 PASS, 단 바인딩이 서로를 구별하지 못한다
+
+리뷰어가 네 기준을 모두 재실행했고 넷 다 rc=0이다. 그러나 기준 1·2·4가 **같은 명령
+하나**(`go test ./tools/planprogress/`)에 묶여 있어 서로를 구별하지 못한다 — 기준 2의
+fixture만 지워도 기준 2는 여전히 통과한다. 리뷰어가 테스트 본문을 직접 읽고 각 규칙을
+보드 사본에 따로 재파종해 그 틈을 닫았다. 기준 3의 `make doc-check`가 넷 중 가장 강한
+바인딩이다. 같은 계열의 지적이 TASK-344 리뷰(finding 4)에서도 나왔으므로 이것은 이
+카드 한 장의 실수가 아니라 카드 작성 관행의 문제다.
+
+### 게이트가 공허하지 않다는 것은 제3자 측정으로 섰다
+
+리뷰어가 직접 파종한 네 형태가 전부 발화했다 — 저자의 프로브를 다시 돌린 것이 아니라
+독립적으로 만든 것이다:
+
+| 파종 | 관측 |
+|---|---|
+| PLAN-009 scope를 `여섯 장` + 6 id로, children 7 | `scope: enumerates and counts 6 card(s), but total-tasks=7` rc=1 |
+| PLAN-008 scope를 `TASK-358..365, 999 — …8장` | 비자식 id + 계수 불일치 2건 rc=1 |
+| PLAN-009 Goal을 `네 장(…5개 id)` | `## Goal counts 4 card(s) beside an enumeration of 5` rc=1 |
+| PLAN-008 범위를 `TASK-358..364`로 좁히고 `8장` 유지 | `counts 8 card(s) beside an enumeration of 7` rc=1 |
+
+저자가 자체 보고한 `TASK-358..360, 999` 결함도 실제로 고쳐졌고 회귀 테스트로 고정된
+것이 독립 확인됐다.
+
+### conditional의 근거 — 미해결 발견 여섯
+
+셋을 카드로 분리했다:
+
+- [[ISSUE-016]] (medium) — `개`·`건`·`장`은 한국어 **범용** 수량사인데 같은 문장의 id
+  열거와 무조건 짝지어진다. `필드 32개`, `관련 문서 8건`이 올바른 열거에 대해 오탐을
+  낸다. **PLAN-009 본문에 `필드 32개`가, PLAN-007 scope에 `결함 3건`이 이미 있다** —
+  오늘 통과하는 것은 규칙이 옳아서가 아니라 숫자와 열거가 우연히 같은 문장에 없기
+  때문이다. `prose.go`의 파일 주석은 이 클래스를 피했다고 주장하지만 피하지 못했다.
+  같은 카드에 계수된 부분 열거 거부(PLAN-006의 실제 scope 형태)와 한 문장 안 두 열거의
+  오탐도 묶었다.
+- [[ISSUE-017]] (low) — 역방향 범위가 뒤따르는 런을 통째로 버리고(고쳐진 결함의 반대
+  방향), id가 중복 제거되지 않아 `TASK-1, 1, 2 — 세 장`이 3자식 plan을 통과한다.
+  `TestFindEnumerations/reversed_range_is_ignored`가 현재 동작을 **정답으로 고정**하고
+  있어 수정하려면 그 테스트의 기대값부터 바꿔야 한다. 셋째 항목이 제일 아프다 —
+  `[[TASK-N]]` 위키링크 형태는 `runTailRE`가 id 바로 뒤의 `,`·`·`를 요구하는데 `]]`가
+  끼어들어 **열거 자체가 보이지 않는다**(`[[TASK-1]], [[TASK-9]] 두 장` → 결함 0건,
+  TASK-9가 비자식인데도). 그런데 그 형태가 **이 보드의 상호참조 표기**다.
+  실측(2026-09-14): `[[TASK-N]]`은 이 카드 본문에 7건, PLAN-007에 2건 있고,
+  PLAN-006에는 위키링크가 아예 없으며 PLAN-008·009는 `[[ISSUE-N]]`·`[[PLAN-N]]`만 쓴다.
+  **결정적으로, 검사가 실제로 읽는 두 구역(`scope:`·`## Goal`)에는 오늘 위키링크가
+  0건이다** — 즉 노출은 현재가 아니라 잠재다. 그러나 본문에서 그렇게 쓰는 저자가
+  scope에도 그렇게 쓰는 것은 자연스럽고, 그때 검사는 아무 말 없이 꺼진다.
+- [[ISSUE-018]] (low, 그러나 영향은 severity보다 크다) — 파싱 층의 조용한 스킵 셋: `scope: >` 접힌 블록은 리터럴
+  `">"`로 파싱돼 scope 규칙 둘이 다 꺼지고, `## Goal (2026)`처럼 접미사가 붙은 제목은
+  빈 Goal이 되며, h1은 Goal 절을 끝내지 않는다(`extractSection`의 자체 doc comment와
+  모순). 진단 없이 검사가 꺼지는 쪽이 실패하는 쪽보다 나쁘다 — 카드는 여전히 green이다.
+
+카드로 만들지 않고 여기 남기는 둘:
+
+- (informational) 한국어 수량사만 인식하므로 영어로 쓰인 plan 카드는 규칙 2·3을
+  공짜로 통과한다. PLAN-006 scope는 이미 부분적으로 영어다.
+- (informational) 범위 확장 오류 메시지가 한 줄에 최대 199개 id를 나열할 수 있다.
+  `maxRangeSpan`은 멤버십 주장을 제한하지 취지 메시지를 제한하지 않는다.
+
+### 리뷰어가 확인하지 않은 것
+
+`make build`, `make test-integration`, CI 워크플로가 실제로 `make doc-check`를 부르는지,
+`tasks/_archive/plan/`의 보관 plan(`loadPlans`가 읽지 않는다), 퍼징·성능, 그리고 이 카드
+자체의 lifecycle(존·frontmatter). 마지막 항목은 이 절과 영수증이 대신 채운다.
+
 
 ## Completion Criteria
 
