@@ -221,6 +221,17 @@ literally that suggestion fails the rule above, because both tools are named bar
 form satisfying both exists; only the advice is one edit short, so write the prefixed form
 directly instead of discovering it at the second gate.
 
+**`ce task move` does not write the frontmatter `status:` field (ISSUE-013).** It relocates
+the card and syncs a **body** `**Status**` table cell when one exists — printing
+"(no Status cell found to sync)" when none does — but the frontmatter key keeps its old
+value. A card can therefore sit in `tasks/done/` with `status: todo`. Neither
+`ce task validate --all` nor `ce task gate` objects: both report the board READY. The only
+check that catches it is `make doc-check`, as
+`STATUS  <path>: zone tasks/done/ permits status: done, found "todo"`. So after every
+`ce task move`, edit the frontmatter yourself and run `make doc-check` — not just the board
+gate — before committing a zone change. This was measured the hard way on 2026-09-14, with
+the issue already open on the board and nothing surfacing it at the moment of use.
+
 ## Flow decision-path gate (flowcheck)
 
 `make doc-check` also runs `go run ./tools/flowcheck`, which reads every flow under
