@@ -21,6 +21,7 @@ const (
 	shimConfigExitVar    = "DVA_TEST_SHIM_CONFIG_EXIT"
 	shimMissingImagesVar = "DVA_TEST_SHIM_MISSING_IMAGES"
 	shimLogVar           = "DVA_TEST_SHIM_LOG"
+	shimInspectFifoVar   = "DVA_TEST_SHIM_INSPECT_FIFO"
 )
 
 // installImageShim replaces PATH with a single directory holding a `docker` that answers
@@ -39,6 +40,7 @@ func installImageShim(t *testing.T) (logPath string) {
 		"echo \"$*\" >> \"$" + shimLogVar + "\"\n" +
 		"if [ \"$1\" = \"info\" ]; then exit \"${" + shimInfoExitVar + ":-0}\"; fi\n" +
 		"if [ \"$1\" = \"image\" ] && [ \"$2\" = \"inspect\" ]; then\n" +
+		"  if [ -n \"${" + shimInspectFifoVar + ":-}\" ]; then read x < \"$" + shimInspectFifoVar + "\"; fi\n" +
 		"  for m in ${" + shimMissingImagesVar + ":-}; do\n" +
 		"    if [ \"$m\" = \"$3\" ]; then exit 1; fi\n" +
 		"  done\n" +
@@ -89,10 +91,10 @@ func shimCalls(t *testing.T, logPath string) []string {
 // more whose pulls compose cancelled, and a service that builds its own image.
 const fixtureMixedProject = `{
   "services": {
-    "web-svelte": {"image": "gizzahub/web-svelte:latest", "build": null},
-    "grafana":    {"image": "grafana/grafana:10.2.0", "build": null},
+    "web-svelte": {"image": "gizzahub/web-svelte:latest"},
+    "grafana":    {"image": "grafana/grafana:10.2.0"},
     "api":        {"image": "gizzahub/api:latest", "build": {"context": "."}},
-    "postgres":   {"image": "postgres:17-alpine", "build": null}
+    "postgres":   {"image": "postgres:17-alpine"}
   }
 }`
 
@@ -367,5 +369,40 @@ func TestMissingLocalImages_AllBuildable_ReturnsNothing(t *testing.T) {
 
 	if got := p.missingLocalImages(pctx); len(got) != 0 {
 		t.Errorf("missingLocalImages() = %v, want empty", got)
+	}
+}
+
+// Given a mode that narrows the up to a subset of services, When the up fails, Then the
+// probe describes only those services — diagnosing one the run never started would name
+// a confident wrong image in place of the real failure.
+func TestComposeUp_ScopedServices_ProbesOnlyThatSubset(t *testing.T) {
+	logPath := installImageShim(t)
+	t.Setenv(shimComposeExitVar, "1")
+	t.Setenv(shimInfoExitVar, "0")
+	t.Setenv(shimConfigJSONVar, fixtureMixedProject)
+	t.Setenv(shimMissingImagesVar, "gizzahub/web-svelte:latest")
+
+	p, pctx := upFailureContext(t, "")
+	scoped := []string{"web-svelte", "grafana"}
+	pctx.ComposeServices = &scoped
+
+	_, _ = p.Up(context.Background(), pctx)
+
+	var configCall string
+	for _, call := range shimCalls(t, logPath) {
+		if strings.Contains(call, "config") {
+			configCall = call
+		}
+	}
+	if configCall == "" {
+		t.Fatal("probe made no config call")
+	}
+	for _, want := range scoped {
+		if !strings.Contains(configCall, " "+want) {
+			t.Errorf("config call %q does not scope to %q", configCall, want)
+		}
+	}
+	if strings.Contains(configCall, "postgres") {
+		t.Errorf("config call %q names a service the up never started", configCall)
 	}
 }

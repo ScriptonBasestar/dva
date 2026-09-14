@@ -1,6 +1,7 @@
 package exec
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"os"
@@ -94,13 +95,28 @@ func ExecSubprocessInDir(env *config.Environment, dir, cmd string, args []string
 // reformatted into an actionable dva error rather than leaked raw. Interpolation
 // and env handling match ExecSubprocessInDir; an empty dir inherits the cwd.
 func ExecSubprocessCaptureInDir(env *config.Environment, dir, cmd string, args []string, shell bool) (string, error) {
+	return ExecSubprocessCaptureInDirContext(context.Background(), env, dir, cmd, args, shell)
+}
+
+// ExecSubprocessCaptureInDirContext is ExecSubprocessCaptureInDir bounded by ctx.
+//
+// Probes that run *after* a command has already failed need this: a daemon that is
+// mid-start can accept the connection and then stall, and an unbounded probe there turns
+// a failed command into a hang — a strictly worse outcome than the bare exit status it
+// was added to improve on. DockerDaemonReachable bounds itself for exactly this reason;
+// a capture probe cannot, because it owns no context of its own.
+//
+// Cancellation kills the process and surfaces as ctx.Err() on the returned error, so a
+// caller that must distinguish "the command answered no" from "the probe ran out of
+// time" checks ctx.Err() rather than reading err alone.
+func ExecSubprocessCaptureInDirContext(ctx context.Context, env *config.Environment, dir, cmd string, args []string, shell bool) (string, error) {
 	cmdLine := buildCommandLine(env, cmd, args, shell)
 
 	if Debug {
 		slog.Debug("exec subprocess (capture)", "dir", dir, "command", strings.Join(cmdLine, " "))
 	}
 
-	c := exec.Command(cmdLine[0], cmdLine[1:]...)
+	c := exec.CommandContext(ctx, cmdLine[0], cmdLine[1:]...)
 	c.Dir = dir
 	c.Env = env.EnvSlice()
 

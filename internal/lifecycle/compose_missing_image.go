@@ -1,15 +1,30 @@
 package lifecycle
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	dvaexec "github.com/ScriptonBasestar/dva/internal/exec"
 )
+
+// missingImageProbeTimeout bounds the whole probe — one `compose config` plus one
+// `docker image inspect` per image-only service — not each call separately. The budget
+// belongs to the diagnosis because that is what must not outlive its usefulness: a
+// per-call bound still lets a stalled daemon burn timeout x N before returning.
+//
+// It is longer than dockerDaemonProbeTimeout because it covers more work, and it exists
+// for the same stated reason (docker_daemon.go): this runs on a path that has already
+// failed and must not be able to turn a failed command into a hang. On expiry the probe
+// yields nothing and the original error stands, exactly as when compose config fails.
+// A var, not a const, so a test can shrink it and exercise the expiry branch without
+// needing a process that actually stalls.
+var missingImageProbeTimeout = 20 * time.Second
 
 // MissingLocalImageError reports that a failed `compose up` left images that compose
 // itself cannot produce: declared with `image:` and no `build:`, and still absent from
@@ -33,7 +48,7 @@ type MissingLocalImageError struct {
 func (e *MissingLocalImageError) Error() string {
 	msg := fmt.Sprintf("%d image(s) have no build: section and are not present locally: %s",
 		len(e.Images), strings.Join(e.Images, ", "))
-	msg += "\n       → at least one of them could not be pulled; compose cannot build them, so they must be pulled or built and tagged outside compose"
+	msg += "\n       → at least one of them could not be pulled; compose cannot build any of them, so whichever is the cause must be pulled or built and tagged outside compose"
 	msg += "\n       → compose cancels the remaining pulls once one fails, so the others may only have been interrupted — this is a candidate list, not a verdict"
 	msg += "\n       → re-run the same up to narrow it down: an interrupted pull succeeds on the retry, and what stays is the cause"
 	return msg
@@ -101,7 +116,10 @@ type composeConfigServices struct {
 // stated, is not — and a re-run narrows the list for free, because an interrupted pull
 // succeeds the second time.
 func (p *ComposePlugin) missingLocalImages(pctx *PluginContext) []string {
-	cfg, err := p.composeConfigJSON(pctx)
+	ctx, cancel := context.WithTimeout(context.Background(), missingImageProbeTimeout)
+	defer cancel()
+
+	cfg, err := p.composeConfigJSON(ctx, pctx)
 	if err != nil {
 		// The probe is advisory: if the project cannot be described, the original
 		// failure is still the honest answer.
@@ -119,7 +137,14 @@ func (p *ComposePlugin) missingLocalImages(pctx *PluginContext) []string {
 			continue
 		}
 		seen[svc.Image] = true
-		if !p.imagePresentLocally(pctx, svc.Image) {
+		if !p.imagePresentLocally(ctx, pctx, svc.Image) {
+			// A cancelled inspect also returns false. Absent-because-unanswered is
+			// not absent, so the deadline ends the probe rather than contributing a
+			// name to the list.
+			if ctx.Err() != nil {
+				pctx.Logger.Debug("missing-image probe: deadline reached", "error", ctx.Err())
+				return nil
+			}
 			missing = append(missing, svc.Image)
 		}
 	}
@@ -127,8 +152,13 @@ func (p *ComposePlugin) missingLocalImages(pctx *PluginContext) []string {
 	return missing
 }
 
-// hasBuild reports whether a service's build: key carries a value. compose config emits
-// the key as JSON null (or omits it) for services that only declare an image.
+// hasBuild reports whether a service's build: key carries a value.
+//
+// Measured against Docker Compose 5.5.1: for a service that only declares an image the
+// key is *omitted entirely*, not emitted as null — so the nil RawMessage is the shape
+// that matters, and the null case is kept only because nothing in compose's output
+// contract promises it will stay omitted. Short-form `build: .` is normalised to an
+// object, so it reads as a value here.
 func hasBuild(raw json.RawMessage) bool {
 	t := strings.TrimSpace(string(raw))
 	return t != "" && t != "null"
@@ -137,13 +167,21 @@ func hasBuild(raw json.RawMessage) bool {
 // composeConfigJSON runs `docker compose ... config --format json`, which parses and
 // merges the compose file set without needing the daemon — the same call family
 // preflightConfig already makes.
-func (p *ComposePlugin) composeConfigJSON(pctx *PluginContext) (*composeConfigServices, error) {
+func (p *ComposePlugin) composeConfigJSON(ctx context.Context, pctx *PluginContext) (*composeConfigServices, error) {
 	cmd, cmdArgs, err := p.buildArgs(pctx, []string{"config", "--format", "json"})
 	if err != nil {
 		return nil, err
 	}
+	// buildArgs appends mode-derived service names only to `up`, so config would
+	// otherwise describe the whole project while the up that failed touched a subset.
+	// Diagnosing a service the run never started names a confident wrong image in place
+	// of the real failure — worse than the bare exit status this replaces. Scope the
+	// probe to exactly what ran.
+	if pctx.ComposeServices != nil && len(*pctx.ComposeServices) > 0 {
+		cmdArgs = append(cmdArgs, *pctx.ComposeServices...)
+	}
 	pctx.Logger.Debug("missing-image probe", "command", cmd, "args", cmdArgs)
-	out, err := dvaexec.ExecSubprocessCaptureInDir(pctx.Env, composeWorkdir(pctx), cmd, cmdArgs, false)
+	out, err := dvaexec.ExecSubprocessCaptureInDirContext(ctx, pctx.Env, composeWorkdir(pctx), cmd, cmdArgs, false)
 	if err != nil {
 		return nil, fmt.Errorf("compose config: %w", err)
 	}
@@ -159,8 +197,8 @@ func (p *ComposePlugin) composeConfigJSON(pctx *PluginContext) (*composeConfigSe
 // missing and names the rest only in stderr prose, which is exactly the string matching
 // this diagnosis exists to avoid. The daemon is known reachable here — runSubprocess
 // consulted it before handing the failure on.
-func (p *ComposePlugin) imagePresentLocally(pctx *PluginContext, image string) bool {
-	_, err := dvaexec.ExecSubprocessCaptureInDir(pctx.Env, composeWorkdir(pctx), "docker",
+func (p *ComposePlugin) imagePresentLocally(ctx context.Context, pctx *PluginContext, image string) bool {
+	_, err := dvaexec.ExecSubprocessCaptureInDirContext(ctx, pctx.Env, composeWorkdir(pctx), "docker",
 		[]string{"image", "inspect", image}, false)
 	return err == nil
 }
