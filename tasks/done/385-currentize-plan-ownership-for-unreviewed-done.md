@@ -5,13 +5,17 @@ type: docs
 priority: P2
 effort: S
 exec-tier: standard
-status: doing
+status: done
 created: 2026-09-14
 source: "2026-09-14 보드 점검. PLAN-007의 마지막 재측정은 2026-09-10의 46장/9장이고 현재는 68장/29장이다. 그 사이에 닫힌 PLAN-008이 자식 8장을 리뷰되지 않은 채 done에 남겼다"
 depends-on: []
 completion-summary: "리뷰되지 않은 done 39장의 소유권을 2026-09-14 기준으로 재측정해 PLAN-007에 표로 남겼다. PLAN-008이 진척 100%로 닫히면서 자식 8장을 리뷰 없이 남긴 사실을 그 계획 본문에 기록했고, 소유자 없는 9장과 합쳐 17장을 레거시로 선언했다(소급 리뷰 없음). PLAN-006 §Session handoff의 잔여 단언에 범위를 명시했고, 그 사례를 TASK-381이 제안한 규칙 둘 중 어느 것으로도 잡지 못한다는 분석과 함께 그 카드에 기록했다"
 verification-status: verified
 verification-evidence: "기계 바인딩 4개 exit 0, make doc-check rc=0. 39/68 수치는 첫 프론트매터 블록만 읽는 awk로 재측정했고 카드 id 39개가 초안과 완전히 일치했다. PLAN-008 자식 8장의 quality-review 부재는 grep -c로 8건 모두 0을 확인했다. §Session handoff 문장은 육안 확인 — 수정 후 문장이 §Order 범위임을 명시하고 frontmatter 26/29와 나머지 두 장(TASK-348, TASK-329)을 함께 적는다"
+quality-review: pass
+quality-reviewed-at: 2026-09-14
+quality-review-evidence: "독립 리뷰 review-385(Claude Opus 5, 저자 아님) 2라운드 pass. 1라운드 conditional의 지적 셋을 접은 뒤 리뷰어가 세 수정을 각각 대상 문서의 행 번호까지 짚어 재확인했다 — PLAN-007의 인용문 154행 대 대상 절 165행(방향 정정 확인), PLAN-006의 §Children 144행·항목 4가 150행이고 §Devbox integration state(52~72행)는 348을 언급하지 않음(옛 포인터가 틀렸음 확인). 리베이스 후 센서스 수치(68/39, 17/8/5/0/9, orphan 9, parent 0건)가 전부 불변임을 재측정했고 신규 validate 실패 0건을 확인했다. 리뷰어가 스크래치 프로브로 CE canonical digest를 실제로 뽑아 평문 sha256과 다름을 실측해, TASK-382의 '이 저장소에서 canonical digest를 만들 수 없다'는 단언을 '만들 수 없는 것은 validator가 건너뛰는 카드뿐'으로 정정했다"
+quality-review-receipt: tasks/receipts/TASK-385/done-review-03475cc92318d9f35bc4b0b333466829b4154081aee7f8eed9fd6abe140d4a1a.json
 ---
 
 ## Summary
@@ -58,7 +62,7 @@ verification-evidence: "기계 바인딩 4개 exit 0, make doc-check rc=0. 39/68
   Tier C에 대해 이미 정한 방식 그대로다.
 - PLAN-008의 8장과 소유자 없는 9장은 **레거시로 선언한다.** 리뷰되지 않았다는 사실이
   이 카드와 PLAN-007의 재측정 절에 남는다.
-- 앞으로는 `blocks:`를 가진 카드가 validator에 걸린다. [[TASK-383]]이 durable 경로를
+- 앞으로는 `blocks:`를 가진 카드가 validator에 걸린다. [[TASK-388]]이 durable 경로를
   열었으므로 그 걸림은 이제 실제로 해소 가능하다. 즉 **리뷰 부채의 유입은 게이트가
   막고, 재고는 선언으로 닫는다.**
 
@@ -94,6 +98,17 @@ review-385가 수치 주장은 전부 독립 재측정으로 참임을 확인했
 세 번째 지적(informational)은 완료 기준의 바인딩이 문자열 존재만 본다는 것이었다.
 기준 2는 008 카드에 `quality-review`라는 글자만 있으면 통과했다. 셋 다 주장을 재는
 형태로 바꿨다 — 표는 행 수를 세고, 나머지 둘은 그 절이 실제로 한 주장의 문장을 찾는다.
+
+## 리뷰 뒤에 링크 하나를 다시 겨눴다
+
+이 카드와 PLAN-007이 durable receipt 경로를 연 작업을 `[[TASK-383]]`으로 불렀다.
+그 카드는 리뷰 도중 **TASK-388로 개명됐다** — 다른 세션이 같은 번호로 먼저 통합돼서다
+(원인은 [[ISSUE-012]]). 개명 후 `[[TASK-383]]`은 in-tree에서 무관한 compose 이미지
+진단 카드로 풀리므로 두 자리를 `[[TASK-388]]`로 겨눴다. `make doc-check`은 wikilink를
+검사하지 않아 이 종류의 오조준을 잡지 못한다 — 리뷰어가 읽어서 잡았다.
+
+같은 오조준이 `tasks/done/386-…md` 두 자리에도 있으나 그 카드는 receipt로 봉인돼
+있어 여기서 고치지 않는다. [[ISSUE-010]]이 소유한 정정 경로 부재의 새 인스턴스다.
 
 ## Completion Criteria
 
