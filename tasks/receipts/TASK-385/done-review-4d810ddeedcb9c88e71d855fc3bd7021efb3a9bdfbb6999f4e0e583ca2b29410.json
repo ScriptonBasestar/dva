@@ -1,0 +1,185 @@
+{
+  "reviewed-card-path": "tasks/doing/385-currentize-plan-ownership-for-unreviewed-done.md",
+  "reviewed-card-sha256": "4d810ddeedcb9c88e71d855fc3bd7021efb3a9bdfbb6999f4e0e583ca2b29410",
+  "reviewed-card-sha256-algorithm": "plain sha256 over the card file bytes as they stand at commit 99e9ce3 (`git show 99e9ce3:tasks/doing/385-...md | shasum -a 256`; the worktree file is byte-identical, cmp clean). This is NOT the CE canonical review digest. The card sits in tasks/doing/ with status doing and declares no blocks:, so ce task validate never reaches the quality-review-receipt check and never computes a canonical digest for it. The canonical digest was confirmed by probe to be a DIFFERENT function of the card, not a plain file digest — see canonical-digest-probe below — and it cannot be obtained for this card in its present shape without mutating the card, which would change the very digest being measured.",
+  "canonical-digest-probe": {
+    "why": "TASK-382's receipt asserted the canonical digest was unobtainable here. This review tested that instead of inheriting it.",
+    "method": "copied this card into a scratch board at the scratchpad, forced status: done + blocks: [TASK-999] + a quality-review-receipt pointing at a receipt pinning an all-zero sha, then read the digest the validator names in its mismatch error.",
+    "observed": "validator reported the probe card digests to 52e2956cfd08469dbbc0561b7f025c8d904821aa94b26688b7d4bd5122a40fd1, while the probe card's plain file sha256 was d08670646ac82ea4cb14d8acce2e68868bc45eb47193988b985843862af0346d.",
+    "conclusion": "the CE canonical review digest is not sha256 over the file bytes. Two further probes (frontmatter-only change, body-only change) both moved the canonical digest, so it covers card content including frontmatter. Therefore any canonical digest read out of a mutated copy would pin the mutated copy, not this card. The plain digest above is the honest thing to pin, and this field says so.",
+    "staleness-warning": "this digest pins the card as it is at 99e9ce3. Closing the card (closing frontmatter, zone move to tasks/done/) will change its bytes and make both this digest and this filename stale, exactly as TASK-382's receipt records for itself. If the card is later given blocks:, a fresh receipt pinning the canonical digest of the final card is required.",
+    "ce-version": "ce 0.8.4 as installed on this workstation"
+  },
+  "task": "TASK-385",
+  "title": "Currentize the plan ownership record for the unreviewed done backlog",
+  "reviewer": "review-385 (Claude Opus 5, independent; did not author the work under review)",
+  "verdict": "conditional",
+  "verdict-final": false,
+  "verdict-condition": "two section-attribution mis-citations must be corrected (F1, F2 below). Both are one-line edits in files this branch already touches; neither changes any measured number. A pass receipt should be issued after the fold.",
+  "reviewed-at": "2026-09-14",
+  "branch": "dev/claude/mbp/docs/currentize-plan-ownership-for-unreviewed-done",
+  "base": "master 658b4e4",
+  "head-reviewed": "99e9ce3",
+  "review-rounds": 1,
+  "diff-scope": {
+    "commits": ["99e9ce3"],
+    "files": [
+      "tasks/doing/385-currentize-plan-ownership-for-unreviewed-done.md (new, 85 lines)",
+      "tasks/plan/006-devbox-dogfood-followup.md (1 line rewritten)",
+      "tasks/plan/007-done-backlog-triage.md (+51)",
+      "tasks/plan/008-migrate-section-order-defects.md (+24)",
+      "tasks/todo/381-check-plan-prose-against-plan-frontmatter.md (+27)"
+    ],
+    "verdict": "matches the card; no source, tooling, or unrelated doc touched. git status --short empty in both this worktree and the primary checkout."
+  },
+  "numbers-reverified": {
+    "method-note": "every number was re-derived independently, and the two census figures were cross-checked with a method different from the implementer's awk, per the review brief.",
+    "done-census": {
+      "claim": "tasks/done/ holds 68 cards; 39 lack a quality-review key",
+      "method-a": "Python: parse only the first frontmatter block (stop at the second '---'), test for a quality-review key -> 68 total, 39 without",
+      "method-b": "naive whole-file `grep -q '^quality-review:'` over every card -> 39 without",
+      "cross-check": "methods A and B returned the SAME 39 filenames, i.e. no done card quotes 'quality-review:' at line-start in its body, so the two methods cannot diverge on this corpus",
+      "method-c": "the awk pipeline printed verbatim in PLAN-007 was executed as written -> 39",
+      "result": "verified"
+    },
+    "ownership-split": {
+      "claim": "17 / 8 / 5 / 0 / 9 across PLAN-006, PLAN-008, PLAN-009, PLAN-007, no owner",
+      "method": "parsed each plan's children: from YAML and intersected with the 39-card id set computed above",
+      "observed": "PLAN-006 17, PLAN-008 8, PLAN-009 5, PLAN-007 0, orphans 9",
+      "card-lists": "every per-plan card list in the table matches the computed intersection element for element",
+      "orphans": ["ISSUE-003", "TASK-308", "TASK-310", "TASK-331", "TASK-349", "TASK-356", "TASK-366", "TASK-374", "TASK-375"],
+      "double-ownership": "pairwise intersection of all four plans' children: is empty — no card is claimed by two plans, and the four intersections plus the orphans partition the 39 exactly",
+      "result": "verified"
+    },
+    "no-parent-frontmatter": {
+      "claim": "not one of the 39 carries a parent: frontmatter key",
+      "method": "checked the parsed frontmatter of all 39",
+      "result": "verified"
+    },
+    "plan-008-children": {
+      "claim": "all eight PLAN-008 children (358-365) lack quality-review",
+      "method": "ran the grep -c loop printed in PLAN-008 verbatim -> 0 0 0 0 0 0 0 0",
+      "result": "verified"
+    },
+    "plan-006-residual": {
+      "claim": "frontmatter 26/29, residual 3 = TASK-328, TASK-348, TASK-329",
+      "method": "of the 29 children, six are absent from tasks/done/: 348, 311, 249, 328, 316, 329. Three of those (311, 249, 316) are in tasks/_archive/done/ and are therefore done. Residual = 328, 348, 329.",
+      "frontmatter": "total-tasks 29, completed-tasks 26, progress 89 — consistent",
+      "result": "verified"
+    },
+    "plan-labels": {
+      "claim": "PLAN-006 active 89%, PLAN-008 closed 100%, PLAN-009 active 85%, PLAN-007 closed 100%",
+      "observed": "006 progress 89 (26/29), 008 progress 100 (8/8), 009 progress 85 (6/7), 007 progress 100 (13/13)",
+      "result": "verified"
+    }
+  },
+  "argument-reverified": {
+    "claim": "neither rule TASK-381 proposes would catch the PLAN-006 §Session handoff defect",
+    "rule-1": "'prose TASK-NNN set must be a subset of children:, only the excess is an error'. The pre-fix sentence names TASK-328, which IS in children:, so the set is a subset and nothing is flagged. Additionally rule 1's stated inspection scope is the scope: field and ## Goal, and the defective sentence lives in §Session handoff — out of scope twice over. The card states only the first reason; the second strengthens it.",
+    "rule-2": "'Korean quantifiers N장 / N개 in child-counting prose must match total-tasks'. The sentence writes 하나뿐, which matches no such quantifier, and the card's own recommended narrowing (scope: + first paragraph of ## Goal) excludes §Session handoff anyway.",
+    "result": "the card's analysis is sound; its proposed third rule (a residual assertion must name the set it counts) follows from the evidence"
+  },
+  "plan-006-sentence-check": {
+    "criterion": "completion criterion 3, bound to `human —`",
+    "read": "tasks/plan/006-devbox-dogfood-followup.md:77",
+    "scope-disclosure": "the rewritten sentence does state §Order as its scope inside the sentence, and names the whole-plan residual alongside it — the stated purpose is met",
+    "cross-section-consistency": "no contradiction found. Line 80's '잔여 사람 작업' bullet covers 328, 348 and familybook (= TASK-329 per §Devbox integration state's own pointer), so the two bullets agree.",
+    "defect": "the parenthetical attributing TASK-348 to §Devbox integration state is wrong — see F2"
+  },
+  "findings": [
+    {
+      "id": "F1",
+      "severity": "minor, blocking the pass verdict only because the citation is factually wrong",
+      "file": "tasks/plan/007-done-backlog-triage.md:154",
+      "text": "바로 위 §`waived` 항목이 48장에 대해 기록한 함정",
+      "problem": "the inserted §2026-09-14 재측정 block occupies lines 114-163; the referenced '### `waived`가 상류에 추가됐다' heading is at line 165 and the 48장 figure at lines 173-177 — both BELOW the citing sentence, not above. The same paragraph's earlier '바로 위 문단이 적은 교훈' (pointing at §2026-09-10 재측정, line 100) is correct, so only this one pointer is inverted.",
+      "suggested": "'바로 위' -> '아래 §`waived` 항목' , or cite the section by name without a direction word"
+    },
+    {
+      "id": "F2",
+      "severity": "minor, blocking the pass verdict only because the citation is factually wrong",
+      "file": "tasks/plan/006-devbox-dogfood-followup.md:77",
+      "text": "TASK-348(§Devbox integration state의 실기동 회차)",
+      "problem": "§Devbox integration state (lines 52-72) never mentions TASK-348. The section that owns 348 is §Children '### Compose follow-up sequence' (line 144), item 4 at line 150, which calls it the final human-owned real-image-build observation. The pre-existing line 80 reads '§Devbox integration state의 scripton-dashboard·familybook 2건과 TASK-328·348의 실기동 회차', where the section name qualifies only the first two items; the new sentence attached it to 348. In a card whose whole purpose is making section scope explicit, a wrong section pointer is the defect it set out to remove.",
+      "suggested": "TASK-348(§Children ### Compose follow-up sequence 4번, 사람 소유 실기동 회차)"
+    },
+    {
+      "id": "F3",
+      "severity": "informational, non-blocking",
+      "file": "tasks/doing/385-currentize-plan-ownership-for-unreviewed-done.md, Completion Criteria",
+      "problem": "criteria 1, 2 and 4 are bound to bare substring greps ('2026-09-14', 'quality-review', 'PLAN-006'). Criterion 2 in particular passes on any occurrence of the string 'quality-review' anywhere in a 008-*.md file, which the plan already contained elsewhere in spirit. The bindings execute and exit 0, but they carry close to no regression-detection value.",
+      "suggested": "optional; bind to a phrase unique to the new content, e.g. the 2026-09-14 heading text"
+    },
+    {
+      "id": "F4",
+      "severity": "informational, non-blocking, pre-existing (NOT introduced by this branch)",
+      "file": "tasks/plan/006-devbox-dogfood-followup.md:84-90 (§Children preamble)",
+      "problem": "the §Children heading says '아래는 26장 전부를 나열' while children: holds 29. The zone does list 26 distinct TASK-NNN, so it is internally consistent, but prose 26 vs frontmatter 29 is precisely the defect shape TASK-381 exists to mechanise. The new sentence at line 77 now cites 'frontmatter의 26/29' in the same document, so two different meanings of 26 coexist a few lines apart.",
+      "suggested": "out of scope for TASK-385; worth a separate card, and it is a third real specimen for TASK-381"
+    }
+  ],
+  "adjacent-defect-found-during-review": {
+    "id": "TASK-383 id collision across two unmerged branches",
+    "severity": "high, outside TASK-385's scope, reported to the lead",
+    "observed": "master at 276988b carries tasks/todo/383-diagnose-a-missing-image-that-compose-cannot-build.md with id: TASK-383. Branch dev/claude/mbp/fix/durable-receipt-path carries tasks/doing/383-move-review-receipts-to-a-tracked-durable-path.md, also id: TASK-383. Both were created 2026-09-14.",
+    "why-it-was-not-caught": "ce task validate runs per-checkout, so neither branch can see the other's card; the collision only exists in the union.",
+    "effect-on-this-review": "the reviewed diff cites [[TASK-383]] in both tasks/plan/007-done-backlog-triage.md and the TASK-385 card, meaning the receipt-path card. That reading was correct when authored. If the compose-image card keeps the id, both citations silently start pointing at the wrong card. Not charged against TASK-385.",
+    "note": "this is also why tasks/receipts/ does not yet exist on this branch — the durable path lands with the other TASK-383."
+  },
+  "verify-bindings": [
+    { "binding": "/usr/bin/grep -rq --include='007-*.md' '2026-09-14' tasks", "exit": 0 },
+    { "binding": "/usr/bin/grep -rq --include='008-*.md' 'quality-review' tasks", "exit": 0 },
+    { "binding": "human — §Session handoff를 읽고 §Order 범위임이 문장 안에서 읽히는지 확인", "exit": "human; scope disclosure confirmed by reading, but see F2 for a wrong section pointer in the same sentence" },
+    { "binding": "/usr/bin/grep -rq --include='381-*.md' 'PLAN-006' tasks", "exit": 0 },
+    { "binding": "make doc-check", "exit": 0 }
+  ],
+  "gates": {
+    "make doc-check": {
+      "exit": 0,
+      "note": "doc-check OK; cilabels OK (8 CI labels match ci.yml); flowcheck OK (10 flows, no decision-path defects); planprogress OK (4 plans, 382 cards indexed, every plan's counts match its children); yamlcheck 6 examples, 0 errors, 0 warnings. The STALE link lines are all under tasks/_archive/ and pre-existing."
+    },
+    "ce task validate --all (this worktree)": {
+      "exit": 1,
+      "summary": "79 valid, 6 invalid (total: 85)",
+      "invalid": [
+        "tasks/done/344-harden-frontmatter-value-parsing-against-comments-and-repeats.md",
+        "tasks/done/371-align-planprogress-with-the-shared-progress-contract.md",
+        "tasks/done/376-prepare-a-rehearsed-dogfood-run-harness-for-the-live-verification-round.md",
+        "tasks/done/377-narrow-the-ce-task-gate-attachment-decision-to-two-costed-options.md",
+        "tasks/done/378-watch-for-the-familybook-readiness-landing-instead-of-remembering-it.md",
+        "tasks/done/379-retarget-the-primeno1-dogfood-steps-at-plan-dev.md"
+      ]
+    },
+    "ce task validate --all (primary checkout at base 658b4e4, unmodified)": {
+      "exit": 1,
+      "summary": "82 valid, 2 invalid (total: 84)",
+      "invalid": [
+        "tasks/done/344-harden-frontmatter-value-parsing-against-comments-and-repeats.md",
+        "tasks/done/371-align-planprogress-with-the-shared-progress-contract.md"
+      ]
+    },
+    "baseline-comparison": {
+      "verdict": "this branch introduces NO new validation failure",
+      "shared": "TASK-344 and TASK-371 fail identically in both ('Done card blocks X but declares no quality-review-receipt'); they are the ISSUE-001 baseline and are owned by TASK-384.",
+      "delta-explained": "the four extra failures in the worktree (376-379) are all 'quality-review-receipt tmp/task-management/direct/queue-run/task-37N-review-receipt.json cannot be read'. .gitignore:51 is `tmp/`, so those receipts exist only in the primary checkout and never travel to a worktree. This branch's diff touches none of those four cards. This is the exact defect TASK-383 (receipt-path) closes.",
+      "total-delta": "85 vs 84 is the one new card, TASK-385 itself, which validates clean."
+    }
+  },
+  "scope-statement": {
+    "certifies": [
+      "every numeric claim in the diff was re-derived from primary data (frontmatter parsed from disk, plan children: read as YAML, set intersections computed), not taken from the implementer's account, and each census was cross-checked by a second independent method",
+      "the two measurement commands the diff prints as evidence were executed verbatim and reproduce their stated output exactly",
+      "the TASK-381 rule analysis was re-derived by applying both proposed rules to the pre-fix sentence",
+      "make doc-check exits 0; ce task validate --all adds no failure over the base commit measured in an unmodified primary checkout",
+      "no file in the primary checkout was read-modified; git status --short is empty there and was empty in this worktree before this receipt was written"
+    ],
+    "does-not-certify": [
+      "that the 17 legacy cards genuinely warrant no retroactive review — that is a policy call the card makes and this review does not second-guess",
+      "the correctness of PLAN-006's pre-existing §Children 26-vs-29 prose (F4), which predates this branch",
+      "anything about the TASK-383 id collision beyond the observation recorded above"
+    ]
+  },
+  "files-modified-by-reviewer": [
+    "tasks/receipts/TASK-385/done-review-4d810ddeedcb9c88e71d855fc3bd7021efb3a9bdfbb6999f4e0e583ca2b29410.json (this receipt; nothing else)"
+  ]
+}

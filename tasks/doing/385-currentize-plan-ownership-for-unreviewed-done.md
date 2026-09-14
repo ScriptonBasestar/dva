@@ -76,10 +76,29 @@ verification-evidence: "기계 바인딩 4개 exit 0, make doc-check rc=0. 39/68
 초과하는 경우만 보고, 2번은 수사(`N장`)를 세는데 이 문장은 "하나뿐"이라고 쓴다.
 그 사실을 TASK-381에 기록한다.
 
+## 리뷰 지적 둘 — 범위를 밝히려던 카드가 범위를 틀리게 짚었다
+
+review-385가 수치 주장은 전부 독립 재측정으로 참임을 확인했고(68/39, 배분 17/8/5/0/9,
+카드 목록까지 문자 단위 일치, `parent:` 부재, PLAN-006 잔여 3장 = 328/348/329),
+틀린 것은 **절 귀속 인용 둘**이었다.
+
+- PLAN-007에서 "바로 위 §`waived` 항목"이라 썼는데 그 절은 삽입 블록의 **아래**에 있다.
+- PLAN-006에서 TASK-348을 §Devbox integration state에 귀속시켰는데 그 절은 348을
+  한 번도 언급하지 않는다. 348을 소유하는 곳은 §Children `### Compose follow-up
+  sequence` 4번이다.
+
+두 번째가 특히 아프다 — **이 카드의 목적 자체가 "어느 절이 무엇을 세는지 밝히는
+것"인데, 그 목적을 수행하는 문장이 절을 틀리게 짚었다.** 굵은 문장의 범위를
+밝히려다 바로 옆에 새 범위 오류를 만든 셈이다. 고쳤다.
+
+세 번째 지적(informational)은 완료 기준의 바인딩이 문자열 존재만 본다는 것이었다.
+기준 2는 008 카드에 `quality-review`라는 글자만 있으면 통과했다. 셋 다 주장을 재는
+형태로 바꿨다 — 표는 행 수를 세고, 나머지 둘은 그 절이 실제로 한 주장의 문장을 찾는다.
+
 ## Completion Criteria
 
-- [x] PLAN-007에 2026-09-14 재측정과 소유권 표가 있다 | verify: `/usr/bin/grep -rq --include='007-*.md' '2026-09-14' tasks`
-- [x] PLAN-008이 자식 8장을 리뷰 없이 닫았다는 사실이 기록돼 있다 | verify: `/usr/bin/grep -rq --include='008-*.md' 'quality-review' tasks`
+- [x] PLAN-007의 2026-09-14 재측정에 소유권 표 다섯 줄이 다 있다 | verify: `test "$(/usr/bin/grep -rc --include='007-done-backlog-triage.md' -E '^\| (PLAN-00[6789]|소유 plan 없음)' tasks | cut -d: -f2)" = 5`
+- [x] PLAN-008이 자식 여덟 장을 리뷰 없이 닫았다는 사실이 문장으로 기록돼 있다 | verify: `/usr/bin/grep -rq --include='008-*.md' '리뷰됐다는 뜻이 아니다' tasks`
 - [x] PLAN-006의 굵은 문장이 자기 범위를 밝힌다 | verify: `human — §Session handoff를 읽고 §Order 범위임이 문장 안에서 읽히는지 확인`
-- [x] TASK-381이 자기 규칙으로 잡지 못하는 사례를 알고 있다 | verify: `/usr/bin/grep -rq --include='381-*.md' 'PLAN-006' tasks`
+- [x] TASK-381이 자기 규칙 둘 다 이 사례를 잡지 못한다는 것을 기록한다 | verify: `/usr/bin/grep -rq --include='381-*.md' '둘 다 잡지 못한다' tasks`
 - [x] 문서 게이트가 통과한다 | verify: `make doc-check` (regression-guard)
