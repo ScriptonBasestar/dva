@@ -127,6 +127,16 @@ plan `dev`의 첫 관문은 `scripts/sigdock-local-up.sh`이고 fail-closed다. 
 사람 결정은 셋으로 확정됐다: (1) pipechain의 서브넷 점유 해제 또는 devbox 서브넷 변경,
 (2) familybook 고아 볼륨·네트워크 purge 동의, (3) `SIGDOCK_CLIENTS_FILE` 값 지정.
 
+### 2026-09-15 점유 해제 — 사람 결정 (1) 집행
+
+사용자 승인("끝났으면 점유해제, 다시 필요하면 그때 재생성")으로 `pipechain_pipechain`
+네트워크를 해제했다. 해제 직전 실측: 해당 네트워크 컨테이너 0건, pipechain 프로젝트
+컨테이너 0건(실행·정지 모두)·볼륨 0건 — 유휴 확인 후 `docker network rm
+pipechain_pipechain`, 잔여 pipechain 계열 네트워크 0건 확인. 서브넷 `172.30.0.0/16`은
+이제 가용하고 **flow-taskchain 축의 환경 장벽은 사라졌다**(pipechain이 다시 그
+서브넷을 필요로 하면 그때 재생성하면 된다 — 사용자 결정). 남은 사람 결정은 둘:
+(2) familybook 고아 볼륨·네트워크 purge 동의, (3) `SIGDOCK_CLIENTS_FILE` 값 지정.
+
 ## Completion Criteria
 
 - [ ] primeno1 native entries complete a real dva up / status / down --purge cycle with output attached to the dogfood report | verify: human — docs/dogfood/primeno1.md contains a 실기동 section with exit codes for up, status, down --purge
