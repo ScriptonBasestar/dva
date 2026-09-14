@@ -151,13 +151,11 @@ F5b는 인식 자체를 막아 검사를 통째로 끈다 — [[ISSUE-018]]이 �
 - [ ] `tools/planprogress/known_issues_test.go`의 `TestIssue017Deduplication`
       (`TASK-1, 1, 2` → 두 장)이 통과한다 — `findEnumerations`가 중복 id를
       제거한다는 뜻이다. 이 바인딩은 구성상 지금은 실패하며, 결함이 고쳐졌을
-      때만 통과한다. `-run`만으로 짠 바인딩은 파일을 통째로 지워도
-      `ok ... [no tests to run]`로 exit 0이 되어버린다(실측 확인) — 그래서
-      출력에서 이 테스트 자신의 PASS 요약 줄을 직접 찾는다. 이름이 지워지거나
-      바뀌면 그 줄이 없으므로 여전히 실패로 읽힌다 | verify: `sh -c 'go test
-      -tags=knownbroken -run "^TestIssue017Deduplication$" -v
-      ./tools/planprogress/ 2>&1 | /usr/bin/grep -qE "^--- PASS:
-      TestIssue017Deduplication "'`
+      때만 통과한다. 명령이 `-v`와 PASS 줄 grep을 거치는 이유는 `go test -run`이
+      0건 매치일 때 `[no tests to run]`과 함께 exit 0을 내기 때문이다 — 재현을
+      지우는 것으로는 이 기준을 만족시킬 수 없다 | verify: `sh -c 'go test
+      -tags=knownbroken -run "^TestIssue017Deduplication$" -v ./tools/planprogress/ 2>&1 | grep -qE
+      "^--- PASS: TestIssue017Deduplication "'`
 - [ ] 역방향/과대 범위(`maxRangeSpan` 초과 포함)를 어떻게 다룰지 — 조용히
       건너뛰되 뒤 나열은 보존, 결함으로 보고, 또는 다른 처리 — 결정되고,
       `TestFindEnumerations`의 `"reversed range is ignored"` 기대값이 그
@@ -171,9 +169,8 @@ F5b는 인식 자체를 막아 검사를 통째로 끈다 — [[ISSUE-018]]이 �
       P5 픽스처를 넣고 결과를 확인
 - [ ] 이 결함의 재현이 기본 테스트 스위트로 옮겨졌다 — `TestIssue017Deduplication`가
       `prose_test.go`에 있고 `known_issues_test.go`에는 남아 있지 않다(태그를
-      지우는 것만으로는 만족되지 않는다) | verify: `/usr/bin/grep -q
-      'TestIssue017Deduplication' tools/planprogress/prose_test.go &&
-      ! /usr/bin/grep -q 'TestIssue017Deduplication'
+      지우는 것만으로는 만족되지 않는다) | verify: `grep -q 'TestIssue017Deduplication'
+      tools/planprogress/prose_test.go && ! grep -q 'TestIssue017Deduplication'
       tools/planprogress/known_issues_test.go`
 
 ## Related

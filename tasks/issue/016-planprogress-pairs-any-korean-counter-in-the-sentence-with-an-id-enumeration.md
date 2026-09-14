@@ -124,13 +124,11 @@ CI에서 떨어진다. `prose.go`의 설계 의도(파일 코멘트)와 실제 �
 - [ ] `tools/planprogress/known_issues_test.go`의 `TestIssue016FalsePositives`
       (F1의 세 문장)가 통과한다 — 카운터 어휘 또는 짝짓기 규칙이 좁혀졌다는
       뜻이다. 이 바인딩은 구성상 지금은 실패하며, 결함이 고쳐졌을 때만
-      통과한다. `-run`만으로 짠 바인딩은 파일을 통째로 지워도
-      `ok ... [no tests to run]`로 exit 0이 되어버린다(실측 확인) —
-      그래서 출력에서 이 테스트 자신의 PASS 요약 줄을 직접 찾는다. 이름이
-      지워지거나 바뀌면 그 줄이 없으므로 여전히 실패로 읽힌다 | verify:
-      `sh -c 'go test -tags=knownbroken -run "^TestIssue016FalsePositives$"
-      -v ./tools/planprogress/ 2>&1 | /usr/bin/grep -qE "^--- PASS:
-      TestIssue016FalsePositives "'`
+      통과한다. 명령이 `-v`와 PASS 줄 grep을 거치는 이유는 `go test -run`이
+      0건 매치일 때 `[no tests to run]`과 함께 exit 0을 내기 때문이다 — 재현을
+      지우는 것으로는 이 기준을 만족시킬 수 없다 | verify: `sh -c 'go test
+      -tags=knownbroken -run "^TestIssue016FalsePositives$" -v ./tools/planprogress/ 2>&1 | grep -qE
+      "^--- PASS: TestIssue016FalsePositives "'`
 - [ ] 좁히는 방식(카운터 어휘를 `장`으로만 제한, 괄호/백틱 구간 제외, 또는
       다른 방식)이 결정되고 `prose.go`의 파일 코멘트가 그 결정과 실제 동작을
       정확히 반영한다 | verify: human — 코멘트를 읽고 F1의 세 문장 각각에 대해
@@ -141,9 +139,8 @@ CI에서 떨어진다. `prose.go`의 설계 의도(파일 코멘트)와 실제 �
       남아있는지 확인
 - [ ] 이 결함의 재현이 기본 테스트 스위트로 옮겨졌다 — `TestIssue016FalsePositives`가
       `prose_test.go`에 있고 `known_issues_test.go`에는 남아 있지 않다(태그를
-      지우는 것만으로는 만족되지 않는다) | verify: `/usr/bin/grep -q
-      'TestIssue016FalsePositives' tools/planprogress/prose_test.go &&
-      ! /usr/bin/grep -q 'TestIssue016FalsePositives'
+      지우는 것만으로는 만족되지 않는다) | verify: `grep -q 'TestIssue016FalsePositives'
+      tools/planprogress/prose_test.go && ! grep -q 'TestIssue016FalsePositives'
       tools/planprogress/known_issues_test.go`
 
 ## Related
