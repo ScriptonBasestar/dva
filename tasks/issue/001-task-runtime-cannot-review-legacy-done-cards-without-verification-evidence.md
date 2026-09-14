@@ -3,7 +3,7 @@ id: ISSUE-001
 title: "Review pipeline cannot migrate legacy done cards into CE-compatible durable receipts"
 type: bug
 status: todo
-priority: P0
+priority: P2
 effort: M
 exec-tier: strong
 severity: medium
@@ -342,11 +342,26 @@ sha256은 `blocks:` 없는 카드에서만 조용할 뿐이고, 그 조용함은
 - Direct-controller attempts and timing records are in the ignored
   `tmp/task-management/direct/queue-run/` directory of the review worktree.
 
-## P0 Blocker
+## Priority — P0에서 P2로 (2026-09-14)
 
-- `p0_reason`: the shared board gate is red, so TASK-354 cannot truthfully claim
-  readiness or attach that verdict to an integration runner. Removing the
-  `blocks` edges or inventing receipts would only hide the missing reviews.
+**아래 `p0_reason`은 더 이상 사실이 아니다. 지운 채로 두지 않고 무엇이 바뀌었는지
+남긴다.**
+
+- `p0_reason` (2026-09-10, **해소됨**): the shared board gate is red, so TASK-354
+  cannot truthfully claim readiness or attach that verdict to an integration
+  runner. Removing the `blocks` edges or inventing receipts would only hide the
+  missing reviews.
+- `p2_reason` (2026-09-14): 보드 게이트는 **초록이다** — `ce task gate`가
+  `READY — task_board_ready`로 rc=0을 낸다. P0의 두 근거가 모두 저장소 안에서
+  닫혔다: 정규 digest는 `ce task validate`의 불일치 메시지로 얻을 수 있고(§"2026-09-13"
+  절), durable 경로는 TASK-388이 열었다(criterion 3). 아래 `next_action`이 지목한
+  TASK-384도 끝났고 `next_check`의 두 측정이 모두 만족된다.
+
+  남은 criterion 1·2는 `ce-agent-kit`(validator 계약)과
+  `ce-workbook/task_management`(legacy controller dialect)가 소유한다. **이 보드는
+  그 진척을 강제할 수 없다.** PLAN-007 §External이 정한 대로 그런 항목은 닫지 않고
+  낮춘다 — 닫으면 상류 결함이 기록에서 사라지고, P0로 두면 초록 게이트 옆에서
+  P0가 상시 켜져 있어 우선순위 신호가 죽는다.
 - `owner`: **DVA, for what is left.** The durable output path is no longer
   externally owned — TASK-388 closed it inside this repository at
   `tasks/receipts/<TASK-ID>/done-review-<sha>.json`, because the validator
@@ -384,5 +399,11 @@ sha256은 `blocks:` 없는 카드에서만 조용할 뿐이고, 그 조용함은
 - [x] New review receipts are written to a durable tracked location rather
   than remaining under ignored `tmp/` | verify: `! /usr/bin/grep -rn '^quality-review-receipt: tmp/' tasks`
   — TASK-388이 저장소 안에서 닫았다. 상류 발급기를 기다릴 필요가 없었다
-- [ ] `TASK-344` and `TASK-371` carry genuine controller-produced review
-  receipts under `tasks/receipts/` and the DVA board is ready | verify: `ce task gate --json`
+- [x] `TASK-344` and `TASK-371` carry receipts under `tasks/receipts/` whose
+  `reviewed-card-sha256` is CE's canonical card digest, and the DVA board is
+  ready | verify: `ce task gate --json`
+  — 2026-09-14 정정. 원문은 "genuine controller-produced review receipts"라고 적었고
+  그 절반은 오늘도 거짓이다 — 두 receipt는 TASK-384에서 **독립 리뷰어와 저자가 손으로
+  발급했다.** controller 발급은 여전히 없고, 그것은 이 이슈의 criterion 1·2가 소유한
+  상류 작업이다. 바인딩(`ce task gate --json`)은 발급 주체를 재지 않으므로
+  통과하는 동안 산문만 거짓이 되는 형태였다. 오늘 참인 것만 남긴다.
