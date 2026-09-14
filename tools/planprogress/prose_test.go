@@ -87,7 +87,7 @@ func TestCheckPlanProse(t *testing.T) {
 				p.goal = "네 장(TASK-1·2·3)이 같은 파일을 고친다"
 				return p
 			}(),
-			wantAny: []string{"counts 4 card(s) beside an enumeration of 3"},
+			wantAny: []string{"counts 4 card(s) beside an enumeration naming 3"},
 			wantN:   1,
 		},
 		{
@@ -248,7 +248,17 @@ func TestFindEnumerations(t *testing.T) {
 		// A range that is then continued by a run: the tail used to be dropped silently,
 		// which let an extra id ride along unchecked inside a correct-looking range.
 		{"range continued by a run", "TASK-358..360, 999", []string{"TASK-358", "TASK-359", "TASK-360", "TASK-999"}},
-		{"reversed range is ignored", "TASK-365..358", nil},
+		// A reversed (or oversized) range is not expanded, but it no longer swallows the rest
+		// of the sentence: it contributes its anchor id and the run after it is still read.
+		// Alone, that single id is an isolated mention, so nothing is returned.
+		{"reversed range contributes only its anchor", "TASK-365..358", nil},
+		{"reversed range does not swallow the run after it", "TASK-365..358, 366, 367",
+			[]string{"TASK-365", "TASK-366", "TASK-367"}},
+		// Wikilink enumerations are invisible to findEnumerations: runTailRE needs the
+		// separator to follow the anchor immediately, and "]]" intervenes. This is a KNOWN
+		// GAP tracked on ISSUE-021 C — recognizing the board's own cross-reference notation
+		// is out of scope here. Pinned so the silence is recorded rather than accidental.
+		{"wikilink enumeration is not recognized (ISSUE-021 C)", "[[TASK-1]], [[TASK-9]] 두 장이 남았다", nil},
 		{"two mentions joined by prose stay isolated", "TASK-343 depends-on TASK-344", nil},
 	}
 

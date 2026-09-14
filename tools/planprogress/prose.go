@@ -36,7 +36,7 @@ import (
 //     remove it, and this comment said otherwise until review-planprogress measured the
 //     counterexample. Reorder the same sentence and the false positive returns:
 //     "다섯 장 — TASK-1·2와 TASK-3·4·5" (five children, written as two groups) still reports
-//     "counts 5 card(s) beside an enumeration of 2". Symmetry guarantees that only ONE
+//     "counts 5 card(s) beside an enumeration naming 2". Symmetry guarantees that only ONE
 //     enumeration is blamed; it does not establish that the blamed one is the count's subject.
 //     The residue is tracked on ISSUE-021, not claimed as fixed here.
 //   - total-tasks is only comparable to prose in `scope:`, which by definition describes the
@@ -166,8 +166,14 @@ func findEnumerations(sentence string) []enumMatch {
 				for n := first; n <= last; n++ {
 					ids = append(ids, n)
 				}
-				end += m[1]
 			}
+			// end advances past the range tail whether or not the range was accepted. A
+			// reversed or oversized range contributes only its anchor id, but the text after
+			// it is still ordinary prose: leaving end before the ".." made the run loop below
+			// re-read the range's own tail and then stop, so "TASK-365..358, 366, 367" lost
+			// 366 and 367 as well — a sound membership claim swallowed by a typo next to it
+			// (ISSUE-021 B).
+			end += m[1]
 		}
 		if ids == nil {
 			ids = []int{first}
@@ -293,7 +299,7 @@ func checkPlanProse(p plan, name string) []string {
 			}
 			if e.count != len(e.ids) {
 				defects = append(defects, fmt.Sprintf(
-					"%s (%s): %s counts %d card(s) beside an enumeration of %d (%q)",
+					"%s (%s): %s counts %d card(s) beside an enumeration naming %d (%q)",
 					name, p.path, region, e.count, len(e.ids), e.text))
 				continue
 			}
