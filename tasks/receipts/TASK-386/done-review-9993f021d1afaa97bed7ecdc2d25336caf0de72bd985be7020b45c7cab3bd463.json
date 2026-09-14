@@ -1,0 +1,198 @@
+{
+  "reviewed-card-path": "tasks/doing/386-quote-the-two-unbackticked-verify-bindings.md",
+  "reviewed-card-sha256": "9993f021d1afaa97bed7ecdc2d25336caf0de72bd985be7020b45c7cab3bd463",
+  "reviewed-card-sha256-algorithm": "plain sha256 over the card file bytes at b53b713 (git blob c551b09249871bd9d55ce8f5553991793e989923; the working-tree file hashes identically, tree clean). NOT the CE canonical digest: the card sits in tasks/doing/ and declares no blocks:, so ce task validate never reaches the quality-review-receipt check and prints no canonical digest. Same situation as the TASK-382 receipt.",
+  "digest-scope-warning": "This pins the card as review-386 actually read it at b53b713. The implementer had not yet added the quality-review frontmatter or moved the card to tasks/done/ when the digest was taken, so the finally committed card will hash differently. That divergence is expected and is not evidence of an unreviewed change; the reviewed content is the b53b713 bytes named above.",
+  "receipt-path-note": "Written directly under the Git-tracked tasks/receipts/TASK-<N>/ path TASK-383 established (ISSUE-001 §Summary item 3), not the gitignored tmp/task-management/direct/queue-run/ earlier receipts used.",
+  "task": "TASK-386",
+  "title": "Quote the two unbackticked verify bindings the validator cannot read",
+  "reviewer": "review-386 (Claude Opus 5, independent; did not author the work under review)",
+  "verdict": "pass",
+  "verdict-final": true,
+  "reviewed-at": "2026-09-14",
+  "branch": "dev/claude/mbp/fix/quote-unbackticked-verify-bindings",
+  "base": "master 658b4e4",
+  "head-reviewed": "b53b713",
+  "review-rounds": 2,
+  "diff-scope": {
+    "commits": ["828eb84", "b53b713"],
+    "files": [
+      "tasks/doing/386-quote-the-two-unbackticked-verify-bindings.md (new in 828eb84, amended in b53b713)",
+      "tasks/done/319-native-entry-ergonomics.md (1 line, :35)",
+      "tasks/done/321-destructive-interaction-agent-deny.md (2 lines, :26-27)"
+    ],
+    "verdict": "matches the card exactly; no source, tooling, or unrelated doc touched. git status --short empty in the worktree and in the primary checkout after every round."
+  },
+  "round-1": {
+    "head-reviewed": "828eb84",
+    "verdict": "conditional",
+    "findings": [
+      {
+        "id": "F1",
+        "severity": "high",
+        "file": "tasks/doing/386-quote-the-two-unbackticked-verify-bindings.md:58",
+        "problem": "criterion 3's binding was `ce task validate --all`, which exits 1 in this worktree (79 valid / 6 invalid) and on master too (82 / 2). A criterion marked [x] carried a binding that does not exit 0, and it measured the whole board rather than the two cards the criterion is about.",
+        "suggested": "scope it to the two cards; that form exits 0 here and produces the two warnings on master",
+        "resolution": "fixed in b53b713 as `ce task validate $(/usr/bin/find tasks -name '319-…' -o -name '321-…')`; re-measured exit 0"
+      },
+      {
+        "id": "F2",
+        "severity": "high",
+        "file": "tasks/doing/386-quote-the-two-unbackticked-verify-bindings.md:14 (verification-evidence)",
+        "problem": "two false factual claims: (a) '완료 기준 3개의 기계 바인딩 전부 exit 0' — criterion 3 exited 1; (b) 'validate --all의 invalid 6건은 master의 기존값' — master yields 2, not 6. The other 4 are TASK-376/377/378/379 citing receipts under the gitignored tmp/, absent from a fresh worktree. The conclusion (this card added none) held; the stated basis did not.",
+        "suggested": "restate as 'master 2 + 4 environment artefacts from the absent tmp/ receipts'",
+        "resolution": "corrected in b53b713; the corrected numbers match this reviewer's measurements exactly"
+      },
+      {
+        "id": "F3",
+        "severity": "high",
+        "file": "tasks/doing/386-quote-the-two-unbackticked-verify-bindings.md:57",
+        "problem": "criterion 2 claimed TASK-321's two lines were backticked but its binding (grep -rq … 'verify: .go run') inspected only the `go run` line. tasks/done/321-…md:27 was covered by no binding at all — criterion 1's binding is fenced to --include='319-*.md'. Removing that line's backticks would have left both bindings passing.",
+        "suggested": "count both lines",
+        "resolution": "fixed in b53b713 as a counting binding requiring exactly 2; confirmed by the two negative probes below"
+      },
+      {
+        "id": "F4",
+        "severity": "informational",
+        "file": "tasks/doing/386-quote-the-two-unbackticked-verify-bindings.md:56-57",
+        "problem": "the `.` in 'verify: .go test' stands for a backtick but matches any single character; the search also recursed into tasks/_archive/",
+        "resolution": "accepted as not-fixed by agreement (see residual-findings R1); search narrowed to tasks/done/ in b53b713, removing the _archive false-positive surface"
+      }
+    ]
+  },
+  "round-2": {
+    "head-reviewed": "b53b713",
+    "verdict": "pass",
+    "re-verified": [
+      "criteria 1 and 2 are now counting forms and both exit 0",
+      "criterion 2 genuinely fails when either of TASK-321's two backticks is removed (two independent negative probes, both exit 1)",
+      "criterion 3's /usr/bin/find form exits 0 and the card itself validates with zero warnings",
+      "the /usr/bin/find detour is genuinely required, and so is the wrapped-tool spelling",
+      "the corrected invalid counts (master 2 + 4 environment artefacts) reproduce exactly"
+    ]
+  },
+  "negative-probes": {
+    "purpose": "confirm criterion 2's counting binding actually fails when the property it asserts is violated, rather than passing vacuously",
+    "binding": "test \"$(/usr/bin/grep -rc --include='321-*.md' 'verify: .go ' tasks/done/ | cut -d: -f2)\" = 2",
+    "probes": [
+      {"mutation": "tasks/done/321-destructive-interaction-agent-deny.md:26 (`go run` line) — backtick removed with sed", "exit": 1},
+      {"mutation": "tasks/done/321-destructive-interaction-agent-deny.md:27 (`go test` line — the line no binding covered before b53b713) — backtick removed with sed", "exit": 1}
+    ],
+    "restoration": "each probe reverted immediately with `git checkout -- tasks/done/321-destructive-interaction-agent-deny.md`; git status --short and git diff --stat both empty afterwards"
+  },
+  "independent-verification": {
+    "diff-is-backticks-only": {
+      "method": "diff <(git show 828eb84~1:<file> | sed 's/`//g') <(git show 828eb84:<file> | sed 's/`//g') for each of the two done cards",
+      "result": "no difference for either file — stripping every backtick makes the post-change files byte-identical to the pre-change files. Only backticks were added. Changed lines 319:35 and 321:26-27, all three `| verify:` lines. Verdicts ([x]), Verification Evidence, body prose and frontmatter untouched."
+    },
+    "pipe-does-not-truncate-the-binding": {
+      "claim-under-test": "the card asserts a `|` inside double quotes is not read as the criterion-line field separator",
+      "method": "two scratchpad copies of the 319 card, each with a binding citing a nonexistent path under an existing parent directory; one binding without a pipe, one with -qE \"a|b\" before the path",
+      "result": "both produced the same 'verify binding cites …, which is absent while its parent directory … exists' warning — the parser reads the whole value past the pipe. The card's probe-a/b/c conclusion reproduces independently.",
+      "note": "an earlier probe using && was inconclusive: bindings with shell operators fall into the validator's 'skipped as unreadable without a shell' bucket for path citations"
+    },
+    "find-detour-is-required": {
+      "method": "scratchpad copy of the 386 card with criterion 3 written as direct card paths",
+      "result": "ce task validate returned 2 errors — 'verify binding names volatile zone path tasks/done/319-native-entry-ergonomics.md; use `find tasks -name …` or `grep -rq --include=… tasks`', and the same for 321. The validator itself prescribes the find form, so the card's rationale is accurate rather than a rationalisation."
+    },
+    "wrapped-tool-spelling-is-required": {
+      "evidence": "make doc-check reports wrapped_tool_bindings 379, bare_tool_bindings 0, bare_suite_bindings 0 — a bare `find` would be a bare tool binding. Explains /usr/bin/find over find."
+    },
+    "invalid-count-decomposition": {
+      "worktree": "ce task validate --all -> 79 valid / 6 invalid: TASK-344, 371, 376, 377, 378, 379",
+      "primary-checkout-master-658b4e4": "ce task validate --all -> 82 valid / 2 invalid: TASK-344, 371",
+      "delta": "4 = TASK-376/377/378/379, each failing with 'quality-review-receipt tmp/task-management/direct/queue-run/task-37N-review-receipt.json cannot be read'",
+      "mechanism": "those four files exist in the primary checkout and are ignored by .gitignore:51 (`tmp/`), confirmed with git check-ignore -v, so a fresh worktree has no copy",
+      "result": "the card's corrected evidence is accurate; this branch adds no invalid card"
+    }
+  },
+  "verify-bindings": [
+    {"binding": "test \"$(/usr/bin/grep -rc --include='319-*.md' 'verify: .go test' tasks/done/ | cut -d: -f2)\" = 1", "exit": 0},
+    {"binding": "test \"$(/usr/bin/grep -rc --include='321-*.md' 'verify: .go ' tasks/done/ | cut -d: -f2)\" = 2", "exit": 0},
+    {"binding": "ce task validate $(/usr/bin/find tasks -name '319-native-entry-ergonomics.md' -o -name '321-destructive-interaction-agent-deny.md')", "exit": 0, "note": "2 valid, 0 invalid, zero warnings"},
+    {"binding": "human — git show로 diff 확인", "exit": "n/a (human)", "note": "discharged under independent-verification.diff-is-backticks-only; the backtick-stripped byte comparison is stronger than eyeballing the diff"}
+  ],
+  "bindings-not-executed": [
+    {
+      "binding": "tasks/done/321-destructive-interaction-agent-deny.md:26 — `go run ./tools/agentdenygen && /usr/bin/grep -q \"Destructive interactions\" docs/agent-deny-rules.md`",
+      "reason": "agentdenygen regenerates a tracked doc; the review brief was read-only, so the line was verified by diff comparison only, not by execution"
+    }
+  ],
+  "gates": {
+    "make doc-check": {
+      "exit": 0,
+      "note": "doc-check OK; cilabels OK; flowcheck OK; planprogress OK; yamlcheck OK. wrapped_tool_bindings 379, bare_tool_bindings 0, bare_suite_bindings 0. Stale link paths all under tasks/_archive/, pre-existing. Run at both 828eb84 and b53b713."
+    },
+    "make lint": {"exit": 0, "note": "go vet clean; gofmt -s 491 files, 0 unformatted; scripts/ci-lint.sh 0 issues"},
+    "ce task validate tasks/doing/386-quote-the-two-unbackticked-verify-bindings.md": {"exit": 0, "note": "Valid, no errors or warnings; no volatile-zone-path error from the find-based binding"},
+    "ce task validate --all": {
+      "exit": 1,
+      "summary": "79 valid, 6 invalid (total 85)",
+      "invalid": [
+        "tasks/done/344-harden-frontmatter-value-parsing-against-comments-and-repeats.md",
+        "tasks/done/371-align-planprogress-with-the-shared-progress-contract.md",
+        "tasks/done/376-prepare-a-rehearsed-dogfood-run-harness-for-the-live-verification-round.md",
+        "tasks/done/377-narrow-the-ce-task-gate-attachment-decision-to-two-costed-options.md",
+        "tasks/done/378-watch-for-the-familybook-readiness-landing-instead-of-remembering-it.md",
+        "tasks/done/379-retarget-the-primeno1-dogfood-steps-at-plan-dev.md"
+      ],
+      "note": "2 are the ISSUE-001 baseline present on master; 4 are the absent-tmp/-receipt environment artefacts TASK-383 closes. This branch adds none. Not used as a gate for this card — criterion 3 was deliberately narrowed away from it in b53b713."
+    }
+  },
+  "residual-findings": [
+    {
+      "id": "R1",
+      "severity": "informational",
+      "file": "tasks/doing/386-quote-the-two-unbackticked-verify-bindings.md:56-57",
+      "text": "'verify: .go test' uses `.` where a backtick is meant",
+      "status": "accepted, not fixed — by agreement with the implementer",
+      "rationale-accepted": "a literal backtick inside a backtick-delimited binding value terminates it; the constraint comes from the checker and the checked sharing one syntax",
+      "better-forms-if-ever-wanted": [
+        "\"verify: $(printf '\\140')go \" — matches the backtick exactly with no wildcard, adding no shell dependency the binding does not already have",
+        "pair the count with a zero-count assertion on the unbackticked form: test \"$(/usr/bin/grep -rc --include='321-*.md' 'verify: go ' tasks/done/ | cut -d: -f2)\" = 0"
+      ]
+    },
+    {
+      "id": "R2",
+      "severity": "informational",
+      "file": "tasks/doing/386-quote-the-two-unbackticked-verify-bindings.md:56-57",
+      "text": "narrowing the search to tasks/done/ bakes a zone assumption into the bindings",
+      "status": "accepted, not fixed",
+      "rationale": "if TASK-319 or TASK-321 is later archived the bindings break — but they break loudly with exit 1 rather than passing vacuously, which is the safe failure direction"
+    },
+    {
+      "id": "R3",
+      "severity": "informational",
+      "file": "not this repository — ce-agent-kit 0.8.4",
+      "text": "the validator's volatile-zone error message prescribes a bare `find tasks -name …` while make doc-check's bare-tool check requires a wrapped /usr/bin/find; following the suggestion verbatim fails doc-check",
+      "status": "out of scope for TASK-386; the team lead is filing it separately against ce-agent-kit"
+    }
+  ],
+  "checked-and-clean": [
+    "TASK-386's own four verify bindings contain no nested backticks (single and double quotes only)",
+    "criterion 4 uses the unbackticked `human — …` form correctly and the validator accepts it",
+    "the two done cards' [x] marks, Verification Evidence sections, Design Record / body prose and frontmatter are byte-identical before and after, modulo the three added backtick pairs",
+    "both go test bindings the quoting made executable were run from the worktree root and exited 0",
+    "the primary checkout /Users/archmagece/mywork/scripton/dva was used read-only throughout; git status --short empty there after every round"
+  ],
+  "scope-statement": {
+    "certifies": [
+      "every factual claim in the card's diff was re-derived from a primary source — git trees, direct command execution, and scratchpad probes against ce task validate — not from the implementer's account",
+      "all three machine bindings execute from the worktree root and exit 0 at b53b713, and the human binding's claim was discharged by a stronger byte-level comparison",
+      "criterion 2's counting binding fails as intended under two independent mutations",
+      "make doc-check 0, make lint 0",
+      "ce task validate --all's 6 invalid at b53b713 decompose into 2 master-baseline + 4 environment artefacts, none added by this branch"
+    ],
+    "does-not-certify": [
+      "the substance of TASK-319's and TASK-321's original verdicts — this card re-opens neither, and only their binding syntax was touched",
+      "tasks/done/321-…md:26's agentdenygen binding by execution; it was verified by diff comparison only",
+      "that the 4 environment artefacts are resolved — that is TASK-383's, and ISSUE-001 stays open until it lands"
+    ]
+  },
+  "files-modified-by-reviewer": [
+    "tasks/receipts/TASK-386/done-review-9993f021d1afaa97bed7ecdc2d25336caf0de72bd985be7020b45c7cab3bd463.json (this file)"
+  ],
+  "files-temporarily-modified-and-restored": [
+    "tasks/done/321-destructive-interaction-agent-deny.md — two sed mutations for the negative probes, each reverted with git checkout --; worktree confirmed clean afterwards"
+  ]
+}
