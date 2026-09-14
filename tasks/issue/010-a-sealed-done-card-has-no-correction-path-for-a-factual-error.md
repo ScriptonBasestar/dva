@@ -14,7 +14,15 @@ created: 2026-09-14
 
 ## Summary
 
-`quality-review-receipt`를 단 done 카드는 **카드 전체가 digest로 봉인된다.**
+**`blocks:`를 선언한** done 카드에 한해, `quality-review-receipt`가 가리키는 파일이
+읽히면 **카드 전체가 digest로 봉인된다.** 두 조건은 둘 다 필요하다. `blocks:`가 없으면
+`ce task validate`는 receipt 검사에 도달조차 하지 않는다 — `tasks/done/386-…md`는
+무수정 상태에서 이미 pinned digest와 현재 바이트가 어긋나 있는데도, 본문에 한 줄을
+덧붙여도 `✅ Valid`다. 근거는 이 저장소 안에 이미 있다: TASK-386 receipt의
+`reviewed-card-sha256-algorithm`이 "declares no `blocks:`, so `ce task validate` never
+reaches the quality-review-receipt check"라고 직접 적고, `tasks/done/382-…md`의
+`quality-review-evidence`는 review-382가 그 조기 return을 `ce-agent-kit`
+소스(`validator_receipt.go`)와 합성 카드 실험 양쪽으로 검증했다고 적는다.
 `quality-review-receipt` 자신은 봉인에서 빠진다 — 아래 §Evidence의 프로브 둘이
 그 한 필드에 대해 양방향으로 확인한 것이고, **다른 필드도 빠지는지는 재지 않았다.**
 digest 범위의 정본은 이 저장소가 아니라 `ce` 쪽에 있고, 여기서 관측할 수 있는 것은
@@ -88,10 +96,13 @@ digest 불일치가 아니라 `quality-review-receipt ... cannot be read`를 낸
 
 ## Impact
 
-**깨끗한 체크아웃에서는 봉인이 아예 동작하지 않는다.** 오늘 receipt를 단 done 카드
-대부분의 포인터가 `tmp/` 아래라, 새 워크트리에서는 digest 검사에 도달하기 전에
-"cannot be read"로 끝난다 — 위조를 막는 장치가 켜져 있지도 않은 상태다. 이 선행
-결함은 [[TASK-388]]이 닫는다.
+**오늘 실제로 봉인이 걸리는 카드는 한 장뿐이다.** 모수가 두 번 좁혀진다. 먼저
+`blocks:`가 있어야 검사가 실행되고(§Summary), 그다음 포인터가 현재 체크아웃에서
+읽혀야 한다 — 그런데 receipt를 단 done 카드 대부분의 포인터가 gitignore된 `tmp/`
+아래라 새 워크트리에서는 "cannot be read"로 끝난다. 2026-09-14 기준 두 조건을 모두
+만족하는 것은 TASK-376 하나다. 즉 위조를 막는 장치는 대부분의 카드에서 **켜져 있지도
+않다.** 뒤쪽 조건은 [[TASK-388]]이 닫고, 앞쪽 조건은 카드 작성자가 `blocks:`를
+선언하는지에 달려 있어 아무도 닫지 않는다.
 
 그 위에서, 낮다 — 오늘 알려진 인스턴스는 TASK-376 하나이고, 틀린 문장은 완료 판정이 아니라 리뷰
 요약의 범위 서술이다. 다만 **보드가 커질수록 조용히 늘어나는 종류의 부채**다. 봉인된
