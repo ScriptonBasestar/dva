@@ -213,6 +213,14 @@ later spans are annotations. Human-only checks use unquoted `verify: human — �
 ordinary shell. `wrapped_tool_bindings` reports the declared population and
 `bare_tool_bindings` must remain zero.
 
+**The validator's volatile-zone suggestion needs one edit before it passes here (ISSUE-011).**
+`ce task validate` rejects a binding that names a card by its state directory and suggests a
+replacement of the form ``find tasks -name '…'`` or ``grep -rq --include='…' … tasks``. Taken
+literally that suggestion fails the rule above, because both tools are named bare. Prefix them
+(`/usr/bin/find`, `/usr/bin/grep`) and both gates pass. The two checks are each correct and a
+form satisfying both exists; only the advice is one edit short, so write the prefixed form
+directly instead of discovering it at the second gate.
+
 ## Flow decision-path gate (flowcheck)
 
 `make doc-check` also runs `go run ./tools/flowcheck`, which reads every flow under

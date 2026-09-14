@@ -146,6 +146,17 @@ F5b는 인식 자체를 막아 검사를 통째로 끈다 — [[ISSUE-018]]이 �
 `[[TASK-N]]` 습관(TASK-381 7회, PLAN-007 2회)을 scope/Goal로 옮기는 순간
 현재화된다 — 그리고 그 날 검사는 진단도 신호도 없이 조용히 꺼진다.
 
+## 소유권 — 이 저장소다 (2026-09-14 명시)
+
+세 카드(ISSUE-016·017·018)는 `review-381`의 독립 리뷰에서 나왔고, 같은 리뷰가 낸 다른
+이슈들이 대부분 `ce-agent-kit`·`ce-workbook` 소유라 서술 형식이 상류 이슈와 구분되지
+않았다. **이 셋은 상류가 아니다** — 결함은 전부 이 저장소의 `tools/planprogress` 코드
+안에 있고, 이 저장소가 고칠 수 있고 고쳐야 한다.
+
+구분이 중요한 이유: 상류 소유 이슈는 이 보드가 진척을 강제할 수 없어 열린 채 남는 것이
+정상이지만(PLAN-007 §External의 선례), 자기 소유 결함을 같은 칸에 넣어 두면 고칠 수 있는
+일이 영원히 대기열에 남는다.
+
 ## Resolution Criteria
 
 - [ ] `tools/planprogress/known_issues_test.go`의 `TestIssue017Deduplication`

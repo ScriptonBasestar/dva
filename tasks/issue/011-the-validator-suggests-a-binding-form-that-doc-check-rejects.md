@@ -67,9 +67,21 @@ review-386이 (1)의 재현을 독립적으로 확인했다 — scratchpad 사�
 
 ## Resolution Criteria
 
+두 기준은 OR다 — 어느 한쪽이 충족되면 왕복이 사라진다.
+
 - [ ] 상류(`ce-agent-kit`)의 volatile-zone 메시지가 doc-check을 통과하는 형태를
       권하거나, 도구 경로에 중립적인 문구로 바뀐다.
-- [ ] 또는 DVA 쪽에서 이 어긋남을 `AGENTS.md`에 명시해 왕복을 없앤다.
+      | verify: human — 임시 디렉터리에 probe 카드를 만들어(verify 바인딩이 state
+      디렉터리로 카드를 지목하게) `ce task validate <probe>`를 돌리고, 메시지가
+      제안하는 도구 이름이 절대 경로이거나 도구를 지목하지 않는지 눈으로 확인한다.
+      이 기준만 기계 바인딩이 불가능하다: 바인딩 안에 그 경로 문자열을 적는 순간
+      **이 결함이 그 카드 자신을 거부한다**. 결함을 재려면 결함을 밟아야 하는 자리다.
+- [x] 또는 DVA 쪽에서 이 어긋남을 `AGENTS.md`에 명시해 왕복을 없앤다.
+      | verify: `/usr/bin/grep -q "ISSUE-011" AGENTS.md && /usr/bin/grep -q "usr/bin/find" AGENTS.md`
+
+**2026-09-14 — 기준 2 충족.** `AGENTS.md`의 verify-binding 절 바로 뒤에 "제안받은 형태는
+한 번 손봐야 여기를 통과한다"는 문단을 넣었다. 상류 수정(기준 1)은 여전히 열려 있지만,
+이 저장소에서의 왕복 비용은 이것으로 사라졌다.
 
 ## Related
 

@@ -5,7 +5,11 @@ type: chore
 priority: P2
 effort: M
 exec-tier: standard
-status: todo
+status: done
+quality-review: pass
+quality-review-date: 2026-09-14
+quality-review-session: review-354 (independent subagent; implementer was dva-28)
+quality-review-evidence: "ce task gate rc0 READY; grep type fix/decision rc0; grep Acceptance Criteria rc0; readiness+runner-call OR make-doc-check rc0; make doc-check rc0 (all 5 mechanical criteria PASS); human criteria 5,6 evidence confirmed in 결정 기록 §8; PLAN-009 7/7 children physically closed in tasks/done/"
 created: 2026-09-08
 source: "TASK-352·353를 파일하다 `ce task validate`가 두 카드를 거부해 발견. 전수 측정으로 확대. 2026-09-09 재측정에서 노출이 0이 아님이 드러나 P3→P2, S→M"
 needs-human: true
@@ -408,15 +412,51 @@ $ ce task gate --json
 **남은 작업은 대화형 `gz-git integrate bootstrap plan|apply` 한 번이다.** 그것이 이 카드의
 `needs-human`이고, 이제 그 앞을 막던 것은 없다.
 
+**10. 2026-09-14 종결 — bootstrap이 착지했고 7개 기준이 전부 충족됐다.**
+
+9번은 "남은 작업은 대화형 `gz-git integrate bootstrap plan|apply` 한 번"으로 끝났다.
+그 한 번이 오늘 실행됐다. 사용자가 두 단계를 직접 돌렸고(에이전트는 hook 정책상 그
+명령을 직접 부를 수 없다), `BOOTSTRAPPED origin/master e43514e`로 끝났다.
+
+`BootstrapApply`는 머지를 만들지 않는다 —
+`git push --force-with-lease=<dest>:<targetSHA> <endpoint> <sourceSHA>:<dest>`로 원격
+통합 브랜치를 소스 커밋으로 fast-forward 시킨다. 그래서 bootstrap은 통합의 전제가 아니라
+**통합 그 자체**이고, 뒤에 통합 런처를 또 돌릴 일이 없다.
+
+**전수 재측정(2026-09-14, `6ab0edc`)** — 7개 기준을 문언 그대로 실행했다:
+
+| # | 바인딩 | rc | 비고 |
+|---|---|---|---|
+| 1 | `ce task gate` | **0** | `READY — task_board_ready`, validate/lint/preflight 전부 pass |
+| 2 | 살아 있는 zone에 `fix`·`decision` type 부재 | **0** | `_archive`는 범위 밖 |
+| 3 | `## Acceptance Criteria` 부재 | **0** | regression-guard |
+| 4 | 선언 AND 러너의 공유 게이트 호출 | **0** | 9번 시점 rc 1 → 0 |
+| 5 | 게이트 배치와 CI의 `ce` 해결 기록 | 충족 | 8번 |
+| 6 | 위반 카드 주입 시 실패 | 충족 | 9번 앞 절 |
+| 7 | `make doc-check` | **0** | regression-guard |
+
+`ce task validate --all` → 101 valid / 0 invalid. `branch-ready`의 provenance 줄이
+`mode=contract-v1`로 바뀌었고 `legacy head-owned gate` WARN이 사라졌다 — 판정이 실제로
+러너에 인계됐다는 신호다.
+
+**4번이 마지막까지 남았던 것은 우연이 아니다.** 9번이 새로 쓴 AND 형태는 "러너 파일이
+놓여 있기만 한 상태"를 rc 1로 떨어뜨린다. 그래서 이 바인딩은 계약 선언이 **실제로**
+착지한 순간에만 초록이 됐다 — 스캔 대상만 넓혔다면 아무것도 재지 않는 초록을 어제 이미
+얻었을 것이다.
+
+**남기는 경계**: [[ISSUE-001]]의 criterion 1·2(상류 발급기, CE-compatible digest)는 여전히
+열려 있다. 이 카드는 보드가 ready인 것을 요구했지 발급 주체를 요구하지 않았으므로 그 둘은
+이 카드의 blocker가 아니다 — 9번의 판정 그대로다.
+
 ## Completion Criteria
 
-- [ ] `ce task gate`가 보드 전체에 대해 ready로 종료한다 | verify: `ce task gate`
-- [ ] `type: fix`와 `type: decision`이 보드에서 사라진다 (스코프는 살아 있는 zone만이다 — `_archive`는 역사적 코퍼스이고 `type: fix` 61장을 포함해 이 카드의 범위 밖이다. 경계는 실수가 아니라 의도다: `ce task validate`도 `_archive`는 돌지 않고, 닫힌 기록을 grep 통과시키려 고쳐 쓰는 것은 TASK-350이 말하는 기록 위조다. 그래서 이 카드를 TASK-367보다 먼저 끝낸다, §작업 1번 순서 참조) | verify: `! /usr/bin/grep -rqE '^type: (fix|decision)$' tasks/todo tasks/done tasks/plan`
-- [ ] `## Acceptance Criteria`가 보드에서 사라진다 (regression-guard — 착수 시점에 이미 0장) | verify: `! /usr/bin/grep -rq '^## Acceptance Criteria$' tasks/todo tasks/done tasks/plan`
-- [ ] 저장소 게이트가 `ce task gate`를 호출한다 — validate를 재구현하지 않는다. `## 게이트 연결`이 제시한 두 붙일 자리(통합 러너 선언 `.gz-git.yaml` 또는 `make doc-check`) 중 사람이 어느 쪽을 골라도 이 바인딩은 만족되어야 한다 — 한쪽만 하드코딩하지 않는다. 러너 경로를 고르는 쪽은 **선언과 호출을 함께** 잰다: `.gz-git.yaml`에 `readiness:` 선언이 있고, 그 디렉토리의 러너가 실제로 공유 게이트를 부를 때만 통과한다 — 러너 파일이 놓여 있기만 한 상태(오늘)와 러너가 판정을 재구현한 상태는 둘 다 실패한다. 주석에서 명령을 언급하는 것만으로는 어느 쪽에서도 통과하지 않는다 — 실제 호출 줄이어야 한다 | verify: `{ /usr/bin/grep -qE '^[[:space:]]*readiness:' .gz-git.yaml && /usr/bin/grep -rhE 'ce task gate' .gz-git/readiness/ | /usr/bin/grep -qvE '^[[:space:]]*#'; } || { /usr/bin/grep -hE 'ce task gate' Makefile 2>/dev/null | /usr/bin/grep -qvE '^[[:space:]]*#'; }`
+- [x] `ce task gate`가 보드 전체에 대해 ready로 종료한다 | verify: `ce task gate`
+- [x] `type: fix`와 `type: decision`이 보드에서 사라진다 (스코프는 살아 있는 zone만이다 — `_archive`는 역사적 코퍼스이고 `type: fix` 61장을 포함해 이 카드의 범위 밖이다. 경계는 실수가 아니라 의도다: `ce task validate`도 `_archive`는 돌지 않고, 닫힌 기록을 grep 통과시키려 고쳐 쓰는 것은 TASK-350이 말하는 기록 위조다. 그래서 이 카드를 TASK-367보다 먼저 끝낸다, §작업 1번 순서 참조) | verify: `! /usr/bin/grep -rqE '^type: (fix|decision)$' tasks/todo tasks/done tasks/plan`
+- [x] `## Acceptance Criteria`가 보드에서 사라진다 (regression-guard — 착수 시점에 이미 0장) | verify: `! /usr/bin/grep -rq '^## Acceptance Criteria$' tasks/todo tasks/done tasks/plan`
+- [x] 저장소 게이트가 `ce task gate`를 호출한다 — validate를 재구현하지 않는다. `## 게이트 연결`이 제시한 두 붙일 자리(통합 러너 선언 `.gz-git.yaml` 또는 `make doc-check`) 중 사람이 어느 쪽을 골라도 이 바인딩은 만족되어야 한다 — 한쪽만 하드코딩하지 않는다. 러너 경로를 고르는 쪽은 **선언과 호출을 함께** 잰다: `.gz-git.yaml`에 `readiness:` 선언이 있고, 그 디렉토리의 러너가 실제로 공유 게이트를 부를 때만 통과한다 — 러너 파일이 놓여 있기만 한 상태(오늘)와 러너가 판정을 재구현한 상태는 둘 다 실패한다. 주석에서 명령을 언급하는 것만으로는 어느 쪽에서도 통과하지 않는다 — 실제 호출 줄이어야 한다 | verify: `{ /usr/bin/grep -qE '^[[:space:]]*readiness:' .gz-git.yaml && /usr/bin/grep -rhE 'ce task gate' .gz-git/readiness/ | /usr/bin/grep -qvE '^[[:space:]]*#'; } || { /usr/bin/grep -hE 'ce task gate' Makefile 2>/dev/null | /usr/bin/grep -qvE '^[[:space:]]*#'; }`
 - [x] 게이트를 어디에 붙였는지와 CI의 `ce` 해결 여부가 근거와 함께 기록됐다 | verify: human — 이 카드 `## 결정 기록` 절에 선택과 그 근거, 그리고 CI에서 `ce`가 해결되는지 확인한 결과가 적혀 있는지 확인
 - [x] 위반 카드를 심으면 게이트가 그 경로를 지목하며 실패한다 | verify: human — `type: fix` 카드 하나를 심고 저장소 게이트가 rc≠0으로 그 경로를 출력한 기록이 `## 결정 기록`에 있다
-- [ ] 기존 게이트 통과 | verify: `make doc-check` (regression-guard)
+- [x] 기존 게이트 통과 | verify: `make doc-check` (regression-guard)
 
 ## Notes
 

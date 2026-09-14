@@ -3,9 +3,9 @@ id: PLAN-009
 title: "Work the task and doccheck defect bundle in dependency order"
 type: plan
 scope: "TASK-371, 344, 350, 343, 354, 338, 377 — 일곱 장이 shared task progress contract, tools/doccheck, 그 Makefile 연결, 또는 게이트 연결 결정을 고친다. 선언된 의존은 TASK-343 depends-on TASK-344와 TASK-354 depends-on TASK-371이다"
-progress: 85
+progress: 100
 total-tasks: 7
-completed-tasks: 6
+completed-tasks: 7
 children: [TASK-371, TASK-344, TASK-350, TASK-343, TASK-354, TASK-338, TASK-377]
 target-date: "2026-09-30"
 created: 2026-09-09
@@ -50,7 +50,7 @@ it changes PLAN-006 too; it may resume only after the separate receipt-contract 
 | 1 | TASK-344 프론트매터 값 파서 강화 | P3 | **완료 2026-09-10.** 공유 `frontmatterField` 파서를 강화했고, TASK-343의 하드 의존을 해제했다. |
 | 2 | TASK-350 역전/공허 바인딩 거부 | P2 | **343보다 먼저.** 350은 공허한 verify 바인딩을 거부하는 카드다. 근거는 **잔존 건수가 아니라 발생률**이다 — 2026-09-08~09 이틀 사이에 세 건이 새로 심어졌다: TASK-369의 release-notes 바인딩, TASK-338의 `make doc-check`, TASK-341의 `make test`. **셋 다 지금은 처리됐다**(각각 재작성·삭제·`(regression-guard)` 표기), 그러니 오늘 이 셋을 실행해 재현하려 하지 말 것. 그런데도 카드가 닫히지 않는 이유가 이 자리의 논거다: **세 건 전부 사람이 리뷰에서 붙잡았고 검사기는 아직 없다.** 350이 먼저 들어와야 다음 필링 배치가 같은 형태를 또 넣지 못한다 |
 | 3 | TASK-343 파일명 번호 충돌 가드 | P2, `depends-on: [TASK-344]` | done 2026-09-10. 344가 닫히면서 언블록됐고, TASK/ISSUE namespace별 filename-number 중복 가드를 추가했다. |
-| 4 | TASK-354 보드를 `ce task validate` 통과시키고 게이트 연결 | P2, `depends-on: [TASK-371]` | 공유 `ce task gate`를 저장소 게이트에 연결한다. TASK-371이 PLAN-006 진행률을 두 validator가 합의하는 값으로 맞춰야 하며, 두 카드가 같은 plan 파일을 병렬로 바꾸지 않는다. **직접 CE 경계 조사**는 2026-09-10에 끝났다(`TASK-329`의 stale verify-binding 경고를 확인). 그러나 board-ready와 gate 연결 완료는 [[ISSUE-001]]의 CE-compatible review-receipt 발급 경로가 없어 외부 차단됐으므로 TASK-354는 todo로 남는다. |
+| 4 | TASK-354 보드를 `ce task validate` 통과시키고 게이트 연결 | P2, `depends-on: [TASK-371]` | 공유 `ce task gate`를 저장소 게이트에 연결한다. TASK-371이 PLAN-006 진행률을 두 validator가 합의하는 값으로 맞춰야 하며, 두 카드가 같은 plan 파일을 병렬로 바꾸지 않는다. **직접 CE 경계 조사**는 2026-09-10에 끝났다(`TASK-329`의 stale verify-binding 경고를 확인). 한때 [[ISSUE-001]]의 review-receipt 발급 경로 부재로 외부 차단됐으나, 2026-09-14에 [[TASK-384]]가 두 done blocker의 독립 리뷰를 수행하고 영수증을 발급하면서 그 차단이 풀렸다. 같은 날 `branch.readiness` 계약 v1이 착지해 7개 기준 전부 충족, **done 2026-09-14**. |
 | 5 | TASK-338 링크의 written path 소멸 보고 | P2 | **문서화된 예외로 완료.** TASK-354의 직접 조사 결과로 shared CE validator가 verify 바인딩을 소유한다는 범위는 확인됐지만, ISSUE-001 때문에 그 카드의 gate 완료·통합을 기다릴 수 없었다. 그래서 TASK-338은 markdown link만 다루고 verify-binding을 복제하지 않는 범위로 한정해 진행했다. live docs 25건은 0으로 고쳤고 archive 84건은 기록 보존으로 남겼다. |
 
 ## 순서가 하드 제약인 곳 — 두 곳
@@ -81,7 +81,7 @@ it changes PLAN-006 too; it may resume only after the separate receipt-contract 
 - TASK-344 — 프론트매터 값 파서를 트레일링 주석·중복 키에 강화 (P3, done 2026-09-10)
 - TASK-350 — doccheck의 역전/공허 verify 바인딩 거부 (P2, done 2026-09-10)
 - TASK-343 — 파일명 번호 충돌 가드 완성 (P2, done 2026-09-10)
-- TASK-354 — 보드를 `ce task validate` 통과시키고 공유 게이트에 연결 (P2, 직접 CE 경계 조사는 완료했으나 [[ISSUE-001]]에 외부 차단, todo 유지)
+- TASK-354 — 보드를 `ce task validate` 통과시키고 공유 게이트에 연결 (P2, **done 2026-09-14**). `.gz-git.yaml`의 `branch.readiness` v1이 판정을 공유 `ce task gate`에 위임한다. 외부 차단은 [[TASK-384]]의 영수증 발급으로 해소됐다
 - TASK-338 — 링크의 written path 소멸을 보고 (P2, done 2026-09-10; live docs 25건을 0으로 고치고 archive 84건은 기록 보존)
 - TASK-377 — 게이트 연결 결정을 비용이 붙은 선택지 2개로 좁힘 (P2, **done 2026-09-13**). TASK-354를 대신 결정하지 않고 결정에 필요한 사실만 모았고, 결과는 `docs/65-ce-task-gate-attachment-options.md`에 있다 — 선택지 B(`branch.readiness`)로 결정됐다. ISSUE-001의 외부 차단과 **독립적으로** 끝났으므로 ordered lane 밖이다
 
