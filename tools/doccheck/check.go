@@ -47,8 +47,17 @@ type Result struct {
 	CardsSeen               int
 	CardsChecked            int
 	StatusMismatches        int
-	CardIDsSeen             int
-	DuplicateCardIDs        int
+	// Upstream-ref advisory (TASK-395): counted, never failed — the meters below are the
+	// point. Unmarked issue cards pool toward the upstream majority by default; owned cards
+	// without an upstream-ref: value have no report trail. Both stay advisory for the reason
+	// upstreamref.go states: the reported act happens outside this repository.
+	IssueCardsSeen     int
+	IssueCardsRead     int
+	OwnershipUnmarked  int
+	UpstreamOwned      int
+	UpstreamUnrefed    int
+	CardIDsSeen        int
+	DuplicateCardIDs   int
 	FilenameNumbersSeen     int
 	DuplicateFilenameNums   int
 	Errors                  []string
@@ -59,6 +68,7 @@ type Result struct {
 	PortabilityDetail       []string
 	ArchiveDetail           []string
 	CardStatusDetail        []string
+	UpstreamDetail          []string
 	DuplicateIDDetail       []string
 	DuplicateFilenameDetail []string
 }
@@ -240,6 +250,22 @@ func Check(in CheckInput) Result {
 	res.StatusMismatches = mismatches
 	res.CardStatusDetail = statusMsgs
 	res.Errors = append(res.Errors, statusErrs...)
+
+	issueSeen, issueRead, unmarked, owned, unrefed, upstreamMsgs, upstreamErrs := checkUpstreamRefs(in.Root, in.Inventory)
+	res.IssueCardsSeen = issueSeen
+	res.IssueCardsRead = issueRead
+	res.OwnershipUnmarked = unmarked
+	res.UpstreamOwned = owned
+	res.UpstreamUnrefed = unrefed
+	res.UpstreamDetail = upstreamMsgs
+	res.Errors = append(res.Errors, upstreamErrs...)
+	// The advisory's one hard edge: a zone the sweep saw but read nothing from is a broken walk,
+	// the same seen/checked split checkCardStatus guards. Every countable outcome above is fine at
+	// zero; this one is not, because it means the meter stopped looking, not that it looked and
+	// found nothing.
+	if res.IssueCardsSeen > 0 && res.IssueCardsRead == 0 {
+		res.Errors = append(res.Errors, fmt.Sprintf("vacuous: %d file(s) under tasks/issue/, zero read as cards", res.IssueCardsSeen))
+	}
 
 	idsSeen, dupes, dupMsgs, dupErrs := checkDuplicateCardIDs(in.Root, in.Inventory)
 	res.CardIDsSeen = idsSeen

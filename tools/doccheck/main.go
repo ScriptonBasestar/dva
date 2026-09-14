@@ -80,6 +80,10 @@ func printReport(res Result) {
 	fmt.Printf("archive_missing:     %d\n", res.ArchiveMissing)
 	fmt.Printf("cards_checked:       %d\n", res.CardsChecked)
 	fmt.Printf("status_mismatches:   %d\n", res.StatusMismatches)
+	fmt.Printf("issue_cards:         %d (read %d)\n", res.IssueCardsSeen, res.IssueCardsRead)
+	fmt.Printf("ownership_unmarked:  %d\n", res.OwnershipUnmarked)
+	fmt.Printf("upstream_owned:      %d\n", res.UpstreamOwned)
+	fmt.Printf("upstream_unref:      %d\n", res.UpstreamUnrefed)
 	fmt.Printf("card_ids:            %d (duplicate: %d)\n", res.CardIDsSeen, res.DuplicateCardIDs)
 	fmt.Printf("filename_numbers:    %d (duplicate: %d)\n", res.FilenameNumbersSeen, res.DuplicateFilenameNums)
 	for _, d := range res.OversizedDetail {
@@ -102,6 +106,9 @@ func printReport(res Result) {
 	}
 	for _, d := range res.CardStatusDetail {
 		fmt.Printf("  STATUS   %s\n", d)
+	}
+	for _, d := range res.UpstreamDetail {
+		fmt.Printf("  UPSTREAM %s\n", d)
 	}
 	for _, d := range res.DuplicateIDDetail {
 		fmt.Printf("  DUP-ID   %s\n", d)
