@@ -39,5 +39,71 @@ this repo do not run.
 ## Completion Criteria
 
 - [ ] A profile-gated service is actually built by `dva build <plan>` against a real compose project | verify: human — 카드 하단 "Evidence" 절에 실제 이미지 빌드 로그와 exit code가 첨부되고, 같은 플랜을 pre-TASK-315 바이너리로 돌렸을 때 이미지가 만들어지지 않음이 함께 기록되었는지 확인
-- [ ] The argv-level regression tests still pass unchanged | verify: `make test` (regression-guard)
+- [x] The argv-level regression tests still pass unchanged | verify: `make test` (regression-guard)
 - [ ] [[TASK-376]] 하네스의 `--execute` 출력 블록이 리포트에 손대지 않고 붙여넣어진다 | verify: human — 붙여넣은 절이 편집 없이 그대로인지 확인한다
+
+## Evidence
+
+### 회차 경위 (2026-09-15)
+
+독립 실행 에이전트가 TASK-328 실기동 준비 중 이 카드의 회차를 함께 잡았다
+(`--execute task348 --assume-yes`, 14스텝 전부 예상 종료, exit 0). 아래 블록은
+하네스가 출력한 붙여넣기 지정 블록을 그대로 옮긴 것이다 — 원본 로그
+(`tmp/dogfood-run/task348-20260915-002552.log`)는 gitignore라 이 블록이 자기완결
+기록이다. 대조군 275c8c98(pre-TASK-315)은 같은 plan에서 "No services to build"만
+내고 이미지를 만들지 않았고, 현행 바이너리는 `sha256:46a7cb56…` 이미지와 마커
+파일까지 생성했다 — 두 비교축이 모두 성립한다.
+
+## 실기동 (2026-09-15 00:25:52, dva version 0.2.0)
+
+- 대상: `/Users/archmagece/mywork/scripton/dva/tools/dogfoodrun/fixtures/task348-profile-build/dva.yml`
+- 하네스: `tools/dogfoodrun/dogfood-run.sh --execute task348`
+- compose 프로젝트: dva-dogfood-task348
+- 전체 출력: `tmp/dogfood-run/task348-20260915-002552.log`
+
+
+| 명령 | exit | 마지막 출력 줄 |
+|------|------|----------------|
+| `/Users/archmagece/mywork/scripton/dva/bin/dva validate` | 0 | ✅ dva.yml is valid |
+| `/Users/archmagece/mywork/scripton/dva/tmp/dogfood-run/control-275c8c98/bin/dva validate` | 1 |   - plans.gated.entries.0: Additional property profiles is not allowed |
+| `/Users/archmagece/mywork/scripton/dva/bin/dva --dry-run build gated` | 0 | [dry-run] compose: docker compose -f /Users/archmagece/mywork/scripton/dva/tools/dogfoodru |
+| `/Users/archmagece/mywork/scripton/dva/tmp/dogfood-run/control-275c8c98/bin/dva --dry-run build gated` | 0 | [dry-run] compose: docker compose -f /Users/archmagece/mywork/scripton/dva/tools/dogfoodru |
+| `docker image inspect dva-dogfood-task348-gated:latest` | 1 | Error response from daemon: No such image: dva-dogfood-task348-gated:latest |
+| `/Users/archmagece/mywork/scripton/dva/tmp/dogfood-run/control-275c8c98/bin/dva build gated` | 0 | time="2026-09-15T00:26:28+09:00" level=warning msg="No services to build" |
+| `docker image inspect dva-dogfood-task348-gated:latest` | 1 | Error response from daemon: No such image: dva-dogfood-task348-gated:latest |
+| `/Users/archmagece/mywork/scripton/dva/bin/dva build legacy` | 0 | time="2026-09-15T00:26:29+09:00" level=warning msg="No services to build" |
+| `docker image inspect dva-dogfood-task348-gated:latest` | 1 | Error response from daemon: No such image: dva-dogfood-task348-gated:latest |
+| `/Users/archmagece/mywork/scripton/dva/bin/dva build gated` | 0 |  Image dva-dogfood-task348-gated Built  |
+| `docker image inspect --format '{{.Id}} {{.Created}}' dva-dogfood-task348-gated:latest` | 0 | sha256:46a7cb56512adac6daa85e475f1674174a14bf69d97dc7f159137babbaaf4af1 2026-09-15T00:26:3 |
+| `docker run --rm dva-dogfood-task348-gated:latest cat /task348-marker` | 0 | dva TASK-348 profile-gated build marker |
+| `/Users/archmagece/mywork/scripton/dva/bin/dva down gated --purge --force` | 0 |  Dangling images Removed  |
+| `docker image inspect dva-dogfood-task348-gated:latest` | 1 | Error response from daemon: No such image: dva-dogfood-task348-gated:latest |
+
+### 선행 확인
+
+대조군은 이 저장소가 스스로 만든다: git archive로 대조 커밋 트리를 tmp/에 풀고
+그 안에서 make build를 돌린다. 저장소 체크아웃·브랜치·worktree는 건드리지 않는다.
+대조군 바이너리는 config version 0.1.48을 보고하고, 픽스처는 0.1.44로 선언해
+두 바이너리 모두 로드할 수 있게 맞춰 두었다.
+
+### purge 미리보기 (파괴적 단계 실행 전)
+
+```text
+## purge 미리보기 — task348
+`dva down ... --purge`는 아래 프로젝트를 `docker compose down --remove-orphans --volumes --rmi local`로 지운다.
+
+### compose project: dva-dogfood-task348
+  containers: (없음)
+  volumes: (없음)
+  networks: (없음)
+  images: (없음)
+  networks (이름만 비슷함 — purge 대상 아님): (없음)
+  volumes (이름만 비슷함 — purge 대상 아님): (없음)
+```
+
+### 남은 것 (사람 확인)
+
+기준 1·3은 사람 확인 바인딩이다 — 위 블록이 편집 없이 그대로인지, 두 비교축
+(대조군 275c8c98 이미지 미생성 · 현행 빌드 이미지·마커 생성)이 기록에 모두
+있는지 확인하면 이 카드는 닫힌다. 기준 2는 회차 중 `make test` exit 0으로
+충족됐다(이 문서 편집은 tasks/ 카드만 건드리므로 회귀 여지가 없다).
