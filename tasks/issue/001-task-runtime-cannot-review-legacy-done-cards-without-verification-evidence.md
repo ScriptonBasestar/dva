@@ -156,6 +156,51 @@ durable 경로가 생기면 이 카드의 receipt도 같이 옮겨야 한다. �
 `~/mywork/scripton/dva/tmp/task-management/direct/queue-run/`에 있고 워크트리 회수와
 함께 사라지지 않도록 주 체크아웃으로 복사해 두는 것이 유일한 보존 수단이다.
 
+## 2026-09-14: §Summary 3번은 DVA 안에서 닫혔다 — 소유권 귀속이 틀렸다
+
+§Summary 3번은 receipt가 `tmp/` 아래 있어 durable하지 않다는 것이고, 위 절들은 그
+해소를 외부 소유(`ce-agent-kit` / `ce-workbook`)로 적었다. **그 귀속이 틀렸다.**
+[[TASK-383]]이 저장소 안에서 닫았다.
+
+**근거 1 — validator는 경로에 아무 제약을 걸지 않는다.** 설치된 `ce` 0.8.4 바이너리에서
+`quality-review-receipt`를 언급하는 메시지는 셋뿐이다.
+
+```
+quality-review-receipt %s cannot be read: %s
+quality-review-receipt %s is not readable JSON: %s
+quality-review-receipt %s pins reviewed-card-sha256 %s but this card digests to %s
+```
+
+접두사 검사도, `tmp/` 특별 취급도, 경로 형태 강제도 없다. validator는 카드가 적어 준
+저장소 상대 경로를 읽을 뿐이다. `tmp/`는 CE가 강제한 자리가 아니라 DVA가 택한 관례였다.
+`ce task validate --staged`가 Git index blob만 보는 모드로 존재한다는 것이 같은 결론을
+가리킨다 — 스테이징 스냅샷만 검증하는 모드가 있다면 receipt는 커밋에 실려 있어야 한다.
+
+**근거 2 — 같은 워크트리에서 결함과 해소가 한 번씩 관측됐다.** 갓 만든 워크트리에서
+아무것도 하기 전 `ce task validate --all`은 `78 valid, 6 invalid`였고, 여섯 중 넷이
+`cannot be read`였다. receipt 6건을 `tasks/receipts/<TASK-ID>/done-review-<sha>.json`으로
+옮기고 카드 포인터를 고친 뒤, 같은 워크트리에 `tmp/`를 만들지 않은 채로
+`82 valid, 2 invalid`가 됐다.
+
+경로 형태는 새로 정한 것이 아니라 §Evidence가 이미 적어 둔 workbook의 문서화된 durable
+계약을 그대로 쓴 것이다. 상류 발급기가 나중에 착지해도 같은 자리에 쓴다.
+
+### 그래서 남은 것은 무엇인가
+
+남은 실패 2건(TASK-344·371)의 사유는 **경로가 아니라 receipt의 부재**다. 그 둘을 푸는
+데 필요한 것은 런타임 기능이 아니라 **실제 독립 재검토**이고, [[TASK-384]]가 소유한다.
+검토 없이 digest만 채우는 것은 여전히 위조이며, validator가 기대 digest를 출력한다는
+사실이 그 금지를 완화하지 않는다.
+
+§Summary 1번(레거시 controller dialect)과 2번(controller/CE digest 불일치)은 **workbook
+controller를 발급기로 쓸 때만** 발생한다. DVA가 실제로 쓰는 경로 — 리뷰어가 판정을
+쓰고 validator에게 정본 digest를 물어 receipt에 넣는 경로 — 에는 controller가 등장하지
+않는다. 두 항목은 상류 발급기가 착지할 때 상류에서 다뤄질 사안으로 남으며, 이 저장소의
+게이트를 막고 있지 않다.
+
+**이 이슈의 P0 사유는 좁아졌다.** 보드가 빨간불인 이유는 이제 런타임 결함이 아니라
+"검토되지 않은 done blocker 두 장"이다.
+
 ## Reproduction
 
 1. At DVA `af7f6e6`, run `ce task gate --json`; it returns
@@ -244,8 +289,8 @@ durable 경로가 생기면 이 카드의 receipt도 같이 옮겨야 한다. �
   produce CE-compatible canonical digests | verify: human — upstream tests for
   both the ce-agent-kit validator contract and ce-workbook issuer are linked
   here
-- [ ] New review receipts are written to a durable tracked location rather
-  than remaining under ignored `tmp/` | verify: human — upstream issuance test
-  and migration responsibility name `tasks/receipts/<TASK-ID>/`
+- [x] New review receipts are written to a durable tracked location rather
+  than remaining under ignored `tmp/` | verify: `! /usr/bin/grep -rn '^quality-review-receipt: tmp/' tasks`
+  — TASK-383이 저장소 안에서 닫았다. 상류 발급기를 기다릴 필요가 없었다
 - [ ] `TASK-344` and `TASK-371` carry genuine controller-produced review
   receipts under `tasks/receipts/` and the DVA board is ready | verify: `ce task gate --json`

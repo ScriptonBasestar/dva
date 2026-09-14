@@ -1,0 +1,322 @@
+{
+  "reviewed-card-path": "tasks/doing/380-currentize-the-docs-that-task-379-left-behind.md",
+  "reviewed-card-sha256": "7b87ddfab24e342d575b37788a44ba39a7762b83c25d935c126417be5708efbb",
+  "reviewed-card-sha256-algorithm": "sha256 over the card file bytes as committed at d3bae59 (round 3, final). Superseded values: 03330f9df6dac8e368628c15146a153edbca04b48ecbe39efdb2cc7bd26c1346 at 99ab8ab (round 2), 7b8e5491cd12c6f3248719cf25f088a1550c2fc5fc186f215ba13fdb99e474b7 at f6ee750 (round 1). This is a plain file digest, not the CE canonical digest — see canonical-digest-status.",
+  "canonical-digest-status": {
+    "requested": "the CANONICAL digest that `ce task validate` computes",
+    "obtained": false,
+    "reason": "TASK-380 declares no `blocks:` (re-verified at d3bae59: frontmatter has `depends-on: []` and no blocks key), so `ce task validate` never reaches the quality-review-receipt check and prints no canonical digest for this card. Verified in round 1 three ways in throwaway copies under tmp/: an exact copy validates clean; the same copy as `status: done` in tasks/done/ with a receipt pinning a 0x64 digest validates clean; adding `blocks: [TASK-328]` does fire the check.",
+    "consequence": "The value above is a plain file digest, NOT the CE canonical digest, and the two differ (for TASK-379 the file digest is 08822a42295f4dd91e3501d62f9668c8af5e5eb5cbb022125e373d39ca7e7c95 while CE's canonical digest is d8827926379c31e492682be7dbd76bc10f6fd2b95efa537a8e128e623e3e0822). Recording a synthetic canonical digest computed over a modified copy of the card would have been a false record, so it was not done.",
+    "if-blocks-is-ever-added": "the canonical digest must be re-elicited from the validator against the final card text, because the digest covers the whole card including its review-metadata frontmatter (measured: removing the quality-review/quality-reviewed-at/quality-review-evidence block from TASK-379 changes its canonical digest to 4e0909d0eaee3b3fabe631892560894f8de0c11887149be3ae790bcf52211a0b)."
+  },
+  "task": "TASK-380",
+  "title": "Currentize the documents TASK-379 left behind",
+  "reviewer": "review-380 (Claude Opus 5, independent reviewer; did not author the work under review)",
+  "verdict": "pass",
+  "reviewed-at": "2026-09-13T23:34:00+09:00",
+  "date": "2026-09-13",
+  "branch": "dev/claude/mbp/docs/currentize-docs-after-379",
+  "base": "764ef3d",
+  "commits-reviewed": [
+    "6242bea",
+    "f6ee750",
+    "99ab8ab",
+    "d3bae59"
+  ],
+  "review-rounds": 3,
+  "criteria-results": [
+    {
+      "criterion": "primeno1.md points at the real remaining blocker instead of the resolved TASK-311/312",
+      "verify": "/usr/bin/grep -q 'TASK-328' docs/dogfood/primeno1.md",
+      "exit": 0,
+      "result": "pass"
+    },
+    {
+      "criterion": "same document records the order 10 sigdock preconditions",
+      "verify": "/usr/bin/grep -q 'SIGDOCK_CLIENTS_FILE' docs/dogfood/primeno1.md",
+      "exit": 0,
+      "result": "pass"
+    },
+    {
+      "criterion": "same document records the TASK-379 plan `dev` retarget (split out at d3bae59, finding F6)",
+      "verify": "/usr/bin/grep -q '하네스 재조준(TASK-379)' docs/dogfood/primeno1.md",
+      "exit": 0,
+      "result": "pass",
+      "note": "prose independently confirmed against tools/dogfoodrun/dogfood-run.sh, not only by the grep"
+    },
+    {
+      "criterion": "PLAN-009 scope: and ## Goal agree with the seven children",
+      "verify": "/usr/bin/grep -rq --include='009-*.md' 'TASK-377' tasks",
+      "exit": 0,
+      "result": "pass",
+      "note": "independently re-derived: children: has 7 entries, total-tasks: 7, prose says 일곱 장; tools/planprogress reports OK"
+    },
+    {
+      "criterion": "TASK-328 residual blockers updated to human round + sigdock preconditions",
+      "verify": "/usr/bin/grep -rq --include='328-*.md' 'SIGDOCK_CLIENTS_FILE' tasks",
+      "exit": 0,
+      "result": "pass",
+      "note": "F4 resolved; see residual note R2 for one overcorrection"
+    },
+    {
+      "criterion": "ISSUE-001 records the canonical-digest observation and stays open at P0",
+      "verify": "/usr/bin/grep -rq --include='001-*.md' 'TASK-379' tasks",
+      "exit": 0,
+      "result": "pass",
+      "note": "frontmatter unchanged: status: todo, priority: P0, external ownership intact"
+    },
+    {
+      "criterion": "primeno1.md drops below the 10 KiB cap",
+      "verify": "test 10240 -ge \"$(/usr/bin/wc -c < docs/dogfood/primeno1.md)\"",
+      "exit": 0,
+      "result": "pass",
+      "measured-bytes": 5907
+    },
+    {
+      "criterion": "documentation gate passes",
+      "verify": "make doc-check",
+      "exit": 0,
+      "result": "pass"
+    }
+  ],
+  "gates": [
+    {
+      "command": "make doc-check",
+      "exit": 0,
+      "round": 3,
+      "commit": "d3bae59"
+    },
+    {
+      "command": "make lint",
+      "exit": 0,
+      "round": 3,
+      "commit": "d3bae59"
+    },
+    {
+      "command": "ce task validate --all",
+      "exit": 1,
+      "round": 3,
+      "commit": "d3bae59",
+      "summary": "78 valid, 5 invalid (total: 83)",
+      "invalid": [
+        "tasks/done/344-harden-frontmatter-value-parsing-against-comments-and-repeats.md",
+        "tasks/done/371-align-planprogress-with-the-shared-progress-contract.md",
+        "tasks/done/376-prepare-a-rehearsed-dogfood-run-harness-for-the-live-verification-round.md",
+        "tasks/done/377-narrow-the-ce-task-gate-attachment-decision-to-two-costed-options.md",
+        "tasks/done/378-watch-for-the-familybook-readiness-landing-instead-of-remembering-it.md"
+      ],
+      "baseline-match": "exactly the five expected ISSUE-001 failures; the branch introduces none. Extracted programmatically from the validator output, not by eye."
+    }
+  ],
+  "re-derivations": [
+    {
+      "id": 1,
+      "claim": "TASK-311 and TASK-312 are complete and the dry-run health-wait limitation is genuinely resolved",
+      "outcome": "confirmed",
+      "evidence": "tasks/done/312-dry-run-up-blocks-on-native-health.md status: done; tasks/_archive/done/311-down-plan-teardown-semantics.md status: done; internal/lifecycle/orchestrator.go:159 branches on `len(entry.HealthChecks) > 0 && opts.Wait && opts.DryRun` and prints a `would wait` line instead of polling, citing TASK-312; regression test internal/lifecycle/orchestrator_dry_run_health_unix_test.go:20 TestUpDryRunSkipsEntryHealthWait; the mode-process half checks opts.DryRun at orchestrator.go:555"
+    },
+    {
+      "id": 2,
+      "claim": "PLAN-009 has seven children while its prose said six; the new prose matches; planprogress still OK",
+      "outcome": "confirmed",
+      "evidence": "children: [TASK-371, TASK-344, TASK-350, TASK-343, TASK-354, TASK-338, TASK-377] = 7, total-tasks: 7; the diff changes scope: and ## Goal from 여섯 장 to 일곱 장; `go run ./tools/planprogress` inside make doc-check reports 'plans_checked: 4 ... planprogress: OK'"
+    },
+    {
+      "id": 3,
+      "claim": "the sigdock precondition list in TASK-328 matches target_notes() and the real gate script",
+      "outcome": "partially confirmed",
+      "evidence": "Faithful to tools/dogfoodrun/dogfood-run.sh:114-126 item for item, including the docker filter label. Against the real gate (git -C ~/mydevbox/primeno1-devbox show origin/master:scripts/sigdock-local-up.sh, read-only, unmodified) the list is incomplete — see finding F4. Sub-claims independently confirmed: SIGDOCK_CLIENTS_FILE has 0 hits in origin/master dva.yml and .env.example, no local .env exists, and 1 hit each in env/templates/.env.template and docs/LOCAL_EXECUTION_GUIDE.md; SIGDOCK_IDP_ISSUER_PROFILE: \"fapi2\" is at dva.yml:29."
+    },
+    {
+      "id": 4,
+      "claim": "the ISSUE-001 addition is accurate and does not overstate; the issue stays open, P0, externally owned",
+      "outcome": "confirmed",
+      "evidence": "The diff touches no frontmatter: status: todo, priority: P0 unchanged, and the text explicitly says the issue is not closed and that owner/next_action/next_check are unchanged. On the substantive question, see judgement below and finding F5."
+    },
+    {
+      "id": 5,
+      "claim": "ISSUE-009's numbers are right — the near-cap docs are under the cap with 7-25 bytes of headroom",
+      "outcome": "contradicted in part",
+      "evidence": "see finding F1"
+    },
+    {
+      "id": 6,
+      "claim": "the primeno1.md split moved content without editing it",
+      "outcome": "contradicted",
+      "evidence": "see finding F2"
+    }
+  ],
+  "judgement-on-digest-echo": "Asked whether echoing a validator-reported canonical digest into reviewed-card-sha256 is a legitimate review record or a way to bypass the check. Reproduced the mechanism in a throwaway copy: `ce task validate` prints 'this card digests to <hex>' and that value, pinned in the receipt, makes the card pass. Two probes show what the pin actually means: the digest covers the entire card including its review-metadata frontmatter (mutating '## Summary' or deleting the quality-review-* block each produce a different digest), and it is not reproducible outside CE (the file's own sha256 differs from the canonical one). So the pin certifies exactly one thing: the card text has not changed since the receipt was written. It is NOT evidence that a review happened — a single round-trip yields a passing value with zero review performed. It is therefore a legitimate review record only when a genuine review produced the receipt, and a bypass when it does not. ISSUE-001's new section states precisely this ('검토 없이 digest만 채우는 것은 여전히 위조다'), so it does not overstate. Two caveats the issue should eventually carry: the canonicalization is CE-internal, so no human or third tool can independently verify the pin; and the check only fires for a done card that declares `blocks:`, so most of the board is never digest-checked at all.",
+  "findings": [
+    {
+      "id": "F1",
+      "severity": "medium",
+      "file": "tasks/issue/009-append-only-docs-are-parked-against-the-10-kib-cap.md:29-40",
+      "title": "ISSUE-009's Evidence miscounts and omits the tightest file in the repository",
+      "detail": "The issue says '여유 2 KiB 미만(≥8192바이트)인 문서 20장'. Re-measured over docs/ and workflows/ .md: 22 at base 764ef3d, 21 at HEAD. It then says '그중 상한에서 200바이트 이내가 다섯 장' and lists five; the true count is six. The omitted file is workflows/dva-dogfood/ref-artifacts.md at 10234 bytes — 6 bytes of headroom, tighter than every file the issue names, and unchanged by this branch so it was omitted at measurement time too. tools/doccheck/policy.go:31 puts workflows/ squarely in the size-enforced scope, so it is not out of scope. The consequence is that line 40's '42번이 7바이트' is presented as the extreme case when the real extreme is a file the issue never mentions, and the issue's own Reproduction step 1 would have been a stronger demonstration against ref-artifacts.md. The corrected claim that all near-cap docs are under the cap is true (nothing exceeds 10240).",
+      "status": "resolved"
+    },
+    {
+      "id": "F2",
+      "severity": "low",
+      "file": "tasks/doing/380-currentize-the-docs-that-task-379-left-behind.md:66 vs docs/dogfood/primeno1-migration-log.md:77",
+      "title": "D-5 asserts the moved content was not edited; exactly one moved line was edited",
+      "detail": "Diffing the moved block (old lines 26-end of `git show 764ef3d:docs/dogfood/primeno1.md` against lines 11-end of the new migration log) yields one changed line out of 67. Old: '- 검증 한계: `dva --dry-run up dev`는 TASK-312로 health 대기에 걸려 멈춤(kill 필요). 실기동 검증은 TASK-311/312 이후.' New: '- 검증 한계(2026-09-05 시점): `dva --dry-run up dev`가 health 대기에 걸려 멈췄다(kill 필요). 실기동 검증은 TASK-311/312 이후로 미뤘다.' The edit is editorially defensible — it re-dates a live claim as a historical observation and drops the stale causal attribution — but the card's flat statement '옮긴 내용은 편집하지 않았다' is false as written, and this is the one line the whole card is about, so it is the line a later reader is most likely to check.",
+      "status": "resolved"
+    },
+    {
+      "id": "F3",
+      "severity": "low",
+      "file": "docs/dogfood/primeno1.md:32-34",
+      "title": "The split left a dangling referent in the surviving document",
+      "detail": "The new heading '## 그 검증 한계는 해소됐다 (2026-09-13)' and its opening '위 문장이 지목한 두 blocker는 둘 다 없다' both point at a sentence that no longer appears in this file — it now lives at docs/dogfood/primeno1-migration-log.md:77. The preceding section links to the migration log but does not quote the sentence, so a reader of primeno1.md alone cannot tell which limitation is being retired. A one-line quote or an explicit pointer to the migration-log line would close it.",
+      "status": "resolved"
+    },
+    {
+      "id": "F4",
+      "severity": "low",
+      "file": "tasks/todo/328-run-a-live-dogfood-verification-round-for-native-entries-and-composition-plans.md:56-66",
+      "title": "The copied precondition list is faithful to target_notes() but incomplete against the real gate",
+      "detail": "Read origin/master:scripts/sigdock-local-up.sh from ~/mydevbox/primeno1-devbox read-only. The card matches tools/dogfoodrun/dogfood-run.sh:114-126 item for item and every item it lists is real. Three fail-closed preconditions the gate enforces appear in neither: (1) require_loopback_provider_host (script lines 27-33, invoked at 398) fails the run unless sigdock.localhost resolves only to loopback addresses — on macOS that generally needs an /etc/hosts entry, and a missing one kills the round at order 10 exactly like the two violations the card does name; (2) `[ -x \"$SCRIPT_DIR/sigdock-local-contract.sh\" ]` (line 400) requires the contract verifier to be executable — the card mentions that script only later as a gateway concern, not as an order-10 precondition; (3) the card names only lsof among required binaries, while the gate requires dva, docker, curl and lsof (lines 393-396). Since D-3's stated purpose is to give the person scheduling the destructive round a complete precondition list, and the card advertises that the same content lives in three places, an incomplete list partly defeats it — and the omission is now replicated into all three.",
+      "status": "resolved"
+    },
+    {
+      "id": "F5",
+      "severity": "low",
+      "file": "tasks/issue/001-task-runtime-cannot-review-legacy-done-cards-without-verification-evidence.md (new section '3번이 얼마나 실제인지 — 같은 날 실측됐다')",
+      "title": "The recorded 6-failure observation is not reproducible in the worktree as committed",
+      "detail": "The section states that `ce task validate --all` in the TASK-380 worktree raised failures from five to six, with TASK-379 failing because its receipt cannot be read. My run in this worktree reports exactly five failures and TASK-379 as valid. Cause established after the fact: the team lead disclosed that before spawning the reviewer they copied tasks' TASK-379 receipt from the primary checkout into this worktree's gitignored tmp/, precisely because validate had reported six. So the 5->6 observation was true when recorded and is unreproducible now only because its cause was removed. The finding is therefore about the WRITING, not the fact: the passage reads as a standing property of the worktree, and a later reader re-running the command sees five and concludes the record is wrong. Reproduction confirmed by the reviewer against a card copy with no receipt beside it: 'quality-review-receipt tmp/task-management/direct/queue-run/task-379-review-receipt.json cannot be read: ... no such file or directory'.",
+      "recommended-fix": "State the sequence rather than the state, and give the command that reproduces it from nothing: fresh worktree of this branch -> `ce task validate --all` -> 6 failures -> copy the receipt from the primary checkout -> 5. Do not drop the observation; it is the sharpest evidence ISSUE-001 has that Summary item 3 is a correctness problem and not an inconvenience.",
+      "status": "resolved"
+    },
+    {
+      "id": "F6",
+      "severity": "informational",
+      "file": "tasks/doing/380-currentize-the-docs-that-task-379-left-behind.md (Completion Criteria, criterion 2)",
+      "title": "One verify binding is a weak proxy for its criterion",
+      "detail": "The criterion asks that the document record both the TASK-379 plan `dev` retarget and the order 10 sigdock preconditions; the binding only greps for SIGDOCK_CLIENTS_FILE, which the retarget half does not contain. The criterion is in fact satisfied — the retarget prose is present at docs/dogfood/primeno1.md:36-42 and I confirmed it against tools/dogfoodrun/dogfood-run.sh independently — but the binding alone would not have caught its absence. Not a defect in the work; noted so the pass is not read as machine-verified for that half.",
+      "status": "resolved"
+    }
+  ],
+  "residual-notes": [
+    "R1 (low, non-blocking) — tasks/issue/009-*.md: the sentence '한글 한 자가 UTF-8로 3바이트이므로 앞 네 장에는 한 자도 못 넣는다' does not follow from its own numbers. tools/doccheck/check.go:117 fails on `nbytes > maxDocBytes`, so 10240 exactly still passes; with 6, 7, 15 and 25 bytes of headroom the first four documents accept 2, 2, 5 and 8 Korean characters respectively, not zero. The round-1 wording had the same shape of error ('42번에는 두 자가 안 들어간다' — two characters are 6 bytes and do fit in 7). Every substantive figure in the section is now correct; this is one rhetorical sentence overshooting, and it sits in an issue whose subject is measurement precision, so it is worth one edit.",
+    "R2 (low, non-blocking) — tasks/todo/328-*.md and tools/dogfoodrun/dogfood-run.sh target_notes(): '인접 체크아웃 존재' was replaced with '디렉터리 존재가 아니라 그 안의 dva.yml을 본다'. The gate checks both. sigdock-local-up.sh:258-259 requires SIGDOCK_DEVBOX_DIR itself to be a cd-able directory and fails with 'adjacent SigDock devbox not found'; line 400 then requires dva.yml inside it and fails with the same message plus the path. So the original text was not wrong, the replacement asserts something false about the directory, and the documented check order omits its true head — the directory check runs before the four binary checks, ahead of everything the card lists. Counting it, the violated conditions are 7th and 9th/10th and five clean gates becomes six. Practically nothing changes for whoever preps the round, but the same message text meaning two different failures is exactly the kind of detail this list exists to carry.",
+    "Neither residual note gates the verdict. Both are single-sentence corrections and neither affects the two-violation count, the gate results, or any completion criterion."
+  ],
+  "scope-statement": {
+    "certifies": [
+      "Round 3 at d3bae59: all eight completion-criteria bindings were executed by the reviewer from the worktree root and exited 0.",
+      "make doc-check exited 0 and make lint exited 0 at d3bae59.",
+      "ce task validate --all exited 1 at d3bae59 with exactly the five pre-existing ISSUE-001 failures (344, 371, 376, 377, 378) and no new failure.",
+      "All six findings (F1-F6) were re-checked against primary sources at their fix commits and are resolved.",
+      "Each of the five round-1 findings was re-checked against primary sources rather than against the implementer's report: ISSUE-009's numbers were re-measured with the reviewer's own recursive find; the moved block was re-diffed against git show 764ef3d; the gate check order and the -f dva.yml condition were read from a read-only git show of origin/master:scripts/sigdock-local-up.sh; the loopback resolution and the four required binaries were measured on this workstation by the reviewer.",
+      "The reviewer modified no file in the repository under review and no file in ~/mydevbox/primeno1-devbox; the only writes were this receipt and throwaway copies under the gitignored tmp/, which were removed."
+    ],
+    "does-not-certify": [
+      "That the sigdock gate would pass on this workstation. No dva up, status, or down --purge was run; nothing was started or torn down. The gate script was read, never executed. Two preconditions remain violated by design (SIGDOCK_CLIENTS_FILE unset, and one stale sigdock-idp container plus its network).",
+      "That the precondition list is now exhaustive. The reviewer audited the explicit fail() sites in the gate's main path; transitive requirements of the adjacent SigDock devbox's own dva.yml, and of the contract and TLS verifiers that run after the gate, were not audited.",
+      "The reviewed-card-sha256 above is a plain file digest, not the CE canonical digest; see canonical-digest-status. It pins the card bytes at d3bae59 and nothing more.",
+      "Anything about code correctness beyond the specific dry-run health-wait branch and its test; no test suite was executed apart from what make doc-check and make lint run.",
+      "The live-round criteria of TASK-328 itself, which remain open and human-owned."
+    ]
+  },
+  "files-modified-by-reviewer": [
+    "tmp/task-management/direct/queue-run/task-380-review-receipt.json"
+  ],
+  "exit-conditions": {
+    "status": "all conditions met; final verdict pass at d3bae59",
+    "F1": "met",
+    "F2": "met",
+    "F3": "met",
+    "F4": "met (optional)",
+    "F5": "met",
+    "F6": "met (optional)",
+    "carried-forward": [
+      "R1 — addressed in an uncommitted edit observed at 2026-09-13T23:40; verified correct, see residual-notes-status",
+      "R2 — addressed in the same uncommitted edit; verified correct, see residual-notes-status"
+    ]
+  },
+  "findings-resolution": {
+    "F1": {
+      "verdict": "resolved, and the implementer found a better root cause than the reviewer stated",
+      "verified": "Re-measured independently at 99ab8ab: `find docs workflows -name '*.md' -type f` gives 21 files >=8192 bytes and exactly six within 200 bytes of the cap, headed by workflows/dva-dogfood/ref-artifacts.md at 10234 bytes. The issue's Evidence block now reproduces that command and its output verbatim, and my re-run matches it line for line. The implementer diagnosed the cause as a non-recursive `workflows/*.md` glob, which explains why the whole workflows/dva-dogfood/ subtree vanished — a sharper diagnosis than 'the count was wrong', and it is now written into the issue as a measurement rule."
+    },
+    "F2": {
+      "verdict": "resolved, in the stronger of the two available ways",
+      "verified": "Re-diffed the moved block against `git show 764ef3d:docs/dogfood/primeno1.md`: every original line is now byte-identical and the only difference is one appended annotation line. The 검증 한계 line carries its 2026-09-05 wording, TASK-312 attribution included, with a dated parenthetical beneath it. The log header now states the convention (originals are annotated, never rewritten), which generalizes the fix beyond this one line."
+    },
+    "F3": {
+      "verdict": "resolved",
+      "verified": "docs/dogfood/primeno1.md:32-35 — the heading is now \"2026-09-05의 검증 한계는 해소됐다\" and the first sentence quotes the original limitation before retiring it, so no pronoun depends on text that moved."
+    },
+    "F4": {
+      "verdict": "resolved, and extended beyond what the reviewer found",
+      "verified": "All three missing preconditions are now in both tasks/todo/328-*.md and tools/dogfoodrun/dogfood-run.sh target_notes(). The implementer additionally caught that the gate tests `[ -f \"$SIGDOCK_DEVBOX_DIR/dva.yml\" ]` (line 400), which the reviewer had not named. The documented check order was verified against sigdock-local-up.sh lines 394-410 and matches exactly: binaries -> fapi2 -> loopback -> devbox dva.yml -> contract -x -> SIGDOCK_CLIENTS_FILE -> ownership marker -> containers -> networks -> port listener; the two violated conditions are indeed 6th and 8th/9th by that numbering. The three new environment claims were independently re-measured by the reviewer: dva, docker, curl, lsof and python3 all resolve on PATH, and sigdock.localhost resolves to exactly ['127.0.0.1', '::1']. The violation count is still two. See residual note R2 for one overcorrection."
+    },
+    "F5": {
+      "verdict": "resolved as recommended",
+      "verified": "ISSUE-001 now carries an ordered reproduction (fresh worktree -> 6 invalid -> copy the receipt -> 5 invalid) and states that the observation disappears when its cause is removed. The observation was kept rather than dropped, which is right: it is the issue's strongest evidence that Summary item 3 is a correctness problem. The reviewer separately confirmed the underlying error text against a card copy with no receipt beside it."
+    },
+    "F6": {
+      "verdict": "resolved at d3bae59, by splitting rather than widening",
+      "verified": "git diff 99ab8ab d3bae59 touches only the card (+6/-1): it adds the F6 note and replaces the single two-part criterion with two criteria carrying separate bindings — `SIGDOCK_CLIENTS_FILE` for the precondition half and `하네스 재조준(TASK-379)` for the retarget half. Both exit 0. Splitting is the correct repair: widening one binding into a compound grep would still have reported a single pass for two independent facts. The card now carries 8 bindings and the reviewer executed all 8 at d3bae59."
+    }
+  },
+  "criteria-results-round-2": {
+    "bindings-executed": 8,
+    "all-exit-zero": true,
+    "note": "Re-ran every binding at 99ab8ab from the worktree root, including the newly split retarget binding. primeno1.md measures 5907 bytes, under the 10240 cap."
+  },
+  "verdict-final": true,
+  "head-reviewed": "d3bae59",
+  "criteria-results-round-3": {
+    "commit": "d3bae59",
+    "bindings-in-card": 8,
+    "bindings-executed": 8,
+    "all-exit-zero": true,
+    "note": "Clean same-commit run: all eight bindings and all three gates were executed at d3bae59 in a worktree with an empty `git status --short`."
+  },
+  "timing-note": "d3bae59 was committed by the implementer DURING round 2, between the reviewer's `git log` call and a later `git diff`. Consequence: the round-2 records above described the 99ab8ab card (digest 03330f9d...), even though the reviewer had already observed 8 bindings and the F6 note. Round 3 exists to remove that ambiguity — every binding and gate recorded under round 3 was run against d3bae59 with a clean working tree.",
+  "open-recommendation": {
+    "id": "ISSUE-009 document count, 21 vs 22",
+    "reviewer-position": "Keep 21 as the headline figure — the Evidence block describes the repository as it stands, and a reader re-running the inline `find` on this branch must get the number they see. But one clause for 22 is worth adding, for a reason specific to this issue: the delta is not drift, it is caused by TASK-380 itself moving docs/dogfood/primeno1.md (10028 bytes at base) out of the >=8192 set. 22 is the number that existed when the problem was hit, so an issue whose whole subject is measurement precision should not silently absorb a change its own fixing branch produced. Suggested shape: '21장(이 브랜치 이후. base 764ef3d에서는 22장 — primeno1.md가 분할로 빠졌다)'."
+  },
+  "residual-notes-status": {
+    "observed-at": "2026-09-13T23:40+09:00, after the round-3 gate runs at d3bae59",
+    "state": "Uncommitted working-tree edits appeared in this worktree while round 3 was in progress, touching tasks/issue/009-*.md, tasks/todo/328-*.md and tools/dogfoodrun/dogfood-run.sh. They are not the reviewer's — the reviewer wrote only this receipt. Read as diffs, they are exactly the R1 and R2 corrections: R1 now cites tools/doccheck/check.go:117 `nbytes > maxDocBytes` and states the remaining capacity as 2/2/5/8 Korean characters instead of zero, matching the reviewer's arithmetic; R2 now records the `:258` cd-able-directory check as the head of the order, restores that both conditions are checked, notes that the two share one failure message, and renumbers the violated conditions to 7th and 9th/10th. Both corrections are accurate.",
+    "re-verified-on-the-dirty-tree": {
+      "make doc-check": 0,
+      "bash -n tools/dogfoodrun/dogfood-run.sh": 0,
+      "shellcheck tools/dogfoodrun/dogfood-run.sh": 0,
+      "ce task validate tasks/todo/328-*.md": 0,
+      "ce task validate tasks/issue/009-*.md": 0
+    },
+    "effect-on-verdict": "None. The verdict and every recorded gate result belong to the committed tree at d3bae59, whose digest is pinned above. R1 and R2 were non-blocking when raised and are now addressed; once these edits are committed the card digest moves again and this receipt's reviewed-card-sha256 becomes stale for the card only if the card itself is among the edited files — at the time of writing it is not."
+  },
+  "post-verdict-card-close": {
+    "observed-at": "2026-09-13T23:44+09:00, after the round-3 verdict",
+    "state": "The card was subsequently edited in the working tree (uncommitted at time of writing) to close it: status todo -> done, all eight criteria ticked, and completion-summary / verification-status / verification-evidence / quality-review: pass / quality-reviewed-at / quality-review-evidence / quality-review-receipt added, the last pointing at this file. It also folds R1 and R2 into the 리뷰 대응 section.",
+    "working-tree-card-sha256": "f34299d89729bc22c4d99b652c72749d3d549ebee1a885476b88ff14d8e4a009",
+    "reviewer-checks": {
+      "ce task validate tasks/doing/380-*.md": 0,
+      "note": "The card still declares no `blocks:`, so the CE quality-review-receipt digest check does not fire for it and no canonical digest is produced — unchanged from every earlier round."
+    },
+    "reviewer-flags": [
+      "quality-review-evidence says '2라운드'. There were three: round 1 conditional (F1-F5), round 2 pass (F6 raised, R1/R2 raised), round 3 pass re-verified at d3bae59 after the F6 split. Cosmetic, but the receipt it cites records three.",
+      "status is `done` while the file still sits in tasks/doing/. `ce task validate` accepts it, but the board convention is that tasks/done/ is the zone for done cards; the move is presumably still to come.",
+      "quality-review-receipt points into tmp/, which .gitignore:51 ignores. That is precisely the defect ISSUE-001 owns, and this card is now another instance of it — worth naming in ISSUE-001 rather than treated as fixed here."
+    ],
+    "effect-on-verdict": "None. The verdict is pass and belongs to the committed tree at d3bae59."
+  },
+  "post-review-amendments": {
+    "authored-by": "the implementer (not review-380); recorded so the receipt is not silently stale",
+    "what": "review-380's FINAL verdict is pass at round 3 (verdict-final: true). This block was first written when only the round-2 message had arrived and said 'round-2 verdict was pass'; round 3 was the reviewer's own disambiguation run against d3bae59 on a clean tree, because d3bae59 landed mid-round-2. The two residual notes (R1, R2) were folded in on the same branch after the round-2 verdict, and the closing frontmatter was added.",
+    "R1": "tasks/issue/009: the sentence '앞 네 장에는 한 자도 못 넣는다' contradicted its own numbers; tools/doccheck/check.go:117 is `nbytes > maxDocBytes` so 10240 exactly passes and 6/7/15/25 bytes of headroom accept 2/2/5/8 Korean characters. Rewritten with the real figures.",
+    "R2": "the F4 correction overcorrected: sigdock-local-up.sh:258 requires SIGDOCK_DEVBOX_DIR to be a cd-able directory AND :400 requires dva.yml inside it, and both fail with the same message string. Card 328 and target_notes() now carry both checks, the true head of the check order, and the shared-message caveat; the violated pair is renumbered 7th and 9th/10th (앞 여섯 관문).",
+    "verified-independently": "sigdock-local-up.sh read at primeno1-devbox origin/master (:258-259, :394-410) and tools/doccheck/check.go:117 read directly, not taken from the reviewer's report.",
+    "card-path-after-move": "tasks/done/380-currentize-the-docs-that-task-379-left-behind.md",
+    "reviewed-card-sha256-note": "the round-2 digest 7b87ddfab24e342d575b37788a44ba39a7762b83c25d935c126417be5708efbb covers the card at 99ab8ab; the card changed afterwards (F6 split, R1/R2 record, closing frontmatter, zone move). File digest of the final card: f34299d89729bc22c4d99b652c72749d3d549ebee1a885476b88ff14d8e4a009. Still a plain file digest, not the CE canonical digest — the card declares no blocks:, so the validator never computes one.",
+    "gates-after-amendment": "ce task validate on the card 0; ce task validate --all = 5 invalid, exactly the ISSUE-001 baseline (TASK-344/371/376/377/378); make doc-check 0; make lint 0; bash -n + shellcheck 0; dogfood-run.sh --plan primeno1 rc 0; all 8 verify bindings exit 0.",
+    "round-3-followup": "Round 3 also flagged three things about the uncommitted closing edits it happened to observe. Two were real and are owned by TASK-382 (commit 5c341c7): the card said 2라운드 where there were three, and ISSUE-009's 21 needed the base-764ef3d figure of 22 beside it. The third — status: done while the file was still in tasks/doing/ — was already resolved at 2b3525e. Round 3's observation that this receipt path is gitignored is recorded in ISSUE-001 as a new instance of the defect that issue owns, not as something solved here."
+  }
+}

@@ -1,0 +1,160 @@
+{
+  "reviewed-card-path": "tasks/done/378-watch-for-the-familybook-readiness-landing-instead-of-remembering-it.md",
+  "reviewed-card-sha256": "9d7f1dc95a3117f3599eaed9ef7fc5fe68761496fe6b7c1178c619a0b686f8fa",
+  "reviewed-card-sha256-algorithm": "CE canonical digest, as printed by `ce task validate` on mismatch. It covers the card's frontmatter and body but excludes the quality-review-receipt field itself, so this receipt's own path may change without invalidating the digest.",
+  "task": "TASK-378",
+  "title": "Watch for the familybook readiness landing instead of remembering it",
+  "reviewer": "review-378 (core:code-reviewer, independent; did not author the work under review — the implementer was check-378)",
+  "verdict": "conditional",
+  "verdict-final": true,
+  "reviewed-at": "2026-09-14",
+  "branch": "dev/claude/mbp/fix/review-376-378-fixes",
+  "base": "master 2db14cc",
+  "review-rounds": 1,
+  "orchestrator": "dva-75 (Claude Opus 5). Delegated the analysis per /task:review's hybrid architecture; applied every fix in this branch on the user's explicit '전부 적용' decision.",
+  "severity-rollup": {
+    "critical": 0,
+    "high": 1,
+    "medium": 4,
+    "low": 3
+  },
+  "findings": [
+    {
+      "id": "H1",
+      "severity": "high",
+      "file": "tools/familybook-readiness-landed.sh (전역)",
+      "problem": "호출자 환경의 GIT_DIR/GIT_WORK_TREE/GIT_INDEX_FILE 등이 그대로 상속된다. GIT_DIR은 git의 저장소 탐색에서 `-C`를 이기므로, 남아 있으면 fixture가 아니라 호출자의 저장소를 읽고 쓴다 — 이 스크립트가 'familybook 저장소에 아무것도 쓰지 않는다'고 선언한 계약이 깨진다.",
+      "fix": "`set -u` 직후 GIT_DIR·GIT_WORK_TREE·GIT_INDEX_FILE·GIT_OBJECT_DIRECTORY·GIT_ALTERNATE_OBJECT_DIRECTORIES·GIT_CONFIG·GIT_CONFIG_GLOBAL·GIT_CEILING_DIRECTORIES를 unset하고 `GIT_TERMINAL_PROMPT=0`을 export.",
+      "status": "fixed"
+    },
+    {
+      "id": "M1",
+      "severity": "medium",
+      "file": "build_fixture, 120000 분기",
+      "problem": "`${path%/*}`는 path에 `/`가 없으면 path 그대로다. 루트 심볼릭 링크에서 그대로 mkdir하면 링크와 같은 이름의 디렉터리가 먼저 생겨 ln이 실패한다. 게다가 오류를 2>/dev/null로 삼킨다.",
+      "fix": "일반 파일 분기와 같은 `[[ $path == */* ]] && { mkdir -p ... || return 1; }` 형태로 통일.",
+      "status": "fixed"
+    },
+    {
+      "id": "M2",
+      "severity": "medium",
+      "file": "build_fixture, git add -A",
+      "problem": "사용자의 전역 core.excludesFile / core.attributesFile이 fixture 트리에 적용된다. ~/.gitignore_global 한 줄이 파일을 빠뜨리면 runner는 그것을 required 누락으로 읽고, 이 검사는 그 결과를 'dva.yml 거부'로 잘못 보고한다.",
+      "fix": "`-c core.excludesFile=/dev/null -c core.attributesFile=/dev/null`을 add에 붙였다.",
+      "status": "fixed"
+    },
+    {
+      "id": "M3",
+      "severity": "medium",
+      "file": "run_runner / probe",
+      "problem": "두 probe가 `$dir/../runner.err` 한 파일을 공유해 두 번째가 첫 번째의 실패 원인을 덮어쓴다. 게다가 probe는 실패를 harness_failure 문자열로만 접어 버려 원인이 어디에도 남지 않는다.",
+      "fix": "probe별 `$workdir/runner-<config>.err`로 분리하고, 실패 시 앞 10줄을 stderr로 낸다.",
+      "status": "fixed"
+    },
+    {
+      "id": "M4",
+      "severity": "medium",
+      "file": "run_runner / fetch",
+      "problem": "외부 저장소가 소유한 runner를 stdin·시간 상한 없이 bash로 실행한다. 입력을 기다리거나 멈추면 검사가 통째로 매달린다. fetch도 느려지기만 하는 연결에 상한이 없다.",
+      "fix": "runner에 `</dev/null`과 (있으면) `timeout 120`을 붙이고, fetch에 `-c http.lowSpeedLimit=1000 -c http.lowSpeedTime=30`을 붙였다. 헤더에 신뢰 가정(이 검사는 origin/develop이 소유한 코드를 실행한다)을 명시했다.",
+      "status": "fixed"
+    },
+    {
+      "id": "L1",
+      "severity": "low",
+      "problem": "`trap cleanup EXIT`만 걸려 있어 SIGINT/SIGTERM/SIGHUP에 임시 디렉터리가 남는다.",
+      "fix": "`trap cleanup EXIT INT TERM HUP`.",
+      "status": "fixed"
+    },
+    {
+      "id": "L2",
+      "severity": "low",
+      "problem": "`--offline`과 `--url`을 함께 받으면 둘 중 하나가 조용히 무시되고, 출력만 보고는 어느 쪽인지 알 수 없다.",
+      "fix": "충돌 시 CANNOT DETERMINE(exit 2)로 끊는다. 실측 확인.",
+      "status": "fixed"
+    },
+    {
+      "id": "L3",
+      "severity": "low",
+      "problem": "두 fixture 동시 실패 메시지가 'the runner rejected both filenames'이라 파일명이 원인인 것처럼 읽힌다. 실제 의미는 fixture가 ready 기준선을 재현하지 못했다는 것이다.",
+      "fix": "'neither fixture reached ready'로 교체.",
+      "status": "fixed"
+    }
+  ],
+  "not-verified": [
+    "기본(네트워크) 모드는 이 회차에서 실행하지 않았다 — 원격 fetch를 수반하기 때문이다. fetch 관련 수정(http.lowSpeedLimit/Time, GIT_TERMINAL_PROMPT)은 정적 리뷰로만 확인했다. 이것이 verdict를 pass가 아니라 conditional로 두는 이유다.",
+    "`timeout`/`gtimeout`이 이 워크스테이션 PATH에 없으면 RUNNER_TIMEOUT은 빈 배열이 되고 상한 없이 돈다. 빈 배열 전개는 bash 3.2의 set -u 버그를 피하려 `${RUNNER_TIMEOUT[@]+\"${RUNNER_TIMEOUT[@]}\"}` 형태로 썼고 --offline 실주행으로 동작을 확인했다."
+  ],
+  "checks-run": [
+    {
+      "cmd": "bash -n tools/familybook-readiness-landed.sh",
+      "exit": 0
+    },
+    {
+      "cmd": "shellcheck tools/familybook-readiness-landed.sh",
+      "exit": 0
+    },
+    {
+      "cmd": "./tools/familybook-readiness-landed.sh --help",
+      "exit": 0
+    },
+    {
+      "cmd": "./tools/familybook-readiness-landed.sh --offline --url https://example.invalid/x.git",
+      "exit": 2,
+      "note": "L2 확인 — CANNOT DETERMINE"
+    },
+    {
+      "cmd": "./tools/familybook-readiness-landed.sh --bogus",
+      "exit": 2
+    },
+    {
+      "cmd": "./tools/familybook-readiness-landed.sh --offline",
+      "exit": 1,
+      "note": "NOT LANDED. dva.yml → not_ready, dva.yaml → ready — 수정 후에도 판정력이 보존됨을 보인다"
+    }
+  ],
+  "side-effects": "familybook 저장소는 실행 전후로 `git status --short` 0줄, refs/remotes/origin/develop = be6d0fd813df96475fe2a2c39fd700a30c6b33b0 불변. 임시 디렉터리도 남지 않았다(`/tmp/familybook-readiness.*` 없음).",
+  "repository-gates": {
+    "make doc-check": {
+      "exit": 0
+    },
+    "make lint": {
+      "exit": 0
+    },
+    "ce task validate --all": {
+      "exit": 1,
+      "summary": "82 valid, 2 invalid (total 84)",
+      "invalid": [
+        "tasks/done/344-harden-frontmatter-value-parsing-against-comments-and-repeats.md",
+        "tasks/done/371-align-planprogress-with-the-shared-progress-contract.md"
+      ],
+      "note": "Baseline before this branch was 5 invalid (TASK-344/371/376/377/378), the set ISSUE-001 owns. Attaching receipts to 376/377/378 drops it to 2. The remaining two are untouched by this branch."
+    },
+    "shellcheck": {
+      "exit": 0,
+      "note": "tools/dogfoodrun/dogfood-run.sh and tools/familybook-readiness-landed.sh both clean"
+    },
+    "regression-guard greps": {
+      "exit": 0,
+      "note": "TASK-354→TASK-377 link and TASK-329→TASK-378 link both present"
+    }
+  },
+  "scope-statement": {
+    "certifies": [
+      "every finding listed above was reproduced against the file at this branch's HEAD before being fixed",
+      "every fix was re-verified by running the command listed in checks-run and recording its exit code"
+    ],
+    "does-not-certify": [
+      "기본(네트워크) 모드는 이 회차에서 실행하지 않았다 — 원격 fetch를 수반하기 때문이다. fetch 관련 수정(http.lowSpeedLimit/Time, GIT_TERMINAL_PROMPT)은 정적 리뷰로만 확인했다. 이것이 verdict를 pass가 아니라 conditional로 두는 이유다.",
+      "`timeout`/`gtimeout`이 이 워크스테이션 PATH에 없으면 RUNNER_TIMEOUT은 빈 배열이 되고 상한 없이 돈다. 빈 배열 전개는 bash 3.2의 set -u 버그를 피하려 `${RUNNER_TIMEOUT[@]+\"${RUNNER_TIMEOUT[@]}\"}` 형태로 썼고 --offline 실주행으로 동작을 확인했다."
+    ]
+  },
+  "files-modified-by-reviewer": [],
+  "files-modified-by-orchestrator": [
+    "tools/dogfoodrun/dogfood-run.sh",
+    "tools/familybook-readiness-landed.sh",
+    "docs/65-ce-task-gate-attachment-options.md",
+    "tasks/done/376-*.md, 377-*.md, 378-*.md (frontmatter; 376 also ## Evidence)"
+  ],
+  "durability-note": "This receipt lives under tmp/, which .gitignore:51 excludes. It therefore does not travel with the branch — the defect ISSUE-001 owns. A copy is placed in the primary checkout's tmp/ so `ce task validate` passes there after integration."
+}

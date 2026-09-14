@@ -44,6 +44,12 @@ DVA는 개발 환경 오케스트레이터입니다. 핵심 방향은 `stack:`�
 `waived`에는 `quality-review-evidence`도 남긴다. 전이와 증거의 정확한 규칙은
 [ce-workbook task-management done-review 정책](https://gitlab.polypia.net/archmagece/ce-workbook/-/blob/master/task_management/execution/actions/done-review.md)을 따른다.
 
+`blocks:`를 선언한 done 카드는 여기에 더해 `quality-review-receipt`를 남긴다 —
+`ce task validate`가 그 파일을 읽어 `reviewed-card-sha256`을 카드의 정본 digest와
+대조한다. 경로는 `tasks/receipts/<TASK-ID>/done-review-<sha>.json`이며 Git이 추적한다.
+`tmp/` 아래에 두면 그것을 만든 체크아웃에서만 유효해 카드의 판정이 재현되지 않는다
+(TASK-383). 규칙과 근거는 `tasks/receipts/README.md`.
+
 ## Repository Map
 
 구현 경계와 데이터 흐름의 원본은 `ARCHITECTURE.md`입니다. 아래 목록은 코드 탐색용입니다.
@@ -74,6 +80,7 @@ internal/exec/                 → Process execution (syscall.Exec, subprocess)
 internal/skillinstall/         → dva skill install|status|uninstall|backup (no AI runtime needed)
 internal/skillclaim/           → Agent Skills claim protocol (installed-file ownership verdicts)
 tools/                         → doccheck, flowcheck, skillgen (make doc-check / make generate)
+tasks/receipts/                → Git-tracked review receipts (ce task validate reads these)
 ```
 
 ## Key Flows

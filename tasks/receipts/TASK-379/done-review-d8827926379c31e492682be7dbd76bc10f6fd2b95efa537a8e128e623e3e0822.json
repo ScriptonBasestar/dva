@@ -1,0 +1,167 @@
+{
+  "reviewed-card-sha256": "d8827926379c31e492682be7dbd76bc10f6fd2b95efa537a8e128e623e3e0822",
+  "task": "TASK-379",
+  "title": "Retarget the primeno1 dogfood steps at plan dev now that native entries landed",
+  "reviewer": "review-379 (independent; did not author the change)",
+  "verdict": "pass",
+  "reviewed-at": "2026-09-13T21:05:00+09:00",
+  "date": "2026-09-13",
+  "branch": "dev/claude/mbp/chore/379-retarget-the-primeno1-dogfood-steps-at-plan-dev",
+  "commits-reviewed": [
+    {
+      "sha": "6a706c7",
+      "subject": "chore(dogfood): retarget the primeno1 steps at plan dev"
+    },
+    {
+      "sha": "d0c1431",
+      "subject": "chore(dogfood): name the first failure surface of a dev round",
+      "note": "addresses all five findings from the conditional first pass"
+    }
+  ],
+  "review-rounds": [
+    {
+      "round": 1,
+      "at": "6a706c7",
+      "verdict": "conditional",
+      "blocking-findings": [
+        "high: target_notes named the native stage as the stopping point; the real first failure surface is the order-10 sigdock gate",
+        "medium: stream is the one native entry neither dev nor external-db reaches, and the card did not address it"
+      ]
+    },
+    {
+      "round": 2,
+      "at": "d0c1431",
+      "verdict": "pass",
+      "note": "both blocking findings resolved; findings 3-5 recorded in target_notes and the criterion text"
+    }
+  ],
+  "criteria-results": [
+    {
+      "n": 1,
+      "criterion": "하네스의 primeno1 스텝이 plan `dev`를 돈다",
+      "verify": "/usr/bin/grep -qE 'up dev' tools/dogfoodrun/dogfood-run.sh",
+      "result": "pass",
+      "exit": 0,
+      "note": "binding also matches the step label; confirmed by reading the diff that the command line `$DVA up dev` is present, so it is satisfied for the right reason"
+    },
+    {
+      "n": 2,
+      "criterion": "`dev` 회차가 `down dev --purge`로 정리된다",
+      "verify": "/usr/bin/grep -qE 'down dev --purge' tools/dogfoodrun/dogfood-run.sh",
+      "result": "pass",
+      "exit": 0,
+      "note": "command line `$DVA down dev --purge --force` confirmed in the diff, not only the label"
+    },
+    {
+      "n": 3,
+      "criterion": "`target_notes`가 대체재 문구를 더 이상 주장하지 않는다",
+      "verify": "! /usr/bin/grep -q '아래 스텝은 아직 external-db다' tools/dogfoodrun/dogfood-run.sh",
+      "result": "pass",
+      "exit": 0
+    },
+    {
+      "n": 4,
+      "criterion": "계획 출력(`--plan`)이 재조준된 스텝을 출력하고 파괴적 명령을 실행하지 않는다",
+      "verify": "human — reproduced independently by the reviewer",
+      "result": "pass",
+      "evidence": "bash tools/dogfoodrun/dogfood-run.sh --plan primeno1 → rc 0; output contains `bin/dva up dev`; docker containers 105→105, volumes 791→791, images 192→192, networks 31→31",
+      "note": "reviewer added image and network counts beyond the containers/volumes the criterion names"
+    },
+    {
+      "n": 5,
+      "criterion": "기존 게이트 통과",
+      "verify": "make doc-check (regression-guard)",
+      "result": "pass",
+      "exit": 0
+    }
+  ],
+  "evidence-commands": [
+    {
+      "command": "git show 6a706c7 && git show d0c1431",
+      "result": "diff read in full; no unrelated changes; worktree clean"
+    },
+    {
+      "command": "bash -n tools/dogfoodrun/dogfood-run.sh",
+      "result": "exit 0"
+    },
+    {
+      "command": "shellcheck tools/dogfoodrun/dogfood-run.sh",
+      "result": "exit 0, no warnings"
+    },
+    {
+      "command": "bash tools/dogfoodrun/dogfood-run.sh --plan primeno1",
+      "result": "exit 0; nothing executed; docker container/volume/image/network counts identical before and after"
+    },
+    {
+      "command": "make doc-check",
+      "result": "exit 0 (doc-check OK, cilabels OK, flowcheck OK, planprogress OK, yamlcheck 0 errors)"
+    },
+    {
+      "command": "make lint",
+      "result": "exit 0 (go vet clean, gofmt -s 491 files 0 unformatted, ci-lint 0 issues)"
+    },
+    {
+      "command": "git -C ~/mydevbox/primeno1-devbox show origin/master:dva.yml",
+      "result": "verified the dropped-plan claim: plans `full` and `dev` both reference the same stack entry `compose` (same files list, same project_name primeno1), so dropping `full` loses no compose coverage"
+    },
+    {
+      "command": "git -C ~/mydevbox/primeno1-devbox show origin/master:scripts/sigdock-local-up.sh",
+      "result": "confirmed the order-10 gate is fail-closed: requires SIGDOCK_CLIENTS_FILE, refuses to run when any sigdock-idp container or network exists, requires a free port 11300, absent ownership marker, SIGDOCK_DEVBOX_DIR checkout and lsof"
+    },
+    {
+      "command": "docker ps -a --filter label=com.docker.compose.project=sigdock-idp; docker network ls --filter label=com.docker.compose.project=sigdock-idp",
+      "result": "1 container (sigdock-idp-postgres-1, exited) and 1 network (sigdock-idp_default) — the measured violation recorded in target_notes is accurate; a live round would fail at order 10 today"
+    },
+    {
+      "command": "grep -c SIGDOCK_CLIENTS_FILE in dva.yml / .env / .env.example",
+      "result": "0 / 0 / 0 — confirms the note's claim that the variable must be supplied out of band"
+    },
+    {
+      "command": "grep -n 'cmd.Env = pctx.Env.EnvSlice()' internal/lifecycle/script.go",
+      "result": "script entries receive the merged config environment, so the note's claim that SIGDOCK_IDP_ISSUER_PROFILE=fapi2 is already satisfied by dva.yml holds"
+    }
+  ],
+  "findings": [
+    {
+      "id": 1,
+      "severity": "high",
+      "summary": "target_notes named the native stage as the first failure surface; the real one is the order-10 sigdock gate (missing SIGDOCK_CLIENTS_FILE, pre-existing sigdock-idp resources)",
+      "status": "resolved in d0c1431",
+      "verification": "notes now list the gate's requirements in order with the measured workstation violation; the Gradle/npm/TLS surface is explicitly labelled second"
+    },
+    {
+      "id": 2,
+      "severity": "medium",
+      "summary": "stream is the one native entry neither dev nor external-db reaches; dev-stream is the superset that would close 6/6",
+      "status": "resolved as a recorded decision in d0c1431",
+      "verification": "target_notes states 5-of-6 coverage and the exact swap (up dev → up dev-stream); the 6/6 call is deferred to TASK-328, which owns the criterion. Accepted as a decision rather than an oversight because it is now visible at the point of use."
+    },
+    {
+      "id": 3,
+      "severity": "low",
+      "summary": "the sigdock gate's adjacent_dva() calls PATH dva (0.2.0, b18f7831), which the harness header rejects as evidence; this path did not exist under plan full",
+      "status": "resolved in d0c1431",
+      "verification": "notes warn against claiming the whole round was measured with this repository's binary"
+    },
+    {
+      "id": 4,
+      "severity": "low",
+      "summary": "down dev --purge also reaches the sigdock-idp project, which the purge preview does not list",
+      "status": "resolved in d0c1431",
+      "verification": "notes record the reach, that it is self-limiting via down_owned plus the ownership marker, and give the inspection command. Reviewer agrees with NOT adding sigdock-idp to target_projects: that list feeds a preview header asserting the projects are deleted with `docker compose down --volumes --rmi local`, which is not what happens to sigdock-idp."
+    },
+    {
+      "id": 5,
+      "severity": "informational",
+      "summary": "criterion 4 named a --dry-run flag the harness does not have",
+      "status": "resolved in d0c1431",
+      "verification": "criterion text now reads 계획 출력(`--plan`, 인자 없는 기본 동작)"
+    }
+  ],
+  "residual-notes": [
+    "Cosmetic only: the notes and the card say SIGDOCK_IDP_ISSUER_PROFILE is in dva.yml's `environment`; it is in the top-level `vars:` block (line 29). Functionally equivalent — script entries receive the merged environment — so no change requested."
+  ],
+  "scope-statement": "This review covers the DVA harness change only. It does not certify that a live primeno1 round will succeed; TASK-328 owns that round, and the preconditions recorded in target_notes are currently unmet on this workstation.",
+  "files-modified-by-reviewer": "none (this receipt only; tmp/ is gitignored)",
+  "reviewed-card-path": "tasks/done/379-retarget-the-primeno1-dogfood-steps-at-plan-dev.md"
+}
