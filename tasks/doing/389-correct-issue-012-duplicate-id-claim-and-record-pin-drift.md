@@ -19,7 +19,7 @@ depends-on: []
 1. [[ISSUE-012]]의 "중복 id를 재는 게이트가 없다"가 틀렸다.
 2. ISSUE-012에 개명 부작용의 실현 인스턴스가 빠져 있고, 잘못된 해법(존재 검사)을
    적을 위험이 있다.
-3. [[ISSUE-001]]에 pin 드리프트의 구조적 성격이 기록돼 있지 않다.
+3. [[ISSUE-001]]에 pin 드리프트가 **어느 digest를 박았는지에 달렸다**는 사실이 기록돼 있지 않다.
 
 ## 1. 중복 id 검사는 있다 — 직접 쟀다
 
@@ -60,11 +60,22 @@ doc-check: FAIL
 생긴다. 그 규칙은 **계기가 된 두 사례를 하나도 잡지 못한다.** 잡을 수 있는 것은
 게이트가 아니라 개명 시점의 일괄 훑기 절차다.
 
-## 3. pin 드리프트는 우연이 아니라 절차의 구조다
+## 3. pin 드리프트는 절차가 아니라 digest 선택이 낳는다
 
-카드를 닫는 행위(=`quality-review` 3줄 추가 + `done/` 이동)가 리뷰 시점 pin을
-무효화한다. 두 건 실측이 ISSUE-001의 새 절에 있다. `blocks:` 없는 카드에서는
-validator가 검사에 도달하지 않아 조용할 뿐이다.
+이 절은 처음에 "카드를 닫는 행위가 리뷰 시점 pin을 무효화한다"고 적었다. **반증됐다**
+— 리뷰어가 반례를 들었고 내가 재측정해 확인했다. 정정한 내용은 ISSUE-001의 새 절에
+있고 요지는 이렇다.
+
+`reviewed-card-sha256`에 박히는 값은 두 종류다. **CE canonical digest**는 닫을 때
+더해지는 `quality-review*` 네 줄 중 셋(`quality-review`, `quality-reviewed-at`,
+`quality-review-receipt`)을 제외하므로 닫는 행위를 견딘다 — `blocks:`를 선언한
+`tasks/done/376|377|378|379-*.md` 넷이 닫힌 뒤에도 `✅ Valid`인 것이 그 증거다.
+**plain file sha256**은 그렇지 않다. TASK-386·388 두 건의 드리프트는 이쪽이고,
+원인은 절차의 구조가 아니라 **receipt를 쓸 때의 선택**이다.
+
+`blocks:` 없는 카드에서는 validator가 검사에 도달하지 않아 조용할 뿐이다 — 그리고
+그 조용함이 위험하다. plain sha256 pin은 canonical digest와 사실상 같아질 수 없으므로,
+그런 카드에 나중에 `blocks:`가 붙으면 회복 불가능한 하드에러가 된다.
 
 ## Completion Criteria
 

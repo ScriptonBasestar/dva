@@ -273,7 +273,8 @@ pin이 canonical digest이기 때문이다.
 이 둘의 pin은 canonical이 아니라 **plain file sha256**이다. 그래서 카드가 조금이라도
 바뀌면 어긋나고, 어긋난 뒤 되돌릴 방법도 없다. **이것은 절차의 구조가 아니라 receipt를
 쓸 때의 선택이다.** 그리고 더 나쁜 성질이 있다 — plain sha256은 `blocks:` 카드에서
-canonical digest와 **원리적으로 같아질 수 없으므로**, 지금 386·388에 `blocks:`가
+canonical digest와 **사실상 같아질 수 없으므로**(둘은 서로 다른 입력을 해싱한다 —
+일치는 우연한 충돌뿐이고 그 확률은 무시해도 좋다), 지금 386·388에 `blocks:`가
 붙는 순간 되돌릴 수 없는 하드에러가 된다.
 
 **왜 지금은 조용한가.** 이 둘은 `blocks:`를 선언하지 않았고 `ce task validate`는

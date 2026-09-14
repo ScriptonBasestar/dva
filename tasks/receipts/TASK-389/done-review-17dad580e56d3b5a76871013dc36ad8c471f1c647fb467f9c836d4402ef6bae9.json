@@ -1,0 +1,93 @@
+{
+  "task": "TASK-389",
+  "title": "Correct ISSUE-012's duplicate-id claim and record the plain-sha256 pin drift",
+  "reviewed-card-path": "tasks/doing/389-correct-issue-012-duplicate-id-claim-and-record-pin-drift.md",
+  "reviewed-card-sha256": "17dad580e56d3b5a76871013dc36ad8c471f1c647fb467f9c836d4402ef6bae9",
+  "reviewed-card-sha256-algorithm": "plain sha256 over the card file bytes (shasum -a 256) at HEAD 645a719, working tree clean apart from this receipt; git blob 09e5d5dc6835e8e0b0bb0c955eebdbfe18a85a5a. NOT the CE canonical digest: the card sits in tasks/doing/ and declares no blocks:, so ce task validate never reaches the quality-review-receipt check and prints no canonical digest. Per the rule this card's own ISSUE-001 edit now states, a canonical digest is what a receipt should pin; it is unobtainable for this card in its current zone without a blocks: declaration, and that limitation is recorded here rather than papered over.",
+  "supersedes": "tasks/receipts/TASK-389/done-review-4b084d74b5214c22f06434690a505bbba07e586308f95d1413458c5923430537.json (round 1, card at 7fc7111)",
+  "reviewer": "review-389 (Claude Opus 5, independent; did not author the work under review)",
+  "reviewed-at": "2026-09-14",
+  "verdict": "conditional",
+  "verdict-final": false,
+  "branch": "dev/claude/mbp/docs/389",
+  "base": "master 8b56802",
+  "head-reviewed": "645a719",
+  "review-rounds": 2,
+  "round-2": {
+    "head-reviewed": "645a719",
+    "diff-from-round-1": "tasks/issue/001-...md (+82/-24, the pin section rewritten from its heading down), tasks/doing/389-...md (1 line, criterion 2 [ ] -> [x]), plus the round-1 receipt committed",
+    "findings-folded": {
+      "F1": "FIXED — the section now lists all four excluded keys (quality-review, quality-reviewed-at, quality-review-receipt, review_status) and states that only quality-review-evidence sits inside the digest subject. Re-read reviewSubjectExcluded() in ce-agent-kit card_digest.go: the four keys match exactly.",
+      "F2": "FIXED — the heading changed from 'pin은 카드를 닫는 행위 자체로 무효화된다 — 구조적 드리프트' to 'pin이 버티느냐는 receipt가 어느 digest를 박았는지가 정한다', and a new subsection carries the TASK-376..379 four-row table with the inversion '닫는 것이 구조적으로 pin을 무효화한다면 이 넷이 존재할 수 없다'. Every digit in the table re-measured and correct.",
+      "F3": "FIXED — canonical digest and plain file sha256 are defined separately at the head of the section, with an explicit note that ce task validate compares only the canonical one. The consequence this reviewer raised is stated too: a plain sha256 becomes an unrecoverable hard error the moment blocks: is added.",
+      "F4": "FIXED — the 18-pointer evidence is re-seated on TASK-376..379. Verified: f84259c retargeted the quality-review-receipt line of all four (tmp/task-management/... -> tasks/receipts/TASK-37N/...), and all four still validate Valid.",
+      "F5": "FIXED in ISSUE-001 ('quality-review* 줄은 넷이다'), NOT fixed in the TASK-389 card itself — see R1.",
+      "F6": "FIXED — criterion 2 is now [x]."
+    },
+    "re-measured": [
+      "TASK-376 pin 9515457848… vs plain d0e4088c1848… — mismatch, validates Valid",
+      "TASK-377 pin dc496420ce32… vs plain 9b0957446fd1… — mismatch, validates Valid",
+      "TASK-378 pin 9d7f1dc95a31… vs plain 3b83f103b781… — mismatch, validates Valid",
+      "TASK-379 pin d8827926379c… vs plain ad71ede7f868… — mismatch, validates Valid",
+      "reviewSubjectExcluded() returns exactly the four keys the card now names",
+      "f84259c retargeted the receipt pointer of all four 37N cards without breaking any"
+    ]
+  },
+  "findings": [
+    {
+      "id": "R1",
+      "severity": "medium",
+      "file": "tasks/doing/389-correct-issue-012-duplicate-id-claim-and-record-pin-drift.md — §Summary item 3, and §'3. pin 드리프트는 우연이 아니라 절차의 구조다' (heading and body)",
+      "problem": "F1/F2/F5 were folded into ISSUE-001 but not into the card that describes the edit. The card still asserts the refuted thesis verbatim: the heading '절차의 구조다', the Summary item 'pin 드리프트의 구조적 성격', and the body '카드를 닫는 행위(= quality-review 3줄 추가 + done/ 이동)가 리뷰 시점 pin을 무효화한다' — which repeats both the unscoped invalidation claim (F2) and the 3줄 miscount (F5, actually four lines). The card now contradicts the issue card it just corrected.",
+      "impact": "This card will be sealed into tasks/done/ as the record of the correction. Sealing a card that states the pre-correction claim reproduces exactly the ISSUE-010 situation both cards are about — a wrong sentence in a card nobody can amend afterwards.",
+      "suggested": "retitle §3 to name the digest choice as the cause, correct 3줄 to 넷, and scope the invalidation claim to the plain-sha256 pin. The frontmatter source: line and the card title already say 'plain-sha256 pin', so they need no change."
+    },
+    {
+      "id": "R2",
+      "severity": "informational",
+      "file": "tasks/issue/001-...md, §'그러면 386·388의 어긋남은 무엇인가'",
+      "problem": "'plain sha256은 blocks: 카드에서 canonical digest와 원리적으로 같아질 수 없으므로' — the two are both SHA-256 outputs over different inputs, so equality is astronomically improbable rather than impossible in principle. The operational conclusion is unaffected.",
+      "suggested": "no change needed unless the wording is being touched anyway."
+    }
+  ],
+  "verify-bindings": [
+    {"binding": "/usr/bin/grep -rq --include='012-*.md' 'checkDuplicateCardIDs' tasks", "exit": 0},
+    {"binding": "human — §Resolution Criteria를 읽고, dangling wikilink 검사를 해법으로 적은 항목이 없는지 확인", "exit": "n/a (human)", "note": "discharged: ISSUE-012 §Resolution Criteria has three items — the duplicate-id check marked [x] as pre-satisfied by c69653e, an AGENTS.md issuance rule, and a rename-time sweep. No dangling-wikilink check anywhere in the section."},
+    {"binding": "/usr/bin/grep -rq --include='012-*.md' 'ISSUE-010' tasks", "exit": 0},
+    {"binding": "/usr/bin/grep -rq --include='001-*.md' '3edee27d' tasks", "exit": 0, "note": "still valid at 645a719 — 3edee27d survives in the relocated 386/388 subsection table"},
+    {"binding": "make doc-check", "exit": 0}
+  ],
+  "binding-convention-audit": {
+    "result": "clean",
+    "checked": [
+      "all five criteria carry a | verify: binding",
+      "four backtick-wrapped, one human — form with no backticks",
+      "no literal backtick inside any binding",
+      "no binding names a path under tasks/done/, tasks/plan/ or tasks/doing/ — the three greps use --include='<glob>' ... tasks",
+      "wrapped tools only (/usr/bin/grep); no bare grep or find",
+      "the bare make target carries the trailing (regression-guard) marker",
+      "no [x] criterion sits beside a binding that exits non-zero — all five now [x], all five pass"
+    ]
+  },
+  "gates": {
+    "make doc-check": {"exit": 0},
+    "ce task validate tasks/issue/001-...md tasks/issue/012-...md tasks/doing/389-...md": {"exit": 0, "note": "3 valid, 0 invalid, zero warnings; both issue cards keep discovered-in/discovered-at, priority, ## Reproduction and ## Expected vs Actual"},
+    "ce task validate --all": {"exit": 1, "summary": "89 valid, 2 invalid (total 91)", "invalid": ["tasks/done/344-harden-frontmatter-value-parsing-against-comments-and-repeats.md", "tasks/done/371-align-planprogress-with-the-shared-progress-contract.md"], "note": "unchanged from round 1 and from the master baseline of 88/2 plus this branch's new card; no regression"}
+  },
+  "checked-and-clean": [
+    "every digit in the new TASK-376..379 table matches this reviewer's independent measurement",
+    "the four excluded frontmatter keys named in the rewrite match reviewSubjectExcluded() exactly",
+    "the f84259c pointer-retargeting evidence is now correctly seated on cards that actually declare blocks:",
+    "the rule line at the end of the section ('reviewed-card-sha256에는 canonical digest를 박는다') follows from the measurements rather than restating them",
+    "ISSUE-012 was not touched in round 2 and remains as verified in round 1",
+    "TASK-388 and tasks/done/388-...md still untouched by this branch",
+    "no probe artefacts left; git status --short shows only this receipt"
+  ],
+  "does-not-certify": [
+    "the substance of TASK-388's own verdict",
+    "that the ce-agent-kit source read here (v0.8.4-194-g8d1d183e) is byte-identical to the installed binary (0.8.4); all digest and blocks: measurements were taken with the installed binary and the source was read only for corroboration"
+  ],
+  "files-modified-by-reviewer": [
+    "tasks/receipts/TASK-389/done-review-17dad580e56d3b5a76871013dc36ad8c471f1c647fb467f9c836d4402ef6bae9.json (this file)"
+  ]
+}
