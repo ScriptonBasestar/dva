@@ -22,6 +22,17 @@ import (
 //   - A count phrase ("8장", "일곱 장") only counts children when it sits beside such an
 //     enumeration. PLAN-007's "done 카드 58장" and PLAN-006's "23개 devbox 저장소" count
 //     something else entirely, and a rule that reads every numeral would reject both.
+//   - Sharing a sentence is not enough on its own, and the first cut of this rule was wrong to
+//     treat it as such (ISSUE-016). Two further conditions were added by measurement:
+//     (a) only 장 pairs. 개/건/장 are all generic Korean counters, but in this corpus 장 is the
+//     only one that ever counts cards — "필드 32개", "관련 문서 8건", "23개 devbox 저장소" count
+//     fields, documents and repositories, and each of those sentences can legitimately carry an
+//     id enumeration beside it. findCountPhrases still reports all three (a 건 count is a real
+//     quantity; it is just not a card count), so the narrowing lives in the pairing, not in the
+//     vocabulary.
+//     (b) pairing is symmetric. A count and an enumeration pair only when each is the other's
+//     nearest neighbour in the sentence, so "TASK-1·2와 TASK-3·4·5, 세 장이 겹친다" does not
+//     hand the same "세 장" to the far enumeration as well.
 //   - total-tasks is only comparable to prose in `scope:`, which by definition describes the
 //     whole plan. In `## Goal` a count legitimately describes a subset — PLAN-009 says
 //     "다섯 장(TASK-344·350·343·354·338)" about five of its seven children — so there the
@@ -49,11 +60,11 @@ var (
 	// runTailRE continues an anchor as a separated run: "TASK-371, 344, 350" or
 	// "TASK-344·350·343". Continuations may drop the "TASK-" prefix, which the live plans do.
 	runTailRE = regexp.MustCompile(`^\s*[,·]\s*(?:TASK-)?0*(\d+)`)
-	// countPhraseRE matches a counted quantity of cards: a digit or a native Korean numeral
-	// followed by 장/개/건. Sino-Korean numeral words (일, 이, 삼 …) are excluded on purpose:
-	// they are indistinguishable from ordinary words at this level and the digit form covers
-	// the same values.
-	countPhraseRE = regexp.MustCompile(`(\d+|열다섯|열네|열세|열두|열한|다섯|여섯|일곱|여덟|아홉|한|두|세|네|열)\s*[장개건]`)
+	// countPhraseRE matches a counted quantity: a digit or a native Korean numeral followed by
+	// 장/개/건. Sino-Korean numeral words (일, 이, 삼 …) are excluded on purpose: they are
+	// indistinguishable from ordinary words at this level and the digit form covers the same
+	// values. The counter itself is captured because only 장 counts cards here — see cardCounter.
+	countPhraseRE = regexp.MustCompile(`(\d+|열다섯|열네|열세|열두|열한|다섯|여섯|일곱|여덟|아홉|한|두|세|네|열)\s*([장개건])`)
 	// sentenceSplitRE bounds "the same sentence". An em dash does not end one — PLAN-009 writes
 	// its enumeration and its count on either side of one.
 	sentenceSplitRE = regexp.MustCompile(`\.\s|\n`)
@@ -69,6 +80,10 @@ var nativeNumerals = map[string]int{
 // range should be ignored, not turned into thousands of membership claims.
 const maxRangeSpan = 200
 
+// cardCounter is the one Korean counter that this corpus uses for cards. 개 and 건 are matched
+// as quantities but never paired with an enumeration — see the file comment (ISSUE-016).
+const cardCounter = "장"
+
 // findCountedEnumerations extracts every task-id enumeration in text, sentence by sentence,
 // pairing each with the nearest count phrase in its own sentence.
 func findCountedEnumerations(text string) []countedEnumeration {
@@ -78,10 +93,15 @@ func findCountedEnumerations(text string) []countedEnumeration {
 		if len(enums) == 0 {
 			continue
 		}
-		counts := findCountPhrases(sentence)
-		for _, e := range enums {
-			if c, ok := nearestCount(e, counts); ok {
-				e.count, e.hasCount = c, true
+		counts := cardCounts(findCountPhrases(sentence))
+		for i, e := range enums {
+			// Symmetric pairing: the count must be this enumeration's nearest, and this
+			// enumeration must be that count's nearest. One-way nearest handed the same count
+			// to every enumeration in the sentence (ISSUE-016 F3).
+			if ci, ok := nearestCount(e, counts); ok {
+				if ei, ok := nearestEnum(counts[ci], enums); ok && ei == i {
+					e.count, e.hasCount = counts[ci].n, true
+				}
 			}
 			out = append(out, e.countedEnumeration)
 		}
@@ -93,13 +113,26 @@ func findCountedEnumerations(text string) []countedEnumeration {
 // enumeration it is actually next to rather than one further away in the same sentence.
 type span struct{ start, end int }
 
+// gap is the character distance between two spans in the same sentence, 0 when they overlap
+// (which only happens if a count sits inside a run).
+func (s span) gap(o span) int {
+	if g := o.start - s.end; g >= 0 {
+		return g
+	}
+	if g := s.start - o.end; g >= 0 {
+		return g
+	}
+	return 0
+}
+
 type enumMatch struct {
 	countedEnumeration
 	span
 }
 
 type countMatch struct {
-	n int
+	n    int
+	unit string
 	span
 }
 
@@ -148,10 +181,19 @@ func findEnumerations(sentence string) []enumMatch {
 			end += m[1]
 		}
 
+		// Two or more ids *as written* is what makes this an enumeration rather than an
+		// isolated mention; the distinct ids are what it claims to count. Keeping the two
+		// apart matters for "TASK-1, 1": still an enumeration, but of one card, so a "두 장"
+		// beside it is reported instead of matching the repeat (ISSUE-017 F5).
 		if len(ids) >= 2 {
 			e := enumMatch{span: span{start: start, end: end}}
 			e.text = strings.TrimSpace(sentence[start:end])
+			seen := make(map[int]bool, len(ids))
 			for _, n := range ids {
+				if seen[n] {
+					continue
+				}
+				seen[n] = true
 				e.ids = append(e.ids, fmt.Sprintf("TASK-%d", n))
 			}
 			out = append(out, e)
@@ -173,25 +215,46 @@ func findCountPhrases(sentence string) []countMatch {
 				continue
 			}
 		}
-		out = append(out, countMatch{n: n, span: span{start: loc[0], end: loc[1]}})
+		out = append(out, countMatch{
+			n:    n,
+			unit: sentence[loc[4]:loc[5]],
+			span: span{start: loc[0], end: loc[1]},
+		})
 	}
 	return out
 }
 
-// nearestCount picks the count phrase closest to e by character gap. Sentences that carry more
-// than one quantity ("여덟 장 중 세 장") would otherwise pair arbitrarily.
+// cardCounts keeps only the quantities that could be counting cards. A 개/건 quantity is still a
+// real quantity — it just counts fields, documents or repositories, never children (ISSUE-016).
+func cardCounts(counts []countMatch) []countMatch {
+	var out []countMatch
+	for _, c := range counts {
+		if c.unit == cardCounter {
+			out = append(out, c)
+		}
+	}
+	return out
+}
+
+// nearestCount returns the index of the count phrase closest to e by character gap. Sentences
+// that carry more than one quantity ("여덟 장 중 세 장") would otherwise pair arbitrarily.
 func nearestCount(e enumMatch, counts []countMatch) (int, bool) {
 	best, bestGap := 0, -1
-	for _, c := range counts {
-		gap := c.start - e.end
-		if gap < 0 {
-			gap = e.start - c.end
+	for i, c := range counts {
+		if gap := e.gap(c.span); bestGap == -1 || gap < bestGap {
+			best, bestGap = i, gap
 		}
-		if gap < 0 {
-			gap = 0 // overlapping, which only happens if a count sits inside the run
-		}
-		if bestGap == -1 || gap < bestGap {
-			best, bestGap = c.n, gap
+	}
+	return best, bestGap != -1
+}
+
+// nearestEnum is nearestCount's mirror: the index of the enumeration closest to c. Both
+// directions are needed because pairing is symmetric — see findCountedEnumerations.
+func nearestEnum(c countMatch, enums []enumMatch) (int, bool) {
+	best, bestGap := 0, -1
+	for i, e := range enums {
+		if gap := c.gap(e.span); bestGap == -1 || gap < bestGap {
+			best, bestGap = i, gap
 		}
 	}
 	return best, bestGap != -1

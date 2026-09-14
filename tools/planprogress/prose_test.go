@@ -143,6 +143,97 @@ func TestCheckPlanProse(t *testing.T) {
 	}
 }
 
+// TestIssue016FalsePositives holds review-381's three measured false positives (F1,
+// 2026-09-14): a numeral of the counter shape (개/건/장) beside an id enumeration used to be
+// paired with it as a card count even when it counted something other than cards. It arrived
+// as a red reproduction behind the "knownbroken" build tag and moved here when ISSUE-016 was
+// fixed by restricting pairing to 장. Do not silence these by loosening wantN.
+func TestIssue016FalsePositives(t *testing.T) {
+	tests := []struct {
+		name  string
+		p     plan
+		wantN int
+	}{
+		{
+			name: "a struct field count in Goal is not an enumeration count",
+			p: func() plan {
+				p := childrenOf("TASK-1", "TASK-2")
+				p.id = "PLAN-ISSUE-016-A"
+				p.goal = "TASK-1·2는 check.go의 Result 구조체(필드 32개)를 고친다"
+				return p
+			}(),
+			wantN: 0,
+		},
+		{
+			name: "a struct field count beside a line range in scope is not an enumeration count",
+			p: func() plan {
+				p := childrenOf("TASK-1", "TASK-2", "TASK-3")
+				p.id = "PLAN-ISSUE-016-B"
+				p.scope = "TASK-1, 2, 3 — check.go(19-51행, 필드 32개)"
+				return p
+			}(),
+			wantN: 0,
+		},
+		{
+			name: "a document count in scope is not an enumeration count",
+			p: func() plan {
+				p := childrenOf("TASK-1", "TASK-2", "TASK-3")
+				p.id = "PLAN-ISSUE-016-C"
+				p.scope = "TASK-1, 2, 3 — 관련 문서 8건을 정리한다"
+				return p
+			}(),
+			wantN: 0,
+		},
+		{
+			// F3: one count phrase used to be handed to every enumeration in the sentence,
+			// so the far one ("TASK-1·2") was reported against a count that belongs to the
+			// near one. Symmetric pairing removed the whole class.
+			name: "a count pairs only with the enumeration it is nearest to",
+			p: func() plan {
+				p := childrenOf("TASK-1", "TASK-2", "TASK-3", "TASK-4", "TASK-5")
+				p.id = "PLAN-ISSUE-016-D"
+				p.goal = "TASK-1·2와 TASK-3·4·5, 세 장이 겹친다"
+				return p
+			}(),
+			wantN: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := checkPlanProse(tt.p, tt.p.id)
+			if len(got) != tt.wantN {
+				t.Fatalf("checkPlanProse() = %v (%d defects), want %d", got, len(got), tt.wantN)
+			}
+		})
+	}
+}
+
+// TestIssue017Deduplication holds review-381's F5 (2026-09-14): findEnumerations did not
+// deduplicate a repeated id in a comma run, so "TASK-1, 1, 2" read as three ids for two
+// distinct cards — and a "세 장" beside it then matched that wrong total, reporting a
+// miscount as correct. Arrived as a red reproduction behind the "knownbroken" tag.
+func TestIssue017Deduplication(t *testing.T) {
+	sentence := "TASK-1, 1, 2"
+	want := []string{"TASK-1", "TASK-2"}
+
+	got := findEnumerations(sentence)
+	if len(got) != 1 {
+		t.Fatalf("findEnumerations(%q) returned %d enumerations, want 1", sentence, len(got))
+	}
+	if strings.Join(got[0].ids, ",") != strings.Join(want, ",") {
+		t.Errorf("findEnumerations(%q) ids = %v, want %v", sentence, got[0].ids, want)
+	}
+
+	// The wrong count must now surface rather than coincide with the repeat.
+	p := childrenOf("TASK-1", "TASK-2", "TASK-3")
+	p.id = "PLAN-ISSUE-017"
+	p.scope = "TASK-1, 1, 2 — 세 장이 같은 파일을 고친다"
+	if defects := checkPlanProse(p, p.id); len(defects) != 1 {
+		t.Errorf("checkPlanProse() = %v (%d defects), want 1", defects, len(defects))
+	}
+}
+
 func TestFindEnumerations(t *testing.T) {
 	tests := []struct {
 		name     string
