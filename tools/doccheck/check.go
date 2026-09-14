@@ -26,38 +26,38 @@ type Result struct {
 	// StaleLinkPaths counts task-card links that resolve by their stable basename while the
 	// relative path written in the document no longer exists in the inventory. This is a
 	// maintenance signal, not a broken link: state-directory moves are intentional (TASK-143).
-	StaleLinkPaths          int
-	StaleLinkPathsDocs      int
-	OversizedDocs           int
-	TestFilesSwept          int
-	TestFuncsFound          int
-	RunPatternsChecked      int
-	UnmatchedRunFlags       int
-	EscapedPipeBindings     int
-	AbsCheckoutBindings     int
-	ExternalCorpusBindings  int
-	WrappedToolBindings     int
-	BareToolBindings        int
-	InvertedGrepBindings    int
-	BareSuiteBindings       int
-	ExistingTodoTestNames   int
-	ArchiveFilesSeen        int
-	ArchiveCards            int
-	ArchiveMissing          int
-	CardsSeen               int
-	CardsChecked            int
-	StatusMismatches        int
+	StaleLinkPaths         int
+	StaleLinkPathsDocs     int
+	OversizedDocs          int
+	TestFilesSwept         int
+	TestFuncsFound         int
+	RunPatternsChecked     int
+	UnmatchedRunFlags      int
+	EscapedPipeBindings    int
+	AbsCheckoutBindings    int
+	ExternalCorpusBindings int
+	WrappedToolBindings    int
+	BareToolBindings       int
+	InvertedGrepBindings   int
+	BareSuiteBindings      int
+	ExistingTodoTestNames  int
+	ArchiveFilesSeen       int
+	ArchiveCards           int
+	ArchiveMissing         int
+	CardsSeen              int
+	CardsChecked           int
+	StatusMismatches       int
 	// Upstream-ref advisory (TASK-395): counted, never failed — the meters below are the
 	// point. Unmarked issue cards pool toward the upstream majority by default; owned cards
 	// without an upstream-ref: value have no report trail. Both stay advisory for the reason
 	// upstreamref.go states: the reported act happens outside this repository.
-	IssueCardsSeen     int
-	IssueCardsRead     int
-	OwnershipUnmarked  int
-	UpstreamOwned      int
-	UpstreamUnrefed    int
-	CardIDsSeen        int
-	DuplicateCardIDs   int
+	IssueCardsSeen          int
+	IssueCardsRead          int
+	OwnershipUnmarked       int
+	UpstreamOwned           int
+	UpstreamUnrefed         int
+	CardIDsSeen             int
+	DuplicateCardIDs        int
 	FilenameNumbersSeen     int
 	DuplicateFilenameNums   int
 	Errors                  []string
