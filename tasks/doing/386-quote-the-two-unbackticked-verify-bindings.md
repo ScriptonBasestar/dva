@@ -1,0 +1,59 @@
+---
+id: TASK-386
+title: "Quote the two unbackticked verify bindings the validator cannot read"
+type: bug
+priority: P3
+effort: S
+exec-tier: standard
+status: doing
+created: 2026-09-14
+source: "2026-09-14 보드 점검에서 ce task validate --all이 내는 경고 2건의 원인을 좁혔다"
+depends-on: []
+completion-summary: "TASK-319의 verify 바인딩 1개와 TASK-321의 2개, 총 3줄을 백틱으로 감쌌다. 두 카드의 판정·증거·본문은 건드리지 않았고 diff는 3줄이다. ce task validate가 내던 경고 2건이 사라졌다"
+verification-status: verified
+verification-evidence: "완료 기준 3개의 기계 바인딩 전부 exit 0. 두 카드 단독 validate가 경고 0. make doc-check rc=0. git diff --stat이 2파일 3줄(+3/-3)로 verify 줄 외 변경이 없음을 보인다. validate --all의 invalid 6건은 이 브랜치의 base인 master의 기존값이며 이 카드가 더하지 않았다"
+---
+
+## Summary
+
+`ce task validate --all`이 경고 2건을 낸다.
+
+```
+tasks/done/319-native-entry-ergonomics.md
+  ⚠️  a | verify: value is neither a backtick command nor `human — …`
+tasks/done/321-destructive-interaction-agent-deny.md
+  ⚠️  a | verify: value is neither a backtick command nor `human — …`
+```
+
+원인은 두 카드의 `verify:` 값이 **백틱으로 감싸이지 않은 것**이다. 다른 84장은 감싼다.
+
+## 원인을 좁힌 절차
+
+처음 의심한 것은 값 안의 `|`였다 — 두 카드 모두 `go test ... -run "A|B|C"`를 쓰고
+criterion 줄의 필드 구분자도 `|`다. **아니었다.** 사본에서 `-run` 정규식의 `|`를 전부
+없애도 경고가 그대로 남았다. 백틱을 씌우자 사라졌다.
+
+```
+probe-a (원본)                 → ⚠️ 1건
+probe-b (-run의 | 제거)        → ⚠️ 1건   ← 파이프는 원인이 아니다
+probe-c (백틱 추가)            → ⚠️ 0건   ← 원인은 이것이다
+```
+
+값 안의 `|`가 무해하다는 것도 같이 확인됐다. 백틱 안에 있으면 파서가 필드 구분자로
+읽지 않는다.
+
+## 고치면 무엇이 달라지나
+
+경고일 뿐 판정을 바꾸지 않는다. 바뀌는 것은 **바인딩이 실행 가능해진다는 것**이다.
+백틱이 없으면 validator가 그 값을 명령으로 인식하지 못하고, 인식하지 못하는 바인딩은
+재실행되지 않는다 — 완료 기준이 글로만 남는다. 두 카드는 done이므로 판정을 다시
+내리지는 않지만, 바인딩은 나중에 회귀를 잡는 데 쓰인다.
+
+두 카드의 판정·증거·본문은 건드리지 않는다. 백틱만 씌운다.
+
+## Completion Criteria
+
+- [x] TASK-319의 verify 값이 백틱으로 감싸여 있다 | verify: `/usr/bin/grep -rq --include='319-*.md' 'verify: .go test' tasks`
+- [x] TASK-321의 verify 값 둘이 백틱으로 감싸여 있다 | verify: `/usr/bin/grep -rq --include='321-*.md' 'verify: .go run' tasks`
+- [x] validate가 두 경고를 더 이상 내지 않는다 | verify: `ce task validate --all`
+- [x] 두 카드에서 verify 줄 외에 바뀐 줄이 없다 | verify: `human — git show로 diff 확인`

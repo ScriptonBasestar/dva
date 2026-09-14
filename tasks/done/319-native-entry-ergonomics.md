@@ -32,7 +32,7 @@ dva로 마이그레이션하는 과정에서 native 엔트리 선언의 표현�
 ## Completion Criteria
 
 - [x] 각 항목 설계 결정 기록 | verify: human — 카드 하단에 "Design record" 절이 추가되어 1)optional/dir-exists, 2)post-build step, 3)PrimaryComposeEntry 명시 수단, 4)native env: 문서화 4개 항목 각각에 대해 채택/보류 결정과 근거가 기록되었는지 확인
-- [x] 구현 + 테스트 | verify: go test ./internal/lifecycle ./internal/config ./internal/cli -run "TestResolvePlanSkipsOptionalEntryWithMissingDir|TestResolvePlanKeepsOptionalEntryWhenDirExists|TestResolvePlanKeepsNonOptionalEntryWithMissingDir|TestResolvePlanSkipsOptionalProcessEntryWithMissingDir|TestResolvePlanKeepsOptionalEntryWithoutDir|TestPrimaryComposeEntryExplicitBeatsOrder|TestPrimaryComposeEntryFallsBackToOrder|TestPrimaryComposeEntryMultiplePrimariesIsDeterministic|TestPrimaryComposeEntryIgnoresNonComposePrimary|TestWarnMultiplePrimaryCompose|TestPostBuild"
+- [x] 구현 + 테스트 | verify: `go test ./internal/lifecycle ./internal/config ./internal/cli -run "TestResolvePlanSkipsOptionalEntryWithMissingDir|TestResolvePlanKeepsOptionalEntryWhenDirExists|TestResolvePlanKeepsNonOptionalEntryWithMissingDir|TestResolvePlanSkipsOptionalProcessEntryWithMissingDir|TestResolvePlanKeepsOptionalEntryWithoutDir|TestPrimaryComposeEntryExplicitBeatsOrder|TestPrimaryComposeEntryFallsBackToOrder|TestPrimaryComposeEntryMultiplePrimariesIsDeterministic|TestPrimaryComposeEntryIgnoresNonComposePrimary|TestWarnMultiplePrimaryCompose|TestPostBuild"`
 
 ## Design Record
 

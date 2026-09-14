@@ -23,8 +23,8 @@ agent-deny 목록은 `config env seal|show` 2건뿐 (`dva agent-deny status`). �
 
 ## Completion Criteria
 
-- [x] 설계 결정 (docs/agent-deny-rules.md 갱신) | verify: go run ./tools/agentdenygen && /usr/bin/grep -q "Destructive interactions" docs/agent-deny-rules.md
-- [x] 구현 + 테스트 | verify: go test ./internal/config ./internal/runner ./internal/cli ./internal/agentdeny -run "TestInteractionCommandDestructive|TestInteractionTreeDestructive|TestConfirmDestructive|TestProjectScopeDestructive"
+- [x] 설계 결정 (docs/agent-deny-rules.md 갱신) | verify: `go run ./tools/agentdenygen && /usr/bin/grep -q "Destructive interactions" docs/agent-deny-rules.md`
+- [x] 구현 + 테스트 | verify: `go test ./internal/config ./internal/runner ./internal/cli ./internal/agentdeny -run "TestInteractionCommandDestructive|TestInteractionTreeDestructive|TestConfirmDestructive|TestProjectScopeDestructive"`
 
 ## Verification Evidence
 
