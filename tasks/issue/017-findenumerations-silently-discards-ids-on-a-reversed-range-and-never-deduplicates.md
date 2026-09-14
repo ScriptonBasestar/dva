@@ -76,14 +76,18 @@ Goal로 주고 `checkPlanProse`를 호출하면 **결함이 0개** 보고된다 
 보고되지 않는다.
 
 이 결함은 카드의 severity 표기(`low`)가 시사하는 것보다 크게 다뤄야 한다:
-`[[TASK-NNN]]`은 이 보드 자체의 상호참조 표기법이다. [[TASK-381]] 본문이 이미
-`[[TASK-385]]`로 쓰고, [[PLAN-007]]도 `[[TASK-381]]`/`[[TASK-388]]`로 같은
-형태를 쓴다(둘 다 grep으로 확인). PLAN-008/009는 같은 대괄호 표기법을
-`[[ISSUE-N]]`/`[[PLAN-N]]`에 쓰지만 `[[TASK-N]]` 실례는 없고, PLAN-006에는
-지금 대괄호 링크 자체가 없다 — 그래도 대괄호 위키링크가 보드 전역의 상호참조
-관용이고 `[[TASK-N]]` 형태가 TASK-381·PLAN-007에서 실제로 쓰인다는 점은
-확인된다. 즉 카드 저자가 보드의 집안 표기법대로 scope/Goal을 쓰면 나열 검사가
-조용히 통째로 꺼지고, 꺼졌다는 신호도 없다.
+`[[TASK-NNN]]`은 이 보드 자체의 상호참조 표기법이다. `[[TASK-N]]` 형태의
+실측 개수는 [[TASK-381]] 본문 7회, [[PLAN-007]] 2회, PLAN-006/008/009는
+0회다 — PLAN-008/009는 같은 대괄호 표기법을 `[[ISSUE-N]]`/`[[PLAN-N]]`에는
+쓰지만 `[[TASK-N]]` 실례는 없고, PLAN-006에는 대괄호 위키링크 자체가 없다.
+
+다만 **이 검사가 실제로 읽는 두 영역 — `scope:`와 `## Goal` 절 — 에는 네 plan
+카드 전부에서 오늘 위키링크가 하나도 없다**(직접 확인). 그래서 이 노출은 지금
+살아있는 카드를 조용히 빠뜨리고 있는 것이 아니라 **잠재적(latent)**이다: 이
+결함 때문에 검사가 꺼진 채로 통과하고 있는 카드는 오늘 하나도 없다. 그러나
+TASK-381·PLAN-007처럼 본문에서 `[[TASK-N]]`을 자유롭게 쓰는 저자가 그 습관을
+scope/Goal로 옮기는 순간, 검사는 진단 없이 조용히 꺼진다 — 노출은 그 날
+현재화된다.
 
 이 문장들은 이 카드와 함께 회귀 픽스처로 추가했다:
 
@@ -133,16 +137,27 @@ F5b는 이 셋 중 가장 넓게 걸린다. F4/F5는 나열이 일단 인식된 
 F5b는 인식 자체를 막아 검사를 통째로 끈다 — [[ISSUE-018]]이 다루는 파싱
 단계의 "조용한 off"와 같은 성질이다. 걸리는 입력이 오타가 아니라 보드의 정상
 표기법이라는 점에서 이 카드의 severity(`low`) 표기가 시사하는 것보다 크게
-다뤄야 한다: 그 표기법대로 scope/Goal을 쓰는 저자는 검사도 진단도 없이 그냥
-통과한다.
+다뤄야 한다.
+
+명시적으로 적는다: 이 노출은 **잠재적(latent)이지, 지금 벌어지고 있는 일이
+아니다.** 검사가 실제로 읽는 `scope:`/`## Goal` 두 영역에는 PLAN-006/007/
+008/009 네 카드 전부에서 오늘 위키링크가 없으므로, 이 결함 때문에 지금
+조용히 통과하고 있는 살아있는 카드는 없다. 노출은 저자가 본문에서 이미 쓰는
+`[[TASK-N]]` 습관(TASK-381 7회, PLAN-007 2회)을 scope/Goal로 옮기는 순간
+현재화된다 — 그리고 그 날 검사는 진단도 신호도 없이 조용히 꺼진다.
 
 ## Resolution Criteria
 
 - [ ] `tools/planprogress/known_issues_test.go`의 `TestIssue017Deduplication`
       (`TASK-1, 1, 2` → 두 장)이 통과한다 — `findEnumerations`가 중복 id를
       제거한다는 뜻이다. 이 바인딩은 구성상 지금은 실패하며, 결함이 고쳐졌을
-      때만 통과한다 | verify: `go test -tags=knownbroken -run
-      TestIssue017Deduplication ./tools/planprogress/`
+      때만 통과한다. `-run`만으로 짠 바인딩은 파일을 통째로 지워도
+      `ok ... [no tests to run]`로 exit 0이 되어버린다(실측 확인) — 그래서
+      출력에서 이 테스트 자신의 PASS 요약 줄을 직접 찾는다. 이름이 지워지거나
+      바뀌면 그 줄이 없으므로 여전히 실패로 읽힌다 | verify: `sh -c 'go test
+      -tags=knownbroken -run "^TestIssue017Deduplication$" -v
+      ./tools/planprogress/ 2>&1 | /usr/bin/grep -qE "^--- PASS:
+      TestIssue017Deduplication "'`
 - [ ] 역방향/과대 범위(`maxRangeSpan` 초과 포함)를 어떻게 다룰지 — 조용히
       건너뛰되 뒤 나열은 보존, 결함으로 보고, 또는 다른 처리 — 결정되고,
       `TestFindEnumerations`의 `"reversed range is ignored"` 기대값이 그
@@ -156,8 +171,9 @@ F5b는 인식 자체를 막아 검사를 통째로 끈다 — [[ISSUE-018]]이 �
       P5 픽스처를 넣고 결과를 확인
 - [ ] 이 결함의 재현이 기본 테스트 스위트로 옮겨졌다 — `TestIssue017Deduplication`가
       `prose_test.go`에 있고 `known_issues_test.go`에는 남아 있지 않다(태그를
-      지우는 것만으로는 만족되지 않는다) | verify: `grep -q 'TestIssue017Deduplication'
-      tools/planprogress/prose_test.go && ! grep -q 'TestIssue017Deduplication'
+      지우는 것만으로는 만족되지 않는다) | verify: `/usr/bin/grep -q
+      'TestIssue017Deduplication' tools/planprogress/prose_test.go &&
+      ! /usr/bin/grep -q 'TestIssue017Deduplication'
       tools/planprogress/known_issues_test.go`
 
 ## Related
