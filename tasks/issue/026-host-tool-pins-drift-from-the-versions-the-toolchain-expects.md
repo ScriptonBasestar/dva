@@ -53,6 +53,14 @@ $ mise current | /usr/bin/grep golangci
 aqua:golangci/golangci-lint 2.13.2                   # mise의 선택과 어긋난다
 ```
 
+## Reproduction
+
+1. `which -a golangci-lint | head -2`를 돌린다 — 물리 경로 2.12.2가 첫 줄이다.
+2. ce-agent-kit 체크아웃에서 `make lint`를 돌린다 — 툴체인 검증에서 즉시 실패한다.
+3. `mise current`에서 worktrunk를 본다 — `latest`로 나온다.
+
+셋 다 워크스테이션 상태라 매번 같은 결과로 재현된다.
+
 ## Expected vs Actual
 
 | | |

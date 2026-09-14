@@ -52,6 +52,16 @@ $ ce task done-finalize tasks/done/394-*.md --dry-run
 역참조 사슬이 만든 교착의 모양: 017(이슈) → 394(done) → 391(done). 017은
 살아 있는 이슈 카드고 참조는 정당하다. 사슬의 아무 고리도 스스로 풀 수 없다.
 
+## Reproduction
+
+1. done-review까지 끝난 카드 하나의 `quality-review-evidence`에 리뷰어가 본 코드
+   영역을 경로로 적는다(정상적인 리뷰 증거 작성이다).
+2. 그 카드를 위키링크로 인용하는 카드를 하나 둔다(정상적인 인용이다).
+3. 그 카드로 `ce task done-finalize <카드> --dry-run`을 돌린다.
+
+두 사유로 BLOCKED가 뜬다. 위 Evidence의 세 카드가 같은 조건에서 재현된 실례다 —
+조건을 피한 카드만 제거된다.
+
 ## Expected vs Actual
 
 | | |
@@ -82,5 +92,5 @@ task_cleanup*.go`의 정합성 검사)에 있다. 이 저장소가 할 수 있�
 ## Resolution Criteria
 
 - [ ] 상류에서 evidence 서술 경로가 소유 정합성 검사를 촉발하지 않게 된다 | verify: human — ce-agent-kit의 cleanup 검사가 전용 바인딩 필드만 검사하는지 읽어 확인한다
-- [ ] 세 카드의 dry-run이 더는 그 사유로 BLOCKED가 아니다 | verify: `ce task done-finalize tasks/done/391-stop-planprogress-from-pairing-any-korean-counter-with-an-enumeration.md --dry-run 2>&1 | /usr/bin/grep -c "ownership reconciliation"` 출력이 0
+- [ ] 세 카드의 dry-run이 더는 그 사유로 BLOCKED가 아니다 | verify: `ce task done-finalize $(/usr/bin/find tasks -name '391-stop-planprogress-from-pairing-any-korean-counter-with-an-enumeration.md') --dry-run 2>&1 | /usr/bin/grep -c "ownership reconciliation"` 출력이 0
 - [ ] 보드 게이트 통과 | verify: `ce task gate` (regression-guard)

@@ -3,7 +3,7 @@ id: ISSUE-025
 title: "The worktree registry keeps a broken entry that every doctor run reports"
 type: bug
 status: todo
-priority: P3
+priority: P2
 severity: low
 created: 2026-09-15
 discovered-at: 2026-09-15
@@ -43,6 +43,16 @@ fatal: validation failed, cannot remove working tree: '.../source/.git' is not a
 
 `git worktree prune`도 지우지 않는다 — 디스크 디렉터리가 살아 있으면 prune의 대상이
 아니고, remove는 검증 단계에서 같이 죽는다. 표준 인터페이스로는 못 지운다.
+
+## Reproduction
+
+1. 이 저장소에서 `ce task run-doctor`를 돌린다.
+2. doctor는 ACTIVE로 뜨지만 detached worktree 경고 한 줄이 같이 나온다.
+3. 경고가 가리키는 체크아웃에서 `git status`를 돌리면 "not a git repository"로
+   죽는다 — 이미 git 저장소로서 죽어 있다.
+4. `git worktree remove --force`와 `git worktree prune`을 차례로 시도한다.
+
+둘 다 그 항목 앞에서 실패하는 것이 재현이다.
 
 ## Expected vs Actual
 

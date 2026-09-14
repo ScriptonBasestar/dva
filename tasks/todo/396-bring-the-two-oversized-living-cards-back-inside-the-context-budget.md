@@ -38,7 +38,7 @@ depends-on: []
 ## Completion Criteria
 
 - [ ] 활성 존 카드가 예산 안에 든다 | verify: `test 0 -eq $(/usr/bin/find tasks/issue tasks/plan tasks/todo -maxdepth 1 -name '*.md' -size +20000c | /usr/bin/grep -c .)`
-- [ ] ISSUE-001이 소유권·보고 자리를 유지한다 | verify: `/usr/bin/grep -c '소유권\|upstream-ref' tasks/issue/001-task-runtime-cannot-review-legacy-done-cards-without-verification-evidence.md`
+- [ ] ISSUE-001이 소유권·보고 자리를 유지한다 | verify: `/usr/bin/grep -c '소유권\|upstream-ref' $(/usr/bin/find tasks -name '001-task-runtime-cannot-review-legacy-done-cards-without-verification-evidence.md')`
 - [ ] 게이트 통과 | verify: `make doc-check` (regression-guard)
 
 ## Sources
