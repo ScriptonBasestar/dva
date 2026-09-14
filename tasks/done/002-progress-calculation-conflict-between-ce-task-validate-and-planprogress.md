@@ -53,14 +53,16 @@ review-receipt contract in ISSUE-001.
 
 The shared task-management validator's truncation rule is canonical. TASK-371
 changed DVA `planprogress` to apply it, added a 16/26 regression case, and
-currentized PLAN-006. TASK-354 records that the progress prerequisite is
-complete and that ISSUE-001 is now the remaining blocker.
+currentized PLAN-006. PLAN-009 §Parallel lane records that the progress
+prerequisite is complete and that ISSUE-001 is now the remaining blocker.
+TASK-354's own §Summary records only the receipt blocker, not this
+prerequisite — corrected 2026-09-14 after review-371 read both documents.
 
 ## Resolution Criteria
 
 - [x] PLAN-006 validates and `make doc-check` accepts the same persisted progress value | verify: `ce task validate "$(/usr/bin/find tasks -name '006-devbox-dogfood-followup.md' -print -quit)" && make doc-check`
 - [x] A non-integer progress ratio is covered by the owning validator's regression test | verify: `go test ./tools/planprogress`
-- [x] TASK-354 records the resolved shared-gate consequence before it is closed | verify: human — TASK-354 §Summary and PLAN-009 §Parallel lane record that TASK-371 resolved the progress prerequisite and ISSUE-001 remains the blocker
+- [x] The resolved shared-gate consequence is recorded before TASK-354 is closed | verify: human — PLAN-009 §Parallel lane records that TASK-371 resolved the progress prerequisite and that ISSUE-001 remains the blocker
 
 ## Resolution Evidence
 
