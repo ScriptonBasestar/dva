@@ -30,7 +30,7 @@ quality-review-evidence:
   - "independent reviewer found no correctness, scope, regression, or portability findings"
   - "go test ./tools/doccheck -count=1, go run ./tools/doccheck, git diff --check, dva lint, and make doc-check passed"
   - "scratch fail-closed probe reported all three planted bindings with counters 1/1/1"
-quality-review-receipt: tmp/task-management/direct/queue-run/task-220-review-receipt.json
+quality-review-receipt: tasks/receipts/TASK-220/done-review-5d5f1fe6b75ff708d5134806ffe33a7c7ba030ce8461ef383235f5d9ed778df2.json
 archived-at: 2026-08-26T11:49:15+09:00
 verified-at: 2026-08-26T11:49:15+09:00
 verification-summary: "Doccheck rejects all three non-portable verify-binding classes, the archive has zero live findings, and the gate is proven fail-closed."

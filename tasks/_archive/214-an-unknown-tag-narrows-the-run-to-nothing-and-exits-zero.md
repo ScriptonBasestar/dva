@@ -26,7 +26,7 @@ quality-reviewed-at: 2026-08-26T11:27:27+09:00
 quality-review-evidence:
   - "targeted CLI and lifecycle tests passed on the reviewed diff"
   - "full dva test, dva lint, and make doc-check gates passed"
-quality-review-receipt: tmp/task-management/direct/queue-run/task-214-review-receipt.json
+quality-review-receipt: tasks/receipts/TASK-214/done-review-a12c164d1451e5ea1ee2761a251bcf9632dde2e90bde24b2db971871c6bd15ba.json
 archived-at: 2026-08-26T11:28:09+09:00
 verified-at: 2026-08-26T11:28:09+09:00
 verification-summary: "Unknown include and exclude tags are rejected before side effects; declared selector controls and all repository gates passed."

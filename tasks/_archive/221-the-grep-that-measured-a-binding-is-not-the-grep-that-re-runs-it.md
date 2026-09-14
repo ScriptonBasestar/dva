@@ -30,7 +30,7 @@ quality-review-evidence:
   - "independent contract judge confirmed the corrected 127/168 to 0/167 close census and 126-rewrite plus one-reclassification accounting"
   - "normal versus malformed human forms, shell quote removal, escaped commands, redirections, substitutions, controls, and real-corpus floor are covered"
   - "TASK-025 and TASK-067 special bindings remain valid; focused/full tests, lint, doccheck, and diff validation passed"
-quality-review-receipt: tmp/task-management/direct/queue-run/task-221-review-receipt.json
+quality-review-receipt: tasks/receipts/TASK-221/done-review-d6795bb32f3620661dc0193b89b3a9c5b40de1a5a195af37940439f02ce70f03.json
 archived-at: 2026-08-26T13:16:15+09:00
 verified-at: 2026-08-26T13:16:15+09:00
 verification-summary: "Mechanical task bindings now use stable absolute grep/find binaries, and doccheck fails closed on shell-obfuscated bare tool invocations while preserving explicit human-review forms."

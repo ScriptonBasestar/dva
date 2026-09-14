@@ -27,7 +27,7 @@ quality-review-evidence:
   - "independent reviewer re-derived all six parseDvaFlags calls and confirmed the rejection-path classification"
   - "all stale 12/7/5 call-site assertions are gone and the diff changes comments only"
   - "focused tests, doccheck, and diff validation passed with no findings"
-quality-review-receipt: tmp/task-management/direct/queue-run/task-208-review-receipt.json
+quality-review-receipt: tasks/receipts/TASK-208/done-review-ca092a2d2ed7530e2f89fc24369914c30e2d08a7a25e8a463e77fbc60ab763fb.json
 archived-at: 2026-08-26T12:30:21+09:00
 verified-at: 2026-08-26T12:30:21+09:00
 verification-summary: "All stale parseDvaFlags call-site totals were removed and replaced by source-derived rejection-path descriptions without behavior changes."

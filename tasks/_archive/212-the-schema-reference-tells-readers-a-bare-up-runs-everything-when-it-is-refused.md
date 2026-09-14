@@ -27,7 +27,7 @@ quality-review-evidence:
   - "independent reviewer confirmed canonical and generated copies cover all no-name plan-selection shapes"
   - "only the schema reference and its generated embedded copy changed; no runtime source changed"
   - "generation, doccheck, stale-phrase, default_plan-count, and diff validations passed"
-quality-review-receipt: tmp/task-management/direct/queue-run/task-212-review-receipt.json
+quality-review-receipt: tasks/receipts/TASK-212/done-review-1272c0ddfee23b9c1d7ab21cb40dd0135869d97e80726ddf22ac3f3db4137d1a.json
 archived-at: 2026-08-26T12:37:37+09:00
 verified-at: 2026-08-26T12:37:37+09:00
 verification-summary: "The schema reference and embedded library now describe bare up correctly for absent, sole, defaulted, and ambiguous plan sets."

@@ -27,7 +27,7 @@ quality-review-evidence:
   - "independent reviewer confirmed accepted-here and plan-only metadata are separated at every rejectUnknownFlags call site"
   - "inline values are normalized before display and similarity matching, with accurate named-plan suggestions"
   - "tests pin both required wording and absence of the old collision explanation; all affected forms remain rc=1"
-quality-review-receipt: tmp/task-management/direct/queue-run/task-209-review-receipt.json
+quality-review-receipt: tasks/receipts/TASK-209/done-review-d6293fe25fb626f7940d6f6f42796d756d89dc03b0adcb14a8758dd67497f359.json
 archived-at: 2026-08-26T12:35:10+09:00
 verified-at: 2026-08-26T12:35:10+09:00
 verification-summary: "Restart now explains and suggests valid named-plan placement for plan-only flags while preserving stack-path rejection."

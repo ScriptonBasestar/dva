@@ -78,6 +78,9 @@ tasks/done/379-retarget-the-primeno1-dogfood-steps-at-plan-dev.md
   → ce task validate: ✅ Valid
 ```
 
+> **낡음 (2026-09-14).** 아래 두 문단의 소유권 귀속은 뒤집혔다 — §"2026-09-14:
+> §Summary 3번은 DVA 안에서 닫혔다"를 보라. 당시 판단으로 남긴다.
+
 **그렇다고 이 이슈가 닫히지는 않는다.** 남은 장애는 §Summary 3번이다: 그 receipt는
 `tmp/` 아래 있고 DVA의 `.gitignore`가 `tmp/`를 무시한다. 즉 receipt를 만든 워크트리
 밖에서는 존재하지 않는 파일을 카드가 가리킨다. durable한 경로
@@ -156,31 +159,42 @@ durable 경로가 생기면 이 카드의 receipt도 같이 옮겨야 한다. �
 `~/mywork/scripton/dva/tmp/task-management/direct/queue-run/`에 있고 워크트리 회수와
 함께 사라지지 않도록 주 체크아웃으로 복사해 두는 것이 유일한 보존 수단이다.
 
+> **해소됨 (2026-09-14, [[TASK-383]]).** durable 경로가 생겼고 이 카드를 포함한
+> receipt 18건(done 6, `_archive` 12)이 `tasks/receipts/<TASK-ID>/`로 옮겨졌다.
+> 주 체크아웃 `tmp/` 복사본은 더 이상 유일한 보존 수단이 아니다.
+
 ## 2026-09-14: §Summary 3번은 DVA 안에서 닫혔다 — 소유권 귀속이 틀렸다
 
 §Summary 3번은 receipt가 `tmp/` 아래 있어 durable하지 않다는 것이고, 위 절들은 그
 해소를 외부 소유(`ce-agent-kit` / `ce-workbook`)로 적었다. **그 귀속이 틀렸다.**
 [[TASK-383]]이 저장소 안에서 닫았다.
 
-**근거 1 — validator는 경로에 아무 제약을 걸지 않는다.** 설치된 `ce` 0.8.4 바이너리에서
-`quality-review-receipt`를 언급하는 메시지는 셋뿐이다.
+**근거 1 (직접 실측) — 같은 워크트리에서 결함과 해소가 한 번씩 관측됐다.** 갓 만든
+워크트리에서 아무것도 하기 전 `ce task validate --all`은 `78 valid, 6 invalid`였고,
+여섯 중 넷이 `cannot be read`였다. receipt를
+`tasks/receipts/<TASK-ID>/done-review-<sha>.json`으로 옮기고 카드 포인터를 고친 뒤,
+같은 워크트리에 `tmp/`를 만들지 않은 채로 `84 valid, 2 invalid (total: 86)`가 됐다.
+같은 시점 master는 `82 valid, 2 invalid (total: 84)`이고 차이 2는 이 브랜치가 더한
+카드 둘(TASK-383·384)이다. **durable 경로가 실제로 동작한다는 것은 이 한 쌍의 측정이
+증명하며, 아래 문자열 census는 그 이유를 설명하는 정황일 뿐 증명이 아니다.**
+
+**근거 2 (정황) — validator는 경로에 아무 제약을 걸지 않는다.** 설치된 `ce` 0.8.4
+바이너리에서 `quality-review-receipt`를 언급하는 메시지는 셋이 아니라 여섯이다.
 
 ```
 quality-review-receipt %s cannot be read: %s
 quality-review-receipt %s is not readable JSON: %s
-quality-review-receipt %s pins reviewed-card-sha256 %s but this card digests to %s
+quality-review-receipt %s records no reviewed-card-sha256, so it pins nothing
+quality-review-receipt %s pins reviewed-card-sha256 %s but this card digests to %s: the card changed after it was reviewed
+Cannot compute this card's review digest, so quality-review-receipt %s cannot be checked
+Done card blocks %s but declares no quality-review-receipt: the successors were unblocked on an unrecorded review
 ```
 
-접두사 검사도, `tmp/` 특별 취급도, 경로 형태 강제도 없다. validator는 카드가 적어 준
-저장소 상대 경로를 읽을 뿐이다. `tmp/`는 CE가 강제한 자리가 아니라 DVA가 택한 관례였다.
-`ce task validate --staged`가 Git index blob만 보는 모드로 존재한다는 것이 같은 결론을
-가리킨다 — 스테이징 스냅샷만 검증하는 모드가 있다면 receipt는 커밋에 실려 있어야 한다.
-
-**근거 2 — 같은 워크트리에서 결함과 해소가 한 번씩 관측됐다.** 갓 만든 워크트리에서
-아무것도 하기 전 `ce task validate --all`은 `78 valid, 6 invalid`였고, 여섯 중 넷이
-`cannot be read`였다. receipt 6건을 `tasks/receipts/<TASK-ID>/done-review-<sha>.json`으로
-옮기고 카드 포인터를 고친 뒤, 같은 워크트리에 `tmp/`를 만들지 않은 채로
-`82 valid, 2 invalid`가 됐다.
+여섯 중 어디에도 접두사 검사, `tmp/` 특별 취급, 경로 형태 강제가 없다. validator는
+카드가 적어 준 저장소 상대 경로를 읽을 뿐이다. `tmp/`는 CE가 강제한 자리가 아니라
+DVA가 택한 관례였다. `ce task validate --staged`가 Git index blob만 보는 모드로
+존재한다는 것이 같은 결론을 가리킨다 — 스테이징 스냅샷만 검증하는 모드가 있다면
+receipt는 커밋에 실려 있어야 한다.
 
 경로 형태는 새로 정한 것이 아니라 §Evidence가 이미 적어 둔 workbook의 문서화된 durable
 계약을 그대로 쓴 것이다. 상류 발급기가 나중에 착지해도 같은 자리에 쓴다.
@@ -259,21 +273,25 @@ controller를 발급기로 쓸 때만** 발생한다. DVA가 실제로 쓰는 �
 - `p0_reason`: the shared board gate is red, so TASK-354 cannot truthfully claim
   readiness or attach that verdict to an integration runner. Removing the
   `blocks` edges or inventing receipts would only hide the missing reviews.
-- `owner`: joint external ownership. `ce-agent-kit` owns the validator's
-  canonical digest and a compatible migration/issuance interface;
-  `ce-workbook/task_management` owns the review issuer, legacy evidence
-  handling, and durable output path. A separate DVA reviewer owns each actual
-  review verdict; TASK-354 owns none of those verdicts.
-- `next_action`: the two runtime owners define and test one receipt contract:
-  the issuer obtains or computes CE's canonical digest, accepts an explicit
-  fresh-review evidence mode for legacy cards whose completion evidence is
-  absent or prose, and writes the machine receipt to a tracked path such as
-  `tasks/receipts/<TASK-ID>/done-review-<sha>.json`. After that support lands,
-  independent reviewers perform fresh reviews of TASK-344 and TASK-371 and
-  commit the generated receipts and human-readable review records. No receipt
-  is reconstructed from an assumed historical review.
-- `next_check`: `ce task validate --all` reports 67 valid and 0 invalid, then
-  `ce task gate --json` exits 0 with `status: ready`. Each blocking done card
+- `owner`: **DVA, for what is left.** The durable output path is no longer
+  externally owned — TASK-383 closed it inside this repository at
+  `tasks/receipts/<TASK-ID>/done-review-<sha>.json`, because the validator
+  imposes no path contract at all (§"근거 2 (정황)"). `ce-agent-kit` still owns
+  the canonical digest and any future issuance tool, and
+  `ce-workbook/task_management` still owns the legacy controller dialect that
+  §Summary 1 and 2 describe — but neither blocks this board. A separate DVA
+  reviewer owns each actual review verdict; TASK-354 owns none of those verdicts.
+- `next_action`: **[[TASK-384]] — nothing upstream is waited on.** Independent
+  reviewers perform fresh reviews of TASK-344 and TASK-371 and commit the
+  receipts and human-readable review records under `tasks/receipts/`. The
+  digest is obtained from `ce task validate` itself, which prints the expected
+  value; no receipt is reconstructed from an assumed historical review, and a
+  `reviewed-at` is never backdated. An upstream issuance tool, when it lands,
+  writes to the same place this repository already uses.
+- `next_check`: `ce task validate --all` reports 0 invalid (the valid count
+  moves with the board — 2026-09-14 measured 84 valid, 2 invalid, total 86 —
+  so it is not pinned here), then `ce task gate --json` exits 0 with
+  `status: ready`. Each blocking done card
   names a readable Git-tracked receipt under `tasks/receipts/` whose
   `reviewed-card-sha256` matches CE's canonical card digest. Upstream fixtures
   cover all three shapes: missing evidence (`TASK-312`), prose evidence

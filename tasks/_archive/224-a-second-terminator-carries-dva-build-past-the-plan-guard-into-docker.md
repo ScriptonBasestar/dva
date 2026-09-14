@@ -27,7 +27,7 @@ quality-review-evidence:
   - "independent reviewer confirmed build consumes exactly one call-site terminator while the shared helper and other verbs remain unchanged"
   - "double form matches the bare plan guard, single separator passthrough is preserved, and triple retains backend build -- --"
   - "focused/package/full tests, lint, build, doccheck, runtime probe, and diff check passed"
-quality-review-receipt: tmp/task-management/direct/queue-run/task-224-review-receipt.json
+quality-review-receipt: tasks/receipts/TASK-224/done-review-56e2dc0676a0a09f0df4eb2e3ccac84357966787511cfba9af1d0052a0b1c411.json
 archived-at: 2026-08-26T12:21:35+09:00
 verified-at: 2026-08-26T12:21:35+09:00
 verification-summary: "Build's second terminator now meets the required plan guard while single-separator passthrough and deliberate triple semantics remain intact."

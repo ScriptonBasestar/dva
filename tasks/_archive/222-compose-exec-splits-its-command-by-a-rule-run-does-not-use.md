@@ -30,7 +30,7 @@ quality-review-evidence:
   - "independent reviewer found all ten ComposeExec/ComposeRun sites use dvaexec.SplitCommand"
   - "argv-slice test correctly compares compose_exec to shell:false sibling run and covers compose_run"
   - "schema source/generated copy, quoted example, targeted tests, full gates, doccheck, and diff check passed"
-quality-review-receipt: tmp/task-management/direct/queue-run/task-222-review-receipt.json
+quality-review-receipt: tasks/receipts/TASK-222/done-review-a382e8b3eab3a14eec5d24d0eac2efe15862a0f5d7a61aeafb0b4b0d760927a0.json
 archived-at: 2026-08-26T12:00:50+09:00
 verified-at: 2026-08-26T12:00:50+09:00
 verification-summary: "All ten compose step argv builders are quote-aware, argv-level regression coverage and a reachable example exist, and generated guidance is current."

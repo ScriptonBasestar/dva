@@ -26,7 +26,7 @@ quality-reviewed-at: 2026-08-26T11:16:39+09:00
 quality-review-evidence:
   - "go test ./internal/cli -count=1, make doc-check, and git diff --check passed"
   - "corpus sweep totals and planless-order exception counts were independently reviewed"
-quality-review-receipt: tmp/task-management/direct/queue-run/task-197-review-receipt.json
+quality-review-receipt: tasks/receipts/TASK-197/done-review-68f7dc531a9f49921c4e76798b7fc862ac6ecd50cfe1d86b551b202bcbb452a1.json
 archived-at: 2026-08-26T11:18:04+09:00
 verified-at: 2026-08-26T11:18:04+09:00
 verification-summary: "Migration compatibility documentation and CLI horizon verified by targeted tests, documentation gates, and repository plus devbox preview sweeps."

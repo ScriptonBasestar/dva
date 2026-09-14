@@ -26,7 +26,7 @@ quality-reviewed-at: 2026-08-26T11:34:19+09:00
 quality-review-evidence:
   - "recognized selector flag value-slot tests and leading-dash control passed"
   - "full dva test, dva lint, and make doc-check gates passed"
-quality-review-receipt: tmp/task-management/direct/queue-run/task-215-review-receipt.json
+quality-review-receipt: tasks/receipts/TASK-215/done-review-61cbcfaccf3a348f5b310be5346605cb4b79c67c86492a83fcb9f35101d9186f.json
 archived-at: 2026-08-26T11:34:54+09:00
 verified-at: 2026-08-26T11:34:54+09:00
 verification-summary: "Recognized DVA flags are rejected as missing values before execution while unrecognized leading-dash values remain supported."

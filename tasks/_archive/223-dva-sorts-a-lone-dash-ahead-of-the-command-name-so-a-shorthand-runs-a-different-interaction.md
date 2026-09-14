@@ -27,7 +27,7 @@ quality-review-evidence:
   - "independent reviewer confirmed dynamicRunArgs preserves explicit run argv order and the built-in/flag lookup guard remains intact"
   - "differential test compares both resolved interaction identity and argv while named dash predicate coverage remains"
   - "focused and package tests, runtime probes, full gates, and git diff check passed"
-quality-review-receipt: tmp/task-management/direct/queue-run/task-223-review-receipt.json
+quality-review-receipt: tasks/receipts/TASK-223/done-review-750fb340735ecdd00c8f04ad55c63aa12d8b2cb8152fd2546b06b54faf93f928.json
 archived-at: 2026-08-26T12:15:45+09:00
 verified-at: 2026-08-26T12:15:45+09:00
 verification-summary: "Dynamic shorthand now preserves explicit run argv order, lone dash routes consistently, and supported flags plus terminator semantics are verified."

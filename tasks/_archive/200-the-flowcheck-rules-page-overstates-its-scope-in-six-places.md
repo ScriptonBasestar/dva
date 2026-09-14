@@ -27,7 +27,7 @@ quality-review-evidence:
   - "independent reviewer confirmed all six prose corrections match the canonical flowcheck implementation without changing rule behavior"
   - "make doc-check and go test ./tools/flowcheck -count=1 passed; all sixteen source rule ids remain documented"
   - "the documented summary line matches flowcheck byte-for-byte and the page remains within the enforced size caps"
-quality-review-receipt: tmp/task-management/direct/queue-run/task-200-review-receipt.json
+quality-review-receipt: tasks/receipts/TASK-200/done-review-e0246fbced83e965c57d958a29e7c385baaed8c0434389fd878c89156efcd8ed.json
 archived-at: 2026-08-26T12:26:18+09:00
 verified-at: 2026-08-26T12:26:18+09:00
 verification-summary: "The canonical flowcheck reference now states each rule's actual scope, trigger, and literal output while retaining all sixteen rule ids."
