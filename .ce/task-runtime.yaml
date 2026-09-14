@@ -8,4 +8,5 @@ schema-version: 1
 repository-id: dva
 worktree-roots:
   mbp: /Users/archmagece/worktrees/misc/dva
+  mst: /Users/archmagece/worktrees/misc/dva
 integration-provider: gz-git
