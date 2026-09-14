@@ -5,13 +5,17 @@ type: chore
 priority: P2
 effort: M
 exec-tier: strong
-status: todo
+status: done
 created: 2026-09-14
 source: "2026-09-14 보드 현행화 — 상류 소유 이슈 다수, 보고 흔적 0장"
 depends-on: []
 completion-summary: "상류 소유 이슈에 `upstream-ref:` 필드를 두고 값이 비어 있으면 doccheck가 세는 자리와 계량기를 만들었다(채널은 2026-09-15 ce-agent-kit 저장소 이슈로 확정). 24장 이슈 카드 전부에 `## 소유권` 절을 명시했고, 그중 상류·갈림 11장에 빈 `upstream-ref:`를 두어 계량기가 잡는다. 측정 결과 ownership_unmarked 0 / upstream_owned 15 / upstream_unref 15 — 게이트는 초록인 채로 미보고 상류 카드가 매 실행마다 보인다"
 verification-status: verified
 verification-evidence: "완료 기준 7개의 verify 바인딩 전부 bare 실행 exit 0 (09f681b). 기준 1: `## 소유권` 절 보유 24장 = 이슈 카드 24장, 파일별 정확히 1절. 기준 2–4: grep·TestUpstreamRef 세 축 테스트 존재. 기준 5: go test ./tools/doccheck/ 2.489s ok. 기준 6–7: make doc-check OK, GOSUMDB=sum.golang.org make lint 0 issues. ce task gate READY"
+quality-review: pass
+quality-reviewed-at: 2026-09-15
+quality-review-evidence: "독립 리뷰 review-395(저자 아님)가 db6d84a를 판정했다. 기준 7개 바인딩·계량기 15/15/0·프롤 스팟체크(007/010/011/012/015/019/020 전문 독해)가 전부 재현됐다. 지적은 low 3(F1 헤딩 부분문자열 면제의 표현 드리프트 위험 — 현재 24개 헤딩은 전부 규약형이라 오계 없음, F2 중복 소유권 절 무감각, F3 vacuous guard의 seen==0 미커버)·info 1(F4 015 조건부 분류)이고 medium·high 0건. 제3 분류 이견(001·010·011·015 갈림 주장)을 리뷰 중 회부했고 카드 본문 대조로 기각됐다 — 적용 라벨이 카드 서술과 정확히 일치. verdict는 조건 없는 pass다"
+quality-review-receipt: tasks/receipts/TASK-395/done-review-5f760440a0eff12933416619575fee1f546d7e1b3f071860b9f59d08a9bb6540.json
 ---
 
 ## Summary

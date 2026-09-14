@@ -1,0 +1,55 @@
+{
+  "reviewed-card-path": "tasks/todo/395-record-where-an-upstream-owned-issue-was-reported.md",
+  "reviewed-card-sha256": "5f760440a0eff12933416619575fee1f546d7e1b3f071860b9f59d08a9bb6540",
+  "reviewed-card-sha256-algorithm": "plain sha256 over the card file bytes as they stand at db6d84a — computed as `git cat-file blob db6d84a:tasks/todo/395-...md | shasum -a 256`; the working-tree file at the reviewed HEAD hashes identically. NOT the CE canonical digest: this card declares no blocks:, so ce task validate never reaches the quality-review-receipt check and prints no canonical digest.",
+  "task": "TASK-395",
+  "title": "Record where an upstream-owned issue was reported",
+  "reviewer": "review-395 (independent; did not author the work under review)",
+  "verdict": "pass",
+  "verdict-final": true,
+  "reviewed-at": "2026-09-15",
+  "branch": "dev/claude/mst/chore/task-395-upstream-ref",
+  "base": "origin/master 7d54663",
+  "head-reviewed": "db6d84a",
+  "review-rounds": 1,
+  "diff-scope": {
+    "commits": ["59423ea", "8b7b191", "09f681b", "db6d84a"],
+    "files": [
+      "tools/doccheck/upstreamref.go (new, 101 lines — ownershipOf + checkUpstreamRefs advisory)",
+      "tools/doccheck/upstreamref_test.go (new, 119 lines — 9 tests incl. the three-axis set)",
+      "tools/doccheck/check.go (Result meters, vacuous guard, UPSTREAM detail wiring; gofmt realign in 8b7b191)",
+      "tools/doccheck/main.go (four meter lines + UPSTREAM detail printing)",
+      "tasks/issue/*.md x15 (09f681b: 11 상류다/갈린다 sections + upstream-ref \"\", 4 이 저장소다 sections; 019/020 heading rename only)",
+      "tasks/todo/395-...md (completion evidence, db6d84a)"
+    ],
+    "out-of-scope-same-branch": "95c17bb (ISSUE-024..026, TASK-396, channel record), 981fea0 (gate schema on four new cards), 23929b2 (TASK-328 remeasure) — other cards' work, not reviewed here",
+    "verdict": "no source outside tools/doccheck touched; the 24-card sweep touched exactly the 15 cards it claims"
+  },
+  "gates": {
+    "ce task gate": "0 — validate/lint/preflight all pass, READY task_board_ready (114 valid, 0 invalid)",
+    "make doc-check": "0 — doc-check OK, all subtools OK (stale_link_paths 84 pre-existing archive-path advisories, unchanged family)",
+    "make lint": "0 — go vet clean, gofmt -s 500 files 0 unformatted, ci-lint 0 issues (bare run, no GOSUMDB override needed)",
+    "go test ./tools/doccheck/": "0 — ok 2.259s",
+    "criterion bindings run bare, never piped": "all seven exit 0 (criterion 1 human-bound: counted two ways, both 24=24)"
+  },
+  "claims-independently-remeasured": [
+    "criterion 1 two ways: /usr/bin/grep -l '^## 소유권' tasks/issue/*.md = 24 and ls tasks/issue/*.md = 24; additionally grep -c per file shows every one of the 24 has exactly 1 section, and 'Ownership' occurs zero times in tasks/issue/ (no orphan English heading anywhere, 019/020 included)",
+    "meters re-derived via bare `go run ./tools/doccheck`: issue_cards 24 (read 24), ownership_unmarked 0, upstream_owned 15, upstream_unref 15, 15 UPSTREAM advisory lines, exit 0 — identical to make doc-check's run and to the card's claimed values",
+    "the 15 upstream_owned = 11 newly classified by 09f681b (001,004,005,006,007,008,011,013,014,019,020) + 4 pre-classified by other work on the branch (022,023,024,026); all 15 carry upstream-ref: \"\" (empty, not absent); the 9 self-owned (009,010,012,015,016,017,018,021,025) carry no field — every membership checked individually",
+    "019/020 cumulative diff 7d54663..db6d84a is exactly +upstream-ref: \"\" and the heading rename ## Ownership — 상류다 -> ## 소유권 — 상류다 (2026-09-15 명시); bodies byte-identical",
+    "prose spot-check 007/010/011/012/015/019/020 (whole card read): every 소유권 claim is supported by the card's own Summary/Impact/Notes/Resolution Criteria — 007's 갈린다 split matches criterion ownership exactly (c1/c2 upstream, c3 local sweep removal with the sequencing constraint the card itself states); 011's 'criterion 2 already closed' matches its [x] checkbox; 015's self-owned default is the OR-shaped criteria with a local path, and the section itself names the reclassification trigger",
+    "advisory-never-red verified in code (res.OK = len(res.Errors) == 0; UPSTREAM detail lines never enter Errors) and in TestUpstreamRefCountsUnreportedUpstreamCard; hard edges are only read errors, malformed frontmatter, repeated upstream-ref key, and the vacuous guard",
+    "empty-vs-absent distinction verified in frontmatterField/checkUpstreamRefs (message text differs: 'is empty' vs 'is absent'; both counted unrefed) and covered by TestUpstreamRefCountsEmptyRefAsUnreported vs TestUpstreamRefCountsUnreportedUpstreamCard",
+    "vacuous guard present at check.go (IssueCardsSeen>0 && IssueCardsRead==0 -> error) and proven by TestUpstreamRefVacuousSweepIsAnError"
+  ],
+  "findings": [
+    {"id": "F1", "severity": "low", "where": "tools/doccheck/upstreamref.go:45 (ownershipOf)", "defect": "self-owned exemption is a substring test over the whole heading line, so a split verdict phrased to mention 이 저장소 anywhere (e.g. '## 소유권 — 이 저장소 절반만 닫혔다') would be silently exempted from upstream_owned/upstream_unref; the doc comment documents the unrecognized-marker choice but not this phrasing hazard", "applied": "n/a — reviewer reports; not a present miscount (today's 24 headings all follow the — 이 저장소다/상류다/갈린다 convention)"},
+    {"id": "F2", "severity": "low", "where": "tools/doccheck/upstreamref.go:40-48 (ownershipOf, first-match return)", "defect": "a second ## 소유권 section in one card is ignored and nothing flags the duplication, so criterion 1's '파일별 정확히 1절' stays human-bound forever; verified 24/24 exactly one at HEAD", "applied": "n/a — reviewer reports; no duplicate exists at db6d84a"},
+    {"id": "F3", "severity": "low", "where": "tools/doccheck/check.go:264-268 (vacuous guard)", "defect": "the guard covers seen>0/read==0 but not seen==0: if tasks/issue/ stopped appearing in the inventory (gitignore change, broken walk), all three meters would read a clean 0 with no error; same shape as the existing archive check, and LoadInventory is the shared basis of every doccheck sweep", "applied": "n/a — reviewer reports; not reachable through the current inventory path"},
+    {"id": "F4", "severity": "info", "where": "tasks/issue/015-...md:87-92", "defect": "the 이 저장소다 classification is conditional — the section itself states that choosing criterion 1 (gate widening) would reclassify the card as upstream-owned; the OR-shaped criteria make the local-path default defensible and the trigger is documented in the card, so recorded as an observation, not a misattribution", "applied": "n/a — no action needed; the card already owns its reclassification trigger"}
+  ],
+  "reviewer-probe": {
+    "what": "redirected one bare `go run ./tools/doccheck` run's stdout to tmp/doccheck-395-review.out for meter capture, then deleted it; no file under review was modified, no probe edit was made",
+    "result": "git status clean before writing this receipt and the report; HEAD unchanged at db6d84a; no commits, no pushes"
+  }
+}

@@ -105,6 +105,28 @@ plan `dev`의 첫 관문은 `scripts/sigdock-local-up.sh`이고 fail-closed다. 
 이 재측정은 dva 카드에만 반영했다 — 하네스 `target_notes()`와 primeno1 리포트는 그
 저장소 소유므로 회차를 잡는 세션에서 맞춘다.
 
+### 2026-09-15 실기동 회차 — 환경이 막는 두 축, 도구 결함 0건
+
+독립 실행 에이전트가 `tools/dogfoodrun/dogfood-run.sh --execute`로 회차를 잡았다
+(증거 로그는 `tmp/dogfood-run/` 아래 — gitignore라 요점만 여기 남긴다).
+
+- **flow-taskchain**: 회차 실행, 환경적으로 실패 — `up local-dev` exit 1, 데몬이
+  "Pool overlaps": `deploy/local/compose.infra.yaml`이 `taskchain-net` 서브넷
+  `172.30.0.0/16`으로 고정했고 현재 `pipechain_pipechain` 프로젝트가 그 서브넷을 점유
+  중. `status` exit 1(정상 오류 보고), `down local-dev --purge --project local-infra
+  --force` exit 0, 잔여물 0건. dva의 wave fail-fast·정리는 전 구간 정상 — **제품
+  결함 아님**.
+- **primeno1**: 미실행 — 전제는 위 재측정과 동일하게 `SIGDOCK_CLIENTS_FILE` 하나만
+  남음(나머지 관문 전부 통과 재확인).
+- **familybook**: 미실행 — 하네스 스텝 `up hybrid`가 낡음(plan이 `dev`로 개명,
+  devbox `6881c81`) → [[TASK-397]]로 분리. 또한 purge 미리보기에 2026-08-04 생성 고아
+  볼륨 `familybook-rustfs-local-data`(현 compose.yaml에 없음)과
+  `familybook-dev-network`가 잡혀, 하네스의 preview-and-stop 계약상 사람 결정이
+  필요하다.
+
+사람 결정은 셋으로 확정됐다: (1) pipechain의 서브넷 점유 해제 또는 devbox 서브넷 변경,
+(2) familybook 고아 볼륨·네트워크 purge 동의, (3) `SIGDOCK_CLIENTS_FILE` 값 지정.
+
 ## Completion Criteria
 
 - [ ] primeno1 native entries complete a real dva up / status / down --purge cycle with output attached to the dogfood report | verify: human — docs/dogfood/primeno1.md contains a 실기동 section with exit codes for up, status, down --purge
