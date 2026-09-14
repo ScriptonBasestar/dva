@@ -220,9 +220,9 @@ steps_familybook() {
 	cat <<EOF
 read|validate|$DVA validate
 read|plan list|$DVA ls
-start|up hybrid (composition)|$DVA up hybrid
+start|up dev (composition: infra compose → backend native)|$DVA up dev
 read|status|$DVA status
-destructive|down hybrid --purge (scoped to infra)|$DVA down hybrid --purge --project infra --force
+destructive|down dev --purge (scoped to infra)|$DVA down dev --purge --project infra --force
 EOF
 }
 
