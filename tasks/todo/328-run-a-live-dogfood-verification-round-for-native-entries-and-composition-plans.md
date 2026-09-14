@@ -90,6 +90,21 @@ plan `dev`의 첫 관문은 `scripts/sigdock-local-up.sh`이고 fail-closed다. 
 같은 내용이 하네스 `target_notes()`와 `docs/dogfood/primeno1.md`에도 있다 — 회차를 잡는
 사람이 어느 쪽을 먼저 열어도 같은 사실에 닿게 세 곳에 둔다.
 
+### 2026-09-15 재측정 — 위반은 하나로 줄었다
+
+관문 9·10(잔여 컨테이너·네트워크)이 해소됐다: sigdock-idp 프로젝트 컨테이너 0건,
+`sigdock-idp_default` 네트워크 소멸. 잔여 `sigdock_sigdock` 네트워크는 라벨이
+`project=sigdock`이라 게이트 필터(`label=…project=sigdock-idp`) 대상이 아님을 게이트
+스크립트(`scripts/sigdock-local-up.sh`의 컨테이너·네트워크 검사) 실측으로 확인했다.
+**관문 7(`SIGDOCK_CLIENTS_FILE`)만 위반** — `dva.yml`·`.env`·`.env.example` 어디에도
+없다(2026-09-13과 동일). 체크아웃 전제도 충족: HEAD = origin/master = `35968b0`
+(`0caeaf9`의 자손), native 엔트리 6종·plan `dev` 선언(`dva.yml:360`) 확인.
+
+사람 세션이 파괴적 회차를 잡기 전에 할 일은 **환경에 `SIGDOCK_CLIENTS_FILE`를 넣는 것
+한 가지**로 줄었다(`env/templates/.env.template`, `docs/LOCAL_EXECUTION_GUIDE.md` 참조).
+이 재측정은 dva 카드에만 반영했다 — 하네스 `target_notes()`와 primeno1 리포트는 그
+저장소 소유므로 회차를 잡는 세션에서 맞춘다.
+
 ## Completion Criteria
 
 - [ ] primeno1 native entries complete a real dva up / status / down --purge cycle with output attached to the dogfood report | verify: human — docs/dogfood/primeno1.md contains a 실기동 section with exit codes for up, status, down --purge
