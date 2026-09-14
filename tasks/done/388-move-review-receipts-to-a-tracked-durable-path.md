@@ -5,10 +5,14 @@ type: bug
 priority: P1
 effort: S
 exec-tier: strong
-status: doing
+status: done
 created: 2026-09-14
 source: "2026-09-14 보드 점검에서 ISSUE-001의 P0 범위가 실제보다 넓게 잡혀 있다는 가설이 나왔다 — 설치된 ce 0.8.4는 receipt 경로에 아무 제약을 걸지 않는다"
 depends-on: []
+quality-review: pass
+quality-reviewed-at: 2026-09-14
+quality-review-evidence: "독립 리뷰 review-383(Claude Opus 5, 저자 아님) 4라운드 pass, verdict-final. 1라운드 9건·2라운드 2건·3라운드 2건을 차례로 접었고 리뷰어가 매 라운드 회신 수치를 받아쓰지 않고 독립 재측정했다 — 증거 12건의 evidence-sha256 대조 12/12, 주 체크아웃 원본과 cmp 12/12 exit 0, 아카이브 카드 diff가 정확히 12 files/+12/-12, README.md 면제를 91 대 90으로 직접 확인. 4라운드에서 잔여 low 하나(RF1)를 새로 잡았다: 기준 4가 [x]인데 바인딩 ce task validate --all이 exit 1이었다. 리뷰어가 exit 0 후보 둘을 실측 제시했고 남은 2건의 정체까지 세는 쪽을 채택했다"
+quality-review-receipt: tasks/receipts/TASK-388/done-review-3edee27d00db9ece81182d61b821f080cad3c097670708fa6e61fc029b502872.json
 ---
 
 ## Summary
@@ -140,12 +144,22 @@ documents are kept as history, not maintained"로 건너뛰고 `--all` 집계에
 파일 수가 카드 수보다 정확히 하나 많다. 확장자는 바이트를 바꾸지 않으므로
 `evidence-sha256` 대조는 그대로 통과한다(12/12). 이 제약도 README에 적었다.
 
+## 리뷰 4라운드가 잡은 것 — `[x]` 옆에 exit 1 바인딩이 있었다
+
+기준 4의 verify가 `ce task validate --all`이었다. 기준의 **내용**은 참이지만 그
+명령은 보드에 실패가 남아 있는 한 exit 1이다 — 바인딩을 돌린 사람은 확인이 아니라
+실패를 본다. 게다가 건수도, 남은 2건의 정체도 스스로 주장하지 않는다.
+
+[[TASK-386]]이 F1으로 잡았던 것과 같은 결함 계열이고, 보드 전체 실패 건수를 다루는
+이 카드가 그 계열을 스스로 남기는 것은 특히 나쁘다. 남은 2건이 **TASK-344·371인지**
+까지 세는 형태로 바꿨다 — 실패 수가 2여도 정체가 다르면 걸린다.
+
 ## Completion Criteria
 
 - [x] `tasks/` 전체에서 `tmp/`를 가리키는 receipt 포인터가 하나도 남지 않았다 | verify: `! /usr/bin/grep -rn '^quality-review-receipt: tmp/' tasks`
 - [x] 옮겨진 receipt 18건(done 6 + `_archive` 12)이 원본과 바이트 동일하다 | verify: `human — cmp로 18건 확인, 이 카드 §실측과 §_archive 절에 기록`
 - [x] 아카이브 카드에서 바뀐 줄은 포인터 한 줄뿐이다 | verify: `human — git diff --stat이 12 files / 12 insertions / 12 deletions인지 확인`
-- [x] `tmp/`가 없는 체크아웃에서 validate 실패가 6에서 2로 줄고, 남은 2건은 TASK-344·371이다 | verify: `ce task validate --all`
+- [x] `tmp/`가 없는 체크아웃에서 validate 실패가 6에서 2로 줄고, 남은 2건은 TASK-344·371이다 | verify: `test "$(ce task validate --all 2>&1 | /usr/bin/grep -B3 '❌ Invalid' | /usr/bin/grep -c 'Validating: tasks/done/\(344\|371\)-')" = 2`
 - [x] 문서 게이트가 새 디렉토리를 받아들인다 | verify: `make doc-check` (regression-guard)
 - [x] 경로 관례가 AGENTS.md와 `tasks/receipts/README.md`에 적혀 있다 | verify: `/usr/bin/grep -q 'tasks/receipts' AGENTS.md`
 - [x] 증거 파일 12건이 receipt에 박힌 `evidence-sha256`과 일치한다 | verify: `human — 12/12 대조, 이 카드의 _archive 절에 기록`
