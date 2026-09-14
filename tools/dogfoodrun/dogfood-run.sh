@@ -25,6 +25,12 @@ CONTROL_COMMIT="275c8c98"
 TARGETS="primeno1 familybook flow-taskchain task348"
 
 RUN_TS=$(date +'%Y-%m-%d %H:%M:%S')
+# 이 디렉토리는 정리하지 않는다 — EXIT trap을 걸면 회귀다. emit_report()가 리포트
+# 본문에서 $STEP_LOG_FILE 경로를 인용하므로, 트랩이 그것을 지우면 리포트가 자기가
+# 가리키는 파일을 없앤다. 회차별 로그(이름에 타임스탬프)는 임시물이 아니라 증거물이고
+# 미리보기(<target>-preview.txt)는 고정 이름이라 애초에 누적되지 않는다. tmp/는
+# .gitignore가 무시하므로 커밋에 실리지도 않는다. 보존 기간은 TASK-328 실기동 회차가
+# 실제로 몇 개를 만드는지 본 뒤에 정한다 (TASK-387).
 OUT_DIR="$REPO_ROOT/tmp/dogfood-run"
 CONTROL_SRC_DIR="$OUT_DIR/control-$CONTROL_COMMIT"
 
