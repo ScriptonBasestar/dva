@@ -8,6 +8,9 @@ exec-tier: strong
 created-at: 2026-09-05T09:00:00+09:00
 source: "docs/dogfood/{gizzahub,matdosa,funbricks-postkit,funbricks-notifire,flow-knowchain,gorisa,sigdock-pass}.md"
 status: done
+quality-review: waived
+quality-reviewed-at: 2026-09-14
+quality-review-evidence: "레거시 일괄 처분(2026-09-14). 이 카드는 2026-09-05(9b74de98)에 done/으로 들어왔고, 독립 done 리뷰를 요구하는 규칙은 그보다 뒤인 1c85d8d0(2026-09-10, docs(tasks): require independent done review)에서 생겼다. 규칙이 없던 때의 변경 맥락 없이 오늘 판정을 지어내지 않는다 — PLAN-008이 여덟 장에 세운 선례를 그대로 적용한다. 판정 부재를 판정으로 위장하지 않기 위해 waived로 남긴다"
 ---
 
 # Task 308: 참조 검증 및 semantic warning 추가
