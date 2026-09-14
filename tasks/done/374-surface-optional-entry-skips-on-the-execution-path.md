@@ -8,6 +8,10 @@ exec-tier: standard
 created-at: 2026-09-12T12:40:00+09:00
 source: "TASK-319 독립 리뷰 findings #2, #4, #5"
 status: done
+quality-review: pass
+quality-reviewed-at: 2026-09-14
+quality-review-session: review-done-batch2 (independent subagent)
+quality-review-evidence: "`go test ./internal/lifecycle ./internal/cli` exit 0 (both ok); human criterion 1 confirmed — the card carries a Design Record adopting ExecutionPlan.Warnings with rationale, and the code matches: resolver.go:27 Warnings []string, resolveDir deleted with only EntryDir (process.go:58) left, optionalSkipDir (resolver.go:716) judged by the selected runner"
 ---
 
 # Task 374: optional 엔트리 skip을 실행 경로에 노출

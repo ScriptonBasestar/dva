@@ -6,6 +6,10 @@ priority: P2
 effort: S
 exec-tier: standard
 status: done
+quality-review: pass
+quality-reviewed-at: 2026-09-14
+quality-review-session: review-done-batch2 (independent subagent)
+quality-review-evidence: "both grep bindings exit 0 and `go test ./internal/cli -run TestImportedPlanCanonicalAndAliasMarkers|TestImportedProvisionProfileIdentity -v` ran and PASSed both (not vacuous); `make doc-check` exit 0; confirmed ManifestPlan now carries Owner/Aliases/AliasOf (manifest_plans.go:17-19) and schema_version is 1.9 (manifest.go:371); confirmed USAGE.md `### subprojects` no longer contains the plans-import gap paragraph"
 needs-human: true
 created: 2026-09-08
 source: "TASK-333 독립 리뷰(2026-09-08) 항목 7 — 측정된 공백"

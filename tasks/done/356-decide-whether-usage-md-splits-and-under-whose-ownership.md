@@ -6,6 +6,10 @@ priority: P3
 effort: M
 exec-tier: standard
 status: done
+quality-review: pass
+quality-reviewed-at: 2026-09-14
+quality-review-session: review-done-batch2 (independent subagent)
+quality-review-evidence: "grep for the decision heading exit 0; `ce validate filesize --changed-only USAGE.md` exit 0 and reports USAGE.md as exempt at 123589/143360 bytes, 1331/1600 prose lines; `make doc-check` exit 0; confirmed the exemption marker is on USAGE.md line 2 in-repo (not in devenv), matching the recorded decision 2"
 created: 2026-09-08
 source: "TASK-323 작업 중 워크스테이션 파일크기 훅이 차단"
 needs-human: false

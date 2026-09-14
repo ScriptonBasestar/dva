@@ -8,7 +8,10 @@ exec-tier: strong
 created-at: 2026-09-07T12:00:00+09:00
 source: "dogfood: careerarchive-devbox (2026-09-07)"
 status: done
-needs-human: false
+quality-review: pass
+quality-reviewed-at: 2026-09-14
+quality-review-session: review-done-batch1 (independent subagent)
+quality-review-evidence: "All five bindings exit 0 and none is vacuous: criterion 1 grep of docs/64 for the section-2 decision heading plus absence of 결정 대기, exit 0; criterion 2 go test ./internal/cli/ -run the three TestPlanScopedHooks_ names, exit 0 with exactly 3 --- PASS; criterion 3 the two compatibility names, exit 0 with exactly 2 --- PASS; criterion 4 go test ./internal/config/ -run the four TestValidate names, exit 0 with exactly 4 --- PASS (name count equals PASS count in each case, so the -run regex selects real tests); criterion 5 grep of USAGE.md for the plan-scope heading exit 0 plus go test -run TestSkipLineExamplesInDocsMatchTheRenderedFormat -count=1 exit 0 with 1 PASS. The Decision note's claim that plans: also reaches provision: and interaction.*.steps and is warned rather than errored is backed by internal/config/validate_warnings.go:362-370."
 ---
 
 # Task 331: interaction 훅을 명령 이름이 아니라 plan에 건다

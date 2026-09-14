@@ -8,7 +8,10 @@ exec-tier: standard
 created-at: 2026-09-05T09:00:00+09:00
 source: "docs/dogfood/{dripter,flow-taskchain,flow-knowchain}.md"
 status: done
-needs-human: false
+quality-review: conditional
+quality-reviewed-at: 2026-09-14
+quality-review-session: review-done-batch1 (independent subagent)
+quality-review-evidence: "All three bindings exit 0: criterion 1 (docs/56 has section 6 with 결정 완료 and no 결정 대기) exit 0; criterion 2 go test ./internal/cli/ with the nine-name -run regex exit 0 with 17 --- PASS lines, so not vacuous; criterion 3 grep of tasks/ exit 0. Re-measured card claims: matchesSuggestionIgnore is gone from all Go source and from docs/56 (only tasks/ prose and tasks/_archive mention it), summarySuffix is a real method at internal/cli/validate_suppression.go:71 used at validate.go:276 so the summary number is the suppressed count as the card says, drift_ignore is registered in the canonical order list at internal/config/validate_warnings.go:30, both named regression tests exist in internal/cli/suppression_ergonomics_test.go, and commit 1e15275 exists with the claimed subject. Caveat: criterion 3 is self-referential — its binding is satisfied by this card's own heading, and the dogfood table it points at was measured in ~/mydevbox/dripter-devbox and ~/mydevbox/flow-taskchain-devbox, outside this repo, so the 103/98 and 74=52+22 numbers could not be independently re-measured here; the table is arithmetically self-consistent and round 1 already corrected one of its counts."
 ---
 
 # Task 309: suggestion_ignore 축약 및 drift warning ignore 수단

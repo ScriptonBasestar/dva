@@ -7,7 +7,10 @@ effort: S
 exec-tier: standard
 created: 2026-09-08
 status: done
-needs-human: true
+quality-review: pass
+quality-reviewed-at: 2026-09-14
+quality-review-session: review-done-batch1 (independent subagent)
+quality-review-evidence: "Criterion 1: ce task run-doctor exit 0 printing ACTIVE: task runtime dependencies are ready. Criterion 2: test 0 -eq grep -c 'git worktree' Makefile exit 0. Criterion 3 (human): the Design record does record the adoption decision, the corrected premise that .gz-git.yaml not .ce/task-runtime.yaml drives reclaim, and the reclaim scope with the reason only one axis is choosable; .gz-git.yaml on disk holds integrationBranch [master] and taskPattern [dev/*/*/*] exactly as described, and both declarations are tracked (git ls-files --error-unmatch .ce/task-runtime.yaml .gz-git.yaml exit 0). I re-ran the card's own leak probe adversarially: creating sub/.ce/cache.json and deep/er/.ce/cache.json under the anchored four-line .gitignore form yields 0 matching lines in git status --porcelain -uall, confirming the Finding 1 fix; probe files removed and the tree is clean. Not re-verified here: the observed RECLAIMED log from the installed gz-git binary, which the card already records as a known evidence gap."
 ---
 
 ## Summary

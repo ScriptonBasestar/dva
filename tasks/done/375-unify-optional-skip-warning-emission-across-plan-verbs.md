@@ -8,6 +8,10 @@ exec-tier: standard
 created-at: 2026-09-12T16:00:00+09:00
 source: "tasks/done/374-surface-optional-entry-skips-on-the-execution-path.md (review-374 Findings 7·8)"
 status: done
+quality-review: pass
+quality-reviewed-at: 2026-09-14
+quality-review-session: review-done-batch2 (independent subagent)
+quality-review-evidence: "three go test bindings ran non-vacuously — TestOptionalSkipIsReportedByComposition 2 PASS, TestOptionalSkip 11 PASS, TestUsageWarningExamplesMatchTheRenderedFormat PASS; human criterion 1 confirmed by opening all 14 production emission sites (build.go:234, logs.go:154, plan_lifecycle.go:387/453/523/568/600, composition_flags.go:345/367/403/426/465/502, composition_restart.go:32) — every one emits immediately after resolution and before its rejection check, with the rule written once at plan_lifecycle.go:272; the card text says eleven sites, the real count is 14"
 ---
 
 # Task 375: optional-skip 경고의 방출 규칙을 일곱 동사에서 통일

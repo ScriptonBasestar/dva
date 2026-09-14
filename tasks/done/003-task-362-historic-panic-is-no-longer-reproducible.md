@@ -3,6 +3,10 @@ id: ISSUE-003
 title: "TASK-362 historic flow-style panic is no longer reproducible"
 type: bug
 status: done
+quality-review: pass
+quality-reviewed-at: 2026-09-14
+quality-review-session: review-done-batch1 (independent subagent)
+quality-review-evidence: "Both criteria are verify: human and both hold. Criterion 1: tasks/done/362-*.md Summary states the guard-removal panic is a historic observation not reproducible on current source, links [[ISSUE-003]], and its Completion Criteria carry no overlay-panic criterion — the three bindings there assert the current contract (original bytes preserved, no change report, one flow-style Blocked reason). Criterion 2: the focused test TASK-362 cites was re-run here — go test ./internal/config/ -run TestMigrateSectionOrderBailsOnUnrepresentableShapes -count=1 -v exit 0, 3 PASS lines including the flow-style_root_mapping subtest, so the binding is not vacuous. Nit not affecting the verdict: the Disposition heading is swallowed into the last line of the Resolution Evidence paragraph."
 priority: P2
 effort: S
 exec-tier: standard
