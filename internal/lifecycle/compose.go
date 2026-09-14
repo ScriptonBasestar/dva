@@ -46,7 +46,10 @@ func (p *ComposePlugin) Up(ctx context.Context, pctx *PluginContext) (*Result, e
 	}
 
 	if err := p.runSubprocess(pctx, args); err != nil {
-		return nil, fmt.Errorf("compose up: %w", err)
+		// A failed up is diagnosed a second time, for the condition compose's own
+		// output buries: an image compose cannot build and could not pull. See
+		// MissingLocalImageError. Returns err unchanged when it does not apply.
+		return nil, fmt.Errorf("compose up: %w", p.diagnoseMissingLocalImages(pctx, err))
 	}
 
 	// Query service status after up

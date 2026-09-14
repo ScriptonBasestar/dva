@@ -89,6 +89,29 @@ stderr 뒤에 bare exit status 를 붙여 중계하는 것을 그만두기 위�
 한다.** 잘못 그으면 "Interrupted 13건"을 "빌드해야 할 이미지 13건"으로 바꿔 보고하는,
 지금보다 나쁜 오답이 된다.
 
+## 판정 경계 결정 (2026-09-14)
+
+**결정: 단정이 아니라 후보 목록으로 보고한다.**
+
+실패 후 프로브에서 `build:` 없이 `image:` 만 선언한 서비스의 이미지가 여전히 로컬에
+없으면 전부 `MissingLocalImageError` 의 `Images` 에 담는다. `Error()` 는 "이 중 **적어도
+하나**를 pull 하지 못했고, compose 는 하나가 실패하면 나머지 pull 을 취소하므로 다른
+것들은 단지 중단된 것일 수 있다 — 다시 실행하면 목록이 좁혀진다" 고 말한다. "이
+이미지들을 전부 빌드해야 한다" 고 말하지 않는다.
+
+근거 — 나머지 선택지가 더 나쁘다:
+
+- 레지스트리 재조회나 `compose pull --ignore-pull-failures` 는 이미 실패한 경로에서
+  두 번째 네트워크 왕복을 요구하고, 그 자체로 새로 실패할 수 있다.
+- 이름 모양 휴리스틱은 애초에 구분하지 못한다. `sigdock-idp:latest`(로컬 전용)와
+  `redis:7-alpine`(Docker Hub official) 을 가르는 신호가 이름에 없다.
+- 중단된 13건을 "빌드해야 할 이미지 13건" 으로 단정하면 지금 출력보다 나쁜 오답이
+  된다. 취소 사실을 명시한 후보 목록은 그렇지 않고, 재실행이 공짜로 목록을 좁힌다.
+
+우선순위: 데몬 불통일 때는 `DockerDaemonError` 가 계속 이긴다. 프로브는 실패 후에만
+돌고, compose 러너가 교체된 경우(`compose.command`)에는 docker 이미지 저장소를 묻지
+않는다.
+
 ## Non-goals
 
 - **어떻게 빌드하라는 안내는 dva 가 할 수 없다.** 그건 저장소 고유 지식이다
@@ -99,10 +122,10 @@ stderr 뒤에 bare exit status 를 붙여 중계하는 것을 그만두기 위�
 
 ## Completion Criteria
 
-- [ ] `build:` 없는 서비스의 이미지가 실패 후에도 로컬에 없으면 `MissingLocalImageError` 로 보고한다 | verify: `go test ./internal/lifecycle/`
-- [ ] `build:` 를 가진 서비스는 이미지가 없어도 이 진단의 대상이 아니다 | verify: `go test ./internal/lifecycle/`
-- [ ] 원인 이미지와 취소된 pull(`Interrupted`) 을 나누는 규칙이 결정되고, 두 경우가 각각 fixture 로 테스트에 있다 | verify: `go test ./internal/lifecycle/`
-- [ ] 진단은 실패 후에만 돈다 — 성공한 `up` 은 추가 서브프로세스를 부르지 않는다 | verify: `go test ./internal/lifecycle/`
-- [ ] 데몬 불통일 때는 `DockerDaemonError` 가 계속 이긴다 (이 진단이 그것을 가리지 않는다) | verify: `go test ./internal/lifecycle/`
-- [ ] `Error()` 가 `DockerDaemonError` 와 같은 형태 — 원인 한 줄 + `→` 지시 — 를 낸다 | verify: `go test ./internal/lifecycle/`
-- [ ] 회귀 없음 | verify: `make test` (regression-guard)
+- [x] `build:` 없는 서비스의 이미지가 실패 후에도 로컬에 없으면 `MissingLocalImageError` 로 보고한다 | verify: `go test ./internal/lifecycle/`
+- [x] `build:` 를 가진 서비스는 이미지가 없어도 이 진단의 대상이 아니다 | verify: `go test ./internal/lifecycle/`
+- [x] 원인 이미지와 취소된 pull(`Interrupted`) 을 나누는 규칙이 결정되고, 두 경우가 각각 fixture 로 테스트에 있다 | verify: `go test ./internal/lifecycle/`
+- [x] 진단은 실패 후에만 돈다 — 성공한 `up` 은 추가 서브프로세스를 부르지 않는다 | verify: `go test ./internal/lifecycle/`
+- [x] 데몬 불통일 때는 `DockerDaemonError` 가 계속 이긴다 (이 진단이 그것을 가리지 않는다) | verify: `go test ./internal/lifecycle/`
+- [x] `Error()` 가 `DockerDaemonError` 와 같은 형태 — 원인 한 줄 + `→` 지시 — 를 낸다 | verify: `go test ./internal/lifecycle/`
+- [x] 회귀 없음 | verify: `make test` (regression-guard)
