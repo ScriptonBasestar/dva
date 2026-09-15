@@ -33,9 +33,10 @@ bindings, since it counts them (`criteria: 3, bound: 3`) — and the `human —`
 prefix is in the text being counted. Neither signal reaches the runnable
 verdict, and the per-card record it emits carries no field for either.
 
-Owner is external: preflight belongs to ce-workbook/task_management. Filed here
-on the ISSUE-004 precedent. It is closely related to [[ISSUE-004]], which is
-the same gap seen from the other side — that card is about admission refusing
+Owner is external: preflight belongs to ce-agent-kit. Filed here on the
+ISSUE-004 precedent — including that card's misattribution, corrected on
+2026-09-15. It is closely related to [[ISSUE-004]], which is the same gap seen
+from the other side — that card is about admission refusing
 human-only work, this one is about runnability admitting it.
 
 ## Reproduction
@@ -80,9 +81,30 @@ evidence and a reasonable source for a warning when the two disagree.
 
 ## 소유권 — 상류다 (2026-09-15 명시)
 
-preflight는 `ce-workbook/task_management` 소유다 — Summary가 "Owner is external"로
-적는다. 기준 전부가 상류가 needs-human 카드를 runnable과 구분해 내는 동작을 요구한다.
+preflight는 `ce-agent-kit` 소유다 — Summary가 "Owner is external"로 적는다.
+기준 전부가 상류가 needs-human 카드를 runnable과 구분해 내는 동작을 요구한다.
 보고 자리는 [[TASK-395]]가 만든다.
+
+**2026-09-15 정정 — 상류는 `ce-agent-kit`이다.** 이 절과 위 본문은 원래
+`ce-workbook/task_management`를 지목했고, 그게 실측과 어긋났다([[ISSUE-027]]).
+실행되는 `ce`의 빌드정보가 자기 모듈을 직접 증언하고, ce-workbook에는 추적되는
+구현이 없다:
+
+```
+$ go version -m "$(command -v ce)"
+	path	github.com/archmagece/ce-agent-kit/cmd/ce
+	mod	github.com/archmagece/ce-agent-kit	v0.8.5-...
+
+$ git -C ~/mywork/ce/ce-workbook ls-files | grep -i preflight | grep -v '^tasks/'
+(없음)
+```
+
+등록 지점은 `cmd/ce/handlers_task.go`, 구현은
+`internal/adapter/cli/commands/task_preflight.go`로 **같은 저장소 안에 함께** 있다.
+ce-workbook의 `tmp/.../queue_preflight.py`는 `.gitignore`된 미추적 스크래치 파일이고,
+`task_management/USAGE.md`의 "기존 Python preflight"는 그 문서가 같은 자리에서 "새
+lifecycle 규칙은 ce-agent-kit에서만 작성"이라고 적는 별개 개념이다. 보고처는
+`ssh://git@gitlab.polypia.net:2224/archmagece/ce-agent-kit.git`다.
 
 ## Resolution Criteria
 

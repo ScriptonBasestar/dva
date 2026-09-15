@@ -83,12 +83,46 @@ TASK-395가 한국어 제목으로 정규화했다. 산문에 적힌 분류는 �
 "상류의 어디인가"는 여전히 산문이다. 지금은 상류가 하나뿐이라 값 하나로 족하지만,
 그 가정이 이 세 카드에서 이미 깨져 있다.
 
+## 처분 — 확정됐다 (2026-09-15)
+
+**`ce task preflight`는 `ce-agent-kit` 소유다.** ISSUE-020의 귀속이 옳았고,
+ISSUE-004 · ISSUE-006이 틀렸다. 세 가지 측정이 같은 답을 준다:
+
+```
+$ go version -m "$(command -v ce)"
+	path	github.com/archmagece/ce-agent-kit/cmd/ce
+	mod	github.com/archmagece/ce-agent-kit	v0.8.5-0.20260915015134-0994a397fe76
+
+$ git -C ~/mywork/ce/ce-workbook ls-files | grep -i preflight | grep -v '^tasks/'
+(없음)
+```
+
+1. 실행되는 `ce` 바이너리의 Go 빌드정보가 자기 모듈을 직접 증언한다 — 추측이
+   아니라 링크된 사실이다.
+2. 등록(`cmd/ce/handlers_task.go`)과 구현
+   (`internal/adapter/cli/commands/task_preflight.go`)이 같은 저장소 안에 함께 있다.
+3. ce-workbook에는 추적되는 preflight 구현이 하나도 없다. `tmp/.../queue_preflight.py`는
+   `.gitignore`된 미추적 스크래치 파일이고, `task_management/USAGE.md`가 말하는
+   "기존 Python preflight"는 같은 문서가 "새 lifecycle 규칙은 ce-agent-kit에서만
+   작성"이라고 못박는 **별개 개념**이다.
+
+**틀린 쪽이 어떻게 틀렸는지가 이 카드의 실제 교훈이다.** ISSUE-004는 `owner:`
+줄에 저장소를 적었고 ISSUE-006은 그걸 "ISSUE-004 precedent"로 인용했다 — 측정이
+한 번도 없었고, 선례가 근거를 대신했다. 산문 귀속은 검사되지 않으니 잘못된 값이
+카드 사이를 그대로 전파한다. [[TASK-398]]이 `ownership:`에 대해 고친 것과 같은
+구조의 결함이고, 세 번째 기준이 그 다음 층(값 어휘가 저장소까지 표현하는 것)을
+가리키는 이유다.
+
+ISSUE-004 · ISSUE-006의 소유권 절과 본문에 날짜 찍힌 정정 블록을 넣어 세 카드를
+같은 어휘로 맞췄다. [[TASK-399]] 묶음 4의 보고처는
+`ssh://git@gitlab.polypia.net:2224/archmagece/ce-agent-kit.git`로 확정이다.
+
 ## Resolution Criteria
 
-- [ ] `ce task preflight`의 소유 저장소가 하나로 확정된다 | verify: human —
+- [x] `ce task preflight`의 소유 저장소가 하나로 확정된다 | verify: human —
       상류 체크아웃에서 preflight 구현 파일이 어느 저장소에 있는지 확인하고,
       그 결론을 세 카드에 같은 어휘로 적는다
-- [ ] 세 카드의 귀속 서술이 일치한다 | verify: human — ISSUE-004 · 006 · 020을
+- [x] 세 카드의 귀속 서술이 일치한다 | verify: human — ISSUE-004 · 006 · 020을
       나란히 읽어 같은 저장소를 지목하는지 확인한다
 - [ ] 또는 `ownership:`이 저장소까지 표현하도록 값 어휘가 넓어진다 (예:
       `upstream:agent-kit` · `upstream:workbook`)하고 검사가 그 형태를 읽는다
