@@ -5,7 +5,7 @@ type: chore
 priority: P2
 effort: S
 exec-tier: strong
-status: todo
+status: done
 created: 2026-09-15
 source: "review-395 F1(헤딩 부분문자열 면제의 표현 드리프트 위험) + 2026-09-15 사용자 결정 1"
 depends-on: []
