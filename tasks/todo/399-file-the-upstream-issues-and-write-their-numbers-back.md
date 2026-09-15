@@ -18,30 +18,41 @@ depends-on: [TASK-398]
 `upstream-ref:`에 되적는다.
 
 두 카드를 나눈 이유는 **막히는 지점이 다르기 때문이다.** TASK-395는 이 저장소 안에서
-끝나고 오늘 끝낼 수 있다. 이 카드는 이 세션이 가질 수 없는 것에 막혀 있다.
+끝난다. 이 카드는 상류 저장소에 쓰기를 하고, 그 결과를 되적는다.
 
-### 막고 있는 것 — 상류 인증
+### 착수 전제 — 인증은 이미 돼 있다 (2026-09-15 정정)
+
+이 카드는 처음 "상류 미인증에 막혀 있다"고 적혀 있었다. **틀린 판단이었고, 틀린
+방식이 기록해 둘 만하다.** 근거로 붙였던 두 줄은 실측 그대로였다:
 
 ```
-$ command -v glab && glab --version
-glab 1.99.0
-
 $ ls ~/.config/glab-cli/
 (없음)
 
 GITLAB_TOKEN=unset · GITLAB_PRIVATE_TOKEN=unset
 ```
 
-`glab`은 설치돼 있으나 `gitlab.polypia.net`에 인증돼 있지 않다. 토큰 발급과 로그인은
-사용자만 할 수 있다:
+둘 다 참이지만 결론이 거짓이었다. macOS의 `glab`은 XDG 경로가 아니라
+`~/Library/Application Support/glab-cli/`를 쓰고, 토큰은 환경변수가 아니라 그
+파일 안에 있다. **도구에게 직접 묻지 않고 도구의 저장 위치를 추측한 것이 오류의
+전부다.** 도구가 답을 갖고 있었다:
 
 ```
-glab auth login --hostname gitlab.polypia.net
+$ glab auth status --hostname gitlab.polypia.net
+gitlab.polypia.net
+  ✓ Logged in to gitlab.polypia.net as archmagece
+    (/Users/archmagece/Library/Application Support/glab-cli/config.yml)
+  ✓ Token found: **************************
+exit=0
 ```
 
-필요한 scope는 `api`다. 인증 전에는 이 카드의 어떤 기준도 만족될 수 없고, 그게 이
-카드가 [[TASK-395]]와 분리된 이유다 — 한 카드였다면 계량기까지 인증에 인질로
-잡힌다.
+그래서 기준 1은 **착수 시점에 이미 exit 0**이다. 이 카드는 인증에 막혀 있지 않고,
+사용자에게 요청할 것도 없다. 실제 잔여 차단은 [[ISSUE-027]] 하나뿐이다 —
+`preflight` 묶음의 상류 귀속이 카드마다 다르게 적혀 있다.
+
+이 절을 기준 1과 함께 남겨 두는 이유는, 부재를 확인하는 올바른 방법이 **도구의
+상태 조회**이지 도구가 파일을 어디 두는지에 대한 추측이 아니라는 것이 이 보드가
+반복해서 부딪히는 형태이기 때문이다.
 
 ### N:1 — 결함별이 아니라 원인별로 연다
 
@@ -79,7 +90,7 @@ glab auth login --hostname gitlab.polypia.net
 
 ## Sources
 
-- 2026-09-15 실측 — `glab` 설치됨, `gitlab.polypia.net` 미인증, 토큰 환경변수 없음
+- 2026-09-15 실측 — `glab` 1.99.0 설치됨, `glab auth status --hostname gitlab.polypia.net` exit 0 (archmagece로 로그인됨). 최초 기재였던 "미인증"은 설정 경로 추측에서 나온 오판이며, 위 절에 정정과 함께 남겼다
 - [[TASK-395]] 결정 2·4 — 채널과 N:1 묶음 규칙
 
 ## Related

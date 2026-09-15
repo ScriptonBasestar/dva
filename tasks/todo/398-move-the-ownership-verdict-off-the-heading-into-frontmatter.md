@@ -9,10 +9,10 @@ status: todo
 created: 2026-09-15
 source: "review-395 F1(헤딩 부분문자열 면제의 표현 드리프트 위험) + 2026-09-15 사용자 결정 1"
 depends-on: []
-quality-review: conditional
+quality-review: pass
 quality-reviewed-at: 2026-09-15
 quality-review-session: review-398 (independent subagent)
-quality-review-evidence: "11개 verify 바인딩 전부 exit 0 (make doc-check, make lint, go test ./tools/doccheck/ 포함). 24장 전수 대조 — origin/master의 `## 소유권` 제목에서 유도한 판정과 새 `ownership:` 값이 전부 일치, 제목 본문도 바이트 동일, 15 owned / 15 unrefed 전후 동일(카드 수만 24→25, ISSUE-027 신규). 적대적 defang 4종 전부 RED 확인 후 cp 복원·diff -q 바이트 동일: (a) 009의 ownership: local→upstream → mismatched=1, doccheck exit 1; (b) ownership: 줄 삭제 → unclassified=1, make doc-check exit 2; (c) issueZonePrefix 파손 → 패키지 테스트 8건 FAIL(단 doccheck 자체는 exit 0); (d) upstream-ref 15개 전부 채움 → TestUpstreamRefsSweepsTheRealCorpus가 승격 절차를 출력하며 FAIL. ISSUE-027의 grep 붙여넣기는 현재 워크트리에서 줄번호까지 재현됨(날조 아님), 착수 시점 제목 4종(022/016·017·018·021/023/019·020 English)도 59423ea^에서 확인. 조건부 사유는 본문 소견 M1~M4 참조 — 특히 headingOwnership의 stripFencedRegions를 제거해도 전 테스트가 초록이며, ISSUE-027의 '011의 — 갈린다 절' 서술은 실제로 ISSUE-007이다."
+quality-review-evidence: "2회차 재검증(HEAD 90a9a60, 1회차는 eedbe43). TASK-398 자체 바인딩 12/12 exit 0 — make doc-check OK(issue_cards 25/read 25, unclassified·mismatched·unreasoned 전부 0, owned 15, unref 15), make lint 0 issues, go test ./tools/doccheck/ ok, ce task validate 세 카드 전부 Valid. 판정 불변 확인: origin/master의 24장 `## 소유권` 제목에서 유도한 값과 `ownership:` 필드가 전부 일치(제목 줄도 바이트 동일), 15 owned / 15 unrefed 전후 동일, 카드 수만 24→25(ISSUE-027 신규, local). 적대적 defang 6종 전부 RED 확인 후 cp 복원·diff -q 바이트 동일: (a) 009 ownership local→split → mismatched=1, doccheck exit 1; (b) ownership: 줄 삭제 → unclassified=1, make doc-check exit 2; (c) issueZonePrefix 파손 → 패키지 테스트 8건 FAIL; (d) upstream-ref 15개 전부 채움 → TestUpstreamRefsSweepsTheRealCorpus가 승격 절차를 출력하며 FAIL; (e) headingOwnership에서 stripFencedRegions 제거 → 1회차엔 전 테스트 초록이었으나 이제 TestUpstreamRefHeadingInsideFenceIsNotMarked·TestUpstreamRefFencedHeadingLeavesTheCardUnreasoned 둘 다 FAIL; (f) 010의 `## 소유권` 절 제목 변경(ownership: local 유지) → unreasoned=1, make doc-check exit 2. 1회차 소견 M1~M4·L1~L4 전부 해소 확인(ownershipOf 삭제·참조 0건, 승격 포인터 테스트명 실재, ISSUE-027의 007/011 서술이 09f681b·59423ea^와 일치, TASK-399 신규 바인딩 2개는 오늘 exit 1로 공허하지 않음). 미해결 소견은 TASK-398 범위 밖 1건뿐 — TASK-399의 glab 미인증 전제가 사실과 다름(`glab auth status --hostname gitlab.polypia.net` exit 0, macOS 설정 경로는 ~/Library/Application Support/glab-cli). 리뷰 중 워크트리에 동시 커밋 발생(dd2256e→90a9a60), 최종 판정은 90a9a60 기준."
 ---
 
 ## Summary
