@@ -5,7 +5,7 @@ type: chore
 priority: P2
 effort: S
 exec-tier: standard
-status: todo
+status: done
 created: 2026-09-15
 source: "2026-09-15 TASK-395 결정 — 채널은 상류 저장소 이슈로 확정, 인증은 사용자 몫"
 depends-on: [TASK-398]
@@ -81,7 +81,7 @@ exit=0
 
 - [x] 상류 호스트에 인증돼 있다 | verify: `glab auth status --hostname gitlab.polypia.net`
 - [x] 상류 소유 카드에 보고 누락이 남아 있지 않다 — 빈 값을 세는 주체는 doccheck다 | verify: `go run ./tools/doccheck . | /usr/bin/grep -qE '^upstream_unref:[[:space:]]+0$'`
-- [ ] 적힌 이슈 번호가 실제로 열려 있다 | verify: human — 카드에 적힌
+- [x] 적힌 이슈 번호가 실제로 열려 있다 | verify: human — 카드에 적힌
       `ce-agent-kit#N` 각각을 상류에서 열어, 번호가 실재하고 내용이 그 카드의
       결함을 서술하는지 확인한다. 확인 명령에는 호스트를 반드시 박는다:
       `GITLAB_HOST=gitlab.polypia.net glab issue view N -R archmagece/ce-agent-kit`
@@ -160,11 +160,31 @@ doc-check: FAIL
 (`107 valid, 11 invalid`), 원인은 [[ISSUE-028]]로 기록하고 `ce-agent-kit#7`로
 보고했다.
 
-### 남은 사람 몫
+### 기준 3 — 독립 리뷰가 일곱 건을 전부 대조했다 (2026-09-15)
 
 기준 3은 기계로 절반만 확인된다. 일곱 이슈가 실재하고 `open` 상태인 것은
 `glab issue view`로 확인했으나, **내용이 각 카드의 결함을 제대로 서술하는지는
-작성자가 판정할 수 없다.** 그 축은 사람이 연다.
+작성자가 판정할 수 없다.** 게이트도 판정하지 않는다 — `upstreamref.go`의
+`checkUpstreamRefs`는 `strings.TrimSpace(ref) == ""`만 보므로 `ce-agent-kit#7`과
+`ce-agent-kit#99999`가 똑같이 통과한다. 그 축은 사람이 연다.
+
+독립 리뷰 세션(`review-399`)이 일곱 건을 전부 열어 카드와 대조하고, 묶음마다
+**부정확 / 누락 / 과장** 세 열로 판정했다. 그 판정이 실제 결함을 여섯 건 찾아냈다:
+`#5` §2가 카드의 시점 한정(`2026-09-14까지`)을 떼어 무조건 현재형으로 바꾸고 재측정
+`4`→`5`와 kind-dir 제외 규칙을 누락한 것, `#3` §1의 최장-일치-접두사 처방이 사유
+표시줄 네 카드 어디에도 없던 것(실제 근거는 `tools/doccheck/cardstatus.go`의 zone
+해석 주석), 그리고 `#2` §1·§2 · `#3` §3 · `#5` §1이 카드에 이미 있던 재현 증거를
+옮기지 않은 것 넷. 전부 반영했고, 재측정에서 `#1`·`#4`·`#6`·`#7`은 세 열 모두
+"없음"이며 판정은 `conditional`(커밋 이의 없음)이다.
+
+**이 기준이 실제로 일을 했다는 것이 기록할 값이다.** 여섯 묶음 전부
+`upstream_unref: 0`으로 초록인 동안 일곱 건 중 넷이 부정확한 내용을 담고 있었고, 하나는
+사실과 반대였다 — `#6` §2가 지금 차단되지 않는 조건을 현재 차단으로 서술했다. 게이트는
+"보고했는가"를 강제하지 **"맞게 보고했는가"를 강제하지 않는다.** 그 간극은 이 카드에서
+가정이 아니라 측정된 값이고, 기준 3을 `human —`으로 묶은 판단의 사후 근거다.
+
+사용자 판단으로 이 리뷰 결과를 기준 3의 충족 근거로 채택한다(2026-09-15). 원문 확인
+명령은 기준 3의 verify 줄에 호스트와 함께 적혀 있다.
 
 ## Sources
 

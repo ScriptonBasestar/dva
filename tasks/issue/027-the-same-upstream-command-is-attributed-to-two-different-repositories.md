@@ -11,6 +11,9 @@ created: 2026-09-15
 discovered-in: "TASK-395 (2026-09-15 소유권 전수 분류)"
 discovered-at: 2026-09-15
 source: "TASK-395 착수 중 21장 전수 분류 과정에서, 같은 ce 명령을 두 저장소에 다르게 귀속한 카드들을 발견"
+resolution: fixed
+resolved-at: 2026-09-15T07:03:05Z
+resolution-summary: "Resolved as fixed by TASK-399."
 ---
 
 ## Summary
