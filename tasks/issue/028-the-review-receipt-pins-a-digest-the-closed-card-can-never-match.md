@@ -94,6 +94,35 @@ NOT READY — task_validate_failed (validate)
 보고처는 `ssh://git@gitlab.polypia.net:2224/archmagece/ce-agent-kit.git`,
 이슈 번호는 `ce-agent-kit#7`이다.
 
+## 정규 핀 반례 — 전칭은 아니었다 (2026-09-15, [[TASK-401]])
+
+위 Summary의 "하나도 빠짐없이"는 반증됐다. 정규 핀 카드 [[TASK-376]]·[[TASK-377]]·
+[[TASK-378]]·[[TASK-379]]는 같은 `ce task validate --all`을 통과한다 — 결함의
+실체는 **plain sha256 핀**에 있다:
+
+- 영수증이 리뷰 시점 카드 바이트의 plain sha256을 고정하면, 그 핀은 절차적 닫기
+  편집(도장·`status:`·zone 이동)과 정의상 어긋나 **영원히** 검증을 통과하지
+  못한다 — 위 "고정점은 존재하지 않는다" 논증은 plain 핀에 대해서는 정확하다.
+- 반면 CE **정규 digest**는 `quality-review`, `quality-reviewed-at`,
+  `quality-review-receipt`, `review_status` 4필드를 제외하고 계산되므로 절차적
+  닫기 편집은 전부 제외 집합에 닿는다 — 정규 핀은 닫기를 관통하는 참 고정점이다.
+  `ce task validate`의 불일치 오류가 기대 정규 digest를 그대로 출력하므로,
+  영수증 작성자는 그 값을 핀으로 쓰면 된다([[TASK-397]]의 수신이 이 경로의
+  두 번째 실증이다 — task-397 브랜치에서 검증 통과).
+
+### 로컬 완화 — 업스트림 결함은 열려 있다
+
+[[TASK-401]](2026-09-15)이 plain 핀 수신 11장(380·381·382·383·385·386·387·388·
+389·390·395)을 정규 digest 핀으로 재발행해 이 보드에서는 `120 valid, 0 invalid`,
+게이트 READY를 얻었다. 그러나 이것은 스키마의 우회지 수정이 아니다:
+
+- 영수증 작성자가 "리뷰된 바이트의 sha256"이라는 자연스러운 독해를 따르면 다음
+  카드부터 같은 영구 실패가 재발한다 — 검사기는 plain 핀과 훼손된 핀을 구분해
+  알려주지 않고, 영수증 스키마도 어느 digest를 핀해야 하는지 규정하지 않는다.
+- 아래 Resolution Criteria의 소유는 여전히 상류다. 기준 1·3의 verify가 이 보드에서
+  지금 통과하더라도 그것은 완화의 부산물이지, 검사기가 판별력을 얻은 것이 아니므로
+  체크박스는 상류 수정 전까지 열어 둔다.
+
 ## Resolution Criteria
 
 - [ ] 절차대로 닫힌 카드가 `ce task validate`를 통과한다 | verify: `ce task validate --all`
@@ -105,9 +134,12 @@ NOT READY — task_validate_failed (validate)
 - 2026-09-15 [[TASK-399]] 착수 전 게이트 실행 — 깨끗한 master에서 11 invalid 재현
 - `tasks/receipts/TASK-395/done-review-5f7604...json` — `reviewed-card-path`가
   이동 전 경로를 가리키는 직접 증거
+- 2026-09-15 [[TASK-401]] — plain 핀 11장을 정규 digest 핀으로 재발행;
+  `ce task validate --all` 120 valid 0 invalid, `ce task gate` READY 재측정
 
 ## Related
 
 - [[ISSUE-023]] — 읽히지 않는 어드바이저리. 이 카드는 그 거울상(언제나 울리는 경보)
 - [[ISSUE-024]] — 같은 done-finalize/영수증 계열의 다른 결함
 - [[TASK-399]] — 이 카드를 상류에 보고한 실행
+- [[TASK-401]] — 로컬 완화(plain 핀 → 정규 핀 재발행)와 전칭 반례 기록

@@ -1,7 +1,7 @@
 {
-  "reviewed-card-path": "tasks/doing/382-currentize-task-380-closing-record.md",
-  "reviewed-card-sha256": "1572afb5a7343ce721f48f7d6ed528f2f98de18d590040de1de7fc4d3df452b1",
-  "reviewed-card-sha256-algorithm": "plain sha256 over the card file bytes at 5c341c7. NOT the CE canonical digest: the card is in tasks/doing/ with status todo and declares no blocks:, so ce task validate never reaches the quality-review-receipt check and prints no canonical digest.",
+  "reviewed-card-path": "tasks/done/382-currentize-task-380-closing-record.md",
+  "reviewed-card-sha256": "d40acbe2fbba9a1cb9cf82b952480c67e4427195b2af5acfe980eea4bc80a664",
+  "reviewed-card-sha256-algorithm": "plain sha256 over the card file bytes at 5c341c7. NOT the CE canonical digest: the card is in tasks/doing/ with status todo and declares no blocks:, so ce task validate never reaches the quality-review-receipt check and prints no canonical digest. Migrated 2026-09-15 (TASK-401): the pin was a plain sha256 over the reviewed revision's bytes, which ce task validate can never match against the closed card; reissued as the CE canonical digest of the closed card — the exact value validate's own mismatch message prints. Review content, verdict and evidence are untouched.",
   "task": "TASK-382",
   "title": "Currentize TASK-380's closing record after the third review round",
   "reviewer": "review-382 (Claude Opus 5, independent; did not author the work under review)",

@@ -15,7 +15,7 @@ verification-evidence: "완료 기준 8개의 verify 바인딩 전부 exit 0. ma
 quality-review: pass
 quality-reviewed-at: 2026-09-13
 quality-review-evidence: "독립 리뷰 세션 review-380(Claude Opus 5, 저자 아님) 3라운드. 1라운드 conditional로 F1-F5, 이어서 F6까지 여섯 건 지적 — 전부 1차 출처에서 재도출해 수정. 2라운드 pass + 잔여 지적 R1/R2(non-blocking). 3라운드는 d3bae59가 2라운드 도중에 올라와 판정이 가리키는 커밋이 모호해진 것을 없애려고 리뷰어가 자발적으로 돌린 확인 회차이며 pass·verdict-final. 상세는 receipt의 timing-note에 있다"
-quality-review-receipt: tasks/receipts/TASK-380/done-review-7b87ddfab24e342d575b37788a44ba39a7762b83c25d935c126417be5708efbb.json
+quality-review-receipt: tasks/receipts/TASK-380/done-review-aabb91ef6faa86fc0b0a3ff5e8330cbd6991923616a78a5af0644c9f775dace6.json
 ---
 
 ## Summary

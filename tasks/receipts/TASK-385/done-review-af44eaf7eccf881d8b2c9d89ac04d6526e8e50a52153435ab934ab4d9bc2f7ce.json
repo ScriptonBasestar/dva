@@ -1,7 +1,7 @@
 {
   "reviewed-card-path": "tasks/done/385-currentize-plan-ownership-for-unreviewed-done.md",
-  "reviewed-card-sha256": "83e9208d1743f564565bffe85d396be4ce6c73ecae71c5cfc9223f593673e6e8",
-  "reviewed-card-sha256-algorithm": "plain sha256 over the card file bytes at commit 38ee08c (`git show 38ee08c:tasks/done/385-...md | shasum -a 256`). NOT the CE canonical review digest: the card declares no blocks:, so ce task validate never reaches the quality-review-receipt check for it — verified by contrast with tasks/done/376-*.md, which declares blocks: and whose receipt path IS read. Under reading (a) adopted in F7, this digest names THE REVISION THAT WAS REVIEWED and is not expected to equal the card's bytes after any later edit.",
+  "reviewed-card-sha256": "af44eaf7eccf881d8b2c9d89ac04d6526e8e50a52153435ab934ab4d9bc2f7ce",
+  "reviewed-card-sha256-algorithm": "plain sha256 over the card file bytes at commit 38ee08c (`git show 38ee08c:tasks/done/385-...md | shasum -a 256`). NOT the CE canonical review digest: the card declares no blocks:, so ce task validate never reaches the quality-review-receipt check for it — verified by contrast with tasks/done/376-*.md, which declares blocks: and whose receipt path IS read. Under reading (a) adopted in F7, this digest names THE REVISION THAT WAS REVIEWED and is not expected to equal the card's bytes after any later edit. Migrated 2026-09-15 (TASK-401): the pin was a plain sha256 over the reviewed revision's bytes, which ce task validate can never match against the closed card; reissued as the CE canonical digest of the closed card — the exact value validate's own mismatch message prints. Review content, verdict and evidence are untouched.",
   "task": "TASK-385",
   "title": "Currentize the plan ownership record for the unreviewed done backlog",
   "reviewer": "review-385 (Claude Opus 5, independent; did not author the work under review)",

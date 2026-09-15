@@ -15,7 +15,7 @@ verification-evidence: "완료 기준 7개의 verify 바인딩 전부 bare 실�
 quality-review: pass
 quality-reviewed-at: 2026-09-15
 quality-review-evidence: "독립 리뷰 review-395(저자 아님)가 db6d84a를 판정했다. 기준 7개 바인딩·계량기 15/15/0·프롤 스팟체크(007/010/011/012/015/019/020 전문 독해)가 전부 재현됐다. 지적은 low 3(F1 헤딩 부분문자열 면제의 표현 드리프트 위험 — 현재 24개 헤딩은 전부 규약형이라 오계 없음, F2 중복 소유권 절 무감각, F3 vacuous guard의 seen==0 미커버)·info 1(F4 015 조건부 분류)이고 medium·high 0건. 제3 분류 이견(001·010·011·015 갈림 주장)을 리뷰 중 회부했고 카드 본문 대조로 기각됐다 — 적용 라벨이 카드 서술과 정확히 일치. verdict는 조건 없는 pass다"
-quality-review-receipt: tasks/receipts/TASK-395/done-review-5f760440a0eff12933416619575fee1f546d7e1b3f071860b9f59d08a9bb6540.json
+quality-review-receipt: tasks/receipts/TASK-395/done-review-b06af01a4dcebcbf1d5865fcd73bc12aaa19ca3191392fd7cf7ba366bdb3e381.json
 ---
 
 ## Summary

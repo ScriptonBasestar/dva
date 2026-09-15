@@ -15,7 +15,7 @@ verification-evidence: "완료 기준 4개 전부 통과 — 기계 바인딩 3�
 quality-review: pass
 quality-reviewed-at: 2026-09-14
 quality-review-evidence: "독립 리뷰 review-386(Claude Opus 5, 저자 아님) 2라운드. 1라운드 conditional의 지적 셋 — 기준 3의 바인딩이 exit 1, verification-evidence의 두 사실 주장 오류, 기준 2가 둘을 주장하며 하나만 검사 — 을 전부 접고 2라운드 pass를 받았다. 리뷰어가 321의 두 줄 각각에서 백틱을 지우는 음성 프로브 2회로 기준 2가 실제로 rc=1을 내는 것을 확인했고, 백틱을 모두 제거하면 변경 전후 파일이 바이트 동일함을 대조로 검증했다. 잔여는 informational 3건이며 그중 하나(validator가 bare find를 권하는데 doc-check은 wrapped를 요구)는 이 저장소 밖 결함이라 ISSUE-011로 분리했다"
-quality-review-receipt: tasks/receipts/TASK-386/done-review-9993f021d1afaa97bed7ecdc2d25336caf0de72bd985be7020b45c7cab3bd463.json
+quality-review-receipt: tasks/receipts/TASK-386/done-review-f06023034a98e896cfed52b60acd91504cf56e44381e12b575bb793c311dc9ba.json
 ---
 
 ## Summary

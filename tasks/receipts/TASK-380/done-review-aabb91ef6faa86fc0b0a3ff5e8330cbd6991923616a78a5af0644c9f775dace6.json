@@ -1,7 +1,7 @@
 {
-  "reviewed-card-path": "tasks/doing/380-currentize-the-docs-that-task-379-left-behind.md",
-  "reviewed-card-sha256": "7b87ddfab24e342d575b37788a44ba39a7762b83c25d935c126417be5708efbb",
-  "reviewed-card-sha256-algorithm": "sha256 over the card file bytes as committed at d3bae59 (round 3, final). Superseded values: 03330f9df6dac8e368628c15146a153edbca04b48ecbe39efdb2cc7bd26c1346 at 99ab8ab (round 2), 7b8e5491cd12c6f3248719cf25f088a1550c2fc5fc186f215ba13fdb99e474b7 at f6ee750 (round 1). This is a plain file digest, not the CE canonical digest — see canonical-digest-status.",
+  "reviewed-card-path": "tasks/done/380-currentize-the-docs-that-task-379-left-behind.md",
+  "reviewed-card-sha256": "aabb91ef6faa86fc0b0a3ff5e8330cbd6991923616a78a5af0644c9f775dace6",
+  "reviewed-card-sha256-algorithm": "sha256 over the card file bytes as committed at d3bae59 (round 3, final). Superseded values: 03330f9df6dac8e368628c15146a153edbca04b48ecbe39efdb2cc7bd26c1346 at 99ab8ab (round 2), 7b8e5491cd12c6f3248719cf25f088a1550c2fc5fc186f215ba13fdb99e474b7 at f6ee750 (round 1). This is a plain file digest, not the CE canonical digest — see canonical-digest-status. Migrated 2026-09-15 (TASK-401): the pin was a plain sha256 over the reviewed revision's bytes, which ce task validate can never match against the closed card; reissued as the CE canonical digest of the closed card — the exact value validate's own mismatch message prints. Review content, verdict and evidence are untouched.",
   "canonical-digest-status": {
     "requested": "the CANONICAL digest that `ce task validate` computes",
     "obtained": false,

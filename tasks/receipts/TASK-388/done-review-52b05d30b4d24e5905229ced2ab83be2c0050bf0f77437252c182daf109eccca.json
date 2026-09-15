@@ -1,7 +1,7 @@
 {
-  "reviewed-card-path": "tasks/doing/388-move-review-receipts-to-a-tracked-durable-path.md",
-  "reviewed-card-sha256": "3edee27d00db9ece81182d61b821f080cad3c097670708fa6e61fc029b502872",
-  "reviewed-card-sha256-algorithm": "plain sha256 over the card file bytes at 80fdccc (git blob fb8b41dce02aa32c573ca9a393d2e4b027f89c07; the working-tree file hashes identically, tree clean). NOT the CE canonical digest: the card sits in tasks/doing/ and declares no blocks:, so ce task validate never reaches the quality-review-receipt check and prints no canonical digest. Same situation as the TASK-382 and TASK-386 receipts.",
+  "reviewed-card-path": "tasks/done/388-move-review-receipts-to-a-tracked-durable-path.md",
+  "reviewed-card-sha256": "52b05d30b4d24e5905229ced2ab83be2c0050bf0f77437252c182daf109eccca",
+  "reviewed-card-sha256-algorithm": "plain sha256 over the card file bytes at 80fdccc (git blob fb8b41dce02aa32c573ca9a393d2e4b027f89c07; the working-tree file hashes identically, tree clean). NOT the CE canonical digest: the card sits in tasks/doing/ and declares no blocks:, so ce task validate never reaches the quality-review-receipt check and prints no canonical digest. Same situation as the TASK-382 and TASK-386 receipts. Migrated 2026-09-15 (TASK-401): the pin was a plain sha256 over the reviewed revision's bytes, which ce task validate can never match against the closed card; reissued as the CE canonical digest of the closed card — the exact value validate's own mismatch message prints. Review content, verdict and evidence are untouched.",
   "digest-scope-warning": "Because this is a plain file digest and not the CE canonical digest, it also covers the quality-review-receipt: line itself. When the author adds that pointer to this card, the file bytes change and this digest no longer matches the card as committed. That is inherent to the fallback and is why the algorithm field above is explicit; the digest pins what was reviewed (80fdccc), not what is finally committed.",
   "receipt-path-note": "This receipt lives at the durable path this very card introduces: tasks/receipts/<TASK-ID>/done-review-<reviewed-card-sha256>.json, git-tracked, not under the gitignored tmp/.",
   "task": "TASK-388",
@@ -296,7 +296,7 @@
     ]
   },
   "files-modified-by-reviewer": [
-    "tasks/receipts/TASK-388/done-review-3edee27d00db9ece81182d61b821f080cad3c097670708fa6e61fc029b502872.json — this receipt, written at the author's explicit request because the author cannot write their own review receipt. Not committed by me."
+    "tasks/receipts/TASK-388/done-review-52b05d30b4d24e5905229ced2ab83be2c0050bf0f77437252c182daf109eccca.json — this receipt, written at the author's explicit request because the author cannot write their own review receipt. Not committed by me."
   ],
   "files-temporarily-modified-and-restored": []
 }

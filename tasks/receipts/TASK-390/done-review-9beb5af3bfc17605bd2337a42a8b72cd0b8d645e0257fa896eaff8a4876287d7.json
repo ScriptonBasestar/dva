@@ -1,7 +1,7 @@
 {
-  "reviewed-card-path": "tasks/todo/390-delegate-the-unreviewed-done-inventory-to-ce-task-lint-and-downgrade-issue-001.md",
-  "reviewed-card-sha256": "669c8cd14accb74aa24c236d34916ef1eb3cd8282a1da1f83ae6ecad155a8191",
-  "reviewed-card-sha256-algorithm": "plain sha256 over the card file bytes as they stood at 5889fc3 — the exact revision the reviewer judged. NOT the CE canonical digest: this card declares no blocks:, so ce task validate never reaches the quality-review-receipt check and prints no canonical digest. Pinning the reviewed revision rather than the closing revision keeps the value non-circular: the closing commit adds the pointer line that names this file.",
+  "reviewed-card-path": "tasks/done/390-delegate-the-unreviewed-done-inventory-to-ce-task-lint-and-downgrade-issue-001.md",
+  "reviewed-card-sha256": "9beb5af3bfc17605bd2337a42a8b72cd0b8d645e0257fa896eaff8a4876287d7",
+  "reviewed-card-sha256-algorithm": "plain sha256 over the card file bytes as they stood at 5889fc3 — the exact revision the reviewer judged. NOT the CE canonical digest: this card declares no blocks:, so ce task validate never reaches the quality-review-receipt check and prints no canonical digest. Pinning the reviewed revision rather than the closing revision keeps the value non-circular: the closing commit adds the pointer line that names this file. Migrated 2026-09-15 (TASK-401): the pin was a plain sha256 over the reviewed revision's bytes, which ce task validate can never match against the closed card; reissued as the CE canonical digest of the closed card — the exact value validate's own mismatch message prints. Review content, verdict and evidence are untouched.",
   "task": "TASK-390",
   "title": "Delegate the unreviewed-done inventory to ce task lint and downgrade ISSUE-001",
   "reviewer": "review-390 (Claude Opus 5, independent; did not author the work under review)",
@@ -14,7 +14,9 @@
   "head-reviewed": "5889fc3",
   "review-rounds": 1,
   "diff-scope": {
-    "commits": ["5889fc3"],
+    "commits": [
+      "5889fc3"
+    ],
     "files": [
       "tasks/todo/390-...md (new)",
       "tasks/issue/001-task-runtime-cannot-review-legacy-done-cards-without-verification-evidence.md (priority P0->P2, criterion 4 retraction, heading rename)",
@@ -42,10 +44,34 @@
     "all bindings comply with AGENTS.md:207-213 — backtick-wrapped, /usr/bin/grep not bare grep, the bare make target carries (regression-guard), no volatile zone path named"
   ],
   "findings": [
-    {"id": "F1", "severity": "medium", "where": "tasks/issue/001-...md:362-363 and tasks/todo/390-...md:55-56", "defect": "attributed to PLAN-007 §External a rule it does not state (close vs downgrade); §External's actual directive for upstream-owned items is to create no card at all", "applied": "attribution removed; the supported half (this board cannot force upstream progress) kept; the downgrade-not-close choice now stated as ISSUE-001's own judgement"},
-    {"id": "F2", "severity": "medium", "where": "tasks/plan/007-done-backlog-triage.md:102-103", "defect": "§2026-09-10 still asserts 46 cards / 9 reviewed in the present tense; the one sentence that superseded those numbers was deleted by 5889fc3", "applied": "stale marker prepended in the board's existing > **낡음 (date)** form"},
-    {"id": "F3", "severity": "low", "where": "tasks/issue/001-...md:88", "defect": "points at §P0 Blocker, a heading this commit renamed to §Priority; make doc-check does not check section references", "applied": "old name kept in parentheses alongside the new one; the two hits under TASK-388's digest-pinned receipt deliberately left alone"},
-    {"id": "F4", "severity": "low", "where": "tasks/todo/390-...md:67-68", "defect": "criterion 1 asserted two things but bound only one, so the snapshot scoping could regress silently", "applied": "criterion split in two, one binding per assertion; criterion 2's literal-only gap left to TASK-350, which owns that family"}
+    {
+      "id": "F1",
+      "severity": "medium",
+      "where": "tasks/issue/001-...md:362-363 and tasks/todo/390-...md:55-56",
+      "defect": "attributed to PLAN-007 §External a rule it does not state (close vs downgrade); §External's actual directive for upstream-owned items is to create no card at all",
+      "applied": "attribution removed; the supported half (this board cannot force upstream progress) kept; the downgrade-not-close choice now stated as ISSUE-001's own judgement"
+    },
+    {
+      "id": "F2",
+      "severity": "medium",
+      "where": "tasks/plan/007-done-backlog-triage.md:102-103",
+      "defect": "§2026-09-10 still asserts 46 cards / 9 reviewed in the present tense; the one sentence that superseded those numbers was deleted by 5889fc3",
+      "applied": "stale marker prepended in the board's existing > **낡음 (date)** form"
+    },
+    {
+      "id": "F3",
+      "severity": "low",
+      "where": "tasks/issue/001-...md:88",
+      "defect": "points at §P0 Blocker, a heading this commit renamed to §Priority; make doc-check does not check section references",
+      "applied": "old name kept in parentheses alongside the new one; the two hits under TASK-388's digest-pinned receipt deliberately left alone"
+    },
+    {
+      "id": "F4",
+      "severity": "low",
+      "where": "tasks/todo/390-...md:67-68",
+      "defect": "criterion 1 asserted two things but bound only one, so the snapshot scoping could regress silently",
+      "applied": "criterion split in two, one binding per assertion; criterion 2's literal-only gap left to TASK-350, which owns that family"
+    }
   ],
   "reviewer-probe": {
     "what": "appended one comment line to tasks/done/344-*.md and tasks/done/371-*.md to prove the digest pin is enforced, then reverted both with git checkout --",

@@ -15,7 +15,7 @@ verification-evidence: "완료 기준 5개 전부 exit 0 (주석 존재, 실측 
 quality-review: pass
 quality-reviewed-at: 2026-09-14
 quality-review-evidence: "독립 리뷰 review-387(Claude Opus 5, 저자 아님), 5라운드, verdict-final. e70565c에서 완료 기준 5개 바인딩을 각각 bare 실행해 전부 rc=0, make doc-check 0, make lint 0, ce task validate --all 90 valid / 2 invalid을 직접 재측정했다. 리뷰어가 §Impact의 자기모순(편집 가능한 386을 정정 불가로 셌다)을 잡아 e70565c로 고쳤고, 봉인 조건이 둘이 아니라 셋(첫째가 zoneFromPath)이라는 지적을 이 커밋에서 ISSUE-010 §Summary에 반영했다"
-quality-review-receipt: tasks/receipts/TASK-387/done-review-62b7dd17290d7ed036116189cbdf50c9b911f939aa545ce2d18d4ba8f7539d9b.json
+quality-review-receipt: tasks/receipts/TASK-387/done-review-083dc5bd9a2b3f18da4c96dc9cd0c9728082062b40d1ad07c7508ecf407f078b.json
 ---
 
 ## Summary

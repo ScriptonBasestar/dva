@@ -1,7 +1,7 @@
 {
-  "reviewed-card-path": "tasks/doing/386-quote-the-two-unbackticked-verify-bindings.md",
-  "reviewed-card-sha256": "9993f021d1afaa97bed7ecdc2d25336caf0de72bd985be7020b45c7cab3bd463",
-  "reviewed-card-sha256-algorithm": "plain sha256 over the card file bytes at b53b713 (git blob c551b09249871bd9d55ce8f5553991793e989923; the working-tree file hashes identically, tree clean). NOT the CE canonical digest: the card sits in tasks/doing/ and declares no blocks:, so ce task validate never reaches the quality-review-receipt check and prints no canonical digest. Same situation as the TASK-382 receipt.",
+  "reviewed-card-path": "tasks/done/386-quote-the-two-unbackticked-verify-bindings.md",
+  "reviewed-card-sha256": "f06023034a98e896cfed52b60acd91504cf56e44381e12b575bb793c311dc9ba",
+  "reviewed-card-sha256-algorithm": "plain sha256 over the card file bytes at b53b713 (git blob c551b09249871bd9d55ce8f5553991793e989923; the working-tree file hashes identically, tree clean). NOT the CE canonical digest: the card sits in tasks/doing/ and declares no blocks:, so ce task validate never reaches the quality-review-receipt check and prints no canonical digest. Same situation as the TASK-382 receipt. Migrated 2026-09-15 (TASK-401): the pin was a plain sha256 over the reviewed revision's bytes, which ce task validate can never match against the closed card; reissued as the CE canonical digest of the closed card — the exact value validate's own mismatch message prints. Review content, verdict and evidence are untouched.",
   "digest-scope-warning": "This pins the card as review-386 actually read it at b53b713. The implementer had not yet added the quality-review frontmatter or moved the card to tasks/done/ when the digest was taken, so the finally committed card will hash differently. That divergence is expected and is not evidence of an unreviewed change; the reviewed content is the b53b713 bytes named above.",
   "receipt-path-note": "Written directly under the Git-tracked tasks/receipts/TASK-<N>/ path TASK-383 established (ISSUE-001 §Summary item 3), not the gitignored tmp/task-management/direct/queue-run/ earlier receipts used.",
   "task": "TASK-386",
@@ -15,7 +15,10 @@
   "head-reviewed": "b53b713",
   "review-rounds": 2,
   "diff-scope": {
-    "commits": ["828eb84", "b53b713"],
+    "commits": [
+      "828eb84",
+      "b53b713"
+    ],
     "files": [
       "tasks/doing/386-quote-the-two-unbackticked-verify-bindings.md (new in 828eb84, amended in b53b713)",
       "tasks/done/319-native-entry-ergonomics.md (1 line, :35)",
@@ -75,8 +78,14 @@
     "purpose": "confirm criterion 2's counting binding actually fails when the property it asserts is violated, rather than passing vacuously",
     "binding": "test \"$(/usr/bin/grep -rc --include='321-*.md' 'verify: .go ' tasks/done/ | cut -d: -f2)\" = 2",
     "probes": [
-      {"mutation": "tasks/done/321-destructive-interaction-agent-deny.md:26 (`go run` line) — backtick removed with sed", "exit": 1},
-      {"mutation": "tasks/done/321-destructive-interaction-agent-deny.md:27 (`go test` line — the line no binding covered before b53b713) — backtick removed with sed", "exit": 1}
+      {
+        "mutation": "tasks/done/321-destructive-interaction-agent-deny.md:26 (`go run` line) — backtick removed with sed",
+        "exit": 1
+      },
+      {
+        "mutation": "tasks/done/321-destructive-interaction-agent-deny.md:27 (`go test` line — the line no binding covered before b53b713) — backtick removed with sed",
+        "exit": 1
+      }
     ],
     "restoration": "each probe reverted immediately with `git checkout -- tasks/done/321-destructive-interaction-agent-deny.md`; git status --short and git diff --stat both empty afterwards"
   },
@@ -107,10 +116,24 @@
     }
   },
   "verify-bindings": [
-    {"binding": "test \"$(/usr/bin/grep -rc --include='319-*.md' 'verify: .go test' tasks/done/ | cut -d: -f2)\" = 1", "exit": 0},
-    {"binding": "test \"$(/usr/bin/grep -rc --include='321-*.md' 'verify: .go ' tasks/done/ | cut -d: -f2)\" = 2", "exit": 0},
-    {"binding": "ce task validate $(/usr/bin/find tasks -name '319-native-entry-ergonomics.md' -o -name '321-destructive-interaction-agent-deny.md')", "exit": 0, "note": "2 valid, 0 invalid, zero warnings"},
-    {"binding": "human — git show로 diff 확인", "exit": "n/a (human)", "note": "discharged under independent-verification.diff-is-backticks-only; the backtick-stripped byte comparison is stronger than eyeballing the diff"}
+    {
+      "binding": "test \"$(/usr/bin/grep -rc --include='319-*.md' 'verify: .go test' tasks/done/ | cut -d: -f2)\" = 1",
+      "exit": 0
+    },
+    {
+      "binding": "test \"$(/usr/bin/grep -rc --include='321-*.md' 'verify: .go ' tasks/done/ | cut -d: -f2)\" = 2",
+      "exit": 0
+    },
+    {
+      "binding": "ce task validate $(/usr/bin/find tasks -name '319-native-entry-ergonomics.md' -o -name '321-destructive-interaction-agent-deny.md')",
+      "exit": 0,
+      "note": "2 valid, 0 invalid, zero warnings"
+    },
+    {
+      "binding": "human — git show로 diff 확인",
+      "exit": "n/a (human)",
+      "note": "discharged under independent-verification.diff-is-backticks-only; the backtick-stripped byte comparison is stronger than eyeballing the diff"
+    }
   ],
   "bindings-not-executed": [
     {
@@ -123,8 +146,14 @@
       "exit": 0,
       "note": "doc-check OK; cilabels OK; flowcheck OK; planprogress OK; yamlcheck OK. wrapped_tool_bindings 379, bare_tool_bindings 0, bare_suite_bindings 0. Stale link paths all under tasks/_archive/, pre-existing. Run at both 828eb84 and b53b713."
     },
-    "make lint": {"exit": 0, "note": "go vet clean; gofmt -s 491 files, 0 unformatted; scripts/ci-lint.sh 0 issues"},
-    "ce task validate tasks/doing/386-quote-the-two-unbackticked-verify-bindings.md": {"exit": 0, "note": "Valid, no errors or warnings; no volatile-zone-path error from the find-based binding"},
+    "make lint": {
+      "exit": 0,
+      "note": "go vet clean; gofmt -s 491 files, 0 unformatted; scripts/ci-lint.sh 0 issues"
+    },
+    "ce task validate tasks/doing/386-quote-the-two-unbackticked-verify-bindings.md": {
+      "exit": 0,
+      "note": "Valid, no errors or warnings; no volatile-zone-path error from the find-based binding"
+    },
     "ce task validate --all": {
       "exit": 1,
       "summary": "79 valid, 6 invalid (total 85)",
@@ -190,7 +219,7 @@
     ]
   },
   "files-modified-by-reviewer": [
-    "tasks/receipts/TASK-386/done-review-9993f021d1afaa97bed7ecdc2d25336caf0de72bd985be7020b45c7cab3bd463.json (this file)"
+    "tasks/receipts/TASK-386/done-review-f06023034a98e896cfed52b60acd91504cf56e44381e12b575bb793c311dc9ba.json (this file)"
   ],
   "files-temporarily-modified-and-restored": [
     "tasks/done/321-destructive-interaction-agent-deny.md — two sed mutations for the negative probes, each reverted with git checkout --; worktree confirmed clean afterwards"

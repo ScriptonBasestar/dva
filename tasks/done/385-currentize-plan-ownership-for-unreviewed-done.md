@@ -15,7 +15,7 @@ verification-evidence: "기계 바인딩 4개 exit 0, make doc-check rc=0. 39/70
 quality-review: pass
 quality-reviewed-at: 2026-09-14
 quality-review-evidence: "독립 리뷰 review-385(Claude Opus 5, 저자 아님) 5라운드. 4라운드에서 리뷰어가 2라운드 수치를 이월하지 않고 리베이스 대상에 대고 센서스를 다시 재서 conditional(F5)을 냈다 — 카드가 tasks/done/을 68장이라 적었으나 b4b1f20에서 69, 19860c2에서 70이었고 이 카드를 닫는 행위 자체가 한 장을 더했다. 값 패치 대신 기준 커밋을 적는 쪽으로 접었고, 5라운드에서 리뷰어가 master 8b56802에 대고 39/70을 두 방법(프론트매터 awk, 전체 grep)으로 교차 재측정해 pass로 올렸다. 분자 39·배분 17/8/5/0/9·orphan 9·parent 0건은 다섯 라운드 모든 커밋에서 정확했고 틀린 것은 분모 하나였다. 게이트 재실행: doc-check 0, lint 0, validate --all 89/2/91 대 master 88/2/90 — 델타는 이 카드 자신이고 실패 2건(344·371)은 base와 동일"
-quality-review-receipt: tasks/receipts/TASK-385/done-review-83e9208d1743f564565bffe85d396be4ce6c73ecae71c5cfc9223f593673e6e8.json
+quality-review-receipt: tasks/receipts/TASK-385/done-review-af44eaf7eccf881d8b2c9d89ac04d6526e8e50a52153435ab934ab4d9bc2f7ce.json
 ---
 
 ## Summary
