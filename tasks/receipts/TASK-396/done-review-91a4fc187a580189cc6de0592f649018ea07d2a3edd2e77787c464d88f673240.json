@@ -1,0 +1,46 @@
+{
+  "reviewed-card-path": "tasks/done/396-bring-the-two-oversized-living-cards-back-inside-the-context-budget.md",
+  "reviewed-card-sha256": "91a4fc187a580189cc6de0592f649018ea07d2a3edd2e77787c464d88f673240",
+  "reviewed-card-sha256-algorithm": "CE canonical card digest, as reported by `ce task validate` on this card (its mismatch message prints the expected value for a card carrying quality-review-receipt). The canonical digest excludes quality-review, quality-reviewed-at, quality-review-receipt and review_status — so retargeting this pointer never breaks the pin — and includes everything else, including quality-review-evidence, status: done and the 리뷰 대응 section. The work was reviewed at branch head 5e69f15 (card then at tasks/doing/ with all three criteria checked on executed rc 0); closing added only the verdict fields, the review-response section, the F1 size-snapshot refresh in the Summary block and this pointer.",
+  "task": "TASK-396",
+  "title": "Bring the two oversized living cards back inside the context budget",
+  "reviewer": "review-396 (independent; did not author the work under review)",
+  "verdict": "pass",
+  "verdict-final": true,
+  "reviewed-at": "2026-09-15",
+  "branch": "dev/claude/mbp/chore/task-396",
+  "base": "master d7b374a",
+  "head-reviewed": "5e69f15affc952802a755f04072bb3b3f365574a",
+  "review-rounds": 1,
+  "diff-scope": {
+    "commits": ["5e69f15"],
+    "files": [
+      "tasks/todo/396-...md → tasks/doing/396-...md (the card itself)",
+      "tasks/issue/001-...md (27599B → 16065B, timeline narrative rebuilt around verdicts)",
+      "tasks/plan/007-...md (22160B → 12679B, disposition principles + allocation snapshot)"
+    ],
+    "out-of-scope-same-branch": "none — git show --name-status 5e69f15: A doing/396, M issue/001, M plan/007, D todo/396; no source files",
+    "verdict": "the session touched exactly the two living cards it owns plus its own card"
+  },
+  "gates": {
+    "criterion 1 (living cards inside budget)": "exact binding rc=0; independent size listing of ALL issue/plan/todo cards: max 16233B (issue/027), none over 20000B; before/after sizes 27599/22160 → 16065/12679 all match via git show on the parent commit",
+    "criterion 2 (ownership preserved)": "exact grep binding rc=0 (count 3); frontmatter ownership: upstream + upstream-ref ce-agent-kit#7 intact; §소유권 with the 2026-09-15 #2→#7 correction survives; Resolution Criteria diffed against parent — two open stay unchecked, two closed stay checked",
+    "criterion 3 (gate)": "make doc-check rc=0; ce task validate --all 120 valid 0 invalid; ce task gate READY; make lint rc=0",
+    "compression principle": "ISSUE-001 keeps every decision-bearing fact (three Summary breaks verbatim, six-message census verbatim, 376-379 pin table exact values, TASK-401 폐기 block, forgery principle); PLAN-007 keeps the allocation snapshot, the cut-off-is-the-rule-commit principle (1c85d8d0), the 48-conditional trap, External's remaining item, children 1:1 (13=13, all done — TASK-373's done state verified); dead plain-pin prose replaced by dated 현행화 blocks cross-checked against TASK-401's done card"
+  },
+  "claims-independently-remeasured": [
+    "budget: re-listed every card in the three living zones, not just the two targets — no other card crosses 20000B",
+    "fidelity: parent-vs-new diff read adversarially; every hit on the dead-claim grep (도달하지/조용/fallback 등) sits inside explicit retraction framing, and 'fallback은 존재하지 않는다' is the correct negation of the retired claim",
+    "historicalization: 'Current board verdict' correctly became dated; the 2→5 failure growth is framed as a 2026-09-13 observation that no longer reproduces; 39장/6건 read as dated observations",
+    "TASK-401 corroboration: the re-measurement claimed by the 현행화 blocks was independently confirmed against TASK-401's done card (master e3c984b: 11 invalid, all plain-pin mismatches, gate NOT READY → 0 invalid after reissue)"
+  ],
+  "findings": [
+    {"id": "F1", "severity": "info", "where": "TASK-396 card Summary block", "defect": "listed 25821B for ISSUE-001 — the accurate size at the card's drafting commit 95c17bb, but ISSUE-001 had grown to 27599B by the base commit", "applied": "refreshed to 27599 with the growth explained, at close (the closing commit)"},
+    {"id": "F2", "severity": "low", "where": "tasks/issue/001-...md Priority section", "defect": "compression drops the sub-argument for lower-and-keep-open (record-loss vs always-on P0) and the 78/6→84/2 same-worktree measurement pair grounding Summary-3's closure", "applied": "accepted — decisions and conclusions preserved, full text in Git history per the card's own compression principle; no action"},
+    {"id": "F3", "severity": "info", "where": "tasks/plan/007-...md", "defect": "compression drops the awk measurement command and the no-parent-frontmatter observation", "applied": "accepted — the boundary principle itself (numbers belong to ce task lint, allocation to this plan) is kept; no action"}
+  ],
+  "reviewer-probe": {
+    "what": "all three criterion bindings re-run verbatim; full size listing of all living-zone cards; before/after size extraction via git show on the parent commit; adversarial parent-vs-new diff of both compressed cards; dead-claim grep across the new text; children cross-check and per-file ce task validate; board and repo gates re-run",
+    "result": "nothing under review modified — /tmp/review-396/ holds read-only git extractions only; worktree git status --porcelain empty after all probes; no gitignored side effects"
+  }
+}

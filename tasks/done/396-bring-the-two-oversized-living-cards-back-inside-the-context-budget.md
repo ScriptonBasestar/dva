@@ -5,7 +5,15 @@ type: chore
 priority: P3
 effort: M
 exec-tier: standard
-status: doing
+status: done
+quality-review: pass
+quality-reviewed-at: 2026-09-15T19:20:00+09:00
+quality-review-receipt: tasks/receipts/TASK-396/done-review-91a4fc187a580189cc6de0592f649018ea07d2a3edd2e77787c464d88f673240.json
+quality-review-evidence:
+  - "review-396 (독립 리뷰어, 판정-final yes, head 5e69f15): 기준 1 바인딩 재실행 rc 0 + 독립 전수 크기 측정 — 활성 존 최대 16233B(issue/027), 20000B 초과 0장; 전·후 크기 4개(27599/22160→16065/12679)가 git show로 정확 일치"
+  - "충실도 대조 — 부모 커밋 원문과 diff해 판단-결정 사실 전부 보존 확인: Summary 3항목·validator 6메시지 census·376~379 핀 실측 표·TASK-401 폐기 블록·#2→#7 보고 정정·P0→P2 근거·위조 금지 원칙; PLAN-007은 배분 스냅샷·처분 원칙(컷오프=1c85d8d0)·48장 함정·External 잔여·children 13=13(전부 done, TASK-373 done 실재 확인)"
+  - "죽은 주장 grep(도달하지/조용/fallback 등) — 모든 적중이 폐기 프레임 안에 있고 'fallback은 존재하지 않는다'는 올바른 부정임을 확인; TASK-401 done 카드가 재측정을 독립적으로 교차검증"
+  - "게이트 재실행 — validate --all 120 valid 0 invalid, gate READY, make doc-check/lint rc 0, 스코프 4파일(카드 이동 + 압축 2장) 소스 무변경"
 completion-summary: "ISSUE-001 27599→16065B, PLAN-007 22160→12679B — 둘 다 20000B 예산 안. ISSUE-001은 시간순 경위를 요지 중심으로 재구성하되 validator 메시지 census·실측 표·폐기/정정 이력·소유권 귀속을 전부 보존했고, TASK-401로 폐기된 plain-핀 서술을 현행화했다. PLAN-007은 처분 원칙과 배분 스냅샷 중심으로 압축했다. 기준 3개 바인딩 전부 실행해 rc 0."
 verification-status: verified
 verification-evidence:
@@ -29,7 +37,7 @@ depends-on: []
 이 둘은 **매 게이트 실행마다 실제로 읽히므로** 비용이 반복해서 청구된다.
 
 ```
-25821  tasks/issue/001-...md   (레거시 done 리뷰 증거 서술)
+27599  tasks/issue/001-...md   (레거시 done 리뷰 증거 서술 — 카드 초안 시점 25821B에서 이슈 정정 작업으로 성장한 뒤의 크기)
 22160  tasks/plan/007-...md    (done 백로그 분류)
 ```
 
@@ -78,3 +86,13 @@ depends-on: []
 Git 이력에 있음을 명시했다. 폐기된 서술("blocks: 없으면 receipt 검사 미도달" 계열)은
 삭제가 아니라 날짜 있는 현행화로 교체해 ISSUE-001의 pin 절과 PLAN-007의 381 절이
 TASK-401의 재측정과 모순되지 않게 했다.
+
+## 리뷰 대응 (2026-09-15, review-396 — pass)
+
+독립 리뷰어가 6개 검사를 전부 재실행해 pass(판정-final)를 냈다(head-reviewed
+`5e69f15`). 충실도 대조에서 판단-결정 사실 전부 보존이, 죽은 주장 grep에서
+현행화의 올바른 부정이, 게이트 4종에서 green이 확인됐다. findings 3건은 전부
+비차단: F1(info) — 본 Summary의 이슈 크기 25821은 카드 초안 시점 스냅샷이므로
+마감 커밋에서 27599(압축 직전 실측)로 갱신함; F2(low)·F3(info) — 압축으로
+떨어진 부분(P0→P2의 하위 논증, awk 측정 명령)은 카드가 선언한 압축 원칙 안에서
+수용, 전문은 Git 이력에 있다.
