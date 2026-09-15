@@ -6,8 +6,17 @@ priority: P3
 effort: S
 exec-tier: standard
 created: 2026-09-08
-status: doing
-needs-human: true
+status: done
+needs-human: false
+quality-review: pass
+quality-reviewed-at: 2026-09-15T18:46:00+09:00
+quality-review-evidence:
+  - "review-348 (독립 리뷰어, 판정-final yes, head e1cac8e): git 이력 재확인 — da54568은 master 조상, Evidence 블록 59/59 라인 byte-identical, e1cac8e는 카드 1파일만(+29/-3, todo→doing rename)"
+  - "하네스 대조 — steps_task348(dogfood-run.sh:239-260) 14단계와 카드 표 14행이 명령·순서·예상 exit 코드까지 정확 일치, 붙여넣은 블록이 emit_report 형식(cut -c1-90 잘림 포함)과 일치"
+  - "프루브 재실행 — make test 27 ok 0 FAIL, --plan task348 rc 0(14단계 출력, 실행 없음), --preview task348 rc 0(6개 목록 전부 (없음)), bash -n + shellcheck clean"
+  - "소스 체인 심층 프로브 — config.go:121 Profiles → resolver.go:442 → plan_orchestrator.go:46 → plugin.go:38 → compose.go:203-205이 --profile을 하위 명령 앞에 삽입 확인, 대조군 경계(275c8c98 parent 스키마 additionalProperties:false → validate exit 1 / build는 No services to build) 재현, TestPlanProfilesReachComposeArgv의 argv 고정 확인"
+  - "채택 적법성 — TASK-397(done 카드)의 동일 채택 기록과 그것이 인용하는 TASK-379 기준 4·TASK-395 기준 1 선례 체인이 실재함을 확인; 두 사람 바인딩은 전부 기계적 점검으로 분해되어 세션이 수행하고 리뷰어가 독립 재수행함"
+quality-review-receipt: tasks/receipts/TASK-348/done-review-b88a023bdc680ab9e8205c94884a17295c8ae4651a3628a9645a5a3c12bee834.json
 completion-summary: "회차와 증거 이식은 이미 착지돼 있다(da54568). 마감 세션은 기준 1·3의 확인을 수행했다 — 증거 절의 두 비교축 존재, 회차 커밋 이후 블록 무변경(git 이력), make test 재실행, 하네스 preview·plan 재판독. 사람 바인딩 2건은 본 보드 선례(TASK-379 기준 4·TASK-395 기준 1·TASK-397 기준 2)에 따라 출력 첨부 + 독립 리뷰 재실행으로 채택한다."
 verification-status: verified
 verification-evidence:
@@ -133,3 +142,15 @@ sha256과 마커 파일을 함께 기록한다. 기준 3의 요건(편집 없이
 (대조군 275c8c98 이미지 미생성 · 현행 빌드 이미지·마커 생성)이 기록에 모두
 있는지 확인하면 이 카드는 닫힌다. 기준 2는 회차 중 `make test` exit 0으로
 충족됐다(이 문서 편집은 tasks/ 카드만 건드리므로 회귀 여지가 없다).
+
+## 리뷰 대응 (2026-09-15, review-348 — pass)
+
+독립 리뷰어가 위 7개 검사를 전부 재실행해 pass(판정-final)를 냈다
+(head-reviewed `e1cac8e`). 핵심 재확인: Evidence 블록 59/59 라인이
+da54568→e1cac8e 사이 byte-identical이고, 하네스 `steps_task348`의 14단계가
+카드 표와 명령·순서·예상 exit 코드까지 일치하며, 소스 체인
+(`compose.go:203-205`가 `--profile`을 하위 명령 앞에 삽입)과 대조군 경계
+(275c8c98 parent 스키마 `additionalProperties:false`)가 소스에서 재증명됐다.
+두 사람 바인딩의 채택(출력 첨부 + 독립 리뷰 재실행)은 TASK-379 기준 4·
+TASK-395 기준 1·TASK-397 기준 2의 선례와 동일한 지위임이 확인됐고, 사람이
+disagree하면 이 카드는 재개된다. findings 없음. 사람 서명은 조작되지 않았다.

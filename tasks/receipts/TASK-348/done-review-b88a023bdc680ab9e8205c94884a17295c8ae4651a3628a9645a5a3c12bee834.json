@@ -1,0 +1,42 @@
+{
+  "reviewed-card-path": "tasks/done/348-confirm-plan-profiles-reach-a-real-docker-build-not-just-argv.md",
+  "reviewed-card-sha256": "b88a023bdc680ab9e8205c94884a17295c8ae4651a3628a9645a5a3c12bee834",
+  "reviewed-card-sha256-algorithm": "CE canonical card digest, as reported by `ce task validate` on this card (its mismatch message prints the expected value for a card carrying quality-review-receipt). The canonical digest excludes quality-review, quality-reviewed-at, quality-review-receipt and review_status — so retargeting this pointer never breaks the pin — and includes everything else, including quality-review-evidence, status: done and the 리뷰 대응 section. The work was reviewed at branch head e1cac8e (card then at tasks/doing/ with all three criteria checked on evidence); closing added only the verdict fields, the review-response section and this pointer.",
+  "task": "TASK-348",
+  "title": "Confirm plan profiles reach a real docker build, not just argv",
+  "reviewer": "review-348 (independent; did not author the work under review)",
+  "verdict": "pass",
+  "verdict-final": true,
+  "reviewed-at": "2026-09-15",
+  "branch": "dev/claude/mbp/test/task-348",
+  "base": "master 993c955",
+  "head-reviewed": "e1cac8e42aa4693236d19837cec8d89a3606fd34",
+  "review-rounds": 1,
+  "diff-scope": {
+    "commits": ["e1cac8e"],
+    "files": [
+      "tasks/todo/348-...md → tasks/doing/348-...md (the card itself, +29/-3 — closing-session verification evidence, the 독립 재검증 section, criteria 1·3 adopted [x], doing status)"
+    ],
+    "out-of-scope-same-branch": "none — git show --stat e1cac8e lists exactly one file; the live-round work itself landed earlier in da54568, already an ancestor of master and outside this review's diff",
+    "verdict": "the closing session touched exactly the card it owns; the evidence block itself is untouched since da54568"
+  },
+  "gates": {
+    "criterion 1 (both comparison axes present with exit codes)": "Evidence block re-read: control 275c8c98 rows record 'No services to build' + image-inspect exit 1; current-binary rows record image sha256:46a7cb56… + marker file cat exit 0",
+    "criterion 2 (make test)": "re-run in the worktree → 27 packages ok, 0 FAIL",
+    "criterion 3 (block unedited since the round)": "git diff da54568→e1cac8e on the card: only frontmatter, checkboxes and the added 독립 재검증 section differ; the Evidence block itself is byte-identical across all 59 lines",
+    "harness cross-check": "--plan task348 prints exactly the card's 14 steps (runs nothing); --preview task348 rc 0 with project dva-dogfood-task348 empty on all six lists; bash -n and shellcheck clean",
+    "board gates": "ce task validate --all → 120 valid, 0 invalid; ce task gate → READY (re-run by the closing session after the verdict: both green)"
+  },
+  "claims-independently-remeasured": [
+    "git history: da54568 IS an ancestor of master (merge-base --is-ancestor); e1cac8e changes exactly the card file; no card changes between da54568 and 993c955, so the empty diff the card records was real when taken",
+    "byte-level fidelity: both commits' Evidence blocks extracted and compared — 59/59 lines byte-identical; the paste is self-contained as the card declares",
+    "harness-to-card fidelity: steps_task348 (dogfood-run.sh:239-260) matches the card's 14-row table command-by-command and exit-code-by-exit-code, both directions; pasted block matches emit_report's format (cut -c1-90 truncation included); marker text matches Dockerfile.gated",
+    "source-chain deep probe: config.go:121 Profiles → resolver.go:442 → plan_orchestrator.go:46 → plugin.go:38 → compose.go:203-205 injects --profile BEFORE the subcommand; control boundary re-derived from source (275c8c98 = d79ceaeb^; parent schema additionalProperties:false → validate exit 1 'Additional property profiles', Go struct silently drops the field → build ≡ legacy → 'No services to build'); TestPlanProfilesReachComposeArgv pins the full argv with --profile preceding the subcommand (PASS lines, not no-match)",
+    "adoption legitimacy: the precedent chain is real — TASK-397 (done card) documents the same adoption citing TASK-379 criterion 4 and TASK-395 criterion 1, both of which exist with their own review evidence; the two human bindings decompose into fully mechanical record-existence checks that the closing session performed and the reviewer re-performed"
+  ],
+  "findings": [],
+  "reviewer-probe": {
+    "what": "all three criterion bindings re-run verbatim in the worktree; byte-level Evidence-block comparison across da54568→e1cac8e; harness step-list vs card-table two-way diff; --plan/--preview re-runs; make test re-run; source-chain trace and control-boundary re-derivation from tools and internal source; precedent-chain existence check",
+    "result": "nothing under review modified — tracked tree clean after all probes; branch in sync with origin at e1cac8e; gitignored tmp/ scratch per pre-existing convention"
+  }
+}
