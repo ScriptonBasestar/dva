@@ -83,7 +83,8 @@ exit=0
 - [x] 상류 소유 카드에 보고 누락이 남아 있지 않다 — 빈 값을 세는 주체는 doccheck다 | verify: `go run ./tools/doccheck . | /usr/bin/grep -qE '^upstream_unref:[[:space:]]+0$'`
 - [ ] 적힌 이슈 번호가 실제로 열려 있다 | verify: human — 카드에 적힌
       `ce-agent-kit#N` 각각을 상류에서 열어, 번호가 실재하고 내용이 그 카드의
-      결함을 서술하는지 확인한다
+      결함을 서술하는지 확인한다. 확인 명령에는 호스트를 반드시 박는다:
+      `GITLAB_HOST=gitlab.polypia.net glab issue view N -R archmagece/ce-agent-kit`
 - [x] advisory 단계가 끝나고 보고 누락이 치명으로 승격됐다 | verify: `/usr/bin/grep -q 'res.UpstreamUnrefed > 0' tools/doccheck/check.go`
 - [x] doccheck 패키지 테스트 전부 통과 | verify: `go test ./tools/doccheck/`
 - [x] 문서 게이트가 초록 | verify: `make doc-check` (regression-guard)
@@ -95,12 +96,26 @@ exit=0
 | 상류 이슈 | 묶은 카드 | 상류 컴포넌트 |
 |---|---|---|
 | `ce-agent-kit#1` | [[ISSUE-004]] · [[ISSUE-006]] · [[ISSUE-020]] | `ce task preflight` runnability 판정 |
-| `ce-agent-kit#2` | [[ISSUE-001]] · [[ISSUE-005]] · [[ISSUE-008]] | `ce task run-*` 수명주기·영수증 |
+| `ce-agent-kit#2` | [[ISSUE-005]] · [[ISSUE-008]] | `ce task run-*` 실행 영수증 |
 | `ce-agent-kit#3` | [[ISSUE-007]] · [[ISSUE-011]] · [[ISSUE-019]] · [[ISSUE-022]] | `ce task validate` 정본 스키마·메시지 |
 | `ce-agent-kit#4` | [[ISSUE-013]] · [[ISSUE-024]] | 상태 전이 (`move` · `done-finalize`) |
 | `ce-agent-kit#5` | [[ISSUE-014]] · [[ISSUE-023]] | `ce task lint` 인벤토리 · `gate` 어드바이저리 |
 | `ce-agent-kit#6` | [[ISSUE-026]] | 호스트 도구 핀 |
-| `ce-agent-kit#7` | [[ISSUE-028]] | 리뷰 영수증 다이제스트 고정점 |
+| `ce-agent-kit#7` | [[ISSUE-028]] · [[ISSUE-001]] | 리뷰 영수증 계약 (고정점 · dialect · 정규화) |
+
+**2번째·7번째 행은 리뷰 후에 고쳐졌다.** 최초 배정은 [[ISSUE-001]]을 #2에 넣었고,
+근거로 "셋 다 '실행 기록'이라는 같은 자료구조를 공유한다"라고 적었다 — 거짓이다.
+#2의 두 카드는 `run-*` **실행 영수증**(레지스트리 항목)을 다루고 ISSUE-001은 **리뷰
+영수증**을 다룬다. 한국어로 둘 다 "영수증"이라 불린다는 것을 같은 자료구조라는 근거로
+썼다. 독립 리뷰가 잡았고, #2에서 해당 절을 떼어 #7로 옮기면서 첫 보고에 누락됐던
+다이제스트 정규화 불일치(ISSUE-001 Summary 2)도 함께 실었다.
+
+이 실수가 [[ISSUE-027]]과 같은 계열이라는 점을 기록해 둘 가치가 있다. 그쪽은 grep이
+"이름이 등장한다"와 "구현이 있다"를 구분하지 못한 것이었고, 이쪽은 명명이 "같게
+불린다"와 "같다"를 구분하지 못한 것이다. **같은 세션이 전자를 진단하면서 후자를
+저질렀다** — 묶음 근거를 산문으로만 적고 아무 검사도 걸지 않았기 때문이다.
+`upstream-ref:` 게이트는 "보고했는가"를 강제하지만 "맞게 묶었는가"는 강제하지 않는다.
+그게 TASK-399 기준 3이 `human —`에 묶여 있는 이유이고, 이번에 실제로 사람이 잡았다.
 
 일곱 번째는 계획에 없었다 — 이 카드의 게이트를 돌리다 발견해 [[ISSUE-028]]로
 기록하고 같은 실행에서 보고했다. 승격된 검사가 **즉시** 그것을 요구했다는 점이
@@ -153,6 +168,7 @@ doc-check: FAIL
 
 ## Sources
 
+- 2026-09-15 실측 — `GITLAB_HOST` 없이 `glab issue view N -R archmagece/ce-agent-kit`를 돌리면 **일곱 건 전부 404**다. `glab`이 기본 호스트인 gitlab.com으로 가고, 거기에 그 프로젝트는 없기 때문이다. 인증은 멀쩡하고 이슈도 멀쩡한데 출력만 "없음"으로 나오는 형태라, 독립 리뷰어가 실제로 이 경로로 일곱 건 전부 404를 받고 "상류 이슈가 없어졌다"로 진단할 뻔했다. 기준 3의 확인 명령에 호스트를 박아 둔 이유다 — 여기서 검증되는 것은 사람의 판단이고, 사람에게 거짓 음성을 보여 주는 명령은 그 판단을 무너뜨린다
 - 2026-09-15 실측 — `glab` 1.99.0 설치됨, `glab auth status --hostname gitlab.polypia.net` exit 0 (archmagece로 로그인됨). 최초 기재였던 "미인증"은 설정 경로 추측에서 나온 오판이며, 위 절에 정정과 함께 남겼다
 - [[TASK-395]] 결정 2·4 — 채널과 N:1 묶음 규칙
 

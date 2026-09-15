@@ -30,8 +30,10 @@ The receipt schema is the root cause, not the accumulation: an entry carries
 record that it finished. `updatedAt` cannot stand in for one; it equals
 `startedAt` on every entry, so it is a creation timestamp under another name.
 
-Owner is external. `run-*` and its registry belong to ce-agent-kit and
-ce-workbook/task_management; DVA owns only the cards it files. This is filed
+Owner is external. `run-*` and its registry belong to ce-agent-kit; DVA owns
+only the cards it files. This line named ce-workbook/task_management alongside
+ce-agent-kit until 2026-09-15; the 소유권 section below carries the correction.
+This is filed
 here on the ISSUE-004 precedent — a DVA-observed defect in the shared runtime
 gets a DVA card so the observation is not lost, and the fix lands upstream.
 
@@ -127,9 +129,19 @@ reconciliation으로 닫으며 `next: no action required`를 붙인다. 낱말�
 
 ## 소유권 — 상류다 (2026-09-15 명시)
 
-`run-*`과 그 레지스트리는 `ce-agent-kit`과 `ce-workbook/task_management` 소유다 —
-Summary가 "Owner is external … the fix lands upstream"으로 적는다. 남은 기준 1(영수증
-스키마의 terminal-state 필드)도 상류 착지다. 보고 자리는 [[TASK-395]]가 만든다.
+`run-*`과 그 레지스트리는 `ce-agent-kit` 소유다 — Summary가 "Owner is external …
+the fix lands upstream"으로 적는다. 남은 기준 1(영수증 스키마의 terminal-state 필드)도
+상류 착지다. 보고는 [[TASK-399]]가 `ce-agent-kit#2`로 수행했다.
+
+> **2026-09-15 정정.** 이 카드는 위 저장소를 `ce-workbook/task_management`로 적고
+> 있었다. 측정한 결과 틀렸다 — `ce`는 `ce-agent-kit`에서 빌드되고(`go version -m
+> $(which ce)` → `mod github.com/archmagece/ce-agent-kit`), 해당 서브커맨드는
+> `cmd/ce/handlers_task.go`에 등록되고 `internal/adapter/cli/commands/`에 구현돼
+> 있다. `ce-workbook`에 이름이 등장하는 것은 그 저장소가 `ce task *`를 **호출하는
+> 계약 테스트**를 갖고 있기 때문이며, 소비자이지 소유자가 아니다. 오귀속은
+> [[ISSUE-004]]의 `owner:` 줄에서 시작해 "ISSUE-004 선례"라는 인용을 타고 이 카드까지
+> 번졌다 — 측정 없이 선례가 근거를 대신했다. 경위는 [[ISSUE-027]]이 기록한다.
+
 
 ## Resolution Criteria
 

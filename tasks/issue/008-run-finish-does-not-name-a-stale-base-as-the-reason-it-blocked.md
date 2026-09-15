@@ -120,7 +120,7 @@ incomplete reclaim — instead of being repurposed as the message for both.
 
 `run-finish`의 verdict 메시지는 `ce` 런타임 소유다 — Notes가 "cannot be fixed in this
 repository"로 적는다. 기준 전부가 메시지 변경이므로 이 저장소가 고칠 부분은 없다.
-보고 자리는 [[TASK-395]]가 만든다.
+보고는 [[TASK-399]]가 `ce-agent-kit#2`로 수행했다.
 
 ## Resolution Criteria
 

@@ -106,6 +106,66 @@ $ git -C ~/mywork/ce/ce-workbook ls-files | grep -i preflight | grep -v '^tasks/
    "기존 Python preflight"는 같은 문서가 "새 lifecycle 규칙은 ce-agent-kit에서만
    작성"이라고 못박는 **별개 개념**이다.
 
+4. 실행 중인 바이너리가 **출력한 문장 자체**를 소스에서 찾으면 한 저장소만 나온다.
+   `ce task preflight --help`의 한 줄을 골라 양쪽을 훑은 결과다:
+
+```
+$ ce task preflight --help | grep -n 'Kind-zone cards'
+Kind-zone cards (plan/, issue/, backlog/) are omitted unless --zone names
+
+$ grep -rn "Kind-zone cards" --include='*.go' ~/mywork/ce/ce-agent-kit
+internal/adapter/cli/commands/task_preflight.go:520
+
+$ /usr/bin/grep -rIn "Kind-zone cards" ~/mywork/ce/ce-workbook
+(없음)
+
+$ /usr/bin/grep -rl "Kind-zone cards" ~/mywork/ce/ce-workbook   # -I 없이
+.omo/evidence/admission-migration-delivery-dffb/ce-tested-binary
+.omo/evidence/session-handoff/own-preparation-backups/ce-v0.8.4-darwin-arm64
+.omo/evidence/session-handoff/candidate-execution/evidence/ce-candidate
+.omo/evidence/session-handoff/runtime-delivery/consume-runtime/adopted-bin/ce
+.omo/evidence/session-handoff/runtime-delivery/consume-runtime/ce-adopted
+.omo/evidence/runtime-migration/ce-candidate          # 6건, 전부 보관된 ce 바이너리
+```
+
+   앞의 세 측정은 "구현이 어디 있는가"를 묻지만 이 측정은 "방금 본 동작이 어느 소스에서
+   나왔는가"를 묻는다 — 중간 추론이 없어 가장 짧다. 그리고 `-I`를 뺐을 때 ce-workbook에서
+   나오는 6건이 오귀속의 기계적 원인을 그대로 보여준다: 걸린 것은 **보관된 ce 바이너리
+   사본**이지 소스가 아니다. grep은 "여기에 있다"와 "여기서 왔다"를 구분하지 않는다.
+
+### 이 측정이 두 번 틀렸고, 두 번 다 도구 때문이었다 (2026-09-15)
+
+위 6건은 처음에 **3건**으로 적혀 있었다. `| head -3`으로 출력을 자른 뒤 그 개수를
+결론으로 적었기 때문이다 — 자른 것은 표시였는데 측정으로 읽었다.
+
+더 중요한 두 번째 오류는 리뷰 쪽에서 났고, 이 저장소의 기존 규칙을 실측으로
+정당화한다. 독립 리뷰어가 같은 grep으로 **0건**을 얻어 위 괄호를 재현 불가로
+보고했다. 둘 다 정직하게 측정했고 **도구가 달랐다**:
+
+```
+$ type grep
+grep is a shell function from ~/.claude/shell-snapshots/snapshot-zsh-….sh
+
+$ cd ~/mywork/ce/ce-workbook
+$ grep -rl 'Kind-zone cards' . | wc -l            # 에이전트 셸 래퍼
+0
+$ /usr/bin/grep -rl 'Kind-zone cards' . | wc -l   # 실제 grep
+6
+```
+
+같은 명령, 같은 트리, 같은 시각에 0과 6이다. **이것이 정확히 [[TASK-221]]이 doccheck에
+넣은 `wrappedBindingTools` 규칙이 막으려는 사태다** — 그 규칙의 주석은 "grep과 find는
+절대경로를 써서 에이전트 셸 래퍼가 기준의 코퍼스나 출력을 바꾸지 못하게 한다"고
+적는다. 지금까지 그 문장은 **가정**이었다. 오늘 이 저장소의 리뷰 루프 안에서 실제로
+발생했고, 참인 관측을 거짓으로 뒤집는 반증을 만들어냈다.
+
+기록해 둘 가치가 있는 이유는 규칙이 옳았다는 것보다, **규칙이 검사하는 자리가
+좁다**는 쪽이다. `wrappedBindingTools`는 카드의 `verify:` 바인딩만 본다. 카드 산문에
+증거로 붙인 명령, 리뷰어가 검증하려고 친 명령, 상류 이슈 본문에 인용한 명령은
+아무것도 검사하지 않는다 — 그런데 이번에 틀린 것은 전부 그 바깥이었다. 규칙을
+바인딩 밖으로 넓힐지는 별도 판단이고, 적어도 **측정을 인용할 때 절대경로를 쓰는
+것이 관례여야 한다**는 것은 이 관측이 지지한다.
+
 **틀린 쪽이 어떻게 틀렸는지가 이 카드의 실제 교훈이다.** ISSUE-004는 `owner:`
 줄에 저장소를 적었고 ISSUE-006은 그걸 "ISSUE-004 precedent"로 인용했다 — 측정이
 한 번도 없었고, 선례가 근거를 대신했다. 산문 귀속은 검사되지 않으니 잘못된 값이
@@ -114,7 +174,10 @@ $ git -C ~/mywork/ce/ce-workbook ls-files | grep -i preflight | grep -v '^tasks/
 가리키는 이유다.
 
 ISSUE-004 · ISSUE-006의 소유권 절과 본문에 날짜 찍힌 정정 블록을 넣어 세 카드를
-같은 어휘로 맞췄다. [[TASK-399]] 묶음 4의 보고처는
+같은 어휘로 맞췄다. 이후 독립 리뷰가 같은 오귀속이 네 장 더 있다고 지적해
+(ISSUE-005 · ISSUE-007 · ISSUE-013 · ISSUE-014) 같은 블록으로 함께 정정했다 — 네 장
+전부가 `[[ISSUE-004]] 선례`라는 문구를 달고 있었다. 위 교훈이 가설이 아니라 관측임을
+그 네 장이 확인해 준다: 전파 경로가 인용문으로 카드에 남아 있었다. [[TASK-399]] 묶음 4의 보고처는
 `ssh://git@gitlab.polypia.net:2224/archmagece/ce-agent-kit.git`로 확정이다.
 
 ## Resolution Criteria

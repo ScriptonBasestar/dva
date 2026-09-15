@@ -62,7 +62,7 @@ $ /usr/bin/grep -rhoE '^quality-review(ed-at|-date):' tasks/done | sort | uniq -
 
 정본 스키마는 `ce-agent-kit`의 canonical validator에 있다. 이 저장소가 필드 이름을
 통일해도(TASK-393이 여덟 장에 대해 그렇게 했다) 다음 카드가 다시 갈리는 것을 막지
-못한다 — 막는 것은 스키마뿐이다. 보고 경로는 [[TASK-395]]가 만든다.
+못한다 — 막는 것은 스키마뿐이다. 보고는 [[TASK-399]]가 `ce-agent-kit#3`으로 수행했다.
 
 ## Resolution Criteria
 

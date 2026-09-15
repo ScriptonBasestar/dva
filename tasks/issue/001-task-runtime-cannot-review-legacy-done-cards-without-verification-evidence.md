@@ -11,7 +11,7 @@ discovered-in: "TASK-312 done-review and TASK-354 gate currentization"
 discovered-at: 2026-09-10
 ownership: upstream
 created: 2026-09-10
-upstream-ref: "ce-agent-kit#2"
+upstream-ref: "ce-agent-kit#7"
 ---
 
 ## Summary
@@ -394,7 +394,22 @@ sha256은 `blocks:` 없는 카드에서만 조용할 뿐이고, 그 조용함은
 검증 계약의 정본은 상류에 있다 — Priority 절이 "ce-agent-kit still owns the canonical
 digest … ce-workbook/task_management still owns the legacy controller dialect"로 적는다.
 이 저장소 절반에 해당하던 기준들은 TASK-388·TASK-384로 이미 닫혔고, 남은 기준은 전부
-상류 검증 계약에 묶여 있다. 보고 자리는 [[TASK-395]]가 만든다.
+상류 검증 계약에 묶여 있다. 보고는 [[TASK-399]]가 `ce-agent-kit#7`로 수행했다.
+
+> **2026-09-15 정정 — 묶음이 틀렸었다.** 이 카드는 처음에 `ce-agent-kit#2`(`run-*`
+> 수명주기)로 보고됐다. 근거로 적힌 문장은 "셋 다 '실행 기록'이라는 같은 자료구조를
+> 공유한다"였는데 거짓이다 — ISSUE-005 · ISSUE-008이 다루는 것은 `run-*` **실행
+> 영수증**(레지스트리 항목)이고 이 카드가 다루는 것은 **리뷰 영수증**
+> (`done-review-<sha>.json`)이다. 한국어로 둘 다 "영수증"이라 불릴 뿐 서로 다른
+> 산출물이며, 같은 단어로 불린다는 것을 같은 자료구조라는 근거로 썼다. [[ISSUE-027]]이
+> 기록한 오류와 같은 계열이다 — 그쪽은 grep이 "이름이 등장한다"와 "구현이 있다"를
+> 섞었고 이쪽은 명명이 "같게 불린다"와 "같다"를 섞었다.
+>
+> 독립 리뷰가 잡아냈고, #2에서 해당 절을 떼어 `ce-agent-kit#7`(리뷰 영수증 계약)로
+> 옮겼다. 옮기면서 Summary 2(컨트롤러의 PyYAML 정규화 ↔ CE canonical JSON 다이제스트
+> 불일치)도 함께 실었다 — 첫 보고에는 Summary 1만 담겼고 2·3이 누락돼 있었다.
+> Summary 3(`tmp/` 경로)은 TASK-388이 이 저장소 안에서 닫았으므로 상류 보고 대상이
+> 아니다.
 
 ## Resolution Criteria
 

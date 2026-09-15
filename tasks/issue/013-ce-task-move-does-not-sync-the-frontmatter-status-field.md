@@ -71,15 +71,26 @@ DVA 카드 대부분은 `**Status**` 테이블 셀을 두지 않으므로 이것
 것은 DVA 저장소 로컬의 `tools/doccheck` `checkCardStatus`뿐이다 — 그런데
 ISSUE-007은 바로 그 검사가 잘못된 저장소에 있다고 주장한다.
 
-소유는 외부다 — `ce task move`는 ce-workbook/task_management 소속이다.
+소유는 외부다 — `ce task move`는 `ce-agent-kit` 소속이다(2026-09-15까지 이 줄은
+ce-workbook/task_management로 적혀 있었다; 아래 소유권 절이 정정을 담는다).
 [[ISSUE-004]] 선례에 따라 여기에 기록한다: DVA에서 관찰된 상류 런타임의 결함을
 잃지 않기 위해 DVA 카드로 남기고, 수정은 상류에서 이루어진다.
 
 ## 소유권 — 상류다 (2026-09-15 명시)
 
-`ce task move`는 `ce-workbook/task_management` 소속이다 — Impact가 "소유는 외부다 …
-수정은 상류에서 이루어진다"로 적는다([[ISSUE-004]] 선례). 보고 자리는 [[TASK-395]]가
-만든다.
+`ce task move`는 `ce-agent-kit` 소속이다 — Impact가 "소유는 외부다 … 수정은 상류에서
+이루어진다"로 적는다([[ISSUE-004]] 선례). 보고는 [[TASK-399]]가 `ce-agent-kit#4`로
+수행했다.
+
+> **2026-09-15 정정.** 이 카드는 위 저장소를 `ce-workbook/task_management`로 적고
+> 있었다. 측정한 결과 틀렸다 — `ce`는 `ce-agent-kit`에서 빌드되고(`go version -m
+> $(which ce)` → `mod github.com/archmagece/ce-agent-kit`), 해당 서브커맨드는
+> `cmd/ce/handlers_task.go`에 등록되고 `internal/adapter/cli/commands/`에 구현돼
+> 있다. `ce-workbook`에 이름이 등장하는 것은 그 저장소가 `ce task *`를 **호출하는
+> 계약 테스트**를 갖고 있기 때문이며, 소비자이지 소유자가 아니다. 오귀속은
+> [[ISSUE-004]]의 `owner:` 줄에서 시작해 "ISSUE-004 선례"라는 인용을 타고 이 카드까지
+> 번졌다 — 측정 없이 선례가 근거를 대신했다. 경위는 [[ISSUE-027]]이 기록한다.
+
 
 ## Resolution Criteria
 

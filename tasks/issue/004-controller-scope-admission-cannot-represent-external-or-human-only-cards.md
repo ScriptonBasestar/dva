@@ -72,7 +72,7 @@ execution or a controller-owned route transition can occur.
 
 큐 preflight·선정·allowed-path 검증은 `ce-agent-kit` 소유다 — P1 Blocker의 `owner`
 항목이 그대로 적는다. 세 기준 전부가 상류 selection 테스트와 회귀를 검증
-대상으로 요구한다. 보고 자리는 [[TASK-395]]가 만든다.
+대상으로 요구한다. 보고는 [[TASK-399]]가 `ce-agent-kit#1`로 수행했다.
 
 **2026-09-15 정정 — 상류는 `ce-agent-kit`이다.** 이 절과 위 본문은 원래
 `ce-workbook/task_management`를 지목했고, 그게 실측과 어긋났다([[ISSUE-027]]).

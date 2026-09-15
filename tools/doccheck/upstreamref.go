@@ -7,23 +7,35 @@ import (
 	"strings"
 )
 
-// The advisory TASK-395 added. An issue card whose fix lives upstream (ce-agent-kit) is only
+// The report-trail check TASK-395 added as an advisory and TASK-399 promoted to a gate error.
+// An issue card whose fix lives upstream (ce-agent-kit) is only
 // honest about that while the board can see whether it was ever reported: on 2026-09-14 every
 // one of the upstream-owned cards carried zero trace of a report, and "보고하지 않은 것" and
 // "보고했는데 안 고쳐진 것" looked identical — both todo, both green.
 //
-// Two meters, both counted rather than failed. A card classified upstream-owned owes an
+// Two meters, both fatal today. A card classified upstream-owned owes an
 // `upstream-ref:` frontmatter value naming where it was reported; a this-repo card owes
 // nothing. TASK-395 read that classification off the `## 소유권` heading text; TASK-398 moved
 // it to the frontmatter field below and kept the heading as the cross-check — see the last
 // paragraph of this block.
 //
-// Why advisory and not red: the act this measures happens outside this repository, so a hard
-// gate here could only be satisfied by writing a reference this repository cannot verify —
-// StaleLinkPaths stays a maintenance signal for the same reason. The count is the meter: an
-// unreported card stops hiding the day the upstream_unref line reads zero, which is all the
-// card asks ("보고 안 됨이 초록 뒤에 숨지 못한다"). When `ce task lint` grows the same field,
-// this widens check retires in favor of it (the same handoff rule as the zone check).
+// Why it was advisory first, and what changed. The original objection, kept here because it was
+// never wrong: the act this measures happens outside this repository, so a hard gate can only
+// require that a reference be *written*, never that it be true — StaleLinkPaths stays a
+// maintenance signal for the same reason. That objection defeats a gate imposed before anyone
+// can satisfy it; it does not defeat one imposed after everyone already has. TASK-399 filed the
+// upstream issues and wrote their numbers back, upstream_unref reached 0, and at that point
+// going red costs nothing and locks the property in: a new upstream-owned card cannot reach
+// master without naming where it was reported.
+//
+// What the gate still does not claim, unchanged by the promotion: presence is not verification.
+// `ce-agent-kit#7` and `ce-agent-kit#99999` are equally acceptable here, by decision — the
+// number is checked by a human reading the card, and TASK-399's third criterion is bound to
+// `human —` for exactly that reason. This check asserts that somebody recorded an answer, not
+// that the answer is right.
+//
+// When `ce task lint` grows the same field, this check retires in favor of it (the same handoff
+// rule as the zone check).
 //
 // TASK-398 moved the verdict off the heading. The heading stays, but as the *reason*: a prose
 // line drifts one syllable ("— 상류입니다") and a substring match goes quietly green, which is
@@ -68,8 +80,9 @@ func headingOwnership(body string) (value string, marked bool) {
 }
 
 // upstreamRefCounts is what one sweep of tasks/issue/ measured. It is a struct rather than a
-// row of ints because the two severities below are easy to swap by accident at a call site:
-// Unclassified and Mismatched fail the gate, Unrefed does not.
+// row of ints because the counters below are easy to swap by accident at a call site. They all
+// fail the gate now; they did not always, so a reader arriving from an older comment should
+// check check.go's wiring rather than trust a remembered severity.
 type upstreamRefCounts struct {
 	Seen         int // non-symlink markdown files under tasks/issue/
 	Read         int // of those, ones whose body was read
@@ -77,7 +90,7 @@ type upstreamRefCounts struct {
 	Mismatched   int // `ownership:` and the `## 소유권` heading disagree — FATAL
 	Unreasoned   int // classified, but no `## 소유권` section to say why — FATAL
 	Owned        int // classified upstream or split
-	Unrefed      int // of Owned, those with no `upstream-ref:` value — advisory
+	Unrefed      int // of Owned, those with no `upstream-ref:` value — FATAL since TASK-399
 	Msgs         []string
 	Errs         []string
 }
@@ -89,12 +102,13 @@ type upstreamRefCounts struct {
 // distinction checkCardStatus draws: Seen>0 with Read==0 means the sweep stopped reaching the
 // zone, an error rather than a clean zero.
 //
-// Classifying is not optional, and that is the load-bearing asymmetry. If a card could stay
-// unclassified at no cost, nobody would ever write `upstream` and Unrefed would read zero
-// forever — a meter that measures nothing, which is exactly the pathology this check exists to
-// end. So Unclassified is fatal. Unrefed is not, because the act it measures (filing the
-// upstream issue) happens outside this repository and a hard gate here could only be satisfied
-// by writing a reference this repository cannot verify.
+// Classifying is not optional, and that was the load-bearing asymmetry while the stage lasted.
+// If a card could stay unclassified at no cost, nobody would ever write `upstream` and Unrefed
+// would read zero forever — a meter that measures nothing, which is exactly the pathology this
+// check exists to end. So Unclassified was fatal from the first commit while Unrefed waited for
+// the reporting to actually happen. It happened (TASK-399), and the asymmetry is now historical:
+// every counter here fails the gate. The staging is recorded rather than erased because the
+// reasoning is what generalizes — measure first, then ratchet — not the particular severities.
 func checkUpstreamRefs(root string, inv []InventoryEntry) upstreamRefCounts {
 	var c upstreamRefCounts
 	for _, e := range inv {

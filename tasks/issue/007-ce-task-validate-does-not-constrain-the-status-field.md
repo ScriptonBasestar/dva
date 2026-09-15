@@ -34,8 +34,9 @@ repository-local copy of a board judgement the shared gate should own — the
 exact duplication that drifts the moment one copy is fixed, and the reason the
 shared `ce task gate` exists.
 
-Owner is external: `ce task validate` belongs to ce-workbook/task_management.
-Filed here on the ISSUE-004 precedent.
+Owner is external: `ce task validate` belongs to ce-agent-kit. Filed here on
+the ISSUE-004 precedent — including, until 2026-09-15, that card's
+misattribution, corrected in the 소유권 section below.
 
 ## Reproduction
 
@@ -94,10 +95,20 @@ the safe state.
 ## 소유권 — 갈린다 (2026-09-15 명시)
 
 규칙 이전과 검사 제거가 짝이다. 기준 1·2(zone/status 제약의 `ce task validate` 이전)은
-상류(`ce-workbook/task_management`) 소유고, 기준 3(`tools/doccheck`의 checkCardStatus
-sweep 제거)은 이 저장소 소유다. 순서 제약은 카드가 이미 정한다 — 상류 검사가 착지하는
-것을 관측하기 전까지 로컬 sweep을 지우지 않는다. 상류 절반의 보고 자리는 [[TASK-395]]가
-만든다.
+상류(`ce-agent-kit`) 소유고, 기준 3(`tools/doccheck`의 checkCardStatus sweep 제거)은 이
+저장소 소유다. 순서 제약은 카드가 이미 정한다 — 상류 검사가 착지하는 것을 관측하기
+전까지 로컬 sweep을 지우지 않는다. 상류 절반은 [[TASK-399]]가 `ce-agent-kit#3`으로
+보고했다.
+
+> **2026-09-15 정정.** 이 카드는 위 저장소를 `ce-workbook/task_management`로 적고
+> 있었다. 측정한 결과 틀렸다 — `ce`는 `ce-agent-kit`에서 빌드되고(`go version -m
+> $(which ce)` → `mod github.com/archmagece/ce-agent-kit`), 해당 서브커맨드는
+> `cmd/ce/handlers_task.go`에 등록되고 `internal/adapter/cli/commands/`에 구현돼
+> 있다. `ce-workbook`에 이름이 등장하는 것은 그 저장소가 `ce task *`를 **호출하는
+> 계약 테스트**를 갖고 있기 때문이며, 소비자이지 소유자가 아니다. 오귀속은
+> [[ISSUE-004]]의 `owner:` 줄에서 시작해 "ISSUE-004 선례"라는 인용을 타고 이 카드까지
+> 번졌다 — 측정 없이 선례가 근거를 대신했다. 경위는 [[ISSUE-027]]이 기록한다.
+
 
 ## Resolution Criteria
 

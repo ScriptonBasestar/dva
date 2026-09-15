@@ -15,9 +15,13 @@ upstream-ref: "ce-agent-kit#7"
 ## Summary
 
 `ce task validate`의 `quality-review-receipt` 검사가 **정상적으로 닫힌 카드를
-구조적으로 통과시킬 수 없다.** 영수증을 가진 done 카드 10장 전부가 같은 형태로
-실패하고, 그 결과 `ce task gate`가 보드 전체에 `NOT READY`를 낸다 — 어느 카드도
-잘못 쓰이지 않았는데.
+구조적으로 통과시킬 수 없다.** 영수증을 가진 done 카드가 **하나도 빠짐없이** 같은
+형태로 실패하고, 그 결과 `ce task gate`가 보드 전체에 `NOT READY`를 낸다 — 어느
+카드도 잘못 쓰이지 않았는데.
+
+수는 적지 않는다. 영수증을 가진 카드가 늘면 실패 수도 같이 늘기 때문에 어떤 숫자를
+적어도 다음 카드에서 낡는다 — 결함이 전칭이라는 것이 요점이고, 숫자는 그 요점의
+가장 약한 표현이다. 측정 시점의 값은 Reproduction에 날짜와 함께 둔다.
 
 ```
 ❌ quality-review-receipt tasks/receipts/TASK-395/done-review-5f7604....json
@@ -48,7 +52,11 @@ NOT READY — task_validate_failed (validate)
 ## Reproduction
 
 1. 깨끗한 `master`(커밋 cccd35a, 워킹트리 clean)에서 `ce task validate --all`.
-2. `Summary: 107 valid, 11 invalid` — 11장 중 10장이 receipt digest 불일치.
+2. **2026-09-15 측정**: `Summary: 107 valid, 11 invalid` — 실패 11장이 **전부**
+   receipt digest 불일치. 같은 날 TASK-399 브랜치에서 다시 재면
+   `108 valid, 11 invalid`이고 실패 집합은 동일하다(TASK-380·381·382·383·385·386·
+   387·388·389·390·395). valid 쪽만 움직인 것은 이 브랜치가 카드를 하나 더했기
+   때문이고, 실패 쪽이 전칭이라는 성질은 바뀌지 않는다.
 3. `ce task gate --dir .` → `NOT READY — task_validate_failed`.
 4. 실패한 카드의 영수증에서 `reviewed-card-path`를 읽으면 카드가 리뷰받던
    시점의 todo zone 경로를 가리킨다. 그 경로에는 파일이 없다.

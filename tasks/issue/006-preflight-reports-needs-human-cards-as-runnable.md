@@ -83,7 +83,7 @@ evidence and a reasonable source for a warning when the two disagree.
 
 preflight는 `ce-agent-kit` 소유다 — Summary가 "Owner is external"로 적는다.
 기준 전부가 상류가 needs-human 카드를 runnable과 구분해 내는 동작을 요구한다.
-보고 자리는 [[TASK-395]]가 만든다.
+보고는 [[TASK-399]]가 `ce-agent-kit#1`로 수행했다.
 
 **2026-09-15 정정 — 상류는 `ce-agent-kit`이다.** 이 절과 위 본문은 원래
 `ce-workbook/task_management`를 지목했고, 그게 실측과 어긋났다([[ISSUE-027]]).

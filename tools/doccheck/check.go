@@ -51,9 +51,9 @@ type Result struct {
 	// now fails the gate. The two severities were a staging device, not a permanent split:
 	// OwnershipUnclassified and OwnershipMismatched were fatal from the start because classifying
 	// is cheap and in-repo, while UpstreamUnrefed stayed advisory only while the act it measures
-	// — reporting into another repository — had not happened yet. TASK-399 filed the six upstream
-	// issues and wrote their numbers back, the count reached 0, and the promotion the wiring site
-	// described was carried out.
+	// — reporting into another repository — had not happened yet. TASK-399 filed the upstream
+	// issues (seven of them, bundling several cards each) and wrote their numbers back, the count
+	// reached 0, and the promotion the wiring site described was carried out.
 	IssueCardsSeen          int
 	IssueCardsRead          int
 	OwnershipUnclassified   int
@@ -280,9 +280,10 @@ func Check(in CheckInput) Result {
 	}
 	// UpstreamUnrefed is fatal as of TASK-399. It was advisory until the count first reached 0,
 	// and the exit was not left to memory: TestUpstreamRefsSweepsTheRealCorpus failed the moment
-	// it hit 0 and named this edit. That is the whole design ISSUE-023 argued for — a stage that
-	// never names its exit is how an advisory becomes unread — and it is worth recording that the
-	// tripwire actually fired rather than that it existed.
+	// it hit 0 and named this edit. ISSUE-023 reports the same failure mode from the other side:
+	// an advisory nobody records is one nobody reads. A stage that never names its exit decays
+	// into exactly that, so it is worth recording that the tripwire actually fired rather than
+	// merely that it existed.
 	//
 	// Promoting costs nothing once the count is clear and locks the property in: a new
 	// upstream-owned card now cannot reach master without naming where it was reported.

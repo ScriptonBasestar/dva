@@ -68,14 +68,25 @@ Resolution Criteria가 지금 이 위치의 존재에 결속되어 있다.
 잠재적이다 — 보드 인벤토리가 자기 자신의 리뷰 증거 저장소를 모르는 채로 있으면,
 그 디렉터리를 대상으로 하는 미래의 정리/스윕 규칙이 안전하게 판단할 근거가 없다.
 
-소유는 외부다 — `ce task lint`는 ce-workbook/task_management 소속이다.
+소유는 외부다 — `ce task lint`는 `ce-agent-kit` 소속이다(2026-09-15까지 이 줄은
+ce-workbook/task_management로 적혀 있었다; 아래 소유권 절이 정정을 담는다).
 [[ISSUE-004]] 선례에 따라 여기에 기록한다.
 
 ## 소유권 — 상류다 (2026-09-15 명시)
 
-`ce task lint`의 DIRS 분류 어휘는 `ce-workbook/task_management` 소유다 — Impact가
-"소유는 외부다"로 적는다([[ISSUE-004]] 선례). 기준 전부가 lint 분류 어휘의 변경이므로
-이 저장소가 고칠 부분은 없다. 보고 자리는 [[TASK-395]]가 만든다.
+`ce task lint`의 DIRS 분류 어휘는 `ce-agent-kit` 소유다 — Impact가 "소유는 외부다"로
+적는다([[ISSUE-004]] 선례). 기준 전부가 lint 분류 어휘의 변경이므로 이 저장소가 고칠
+부분은 없다. 보고는 [[TASK-399]]가 `ce-agent-kit#5`로 수행했다.
+
+> **2026-09-15 정정.** 이 카드는 위 저장소를 `ce-workbook/task_management`로 적고
+> 있었다. 측정한 결과 틀렸다 — `ce`는 `ce-agent-kit`에서 빌드되고(`go version -m
+> $(which ce)` → `mod github.com/archmagece/ce-agent-kit`), 해당 서브커맨드는
+> `cmd/ce/handlers_task.go`에 등록되고 `internal/adapter/cli/commands/`에 구현돼
+> 있다. `ce-workbook`에 이름이 등장하는 것은 그 저장소가 `ce task *`를 **호출하는
+> 계약 테스트**를 갖고 있기 때문이며, 소비자이지 소유자가 아니다. 오귀속은
+> [[ISSUE-004]]의 `owner:` 줄에서 시작해 "ISSUE-004 선례"라는 인용을 타고 이 카드까지
+> 번졌다 — 측정 없이 선례가 근거를 대신했다. 경위는 [[ISSUE-027]]이 기록한다.
+
 
 ## Resolution Criteria
 
