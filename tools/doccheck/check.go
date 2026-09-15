@@ -56,6 +56,7 @@ type Result struct {
 	IssueCardsRead          int
 	OwnershipUnclassified   int
 	OwnershipMismatched     int
+	OwnershipUnreasoned     int
 	UpstreamOwned           int
 	UpstreamUnrefed         int
 	CardIDsSeen             int
@@ -258,6 +259,7 @@ func Check(in CheckInput) Result {
 	res.IssueCardsRead = upstream.Read
 	res.OwnershipUnclassified = upstream.Unclassified
 	res.OwnershipMismatched = upstream.Mismatched
+	res.OwnershipUnreasoned = upstream.Unreasoned
 	res.UpstreamOwned = upstream.Owned
 	res.UpstreamUnrefed = upstream.Unrefed
 	res.UpstreamDetail = upstream.Msgs
@@ -268,11 +270,14 @@ func Check(in CheckInput) Result {
 	if res.OwnershipMismatched > 0 {
 		res.Errors = append(res.Errors, fmt.Sprintf("%d issue card(s) whose ownership: and %s heading disagree", res.OwnershipMismatched, ownershipHeadingPrefix))
 	}
+	if res.OwnershipUnreasoned > 0 {
+		res.Errors = append(res.Errors, fmt.Sprintf("%d issue card(s) classified with no %s section stating why", res.OwnershipUnreasoned, ownershipHeadingPrefix))
+	}
 	// UpstreamUnrefed is counted, printed, and deliberately not fatal. Promote to res.Errors
 	// when it first reaches 0: going fatal after the count is already clear costs nothing and
 	// locks the property in. A stage that never names its exit is how ISSUE-023's advisory
 	// became unread, so this one does not rely on anyone remembering —
-	// TestUpstreamRefs_sweepsTheRealCorpus fails the moment the count hits 0 and says to promote.
+	// TestUpstreamRefsSweepsTheRealCorpus fails the moment the count hits 0 and says to promote.
 	// The advisory's one hard edge: a zone the sweep saw but read nothing from is a broken walk,
 	// the same seen/checked split checkCardStatus guards. Every countable outcome above is fine at
 	// zero; this one is not, because it means the meter stopped looking, not that it looked and

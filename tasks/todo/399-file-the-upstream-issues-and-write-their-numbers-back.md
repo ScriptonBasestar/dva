@@ -69,11 +69,11 @@ glab auth login --hostname gitlab.polypia.net
 ## Completion Criteria
 
 - [ ] 상류 호스트에 인증돼 있다 | verify: `glab auth status --hostname gitlab.polypia.net`
-- [ ] 상류 소유 카드에 빈 `upstream-ref:`가 남아 있지 않다 | verify: `test -z "$(/usr/bin/grep -rl '^upstream-ref: *$' tasks/issue)"`
+- [ ] 상류 소유 카드에 보고 누락이 남아 있지 않다 — 빈 값을 세는 주체는 doccheck다 | verify: `go run ./tools/doccheck . | /usr/bin/grep -qE '^upstream_unref:[[:space:]]+0$'`
 - [ ] 적힌 이슈 번호가 실제로 열려 있다 | verify: human — 카드에 적힌
       `ce-agent-kit#N` 각각을 상류에서 열어, 번호가 실재하고 내용이 그 카드의
       결함을 서술하는지 확인한다
-- [ ] doccheck의 보고 누락 계수가 0이다 | verify: `test 0 -eq $(cd "$(git rev-parse --show-toplevel)" && go run ./tools/doccheck . 2>/dev/null; echo $?)`
+- [ ] advisory 단계가 끝나고 보고 누락이 치명으로 승격됐다 | verify: `/usr/bin/grep -q 'res.UpstreamUnrefed > 0' tools/doccheck/check.go`
 - [ ] doccheck 패키지 테스트 전부 통과 | verify: `go test ./tools/doccheck/`
 - [ ] 문서 게이트가 초록 | verify: `make doc-check` (regression-guard)
 

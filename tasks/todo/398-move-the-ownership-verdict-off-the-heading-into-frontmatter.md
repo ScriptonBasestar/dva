@@ -9,6 +9,10 @@ status: todo
 created: 2026-09-15
 source: "review-395 F1(헤딩 부분문자열 면제의 표현 드리프트 위험) + 2026-09-15 사용자 결정 1"
 depends-on: []
+quality-review: conditional
+quality-reviewed-at: 2026-09-15
+quality-review-session: review-398 (independent subagent)
+quality-review-evidence: "11개 verify 바인딩 전부 exit 0 (make doc-check, make lint, go test ./tools/doccheck/ 포함). 24장 전수 대조 — origin/master의 `## 소유권` 제목에서 유도한 판정과 새 `ownership:` 값이 전부 일치, 제목 본문도 바이트 동일, 15 owned / 15 unrefed 전후 동일(카드 수만 24→25, ISSUE-027 신규). 적대적 defang 4종 전부 RED 확인 후 cp 복원·diff -q 바이트 동일: (a) 009의 ownership: local→upstream → mismatched=1, doccheck exit 1; (b) ownership: 줄 삭제 → unclassified=1, make doc-check exit 2; (c) issueZonePrefix 파손 → 패키지 테스트 8건 FAIL(단 doccheck 자체는 exit 0); (d) upstream-ref 15개 전부 채움 → TestUpstreamRefsSweepsTheRealCorpus가 승격 절차를 출력하며 FAIL. ISSUE-027의 grep 붙여넣기는 현재 워크트리에서 줄번호까지 재현됨(날조 아님), 착수 시점 제목 4종(022/016·017·018·021/023/019·020 English)도 59423ea^에서 확인. 조건부 사유는 본문 소견 M1~M4 참조 — 특히 headingOwnership의 stripFencedRegions를 제거해도 전 테스트가 초록이며, ISSUE-027의 '011의 — 갈린다 절' 서술은 실제로 ISSUE-007이다."
 ---
 
 ## Summary
@@ -65,8 +69,9 @@ depends-on: []
 - 상류에 실제로 이슈를 열지 않는다 → [[TASK-399]]
 - `upstream-ref:` 값의 형식을 검증하지 않는다 — 존재 여부만 본다
 - TASK-395의 분류 결과를 바꾸지 않는다. `ownership:` 값은 각 카드의 기존 `## 소유권`
-  제목에서 유도했고, 계량기 값이 전후 동일(24 카드 / 15 owned / 15 unrefed)한 것이
-  그 증거다
+  제목에서 유도했고, 판정 계량기가 전후 동일(15 owned / 15 unrefed)한 것이 그
+  증거다. 카드 수만 24 → 25로 늘었는데, 이 커밋이 [[ISSUE-027]]을 새로 열었기
+  때문이고 그 카드는 `local`이라 두 계량기 어느 쪽에도 들어가지 않는다
 
 ## Completion Criteria
 
@@ -75,6 +80,7 @@ depends-on: []
 - [ ] 산문 소유권 절이 근거로 남아 있다 | verify: `test -z "$(/usr/bin/grep -rL '^## 소유권' tasks/issue)"`
 - [ ] 분류 누락이 게이트를 빨갛게 만든다 | verify: `/usr/bin/grep -rq 'OwnershipUnclassified' tools/doccheck`
 - [ ] 필드와 제목의 불일치가 게이트를 빨갛게 만든다 | verify: `/usr/bin/grep -rq 'OwnershipMismatched' tools/doccheck`
+- [ ] 근거 절이 아예 없는 것도 게이트를 빨갛게 만든다 — 카드가 done으로 간 뒤에도 남는 방어 | verify: `/usr/bin/grep -rq 'OwnershipUnreasoned' tools/doccheck`
 - [ ] 세 축 테스트가 있다 — 결함이 있으면 빨갛고, 계량 대상이 없으면 빨갛고, 충족되면 초록 | verify: `/usr/bin/grep -rq 'TestUpstreamRefsSweepsTheRealCorpus' tools/doccheck`
 - [ ] 승격 조건이 배선 지점 주석에 적혀 있다 | verify: `/usr/bin/grep -rq 'Promote to res.Errors' tools/doccheck`
 - [ ] 승격 시점이 기억에 의존하지 않는다 | verify: `/usr/bin/grep -rq 'advisory stage is now due to end' tools/doccheck`

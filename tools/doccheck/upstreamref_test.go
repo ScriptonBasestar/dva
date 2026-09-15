@@ -159,11 +159,45 @@ func TestUpstreamRefIgnoresOtherZones(t *testing.T) {
 
 // Guard against the heading matcher drifting into fenced examples: a ``` block quoting the
 // heading is documentation about the section, not the section.
+//
+// Bound to headingOwnership, the function the sweep actually calls. It was bound to a sibling
+// that production no longer called, so dropping stripFencedRegions from the live path left the
+// whole package green — the "green while measuring nothing" shape this card exists to end.
 func TestUpstreamRefHeadingInsideFenceIsNotMarked(t *testing.T) {
 	body := "---\nid: ISSUE-037\nstatus: todo\n---\n\n```\n## 소유권 — 상류다\n```\n"
-	self, marked := ownershipOf(body)
+	value, marked := headingOwnership(body)
 	if marked {
-		t.Fatalf("fenced heading must not mark ownership (self=%v)", self)
+		t.Fatalf("fenced heading must not mark ownership (value=%q)", value)
+	}
+}
+
+// And the same guard at the gate, so the fence rule holds through the wiring and not only in
+// the helper: a card whose only heading is fenced has no reason section, which is fatal.
+func TestUpstreamRefFencedHeadingLeavesTheCardUnreasoned(t *testing.T) {
+	res := cardFixture(t, archiveCard{
+		path: "tasks/issue/040-x.md",
+		body: "---\nid: ISSUE-040\nstatus: todo\nownership: upstream\n---\n\n```\n## 소유권 — 상류다\n```\n",
+	})
+	if res.OwnershipUnreasoned != 1 || res.OwnershipMismatched != 0 {
+		t.Fatalf("unreasoned/mismatched = %d/%d, want 1/0 — a fenced heading is a quotation, not the section", res.OwnershipUnreasoned, res.OwnershipMismatched)
+	}
+	if res.OK {
+		t.Fatalf("a card classified with no reason section must fail the gate; errors: %v", res.Errors)
+	}
+}
+
+// The prose section stops being optional the day TASK-398 goes to done and its own `verify:`
+// binding stops running. This is the assertion that outlives the card.
+func TestUpstreamRefFlagsClassifiedCardWithNoReasonSection(t *testing.T) {
+	res := cardFixture(t, archiveCard{
+		path: "tasks/issue/041-x.md",
+		body: "---\nid: ISSUE-041\nstatus: todo\nownership: local\n---\n\n## Summary\n\nno ownership section\n",
+	})
+	if res.OwnershipUnreasoned != 1 {
+		t.Fatalf("unreasoned = %d, want 1 — a verdict with no stated reason is not a classification", res.OwnershipUnreasoned)
+	}
+	if res.OK {
+		t.Fatalf("a classified card with no reason section must fail the gate; errors: %v", res.Errors)
 	}
 }
 

@@ -83,6 +83,7 @@ func printReport(res Result) {
 	fmt.Printf("issue_cards:         %d (read %d)\n", res.IssueCardsSeen, res.IssueCardsRead)
 	fmt.Printf("ownership_unclassified: %d\n", res.OwnershipUnclassified)
 	fmt.Printf("ownership_mismatched:   %d\n", res.OwnershipMismatched)
+	fmt.Printf("ownership_unreasoned:   %d\n", res.OwnershipUnreasoned)
 	fmt.Printf("upstream_owned:      %d\n", res.UpstreamOwned)
 	fmt.Printf("upstream_unref:      %d\n", res.UpstreamUnrefed)
 	fmt.Printf("card_ids:            %d (duplicate: %d)\n", res.CardIDsSeen, res.DuplicateCardIDs)

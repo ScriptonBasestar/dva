@@ -12,12 +12,11 @@ import (
 // one of the upstream-owned cards carried zero trace of a report, and "보고하지 않은 것" and
 // "보고했는데 안 고쳐진 것" looked identical — both todo, both green.
 //
-// Two meters, both counted rather than failed. `## 소유권` is the per-card ownership verdict
-// this board already writes: a heading containing "이 저장소" exempts the card; every other
-// form ("상류다", "갈린다") owes an `upstream-ref:` frontmatter value naming where it was
-// reported. And a card with no ownership heading at all is counted as unmarked, because the
-// default for silence is to be pooled with the upstream-owned majority (the failure mode
-// ISSUE-021's section was written to stop).
+// Two meters, both counted rather than failed. A card classified upstream-owned owes an
+// `upstream-ref:` frontmatter value naming where it was reported; a this-repo card owes
+// nothing. TASK-395 read that classification off the `## 소유권` heading text; TASK-398 moved
+// it to the frontmatter field below and kept the heading as the cross-check — see the last
+// paragraph of this block.
 //
 // Why advisory and not red: the act this measures happens outside this repository, so a hard
 // gate here could only be satisfied by writing a reference this repository cannot verify —
@@ -48,21 +47,6 @@ const (
 // resolved and left scope reads `upstream`, one that was only worked around reads `split`.
 var ownershipValues = map[string]bool{"local": true, "upstream": true, "split": true}
 
-// ownershipOf reads a card's ownership verdict from its `## 소유권` heading line. marked is
-// false when no such heading exists. Any heading that does not name "이 저장소" counts as
-// upstream-owned — including "갈린다", whose this-repo half still owes the upstream half a
-// report trail, and including an unrecognized marker, which reads as upstream rather than
-// silently exempting the card.
-func ownershipOf(body string) (selfOwned bool, marked bool) {
-	for line := range strings.SplitSeq(stripFencedRegions(body), "\n") {
-		if !strings.HasPrefix(line, ownershipHeadingPrefix) {
-			continue
-		}
-		return strings.Contains(line, selfOwnedMarker), true
-	}
-	return false, false
-}
-
 // headingOwnership maps a `## 소유권` heading to the ownership: value it asserts, for the
 // cross-check. It reports the same three values the field carries so the comparison is a plain
 // equality rather than a second, differently-shaped judgement.
@@ -91,6 +75,7 @@ type upstreamRefCounts struct {
 	Read         int // of those, ones whose body was read
 	Unclassified int // read cards with no usable `ownership:` value — FATAL
 	Mismatched   int // `ownership:` and the `## 소유권` heading disagree — FATAL
+	Unreasoned   int // classified, but no `## 소유권` section to say why — FATAL
 	Owned        int // classified upstream or split
 	Unrefed      int // of Owned, those with no `upstream-ref:` value — advisory
 	Msgs         []string
@@ -148,7 +133,16 @@ func checkUpstreamRefs(root string, inv []InventoryEntry) upstreamRefCounts {
 		// The heading is the reason the field says what it says. Reading it back catches the
 		// case where one of the two was edited and the other was not — the drift that made a
 		// heading-only verdict unsafe in the first place.
-		if heading, marked := headingOwnership(body); marked && heading != owner {
+		//
+		// A card with no such section is its own failure rather than a silent pass: the field
+		// alone is a verdict nobody has to justify, and the cross-check above degrades to a
+		// no-op for exactly the cards that most need it. TASK-395 counted this as `unmarked`;
+		// the counter moved here rather than disappearing when the axis moved.
+		switch heading, marked := headingOwnership(body); {
+		case !marked:
+			c.Unreasoned++
+			c.Msgs = append(c.Msgs, fmt.Sprintf("%s: %s: %s but the card has no %s section stating why (TASK-398)", e.Path, ownershipField, owner, ownershipHeadingPrefix))
+		case heading != owner:
 			c.Mismatched++
 			c.Msgs = append(c.Msgs, fmt.Sprintf("%s: %s: %s but the %s heading says %s — one of the two is stale (TASK-398)", e.Path, ownershipField, owner, ownershipHeadingPrefix, heading))
 		}
