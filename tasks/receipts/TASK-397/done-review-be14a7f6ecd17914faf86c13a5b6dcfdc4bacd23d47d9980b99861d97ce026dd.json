@@ -1,0 +1,47 @@
+{
+  "reviewed-card-path": "tasks/done/397-retarget-the-familybook-harness-step-to-the-dev-plan.md",
+  "reviewed-card-sha256": "be14a7f6ecd17914faf86c13a5b6dcfdc4bacd23d47d9980b99861d97ce026dd",
+  "reviewed-card-sha256-algorithm": "CE canonical card digest, as reported by `ce task validate tasks/done/397-...md` (its mismatch message prints the expected value for a card carrying quality-review-receipt). The canonical digest excludes quality-review, quality-reviewed-at, quality-review-receipt and review_status — so retargeting this pointer never breaks the pin — and includes everything else, including quality-review-evidence, status: done and the 리뷰 대응 section. The work was reviewed at branch head fee1624 (card then at tasks/doing/, plain file sha256 9c72eef2e2d6c60f368ab113580c8d1aa199fd1f980c84f1b92788f4ea192581); closing added only the verdict fields, the review-response section and this pointer.",
+  "task": "TASK-397",
+  "title": "Retarget the familybook harness step to the dev plan",
+  "reviewer": "review-397 (independent; did not author the work under review)",
+  "verdict": "pass",
+  "verdict-final": true,
+  "reviewed-at": "2026-09-15",
+  "branch": "dev/claude/mbp/chore/task-397",
+  "base": "master e3c984b",
+  "head-reviewed": "fee1624",
+  "review-rounds": 1,
+  "diff-scope": {
+    "commits": ["fee1624"],
+    "files": [
+      "tasks/doing/397-...md (rename from tasks/todo/, +29/-2 — status doing, completion-summary, verification-status + 5 evidence entries, 독립 재검증 section, criterion-2 checkbox)"
+    ],
+    "out-of-scope-same-branch": "none — single-commit branch",
+    "verdict": "session touched exactly the one card file; no source file was modified by the closing session because the fix itself (396d639) predates it and is already in the branch's base history (git merge-base --is-ancestor 396d639 fee1624 → 0)"
+  },
+  "gates": {
+    "criterion 1": "! /usr/bin/grep -q 'hybrid' tools/dogfoodrun/dogfood-run.sh → exit 0 (zero occurrences; steps_familybook :219 runs `up dev` / `down dev --purge --project infra --force`)",
+    "criterion 2 (human binding, agent-side evidence)": "bash tools/dogfoodrun/dogfood-run.sh --preview familybook → rc 0, no plan-lookup error; compose project familybook-devbox containers/volumes/networks/images all (없음), both neighbor lists (없음)",
+    "plan print": "bash tools/dogfoodrun/dogfood-run.sh --plan familybook → rc 0, steps match the card verbatim, nothing executed",
+    "bash -n + shellcheck": "both exit 0",
+    "make doc-check": "0 (84 informational STALE archive-path advisories, exit 0 — pre-existing advisory family)",
+    "make lint": "0"
+  },
+  "claims-independently-remeasured": [
+    "premise: git branch --contains 396d639 master lists master — the code fix landed before this session; the closing session owns only the card lifecycle",
+    "all five verification-evidence entries in the card reproduced exactly (grep 0; preview rc 0 all-(없음) including the orphan-volume/network-cleanup narrative — familybook-rustfs-local-data and familybook-dev-network absent on re-measurement too; plan rc 0 with the two claimed labels; bash -n + shellcheck 0; doc-check + lint 0)",
+    "scope-retention: devbox dva.yaml:16 project_name familybook-devbox; current dev children = infra + backend (dva.yaml:46-53); pre-rename 6881c81^ hybrid children = infra/backend/dev/frontend/dev — child name infra identical both sides, so --project infra scope survives the rename; validateCompositionFlagScope exists at internal/cli/composition_flags.go:101 wired for up :346 and down :368",
+    "retract-before-you-seal: no quality-review fields at the reviewed HEAD and no prior-review claim anywhere in the card — the completion-summary attributes everything to the closing session's own re-execution, which this review reproduced",
+    "board baseline noted at close time: master already carries 11 receipt-pin drift failures (done/381-386, 388-391, 398) of the same shape this receipt avoids — this card pins the canonical digest the validator itself prints, so it does not join them"
+  ],
+  "findings": [
+    {"id": "F1", "severity": "low", "where": "card — criterion 2 checkbox + lines 70-71", "defect": "criterion 2 is a human binding, yet its [x] now stands on agent-side evidence plus this review's re-execution; no human sign-off exists anywhere", "applied": "acknowledged as a conscious adoption in the card's 리뷰 대응 §1 — same treatment as TASK-379 criterion 4 and TASK-395 criterion 1 (output attached, independently re-verified); a human who disagrees reopens the card and re-judges the criterion"},
+    {"id": "F2", "severity": "info", "where": "harness — preview path", "defect": "--preview issues only read-only docker queries and never invokes the dva binary, so criterion 2's check is structurally unable to fail; the real protection is the steps text naming plan `dev`, whose existence in the devbox config the review verified directly", "applied": "recorded in the card's 리뷰 대응 §2; the criterion text is the card author's and is satisfied — not rewritten by this review"},
+    {"id": "F3", "severity": "info", "where": "make doc-check output", "defect": "84 informational STALE archive-path advisories print while exiting 0; the card's 'both exit 0' claim is accurate as written", "applied": "none needed"}
+  ],
+  "reviewer-probe": {
+    "what": "bare git inspection (branch --contains, merge-base --is-ancestor, diff/stat/name-status), /usr/bin/grep + sed over the worktree script and the devbox dva.yaml (current and 6881c81^), negated criterion-1 grep, bash -n, shellcheck, --preview familybook and --plan familybook (read-only), make doc-check and make lint",
+    "result": "nothing under review modified — final git status --porcelain empty, HEAD unchanged at fee1624cca6e25d930f25f954324098b8e46d45f; disclosure: make lint created the gitignored cache dir tmp/golangci-lint-cache in the worktree (disposable tmp/ path, nothing tracked)"
+  }
+}

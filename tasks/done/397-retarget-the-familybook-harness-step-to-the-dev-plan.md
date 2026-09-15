@@ -5,7 +5,7 @@ type: chore
 priority: P2
 effort: S
 exec-tier: standard
-status: doing
+status: done
 completion-summary: "steps_familybook의 hybrid→dev 리타겟(396d639)이 master에 반영된 뒤 카드만 남아 있었다. 워크트리에서 기준 2개와 게이트를 독립 재실행해 확인하고 마감했다."
 verification-status: verified
 verification-evidence:
@@ -24,6 +24,14 @@ verification-evidence:
   - kind: automated
     command-or-step: "make doc-check && make lint"
     result: "both exit 0"
+quality-review: pass
+quality-reviewed-at: 2026-09-15T17:45:00+09:00
+quality-review-evidence:
+  - "독립 리뷰(review-397)가 fee1624에서 기준 2개·게이트·선행 커밋을 직접 재실행해 확인했다 — grep exit 0, preview rc 0(전 항목 없음), plan rc 0, bash -n/shellcheck/doc-check/lint 전부 0"
+  - "수정 선행 커밋 396d639가 master에 속함을 `git branch --contains`로, 워크트리 기반 history에 포함됨을 `git merge-base --is-ancestor 396d639 fee1624`로 독립 확인했다"
+  - "`--project infra` 스코프 유지 근거(자식명 infra 불변, validateCompositionFlagScope 결선)를 devbox dva.yaml 현행·6881c81^ 대조로 독립 재확인했다"
+  - "지적 1건(low)을 의식적 채택으로 기록했다 — 기준 2 human 바인딩의 [x]는 에이전트 측 증거 + 독립 리뷰 재실행으로 채택하며, TASK-379 기준 4의 선례와 같은 처리다 (하단 리뷰 대응 참조)"
+quality-review-receipt: tasks/receipts/TASK-397/done-review-be14a7f6ecd17914faf86c13a5b6dcfdc4bacd23d47d9980b99861d97ce026dd.json
 created: 2026-09-15
 source: "TASK-328 실기동 회차(2026-09-15) — dogfood-run.sh의 steps_familybook이 존재하지 않는 plan hybrid를 가리킨다"
 depends-on: []
@@ -78,6 +86,25 @@ verification-evidence 5항목을 재실행해 전부 재확인했다. preview �
 이전 증거가 보고한 고아 볼륨·네트워크는 더 이상 없다 — 사람 결정 ②(TASK-328)의
 대상이었던 자원이 사이에 정리됐다는 뜻이며, 기준 2의 요건(plan 미조회 오류
 부재)과는 무관하다.
+
+## 리뷰 대응 (2026-09-15, review-397 — pass)
+
+독립 리뷰가 기준 2개·게이트 5종·선행 커밋 소속을 전부 재실행해 재현했고, 세션
+diff(e3c984b..fee1624)가 카드 파일 하나뿐임을 확인했다. 지적 세 건:
+
+**1. 기준 2의 [x]가 에이전트 측 증거만으로 채택됐다(low) — 의식적 채택.** human
+바인딩이지만 이 보드의 선례([[TASK-379]] 기준 4, TASK-395 기준 1)는 "출력 첨부 +
+독립 리뷰 재실행"으로 닫는다. 사람의 별도 서명은 어디에도 남지 않는다 — 사람이 이
+판정에 동의하지 않으면 이 카드를 다시 열어 기준을 재판정하면 된다.
+
+**2. preview는 plan 미조회 오류를 구조적으로 잡지 못한다(info).** `--preview`는
+docker 읽기 전용 조회만 돌려 `dva` 바이너리를 부르지 않는다 — 기준 2의 검사가
+실제로 실패할 일은 없다. 기준의 실질 보호는 스텝 텍스트가 `dev`를 가리키는 것이고,
+리뷰어가 devbox 설정에 `dev` plan이 존재함을 직접 확인했다. 기준 문구를 지금 고치지
+않는다 — 기준은 카드 작성자의 것이고 달성됐으며, 강도 관찰은 여기 기록만 남긴다.
+
+**3. doc-check의 84건 STALE informational 행(info).** exit 0과 양립하는 기존
+advisory family라 "both exit 0" 표기는 그대로 정확하다.
 
 ## Completion Criteria
 
