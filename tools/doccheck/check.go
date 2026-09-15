@@ -282,6 +282,13 @@ func Check(in CheckInput) Result {
 	// the same seen/checked split checkCardStatus guards. Every countable outcome above is fine at
 	// zero; this one is not, because it means the meter stopped looking, not that it looked and
 	// found nothing.
+	//
+	// Its limit, measured rather than assumed: this guard needs Seen>0, so a sweep that misses the
+	// zone entirely (a wrong issueZonePrefix) reports issue_cards: 0 and exits 0 here. It cannot be
+	// tightened to Seen==0 in this function, because a fixture tree with no tasks/issue/ at all is
+	// legitimate — the same reasoning archive.go states for ArchiveFilesSeen. The "corpus absent is
+	// red" axis therefore lives in TestUpstreamRefsSweepsTheRealCorpus, which asserts against the
+	// real board and fails when the sweep reads nothing. Both run in CI; they are not the same gate.
 	if res.IssueCardsSeen > 0 && res.IssueCardsRead == 0 {
 		res.Errors = append(res.Errors, fmt.Sprintf("vacuous: %d file(s) under tasks/issue/, zero read as cards", res.IssueCardsSeen))
 	}

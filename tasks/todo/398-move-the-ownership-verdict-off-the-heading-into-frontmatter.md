@@ -81,7 +81,7 @@ quality-review-evidence: "11개 verify 바인딩 전부 exit 0 (make doc-check, 
 - [ ] 분류 누락이 게이트를 빨갛게 만든다 | verify: `/usr/bin/grep -rq 'OwnershipUnclassified' tools/doccheck`
 - [ ] 필드와 제목의 불일치가 게이트를 빨갛게 만든다 | verify: `/usr/bin/grep -rq 'OwnershipMismatched' tools/doccheck`
 - [ ] 근거 절이 아예 없는 것도 게이트를 빨갛게 만든다 — 카드가 done으로 간 뒤에도 남는 방어 | verify: `/usr/bin/grep -rq 'OwnershipUnreasoned' tools/doccheck`
-- [ ] 세 축 테스트가 있다 — 결함이 있으면 빨갛고, 계량 대상이 없으면 빨갛고, 충족되면 초록 | verify: `/usr/bin/grep -rq 'TestUpstreamRefsSweepsTheRealCorpus' tools/doccheck`
+- [ ] 세 축 테스트가 있다 — 결함이 있으면 빨갛고, 계량 대상이 없으면 빨갛고, 충족되면 초록. 가운데 축은 `make doc-check`가 아니라 이 테스트가 진다(공허 가드는 `Seen > 0`을 전제하므로 존을 통째로 못 찾으면 doccheck는 초록이다) | verify: `/usr/bin/grep -rq 'TestUpstreamRefsSweepsTheRealCorpus' tools/doccheck`
 - [ ] 승격 조건이 배선 지점 주석에 적혀 있다 | verify: `/usr/bin/grep -rq 'Promote to res.Errors' tools/doccheck`
 - [ ] 승격 시점이 기억에 의존하지 않는다 | verify: `/usr/bin/grep -rq 'advisory stage is now due to end' tools/doccheck`
 - [ ] doccheck 패키지 테스트 전부 통과 | verify: `go test ./tools/doccheck/`
