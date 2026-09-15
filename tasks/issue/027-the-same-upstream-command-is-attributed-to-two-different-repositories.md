@@ -162,6 +162,14 @@ $ /usr/bin/grep -rl 'Kind-zone cards' . | wc -l   # 실제 grep
 출력을 바꾼다")를 일반 명제로 읽으면 이 관측이 지지하는 것보다 넓다.** 래퍼를
 분해해 보면 차이가 셋이고, 셋 다 예측 가능한 방향이다.
 
+**셋의 출처는 플래그가 아니라 프로그램이다.** 래퍼 정의를 읽으면
+(`~/.claude/shell-snapshots/snapshot-zsh-*.sh:650-664`) 실행되는 것은 grep이 아니라
+**ugrep**이다 — `ARGV0=ugrep "$_cc_bin" -G --ignore-files --hidden -I --exclude-dir=.git
+…`. `-G`로 BRE 호환 모드를 켜고, `-I`가 (1)을, `--ignore-files`가 (2)를, ugrep 자체의
+경로 정규화가 (3)을 만든다. 다른 구현이므로 **아래 셋은 닫힌 목록이 아니다** —
+BRE 방언 경계나 `-o` 출력 형태처럼 아직 관측되지 않은 차이가 남아 있을 수 있다.
+그리고 `--hidden`은 **켜져** 있다: 숨김 디렉터리를 건너뛴다는 설명은 틀리다.
+
 ```
 $ cd ~/mywork/ce/ce-workbook
 
@@ -183,7 +191,25 @@ $ grep           -rl  … | head -1     tasks/done/107-….md
 **`bare-only = 0`이 진단의 성격을 바꾼다.** 래퍼는 `/usr/bin/grep`의 진부분집합이므로
 거짓 양성을 만들 수 없다 — 없는 매치를 지어내지 않는다. 그래서 "찾았다"는 항상
 참이고, 의심해야 하는 것은 **"못 찾았다"뿐**이다. 사각지대는 정확히 두 곳이다:
-untracked·ignored 경로와 바이너리 파일. 뒤집으면, 코퍼스가 **tracked 소스 트리**인
+**ignore된** 경로와 바이너리 파일. 판별자는 ignored이지 untracked가 아니다 —
+`--ignore-files`는 ignore 파일을 읽을 뿐 git index를 보지 않으므로, 아직 add하지
+않은 파일은 래퍼도 **찾는다**. 이 워크트리에서 갈랐다(2026-09-15, 프로브 2건 생성 후
+삭제, `git status` 클린 확인):
+
+```
+# 두 프로브를 동시에 두고 . 에서 재귀
+$ /usr/bin/grep -rlI $M .     ./probe-untracked.txt   ./tmp/probe-ignored.txt
+$ grep           -rl  $M .      probe-untracked.txt                            ← ignored만 탈락
+
+# 다만 ignore된 디렉터리를 검색 루트로 직접 지목하면 프룬되지 않는다
+$ grep           -rl  $M tmp    tmp/probe-ignored.txt
+```
+
+마지막 줄이 중요하다: 프룬은 **재귀 하강**에 걸리는 것이지 명시된 루트에 걸리는 것이
+아니다. "방금 만든 아직 add 안 한 파일은 래퍼가 못 본다"는 흔한 오해이고, 하필
+에이전트가 가장 자주 마주치는 상황이라 틀린 자리에서 값비싸다.
+
+뒤집으면, 코퍼스가 **tracked 소스 트리**인
 바인딩에서는 두 도구가 일치한다 — 이 보드의 `verify:` 바인딩은 거의 전부 그쪽이고,
 같은 날 리뷰어가 F6·F9·F11 측정을 양쪽 도구로 다시 돌려 동일함을 확인했다.
 
