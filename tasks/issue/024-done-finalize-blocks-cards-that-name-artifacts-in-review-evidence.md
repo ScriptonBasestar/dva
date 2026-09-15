@@ -5,6 +5,7 @@ type: bug
 status: todo
 priority: P2
 severity: medium
+ownership: upstream
 created: 2026-09-15
 discovered-at: 2026-09-14
 discovered-in: "TASK-392 done-finalize (2026-09-14) — 통과한 카드와 막힌 카드의 차이에서"

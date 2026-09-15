@@ -5,6 +5,7 @@ type: bug
 status: todo
 priority: P2
 severity: low
+ownership: upstream
 created: 2026-09-14
 discovered-in: "TASK-386 (dev/claude/mbp/fix/quote-unbackticked-verify-bindings, b53b713)"
 discovered-at: 2026-09-14

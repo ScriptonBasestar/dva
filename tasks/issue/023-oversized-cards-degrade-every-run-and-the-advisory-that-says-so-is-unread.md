@@ -5,6 +5,7 @@ type: bug
 status: todo
 priority: P2
 severity: low
+ownership: split
 created: 2026-09-14
 discovered-at: 2026-09-14
 discovered-in: "TASK-393 independent review — reviewer noticed a gate advisory nobody had registered"

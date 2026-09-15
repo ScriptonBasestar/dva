@@ -9,6 +9,7 @@ exec-tier: standard
 severity: medium
 discovered-in: "2026-09-13 task:run-all loop termination"
 discovered-at: 2026-09-13
+ownership: upstream
 created: 2026-09-13
 upstream-ref: ""
 ---

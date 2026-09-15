@@ -1,0 +1,95 @@
+---
+id: TASK-398
+title: "Move the ownership verdict off the heading into frontmatter"
+type: chore
+priority: P2
+effort: S
+exec-tier: strong
+status: todo
+created: 2026-09-15
+source: "review-395 F1(헤딩 부분문자열 면제의 표현 드리프트 위험) + 2026-09-15 사용자 결정 1"
+depends-on: []
+---
+
+## Summary
+
+[[TASK-395]]는 이슈 카드의 소유권을 **산문 제목**으로 판정했다 — `## 소유권`으로
+시작하는 줄이 "이 저장소"를 포함하면 면제, 아니면 상류 소유. 그 카드의 독립 리뷰가
+스스로 남긴 지적이 F1이다: **표현이 흔들리면 조용히 오분류된다.**
+
+지금은 24개 제목이 전부 규약형이라 오계가 없다. 그러나 `## 소유권 — 상류입니다`
+한 줄이면 "이 저장소"도 "갈린다"도 아니므로 기본값인 upstream으로 떨어지고,
+`## 소유권 — 이 저장소가 아니다`는 **"이 저장소"를 포함하므로 면제된다.** 후자가
+정확히 뒤집힌 판정이고, 어떤 검사도 그걸 보지 못한다.
+
+이 저장소가 이미 세 번 겪은 형태다 — [[ISSUE-022]]의 철자 두 개, [[ISSUE-023]]의
+읽히지 않는 advisory, `ce task lint`의 rc-0 `UNFINALIZED DONE` 줄. 전부 "초록인데
+아무것도 재지 않음"이다.
+
+**그래서 축을 나눈다.**
+
+- frontmatter `ownership:` — 기계가 읽는 축. 닫힌 값 집합 `local`·`upstream`·`split`.
+- 산문 `## 소유권` 절 — 사람이 읽는 축. **이유**를 적는 자리로 남는다.
+
+산문을 없애지 않는 이유는 판정보다 판정의 근거가 오래 쓸모 있기 때문이다. 값만
+남기면 6개월 뒤에 왜 `split`인지 아무도 모른다.
+
+그리고 **둘이 어긋나면 게이트가 빨개진다.** 둘 중 하나만 고쳐진 상태이고, 어느
+쪽이 최신인지 기계가 고를 방법이 없기 때문이다. 이 교차검증이 F1이 경고한 드리프트를
+실제로 잡는 유일한 장치다.
+
+## 왜 `unclassified`만 치명인가
+
+계량기가 둘인데 심각도는 다르다.
+
+- `ownership_unclassified` · `ownership_mismatched` → **치명.** 분류는 이 저장소
+  안에서 끝나는 편집이고 외부 의존이 없다.
+- `upstream_unref` → **advisory.** 이 값이 재는 행위(상류에 이슈를 연다)는 저장소
+  밖에서 일어나고, 여기서 하드 게이트를 걸면 검증할 수 없는 참조를 쓰는 것으로만
+  만족된다.
+
+분류가 선택이면 아무도 `upstream`을 쓰지 않고 `upstream_unref`는 영원히 0이다 —
+아무것도 재지 않는 계량기. 그래서 앞의 둘이 치명인 것이 뒤의 하나를 정직하게
+만든다.
+
+## 승격 조건
+
+`upstream_unref`가 처음 0에 닿는 순간 `res.Errors`로 승격한다. 이미 분명해진 값을
+치명으로 바꾸는 데는 비용이 없고 성질이 고정된다. 그 시점을 **기억에 의존시키지
+않는다** — `TestUpstreamRefsSweepsTheRealCorpus`가 0이 되는 순간 실패하며 승격
+절차를 출력한다. [[ISSUE-023]]이 advisory 하나를 아무도 읽지 않아 생긴 카드라,
+이 카드의 advisory는 같은 길로 가지 않는다.
+
+## 이 카드가 하지 않는 것
+
+- 상류에 실제로 이슈를 열지 않는다 → [[TASK-399]]
+- `upstream-ref:` 값의 형식을 검증하지 않는다 — 존재 여부만 본다
+- TASK-395의 분류 결과를 바꾸지 않는다. `ownership:` 값은 각 카드의 기존 `## 소유권`
+  제목에서 유도했고, 계량기 값이 전후 동일(24 카드 / 15 owned / 15 unrefed)한 것이
+  그 증거다
+
+## Completion Criteria
+
+- [ ] 모든 이슈 카드가 `ownership:`을 표기한다 | verify: `test -z "$(/usr/bin/grep -rL '^ownership:' tasks/issue)"`
+- [ ] 값 집합이 닫혀 있다 | verify: `test -z "$(/usr/bin/grep -rhE '^ownership:' tasks/issue | /usr/bin/grep -vE '^ownership: (local|upstream|split)$')"`
+- [ ] 산문 소유권 절이 근거로 남아 있다 | verify: `test -z "$(/usr/bin/grep -rL '^## 소유권' tasks/issue)"`
+- [ ] 분류 누락이 게이트를 빨갛게 만든다 | verify: `/usr/bin/grep -rq 'OwnershipUnclassified' tools/doccheck`
+- [ ] 필드와 제목의 불일치가 게이트를 빨갛게 만든다 | verify: `/usr/bin/grep -rq 'OwnershipMismatched' tools/doccheck`
+- [ ] 세 축 테스트가 있다 — 결함이 있으면 빨갛고, 계량 대상이 없으면 빨갛고, 충족되면 초록 | verify: `/usr/bin/grep -rq 'TestUpstreamRefsSweepsTheRealCorpus' tools/doccheck`
+- [ ] 승격 조건이 배선 지점 주석에 적혀 있다 | verify: `/usr/bin/grep -rq 'Promote to res.Errors' tools/doccheck`
+- [ ] 승격 시점이 기억에 의존하지 않는다 | verify: `/usr/bin/grep -rq 'advisory stage is now due to end' tools/doccheck`
+- [ ] doccheck 패키지 테스트 전부 통과 | verify: `go test ./tools/doccheck/`
+- [ ] 문서 게이트가 초록 | verify: `make doc-check` (regression-guard)
+- [ ] 저장소 게이트 통과 | verify: `make lint` (regression-guard)
+
+## Sources
+
+- 2026-09-15 [[TASK-395]] 독립 리뷰 review-395의 F1 지적
+- 2026-09-15 사용자 결정 1 — 기계가 읽는 축과 사람이 읽는 축의 분리
+
+## Related
+
+- [[TASK-395]] — 계량기를 만든 카드. 이 카드는 그 판정축만 옮긴다
+- [[TASK-399]] — 값을 실제로 채우는 카드
+- [[ISSUE-022]] · [[ISSUE-023]] — 같은 병리의 앞선 두 사례
+- [[ISSUE-027]] — 상류가 어느 저장소인지는 아직 산문이다

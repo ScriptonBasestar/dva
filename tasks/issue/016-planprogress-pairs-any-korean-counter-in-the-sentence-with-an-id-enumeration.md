@@ -7,6 +7,7 @@ priority: P2
 severity: medium
 effort: S
 exec-tier: standard
+ownership: local
 created: 2026-09-14
 discovered-in: "review-381 independent review of TASK-381 (2026-09-14)"
 discovered-at: 2026-09-14

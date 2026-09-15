@@ -5,6 +5,7 @@ type: bug
 status: todo
 priority: P2
 severity: low
+ownership: upstream
 created: 2026-09-14
 discovered-in: "ISSUE-005 P1 강등 (2026-09-14, ce-agent-kit 0.8.4)"
 discovered-at: 2026-09-14

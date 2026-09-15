@@ -5,6 +5,7 @@ type: bug
 status: todo
 priority: P2
 severity: low
+ownership: local
 created: 2026-09-15
 discovered-at: 2026-09-15
 discovered-in: "TASK-395 작업 세션 (2026-09-15)"

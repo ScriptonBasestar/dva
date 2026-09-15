@@ -9,6 +9,7 @@ exec-tier: strong
 severity: low
 discovered-in: "TASK-387 — TASK-376의 quality-review-evidence가 리뷰 지적 다섯 건을 '전부 수정했다'고 적었으나 한 건의 전반부가 남아 있었고, 그 문장을 고칠 수 없었다"
 discovered-at: 2026-09-14
+ownership: local
 created: 2026-09-14
 ---
 

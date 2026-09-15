@@ -5,6 +5,7 @@ type: bug
 status: todo
 priority: P2
 severity: medium
+ownership: upstream
 created: 2026-09-15
 discovered-at: 2026-09-15
 discovered-in: "mst 호스트 온보딩 후속 (2026-09-15)"

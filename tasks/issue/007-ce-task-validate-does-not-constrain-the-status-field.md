@@ -9,6 +9,7 @@ exec-tier: standard
 severity: medium
 discovered-in: "2026-09-13 board currentization review"
 discovered-at: 2026-09-13
+ownership: split
 created: 2026-09-13
 upstream-ref: ""
 ---

@@ -6,6 +6,7 @@ status: todo
 priority: P2
 severity: low
 effort: S
+ownership: upstream
 created: 2026-09-14
 discovered-in: "TASK-381 (check-plan-prose-against-plan-frontmatter) 종료 중 ce task lint 실행"
 discovered-at: 2026-09-14

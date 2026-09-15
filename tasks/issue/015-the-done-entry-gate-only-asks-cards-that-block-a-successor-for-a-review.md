@@ -7,6 +7,7 @@ priority: P2
 severity: medium
 effort: S
 exec-tier: standard
+ownership: local
 created: 2026-09-14
 discovered-in: "2026-09-14 board currentization — TASK-381 landed in done/ with no review verdict"
 discovered-at: 2026-09-14

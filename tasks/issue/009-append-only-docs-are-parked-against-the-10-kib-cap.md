@@ -9,6 +9,7 @@ exec-tier: standard
 severity: low
 discovered-in: "TASK-380 — docs/dogfood/primeno1.md에 네 줄을 더하려다 상한을 넘겨 분리해야 했다"
 discovered-at: 2026-09-13
+ownership: local
 created: 2026-09-13
 ---
 

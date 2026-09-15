@@ -6,6 +6,7 @@ status: todo
 priority: P2
 severity: medium
 effort: S
+ownership: upstream
 created: 2026-09-14
 discovered-in: "TASK-381 (check-plan-prose-against-plan-frontmatter)"
 discovered-at: 2026-09-14

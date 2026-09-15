@@ -9,6 +9,7 @@ exec-tier: standard
 severity: low
 discovered-in: "2026-09-13 board currentization review"
 discovered-at: 2026-09-13
+ownership: upstream
 created: 2026-09-13
 upstream-ref: ""
 ---

@@ -5,6 +5,7 @@ type: bug
 status: todo
 priority: P2
 severity: low
+ownership: upstream
 created: 2026-09-14
 discovered-in: "2026-09-14 보드 현행화 — `ce task preflight --zone done`이 두 장을 no-criteria로 막았다"
 discovered-at: 2026-09-14

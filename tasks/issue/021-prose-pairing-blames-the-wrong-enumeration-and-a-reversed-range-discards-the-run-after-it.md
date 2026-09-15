@@ -5,6 +5,7 @@ type: bug
 status: todo
 priority: P2
 severity: low
+ownership: local
 created: 2026-09-14
 discovered-in: "review-planprogress independent review of TASK-391 (2026-09-14)"
 discovered-at: 2026-09-14

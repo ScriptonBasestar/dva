@@ -47,13 +47,15 @@ type Result struct {
 	CardsSeen              int
 	CardsChecked           int
 	StatusMismatches       int
-	// Upstream-ref advisory (TASK-395): counted, never failed — the meters below are the
-	// point. Unmarked issue cards pool toward the upstream majority by default; owned cards
-	// without an upstream-ref: value have no report trail. Both stay advisory for the reason
-	// upstreamref.go states: the reported act happens outside this repository.
+	// Issue-card ownership (TASK-395, re-based on frontmatter by TASK-398). Two severities:
+	// OwnershipUnclassified and OwnershipMismatched fail the gate — classifying is cheap,
+	// in-repo, and if it were optional the meter below would read zero forever. UpstreamUnrefed
+	// stays advisory for the reason upstreamref.go states: the reported act happens outside
+	// this repository.
 	IssueCardsSeen          int
 	IssueCardsRead          int
-	OwnershipUnmarked       int
+	OwnershipUnclassified   int
+	OwnershipMismatched     int
 	UpstreamOwned           int
 	UpstreamUnrefed         int
 	CardIDsSeen             int
@@ -251,14 +253,26 @@ func Check(in CheckInput) Result {
 	res.CardStatusDetail = statusMsgs
 	res.Errors = append(res.Errors, statusErrs...)
 
-	issueSeen, issueRead, unmarked, owned, unrefed, upstreamMsgs, upstreamErrs := checkUpstreamRefs(in.Root, in.Inventory)
-	res.IssueCardsSeen = issueSeen
-	res.IssueCardsRead = issueRead
-	res.OwnershipUnmarked = unmarked
-	res.UpstreamOwned = owned
-	res.UpstreamUnrefed = unrefed
-	res.UpstreamDetail = upstreamMsgs
-	res.Errors = append(res.Errors, upstreamErrs...)
+	upstream := checkUpstreamRefs(in.Root, in.Inventory)
+	res.IssueCardsSeen = upstream.Seen
+	res.IssueCardsRead = upstream.Read
+	res.OwnershipUnclassified = upstream.Unclassified
+	res.OwnershipMismatched = upstream.Mismatched
+	res.UpstreamOwned = upstream.Owned
+	res.UpstreamUnrefed = upstream.Unrefed
+	res.UpstreamDetail = upstream.Msgs
+	res.Errors = append(res.Errors, upstream.Errs...)
+	if res.OwnershipUnclassified > 0 {
+		res.Errors = append(res.Errors, fmt.Sprintf("%d issue card(s) with no usable ownership: value", res.OwnershipUnclassified))
+	}
+	if res.OwnershipMismatched > 0 {
+		res.Errors = append(res.Errors, fmt.Sprintf("%d issue card(s) whose ownership: and %s heading disagree", res.OwnershipMismatched, ownershipHeadingPrefix))
+	}
+	// UpstreamUnrefed is counted, printed, and deliberately not fatal. Promote to res.Errors
+	// when it first reaches 0: going fatal after the count is already clear costs nothing and
+	// locks the property in. A stage that never names its exit is how ISSUE-023's advisory
+	// became unread, so this one does not rely on anyone remembering —
+	// TestUpstreamRefs_sweepsTheRealCorpus fails the moment the count hits 0 and says to promote.
 	// The advisory's one hard edge: a zone the sweep saw but read nothing from is a broken walk,
 	// the same seen/checked split checkCardStatus guards. Every countable outcome above is fine at
 	// zero; this one is not, because it means the meter stopped looking, not that it looked and
