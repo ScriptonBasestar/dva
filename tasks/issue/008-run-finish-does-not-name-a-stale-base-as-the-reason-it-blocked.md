@@ -11,7 +11,7 @@ discovered-in: "2026-09-13 TASK-378 integration"
 discovered-at: 2026-09-13
 ownership: upstream
 created: 2026-09-13
-upstream-ref: ""
+upstream-ref: "ce-agent-kit#2"
 ---
 
 ## Summary

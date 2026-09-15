@@ -10,7 +10,7 @@ created: 2026-09-14
 discovered-in: "ISSUE-005 P1 강등 (2026-09-14, ce-agent-kit 0.8.4)"
 discovered-at: 2026-09-14
 source: "ISSUE-005를 P1에서 내리려다 validate가 P3를 거부"
-upstream-ref: ""
+upstream-ref: "ce-agent-kit#3"
 ---
 
 ## Summary

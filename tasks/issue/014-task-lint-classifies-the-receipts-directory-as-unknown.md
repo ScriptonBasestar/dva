@@ -11,7 +11,7 @@ created: 2026-09-14
 discovered-in: "TASK-381 (check-plan-prose-against-plan-frontmatter) 종료 중 ce task lint 실행"
 discovered-at: 2026-09-14
 source: "TASK-381 종료 확인 중 ce task lint의 DIRS 표에서 receipts/가 unknown 0건으로 나오는 것을 발견"
-upstream-ref: ""
+upstream-ref: "ce-agent-kit#5"
 ---
 
 ## Summary

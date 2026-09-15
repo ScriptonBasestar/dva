@@ -9,8 +9,10 @@ import (
 
 // The three axes TASK-395 requires, plus the two shape tests around them: what the heading
 // tokens classify, and that the sweep's own failure is an error rather than a clean zero.
-// Fixtures go through cardFixture (whole gate) so the advisory's wiring is tested with its
-// classification, the same reasoning cardstatus_test.go states.
+// Fixtures go through cardFixture (whole gate) so the check's wiring is tested with its
+// classification, the same reasoning cardstatus_test.go states. TASK-399 promoted the
+// unreported meter from advisory to fatal; the fixtures below assert the post-promotion
+// severity.
 
 func TestUpstreamRefCountsUnreportedUpstreamCard(t *testing.T) {
 	res := cardFixture(t, archiveCard{
@@ -23,9 +25,12 @@ func TestUpstreamRefCountsUnreportedUpstreamCard(t *testing.T) {
 	if !containsAny(res.UpstreamDetail, "030-x.md") {
 		t.Fatalf("report must name the unreported card, got %v", res.UpstreamDetail)
 	}
-	// Advisory: counted, never red — the meter is the line in the report, not a gate failure.
-	if !res.OK {
-		t.Fatalf("unreported upstream card must not fail the gate (advisory), errors: %v", res.Errors)
+	// Fatal as of TASK-399. This assertion read the other way while the stage was advisory; it was
+	// inverted, not deleted, because "counted" and "red" are separate properties and the counting
+	// above is what the gate failure is built on. A deleted test would have left the first half
+	// unguarded.
+	if res.OK {
+		t.Fatalf("unreported upstream card must fail the gate, got OK with detail %v", res.UpstreamDetail)
 	}
 }
 
@@ -217,10 +222,16 @@ func repoRoot(t *testing.T) string {
 }
 
 // TestUpstreamRefsSweepsTheRealCorpus is the binding on the live board, not a fixture: the
-// property only matters where the cards actually are. It also carries this check's exit
+// property only matters where the cards actually are. It also carried this check's exit
 // condition, because a stage that never names its exit is how ISSUE-023's advisory became
-// unread. When the last upstream-owned card gains a reference, this test fails and says what
-// to do — so the promotion announces itself instead of waiting to be remembered.
+// unread — and it worked: on 2026-09-15 TASK-399 filed the upstream issues, the count reached
+// 0, and this test failed with the edit to make. The guard below is what replaced it, in the
+// terms that failure named: the count is now asserted to stay at 0, and check.go fails the
+// gate on any regression rather than counting one.
+//
+// It also still owns the "corpus absent is red" axis that Check cannot hold: Check's vacuity
+// guard needs Seen>0, so a sweep that misses tasks/issue/ entirely exits 0 there. Here it does
+// not.
 func TestUpstreamRefsSweepsTheRealCorpus(t *testing.T) {
 	root := repoRoot(t)
 	inv, err := LoadInventory(root)
@@ -237,10 +248,13 @@ func TestUpstreamRefsSweepsTheRealCorpus(t *testing.T) {
 	if c.Mismatched != 0 {
 		t.Fatalf("mismatched = %d on the real board; ownership: and its heading must agree — %v", c.Mismatched, c.Msgs)
 	}
-	if c.Unrefed == 0 {
-		t.Fatalf("upstream_unref=0 across %d issue card(s) — the advisory stage is now due to end: "+
-			"promote UpstreamUnrefed to res.Errors in check.go, then replace this guard with "+
-			"an assertion that it stays 0", c.Read)
+	if c.Unrefed != 0 {
+		t.Fatalf("unrefed = %d on the real board; every upstream-owned card must name where it was "+
+			"reported (%s) — %v", c.Unrefed, upstreamRefField, c.Msgs)
+	}
+	if c.Owned == 0 {
+		t.Fatalf("owned = 0 across %d issue card(s) — the unrefed assertion above is vacuous when "+
+			"nothing is classified upstream-owned, so this board must keep at least one", c.Read)
 	}
 	t.Logf("swept %d issue card(s) from %d file(s) under %s: %d owned, %d unrefed", c.Read, c.Seen, issueZonePrefix, c.Owned, c.Unrefed)
 }

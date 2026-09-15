@@ -10,7 +10,7 @@ created: 2026-09-14
 discovered-in: "2026-09-14 보드 현행화 — `ce task preflight --zone done`이 두 장을 no-criteria로 막았다"
 discovered-at: 2026-09-14
 source: "TASK-354의 §Notes가 같은 형태를 한 번 기록했고, 이번 전수 측정에서 재현됐다"
-upstream-ref: ""
+upstream-ref: "ce-agent-kit#1"
 ---
 
 ## Summary

@@ -11,7 +11,7 @@ discovered-in: "TASK-312 done-review and TASK-354 gate currentization"
 discovered-at: 2026-09-10
 ownership: upstream
 created: 2026-09-10
-upstream-ref: ""
+upstream-ref: "ce-agent-kit#2"
 ---
 
 ## Summary

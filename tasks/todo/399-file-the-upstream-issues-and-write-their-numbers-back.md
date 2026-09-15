@@ -64,11 +64,11 @@ exit=0
 묶음은 [[TASK-398]]이 남긴 `ownership:` 분류와 각 카드의 산문 소유권 절에서
 읽는다 — 이 카드가 새로 판정하지 않는다.
 
-**여섯 묶음 중 하나는 이미 막혀 있다.** `ce task preflight` 계열([[ISSUE-004]] ·
-[[ISSUE-006]] · [[ISSUE-020]])은 세 카드가 서로 다른 상류 저장소를 지목한다 —
-[[ISSUE-027]]. 그 묶음만 보류하고 나머지 다섯은 진행한다. 이 카드가 그 귀속을
-직접 판정하지 않는 이유는, 판정에 상류 체크아웃 조사가 필요하고 그건 보고와
-다른 작업이기 때문이다.
+**여섯 묶음 중 하나는 착수 시점에 막혀 있었다.** `ce task preflight` 계열
+([[ISSUE-004]] · [[ISSUE-006]] · [[ISSUE-020]])은 세 카드가 서로 다른 상류
+저장소를 지목하고 있었다 — [[ISSUE-027]]. 2026-09-15 그 귀속을 실측으로 확정해
+(`ce` 바이너리의 Go 빌드정보 + ce-workbook의 `ls-files` 부재) `ce-agent-kit`으로
+세 카드를 맞췄고, 묶음 여섯 전부를 진행했다.
 
 ### 이 카드가 하지 않는 것
 
@@ -79,14 +79,77 @@ exit=0
 
 ## Completion Criteria
 
-- [ ] 상류 호스트에 인증돼 있다 | verify: `glab auth status --hostname gitlab.polypia.net`
-- [ ] 상류 소유 카드에 보고 누락이 남아 있지 않다 — 빈 값을 세는 주체는 doccheck다 | verify: `go run ./tools/doccheck . | /usr/bin/grep -qE '^upstream_unref:[[:space:]]+0$'`
+- [x] 상류 호스트에 인증돼 있다 | verify: `glab auth status --hostname gitlab.polypia.net`
+- [x] 상류 소유 카드에 보고 누락이 남아 있지 않다 — 빈 값을 세는 주체는 doccheck다 | verify: `go run ./tools/doccheck . | /usr/bin/grep -qE '^upstream_unref:[[:space:]]+0$'`
 - [ ] 적힌 이슈 번호가 실제로 열려 있다 | verify: human — 카드에 적힌
       `ce-agent-kit#N` 각각을 상류에서 열어, 번호가 실재하고 내용이 그 카드의
       결함을 서술하는지 확인한다
-- [ ] advisory 단계가 끝나고 보고 누락이 치명으로 승격됐다 | verify: `/usr/bin/grep -q 'res.UpstreamUnrefed > 0' tools/doccheck/check.go`
-- [ ] doccheck 패키지 테스트 전부 통과 | verify: `go test ./tools/doccheck/`
-- [ ] 문서 게이트가 초록 | verify: `make doc-check` (regression-guard)
+- [x] advisory 단계가 끝나고 보고 누락이 치명으로 승격됐다 | verify: `/usr/bin/grep -q 'res.UpstreamUnrefed > 0' tools/doccheck/check.go`
+- [x] doccheck 패키지 테스트 전부 통과 | verify: `go test ./tools/doccheck/`
+- [x] 문서 게이트가 초록 | verify: `make doc-check` (regression-guard)
+
+## 완료 기록 (2026-09-15)
+
+### 여섯 묶음 — 상류 컴포넌트별로 열었다
+
+| 상류 이슈 | 묶은 카드 | 상류 컴포넌트 |
+|---|---|---|
+| `ce-agent-kit#1` | [[ISSUE-004]] · [[ISSUE-006]] · [[ISSUE-020]] | `ce task preflight` runnability 판정 |
+| `ce-agent-kit#2` | [[ISSUE-001]] · [[ISSUE-005]] · [[ISSUE-008]] | `ce task run-*` 수명주기·영수증 |
+| `ce-agent-kit#3` | [[ISSUE-007]] · [[ISSUE-011]] · [[ISSUE-019]] · [[ISSUE-022]] | `ce task validate` 정본 스키마·메시지 |
+| `ce-agent-kit#4` | [[ISSUE-013]] · [[ISSUE-024]] | 상태 전이 (`move` · `done-finalize`) |
+| `ce-agent-kit#5` | [[ISSUE-014]] · [[ISSUE-023]] | `ce task lint` 인벤토리 · `gate` 어드바이저리 |
+| `ce-agent-kit#6` | [[ISSUE-026]] | 호스트 도구 핀 |
+| `ce-agent-kit#7` | [[ISSUE-028]] | 리뷰 영수증 다이제스트 고정점 |
+
+일곱 번째는 계획에 없었다 — 이 카드의 게이트를 돌리다 발견해 [[ISSUE-028]]로
+기록하고 같은 실행에서 보고했다. 승격된 검사가 **즉시** 그것을 요구했다는 점이
+승격이 옳았다는 증거다: 새 상류 소유 카드는 이제 보고처를 적지 않고는 master에
+닿을 수 없다.
+
+### 승격 — 스스로 발화한 종료 조건
+
+[[TASK-395]]는 보고 누락을 advisory로 두면서 **종료 조건을 TODO 주석이 아니라
+실패하는 테스트로** 적어 뒀다. 그것이 문자 그대로 작동했다:
+
+```
+$ go test ./tools/doccheck/ -run TestUpstreamRefsSweepsTheRealCorpus
+--- FAIL: TestUpstreamRefsSweepsTheRealCorpus
+    upstream_unref=0 across 25 issue card(s) — the advisory stage is now due to end:
+    promote UpstreamUnrefed to res.Errors in check.go, then replace this guard with
+    an assertion that it stays 0
+```
+
+지시대로 승격했고, 가드는 삭제가 아니라 **뒤집었다** — 0을 유지하라는 단언으로.
+`TestUpstreamRefCountsUnreportedUpstreamCard`의 advisory 단언도 같은 이유로
+뒤집었다: "세어진다"와 "빨갛다"는 별개 성질이고, 테스트를 지웠다면 앞의 절반이
+무방비가 됐을 것이다.
+
+승격이 실제로 빨간불을 내는지 통제된 defang으로 확인했다(백업 → 수정 → 측정 →
+복원 → `diff -q`로 바이트 동일 확인):
+
+```
+upstream_unref:      1
+  ERROR    1 upstream-owned issue card(s) with no upstream-ref value naming where the defect was reported
+doc-check: FAIL
+```
+
+### 게이트
+
+`go test ./tools/doccheck/` exit 0 · `make doc-check` exit 0
+(`issue_cards: 26 (read 26)`, `upstream_owned: 16`, `upstream_unref: 0`) ·
+`make lint` exit 0.
+
+`ce task gate --dir .`는 `NOT READY — task_validate_failed`를 내지만 이것은
+**이 브랜치가 만든 것이 아니다.** 깨끗한 master(cccd35a)에서 동일하게 재현되며
+(`107 valid, 11 invalid`), 원인은 [[ISSUE-028]]로 기록하고 `ce-agent-kit#7`로
+보고했다.
+
+### 남은 사람 몫
+
+기준 3은 기계로 절반만 확인된다. 일곱 이슈가 실재하고 `open` 상태인 것은
+`glab issue view`로 확인했으나, **내용이 각 카드의 결함을 제대로 서술하는지는
+작성자가 판정할 수 없다.** 그 축은 사람이 연다.
 
 ## Sources
 

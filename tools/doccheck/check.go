@@ -47,11 +47,13 @@ type Result struct {
 	CardsSeen              int
 	CardsChecked           int
 	StatusMismatches       int
-	// Issue-card ownership (TASK-395, re-based on frontmatter by TASK-398). Two severities:
-	// OwnershipUnclassified and OwnershipMismatched fail the gate — classifying is cheap,
-	// in-repo, and if it were optional the meter below would read zero forever. UpstreamUnrefed
-	// stays advisory for the reason upstreamref.go states: the reported act happens outside
-	// this repository.
+	// Issue-card ownership (TASK-395, re-based on frontmatter by TASK-398). Every meter below
+	// now fails the gate. The two severities were a staging device, not a permanent split:
+	// OwnershipUnclassified and OwnershipMismatched were fatal from the start because classifying
+	// is cheap and in-repo, while UpstreamUnrefed stayed advisory only while the act it measures
+	// — reporting into another repository — had not happened yet. TASK-399 filed the six upstream
+	// issues and wrote their numbers back, the count reached 0, and the promotion the wiring site
+	// described was carried out.
 	IssueCardsSeen          int
 	IssueCardsRead          int
 	OwnershipUnclassified   int
@@ -273,12 +275,19 @@ func Check(in CheckInput) Result {
 	if res.OwnershipUnreasoned > 0 {
 		res.Errors = append(res.Errors, fmt.Sprintf("%d issue card(s) classified with no %s section stating why", res.OwnershipUnreasoned, ownershipHeadingPrefix))
 	}
-	// UpstreamUnrefed is counted, printed, and deliberately not fatal. Promote to res.Errors
-	// when it first reaches 0: going fatal after the count is already clear costs nothing and
-	// locks the property in. A stage that never names its exit is how ISSUE-023's advisory
-	// became unread, so this one does not rely on anyone remembering —
-	// TestUpstreamRefsSweepsTheRealCorpus fails the moment the count hits 0 and says to promote.
-	// The advisory's one hard edge: a zone the sweep saw but read nothing from is a broken walk,
+	if res.UpstreamUnrefed > 0 {
+		res.Errors = append(res.Errors, fmt.Sprintf("%d upstream-owned issue card(s) with no %s value naming where the defect was reported", res.UpstreamUnrefed, upstreamRefField))
+	}
+	// UpstreamUnrefed is fatal as of TASK-399. It was advisory until the count first reached 0,
+	// and the exit was not left to memory: TestUpstreamRefsSweepsTheRealCorpus failed the moment
+	// it hit 0 and named this edit. That is the whole design ISSUE-023 argued for — a stage that
+	// never names its exit is how an advisory becomes unread — and it is worth recording that the
+	// tripwire actually fired rather than that it existed.
+	//
+	// Promoting costs nothing once the count is clear and locks the property in: a new
+	// upstream-owned card now cannot reach master without naming where it was reported.
+	//
+	// The old advisory's one hard edge, still load-bearing: a zone the sweep saw but read nothing from is a broken walk,
 	// the same seen/checked split checkCardStatus guards. Every countable outcome above is fine at
 	// zero; this one is not, because it means the meter stopped looking, not that it looked and
 	// found nothing.

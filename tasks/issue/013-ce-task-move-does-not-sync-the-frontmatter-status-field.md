@@ -11,7 +11,7 @@ created: 2026-09-14
 discovered-in: "TASK-381 (check-plan-prose-against-plan-frontmatter)"
 discovered-at: 2026-09-14
 source: "TASK-381 종료 중 ce task move가 status: todo를 done으로 옮기며 frontmatter를 갱신하지 않는 것을 발견"
-upstream-ref: ""
+upstream-ref: "ce-agent-kit#4"
 ---
 
 ## Summary

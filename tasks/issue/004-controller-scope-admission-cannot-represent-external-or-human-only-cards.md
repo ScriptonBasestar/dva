@@ -11,7 +11,7 @@ discovered-in: "2026-09-10 direct queue-run preflight"
 discovered-at: 2026-09-10
 ownership: upstream
 created: 2026-09-10
-upstream-ref: ""
+upstream-ref: "ce-agent-kit#1"
 ---
 
 ## Summary
