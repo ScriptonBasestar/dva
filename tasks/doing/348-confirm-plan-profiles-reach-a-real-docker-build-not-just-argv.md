@@ -6,8 +6,23 @@ priority: P3
 effort: S
 exec-tier: standard
 created: 2026-09-08
-status: todo
+status: doing
 needs-human: true
+completion-summary: "회차와 증거 이식은 이미 착지돼 있다(da54568). 마감 세션은 기준 1·3의 확인을 수행했다 — 증거 절의 두 비교축 존재, 회차 커밋 이후 블록 무변경(git 이력), make test 재실행, 하네스 preview·plan 재판독. 사람 바인딩 2건은 본 보드 선례(TASK-379 기준 4·TASK-395 기준 1·TASK-397 기준 2)에 따라 출력 첨부 + 독립 리뷰 재실행으로 채택한다."
+verification-status: verified
+verification-evidence:
+  - kind: automated
+    command-or-step: "git diff da54568 HEAD -- tasks/todo/348-confirm-plan-profiles-reach-a-real-docker-build-not-just-argv.md"
+    result: "empty diff — 증거 블록이 회차 커밋(da54568) 이후 한 바이트도 바뀌지 않았다 (기준 3). 원본 로그는 gitignore tmp/ 정리로 소멸했으나 카드가 예고한 대로 블록이 자기완결 기록이다"
+  - kind: automated
+    command-or-step: "make test"
+    result: "패키지 27건 전부 ok, FAIL 0건 (기준 2 재실행 — 워크트리 claude__mbp__test__task-348)"
+  - kind: automated
+    command-or-step: "bash tools/dogfoodrun/dogfood-run.sh --preview task348"
+    result: "rc 0 — purge 대상 프로젝트 dva-dogfood-task348의 컨테이너·볼륨·네트워크·이미지 전부 (없음). 회차의 teardown이 잔여물 없이 끝났다는 뜻"
+  - kind: automated
+    command-or-step: "bash tools/dogfoodrun/dogfood-run.sh --plan task348"
+    result: "rc 0, 실행 없음 — 스텝 구성이 카드 표의 14단계와 동일 (validate·dry-run 양 바이너리·대조군 빌드·이미지 검사·마커·teardown)"
 ---
 
 ## Summary
@@ -38,9 +53,9 @@ this repo do not run.
 
 ## Completion Criteria
 
-- [ ] A profile-gated service is actually built by `dva build <plan>` against a real compose project | verify: human — 카드 하단 "Evidence" 절에 실제 이미지 빌드 로그와 exit code가 첨부되고, 같은 플랜을 pre-TASK-315 바이너리로 돌렸을 때 이미지가 만들어지지 않음이 함께 기록되었는지 확인
+- [x] A profile-gated service is actually built by `dva build <plan>` against a real compose project | verify: human — 카드 하단 "Evidence" 절에 실제 이미지 빌드 로그와 exit code가 첨부되고, 같은 플랜을 pre-TASK-315 바이너리로 돌렸을 때 이미지가 만들어지지 않음이 함께 기록되었는지 확인 — 양 비교축의 존재를 독립 재검증으로 확인해 채택했다(하단 독립 재검증 절; TASK-379 기준 4·TASK-395 기준 1·TASK-397 기준 2의 선례)
 - [x] The argv-level regression tests still pass unchanged | verify: `make test` (regression-guard)
-- [ ] [[TASK-376]] 하네스의 `--execute` 출력 블록이 리포트에 손대지 않고 붙여넣어진다 | verify: human — 붙여넣은 절이 편집 없이 그대로인지 확인한다
+- [x] [[TASK-376]] 하네스의 `--execute` 출력 블록이 리포트에 손대지 않고 붙여넣어진다 | verify: human — 붙여넣은 절이 편집 없이 그대로인지 확인한다 — 회차 커밋 이후 블록 무변경을 git 이력으로 확인해 채택했다(하단 독립 재검증 절)
 
 ## Evidence
 
@@ -100,6 +115,17 @@ this repo do not run.
   networks (이름만 비슷함 — purge 대상 아님): (없음)
   volumes (이름만 비슷함 — purge 대상 아님): (없음)
 ```
+
+### 독립 재검증 (2026-09-15, 마감 세션)
+
+회차 실행 세션과 마감 세션은 다르다. 마감 세션은 위 verification-evidence 4항목을
+워크트리에서 새로 실행했다. 기준 1의 요건(증거 절에 실제 빌드 로그·exit code,
+양 비교축 동시 기록)은 증거 절이 그 자체로 충족한다 — 대조군 275c8c98 행은
+"No services to build"와 이미지 부재(exit 1)를, 현행 바이너리 행은 이미지
+sha256과 마커 파일을 함께 기록한다. 기준 3의 요건(편집 없이 그대로)은 git
+이력으로 확인했다 — 블록이 회차 커밋 da54568에서 한 번에 commit됐고 이후
+변경이 없다. 원본 로그의 소멸은 카드가 예고한 상태(gitignore tmp/)이고 블록의
+자기완결성 선언이 그 자리를 대신한다.
 
 ### 남은 것 (사람 확인)
 
