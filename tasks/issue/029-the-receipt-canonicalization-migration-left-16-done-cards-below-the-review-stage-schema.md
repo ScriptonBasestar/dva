@@ -75,8 +75,10 @@ run-finish가 "integration did not complete"로 블록됐다.
       전문은 카드 본문과 수신 파일에 보존된다. 리스트형 evidence를 검증기가 읽지
       못하는 비대칭(`fieldHasNonEmptyValue`는 시퀀스를 읽는데 리뷰 스테이지 검증은
       스칼라 전용 `scalarField`를 쓴다)은 상류 ce-agent-kit 보고 후보로 남긴다)
-- [ ] 블록된 통합(TASK-404 브랜치 등)이 회복된다
-      (이 수리 커밋 직후 TASK-404 run-finish로 수행한다)
+- [x] 블록된 통합(TASK-404 브랜치 등)이 회복된다
+      (2026-09-17 실측 — run-finish 404-postgres-mount-card가 DONE으로 수리 커밋
+      5f184c7을 master에 패스트포워드했고 워크트리·로컬 브랜치·원격 태스크
+      브랜치 회수까지 확인. 이 이슈 카드 자체의 done 전이는 별도 주기로 둔다)
 
 ## 수신 재발행 기록 — 봉인 재기록 예외 9건 (2026-09-17 사용자 승인)
 
