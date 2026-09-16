@@ -23,19 +23,13 @@
 
 ## 적용 결과 (2026-09-05)
 
-### 변경 항목 체크리스트
-- [x] `dva config migrate` (dva.yaml, rename 전) 원문: `ERROR: no dva.yml in .` (exit 1) — validate는 같은 파일을 읽고 rename 경고를 내는데 migrate는 못 읽음. TASK-304 증거.
-- [x] `git mv dva.yaml dva.yml` (커밋 없음). rename 후 migrate: `stack.compose → runners.compose`만 변환. 남긴 항목: `stack.*.order`("plans가 없어 옮길 곳 없음"), modes 3개(description → plans.<mode>.description, `compose_profiles → up_options, as --profile full-stack` / `--profile monitoring` — 모드 이름을 profile 값으로 오기), `environments.test.compose_files` 언급 없음, clean replace 언급 없음.
-- [x] flat stack → `stack.compose.runners.compose`, `order` 제거.
-- [x] modes 3개 → plans: `infra`(compose), `full-stack`(stack.apps = compose.yaml+compose.apps.yaml, services postgres/redis/backend-dev/frontend-dev), `monitoring`(stack.monitoring = base+overlay, monitoring profile 서비스 12개 명시). 추가로 `hybrid`(compose + native backend + native frontend) 및 `test`(stack.test-stack = compose.test.yaml, project familybook-test). `default_plan: infra`.
-- [x] `environments.test.compose_files` 제거 → `stack.test-stack` + `plans.test`. `environments.dev.env_file: .env` 제거(루트 env_file이 이미 .env를 읽음).
-- [x] 상위 `health_checks` → `stack.compose.health_checks`(postgres/redis tcp), `stack.backend`/`stack.frontend` native 엔트리의 health_checks(http :15000/health, :15001). `start`/`start_hint` 삭제.
-- [x] `interaction.clean` replace → `steps:`; `build`/`logs` replace 제거(`dva build hybrid`가 native build 실행, `dva logs <plan>`). 파일 로그 tail은 `logs-backend`/`logs-frontend` 유지.
-- [x] `backend-start`/`frontend-start` interaction 제거 → `dva up hybrid` (native 엔트리). 단독 기동이 필요하면 `dva up hybrid`가 compose까지 같이 올린다는 점 유의(플래그).
-- [x] `env_file` map 형식(`files:`/`priority`/`interpolate`) → 리스트 형식. `priority`/`interpolate` 키는 스키마에 없어 삭제(동작 동일: env_file이 environment 위에 덮임).
-- [x] `checks`의 `type: tcp` 2개 → `type: command` + `nc -z` (schema가 tcp check를 허용하지 않아 flat-stack 에러 뒤에 숨어 있던 스키마 에러).
-- [x] provision `docker compose up -d` → `compose_up: [postgres, redis]`; reset의 `docker compose down -v`는 유지(purge gap).
-- [x] version 0.1.44. Makefile 제안 194개 → suggestion_ignore 글로브.
+### 변경 항목 요약
+dva.yaml rename 전 migrate 실패(TASK-304 증거)를 제외한 전면 수동 전환: flat stack →
+`runners.compose`, modes 3개 → plans(`infra`/`full-stack`/`monitoring` + `hybrid`/`test`,
+`default_plan: infra`), `environments.test.compose_files` → `stack.test-stack`+`plans.test`,
+상위 `health_checks` → 엔트리별 이동(start/start_hint 삭제), `interaction.clean` replace →
+`steps:`, env_file map 형식 → 리스트, `checks` tcp → command, provision → `compose_up`.
+version 0.1.44, Makefile 제안 194개 → suggestion_ignore 글로브.
 
 ### validate 최종 출력
 ```
