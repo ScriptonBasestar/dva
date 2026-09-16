@@ -140,8 +140,9 @@ pipechain_pipechain`, 잔여 pipechain 계열 네트워크 0건 확인. 서브�
 ### 2026-09-16 실기동 회차 — 세 축 전부 실행, 결함 1건 수정·통합, 환경 장벽 3건 기록
 
 사람 결정 (1)(2)와 SOPS age 키 제공이 선행된 뒤 사람 세션에서 3개 대상을 전부
-실행했다. 증거 로그는 `tmp/`(gitignore) 아래 `tmp-familybook-round3.log`,
-`tmp-taskchain-round3.log`, `tmp-primeno1-round2.log`/`round3.log`.
+실행했다. 증거 로그는 `tmp/dogfood-run/evidence/`(gitignore) 아래
+`tmp-familybook-round3.log`, `tmp-taskchain-round3.log`,
+`tmp-primeno1-round2.log`/`round3.log`.
 
 - **familybook — 완주, 전 스텝 exit=0.** 1차는 Docker address pool 소진(사람 결정으로
   미사용 네트워크 23건 prune), 2차는 27분 무응답 — 원인은 devbox 측:
