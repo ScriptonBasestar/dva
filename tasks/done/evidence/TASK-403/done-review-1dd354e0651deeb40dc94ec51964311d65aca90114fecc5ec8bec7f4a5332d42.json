@@ -1,0 +1,22 @@
+{
+  "task": "TASK-403",
+  "title": "Board gate cannot pass: migrate _archive and receipts into canonical zones",
+  "reviewer": "review-403 (independent reviewer agent, Claude — did not author the reviewed work)",
+  "verdict": "pass",
+  "verdict-final": true,
+  "reviewed-at": "2026-09-16",
+  "head-reviewed": "06948b7d (migration bc571e77 + review fixes a7f37adf, 06948b7d)",
+  "review-rounds": 2,
+  "round-1": {
+    "head-reviewed": "bc571e77",
+    "verdict": "fail",
+    "summary": "Migration mechanism verified sound (zones, Go filter, 161 reference rewrites, gates), but four findings: F1 (P1) the reference sweep also rewrote the sealed evidence bytes of TASK-197, breaking its evidence-sha256 pin; F2 (P1) twelve sealed receipt JSONs had historical prose edited in violation of the receipts-are-untouched rule; F3 (P3) the TASK-388 re-pin broke the filename-matches-pin invariant; F4 (P3) isPlanCardFile clipped the closing fence line, so an id-last plan card would be misindexed as a TASK."
+  },
+  "round-2": {
+    "head-reviewed": "06948b7d",
+    "verdict": "pass",
+    "summary": "F1 restored byte-for-byte (sha256 34e8e522... matches the pin); F2 confirmed by a blob-hash sweep of all 50 evidence files against the pre-migration receipts — only the unsealed README and two new/disclosed files differ; F3 resolved with a disclosed reissue file named for the digest it pins while the original stays unedited; F4 rewritten line-based with quoted-id support and regression tests (reviewer independently probed 7 edge shapes including CRLF id-last). Gates on the live tree: validate --all 122/122, make doc-check exit 0, both tool test packages ok, ce task gate READY."
+  },
+  "scope": "commit bc571e77 (425 files: 315-card archive flatten to tasks/archive/2026-09, 33 receipt dirs to tasks/done/evidence, doccheck/cardstatus/planprogress zone tables, 161 reference rewrites, 79 relative-link depth fixes) and its remediation commits a7f37adf, 06948b7d",
+  "reviewed-card-sha256": "1dd354e0651deeb40dc94ec51964311d65aca90114fecc5ec8bec7f4a5332d42"
+}

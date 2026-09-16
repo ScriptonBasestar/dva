@@ -6,7 +6,10 @@ priority: P1
 effort: M
 exec-tier: standard
 created: 2026-09-16
-status: doing
+status: done
+quality-review: pass
+quality-reviewed-at: 2026-09-16
+quality-review-receipt: "tasks/done/evidence/TASK-403/done-review-1dd354e0651deeb40dc94ec51964311d65aca90114fecc5ec8bec7f4a5332d42.json"
 depends-on: []
 ---
 
