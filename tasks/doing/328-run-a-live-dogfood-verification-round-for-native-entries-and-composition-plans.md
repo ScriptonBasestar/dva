@@ -140,16 +140,18 @@ pipechain_pipechain`, 잔여 pipechain 계열 네트워크 0건 확인. 서브�
 ### 2026-09-16 실기동 회차 — 세 축 전부 실행, 결함 1건 수정·통합, 환경 장벽 3건 기록
 
 사람 결정 (1)(2)와 SOPS age 키 제공이 선행된 뒤 사람 세션에서 3개 대상을 전부
-실행했다. 증거 로그는 `tmp/dogfood-run/evidence/`(gitignore) 아래
-`tmp-familybook-round3.log`, `tmp-taskchain-round3.log`,
-`tmp-primeno1-round2.log`/`round3.log`.
+실행했다. 실행 당시 작업 로그는 gitignore 경로(`tmp/dogfood-run/evidence/` 아래
+`tmp-*-round*.log`)에만 있었고 워크트리 통합 시 함께 정리됐다. 영구 증거는 커밋된
+리포트다: `docs/dogfood/familybook.md`, `docs/dogfood/flow-taskchain.md`,
+`docs/dogfood/primeno1.md`의 하네스 리포트 블록(원본 로그와 바이트 일치 확인,
+2026-09-16)과 각 문서의 회차 기록.
 
 - **familybook — 완주, 전 스텝 exit=0.** 1차는 Docker address pool 소진(사람 결정으로
   미사용 네트워크 23건 prune), 2차는 27분 무응답 — 원인은 devbox 측:
   `scripts/devbox.sh backend-run`이 `bin/familybook-server`를 요구하는데 빌드된 적이
   없어 즉사(exit 3), dva의 readiness 게이트는 컨텍스트 데드라인 없이 2초 폴링이라
   `up dev`가 영원히 돌아간다. **dva 결함 후보 1건** — native 엔트리 프로세스가 즉사해도
-  up이 fail-fast하지 않는 것(아래 신규 카드). `dva run backend-generate`+`backend-build`
+  up이 fail-fast하지 않는 것([[TASK-402]]). `dva run backend-generate`+`backend-build`
   선행 후 3차 회차가 validate/ls/up dev/status/down --purge 전부 exit=0. 리포트 블록은
   `docs/dogfood/familybook.md`에 그대로 붙였다.
 - **flow-taskchain — 결함 2건. (1) 수정·통합, (2) 엔진 카드로 승격.** 1~2차는
