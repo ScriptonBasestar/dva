@@ -113,7 +113,7 @@
       "id": 1,
       "claim": "TASK-311 and TASK-312 are complete and the dry-run health-wait limitation is genuinely resolved",
       "outcome": "confirmed",
-      "evidence": "tasks/done/312-dry-run-up-blocks-on-native-health.md status: done; tasks/archive/done/311-down-plan-teardown-semantics.md status: done; internal/lifecycle/orchestrator.go:159 branches on `len(entry.HealthChecks) > 0 && opts.Wait && opts.DryRun` and prints a `would wait` line instead of polling, citing TASK-312; regression test internal/lifecycle/orchestrator_dry_run_health_unix_test.go:20 TestUpDryRunSkipsEntryHealthWait; the mode-process half checks opts.DryRun at orchestrator.go:555"
+      "evidence": "tasks/done/312-dry-run-up-blocks-on-native-health.md status: done; tasks/_archive/done/311-down-plan-teardown-semantics.md status: done; internal/lifecycle/orchestrator.go:159 branches on `len(entry.HealthChecks) > 0 && opts.Wait && opts.DryRun` and prints a `would wait` line instead of polling, citing TASK-312; regression test internal/lifecycle/orchestrator_dry_run_health_unix_test.go:20 TestUpDryRunSkipsEntryHealthWait; the mode-process half checks opts.DryRun at orchestrator.go:555"
     },
     {
       "id": 2,

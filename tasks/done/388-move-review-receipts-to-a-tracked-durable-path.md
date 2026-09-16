@@ -12,7 +12,7 @@ depends-on: []
 quality-review: pass
 quality-reviewed-at: 2026-09-14
 quality-review-evidence: "독립 리뷰 review-383(Claude Opus 5, 저자 아님) 4라운드 pass, verdict-final. 1라운드 9건·2라운드 2건·3라운드 2건을 차례로 접었고 리뷰어가 매 라운드 회신 수치를 받아쓰지 않고 독립 재측정했다 — 증거 12건의 evidence-sha256 대조 12/12, 주 체크아웃 원본과 cmp 12/12 exit 0, 아카이브 카드 diff가 정확히 12 files/+12/-12, README.md 면제를 91 대 90으로 직접 확인. 4라운드에서 잔여 low 하나(RF1)를 새로 잡았다: 기준 4가 [x]인데 바인딩 ce task validate --all이 exit 1이었다. 리뷰어가 exit 0 후보 둘을 실측 제시했고 남은 2건의 정체까지 세는 쪽을 채택했다"
-quality-review-receipt: tasks/done/evidence/TASK-388/done-review-52b05d30b4d24e5905229ced2ab83be2c0050bf0f77437252c182daf109eccca.json
+quality-review-receipt: tasks/done/evidence/TASK-388/done-review-97348a96ec4560324c2efbac03e4e8073729f062cef42ef65cb3c7607a992560.json
 ---
 
 ## Summary

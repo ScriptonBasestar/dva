@@ -44,7 +44,7 @@
     },
     {
       "claim": "TASK-388 pin 3edee27d...2872 vs closed card fce997be...b0ad",
-      "method": "read reviewed-card-sha256 from tasks/done/evidence/TASK-388/done-review-*.json; shasum -a 256 tasks/done/388-*.md",
+      "method": "read reviewed-card-sha256 from tasks/receipts/TASK-388/done-review-*.json; shasum -a 256 tasks/done/388-*.md",
       "result": "CONFIRMED exactly — pin 3edee27d00db9ece81182d61b821f080cad3c097670708fa6e61fc029b502872, actual fce997be9d6be6b6f01c16d6321e0a269a68437093bb57115a043e07b2f9b0ad"
     },
     {
@@ -150,10 +150,10 @@
     "that the ce-agent-kit source read here (v0.8.4-194-g8d1d183e) matches the installed binary (0.8.4) line for line; every digest and blocks: conclusion above was measured with the installed binary, and the source was read only for corroboration"
   ],
   "files-modified-by-reviewer": [
-    "tasks/done/evidence/TASK-389/done-review-4b084d74b5214c22f06434690a505bbba07e586308f95d1413458c5923430537.json (this file)"
+    "tasks/receipts/TASK-389/done-review-4b084d74b5214c22f06434690a505bbba07e586308f95d1413458c5923430537.json (this file)"
   ],
   "files-temporarily-created-and-removed": [
     "tasks/todo/999-probe-duplicate-id.md (DUP-ID probe)",
-    "tasks/done/997-digest-probe-card.md and tasks/done/evidence/TASK-997/{probe.json,probe2.json} (digest-coverage and blocks: probes)"
+    "tasks/done/997-digest-probe-card.md and tasks/receipts/TASK-997/{probe.json,probe2.json} (digest-coverage and blocks: probes)"
   ]
 }

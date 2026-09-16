@@ -3,7 +3,7 @@
   "reviewed-card-sha256": "f06023034a98e896cfed52b60acd91504cf56e44381e12b575bb793c311dc9ba",
   "reviewed-card-sha256-algorithm": "plain sha256 over the card file bytes at b53b713 (git blob c551b09249871bd9d55ce8f5553991793e989923; the working-tree file hashes identically, tree clean). NOT the CE canonical digest: the card sits in tasks/doing/ and declares no blocks:, so ce task validate never reaches the quality-review-receipt check and prints no canonical digest. Same situation as the TASK-382 receipt. Migrated 2026-09-15 (TASK-401): the pin was a plain sha256 over the reviewed revision's bytes, which ce task validate can never match against the closed card; reissued as the CE canonical digest of the closed card — the exact value validate's own mismatch message prints. Review content, verdict and evidence are untouched.",
   "digest-scope-warning": "This pins the card as review-386 actually read it at b53b713. The implementer had not yet added the quality-review frontmatter or moved the card to tasks/done/ when the digest was taken, so the finally committed card will hash differently. That divergence is expected and is not evidence of an unreviewed change; the reviewed content is the b53b713 bytes named above.",
-  "receipt-path-note": "Written directly under the Git-tracked tasks/done/evidence/TASK-<N>/ path TASK-383 established (ISSUE-001 §Summary item 3), not the gitignored tmp/task-management/direct/queue-run/ earlier receipts used.",
+  "receipt-path-note": "Written directly under the Git-tracked tasks/receipts/TASK-<N>/ path TASK-383 established (ISSUE-001 §Summary item 3), not the gitignored tmp/task-management/direct/queue-run/ earlier receipts used.",
   "task": "TASK-386",
   "title": "Quote the two unbackticked verify bindings the validator cannot read",
   "reviewer": "review-386 (Claude Opus 5, independent; did not author the work under review)",
@@ -58,8 +58,8 @@
         "id": "F4",
         "severity": "informational",
         "file": "tasks/doing/386-quote-the-two-unbackticked-verify-bindings.md:56-57",
-        "problem": "the `.` in 'verify: .go test' stands for a backtick but matches any single character; the search also recursed into tasks/archive/",
-        "resolution": "accepted as not-fixed by agreement (see residual-findings R1); search narrowed to tasks/done/ in b53b713, removing the archive false-positive surface"
+        "problem": "the `.` in 'verify: .go test' stands for a backtick but matches any single character; the search also recursed into tasks/_archive/",
+        "resolution": "accepted as not-fixed by agreement (see residual-findings R1); search narrowed to tasks/done/ in b53b713, removing the _archive false-positive surface"
       }
     ]
   },
@@ -144,7 +144,7 @@
   "gates": {
     "make doc-check": {
       "exit": 0,
-      "note": "doc-check OK; cilabels OK; flowcheck OK; planprogress OK; yamlcheck OK. wrapped_tool_bindings 379, bare_tool_bindings 0, bare_suite_bindings 0. Stale link paths all under tasks/archive/, pre-existing. Run at both 828eb84 and b53b713."
+      "note": "doc-check OK; cilabels OK; flowcheck OK; planprogress OK; yamlcheck OK. wrapped_tool_bindings 379, bare_tool_bindings 0, bare_suite_bindings 0. Stale link paths all under tasks/_archive/, pre-existing. Run at both 828eb84 and b53b713."
     },
     "make lint": {
       "exit": 0,
@@ -219,7 +219,7 @@
     ]
   },
   "files-modified-by-reviewer": [
-    "tasks/done/evidence/TASK-386/done-review-f06023034a98e896cfed52b60acd91504cf56e44381e12b575bb793c311dc9ba.json (this file)"
+    "tasks/receipts/TASK-386/done-review-f06023034a98e896cfed52b60acd91504cf56e44381e12b575bb793c311dc9ba.json (this file)"
   ],
   "files-temporarily-modified-and-restored": [
     "tasks/done/321-destructive-interaction-agent-deny.md — two sed mutations for the negative probes, each reverted with git checkout --; worktree confirmed clean afterwards"

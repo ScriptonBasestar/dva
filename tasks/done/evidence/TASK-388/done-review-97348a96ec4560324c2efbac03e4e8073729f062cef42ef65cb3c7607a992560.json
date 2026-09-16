@@ -1,0 +1,14 @@
+{
+  "reviewed-card-path": "tasks/done/388-move-review-receipts-to-a-tracked-durable-path.md",
+  "reviewed-card-sha256": "97348a96ec4560324c2efbac03e4e8073729f062cef42ef65cb3c7607a992560",
+  "reviewed-card-sha256-algorithm": "CE canonical card digest of the card as sealed 2026-09-16 (the value ce task validate's own mismatch message prints).",
+  "task": "TASK-388",
+  "title": "Move review receipts to a tracked durable path under tasks/done/evidence/",
+  "reviewer": "TASK-403 reissue (claude/mbp session) — not a re-review of the change; a receipt re-issue only",
+  "verdict": "pass",
+  "verdict-final": true,
+  "reviewed-at": "2026-09-16",
+  "reissue-note": "Issued by TASK-403. The board canonicalization (commit bc571e77) retargeted this card's two verify bindings from tasks/receipts to tasks/done/evidence, which is a real body change and moved the card's canonical digest from 52b05d30... to 97348a96.... Per the reissue procedure TASK-401 established, the original receipt (done-review-52b05d30....json, unedited, filename matching its own pin) stays beside this file as the historical record; this file is the live pin the card points at. Receipt-body text of the original was not modified.",
+  "head-reviewed": "bc571e77",
+  "review-rounds": 0
+}

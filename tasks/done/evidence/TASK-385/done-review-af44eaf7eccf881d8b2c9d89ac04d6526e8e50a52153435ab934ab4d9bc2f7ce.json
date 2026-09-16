@@ -138,7 +138,7 @@
       "check": "make doc-check",
       "kind": "completion criterion 5 / gate",
       "exit": 0,
-      "note": "doc-check OK; cilabels OK (8 CI labels match ci.yml make targets); flowcheck OK (10 flows, no decision-path defects); planprogress OK (every plan's total-tasks/completed-tasks/progress matches its children); yamlcheck 6 examples, 0 errors, 0 warnings. STALE link lines are all under tasks/archive/ and pre-existing."
+      "note": "doc-check OK; cilabels OK (8 CI labels match ci.yml make targets); flowcheck OK (10 flows, no decision-path defects); planprogress OK (every plan's total-tasks/completed-tasks/progress matches its children); yamlcheck 6 examples, 0 errors, 0 warnings. STALE link lines are all under tasks/_archive/ and pre-existing."
     },
     {
       "check": "make lint",
@@ -215,7 +215,7 @@
     },
     "plan-006-residual": {
       "claim": "frontmatter 26/29, residual 3 = TASK-328, TASK-348, TASK-329",
-      "method": "of the 29 children, six are absent from tasks/done/: 348, 311, 249, 328, 316, 329. Three of those (311, 249, 316) are in tasks/archive/done/ and are therefore done. Residual = 328, 348, 329.",
+      "method": "of the 29 children, six are absent from tasks/done/: 348, 311, 249, 328, 316, 329. Three of those (311, 249, 316) are in tasks/_archive/done/ and are therefore done. Residual = 328, 348, 329.",
       "frontmatter": "total-tasks 29, completed-tasks 26, progress 89 — consistent",
       "result": "verified"
     },
@@ -258,7 +258,7 @@
       "the TASK-381 rule analysis was re-derived by applying both proposed rules to the pre-fix sentence rather than accepting the card's conclusion",
       "all four mechanical verify bindings and the human binding were executed or read individually at b4b1f20; make doc-check and make lint both exit 0; ce task validate --all adds no failure over the base commit, measured in an unmodified primary checkout",
       "the round-2 folds F1-F3 were re-read in the folded text at b4b1f20, not accepted on the implementer's report",
-      "no file in the primary checkout was modified at any point during three rounds; the only files this reviewer wrote are receipts under tasks/done/evidence/TASK-385/"
+      "no file in the primary checkout was modified at any point during three rounds; the only files this reviewer wrote are receipts under tasks/receipts/TASK-385/"
     ],
     "does-not-certify": [
       "the 68-card denominator, which F5 measures as 69 at b4b1f20 — this is the open condition",
@@ -276,8 +276,8 @@
     "effect-on-this-review": "the reviewed diff cites [[TASK-383]] in tasks/plan/007-done-backlog-triage.md and in the card, meaning the receipt-path card. That reading was correct when authored; after the rebases those links resolve in-tree to the compose-image card instead. Not charged against TASK-385, but the two citations should be re-pointed once the collision is settled."
   },
   "files-modified-by-reviewer": [
-    "tasks/done/evidence/TASK-385/done-review-83e9208d...json (this receipt)",
-    "tasks/done/evidence/TASK-385/done-review-66e0c237...json (superseded; the lead removes it)"
+    "tasks/receipts/TASK-385/done-review-83e9208d...json (this receipt)",
+    "tasks/receipts/TASK-385/done-review-66e0c237...json (superseded; the lead removes it)"
   ],
   "round-4-new-content-verification": {
     "why": "the close added content no earlier round had seen. The lead flagged this rather than letting it ride, which is the right call — (c) frontmatter and (d) zone move were predicted by the round-3 receipt, but (a) and (b) were not reviewed.",

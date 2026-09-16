@@ -1,11 +1,11 @@
 {
   "reviewed-card-path": "tasks/done/388-move-review-receipts-to-a-tracked-durable-path.md",
-  "reviewed-card-sha256": "97348a96ec4560324c2efbac03e4e8073729f062cef42ef65cb3c7607a992560",
+  "reviewed-card-sha256": "52b05d30b4d24e5905229ced2ab83be2c0050bf0f77437252c182daf109eccca",
   "reviewed-card-sha256-algorithm": "plain sha256 over the card file bytes at 80fdccc (git blob fb8b41dce02aa32c573ca9a393d2e4b027f89c07; the working-tree file hashes identically, tree clean). NOT the CE canonical digest: the card sits in tasks/doing/ and declares no blocks:, so ce task validate never reaches the quality-review-receipt check and prints no canonical digest. Same situation as the TASK-382 and TASK-386 receipts. Migrated 2026-09-15 (TASK-401): the pin was a plain sha256 over the reviewed revision's bytes, which ce task validate can never match against the closed card; reissued as the CE canonical digest of the closed card — the exact value validate's own mismatch message prints. Review content, verdict and evidence are untouched.",
   "digest-scope-warning": "Because this is a plain file digest and not the CE canonical digest, it also covers the quality-review-receipt: line itself. When the author adds that pointer to this card, the file bytes change and this digest no longer matches the card as committed. That is inherent to the fallback and is why the algorithm field above is explicit; the digest pins what was reviewed (80fdccc), not what is finally committed.",
-  "receipt-path-note": "This receipt lives at the durable path this very card introduces: tasks/done/evidence/<TASK-ID>/done-review-<reviewed-card-sha256>.json, git-tracked, not under the gitignored tmp/.",
+  "receipt-path-note": "This receipt lives at the durable path this very card introduces: tasks/receipts/<TASK-ID>/done-review-<reviewed-card-sha256>.json, git-tracked, not under the gitignored tmp/.",
   "task": "TASK-388",
-  "title": "Move review receipts to a tracked durable path under tasks/done/evidence/",
+  "title": "Move review receipts to a tracked durable path under tasks/receipts/",
   "reviewer": "review-383 (Claude Opus 5, independent — did not author any part of this change)",
   "verdict": "pass",
   "verdict-final": true,
@@ -22,7 +22,7 @@
       "482a152 (round 3; fe6d825 before the rebase)",
       "80fdccc (round 4)"
     ],
-    "files": "54 files changed, 1894 insertions(+), 36 deletions(-) against 29f745b. The 18 moved receipt JSONs and 12 committed evidence .md.txt files account for nearly all of it; the prose changes are the card itself, tasks/done/evidence/README.md, AGENTS.md, ISSUE-001, ISSUE-012, and the 18 pointer lines in done/archive cards.",
+    "files": "54 files changed, 1894 insertions(+), 36 deletions(-) against 29f745b. The 18 moved receipt JSONs and 12 committed evidence .md.txt files account for nearly all of it; the prose changes are the card itself, tasks/receipts/README.md, AGENTS.md, ISSUE-001, ISSUE-012, and the 18 pointer lines in done/_archive cards.",
     "verdict": "in scope throughout. No source, tooling, Makefile, or unrelated doc was touched in any round. git status --porcelain empty in the worktree and in the primary checkout after every round. The tmp/ originals were not deleted."
   },
   "round-1": {
@@ -33,9 +33,9 @@
         "id": "F1",
         "severity": "high",
         "file": "tasks/doing/383-…md — the archive-receipt completion criterion",
-        "problem": "a criterion was marked [x] but its verify binding exited 1, because the 12 receipts under tasks/archive/ still pointed at tmp/. The box asserted something the binding contradicted.",
+        "problem": "a criterion was marked [x] but its verify binding exited 1, because the 12 receipts under tasks/_archive/ still pointed at tmp/. The box asserted something the binding contradicted.",
         "suggested": "either migrate the archive receipts too, or narrow the criterion to the scope actually done and say so",
-        "resolution": "fixed the stronger way in b3d16a1: all 12 tasks/archive/ receipts were migrated to tasks/done/evidence/TASK-<N>/, and the binding now exits 0. Re-measured by me, not taken on the author's word."
+        "resolution": "fixed the stronger way in b3d16a1: all 12 tasks/_archive/ receipts were migrated to tasks/receipts/TASK-<N>/, and the binding now exits 0. Re-measured by me, not taken on the author's word."
       },
       {
         "id": "F2",
@@ -49,7 +49,7 @@
         "id": "F3",
         "severity": "high",
         "file": "tasks/doing/383-…md — the evidence ordering for 'ce places no path constraint'",
-        "problem": "the card's primary evidence was the absence of a path-constraining error string in the ce binary. Absence of an error string does not prove absence of a constraint — the constraint could be enforced without a distinct message, or the message could be assembled at runtime. The genuinely probative evidence was the empirical one: receipts at tasks/done/evidence/ actually validate.",
+        "problem": "the card's primary evidence was the absence of a path-constraining error string in the ce binary. Absence of an error string does not prove absence of a constraint — the constraint could be enforced without a distinct message, or the message could be assembled at runtime. The genuinely probative evidence was the empirical one: receipts at tasks/receipts/ actually validate.",
         "suggested": "promote the empirical measurement to primary evidence and demote the string census to circumstantial support",
         "resolution": "done in b3d16a1 — the measurement is now 근거 1 and the string census is labelled 정황."
       },
@@ -91,7 +91,7 @@
         "file": "tasks/doing/383-…md",
         "problem": "the card asserted the migrated receipts were byte-identical to the originals but recorded no comparison.",
         "suggested": "record the cmp results in the card",
-        "resolution": "b3d16a1 recorded the 18-file cmp result in §실측 and §archive. I re-ran cmp independently on all 18 and confirmed byte identity, and confirmed each filename <sha> equals the receipt's own reviewed-card-sha256."
+        "resolution": "b3d16a1 recorded the 18-file cmp result in §실측 and §_archive. I re-ran cmp independently on all 18 and confirmed byte identity, and confirmed each filename <sha> equals the receipt's own reviewed-card-sha256."
       },
       {
         "id": "F9",
@@ -110,15 +110,15 @@
       {
         "id": "R2-1",
         "severity": "high",
-        "file": "tasks/done/evidence/TASK-{197,200,208,209,212,214,215,220,221,222,223,224}/done-review-*.json",
+        "file": "tasks/receipts/TASK-{197,200,208,209,212,214,215,220,221,222,223,224}/done-review-*.json",
         "problem": "the 12 migrated archive receipts were now tracked, but each one's inner evidence-path still pointed at tmp/task-management/direct/queue-run/…. The pointer was made durable while the thing it points at stayed gitignored — the defect was moved one level down, not removed.",
         "suggested": "commit the 12 evidence files beside their receipts, or redefine evidence-path as a provenance record rather than a path to follow, and say which",
-        "resolution": "fe6d825 did both: the 12 evidence files were committed as tasks/done/evidence/TASK-<N>/task-<N>-*.md.txt, and tasks/done/evidence/README.md re-defines evidence-path as '따라갈 경로가 아니라 출처 기록'. I verified all 12 files' sha256 against the evidence-sha256 recorded in their receipts: 12/12 match."
+        "resolution": "fe6d825 did both: the 12 evidence files were committed as tasks/receipts/TASK-<N>/task-<N>-*.md.txt, and tasks/receipts/README.md re-defines evidence-path as '따라갈 경로가 아니라 출처 기록'. I verified all 12 files' sha256 against the evidence-sha256 recorded in their receipts: 12/12 match."
       },
       {
         "id": "R2-2",
         "severity": "low",
-        "file": "tasks/done/evidence/README.md",
+        "file": "tasks/receipts/README.md",
         "problem": "the README stated that ce task validate reads every .md under tasks/ as a card. That is not the rule — the exemption is by filename (README.md), not by directory, which is exactly why this README is safe and why the evidence files had to be renamed.",
         "suggested": "state the actual rule, including that the exemption is filename-scoped",
         "resolution": "corrected in 80fdccc."
@@ -139,16 +139,16 @@
       {
         "id": "R3-1",
         "severity": "low",
-        "file": "tasks/done/evidence/README.md",
+        "file": "tasks/receipts/README.md",
         "problem": "carried over from R2-2 — the '모든 .md' rule was still inaccurate.",
         "suggested": "name the README.md exemption and say it is filename-scoped",
-        "resolution": "closed in 80fdccc. I re-measured the author's numbers myself: /usr/bin/find tasks -name '*.md' -not -path 'tasks/archive/*' gives 91; ce task validate --all validates 90; the single difference is tasks/done/evidence/README.md, the only README.md under tasks/. The corrected prose is accurate."
+        "resolution": "closed in 80fdccc. I re-measured the author's numbers myself: /usr/bin/find tasks -name '*.md' -not -path 'tasks/_archive/*' gives 91; ce task validate --all validates 90; the single difference is tasks/receipts/README.md, the only README.md under tasks/. The corrected prose is accurate."
       },
       {
         "id": "R3-2",
         "severity": "low",
         "file": "tasks/doing/388-…md §Completion Criteria",
-        "problem": "two pieces of new work still had no binding — that tasks/done/evidence/ contains no .md that validate would read as a card, and that ISSUE-001 records the ownership correction.",
+        "problem": "two pieces of new work still had no binding — that tasks/receipts/ contains no .md that validate would read as a card, and that ISSUE-001 records the ownership correction.",
         "suggested": "two criteria, given verbatim",
         "resolution": "both added in 80fdccc exactly as proposed. Both execute from the worktree root and exit 0; see verify-bindings. The author also hit and documented a real gotcha while writing them — a backtick inside a 'human — …' verify value closes the single-backtick fence prematurely."
       }
@@ -157,7 +157,7 @@
   "round-4": {
     "head-reviewed": "80fdccc",
     "verdict": "pass",
-    "diff": "2 files changed, 9 insertions(+), 4 deletions(-) — tasks/doing/388-…md (+10/-3) and tasks/done/evidence/README.md (+3/-1). Nothing else touched.",
+    "diff": "2 files changed, 9 insertions(+), 4 deletions(-) — tasks/doing/388-…md (+10/-3) and tasks/receipts/README.md (+3/-1). Nothing else touched.",
     "re-verified": [
       "both round-3 lows are genuinely closed, re-measured rather than accepted",
       "all six machine verify bindings executed; five exit 0, one exits 1 (see residual-findings/RF1)",
@@ -168,7 +168,7 @@
   "independent-verification": {
     "the-central-claim": {
       "claim": "installed ce 0.8.4 places no constraint on the receipt path",
-      "how-I-tested-it": "I did not accept the string census. I ran ce task validate --all against a checkout where receipts live under tasks/done/evidence/ and confirmed the receipt check passes there, and separately confirmed that the pre-change failures were read-failures of absent tmp/ files, not path rejections.",
+      "how-I-tested-it": "I did not accept the string census. I ran ce task validate --all against a checkout where receipts live under tasks/receipts/ and confirmed the receipt check passes there, and separately confirmed that the pre-change failures were read-failures of absent tmp/ files, not path rejections.",
       "verdict": "the claim holds, but only on the empirical evidence. Absence of a path-constraining error string in the binary does not by itself prove absence of a constraint; I said so in round 1 and the card's evidence ordering was changed accordingly."
     },
     "why-the-CE-canonical-digest-is-unavailable-here": {
@@ -176,11 +176,11 @@
       "consequence": "this receipt uses a plain file sha256 and says so in reviewed-card-sha256-algorithm. Precedent: the TASK-382 and TASK-386 receipts."
     },
     "validate-exemption-rule": {
-      "measured": "91 .md files under tasks/ excluding tasks/archive/; 90 cards validated; the difference is tasks/done/evidence/README.md",
-      "conclusion": "the exemption is by filename README.md, not by directory. tasks/archive/ is skipped wholesale, separately."
+      "measured": "91 .md files under tasks/ excluding tasks/_archive/; 90 cards validated; the difference is tasks/receipts/README.md",
+      "conclusion": "the exemption is by filename README.md, not by directory. tasks/_archive/ is skipped wholesale, separately."
     },
     "archive-diff-shape": {
-      "measured": "git show --numstat --format= HEAD -- 'tasks/archive/*.md' → 12 files, 12 insertions, 12 deletions",
+      "measured": "git show --numstat --format= HEAD -- 'tasks/_archive/*.md' → 12 files, 12 insertions, 12 deletions",
       "note": "my first measurement of this was wrong — I piped git show --numstat without --format= and awk counted commit-message lines into the totals (35/108/24). I caught and corrected it before reporting."
     }
   },
@@ -197,7 +197,7 @@
     {
       "binding": "make doc-check",
       "exit": 0,
-      "note": "doc-check OK; cilabels OK; flowcheck OK; planprogress OK; yamlcheck OK. Stale link paths reported are all under tasks/archive/ and pre-existing."
+      "note": "doc-check OK; cilabels OK; flowcheck OK; planprogress OK; yamlcheck OK. Stale link paths reported are all under tasks/_archive/ and pre-existing."
     },
     {
       "binding": "/usr/bin/grep -q 'tasks/receipts' AGENTS.md",
@@ -214,15 +214,15 @@
   ],
   "bindings-not-executed": [
     {
-      "binding": "human — cmp로 18건 확인, 이 카드 §실측과 §archive 절에 기록",
-      "reason": "human binding. Discharged more strongly: I ran cmp myself on all 18 pairs (6 done + 12 archive) against the surviving tmp/ originals — byte-identical — and confirmed each filename's <sha> equals the receipt's own reviewed-card-sha256."
+      "binding": "human — cmp로 18건 확인, 이 카드 §실측과 §_archive 절에 기록",
+      "reason": "human binding. Discharged more strongly: I ran cmp myself on all 18 pairs (6 done + 12 _archive) against the surviving tmp/ originals — byte-identical — and confirmed each filename's <sha> equals the receipt's own reviewed-card-sha256."
     },
     {
       "binding": "human — git diff --stat이 12 files / 12 insertions / 12 deletions인지 확인",
-      "reason": "human binding. Discharged by git show --numstat --format= HEAD~n -- 'tasks/archive/*.md' → exactly 12/12/12; each changed line is the quality-review-receipt: pointer and nothing else."
+      "reason": "human binding. Discharged by git show --numstat --format= HEAD~n -- 'tasks/_archive/*.md' → exactly 12/12/12; each changed line is the quality-review-receipt: pointer and nothing else."
     },
     {
-      "binding": "human — 12/12 대조, 이 카드의 archive 절에 기록",
+      "binding": "human — 12/12 대조, 이 카드의 _archive 절에 기록",
       "reason": "human binding. Discharged by hashing all 12 committed evidence files and comparing to the evidence-sha256 embedded in their receipts: 12/12 match."
     }
   ],
@@ -269,10 +269,10 @@
     }
   ],
   "checked-and-clean": [
-    "only the quality-review-receipt: line changed in each of the 6 done cards and each of the 12 archive cards — 18 pointer lines, nothing else",
+    "only the quality-review-receipt: line changed in each of the 6 done cards and each of the 12 _archive cards — 18 pointer lines, nothing else",
     "each migrated receipt's filename <sha> equals its own reviewed-card-sha256 field",
     "the tmp/ originals were not deleted; the migration is a copy, so the pre-change state remains inspectable",
-    "the AGENTS.md addition (the quality-review-receipt paragraph and the Repository Map line for tasks/done/evidence/) is accurate and carries the renumbered TASK-388",
+    "the AGENTS.md addition (the quality-review-receipt paragraph and the Repository Map line for tasks/receipts/) is accurate and carries the renumbered TASK-388",
     "ISSUE-001 remains open and now records the ownership correction rather than claiming resolution",
     "ISSUE-012 was filed for the parallel-worktree id collision that produced the 383 duplicate",
     "no file outside tasks/ and AGENTS.md was touched in any round"
@@ -296,9 +296,7 @@
     ]
   },
   "files-modified-by-reviewer": [
-    "tasks/done/evidence/TASK-388/done-review-52b05d30b4d24e5905229ced2ab83be2c0050bf0f77437252c182daf109eccca.json — this receipt, written at the author's explicit request because the author cannot write their own review receipt. Not committed by me."
+    "tasks/receipts/TASK-388/done-review-52b05d30b4d24e5905229ced2ab83be2c0050bf0f77437252c182daf109eccca.json — this receipt, written at the author's explicit request because the author cannot write their own review receipt. Not committed by me."
   ],
-  "files-temporarily-modified-and-restored": [],
-  "digest-kind": "ce-canonical-card-digest (reissued 2026-09-16, TASK-403)",
-  "digest-note": "Migrated 2026-09-16 (TASK-403): the receipts tree moved tasks/receipts/TASK-388 → tasks/done/evidence/TASK-388 and this card's two verify bindings were retargeted at tasks/done/evidence (the receipts location is now a canonical-zone storage layout after ce-agent-kit be821a2d enforced canonical task directories). The canonical digest excludes the quality-review-receipt pointer but includes the criteria body, so the binding edit moved the digest; the pin is reissued against the card as it now stands — the exact value validate's mismatch message prints. The receipt filename keeps the seal-time digest as the historical pin; filename and field can only agree at seal time. Review content, verdict and evidence are untouched."
+  "files-temporarily-modified-and-restored": []
 }

@@ -1,6 +1,6 @@
 ---
 id: TASK-403
-title: "Board gate cannot pass: make ce task lint CLEAN (canonicalize _archive, declare receipts)"
+title: "Board gate cannot pass: migrate _archive and receipts into canonical zones"
 type: chore
 priority: P1
 effort: M

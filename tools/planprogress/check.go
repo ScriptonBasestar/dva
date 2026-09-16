@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -96,20 +95,31 @@ func isPlanPath(rel string) bool {
 
 // isPlanCardFile reports whether a card file's frontmatter declares a plan id
 // ("PLAN-N"). Task cards declare TASK-N, so the id prefix is the whole test.
+// The fence scan is line-based: an index computed on a prefix-trimmed body can
+// clip the fence line itself and drop a closing id line from the scanned head.
 func isPlanCardFile(path string) bool {
 	body, err := os.ReadFile(path)
 	if err != nil {
 		return false
 	}
-	// Frontmatter is the leading --- block; scanning it avoids false hits in prose.
-	head := body
-	if end := bytes.Index(bytes.TrimPrefix(body, []byte("---\n")), []byte("\n---")); end >= 0 {
-		head = body[:end]
+	lines := strings.Split(string(body), "\n")
+	if len(lines) == 0 || strings.TrimSpace(lines[0]) != "---" {
+		return false
 	}
-	return planIDRE.Match(head)
+	end := -1
+	for i := 1; i < len(lines); i++ {
+		if strings.TrimSpace(lines[i]) == "---" {
+			end = i
+			break
+		}
+	}
+	if end < 0 {
+		return false
+	}
+	return planIDRE.MatchString(strings.Join(lines[1:end], "\n"))
 }
 
-var planIDRE = regexp.MustCompile(`(?m)^id: *PLAN-\d+`)
+var planIDRE = regexp.MustCompile(`(?m)^id: *"?PLAN-\d+`)
 
 func zoneFromPath(rel string) zone {
 	switch {

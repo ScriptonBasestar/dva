@@ -48,7 +48,7 @@
       "severity": "high",
       "kind": "record",
       "summary": "verification-evidence claimed an independent review with zero corroboration.",
-      "detail": "The clause 'independent review confirmed shared truncation contract' has no backing artifact. tasks/done/evidence/TASK-371/ did not exist. The card was filed in 36594bb2 (2026-09-10 12:33:49) and closed in 5fc87d79 (2026-09-10 12:49:49) — sixteen minutes apart, same author, and the sentence was introduced inside the implementer's own closing commit. AGENTS.md acquired the independent-review requirement at 17:50 the same day, after both commits.",
+      "detail": "The clause 'independent review confirmed shared truncation contract' has no backing artifact. tasks/receipts/TASK-371/ did not exist. The card was filed in 36594bb2 (2026-09-10 12:33:49) and closed in 5fc87d79 (2026-09-10 12:49:49) — sixteen minutes apart, same author, and the sentence was introduced inside the implementer's own closing commit. AGENTS.md acquired the independent-review requirement at 17:50 the same day, after both commits.",
       "disposition": "fixed",
       "resolution": "The clause is retracted in the card's verification-evidence and the retraction is restated in the body. Leaving it intact would have made this receipt appear to corroborate a review that never happened — and once the card is sealed by this receipt, that sentence would no longer be correctable (ISSUE-010)."
     },
@@ -79,6 +79,6 @@
     }
   ],
   "backdating-statement": "This review was performed on 2026-09-14. No part of it is backdated to 2026-09-10. The card's original 2026-09-10 verification stands as the implementer's own self-verification and is labelled as such.",
-  "lead-verification": "The card's author re-measured every load-bearing claim in this receipt independently before accepting it: the commit topology via git log --follow, the absence of tasks/done/evidence/TASK-371, the truncatedPercent source, and the TestTruncatedPercent table. The reviewer verified truncation by injecting 6/7 ad hoc; the tracked table was substituted as the durable evidence because an injected case disappears when the run ends.",
+  "lead-verification": "The card's author re-measured every load-bearing claim in this receipt independently before accepting it: the commit topology via git log --follow, the absence of tasks/receipts/TASK-371, the truncatedPercent source, and the TestTruncatedPercent table. The reviewer verified truncation by injecting 6/7 ad hoc; the tracked table was substituted as the durable evidence because an injected case disappears when the run ends.",
   "digest-scope-warning": "This pin is a CE canonical digest and is therefore compared on every ce task validate run. Any later edit to this card's body or to any frontmatter key other than the four excluded ones will turn the board red. Correcting this card after this point requires re-issuing a receipt against the new revision, not re-pinning this one."
 }

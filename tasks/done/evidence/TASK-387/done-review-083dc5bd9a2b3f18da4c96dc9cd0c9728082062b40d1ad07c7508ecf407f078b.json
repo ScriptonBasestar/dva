@@ -3,7 +3,7 @@
   "reviewed-card-sha256": "083dc5bd9a2b3f18da4c96dc9cd0c9728082062b40d1ad07c7508ecf407f078b",
   "reviewed-card-sha256-algorithm": "plain sha256 over the card file bytes at e70565c (git blob 6ce02acbbdb119004c2464b48c1f2b362205245d). NOT the CE canonical digest. Two independent reasons. (1) The check never runs for this card: internal/usecase/task/validator_receipt.go:38 returns early unless zoneFromPath(path) == tasks/done/, and :42 returns early unless blocks: is non-empty; this card is in tasks/doing/ and declares no blocks:, so ce task validate prints no canonical digest to copy. (2) The canonical digest of this card in its present form is not obtainable at all without first adding blocks:, and blocks: is inside the digest subject, so the probe would report a digest of the probe rather than of the card. Measured, not assumed - see independent-verification.seal-preconditions. Migrated 2026-09-15 (TASK-401): the pin was a plain sha256 over the reviewed revision's bytes, which ce task validate can never match against the closed card; reissued as the CE canonical digest of the closed card — the exact value validate's own mismatch message prints. Review content, verdict and evidence are untouched.",
   "digest-scope-warning": "This names the revision review-387 actually read: the card's bytes at e70565c. Closing the card will change those bytes - status: doing -> done, the added quality-review* frontmatter, and the move to tasks/done/ - so this filename's sha will not equal a plain sha256 of the committed card. That is expected and is not a defect in this receipt. It is also NOT the h(x) in x self-reference the board had assumed: card_digest.go:22-28 excludes quality-review-receipt from the digest subject precisely so a receipt can name its own card. See independent-verification.digest-convergence-is-achievable. HAZARD AND REMEDY: a plain sha256 can never equal the canonical digest, so if TASK-387 is ever given a blocks: entry and moved to tasks/done/, this pin becomes an unrecoverable hard error. Should that happen, do not re-pin this file - re-issue a receipt whose reviewed-card-sha256 is the CE canonical digest, obtained by finalising the card's other frontmatter and body first, pinning 0, and reading the expected value out of ce task validate's mismatch message. As the card stands (tasks/doing/, no blocks:) the check is unreachable and this pin is a provenance record, not a gate. MEASURED CORRECTION to the hazard above: switching this pin to the CE canonical digest today would NOT remove it. status: and blocks: are both inside the digest subject (probed on TASK-376: changing either alone moves the digest), so a canonical value computed at e70565c breaks at close just as the plain sha256 does. A durable canonical pin can only be taken after the card is finalised, which is a close-time act, not a review-time one. See independent-verification.digest-subject-includes-status-and-blocks.",
-  "receipt-path-note": "Written under the Git-tracked tasks/done/evidence/TASK-<N>/ path TASK-383 established and TASK-388 completed the migration to. Self-contained by design: findings and checks-run are inline, with no evidence-path pointer to an untracked file.",
+  "receipt-path-note": "Written under the Git-tracked tasks/receipts/TASK-<N>/ path TASK-383 established and TASK-388 completed the migration to. Self-contained by design: findings and checks-run are inline, with no evidence-path pointer to an untracked file.",
   "task": "TASK-387",
   "title": "Record dogfood run output artifacts",
   "reviewer": "review-387 (Claude Opus 5, independent; did not author the work under review)",
@@ -231,7 +231,7 @@
     {
       "id": "W1",
       "severity-if-real": "high",
-      "would-have-been": "tasks/done/evidence/TASK-376/done-review-9515457848...json cited as a fabricated path",
+      "would-have-been": "tasks/receipts/TASK-376/done-review-9515457848...json cited as a fabricated path",
       "why-withdrawn": "before sending, the reviewer verified the file existed byte-for-byte on the then-unmerged branch dev/claude/mbp/fix/durable-receipt-path at 2c22fe0c. The path was real but not yet on master.",
       "folded-into": "M1, restated as 'cites an unmerged branch's layout without saying so'",
       "recorded-because": "a reviewer's near-miss on a fabrication charge belongs in the record"
@@ -334,7 +334,7 @@
     ]
   },
   "files-modified-by-reviewer": [
-    "tasks/done/evidence/TASK-387/done-review-083dc5bd9a2b3f18da4c96dc9cd0c9728082062b40d1ad07c7508ecf407f078b.json (this file)"
+    "tasks/receipts/TASK-387/done-review-083dc5bd9a2b3f18da4c96dc9cd0c9728082062b40d1ad07c7508ecf407f078b.json (this file)"
   ],
   "files-temporarily-modified-and-restored": [
     "tasks/done/376-*.md, tasks/done/377-*.md, tasks/done/378-*.md, tasks/done/379-*.md - one appended comment line each for the §Reproduction run, each reverted with git checkout --",

@@ -72,7 +72,7 @@
     },
     {
       "command": "make doc-check",
-      "result": "exit 0 — doccheck OK (STALE lines are pre-existing archive/plan notices, non-fatal), cilabels OK, flowcheck OK, planprogress OK, yamlcheck OK"
+      "result": "exit 0 — doccheck OK (STALE lines are pre-existing _archive/plan notices, non-fatal), cilabels OK, flowcheck OK, planprogress OK, yamlcheck OK"
     },
     {
       "command": "make lint",
@@ -201,7 +201,7 @@
     "All six review steps were run; the items below are what was not checked within them.",
     "make build and make test-integration were not run.",
     "Whether CI actually invokes make doc-check on the branches that matter; only that doc-check runs planprogress locally and that cilabels lists doc-check as a (CI) target.",
-    "Behaviour on archived plans under tasks/archive/plan/ — loadPlans reads only tasks/plan/, and whether that is intended was not evaluated.",
+    "Behaviour on archived plans under tasks/_archive/plan/ — loadPlans reads only tasks/plan/, and whether that is intended was not evaluated.",
     "Pathological input beyond maxRangeSpan: no fuzzing, no timing.",
     "The card's own lifecycle (zone, frontmatter, close conditions) — the reviewer reviewed the change, not the card. That gap is filled by the card's 독립 리뷰 section and by this receipt.",
     "The other doc-check tools (doccheck, cilabels, flowcheck, yamlcheck) and their pre-existing STALE warnings."

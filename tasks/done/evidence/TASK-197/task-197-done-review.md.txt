@@ -6,7 +6,7 @@
 - verdict: `pass`
 - transition: `done -> done` (`reviewed` phase)
 
-The first review result was rejected because it proposed `done -> archive`, non-canonical fields, and a non-empty follow-up. After re-scan, the corrected read-only proposal satisfied the action contract.
+The first review result was rejected because it proposed `done -> _archive`, non-canonical fields, and a non-empty follow-up. After re-scan, the corrected read-only proposal satisfied the action contract.
 
 Observed evidence:
 

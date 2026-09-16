@@ -5,10 +5,13 @@ type: test
 priority: P2
 effort: M
 exec-tier: standard
-status: doing
+status: done
 created: 2026-09-06
 needs-human: true
 depends-on: [TASK-376, TASK-379]
+quality-review: pass
+quality-reviewed-at: 2026-09-16
+quality-review-receipt: "tasks/done/evidence/TASK-328/done-review-c2c8219271f5f37eb70fdc2eed9503d95f2416ff1f519a7e0d932de63f6374d1.json"
 ---
 
 ## Summary

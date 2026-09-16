@@ -5,8 +5,8 @@
   "reviewed-card-sha256": "0caf5ff7438c0c55b3820fa9248ac8451be0035618a5a57287e77b03cdce3645",
   "reviewed-card-sha256-algorithm": "plain sha256 over the card file bytes (shasum -a 256) at HEAD 68d356a, working tree clean apart from this receipt; git blob 21ddc0588591304f15619c1ce8c7e29c83bf8be1. NOT the CE canonical digest. Per the rule this card's own ISSUE-001 edit now states, a receipt should pin the canonical digest; that value is unobtainable for this card because it sits in tasks/doing/ and declares no blocks:, so ce task validate returns before computing it. Recording the limitation rather than presenting a plain sha256 as if it were the canonical one. Migrated 2026-09-15 (TASK-401): the pin was a plain sha256 over the reviewed revision's bytes, which ce task validate can never match against the closed card; reissued as the CE canonical digest of the closed card — the exact value validate's own mismatch message prints. Review content, verdict and evidence are untouched.",
   "supersedes": [
-    "tasks/done/evidence/TASK-389/done-review-4b084d74b5214c22f06434690a505bbba07e586308f95d1413458c5923430537.json (round 1, card at 7fc7111)",
-    "tasks/done/evidence/TASK-389/done-review-17dad580e56d3b5a76871013dc36ad8c471f1c647fb467f9c836d4402ef6bae9.json (round 2, card at 645a719)"
+    "tasks/receipts/TASK-389/done-review-4b084d74b5214c22f06434690a505bbba07e586308f95d1413458c5923430537.json (round 1, card at 7fc7111)",
+    "tasks/receipts/TASK-389/done-review-17dad580e56d3b5a76871013dc36ad8c471f1c647fb467f9c836d4402ef6bae9.json (round 2, card at 645a719)"
   ],
   "reviewer": "review-389 (Claude Opus 5, independent; did not author the work under review)",
   "reviewed-at": "2026-09-14",
@@ -107,10 +107,10 @@
     "the two open human criteria in ISSUE-012 §Resolution Criteria — they belong to the issue's eventual resolution, not to this task"
   ],
   "files-modified-by-reviewer": [
-    "tasks/done/evidence/TASK-389/done-review-0caf5ff7438c0c55b3820fa9248ac8451be0035618a5a57287e77b03cdce3645.json (this file)"
+    "tasks/receipts/TASK-389/done-review-0caf5ff7438c0c55b3820fa9248ac8451be0035618a5a57287e77b03cdce3645.json (this file)"
   ],
   "files-temporarily-created-and-removed": [
     "tasks/todo/999-probe-duplicate-id.md (round 1 DUP-ID probe)",
-    "tasks/done/997-digest-probe-card.md and tasks/done/evidence/TASK-997/{probe.json,probe2.json} (round 1 digest-coverage and blocks: probes)"
+    "tasks/done/997-digest-probe-card.md and tasks/receipts/TASK-997/{probe.json,probe2.json} (round 1 digest-coverage and blocks: probes)"
   ]
 }

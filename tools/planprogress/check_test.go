@@ -270,6 +270,41 @@ func TestBuildTaskIndexWalksNestedArchiveAndSkipsPlanDir(t *testing.T) {
 	}
 }
 
+func TestIsPlanCardFileFenceShapes(t *testing.T) {
+	root := t.TempDir()
+	// The id-last shape is the regression this filter exists for: an index
+	// computed on a prefix-trimmed body clipped the closing fence line and
+	// dropped it from the scan, so the card was indexed as a TASK again.
+	files := map[string]string{
+		"id-first.md":             "---\nid: PLAN-005\ntype: plan\nstatus: done\n---\n",
+		"id-last.md":              "---\ntype: plan\nstatus: done\nid: PLAN-005\n---\n",
+		"id-quoted.md":            "---\ntype: plan\nid: \"PLAN-005\"\n---\n",
+		"task-card.md":            "---\nid: TASK-30\nstatus: done\n---\n",
+		"plan-mention-in-body.md": "---\nid: TASK-31\nstatus: done\n---\n\nbody mentions id: PLAN-005 in prose\n",
+	}
+	for rel, content := range files {
+		full := filepath.Join(root, rel)
+		if err := os.WriteFile(full, []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	tests := []struct {
+		file string
+		want bool
+	}{
+		{"id-first.md", true},
+		{"id-last.md", true},
+		{"id-quoted.md", true},
+		{"task-card.md", false},
+		{"plan-mention-in-body.md", false},
+	}
+	for _, tt := range tests {
+		if got := isPlanCardFile(filepath.Join(root, tt.file)); got != tt.want {
+			t.Errorf("isPlanCardFile(%s) = %v, want %v", tt.file, got, tt.want)
+		}
+	}
+}
+
 func TestBuildTaskIndexSkipsPlanCardsInDatedArchivePartition(t *testing.T) {
 	root := t.TempDir()
 	files := map[string]string{

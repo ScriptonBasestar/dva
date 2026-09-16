@@ -1,0 +1,17 @@
+{
+  "task": "TASK-328",
+  "title": "Run a live dogfood verification round for native entries and composition plans",
+  "reviewer": "review-328 (independent reviewer agent, Claude — did not author the reviewed work)",
+  "verdict": "pass",
+  "verdict-final": true,
+  "reviewed-at": "2026-09-16",
+  "head-reviewed": "a7f37adf (master; the four task commits 9d549f06, c709cb1c, 64955bad, 77b08e7d plus review-fix commit a7f37adf)",
+  "review-rounds": 1,
+  "scope": "docs/dogfood/familybook.md, flow-taskchain.md, primeno1.md live-round report blocks; the TASK-328 card and its criteria; TASK-402 defect card boarding",
+  "summary": "Verified criterion 3's grep pass is reproducible against tasks/plan/006-devbox-dogfood-followup.md; confirmed all three docs carry harness-format report blocks (conditional failure bullet present only for the two axes with failed up steps, matching tools/dogfoodrun/dogfood-run.sh logic), each within the 10240-byte budget; cross-checked the card's exit-code narrative against the committed tables (familybook all-zero, flow-taskchain up 143 / status 1 / down 0, primeno1 gate exits); confirmed the evidence claim survives the tmp log cleanup because the committed reports are the durable record.",
+  "findings": [
+    "F1 (fixed in a7f37adf): untracked TASK-402 card broke make doc-check — missing status frontmatter and a go test -run binding naming a nonexistent test",
+    "F2 (fixed in a7f37adf): 328 card's defect mention lacked a [[TASK-402]] wikilink"
+  ],
+  "reviewed-card-sha256": "c2c8219271f5f37eb70fdc2eed9503d95f2416ff1f519a7e0d932de63f6374d1"
+}

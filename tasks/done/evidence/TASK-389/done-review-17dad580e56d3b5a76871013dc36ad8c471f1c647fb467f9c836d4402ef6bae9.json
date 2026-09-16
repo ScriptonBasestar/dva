@@ -4,7 +4,7 @@
   "reviewed-card-path": "tasks/doing/389-correct-issue-012-duplicate-id-claim-and-record-pin-drift.md",
   "reviewed-card-sha256": "17dad580e56d3b5a76871013dc36ad8c471f1c647fb467f9c836d4402ef6bae9",
   "reviewed-card-sha256-algorithm": "plain sha256 over the card file bytes (shasum -a 256) at HEAD 645a719, working tree clean apart from this receipt; git blob 09e5d5dc6835e8e0b0bb0c955eebdbfe18a85a5a. NOT the CE canonical digest: the card sits in tasks/doing/ and declares no blocks:, so ce task validate never reaches the quality-review-receipt check and prints no canonical digest. Per the rule this card's own ISSUE-001 edit now states, a canonical digest is what a receipt should pin; it is unobtainable for this card in its current zone without a blocks: declaration, and that limitation is recorded here rather than papered over.",
-  "supersedes": "tasks/done/evidence/TASK-389/done-review-4b084d74b5214c22f06434690a505bbba07e586308f95d1413458c5923430537.json (round 1, card at 7fc7111)",
+  "supersedes": "tasks/receipts/TASK-389/done-review-4b084d74b5214c22f06434690a505bbba07e586308f95d1413458c5923430537.json (round 1, card at 7fc7111)",
   "reviewer": "review-389 (Claude Opus 5, independent; did not author the work under review)",
   "reviewed-at": "2026-09-14",
   "verdict": "conditional",
@@ -20,7 +20,7 @@
       "F1": "FIXED — the section now lists all four excluded keys (quality-review, quality-reviewed-at, quality-review-receipt, review_status) and states that only quality-review-evidence sits inside the digest subject. Re-read reviewSubjectExcluded() in ce-agent-kit card_digest.go: the four keys match exactly.",
       "F2": "FIXED — the heading changed from 'pin은 카드를 닫는 행위 자체로 무효화된다 — 구조적 드리프트' to 'pin이 버티느냐는 receipt가 어느 digest를 박았는지가 정한다', and a new subsection carries the TASK-376..379 four-row table with the inversion '닫는 것이 구조적으로 pin을 무효화한다면 이 넷이 존재할 수 없다'. Every digit in the table re-measured and correct.",
       "F3": "FIXED — canonical digest and plain file sha256 are defined separately at the head of the section, with an explicit note that ce task validate compares only the canonical one. The consequence this reviewer raised is stated too: a plain sha256 becomes an unrecoverable hard error the moment blocks: is added.",
-      "F4": "FIXED — the 18-pointer evidence is re-seated on TASK-376..379. Verified: f84259c retargeted the quality-review-receipt line of all four (tmp/task-management/... -> tasks/done/evidence/TASK-37N/...), and all four still validate Valid.",
+      "F4": "FIXED — the 18-pointer evidence is re-seated on TASK-376..379. Verified: f84259c retargeted the quality-review-receipt line of all four (tmp/task-management/... -> tasks/receipts/TASK-37N/...), and all four still validate Valid.",
       "F5": "FIXED in ISSUE-001 ('quality-review* 줄은 넷이다'), NOT fixed in the TASK-389 card itself — see R1.",
       "F6": "FIXED — criterion 2 is now [x]."
     },
@@ -88,6 +88,6 @@
     "that the ce-agent-kit source read here (v0.8.4-194-g8d1d183e) is byte-identical to the installed binary (0.8.4); all digest and blocks: measurements were taken with the installed binary and the source was read only for corroboration"
   ],
   "files-modified-by-reviewer": [
-    "tasks/done/evidence/TASK-389/done-review-17dad580e56d3b5a76871013dc36ad8c471f1c647fb467f9c836d4402ef6bae9.json (this file)"
+    "tasks/receipts/TASK-389/done-review-17dad580e56d3b5a76871013dc36ad8c471f1c647fb467f9c836d4402ef6bae9.json (this file)"
   ]
 }
