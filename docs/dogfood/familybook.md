@@ -78,3 +78,47 @@ EXIT=0   (warning 1 — 의도적 예외)
   빈 `integration: {}`를 추가해야 `--controller-config`로 통합 가능했다(prepareProfile 미지정 시 준비 단계 생략).
 - 발견: composition plan에 `environment:`/`site:`를 두면 validate ERROR라 삭제했다(§2 문서에 명시 필요, TASK-323).
 - `dva --dry-run up hybrid`는 wave 순서를 올바르게 출력하고 블록되지 않음(TASK-312는 entries가 있는 plan에서만 재현).
+
+## 실기동 (2026-09-16 14:52:40, dva version 0.2.0)
+
+- 대상: `/Users/archmagece/mydevbox/familybook-devbox/dva.yaml`
+- 하네스: `tools/dogfoodrun/dogfood-run.sh --execute familybook`
+- compose 프로젝트: familybook-devbox
+- 전체 출력: `tmp/dogfood-run/familybook-20260916-145240.log`
+
+
+| 명령 | exit | 마지막 출력 줄 |
+|------|------|----------------|
+| `/Users/archmagece/worktrees/misc/dva/claude__mbp__test__task-328/bin/dva validate` | 0 | ✅ dva.yml is valid |
+| `/Users/archmagece/worktrees/misc/dva/claude__mbp__test__task-328/bin/dva ls` | 0 |   monitoring  # monitoring |
+| `/Users/archmagece/worktrees/misc/dva/claude__mbp__test__task-328/bin/dva up dev` | 0 | outcome: up |
+| `/Users/archmagece/worktrees/misc/dva/claude__mbp__test__task-328/bin/dva status` | 0 |   redis      running   healthy |
+| `/Users/archmagece/worktrees/misc/dva/claude__mbp__test__task-328/bin/dva down dev --purge --project infra --force` | 0 | outcome: down |
+
+### 선행 확인
+
+설정 파일 이름이 아직 `dva.yaml`이다 (TASK-329로 개명 대기). composition plan은
+`--purge`에 `--project <child>`가 필수라 teardown이 infra 하위로 스코프된다
+(internal/cli/composition_flags.go). backend/dev·frontend/dev는 자식 저장소의
+native plan이라 purge 대상이 아니다.
+
+### purge 미리보기 (파괴적 단계 실행 전)
+
+```text
+## purge 미리보기 — familybook
+`dva down ... --purge`는 아래 프로젝트를 `docker compose down --remove-orphans --volumes --rmi local`로 지운다.
+
+### compose project: familybook-devbox
+  containers:
+    familybook-postgres  [running]  postgres:16-alpine
+    familybook-redis  [running]  redis:7-alpine
+  volumes:
+    familybook-postgres-data
+    familybook-redis-data
+  networks:
+    familybook-dev-network
+  images: (없음)
+  networks (이름만 비슷함 — purge 대상 아님): (없음)
+  volumes (이름만 비슷함 — purge 대상 아님): (없음)
+```
+

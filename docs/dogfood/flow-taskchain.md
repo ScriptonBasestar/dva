@@ -55,3 +55,42 @@ exit=0   (warning 4 — 모두 사전 존재하던 Makefile suggestion: gap-303-
 - 발견(dva 결함, TASK-324): composes만 있는 두 plan(`local-dev`, `local-full`)이 서로 다른 composes를 가져도
   "declare equal environment, site, vars, endpoint_tags, and entries" warning이 뜬다 — `plansHaveEqualDeclaration`이 `Composes`를 비교하지 않음.
 - 발견: `subprojects:`를 `endpoints:` 뒤에 두면 canonical section order warning(TASK-318 범위).
+
+## 실기동 (2026-09-16 14:53:59, dva version 0.2.0)
+
+- 대상: `/Users/archmagece/mydevbox/flow-taskchain-devbox/dva.yml`
+- 하네스: `tools/dogfoodrun/dogfood-run.sh --execute flow-taskchain`
+- compose 프로젝트: taskchain
+- 전체 출력: `tmp/dogfood-run/flow-taskchain-20260916-145359.log`
+
+- 기동 스텝이 실패한 뒤 파괴적 스텝 `down local-dev --purge (scoped to local-infra)`에 도달했다.
+| 명령 | exit | 마지막 출력 줄 |
+|------|------|----------------|
+| `/Users/archmagece/worktrees/misc/dva/claude__mbp__test__task-328/bin/dva validate` | 0 | ✅ dva.yml is valid (102 suggestions ignored by dva.yml) |
+| `/Users/archmagece/worktrees/misc/dva/claude__mbp__test__task-328/bin/dva ls` | 0 |   portal/dev        # Frontend portal (SvelteKit) — :10001 as a native process (infrastruc |
+| `/Users/archmagece/worktrees/misc/dva/claude__mbp__test__task-328/bin/dva up local-dev` | 143 | [+] started mcp |
+| `/Users/archmagece/worktrees/misc/dva/claude__mbp__test__task-328/bin/dva status` | 1 | ERROR: composition "local-dev" is not fully up |
+| `/Users/archmagece/worktrees/misc/dva/claude__mbp__test__task-328/bin/dva down local-dev --purge --project local-infra --force` | 0 | outcome: down |
+
+### 선행 확인
+
+composition plan이라 teardown은 `--project local-infra`로 스코프된다. engine/mcp/portal은
+자식 저장소의 native plan이며 purge 대상이 아니다.
+
+### purge 미리보기 (파괴적 단계 실행 전)
+
+```text
+## purge 미리보기 — flow-taskchain
+`dva down ... --purge`는 아래 프로젝트를 `docker compose down --remove-orphans --volumes --rmi local`로 지운다.
+
+### compose project: taskchain
+  containers: (없음)
+  volumes: (없음)
+  networks: (없음)
+  images: (없음)
+  networks (이름만 비슷함 — purge 대상 아님): (없음)
+  volumes (이름만 비슷함 — purge 대상 아님):
+    taskchain-qa024_postgres-data
+    taskchain-qa024_redis-data
+```
+

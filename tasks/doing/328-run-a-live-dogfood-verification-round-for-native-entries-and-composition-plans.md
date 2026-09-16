@@ -5,7 +5,7 @@ type: test
 priority: P2
 effort: M
 exec-tier: standard
-status: todo
+status: doing
 created: 2026-09-06
 needs-human: true
 depends-on: [TASK-376, TASK-379]
@@ -136,6 +136,47 @@ pipechain_pipechain`, 잔여 pipechain 계열 네트워크 0건 확인. 서브�
 이제 가용하고 **flow-taskchain 축의 환경 장벽은 사라졌다**(pipechain이 다시 그
 서브넷을 필요로 하면 그때 재생성하면 된다 — 사용자 결정). 남은 사람 결정은 둘:
 (2) familybook 고아 볼륨·네트워크 purge 동의, (3) `SIGDOCK_CLIENTS_FILE` 값 지정.
+
+### 2026-09-16 실기동 회차 — 세 축 전부 실행, 결함 1건 수정·통합, 환경 장벽 3건 기록
+
+사람 결정 (1)(2)와 SOPS age 키 제공이 선행된 뒤 사람 세션에서 3개 대상을 전부
+실행했다. 증거 로그는 `tmp/`(gitignore) 아래 `tmp-familybook-round3.log`,
+`tmp-taskchain-round3.log`, `tmp-primeno1-round2.log`/`round3.log`.
+
+- **familybook — 완주, 전 스텝 exit=0.** 1차는 Docker address pool 소진(사람 결정으로
+  미사용 네트워크 23건 prune), 2차는 27분 무응답 — 원인은 devbox 측:
+  `scripts/devbox.sh backend-run`이 `bin/familybook-server`를 요구하는데 빌드된 적이
+  없어 즉사(exit 3), dva의 readiness 게이트는 컨텍스트 데드라인 없이 2초 폴링이라
+  `up dev`가 영원히 돌아간다. **dva 결함 후보 1건** — native 엔트리 프로세스가 즉사해도
+  up이 fail-fast하지 않는 것(아래 신규 카드). `dva run backend-generate`+`backend-build`
+  선행 후 3차 회차가 validate/ls/up dev/status/down --purge 전부 exit=0. 리포트 블록은
+  `docs/dogfood/familybook.md`에 그대로 붙였다.
+- **flow-taskchain — 결함 2건. (1) 수정·통합, (2) 엔진 카드로 승격.** 1~2차는
+  `postgres:18` 이미지가 구경로 마운트(`/var/lib/postgresql/data`)를 거부하는
+  crash-loop로 `up -d --wait`가 타임아웃 없이 대기. devbox 저장소에 [[TASK-166]]로
+  승격해 compose.infra/e2e 두 파일의 마운트를 18 레이아웃 부모경로로 고치고(healthy
+  부팅 + 볼륨 영속 검증) `origin/develop`에 통합 완료(c67a51d6). 수정본 위 3차 회차:
+  infra postgres·redis healthy 확인(수정 효과 실측) → native 구간에서 mcp는 기동(포트
+  10002 리슨)했으나 engine이 스폰 즉시 panic — `bug_reports does not exist: no such
+  table`(BACKEND=sqlite 표기 + 빌드 태그 없는 `make run` → in-memory store와 sqlite
+  파일 마이그레이션 혼용). 엔진 저장소 보드에 카드로 승격(flow-taskchain-engine
+  TASK-135). 회차는 up exit=143(무한대기에 빠진 up을 사람 세션이 종료 — 위 dva 결함),
+  status exit=1(정상 오류 보고), down --purge exit=0으로 완주했고 리포트 블록을
+  `docs/dogfood/flow-taskchain.md`에 그대로 붙였다. 환경 기록: host :10010/:10020에
+  기존 ssh 터널이 리슨 중 — 컨테이너 포트맵이 아니라 터널이 응답할 수 있다.
+- **primeno1 — 게이트 진전, 크로스레포 드리프트 1건.** 사전 준비로 해소된 것:
+  `SIGDOCK_CLIENTS_FILE` 등 부트스트랩 자재 6종 export(사람 결정 (3)),
+  `make env-unseal`(age 키), 잔존 `sigdock-idp-postgres-1` exited 컨테이너 제거로
+  관문 9·10 충족. 2·3차 회차 동일 결과: `up dev`가 게이트 안 `adjacent_dva up infra`의
+  서비스 테이블 출력까지만 가고 `/healthz` 60초 타임아웃(exit 1). 원인은 게이트가 아닌
+  인접 devbox 드리프트 — sigdock-idp-devbox의 현재 `infra` 플랜은 "코어 인프라 전용,
+  서버는 직접 native 실행"이라 IdP를 띄우지 않는다(수동 `adjacent_dva up infra` 재현,
+  `docker ps`에 sigdock-idp 컨테이너 부재 실측). primeno1-devbox 보드에 카드로 승격
+  (TASK-203). `up external-db`는 설계된 opt-in fail-closed:
+  `PRIMENO1_EXTERNAL_DB_ENV_FILE`(Platform/SRE 발급 repo 밖 credential 7키)이 이
+  워크스테이션에 없어 exit 1 — 결함 아님, 사람 발급 전까지 통과 불가. down 스텝은 두
+  플랜 모두 exit=0(게이트가 소유한 자원만 정리). 리포트 블록은
+  `docs/dogfood/primeno1.md`에 그대로 붙였다.
 
 ## Completion Criteria
 
