@@ -4,8 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
+	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/ScriptonBasestar/dva/internal/config"
 )
@@ -535,13 +539,101 @@ func (o *Orchestrator) waitEntriesReady(ctx context.Context, names []string) err
 		}
 		entryEnv := o.env.Clone()
 		entryEnv.MergeVars(entry.Vars)
-		for _, result := range o.hc.WaitUntilReadyWithContext(ctx, entry.HealthChecks, entryEnv.WorkDir(), entryEnv) {
-			if !result.Ready {
-				return fmt.Errorf("entry %q health check %q not ready", entry.Name, result.Name)
-			}
+		if err := o.waitEntryReady(ctx, entry, entryEnv); err != nil {
+			return err
 		}
 	}
 	return nil
+}
+
+// livenessPollInterval matches the health-check poll cadence (health.go): a native
+// run command that died right after spawn is caught within one interval.
+const livenessPollInterval = 2 * time.Second
+
+// defaultReadyTimeout is the readiness ceiling a health check gets when it declares
+// no ready_timeout — the same ceiling the single-plan startModeProcesses wait applies.
+const defaultReadyTimeout = 30 * time.Second
+
+// waitEntryReady gates one entry. Two bounds close the forever-polling window
+// TASK-402 measured: the wait carries a deadline derived from the entry's health
+// checks' ready_timeout, and while the checks are pending the entry's pidfile is
+// rechecked, so a native run command that exited after spawn fails `up` within one
+// poll interval — with its log path — instead of hanging until the deadline.
+func (o *Orchestrator) waitEntryReady(ctx context.Context, entry config.LifecycleEntry, entryEnv *config.Environment) error {
+	timeout := entryReadyTimeout(entry)
+	waitCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	resultsCh := make(chan []HealthCheckResult, 1)
+	go func() {
+		resultsCh <- o.hc.WaitUntilReadyWithContext(waitCtx, entry.HealthChecks, entryEnv.WorkDir(), entryEnv)
+	}()
+
+	ticker := time.NewTicker(livenessPollInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case results := <-resultsCh:
+			for _, result := range results {
+				if !result.Ready {
+					if waitCtx.Err() == context.DeadlineExceeded {
+						return fmt.Errorf("entry %q not ready within %s (ready_timeout)", entry.Name, timeout)
+					}
+					return fmt.Errorf("entry %q health check %q not ready", entry.Name, result.Name)
+				}
+			}
+			return nil
+		case <-ctx.Done():
+			return fmt.Errorf("entry %q readiness wait cancelled: %w", entry.Name, ctx.Err())
+		case <-ticker.C:
+			if pid, known := o.entryPid(entry); known && !IsProcessRunning(pid) {
+				return fmt.Errorf("entry %q native process (pid %d) exited before becoming ready — see %s",
+					entry.Name, pid, entryLogPath(o.cfg.FileDir(), entry.Name))
+			}
+		}
+	}
+}
+
+// entryReadyTimeout returns the largest ready_timeout declared across the entry's
+// health checks, or defaultReadyTimeout when none declares one — the same per-check
+// semantics the single-plan wait path applies to its single check.
+func entryReadyTimeout(entry config.LifecycleEntry) time.Duration {
+	timeout := time.Duration(0)
+	for _, check := range entry.HealthChecks {
+		if d := time.Duration(check.ReadyTimeout) * time.Second; d > timeout {
+			timeout = d
+		}
+	}
+	if timeout == 0 {
+		return defaultReadyTimeout
+	}
+	return timeout
+}
+
+// entryPid reads the native pidfile for the entry, reporting known=false when the
+// entry is not a process/native entry or no readable pidfile exists — those wait
+// on their health checks alone.
+func (o *Orchestrator) entryPid(entry config.LifecycleEntry) (int, bool) {
+	if entry.Process == nil {
+		return 0, false
+	}
+	data, err := os.ReadFile(entryPidPath(o.cfg.FileDir(), entry.Name))
+	if err != nil {
+		return 0, false
+	}
+	pid, err := strconv.Atoi(strings.TrimSpace(string(data)))
+	if err != nil {
+		return 0, false
+	}
+	return pid, true
+}
+
+func entryPidPath(cfgDir, name string) string {
+	return filepath.Join(cfgDir, config.DotDirName, config.PidsDirName, name+".pid")
+}
+
+func entryLogPath(cfgDir, name string) string {
+	return filepath.Join(cfgDir, config.DotDirName, config.LogsDirName, name+".log")
 }
 
 func executionPlanEntryNames(plan *ExecutionPlan) []string {

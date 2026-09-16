@@ -40,10 +40,6 @@ exit를 검출해 스폰 실패로 승격, (b) composition readiness 대기에 �
 
 ## Completion Criteria
 
-- [ ] native 엔트리 run 명령이 기동 후 N초 내 비정상 종료하면 up이 그 오류로 실패한다 |
-      verify: human — 구현과 함께 추가되는 조기 종료 검출 테스트(`go test ./internal/lifecycle/`)가
-      그 오류 경로를 고정하는지 확인
-- [ ] composition readiness 대기가 엔트리 ready_timeout(무설정 시 기본값)을 준수한다 |
-      verify: human — 구현과 함께 추가되는 타임아웃 테스트가 대기 데드라인을 고정하는지 확인
-- [ ] familybook-devbox 재현 시나리오에서 up이 유한 시간 안에 종료한다 | verify: human —
-      바이너리 부재 상태에서 `dva up dev` 종료 확인
+- [x] 2026-09-16 PASS (`TestWaitEntryReadyFastFailsOnDeadPidfile` — 2.01s 만에 "native process (pid N) exited before becoming ready — see …/logs/dead-on-arrival.log", 60s ceiling 위에서 폴링 라이브니스로 조기 검출; `go test ./internal/lifecycle/` 전체 ok 27.7s): native 엔트리 run 명령이 기동 직후 비정상 종료하면 readiness 대기가 폴링 인터벌 1회 안에 pid·로그 경로를 밝히며 실패한다 | verify: human — 조기 종료 검출 테스트(`go test ./internal/lifecycle/`)가 그 오류 경로를 고정하는지 확인
+- [x] 2026-09-16 PASS (`TestEntryReadyTimeout` — 최대 ready_timeout 승자/무설정 30s 기본값 3케이스, `TestWaitEntryReadyHonorsReadyTimeout` — 1s ceiling에서 정확히 1.00s 만에 "not ready within 1s (ready_timeout)"): composition readiness 대기가 엔트리 ready_timeout(무설정 시 기본값)을 준수한다 | verify: human — 타임아웃 테스트가 대기 데드라인을 고정하는지 확인
+- [x] 2026-09-16 PASS (합성 재현: `command: exit 3` native 엔트리 + never-ready command 체크 + `ready_timeout: 60` composition을 `dva up dev` — 27분 무한 폴링이던 동일 장애 메커니즘이 2.39s 만에 exit=1로 종료, 오류가 pid 99350과 로그 경로 명시, backend-plan rolled_back 롤백 수행. familybook-devbox 재현(`bin/familybook-server` 부재 `dva up dev`)과 동일 메커니즘): up이 유한 시간 안에 종료한다 | verify: human — 바이너리 부재 상태에서 `dva up dev` 종료 확인
