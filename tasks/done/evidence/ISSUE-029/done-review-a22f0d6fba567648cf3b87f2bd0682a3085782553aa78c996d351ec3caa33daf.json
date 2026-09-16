@@ -1,0 +1,17 @@
+{
+  "task": "ISSUE-029",
+  "title": "16 done cards sit below the review-stage schema and hold the integration gate red",
+  "reviewer": "review-404-issue29 (independent reviewer agent, Claude — did not author the reviewed work)",
+  "verdict": "pass",
+  "verdict-final": true,
+  "reviewed-at": "2026-09-17",
+  "head-reviewed": "dva master d4681a2",
+  "review-rounds": 1,
+  "scope": "ISSUE-029 카드 기준 3건과 완료 주장의 실측 대조 — ce 0.8.4 validate --all/gate 재실행, 5f184c7 수리 전표(3부류 16장 복원 + 9수신 재발행)와 커밋 diff, 6ced29d→d4681a2 master 서열과 패스트포워드 통합·태스크 브랜치·워크트리 회수, 3부류 표본(348·328·399) frontmatter 검증",
+  "summary": "카드의 주장이 끝까지 확인됐다: 보드는 0 invalid로 validate되고 게이트는 카드가 명시한 동일 ce 0.8.4 바이너리에서 READY다. 수리 커밋 5f184c7은 실제 패스트포워드 통합으로 master에 있고 그 전표는 16장의 3부류 복원(5 리스트→스칼라/4 수신 재수록/6 레거시/399 판정 복원)과 사용자 승인(2026-09-17 '① 수신 9장 재발행') 9수신 재발행을 충실히 기록한다. 블록됐던 TASK-404 통합은 4커밋 서열(6ced29d→b9d4e84→9308ba9→5f184c7)의 패스트포워드 착지와 태스크 브랜치·워크트리 회수로 회복됐음이 입증됐고, 3부류 표본 검증에서 frontmatter 수리와 재발행 수신(핀=파일명 digest)이 서술과 정확히 일치한다. 유일한 불일치는 사후 발행된 ISSUE-030으로 인한 124→125 benign 카운트 드리프트와, 이 카드가 스스로 예고한 별도 마감 주기의 진행 중 워크트리 관찰뿐이다.",
+  "findings": [
+    "F1 (non-blocking): validate 실측은 125 valid 0 invalid — 124는 5f184c7 시점 기준값으로 정확했고 증분 1장은 수리 이후 발행된 ISSUE-030(d4681a2)이다. 0 invalid와 READY는 그대로 성립",
+    "F2 (non-blocking, 관찰): 마감 주기 워크트리+브랜치(404-issue-029-close)가 d4681a2에서 활성 — master 팁과 동일해 묶인 작업은 없으며, 카드가 예고한 별도 done 전이 주기 그 자체다"
+  ],
+  "reviewed-card-sha256": "a22f0d6fba567648cf3b87f2bd0682a3085782553aa78c996d351ec3caa33daf"
+}

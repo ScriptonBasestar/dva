@@ -2,13 +2,18 @@
 id: ISSUE-029
 title: "16 done cards sit below the review-stage schema and hold the integration gate red"
 type: bug
-status: todo
+status: done
 priority: P1
 severity: high
 ownership: local
 created: 2026-09-16
 discovered-at: 2026-09-16
 discovered-in: "TASK-404 카드 통합 시도(2026-09-16) — run-finish가 게이트 red로 블록"
+quality-review: pass
+quality-reviewed-at: 2026-09-17
+quality-review-session: "review-404-issue29 (independent subagent)"
+quality-review-receipt: "tasks/done/evidence/ISSUE-029/done-review-a22f0d6fba567648cf3b87f2bd0682a3085782553aa78c996d351ec3caa33daf.json"
+quality-review-evidence: "독립 리뷰(review-404-issue29) 판정 pass 재수록(2026-09-17) — 전문은 quality-review-receipt 수신 파일에 있다. 기준 실측(ce 0.8.4 validate --all 0 invalid + gate READY, 5f184c7의 3부류 16장 복원과 9수신 재발행 전표, 6ced29d→d4681a2 착지 서열과 태스크 브랜치·워크트리 회수, 3부류 표본 348·328·399 검증)을 독립 재실행·확인했다"
 ---
 
 ## Summary
