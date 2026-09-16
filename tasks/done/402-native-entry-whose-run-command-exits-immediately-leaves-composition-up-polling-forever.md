@@ -5,7 +5,10 @@ type: bug
 priority: P1
 effort: M
 created: 2026-09-16
-status: doing
+status: done
+quality-review: pass
+quality-reviewed-at: 2026-09-16
+quality-review-receipt: "tasks/done/evidence/TASK-402/done-review-f856e29ba0d08c2da70b202b866904f709b1c8c3c0ca44725d7f570ba1a2a02f.json"
 ---
 
 ## Summary

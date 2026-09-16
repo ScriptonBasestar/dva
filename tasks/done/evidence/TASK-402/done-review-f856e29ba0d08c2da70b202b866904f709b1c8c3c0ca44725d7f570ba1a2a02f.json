@@ -1,0 +1,20 @@
+{
+  "task": "TASK-402",
+  "title": "Native entry whose run command exits immediately leaves composition up polling forever",
+  "reviewer": "review-402 (independent reviewer agent, Claude — did not author the reviewed work)",
+  "verdict": "pass",
+  "verdict-final": true,
+  "reviewed-at": "2026-09-16",
+  "head-reviewed": "550e07b2 (master; fix commit 550e07b2 plus card-move commit d83a3ea3, diff 19e4ffb6..550e07b2)",
+  "review-rounds": 1,
+  "scope": "internal/lifecycle/composition_orchestrator.go (waitEntryReady deadline + pidfile liveness), internal/lifecycle/composition_wait_ready_test.go (new), the TASK-402 card and its criteria evidence",
+  "summary": "All three criteria independently re-verified: targeted tests pass (fast-fail 2.01s within its 60s ceiling naming pid + log path; timeout test ends at exactly 1.00s with 'not ready within 1s (ready_timeout)'; TestEntryReadyTimeout covers max-wins and the 30s default); full go test ./internal/lifecycle/ ok and go vet clean; make build plus an independent E2E repro (composition plan, exit 3 native entry, never-ready check, ready_timeout 60) failed in 2.39s with exit=1 naming pid and log path with the sibling rolled back — matching the card's recorded evidence exactly. Correctness traced: no goroutine leak (resultsCh buffered, WaitUntilReadyWithContext always returns), waitCtx derives from the parent with deferred cancel, pidfile/log paths match ProcessPlugin's, entry.Process guard covers native runner entries via materializeResolvedEntry, no sealed records touched.",
+  "findings": [
+    "F1 (non-blocking): cancellation race can mislabel the error — a parent-ctx cancellation delivered alongside results yields 'health check not ready' instead of the cancelled message, and a propagated deadline gets labeled '(ready_timeout)'; cosmetic, behavior stays bounded",
+    "F2 (non-blocking): on Windows isProcessRunning is hard-coded false, so the liveness probe would fast-fail every native entry there; pre-existing platform stance shared with Up's already-running check",
+    "F3 (non-blocking): pid reuse degrades the fast-fail to the ready_timeout bound; still finite",
+    "F4 (non-blocking): entryReadyTimeout takes the max across checks, so a check's smaller individual ready_timeout is not enforced at its own ceiling; documented",
+    "F5 (observation): entries with zero health checks still skip the readiness gate entirely — identical to pre-fix behavior, not a regression"
+  ],
+  "reviewed-card-sha256": "f856e29ba0d08c2da70b202b866904f709b1c8c3c0ca44725d7f570ba1a2a02f"
+}
