@@ -5,7 +5,7 @@ type: bug
 priority: P1
 effort: M
 created: 2026-09-16
-status: todo
+status: doing
 ---
 
 ## Summary
