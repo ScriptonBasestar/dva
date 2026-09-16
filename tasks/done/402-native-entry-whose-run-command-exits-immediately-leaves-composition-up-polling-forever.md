@@ -8,7 +8,8 @@ created: 2026-09-16
 status: done
 quality-review: pass
 quality-reviewed-at: 2026-09-16
-quality-review-receipt: "tasks/done/evidence/TASK-402/done-review-f856e29ba0d08c2da70b202b866904f709b1c8c3c0ca44725d7f570ba1a2a02f.json"
+quality-review-receipt: "tasks/done/evidence/TASK-402/done-review-a1a8360d220576c6ae4890ddd4d956fe51a46e89f32c2b5d888fd0c2188ae543.json"
+quality-review-evidence: "마감 리뷰(pass) 수신 요약 재수록(2026-09-16, ISSUE-029 스키마 정합) — 전문은 quality-review-receipt 수신 파일에 있다. 즉사 fast-fail 2.01s가 pid+로그 경로를 명명하고, ready_timeout 1.00s 'not ready within 1s (ready_timeout)', TestEntryReadyTimeout의 max-wins + 30s 기본값, go test ./internal/lifecycle/ ok + vet clean, 독립 E2E 재현 2.39s exit=1을 확인했다"
 ---
 
 ## Summary

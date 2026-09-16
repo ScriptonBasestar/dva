@@ -11,7 +11,8 @@ needs-human: true
 depends-on: [TASK-376, TASK-379]
 quality-review: pass
 quality-reviewed-at: 2026-09-16
-quality-review-receipt: "tasks/done/evidence/TASK-328/done-review-c2c8219271f5f37eb70fdc2eed9503d95f2416ff1f519a7e0d932de63f6374d1.json"
+quality-review-receipt: "tasks/done/evidence/TASK-328/done-review-d37e9fe913ab386e5f60f1743bce95fefe7159f451451d94cbbe721f560c6e80.json"
+quality-review-evidence: "마감 리뷰(pass, final, 1회차) 수신 요약 재수록(2026-09-16, ISSUE-029 스키마 정합) — 전문은 quality-review-receipt 수신 파일에 있다. 기준 3의 grep 재현(tasks/plan/006-devbox-dogfood-followup.md 대조), 3개 dogfood 문서가 10240B 예산 안에서 하네스 형식 실기동 블록을 운반하는지 확인, exit 코드 서사 교차 대조(familybook 전부 0, flow-taskchain up 143/status 1/down 0, primeno1 게이트 exit), tmp 정리 후에도 증거가 영수증으로 생존함을 독립 확인했다"
 ---
 
 ## Summary

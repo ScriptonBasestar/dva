@@ -13,5 +13,5 @@
     "F1 (fixed in a7f37adf): untracked TASK-402 card broke make doc-check — missing status frontmatter and a go test -run binding naming a nonexistent test",
     "F2 (fixed in a7f37adf): 328 card's defect mention lacked a [[TASK-402]] wikilink"
   ],
-  "reviewed-card-sha256": "c2c8219271f5f37eb70fdc2eed9503d95f2416ff1f519a7e0d932de63f6374d1"
+  "reviewed-card-sha256": "d37e9fe913ab386e5f60f1743bce95fefe7159f451451d94cbbe721f560c6e80"
 }

@@ -18,5 +18,5 @@
     "summary": "F1 restored byte-for-byte (sha256 34e8e522... matches the pin); F2 confirmed by a blob-hash sweep of all 50 evidence files against the pre-migration receipts — only the unsealed README and two new/disclosed files differ; F3 resolved with a disclosed reissue file named for the digest it pins while the original stays unedited; F4 rewritten line-based with quoted-id support and regression tests (reviewer independently probed 7 edge shapes including CRLF id-last). Gates on the live tree: validate --all 122/122, make doc-check exit 0, both tool test packages ok, ce task gate READY."
   },
   "scope": "commit bc571e77 (425 files: 315-card archive flatten to tasks/archive/2026-09, 33 receipt dirs to tasks/done/evidence, doccheck/cardstatus/planprogress zone tables, 161 reference rewrites, 79 relative-link depth fixes) and its remediation commits a7f37adf, 06948b7d",
-  "reviewed-card-sha256": "1dd354e0651deeb40dc94ec51964311d65aca90114fecc5ec8bec7f4a5332d42"
+  "reviewed-card-sha256": "c7b6b66c765d6c1244e4ea22fe9d21036dd9d3fa3eb6473a1939cc944703c257"
 }

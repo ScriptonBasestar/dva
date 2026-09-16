@@ -22,12 +22,8 @@ verification-evidence:
     result: "exit 0 — 기준 3. ISSUE-028에 정규 핀 반례 절(376~379 반례)과 로컬 완화 절을 추가했고 ownership: upstream은 열려 있다"
 quality-review: pass
 quality-reviewed-at: 2026-09-15T18:25:00+09:00
-quality-review-receipt: tasks/done/evidence/TASK-401/done-review-712426d69ebd248cfb6485be4bd0d7e162d0be7aa318824b34a2c5ec9c0296f9.json
-quality-review-evidence:
-  - "독립 리뷰(review-401)가 기준 3개를 워크트리에서 전부 재실행해 재현했다 — validate 120 valid 0 invalid, gate READY, grep exit 0. 같은 리뷰가 master e3c984b에서 이행 전 상태(11 invalid, 전부 receipt 핀 불일치, gate NOT READY)도 직접 재현해 전후 대조를 세웠다"
-  - "11수신의 구(parent commit)·신 JSON 구조 비교에서 선언된 변경(핀·경로·algorithm·자기참조 4곳·381 digest 필드 2개) 외 모든 필드(verdict·findings·gates·증거 배열, 수신당 17~30개)가 바이트 동일함을 확인했다. 383·395의 줄 수 증가는 재직렬화뿐이고, 389의 역사 수신 2건은 무손상"
-  - "정규 핀의 정당성은 검증기 자신으로 증명됐다 — master에서 불일치 오류가 출력한 기대 digest 11/11이 신규 핀과 정확히 일치하고, 브랜치에서는 같은 검증기가 0 invalid를 낸다. 포인터 편집이 핀을 깨지 않음도 master(구 포인터)·브랜치(신 포인터) 양쪽 카드 상태에서 digest가 동일함으로 교차 확인됐다"
-  - "스코프: 26개 변경 파일이 전부 tasks/ 하위(카드 12 + 이슈 1 + 수신 11 재발행)이고 소스 파일은 없다. make doc-check·make lint 모두 exit 0"
+quality-review-receipt: tasks/done/evidence/TASK-401/done-review-4f20d6a44fa2ea0f5c5f5df2a8a26aaa3b477c36eba9bc420f76f5b3cb816fee.json
+quality-review-evidence: "(2026-09-16 리스트형→스칼라형 재형식화, 내용 불변 — ISSUE-029) 독립 리뷰(review-401)가 기준 3개를 워크트리에서 전부 재실행해 재현했다 — validate 120 valid 0 invalid, gate READY, grep exit 0. 같은 리뷰가 master e3c984b에서 이행 전 상태(11 invalid, 전부 receipt 핀 불일치, gate NOT READY)도 직접 재현해 전후 대조를 세웠다; 11수신의 구(parent commit)·신 JSON 구조 비교에서 선언된 변경(핀·경로·algorithm·자기참조 4곳·381 digest 필드 2개) 외 모든 필드(verdict·findings·gates·증거 배열, 수신당 17~30개)가 바이트 동일함을 확인했다. 383·395의 줄 수 증가는 재직렬화뿐이고, 389의 역사 수신 2건은 무손상; 정규 핀의 정당성은 검증기 자신으로 증명됐다 — master에서 불일치 오류가 출력한 기대 digest 11/11이 신규 핀과 정확히 일치하고, 브랜치에서는 같은 검증기가 0 invalid를 낸다. 포인터 편집이 핀을 깨지 않음도 master(구 포인터)·브랜치(신 포인터) 양쪽 카드 상태에서 digest가 동일함으로 교차 확인됐다; 스코프: 26개 변경 파일이 전부 tasks/ 하위(카드 12 + 이슈 1 + 수신 11 재발행)이고 소스 파일은 없다. make doc-check·make lint 모두 exit 0"
 ---
 
 ## Summary

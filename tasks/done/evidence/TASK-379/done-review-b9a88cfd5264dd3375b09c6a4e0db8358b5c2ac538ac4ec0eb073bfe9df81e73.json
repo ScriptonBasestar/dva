@@ -1,5 +1,5 @@
 {
-  "reviewed-card-sha256": "d8827926379c31e492682be7dbd76bc10f6fd2b95efa537a8e128e623e3e0822",
+  "reviewed-card-sha256": "b9a88cfd5264dd3375b09c6a4e0db8358b5c2ac538ac4ec0eb073bfe9df81e73",
   "task": "TASK-379",
   "title": "Retarget the primeno1 dogfood steps at plan dev now that native entries landed",
   "reviewer": "review-379 (independent; did not author the change)",

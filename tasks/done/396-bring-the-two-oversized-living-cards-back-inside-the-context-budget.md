@@ -8,12 +8,8 @@ exec-tier: standard
 status: done
 quality-review: pass
 quality-reviewed-at: 2026-09-15T19:20:00+09:00
-quality-review-receipt: tasks/done/evidence/TASK-396/done-review-91a4fc187a580189cc6de0592f649018ea07d2a3edd2e77787c464d88f673240.json
-quality-review-evidence:
-  - "review-396 (독립 리뷰어, 판정-final yes, head 5e69f15): 기준 1 바인딩 재실행 rc 0 + 독립 전수 크기 측정 — 활성 존 최대 16233B(issue/027), 20000B 초과 0장; 전·후 크기 4개(27599/22160→16065/12679)가 git show로 정확 일치"
-  - "충실도 대조 — 부모 커밋 원문과 diff해 판단-결정 사실 전부 보존 확인: Summary 3항목·validator 6메시지 census·376~379 핀 실측 표·TASK-401 폐기 블록·#2→#7 보고 정정·P0→P2 근거·위조 금지 원칙; PLAN-007은 배분 스냅샷·처분 원칙(컷오프=1c85d8d0)·48장 함정·External 잔여·children 13=13(전부 done, TASK-373 done 실재 확인)"
-  - "죽은 주장 grep(도달하지/조용/fallback 등) — 모든 적중이 폐기 프레임 안에 있고 'fallback은 존재하지 않는다'는 올바른 부정임을 확인; TASK-401 done 카드가 재측정을 독립적으로 교차검증"
-  - "게이트 재실행 — validate --all 120 valid 0 invalid, gate READY, make doc-check/lint rc 0, 스코프 4파일(카드 이동 + 압축 2장) 소스 무변경"
+quality-review-receipt: tasks/done/evidence/TASK-396/done-review-050a53f748ddeba5a560ef35a6b558fda9364c01c645464006d7c93957d25f4d.json
+quality-review-evidence: "(2026-09-16 리스트형→스칼라형 재형식화, 내용 불변 — ISSUE-029) review-396 (독립 리뷰어, 판정-final yes, head 5e69f15): 기준 1 바인딩 재실행 rc 0 + 독립 전수 크기 측정 — 활성 존 최대 16233B(issue/027), 20000B 초과 0장; 전·후 크기 4개(27599/22160→16065/12679)가 git show로 정확 일치; 충실도 대조 — 부모 커밋 원문과 diff해 판단-결정 사실 전부 보존 확인: Summary 3항목·validator 6메시지 census·376~379 핀 실측 표·TASK-401 폐기 블록·#2→#7 보고 정정·P0→P2 근거·위조 금지 원칙; PLAN-007은 배분 스냅샷·처분 원칙(컷오프=1c85d8d0)·48장 함정·External 잔여·children 13=13(전부 done, TASK-373 done 실재 확인); 죽은 주장 grep(도달하지/조용/fallback 등) — 모든 적중이 폐기 프레임 안에 있고 'fallback은 존재하지 않는다'는 올바른 부정임을 확인; TASK-401 done 카드가 재측정을 독립적으로 교차검증; 게이트 재실행 — validate --all 120 valid 0 invalid, gate READY, make doc-check/lint rc 0, 스코프 4파일(카드 이동 + 압축 2장) 소스 무변경"
 completion-summary: "ISSUE-001 27599→16065B, PLAN-007 22160→12679B — 둘 다 20000B 예산 안. ISSUE-001은 시간순 경위를 요지 중심으로 재구성하되 validator 메시지 census·실측 표·폐기/정정 이력·소유권 귀속을 전부 보존했고, TASK-401로 폐기된 plain-핀 서술을 현행화했다. PLAN-007은 처분 원칙과 배분 스냅샷 중심으로 압축했다. 기준 3개 바인딩 전부 실행해 rc 0."
 verification-status: verified
 verification-evidence:

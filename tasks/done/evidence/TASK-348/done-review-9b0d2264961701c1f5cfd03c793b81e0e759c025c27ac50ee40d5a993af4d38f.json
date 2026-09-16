@@ -1,6 +1,6 @@
 {
   "reviewed-card-path": "tasks/done/348-confirm-plan-profiles-reach-a-real-docker-build-not-just-argv.md",
-  "reviewed-card-sha256": "b88a023bdc680ab9e8205c94884a17295c8ae4651a3628a9645a5a3c12bee834",
+  "reviewed-card-sha256": "9b0d2264961701c1f5cfd03c793b81e0e759c025c27ac50ee40d5a993af4d38f",
   "reviewed-card-sha256-algorithm": "CE canonical card digest, as reported by `ce task validate` on this card (its mismatch message prints the expected value for a card carrying quality-review-receipt). The canonical digest excludes quality-review, quality-reviewed-at, quality-review-receipt and review_status — so retargeting this pointer never breaks the pin — and includes everything else, including quality-review-evidence, status: done and the 리뷰 대응 section. The work was reviewed at branch head e1cac8e (card then at tasks/doing/ with all three criteria checked on evidence); closing added only the verdict fields, the review-response section and this pointer.",
   "task": "TASK-348",
   "title": "Confirm plan profiles reach a real docker build, not just argv",

@@ -9,7 +9,8 @@ created: 2026-09-16
 status: done
 quality-review: pass
 quality-reviewed-at: 2026-09-16
-quality-review-receipt: "tasks/done/evidence/TASK-403/done-review-1dd354e0651deeb40dc94ec51964311d65aca90114fecc5ec8bec7f4a5332d42.json"
+quality-review-receipt: "tasks/done/evidence/TASK-403/done-review-c7b6b66c765d6c1244e4ea22fe9d21036dd9d3fa3eb6473a1939cc944703c257.json"
+quality-review-evidence: "마감 리뷰(pass, 2회차) 수신 요약 재수록(2026-09-16, ISSUE-029 스키마 정합) — 전문은 quality-review-receipt 수신 파일에 있다. 1회차 FAIL(bc571e77, 4 findings — F1 P1 봉인 증거 바이트 재기록이 TASK-197 sha256 핀을 깨는 것 포함), 2회차 PASS(06948b7d — F1 바이트 동일 복원 sha256 34e8e522 핀 일치, F2 증거 50파일 blob-hash 전수 대조에서 미봉인 README 1건 + 신규/공시 2건만 차이)를 확인했다"
 depends-on: []
 ---
 

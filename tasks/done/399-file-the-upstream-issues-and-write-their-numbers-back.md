@@ -6,6 +6,9 @@ priority: P2
 effort: S
 exec-tier: standard
 status: done
+quality-review: conditional
+quality-reviewed-at: 2026-09-15
+quality-review-evidence: "review-399(독립 리뷰)가 일곱 상류 이슈 묶음을 카드와 전부 대조해 부정확·누락·과장 세 열로 판정했다 — 여섯 건의 실제 결함을 찾아 전부 반영했고, 재측정에서 #1·#4·#6·#7은 세 열 모두 없음, 판정은 conditional(커밋 이의 없음). 사용자 판단으로 리뷰 결과를 기준 3 충족 근거로 채택했다(카드 본문 §기준 3). 독립 수신 파일은 존재하지 않는다(구 다이얼렉트) (2026-09-16 ISSUE-029 스키마 정합 — 본문에 기록된 판정의 frontmatter 복원이지 재판정이 아니다)"
 created: 2026-09-15
 source: "2026-09-15 TASK-395 결정 — 채널은 상류 저장소 이슈로 확정, 인증은 사용자 몫"
 depends-on: [TASK-398]

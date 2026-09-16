@@ -20,11 +20,8 @@ verification-evidence:
     result: "both exit 0"
 quality-review: pass
 quality-reviewed-at: 2026-09-13T21:05:00+09:00
-quality-review-evidence:
-  - "독립 리뷰(review-379)가 d0c1431에서 기준 5개와 게이트를 직접 재실행해 확인했다"
-  - "plan full 제거의 근거(dev와 full이 같은 compose 엔트리)를 origin/master:dva.yml 대조로 독립 확인했다"
-  - "sigdock 게이트의 fail-closed 선행 조건과 이 워크스테이션의 위반 상태를 독립 재측정했다"
-quality-review-receipt: tasks/done/evidence/TASK-379/done-review-d8827926379c31e492682be7dbd76bc10f6fd2b95efa537a8e128e623e3e0822.json
+quality-review-evidence: "(2026-09-16 리스트형→스칼라형 재형식화, 내용 불변 — ISSUE-029) 독립 리뷰(review-379)가 d0c1431에서 기준 5개와 게이트를 직접 재실행해 확인했다; plan full 제거의 근거(dev와 full이 같은 compose 엔트리)를 origin/master:dva.yml 대조로 독립 확인했다; sigdock 게이트의 fail-closed 선행 조건과 이 워크스테이션의 위반 상태를 독립 재측정했다"
+quality-review-receipt: tasks/done/evidence/TASK-379/done-review-b9a88cfd5264dd3375b09c6a4e0db8358b5c2ac538ac4ec0eb073bfe9df81e73.json
 created: 2026-09-13
 source: "TASK-328의 외부 blocker를 재측정하다 발견. primeno1-devbox origin/master가 b432a01→0caeaf9로 움직이며 native 엔트리 6종과 plan `dev`가 들어왔고, 하네스는 아직 대체재 plan `external-db`를 돈다"
 depends-on: []

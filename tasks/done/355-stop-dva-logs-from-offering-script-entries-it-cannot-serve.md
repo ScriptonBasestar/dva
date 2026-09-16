@@ -13,6 +13,7 @@ verification-evidence: "2026-09-10: pre-fix source made both focused regressions
 quality-review: pass
 quality-review-date: 2026-09-11
 quality-review-session: 1438093b-d243-4c4f-8985-48682b9b9802
+quality-review-evidence: "레거시 리뷰 표식 재수록(2026-09-16, ISSUE-029 스키마 정합) — 구 다이얼렉트(quality-review-date: 2026-09-11, quality-review-session: 1438093b-d243-4c4f-8985-48682b9b9802)에서 pass 판정을 받았고 독립 영수증은 존재하지 않는다. 스키마 정합을 위해 판정·일자·세션 포인터를 이 필드에 옮겨 적는다; 재검증이 아니다"
 ---
 
 ## Summary

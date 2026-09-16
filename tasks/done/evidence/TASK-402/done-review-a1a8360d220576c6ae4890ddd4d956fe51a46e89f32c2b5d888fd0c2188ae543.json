@@ -16,5 +16,5 @@
     "F4 (non-blocking): entryReadyTimeout takes the max across checks, so a check's smaller individual ready_timeout is not enforced at its own ceiling; documented",
     "F5 (observation): entries with zero health checks still skip the readiness gate entirely — identical to pre-fix behavior, not a regression"
   ],
-  "reviewed-card-sha256": "f856e29ba0d08c2da70b202b866904f709b1c8c3c0ca44725d7f570ba1a2a02f"
+  "reviewed-card-sha256": "a1a8360d220576c6ae4890ddd4d956fe51a46e89f32c2b5d888fd0c2188ae543"
 }

@@ -9,7 +9,8 @@ status: done
 created: 2026-09-06
 quality-review: pass
 quality-reviewed-at: 2026-09-16
-quality-review-receipt: "tasks/done/evidence/TASK-329/done-review-02553cf2e2db909d33f9ecc0e1f32ad78d9f2c926104668406b8d3b585290219.json"
+quality-review-receipt: "tasks/done/evidence/TASK-329/done-review-391e3d3f5fe8cbc24ed77cb2fd89516c65879c762b352d70a9356f4c4646f485.json"
+quality-review-evidence: "마감 리뷰(pass) 수신 요약 재수록(2026-09-16, ISSUE-029 스키마 정합) — 전문은 quality-review-receipt 수신 파일에 있다. landed 프로브 exit 0(origin/develop 114e69c), dva validate의 '✅ dva.yml is valid'와 legacy 파일명 잔여 0줄, exactly-one 의미론 추적(둘 다 없음/둘 다 있음 → not_ready missing_required_file, inspect 오류 → unavailable source_read_failure)을 독립 재실행·확인했다"
 ---
 
 ## Summary

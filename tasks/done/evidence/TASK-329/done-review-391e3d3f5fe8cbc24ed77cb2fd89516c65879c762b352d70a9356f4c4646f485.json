@@ -13,5 +13,5 @@
     "F1 (fixed in the card edit): the resolution section over-claimed the expired mst branch was reclaimed — dev/claude/mst/chore/readiness-dva-yml (3538cf2) still exists on origin; card corrected to state it remains and that dropping it is a separate decision",
     "F2 (non-blocking): check_test.sh has no explicit neither-present (count=0) case; both-present is covered and shares the same != 1 branch, negligible risk"
   ],
-  "reviewed-card-sha256": "02553cf2e2db909d33f9ecc0e1f32ad78d9f2c926104668406b8d3b585290219"
+  "reviewed-card-sha256": "391e3d3f5fe8cbc24ed77cb2fd89516c65879c762b352d70a9356f4c4646f485"
 }

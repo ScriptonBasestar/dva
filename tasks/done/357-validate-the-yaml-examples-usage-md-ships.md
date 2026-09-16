@@ -10,6 +10,7 @@ created-at: 2026-09-08T16:20:00+09:00
 source: "TASK-323 C3 (두 번 깨짐)"
 status: done
 quality-review: pass
+quality-review-evidence: "레거시 리뷰 표식 재수록(2026-09-16, ISSUE-029 스키마 정합) — 이 카드는 evidence 필드가 없던 구 다이얼렉트에서 quality-review: pass만 남았고, 일자·세션·독립 영수증 기록은 존재하지 않는다. 스키마 정합을 위해 존재하는 판정 사실만 이 필드에 옮겨 적는다; 판정 내용의 재검증이 아니므로 evidence로서의 무게는 판정 시점의 다이얼렉트가 정한다"
 depends-on: []
 ---
 

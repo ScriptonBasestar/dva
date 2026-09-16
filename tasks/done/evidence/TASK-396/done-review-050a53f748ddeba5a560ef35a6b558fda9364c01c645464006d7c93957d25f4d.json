@@ -1,6 +1,6 @@
 {
   "reviewed-card-path": "tasks/done/396-bring-the-two-oversized-living-cards-back-inside-the-context-budget.md",
-  "reviewed-card-sha256": "91a4fc187a580189cc6de0592f649018ea07d2a3edd2e77787c464d88f673240",
+  "reviewed-card-sha256": "050a53f748ddeba5a560ef35a6b558fda9364c01c645464006d7c93957d25f4d",
   "reviewed-card-sha256-algorithm": "CE canonical card digest, as reported by `ce task validate` on this card (its mismatch message prints the expected value for a card carrying quality-review-receipt). The canonical digest excludes quality-review, quality-reviewed-at, quality-review-receipt and review_status — so retargeting this pointer never breaks the pin — and includes everything else, including quality-review-evidence, status: done and the 리뷰 대응 section. The work was reviewed at branch head 5e69f15 (card then at tasks/doing/ with all three criteria checked on executed rc 0); closing added only the verdict fields, the review-response section, the F1 size-snapshot refresh in the Summary block and this pointer.",
   "task": "TASK-396",
   "title": "Bring the two oversized living cards back inside the context budget",

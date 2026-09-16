@@ -1,6 +1,6 @@
 {
   "reviewed-card-path": "tasks/done/397-retarget-the-familybook-harness-step-to-the-dev-plan.md",
-  "reviewed-card-sha256": "be14a7f6ecd17914faf86c13a5b6dcfdc4bacd23d47d9980b99861d97ce026dd",
+  "reviewed-card-sha256": "410de5e01f1756039aee1f88004bb7b201ddf524eef465a5e0c7f13ae3de7e4a",
   "reviewed-card-sha256-algorithm": "CE canonical card digest, as reported by `ce task validate tasks/done/397-...md` (its mismatch message prints the expected value for a card carrying quality-review-receipt). The canonical digest excludes quality-review, quality-reviewed-at, quality-review-receipt and review_status — so retargeting this pointer never breaks the pin — and includes everything else, including quality-review-evidence, status: done and the 리뷰 대응 section. The work was reviewed at branch head fee1624 (card then at tasks/doing/, plain file sha256 9c72eef2e2d6c60f368ab113580c8d1aa199fd1f980c84f1b92788f4ea192581); closing added only the verdict fields, the review-response section and this pointer.",
   "task": "TASK-397",
   "title": "Retarget the familybook harness step to the dev plan",

@@ -1,6 +1,6 @@
 {
   "reviewed-card-path": "tasks/done/401-reissue-plain-pinned-review-receipts-as-canonical-pins.md",
-  "reviewed-card-sha256": "712426d69ebd248cfb6485be4bd0d7e162d0be7aa318824b34a2c5ec9c0296f9",
+  "reviewed-card-sha256": "4f20d6a44fa2ea0f5c5f5df2a8a26aaa3b477c36eba9bc420f76f5b3cb816fee",
   "reviewed-card-sha256-algorithm": "CE canonical card digest, as reported by `ce task validate tasks/done/401-...md` (its mismatch message prints the expected value for a card carrying quality-review-receipt). The canonical digest excludes quality-review, quality-reviewed-at, quality-review-receipt and review_status — so retargeting this pointer never breaks the pin — and includes everything else, including quality-review-evidence, status: done and the 리뷰 대응 section. The work was reviewed at branch head 84d1778 (card then at tasks/doing/ with criteria checked on evidence); closing added only the verdict fields, the review-response section, the 381 wording clarification and this pointer.",
   "task": "TASK-401",
   "title": "Reissue the plain-pinned review receipts as canonical pins",
