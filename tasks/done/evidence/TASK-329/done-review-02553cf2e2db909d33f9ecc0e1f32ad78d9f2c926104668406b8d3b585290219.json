@@ -1,0 +1,17 @@
+{
+  "task": "TASK-329",
+  "title": "Rename familybook devbox dva.yaml to dva.yml after readiness branch lands",
+  "reviewer": "review-329 (independent reviewer agent, Claude — did not author the reviewed work)",
+  "verdict": "pass",
+  "verdict-final": true,
+  "reviewed-at": "2026-09-16",
+  "head-reviewed": "familybook-devbox origin/develop 114e69c (1613cbb contract + 114e69c rename); dva card branch dev/claude/mbp/chore/task-329",
+  "review-rounds": 1,
+  "scope": "familybook-devbox .gz-git/readiness/check + check_test.sh + README (1613cbb), the dva.yaml→dva.yml rename commit (114e69c), the TASK-329 card's resolution section and checked criteria, and both completion-criterion probes",
+  "summary": "Both criteria independently re-verified: the landed probe printed LANDED with exit 0 (both single-name fixtures ready against origin/develop 114e69c), and the rename state passes dva validate ('✅ dva.yml is valid', exit 0, zero legacy-name lines) with test -f on the primary checkout passing. The contract commit's exactly-one semantics traced in the runner: neither or both → not_ready missing_required_file, inspect errors → unavailable source_read_failure; check_test.sh covers rename-ready, both-present-not-ready, and all pre-existing cases and passes in the primary checkout. The rename commit leaves no live dva.yaml reference outside one explanatory prose line and historical retired-task docs; devbox contract tests 10/10 OK. The dva branch touches only the 329 card.",
+  "findings": [
+    "F1 (fixed in the card edit): the resolution section over-claimed the expired mst branch was reclaimed — dev/claude/mst/chore/readiness-dva-yml (3538cf2) still exists on origin; card corrected to state it remains and that dropping it is a separate decision",
+    "F2 (non-blocking): check_test.sh has no explicit neither-present (count=0) case; both-present is covered and shares the same != 1 branch, negligible risk"
+  ],
+  "reviewed-card-sha256": "02553cf2e2db909d33f9ecc0e1f32ad78d9f2c926104668406b8d3b585290219"
+}
