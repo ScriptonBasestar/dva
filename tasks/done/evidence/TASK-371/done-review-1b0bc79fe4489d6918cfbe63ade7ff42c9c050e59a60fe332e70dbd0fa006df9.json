@@ -1,0 +1,84 @@
+{
+  "reviewed-card-path": "tasks/done/371-align-planprogress-with-the-shared-progress-contract.md",
+  "reviewed-card-sha256": "1b0bc79fe4489d6918cfbe63ade7ff42c9c050e59a60fe332e70dbd0fa006df9",
+  "digest-kind": "ce-canonical-card-digest",
+  "reviewed-card-sha256-algorithm": "CE canonical card digest, obtained from ce task validate's mismatch message with a zero-filled probe receipt after the card's body and quality-review-evidence were frozen. This card declares blocks: [TASK-354] and sits in tasks/done/, so all three early returns in internal/usecase/task/validator_receipt.go are cleared and ce task validate actually compares this value on every run. The digest excludes quality-review, quality-reviewed-at, quality-review-receipt and review_status, which is why setting the pointer below after taking the digest does not move it.",
+  "reviewer": "review-371 (Claude Opus 5, independent — did not participate in the 2026-09-10 implementation)",
+  "reviewed-at": "2026-09-14",
+  "review-round-count": 1,
+  "verdict": "conditional",
+  "verdict-final": true,
+  "verdict-condition": "The card's verification-evidence claimed an independent review that has no supporting artifact. The condition is discharged in the same commit that carries this receipt: the clause is retracted and replaced with a statement that today's review is the first.",
+  "head-reviewed": "the revision introduced by the commit that carries this receipt. A commit sha cannot be written here without being circular; the canonical digest above identifies the reviewed card content exactly, which is what the validator compares.",
+  "base": "88b8b7134fa6a7bf6d26fd0f0565addf5a670cba",
+  "criteria-results": [
+    {
+      "criterion": "16/26 같은 비정수 비율에서 planprogress가 공유 validator와 같은 절삭 값을 요구한다",
+      "binding": "go test ./tools/planprogress",
+      "invocation": "bare (no pipe; a pipeline would report the last stage's exit code)",
+      "exit-code": 0,
+      "result": "pass"
+    },
+    {
+      "criterion": "PLAN-006과 모든 현재 plan이 두 검사기에서 같은 진행률로 유효하다",
+      "binding": "ce task validate --all",
+      "invocation": "bare",
+      "exit-code": 1,
+      "result": "pass-with-note",
+      "note": "93 valid / 1 invalid. The single failure is this card's own missing quality-review-receipt, which this receipt closes. No plan disagreed on a progress value; progress parity — what the criterion actually asserts — holds."
+    },
+    {
+      "criterion": "저장소 문서 게이트가 통과한다",
+      "binding": "make doc-check",
+      "invocation": "bare",
+      "exit-code": 0,
+      "result": "pass",
+      "note": "planprogress: OK — every plan's total-tasks/completed-tasks/progress matches its children."
+    }
+  ],
+  "evidence-commands": [
+    "go test ./tools/planprogress",
+    "ce task validate --all",
+    "make doc-check",
+    "git log --follow --format='%h %ad %an %s' --date=iso -- tasks/done/371-align-planprogress-with-the-shared-progress-contract.md"
+  ],
+  "findings": [
+    {
+      "id": "F1",
+      "severity": "high",
+      "kind": "record",
+      "summary": "verification-evidence claimed an independent review with zero corroboration.",
+      "detail": "The clause 'independent review confirmed shared truncation contract' has no backing artifact. tasks/done/evidence/TASK-371/ did not exist. The card was filed in 36594bb2 (2026-09-10 12:33:49) and closed in 5fc87d79 (2026-09-10 12:49:49) — sixteen minutes apart, same author, and the sentence was introduced inside the implementer's own closing commit. AGENTS.md acquired the independent-review requirement at 17:50 the same day, after both commits.",
+      "disposition": "fixed",
+      "resolution": "The clause is retracted in the card's verification-evidence and the retraction is restated in the body. Leaving it intact would have made this receipt appear to corroborate a review that never happened — and once the card is sealed by this receipt, that sentence would no longer be correctable (ISSUE-010)."
+    },
+    {
+      "id": "F2",
+      "severity": "medium",
+      "kind": "record",
+      "summary": "Three unticked Completion Criteria on a status: done card.",
+      "detail": "All three were satisfied at review time. Criterion 2's exit 1 is owed solely to this card's own receipt gap, not to a progress disagreement.",
+      "disposition": "fixed",
+      "resolution": "Ticked, with criterion 2 annotated to say why its binding exits 1 and that this commit closes it."
+    },
+    {
+      "id": "F3",
+      "severity": "informational",
+      "kind": "verified-good",
+      "summary": "The truncation contract is genuine and regression-tested.",
+      "detail": "tools/planprogress/check.go:304-309 — truncatedPercent guards total == 0 and then returns completed * 100 / total. check_test.go's TestTruncatedPercent pins 15/16=93, 16/26=61, 7/19=36 and 2/3=66; all four diverge from the rounded value, so the table discriminates truncation from rounding rather than merely exercising it. 0/0=0 covers the zero-children case. No other code in the repository rounds a percentage."
+    },
+    {
+      "id": "F4",
+      "severity": "low",
+      "kind": "record",
+      "summary": "ISSUE-002's Resolution Criterion 3 named a document that does not record the claim.",
+      "detail": "The human binding asserted that TASK-354 §Summary records TASK-371 resolving the progress prerequisite. PLAN-009 §Parallel lane does record it; TASK-354 §Summary records only the receipt blocker.",
+      "disposition": "fixed",
+      "resolution": "The binding and the Recommended Resolution prose in tasks/done/002-*.md now name PLAN-009 only, and state explicitly what TASK-354 does and does not record."
+    }
+  ],
+  "backdating-statement": "This review was performed on 2026-09-14. No part of it is backdated to 2026-09-10. The card's original 2026-09-10 verification stands as the implementer's own self-verification and is labelled as such.",
+  "lead-verification": "The card's author re-measured every load-bearing claim in this receipt independently before accepting it: the commit topology via git log --follow, the absence of tasks/done/evidence/TASK-371, the truncatedPercent source, and the TestTruncatedPercent table. The reviewer verified truncation by injecting 6/7 ad hoc; the tracked table was substituted as the durable evidence because an injected case disappears when the run ends.",
+  "digest-scope-warning": "This pin is a CE canonical digest and is therefore compared on every ce task validate run. Any later edit to this card's body or to any frontmatter key other than the four excluded ones will turn the board red. Correcting this card after this point requires re-issuing a receipt against the new revision, not re-pinning this one."
+}

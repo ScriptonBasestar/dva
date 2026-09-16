@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -34,10 +35,10 @@ type taskRecord struct {
 
 var cardFilenameRE = regexp.MustCompile(`^0*(\d+)-.+\.md$`)
 
-// buildTaskIndex walks <root>/tasks, excluding tasks/plan/, and classifies every card file by
-// id. A path under tasks/done/ or tasks/_archive/ (at any depth, e.g. tasks/_archive/done/) is
-// closed; a path under tasks/todo/ or tasks/doing/ is open; anything else found under tasks/ is
-// recorded but counted as neither.
+// buildTaskIndex walks <root>/tasks, excluding tasks/plan/ and archived plan cards, and
+// classifies every card file by id. A path under tasks/done/ or tasks/archive/ (at any
+// depth) is closed; a path under tasks/todo/ or tasks/doing/ is open; anything else found
+// under tasks/ is recorded but counted as neither.
 func buildTaskIndex(root string) (taskIndex, error) {
 	tasksDir := filepath.Join(root, "tasks")
 	idx := taskIndex{}
@@ -54,6 +55,14 @@ func buildTaskIndex(root string) (taskIndex, error) {
 		}
 		rel = filepath.ToSlash(rel)
 		if isPlanPath(rel) {
+			return nil
+		}
+		// Archived plan cards no longer carry a "plan" segment — the dated archive
+		// partitions (tasks/archive/<YYYY-MM>/) hold every card flat — so a completed
+		// plan would otherwise be indexed by its filename number as a TASK card and
+		// silently satisfy a real child of that id. The frontmatter id tells the truth:
+		// plans declare PLAN-N, never TASK-N.
+		if strings.HasPrefix(rel, "archive/") && isPlanCardFile(path) {
 			return nil
 		}
 		m := cardFilenameRE.FindStringSubmatch(filepath.Base(rel))
@@ -80,19 +89,33 @@ func buildTaskIndex(root string) (taskIndex, error) {
 }
 
 // isPlanPath reports whether a tasks/-relative path is a plan card rather than a task card.
-// Plans live in tasks/plan/ and, once complete, in tasks/_archive/plan/ — both have to be
-// excluded from the task index. A plan filename ("003-command-surface-renewal-discovery.md")
-// is indistinguishable from a task filename, so an archived plan would otherwise be indexed
-// as TASK-3 and silently satisfy a real child of that id.
+// Live plans live in tasks/plan/, which has to be excluded from the task index wholesale.
 func isPlanPath(rel string) bool {
 	return slices.Contains(strings.Split(rel, "/"), "plan")
 }
+
+// isPlanCardFile reports whether a card file's frontmatter declares a plan id
+// ("PLAN-N"). Task cards declare TASK-N, so the id prefix is the whole test.
+func isPlanCardFile(path string) bool {
+	body, err := os.ReadFile(path)
+	if err != nil {
+		return false
+	}
+	// Frontmatter is the leading --- block; scanning it avoids false hits in prose.
+	head := body
+	if end := bytes.Index(bytes.TrimPrefix(body, []byte("---\n")), []byte("\n---")); end >= 0 {
+		head = body[:end]
+	}
+	return planIDRE.Match(head)
+}
+
+var planIDRE = regexp.MustCompile(`(?m)^id: *PLAN-\d+`)
 
 func zoneFromPath(rel string) zone {
 	switch {
 	case rel == "done" || strings.HasPrefix(rel, "done/"):
 		return zoneClosed
-	case rel == "_archive" || strings.HasPrefix(rel, "_archive/"):
+	case rel == "archive" || strings.HasPrefix(rel, "archive/"):
 		return zoneClosed
 	case rel == "todo" || strings.HasPrefix(rel, "todo/"):
 		return zoneOpen

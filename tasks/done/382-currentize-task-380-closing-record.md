@@ -15,7 +15,7 @@ verification-evidence: "완료 기준 4개의 verify 바인딩 전부 exit 0. ma
 quality-review: pass
 quality-reviewed-at: 2026-09-13
 quality-review-evidence: "독립 리뷰 review-382(Claude Opus 5, 저자 아님). C-2의 22 vs 21을 git ls-tree로 직접 재측정해 delta가 primeno1.md임을 확인했고, C-3의 blocks: 논증을 ce-agent-kit 소스(validator_receipt.go의 조기 return)와 합성 카드 실험 양쪽으로 검증했다. pass + 잔여 지적 R1-R4(non-blocking)는 같은 브랜치에서 접었다"
-quality-review-receipt: tasks/receipts/TASK-382/done-review-d40acbe2fbba9a1cb9cf82b952480c67e4427195b2af5acfe980eea4bc80a664.json
+quality-review-receipt: tasks/done/evidence/TASK-382/done-review-d40acbe2fbba9a1cb9cf82b952480c67e4427195b2af5acfe980eea4bc80a664.json
 ---
 
 ## Summary

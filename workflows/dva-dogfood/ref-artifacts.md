@@ -88,7 +88,7 @@ sources:
   dva_build_commit: null # stamps the source, never identifies the file — two builds can stamp one commit
   # candidate_* records the stage-20 build and its durable archived copy.
   candidate_dva_executable: null
-  candidate_dva_archive: null
+  candidate_dvaarchive: null
   candidate_dva_sha256: null # full 64-hex digest
   candidate_dva_build_commit: null
   skill_source: null

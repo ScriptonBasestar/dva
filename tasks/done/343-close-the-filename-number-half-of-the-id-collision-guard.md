@@ -56,7 +56,7 @@ filename number to equal the numeric suffix of `id:`. That equality is a useful 
 the current corpus and task format treat filename numbering and the full frontmatter identity as
 separate inputs; making it mandatory would reject compatible cards without evidence that their
 freedom is a defect. This card's narrowly evidenced failure is two distinct `TASK-*` ids sharing
-one visible filename number. `tasks/plan/` and archived `tasks/_archive/plan/` are excluded, and
+one visible filename number. `tasks/plan/` and archived `tasks/archive/plan/` are excluded, and
 the repository's intentional `ISSUE-001` / historical `TASK-001` overlap remains valid because
 they are separate namespaces.
 

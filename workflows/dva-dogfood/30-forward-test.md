@@ -36,7 +36,7 @@ accepted.</input>
    requiring a candidate has no executable candidate. Prove the selected path is
    executable and that its **SHA-256** matches state; a matching version and build
    commit do not identify a binary, because two different builds can stamp the same
-   commit. On a mismatch, use `candidate_dva_archive` and record why the build path
+   commit. On a mismatch, use `candidate_dvaarchive` and record why the build path
    was not used. Record the selection without installing globally.
 6. Recompute the SHA-256 of `<RUN_DIR>/forward-requests.md` and compare it with
    `evaluation.forward_requests_hash`. On any difference, BLOCK: the requests were

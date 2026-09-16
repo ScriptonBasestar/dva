@@ -89,7 +89,7 @@ Only when `owner: dva_tool`.
 5. Build and execute the fixed local artifact, then **copy it into this attempt's
    `artifacts/` directory** — the build path is not durable and a concurrent build
    destroys it silently. Record the build path in `candidate_dva_executable`, the
-   copy in `candidate_dva_archive`, the commit in `candidate_dva_build_commit`, and
+   copy in `candidate_dvaarchive`, the commit in `candidate_dva_build_commit`, and
    the **full** SHA-256 of both the archived copy and the installed executable in
    `candidate_dva_sha256` and `dva_sha256`. Never truncate a digest. Keep installed,
    source, and candidate provenance distinct — never overwrite installed provenance.

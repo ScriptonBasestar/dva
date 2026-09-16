@@ -1,0 +1,49 @@
+{
+  "reviewed-card-path": "tasks/done/401-reissue-plain-pinned-review-receipts-as-canonical-pins.md",
+  "reviewed-card-sha256": "712426d69ebd248cfb6485be4bd0d7e162d0be7aa318824b34a2c5ec9c0296f9",
+  "reviewed-card-sha256-algorithm": "CE canonical card digest, as reported by `ce task validate tasks/done/401-...md` (its mismatch message prints the expected value for a card carrying quality-review-receipt). The canonical digest excludes quality-review, quality-reviewed-at, quality-review-receipt and review_status — so retargeting this pointer never breaks the pin — and includes everything else, including quality-review-evidence, status: done and the 리뷰 대응 section. The work was reviewed at branch head 84d1778 (card then at tasks/doing/ with criteria checked on evidence); closing added only the verdict fields, the review-response section, the 381 wording clarification and this pointer.",
+  "task": "TASK-401",
+  "title": "Reissue the plain-pinned review receipts as canonical pins",
+  "reviewer": "review-401 (independent; did not author the work under review)",
+  "verdict": "pass",
+  "verdict-final": true,
+  "reviewed-at": "2026-09-15",
+  "branch": "dev/claude/mbp/chore/task-401",
+  "base": "master e3c984b",
+  "head-reviewed": "84d1778a35d8a02cff648390219c2a10ae381d2b",
+  "review-rounds": 1,
+  "diff-scope": {
+    "commits": ["84d1778"],
+    "files": [
+      "tasks/doing/401-...md (new, the card itself)",
+      "tasks/done/38{0,1,2,3,5,6,7,8,9}*.md + 390 + 395 — exactly one changed line each (quality-review-receipt pointer)",
+      "tasks/issue/028-...md (+32 — 정규 핀 반례 and 로컬 완화 sections)",
+      "11 receipt reissues (9 git renames + 2 A/D pairs: 383, 395)"
+    ],
+    "out-of-scope-same-branch": "none — verified via git diff --name-status -M: 26 files, all under tasks/, no source files",
+    "verdict": "session touched exactly the board files it owns; the migration changed pin fields, filenames, pointers and four self-reference path strings, and adjusted TASK-381's digest-kind/digest-note — nothing else"
+  },
+  "gates": {
+    "criterion 1": "ce task validate --all → Summary: 120 valid, 0 invalid (total: 120), exit 0",
+    "criterion 2": "ce task gate → READY — task_board_ready, exit 0",
+    "criterion 3": "/usr/bin/grep -rq --include='028-the-review-receipt-pins-a-digest-the-closed-card-can-never-match.md' '정규 핀 반례' tasks → exit 0",
+    "before/after reproduction": "on master e3c984b (primary checkout, clean before/after): validate → 11 invalid, all quality-review-receipt pin mismatches; gate → NOT READY — task_validate_failed",
+    "make doc-check": "0",
+    "make lint": "0"
+  },
+  "claims-independently-remeasured": [
+    "migration fidelity: structural old-vs-new JSON comparison of all 11 receipts (old pins recovered from the parent commit) — only the declared fields differ; verdict, findings, gates and evidence arrays byte-identical; 383/395 line-count growth is pure re-serialization; TASK-389's two historical receipts untouched",
+    "canonical legitimacy: on master the validator's own mismatch output printed the expected digest for all 11 cards — every printed value equals the new pin (11/11); on the branch the same validator reports 0 invalid",
+    "pointer-edit safety: canonical digest identical between master (old pointer) and branch (new pointer) card states, so quality-review-receipt is excluded from the digest subject, exactly as the card claims",
+    "ISSUE-028 fact-check: TASK-376..379 receipts exist with 64-hex pins and are not among master's 11 invalid; frontmatter keeps ownership: upstream, upstream-ref ce-agent-kit#7, status: todo; all three resolution-criteria checkboxes remain unchecked and the text says they stay open until the upstream fix"
+  ],
+  "findings": [
+    {"id": "INFO-1", "severity": "info", "where": "tasks/done/evidence/TASK-381/done-review-747206df....json + card Evidence item 3", "defect": "the migration note on 381 is a NEWLY CREATED reviewed-card-sha256-algorithm field (the old 381 receipt had none), so the card's '끝에 NOTE 첨부' wording did not literally cover it", "applied": "card Evidence item 3 gained an exception clause before sealing; receipt content itself accurate, no other action"},
+    {"id": "INFO-2", "severity": "info", "where": "tasks/done/evidence/TASK-381 + TASK-385", "defect": "none — reviewed-card-path values did not change because they already pointed at current done paths", "applied": "none needed"},
+    {"id": "INFO-3", "severity": "info", "where": "tasks/done/evidence/TASK-389/done-review-{17dad580,4b084d74}....json (pre-existing, unchanged)", "defect": "two historical receipts still pin stale doing/ paths and are invisible to the validator (not referenced by the card pointer)", "applied": "declared in the card as deliberately preserved master history; left untouched"}
+  ],
+  "reviewer-probe": {
+    "what": "all three criterion bindings re-run verbatim; python structural receipt comparison against the parent commit (script at /tmp/review401_diff_receipts.py plus inline heredocs); validator mismatch-output cross-check on master; git diff --name-status -M scope audit; make doc-check and make lint in the worktree",
+    "result": "nothing under review modified — tracked trees clean in both the worktree and the primary checkout after all probes; branch in sync with origin at 84d1778; gitignored tmp/ scratch in the worktree per pre-existing convention"
+  }
+}

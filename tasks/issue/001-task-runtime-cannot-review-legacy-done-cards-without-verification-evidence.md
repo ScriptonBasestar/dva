@@ -51,7 +51,7 @@ As of 2026-09-10 this was an active repository gate blocker: at DVA HEAD
 - **3번(`tmp/` 경로)은 이 저장소 안에서 닫혔다.** validator는 경로에 아무 제약을
   걸지 않는다(설치된 `ce` 0.8.4의 `quality-review-receipt` 메시지 여섯 중 어디에도
   접두사·경로 형태 강제가 없다). [[TASK-388]]이 durable 경로
-  `tasks/receipts/<TASK-ID>/done-review-<sha>.json`을 열었고 receipt 18건이 옮겨졌다.
+  `tasks/done/evidence/<TASK-ID>/done-review-<sha>.json`을 열었고 receipt 18건이 옮겨졌다.
 - **게이트는 초록이다.** `ce task gate`가 `READY — task_board_ready`로 rc=0을 낸다
   (2026-09-14 이후 유지).
 
@@ -195,7 +195,7 @@ Done card blocks %s but declares no quality-review-receipt: the successors were 
   두 측정도 모두 만족됐다.
 - `owner`: **DVA, for what is left.** The durable output path is no longer
   externally owned — TASK-388 closed it inside this repository at
-  `tasks/receipts/<TASK-ID>/done-review-<sha>.json`, because the validator
+  `tasks/done/evidence/<TASK-ID>/done-review-<sha>.json`, because the validator
   imposes no path contract at all. `ce-agent-kit` still owns the canonical
   digest and any future issuance tool, and `ce-workbook/task_management` still
   owns the legacy controller dialect that §Summary 1 and 2 describe — but
@@ -205,7 +205,7 @@ Done card blocks %s but declares no quality-review-receipt: the successors were 
   수행했다. 상류 발급기가 착지하면 같은 자리에 쓴다.
 - `next_check`: `ce task validate --all` reports 0 invalid, then
   `ce task gate --json` exits 0 with `status: ready`. Each blocking done card
-  names a readable Git-tracked receipt under `tasks/receipts/` whose
+  names a readable Git-tracked receipt under `tasks/done/evidence/` whose
   `reviewed-card-sha256` matches CE's canonical card digest. Upstream fixtures
   cover all three shapes: missing evidence (`TASK-312`), prose evidence
   (`TASK-344`/`TASK-371`), and a current controller-created card.
@@ -245,7 +245,7 @@ digest … ce-workbook/task_management still owns the legacy controller dialect"
 - [x] New review receipts are written to a durable tracked location rather
   than remaining under ignored `tmp/` | verify: `! /usr/bin/grep -rn '^quality-review-receipt: tmp/' tasks`
   — TASK-388이 저장소 안에서 닫았다. 상류 발급기를 기다릴 필요가 없었다
-- [x] `TASK-344` and `TASK-371` carry receipts under `tasks/receipts/` whose
+- [x] `TASK-344` and `TASK-371` carry receipts under `tasks/done/evidence/` whose
   `reviewed-card-sha256` is CE's canonical card digest, and the DVA board is
   ready | verify: `ce task gate --json`
   — 2026-09-14 정정. 원문은 "genuine controller-produced review receipts"라고 적었고

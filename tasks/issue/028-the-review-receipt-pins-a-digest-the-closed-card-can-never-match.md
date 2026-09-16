@@ -24,7 +24,7 @@ upstream-ref: "ce-agent-kit#7"
 가장 약한 표현이다. 측정 시점의 값은 Reproduction에 날짜와 함께 둔다.
 
 ```
-❌ quality-review-receipt tasks/receipts/TASK-395/done-review-5f7604....json
+❌ quality-review-receipt tasks/done/evidence/TASK-395/done-review-5f7604....json
    pins reviewed-card-sha256 5f760440... but this card digests to b06af01a...:
    the card changed after it was reviewed
 
@@ -132,7 +132,7 @@ NOT READY — task_validate_failed (validate)
 ## Sources
 
 - 2026-09-15 [[TASK-399]] 착수 전 게이트 실행 — 깨끗한 master에서 11 invalid 재현
-- `tasks/receipts/TASK-395/done-review-5f7604...json` — `reviewed-card-path`가
+- `tasks/done/evidence/TASK-395/done-review-5f7604...json` — `reviewed-card-path`가
   이동 전 경로를 가리키는 직접 증거
 - 2026-09-15 [[TASK-401]] — plain 핀 11장을 정규 digest 핀으로 재발행;
   `ce task validate --all` 120 valid 0 invalid, `ce task gate` READY 재측정

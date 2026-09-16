@@ -15,7 +15,7 @@ verification-evidence: "완료 기준 5개 중 기계 바인딩 4개를 bare로 
 quality-review: pass
 quality-reviewed-at: 2026-09-14
 quality-review-evidence: "독립 리뷰 review-389(Claude Opus 5, 저자 아님), 3라운드, verdict-final. 1라운드에서 이 카드의 원래 논지 둘을 HIGH로 반증했다 — (F1) digest 제외 키가 quality-review-receipt 하나가 아니라 넷이고, (F2) 닫는 행위가 pin을 구조적으로 무효화한다는 주장이 376–379 넷의 반례로 깨진다. 둘 다 내가 소스와 카드 넷으로 독립 재측정한 뒤 645a719로 고쳤고, 2라운드의 R1(이슈는 고쳤으나 카드 본문이 반증된 논지를 그대로 들고 있다)을 68d356a로 고쳤다. 3라운드에서 §3의 사실 주장 다섯을 리뷰어가 자기 측정으로 전부 재확인했다"
-quality-review-receipt: tasks/receipts/TASK-389/done-review-0caf5ff7438c0c55b3820fa9248ac8451be0035618a5a57287e77b03cdce3645.json
+quality-review-receipt: tasks/done/evidence/TASK-389/done-review-0caf5ff7438c0c55b3820fa9248ac8451be0035618a5a57287e77b03cdce3645.json
 ---
 
 ## Summary

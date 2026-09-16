@@ -11,7 +11,7 @@ func TestCheckPlanDefectKinds(t *testing.T) {
 	baseIndex := taskIndex{
 		"TASK-1": {paths: []string{"done/1-a.md"}, closed: true},
 		"TASK-2": {paths: []string{"todo/2-b.md"}, closed: false},
-		"TASK-3": {paths: []string{"_archive/3-c.md"}, closed: true},
+		"TASK-3": {paths: []string{"archive/3-c.md"}, closed: true},
 		"TASK-4": {paths: []string{"todo/4-d.md"}, closed: false},
 	}
 
@@ -214,8 +214,8 @@ func TestZoneFromPath(t *testing.T) {
 		{"todo/249-x.md", zoneOpen},
 		{"doing/249-x.md", zoneOpen},
 		{"done/248-x.md", zoneClosed},
-		{"_archive/251-x.md", zoneClosed},
-		{"_archive/done/244-x.md", zoneClosed},
+		{"archive/251-x.md", zoneClosed},
+		{"archive/done/244-x.md", zoneClosed},
 		{"issue/1-x.md", zoneOther},
 	}
 	for _, tt := range tests {
@@ -228,12 +228,12 @@ func TestZoneFromPath(t *testing.T) {
 func TestBuildTaskIndexWalksNestedArchiveAndSkipsPlanDir(t *testing.T) {
 	root := t.TempDir()
 	files := map[string]string{
-		"tasks/todo/249-open.md":                   "open card",
-		"tasks/done/248-closed.md":                 "closed card",
-		"tasks/_archive/251-flat.md":               "archived directly under _archive/, not nested",
-		"tasks/_archive/done/244-nested.md":        "archived under _archive/done/",
-		"tasks/plan/006-should-be-ignored.md":      "plan cards are not task cards",
-		"tasks/_archive/plan/003-archived-plan.md": "an archived plan is still a plan, not TASK-3",
+		"tasks/todo/249-open.md":                  "open card",
+		"tasks/done/248-closed.md":                "closed card",
+		"tasks/archive/251-flat.md":               "archived directly under archive/, not nested",
+		"tasks/archive/done/244-nested.md":        "archived under archive/done/",
+		"tasks/plan/006-should-be-ignored.md":     "plan cards are not task cards",
+		"tasks/archive/plan/003-archived-plan.md": "an archived plan is still a plan, not TASK-3",
 	}
 	for rel, content := range files {
 		full := filepath.Join(root, filepath.FromSlash(rel))
@@ -254,7 +254,7 @@ func TestBuildTaskIndexWalksNestedArchiveAndSkipsPlanDir(t *testing.T) {
 		t.Error("buildTaskIndex() indexed a card under tasks/plan/, which is not a task zone")
 	}
 	if _, ok := idx["TASK-3"]; ok {
-		t.Error("buildTaskIndex() indexed a card under tasks/_archive/plan/; an archived plan would then satisfy a real TASK-3 child")
+		t.Error("buildTaskIndex() indexed a card under tasks/archive/plan/; an archived plan would then satisfy a real TASK-3 child")
 	}
 	if rec, ok := idx["TASK-249"]; !ok || rec.closed {
 		t.Errorf("TASK-249 = %+v, ok=%v; want open (not closed)", idx["TASK-249"], ok)
@@ -263,10 +263,39 @@ func TestBuildTaskIndexWalksNestedArchiveAndSkipsPlanDir(t *testing.T) {
 		t.Errorf("TASK-248 = %+v, ok=%v; want closed", idx["TASK-248"], ok)
 	}
 	if rec, ok := idx["TASK-251"]; !ok || !rec.closed {
-		t.Errorf("TASK-251 = %+v, ok=%v; want closed (flat under _archive/)", idx["TASK-251"], ok)
+		t.Errorf("TASK-251 = %+v, ok=%v; want closed (flat under archive/)", idx["TASK-251"], ok)
 	}
 	if rec, ok := idx["TASK-244"]; !ok || !rec.closed {
-		t.Errorf("TASK-244 = %+v, ok=%v; want closed (nested under _archive/done/)", idx["TASK-244"], ok)
+		t.Errorf("TASK-244 = %+v, ok=%v; want closed (nested under archive/done/)", idx["TASK-244"], ok)
+	}
+}
+
+func TestBuildTaskIndexSkipsPlanCardsInDatedArchivePartition(t *testing.T) {
+	root := t.TempDir()
+	files := map[string]string{
+		"tasks/archive/2026-09/030-closed-task.md":   "---\nid: TASK-30\nstatus: done\n---\n",
+		"tasks/archive/2026-09/005-archived-plan.md": "---\nid: PLAN-005\ntype: plan\nstatus: done\n---\n",
+	}
+	for rel, content := range files {
+		full := filepath.Join(root, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(full, []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	idx, err := buildTaskIndex(root)
+	if err != nil {
+		t.Fatalf("buildTaskIndex() error = %v", err)
+	}
+
+	if rec, ok := idx["TASK-30"]; !ok || !rec.closed {
+		t.Errorf("TASK-30 = %+v, ok=%v; want closed (dated archive partition)", idx["TASK-30"], ok)
+	}
+	if _, ok := idx["TASK-5"]; ok {
+		t.Error("buildTaskIndex() indexed an archived plan card by its filename number; a completed plan would then satisfy a real TASK-5 child")
 	}
 }
 

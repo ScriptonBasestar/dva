@@ -428,7 +428,7 @@ func checkOneLink(
 
 	// A link into the tasks tree whose literal target moved to another state directory resolves to
 	// the file's actual location before it is declared broken. A task's identity is its number
-	// (NNN-slug.md); its directory is its state (todo/done/_archive/…), which is expected to change
+	// (NNN-slug.md); its directory is its state (todo/done/archive/…), which is expected to change
 	// when it is worked or archived. One basename match resolves the link; zero is a genuine broken
 	// link; more than one is an ambiguity the checker refuses to guess (TASK-143).
 	literalTargetPath := targetPath

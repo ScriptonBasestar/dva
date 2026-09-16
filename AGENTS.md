@@ -46,9 +46,9 @@ DVA는 개발 환경 오케스트레이터입니다. 핵심 방향은 `stack:`�
 
 `blocks:`를 선언한 done 카드는 여기에 더해 `quality-review-receipt`를 남긴다 —
 `ce task validate`가 그 파일을 읽어 `reviewed-card-sha256`을 카드의 정본 digest와
-대조한다. 경로는 `tasks/receipts/<TASK-ID>/done-review-<sha>.json`이며 Git이 추적한다.
+대조한다. 경로는 `tasks/done/evidence/<TASK-ID>/done-review-<sha>.json`이며 Git이 추적한다.
 `tmp/` 아래에 두면 그것을 만든 체크아웃에서만 유효해 카드의 판정이 재현되지 않는다
-(TASK-388). 규칙과 근거는 `tasks/receipts/README.md`.
+(TASK-388). 규칙과 근거는 `tasks/done/evidence/README.md`.
 
 ## Repository Map
 
@@ -80,7 +80,7 @@ internal/exec/                 → Process execution (syscall.Exec, subprocess)
 internal/skillinstall/         → dva skill install|status|uninstall|backup (no AI runtime needed)
 internal/skillclaim/           → Agent Skills claim protocol (installed-file ownership verdicts)
 tools/                         → doccheck, flowcheck, skillgen (make doc-check / make generate)
-tasks/receipts/                → Git-tracked review receipts (ce task validate reads these)
+tasks/done/evidence/                → Git-tracked review receipts (ce task validate reads these)
 ```
 
 ## Key Flows
@@ -203,7 +203,7 @@ Size exemptions (lookup / contract documents — splitting harms the use case; l
 
 The checker inventories **tracked files that still exist in the worktree + non-ignored untracked** files (tracked deletions are excluded so mid-move index blobs cannot mask broken links; ignored `tmp/` cannot make a miss look valid), skips git symlink aliases (mode `120000`) and checks the canonical target once, and fails on zero candidates/links, any broken relative link/anchor in repository Markdown, or oversized docs under the size-enforced paths.
 
-**Task links survive state transitions (TASK-143).** A task's identity is its number (`NNN-slug.md`); its directory is its state (`todo`/`done`/`_archive`/…), which changes when it is worked or archived. The checker resolves a `tasks/<state>/NNN-…` markdown link — and the same path written inside inline code (where `verify:` bindings live, invisible to the link scan) — to whichever state directory actually holds `NNN-…`. One match resolves the reference; zero is a genuine broken link; more than one is an ambiguity the gate refuses to guess. So archiving a task no longer breaks inbound links: `make doc-check` stays green across a move without a repoint pass.
+**Task links survive state transitions (TASK-143).** A task's identity is its number (`NNN-slug.md`); its directory is its state (`todo`/`done`/`archive`/…), which changes when it is worked or archived. The checker resolves a `tasks/<state>/NNN-…` markdown link — and the same path written inside inline code (where `verify:` bindings live, invisible to the link scan) — to whichever state directory actually holds `NNN-…`. One match resolves the reference; zero is a genuine broken link; more than one is an ambiguity the gate refuses to guess. So archiving a task no longer breaks inbound links: `make doc-check` stays green across a move without a repoint pass.
 
 **Verify bindings must not depend on agent shell wrappers (TASK-221).** On a task criterion
 line, doccheck reads the first inline-code span after `verify:` after removing fenced examples;
@@ -273,8 +273,8 @@ ships a `PostToolUse` hook (`ce-validate-filesize.sh` → `ce validate filesize`
 a commit message or a review as "the limit" without saying whose it is (TASK-211), and
 do not cite the cache path without a date — it is versioned and moves.
 
-"Advisory" describes its status here, not its track record: `tasks/_archive/187` and
-`tasks/_archive/193` each split a Go file specifically to stay under 500, neither citing
+"Advisory" describes its status here, not its track record: `tasks/archive/187` and
+`tasks/archive/193` each split a Go file specifically to stay under 500, neither citing
 a repository rule because there is none to cite. Splitting a file for that reason is a
 legitimate choice; making it as though the repository required it is not.
 

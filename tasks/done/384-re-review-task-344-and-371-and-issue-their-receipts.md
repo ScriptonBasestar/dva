@@ -11,7 +11,7 @@ source: "TASK-388이 durable 경로를 열자 보드의 남은 실패 2건의 �
 depends-on: [TASK-388]
 completion-summary: "TASK-344와 TASK-371 두 카드를 오늘 날짜의 독립 리뷰로 재검토하고 각각 추적 경로에 receipt를 발급했다. 리뷰어가 두 카드 모두에서 같은 결함을 찾았다 — 두 카드의 verification-evidence가 산출물 없는 소급 독립 리뷰를 주장하고 있었고, 봉인 전에 둘 다 철회했다. 그 결과 ce task validate --all이 94 valid / 0 invalid, ce task gate가 READY로 처음 초록이 됐다"
 verification-status: verified
-verification-evidence: "완료 기준 5개: grep 바인딩 둘 rc=0, ce task validate --all rc=0(94 valid / 0 invalid), ce task gate rc=0(validate·lint·preflight 셋 다 pass, READY — task_board_ready). 소급 아님 확인은 커밋 토폴로지로 했다 — TASK-371은 36594bb2(12:33:49)와 5fc87d79(12:49:49)가 16분 간격 동일 저자이고 tasks/receipts/TASK-371이 없었다. make doc-check 0, make lint 0"
+verification-evidence: "완료 기준 5개: grep 바인딩 둘 rc=0, ce task validate --all rc=0(94 valid / 0 invalid), ce task gate rc=0(validate·lint·preflight 셋 다 pass, READY — task_board_ready). 소급 아님 확인은 커밋 토폴로지로 했다 — TASK-371은 36594bb2(12:33:49)와 5fc87d79(12:49:49)가 16분 간격 동일 저자이고 tasks/done/evidence/TASK-371이 없었다. make doc-check 0, make lint 0"
 quality-review: waived
 quality-reviewed-at: 2026-09-14
 quality-review-evidence: "이 카드 자체는 독립 리뷰를 받지 않았고 waived로 정직하게 남긴다. 이 카드의 산출물은 receipt 둘이며 그 둘은 각각 독립 리뷰어(review-344, review-371, 둘 다 저자 아님)가 판정해 발급했다 — 즉 실질 내용은 리뷰됐고 리뷰되지 않은 것은 이 카드의 닫는 기록뿐이다. 여기에 pass를 찍으면 이 카드가 두 카드에서 철회시킨 바로 그 주장(근거 없는 독립 리뷰 주장)을 스스로 반복하게 된다"
@@ -85,8 +85,8 @@ tasks/done/371-align-planprogress-with-the-shared-progress-contract.md
 
 ## Completion Criteria
 
-- [x] TASK-344가 오늘 날짜의 독립 리뷰 판정을 담은 추적 receipt를 가리킨다 | verify: `/usr/bin/grep -rq --include='344-*.md' 'quality-review-receipt: tasks/receipts/' tasks`
-- [x] TASK-371도 같다 | verify: `/usr/bin/grep -rq --include='371-*.md' 'quality-review-receipt: tasks/receipts/' tasks`
+- [x] TASK-344가 오늘 날짜의 독립 리뷰 판정을 담은 추적 receipt를 가리킨다 | verify: `/usr/bin/grep -rq --include='344-*.md' 'quality-review-receipt: tasks/done/evidence/' tasks`
+- [x] TASK-371도 같다 | verify: `/usr/bin/grep -rq --include='371-*.md' 'quality-review-receipt: tasks/done/evidence/' tasks`
 - [x] 두 receipt의 `reviewed-at`이 소급 날짜가 아니다 | verify: `human — 리뷰어 세션 기록과 대조`
 - [x] 보드가 통과한다 | verify: `ce task validate --all`
 - [x] 공유 게이트가 초록이다 | verify: `ce task gate`

@@ -1,6 +1,6 @@
 ---
 id: TASK-388
-title: "Move review receipts to a tracked durable path under tasks/receipts/"
+title: "Move review receipts to a tracked durable path under tasks/done/evidence/"
 type: bug
 priority: P1
 effort: S
@@ -12,7 +12,7 @@ depends-on: []
 quality-review: pass
 quality-reviewed-at: 2026-09-14
 quality-review-evidence: "독립 리뷰 review-383(Claude Opus 5, 저자 아님) 4라운드 pass, verdict-final. 1라운드 9건·2라운드 2건·3라운드 2건을 차례로 접었고 리뷰어가 매 라운드 회신 수치를 받아쓰지 않고 독립 재측정했다 — 증거 12건의 evidence-sha256 대조 12/12, 주 체크아웃 원본과 cmp 12/12 exit 0, 아카이브 카드 diff가 정확히 12 files/+12/-12, README.md 면제를 91 대 90으로 직접 확인. 4라운드에서 잔여 low 하나(RF1)를 새로 잡았다: 기준 4가 [x]인데 바인딩 ce task validate --all이 exit 1이었다. 리뷰어가 exit 0 후보 둘을 실측 제시했고 남은 2건의 정체까지 세는 쪽을 채택했다"
-quality-review-receipt: tasks/receipts/TASK-388/done-review-52b05d30b4d24e5905229ced2ab83be2c0050bf0f77437252c182daf109eccca.json
+quality-review-receipt: tasks/done/evidence/TASK-388/done-review-52b05d30b4d24e5905229ced2ab83be2c0050bf0f77437252c182daf109eccca.json
 ---
 
 ## Summary
@@ -56,7 +56,7 @@ Done card blocks %s but declares no quality-review-receipt: the successors were 
 ## 경로 형태는 새로 정하지 않는다
 
 ISSUE-001 §Evidence가 이미 workbook의 문서화된 durable 계약을
-`tasks/receipts/<TASK-ID>/done-review-<sha>.json`으로 적어 두었다. 그 형태를 그대로
+`tasks/done/evidence/<TASK-ID>/done-review-<sha>.json`으로 적어 두었다. 그 형태를 그대로
 쓴다. 상류 발급기가 나중에 착지해도 같은 자리에 쓰게 되어 마이그레이션이 필요 없다.
 
 `<sha>`는 receipt가 고정하는 `reviewed-card-sha256`이다. 파일명이 자신이 고정한 digest를
@@ -84,7 +84,7 @@ Summary: 78 valid, 6 invalid (total: 84)
 ❌ Done card blocks TASK-354 but declares no quality-review-receipt   (TASK-371)
 ```
 
-receipt 6건을 `tasks/receipts/<TASK-ID>/`로 옮기고 카드 포인터를 고친 뒤, 같은
+receipt 6건을 `tasks/done/evidence/<TASK-ID>/`로 옮기고 카드 포인터를 고친 뒤, 같은
 워크트리에서 `tmp/`를 만들지 않은 채로:
 
 ```
@@ -99,11 +99,11 @@ Summary: 84 valid, 2 invalid (total: 86)
 
 `tmp/`의 원본은 지우지 않는다. 워크스테이션 로컬 이력이고, 지워서 얻을 것이 없다.
 
-## `_archive` 12장도 함께 옮겼다 — 게이트 때문이 아니라 증거 때문이다
+## `archive` 12장도 함께 옮겼다 — 게이트 때문이 아니라 증거 때문이다
 
 초안은 live done 6장만 옮겼다. 그러자 ISSUE-001의 해소 기준으로 쓰려던 바인딩
 `! /usr/bin/grep -rn '^quality-review-receipt: tmp/' tasks`가 exit 1이었다 —
-`tasks/_archive/`의 12장(197, 200, 208, 209, 212, 214, 215, 220, 221, 222, 223, 224)이
+`tasks/archive/`의 12장(197, 200, 208, 209, 212, 214, 215, 220, 221, 222, 223, 224)이
 아직 `tmp/`를 가리키고 있었다. 바인딩을 `tasks/done/`으로 좁혀 통과시킬 수도 있었지만
 그것은 **주장을 측정에 맞추는 것**이다.
 
@@ -125,7 +125,7 @@ documents are kept as history, not maintained"로 건너뛰고 `--all` 집계에
 카드→receipt만 옮기면 바깥 포인터만 내구적이 되고 안쪽 포인터는 그대로 `tmp/`에
 남는다. 이 절이 12건을 옮긴 이유로 든 것이 바로 "아무도 다시 검증하지 않으므로
 포인터가 끊긴 것을 알아챌 기회 자체가 없다"인데, 그 상태가 receipt 안에 그대로
-남아 있게 된다. 그래서 12개 증거 파일도 `tasks/receipts/TASK-<N>/` 아래 원래
+남아 있게 된다. 그래서 12개 증거 파일도 `tasks/done/evidence/TASK-<N>/` 아래 원래
 파일명 그대로 함께 커밋했다. 복사 전에 12건 모두 receipt가 고정한
 `evidence-sha256`과 실제 파일의 sha256을 대조했고 12/12 일치했다.
 
@@ -134,13 +134,13 @@ documents are kept as history, not maintained"로 건너뛰고 `--all` 집계에
 있던 자리를 적은 것이고, 그것을 나중에 고치는 것은 판정을 고치는 것과 같은 종류의
 행위다. 그러므로 **`evidence-path`는 읽는 사람이 따라갈 경로가 아니라 출처
 기록이고, 같은 바이트는 receipt 옆에 있다.** 이 한계를
-`tasks/receipts/README.md`에도 적었다.
+`tasks/done/evidence/README.md`에도 적었다.
 
 증거 파일은 `task-197-done-review.md.txt`처럼 `.txt`를 덧붙여 커밋했다. 원래 이름
 그대로 두었더니 `ce task validate --all`이 12개를 전부 **카드로 읽어**
 `86 valid / 14 invalid (total: 100)`이 됐다 — `tasks/` 아래에서 `README.md`를
 제외한 모든 `.md`가 카드 후보다. 면제는 디렉토리가 아니라 파일명에 걸린다:
-`tasks/receipts/README.md` 자신이 유일한 예외이고, 실측하면 `_archive`를 뺀 `.md`
+`tasks/done/evidence/README.md` 자신이 유일한 예외이고, 실측하면 `archive`를 뺀 `.md`
 파일 수가 카드 수보다 정확히 하나 많다. 확장자는 바이트를 바꾸지 않으므로
 `evidence-sha256` 대조는 그대로 통과한다(12/12). 이 제약도 README에 적었다.
 
@@ -157,11 +157,11 @@ documents are kept as history, not maintained"로 건너뛰고 `--all` 집계에
 ## Completion Criteria
 
 - [x] `tasks/` 전체에서 `tmp/`를 가리키는 receipt 포인터가 하나도 남지 않았다 | verify: `! /usr/bin/grep -rn '^quality-review-receipt: tmp/' tasks`
-- [x] 옮겨진 receipt 18건(done 6 + `_archive` 12)이 원본과 바이트 동일하다 | verify: `human — cmp로 18건 확인, 이 카드 §실측과 §_archive 절에 기록`
+- [x] 옮겨진 receipt 18건(done 6 + `archive` 12)이 원본과 바이트 동일하다 | verify: `human — cmp로 18건 확인, 이 카드 §실측과 §archive 절에 기록`
 - [x] 아카이브 카드에서 바뀐 줄은 포인터 한 줄뿐이다 | verify: `human — git diff --stat이 12 files / 12 insertions / 12 deletions인지 확인`
 - [x] `tmp/`가 없는 체크아웃에서 validate 실패가 6에서 2로 줄고, 남은 2건은 TASK-344·371이다 | verify: `test "$(ce task validate --all 2>&1 | /usr/bin/grep -B3 '❌ Invalid' | /usr/bin/grep -c 'Validating: tasks/done/\(344\|371\)-')" = 2`
 - [x] 문서 게이트가 새 디렉토리를 받아들인다 | verify: `make doc-check` (regression-guard)
-- [x] 경로 관례가 AGENTS.md와 `tasks/receipts/README.md`에 적혀 있다 | verify: `/usr/bin/grep -q 'tasks/receipts' AGENTS.md`
-- [x] 증거 파일 12건이 receipt에 박힌 `evidence-sha256`과 일치한다 | verify: `human — 12/12 대조, 이 카드의 _archive 절에 기록`
-- [x] `tasks/receipts/` 아래에 카드로 읽히는 `.md`가 없다 | verify: `! /usr/bin/find tasks/receipts -name '*.md' -not -name 'README.md' | /usr/bin/grep -q .` (regression-guard)
+- [x] 경로 관례가 AGENTS.md와 `tasks/done/evidence/README.md`에 적혀 있다 | verify: `/usr/bin/grep -q 'tasks/done/evidence' AGENTS.md`
+- [x] 증거 파일 12건이 receipt에 박힌 `evidence-sha256`과 일치한다 | verify: `human — 12/12 대조, 이 카드의 archive 절에 기록`
+- [x] `tasks/done/evidence/` 아래에 카드로 읽히는 `.md`가 없다 | verify: `! /usr/bin/find tasks/done/evidence -name '*.md' -not -name 'README.md' | /usr/bin/grep -q .` (regression-guard)
 - [x] ISSUE-001이 3번의 소유권 정정을 반영한다 | verify: `/usr/bin/grep -rq --include='001-task-runtime-cannot-review-legacy-done-cards-without-verification-evidence.md' 'TASK-388' tasks`

@@ -111,7 +111,7 @@ PLAN-006 자식(303, 304, 305, 306, 308, 310, 312, 313, 317). 그 계획을 진�
 실측으로 기록했다: `ce task validate`가 영수증을 요구하는 조건이 `blocks:` 하나뿐이라는
 것. TASK-381은 그 문제가 없는 케이스로 **진짜 독립 리뷰**(`review-381`, 판정
 `conditional`)을 받았고 — 결함 네 형태를 독립 재파종해 rc=1로 발화, 미해결 발견은
-ISSUE-016~018로 분리, 영수증은 `tasks/receipts/TASK-381/`에 있다. 리뷰가 실제 결함
+ISSUE-016~018로 분리, 영수증은 `tasks/done/evidence/TASK-381/`에 있다. 리뷰가 실제 결함
 여섯을 찾았다는 사실이 배분 판단(provenance가 살아 있는 카드엔 진짜 리뷰가 더 싸다)의
 회수를 증명한다.
 
@@ -126,7 +126,7 @@ ISSUE-016~018로 분리, 영수증은 `tasks/receipts/TASK-381/`에 있다. 리�
 `ce task archive --help`가 `quality-review: pass|conditional|waived`를 받는다고 명시하고,
 `waived`는 `quality-review-evidence`를 함께 요구한다 — 이 계획이 요청한 형태 그대로다.
 대가가 하나 남는다. §Order 3이 Tier B 36장을 값이 없던 시절 `conditional` + evidence
-문구로 우회했고, `tasks/_archive/done/`의 `quality-review: conditional`은 **48장**이다.
+문구로 우회했고, `tasks/archive/done/`의 `quality-review: conditional`은 **48장**이다.
 그중 상당수는 리뷰된 카드가 아니라 우회된 waiver다. **소급 수정하지 않는다** — evidence
 문구가 각 카드에 남아 정보는 손실되지 않았다. 기록: **그 48장을 세어 "48장이 리뷰됐다"고
 읽으면 틀린다.**

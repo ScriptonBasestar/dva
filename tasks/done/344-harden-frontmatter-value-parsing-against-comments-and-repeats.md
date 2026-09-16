@@ -12,7 +12,7 @@ verification-evidence: "2026-09-10: go test ./tools/doccheck, make doc-check 통
 quality-review: pass
 quality-reviewed-at: 2026-09-14
 quality-review-evidence: "2026-09-14, 독립 리뷰어(작업 미참여)가 재검증했다. 완료 기준 4건의 verify 바인딩을 워크트리에서 직접 실행해 전부 rc=0, go test ./tools/doccheck/... rc=0, make doc-check rc=0을 오늘 다시 측정했다. 별도 픽스처 트리에 `id: TASK-331 # duplicate` 카드를 넣고 doccheck를 돌려 card_ids 1 (duplicate: 1) / doc-check: FAIL로 우회 차단을 독립 재현했고, frontmatterValue를 격리 복사본에서 10개 입력으로 탐침해 인용부호 내부 # 보존과 공백 없는 # 비제거를 확인했다. 비차단 지적 셋(반복 키 검출이 질의된 키 한정, 큰따옴표 이스케이프 미해제, 완료 기준 넷이 테스트 이름 존재 검사)은 카드 본문에 기록했다."
-quality-review-receipt: tasks/receipts/TASK-344/done-review-29e2ab55ea8b81a93a32f2480665d6e156dc24d04ad14f043fa5092ff290b32a.json
+quality-review-receipt: tasks/done/evidence/TASK-344/done-review-29e2ab55ea8b81a93a32f2480665d6e156dc24d04ad14f043fa5092ff290b32a.json
 ---
 
 ## Summary

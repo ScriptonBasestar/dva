@@ -16,7 +16,7 @@ quality-review-evidence:
   - "프루브 재실행 — make test 27 ok 0 FAIL, --plan task348 rc 0(14단계 출력, 실행 없음), --preview task348 rc 0(6개 목록 전부 (없음)), bash -n + shellcheck clean"
   - "소스 체인 심층 프로브 — config.go:121 Profiles → resolver.go:442 → plan_orchestrator.go:46 → plugin.go:38 → compose.go:203-205이 --profile을 하위 명령 앞에 삽입 확인, 대조군 경계(275c8c98 parent 스키마 additionalProperties:false → validate exit 1 / build는 No services to build) 재현, TestPlanProfilesReachComposeArgv의 argv 고정 확인"
   - "채택 적법성 — TASK-397(done 카드)의 동일 채택 기록과 그것이 인용하는 TASK-379 기준 4·TASK-395 기준 1 선례 체인이 실재함을 확인; 두 사람 바인딩은 전부 기계적 점검으로 분해되어 세션이 수행하고 리뷰어가 독립 재수행함"
-quality-review-receipt: tasks/receipts/TASK-348/done-review-b88a023bdc680ab9e8205c94884a17295c8ae4651a3628a9645a5a3c12bee834.json
+quality-review-receipt: tasks/done/evidence/TASK-348/done-review-b88a023bdc680ab9e8205c94884a17295c8ae4651a3628a9645a5a3c12bee834.json
 completion-summary: "회차와 증거 이식은 이미 착지돼 있다(da54568). 마감 세션은 기준 1·3의 확인을 수행했다 — 증거 절의 두 비교축 존재, 회차 커밋 이후 블록 무변경(git 이력), make test 재실행, 하네스 preview·plan 재판독. 사람 바인딩 2건은 본 보드 선례(TASK-379 기준 4·TASK-395 기준 1·TASK-397 기준 2)에 따라 출력 첨부 + 독립 리뷰 재실행으로 채택한다."
 verification-status: verified
 verification-evidence:

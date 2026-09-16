@@ -142,7 +142,7 @@ func runPatternSelects(pattern string, names []string) (bool, error) {
 // load-bearing: inside single quotes a backslash is an ordinary character, so -run 'A\|B' reaches
 // Go's regexp as A\|B — an escaped pipe, which matches the literal name "A|B" and therefore
 // nothing. Unquoted, the shell eats the backslash and Go sees the alternation A|B.
-// tasks/_archive/059 wrote the first form and recorded the second form's results.
+// tasks/archive/059 wrote the first form and recorded the second form's results.
 func shellUnquote(raw string) string {
 	switch {
 	case len(raw) >= 2 && raw[0] == '\'' && raw[len(raw)-1] == '\'':

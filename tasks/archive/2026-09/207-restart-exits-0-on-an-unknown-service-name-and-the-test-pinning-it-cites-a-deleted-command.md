@@ -1,0 +1,403 @@
+---
+id: TASK-207
+title: "`dva restart` exits 0 on an unknown service name, pinned by a test citing a deleted command"
+type: bug
+priority: P2
+effort: S
+created-at: 2026-08-20T14:06:00+09:00
+source: "found by the TASK-198 corpus sweep — the name-shaped twin of 198's flag defect, surviving one line away from the guard 198 added"
+scope: "internal/cli/compose.go restartCmd RunE and internal/cli/restart_names_test.go TestRestart_UnknownNameTouchesNothing. Decide the ruling first; the code change is one call to an existing helper."
+status: done
+---
+
+# Task 207: `dva restart` exits 0 on an unknown service name, pinned by a test citing a deleted command
+
+## Summary
+
+TASK-198 closed `dva restart --no-wat` (unknown **flag** read as a service name,
+exit 0, nothing restarted). The same user-visible signature — exit 0, nothing
+done, no error — survives through the name half of the same path, and `restart`
+is the only lifecycle verb still exposed to it.
+
+Measured against the **post-198** binary, so this is not a regression 198
+introduced and not something 198 fixes:
+
+```
+restart zzznosuchservice     rc=0   [warn] no lifecycle entries matched filters
+up      zzznosuchservice     rc=1   unexpected argument 'zzznosuchservice'
+down    zzznosuchservice     rc=1   'dva down' downs all declared entries. Name a plan instead
+stop    zzznosuchservice     rc=1   'dva stop' stops all declared entries. Name a plan instead
+```
+
+Identical result in a plans-present fixture, and via a tag filter matching
+nothing (`restart -T zzznosuchtag` → rc=0). `restart` is the only verb that
+legitimately takes positional service names, which is exactly why it is the only
+one that can misread a typo as one — the same structural reason it was the
+outlier in TASK-198.
+
+`rejectUnknownFlags` cannot catch this: it fires only on a leading dash
+(`internal/cli/selectors.go:57`, `len(a) >= 2 && strings.HasPrefix(a, "-")`).
+The guard TASK-198 added sits one line above the code that discards the
+unmatched name.
+
+## The four tokens this covers
+
+An adversarial review of TASK-198 found three more ways into the same rc=0,
+nothing-done outcome. They are not separate defects — they are the same
+unmatchable-name path reached by different tokens, which is why they belong in
+one ruling instead of three:
+
+```
+restart zzznosuchservice       rc=0   nothing ran      an ordinary typo
+restart --                     rc=0   nothing ran      terminator, no names follow
+restart -                      rc=0   nothing ran      too short for the dash guard (len < 2)
+restart -- --no-wat s1         rc=0   s1 ran           after `--` a flag IS a name; typo discarded
+```
+
+The last row is the worst of the four and matches what TASK-198 calls the worse
+half of its own defect: something *does* happen, and the argument the user typed
+is silently dropped. The bare `-` case is shared with `up` and `down` and is
+pre-existing in all three.
+
+TASK-198 deliberately declined to settle any of these. Its guard leaves `--` in
+the name list rather than removing it, precisely so that this card decides what
+an unmatchable name means instead of inheriting an answer from slice arithmetic
+— an earlier draft removed the token and turned `dva restart --` into a full
+stack bounce, which is recorded in `TestRestartBareTerminatorChangesNothing`.
+
+## Why this is a decision and not just a fix
+
+The behaviour is **already pinned by a passing test**, whose stated
+justification names a command that no longer exists:
+
+```go
+// TestRestart_UnknownNameTouchesNothing matches the 'dva stack up bogus-name'
+// reference path: warn, change nothing, exit 0.
+```
+
+`dva stack` was removed with the `applications:` section in the intent-centric
+plan refactor (`6710766`, and CLAUDE.md records the removal). The reference path
+this test conforms to is gone, and the verb that replaced it — `up` — took the
+opposite ruling: `up zzznosuchservice` is rc=1. So the current behaviour is not
+a decision that survived the refactor; it is a decision whose premise the
+refactor deleted, left unexamined because the test kept passing.
+
+That is what makes this a card rather than a one-line change. Whichever way it
+is ruled, the test comment must stop citing `dva stack up`.
+
+## The ruling to make
+
+Three defensible outcomes, in the order I would argue them:
+
+1. **Reject, matching `up`.** An unknown name is a typo far more often than an
+   intentional no-op, and `restart` is the last verb that disagrees with its
+   siblings. Cost: `dva restart $SERVICE` in a script now fails where it used to
+   warn — and note `dva restart -- "$@"` with an empty `"$@"` becomes an error
+   under this reading, which is the idiom `--` exists for.
+2. **Reject only when *no* name matched**, keeping a partial match (`restart s1
+   zzztypo`) as a warn. Narrower, and it preserves batch invocations.
+3. **Keep exit 0 deliberately**, and rewrite the test comment to say so on its
+   own terms rather than by reference to a deleted command.
+
+This card does not assume (1). It requires that one of them be chosen and that
+the test's rationale be replaced either way.
+
+Note the interaction with TASK-198's Open Question — "should the empty selection
+itself be an error?" — which covers the tag-filter arm of the same exit-0 path.
+Settle the name arm here; a tag filter that legitimately matches nothing is a
+different case and is not in scope.
+
+## Completion Criteria
+
+- [x] The ruling is stated in the card's disposition, naming which of the three outcomes was chosen and why | verify: human — read the disposition
+- [x] `TestRestart_UnknownNameTouchesNothing` no longer justifies itself by `dva stack up` | verify: `/usr/bin/grep -c 'dva stack up' internal/cli/restart_names_test.go` returns 0 (today: 1)
+- [x] The ruling is pinned by a test named for it, so the behaviour stops being inherited from the flag guard | verify: `/usr/bin/grep -c 'func TestRestartUnknownNameRuling' internal/cli/restart_names_test.go` returns 1 (today: 0)
+- [x] That test exercises a plans-present config too, since the stack path is reachable with plans configured | verify: `/usr/bin/grep -A30 'func TestRestartUnknownNameRuling' internal/cli/restart_names_test.go | /usr/bin/grep -c 'writeRestartPlanProbeConfig'` returns ≥ 1 (today: 0, the function does not exist)
+- [x] All four tokens from "The four tokens this covers" are ruled on together, not just the typo | verify: human — the disposition states the outcome for `zzznosuchservice`, `--`, `-`, and a flag after `--`; a ruling that leaves any of the four unnamed is incomplete
+- [x] `TestRestartBareTerminatorChangesNothing` is updated rather than left asserting a behaviour this card overturned | verify: human — read the test and confirm it asserts the chosen ruling for `--`; a presence grep would pass unchanged and prove nothing
+- [x] The whole cli package passes | verify: `go test ./internal/cli/ -count=1`
+- [x] Confirmed against the built binary | verify: human — rebuild and re-run the 4-verb `zzznosuchservice` table from Summary; state which rows changed
+- [x] `make test` passes | verify: `make test`
+
+## References
+
+- `internal/cli/compose.go` — `restartCmd` RunE, the name path below TASK-198's guard
+- `internal/cli/selectors.go:57` — `rejectUnknownFlags`, and the leading-dash condition that makes it blind to this
+- `internal/cli/restart_names_test.go` — `TestRestart_UnknownNameTouchesNothing`, the test with the stale rationale
+- `tasks/archive/198-restart-reports-success-on-a-typo-d-flag-while-doing-nothing.md` — the flag half, and its Open Question on the empty selection
+- `tasks/archive/087-unrecognized-stack-args-become-entry-names.md` — the name-fallthrough class, filed against the removed `stack` family
+- `internal/cli/restart_names_test.go` — `TestRestartBareTerminatorChangesNothing`, which pins the `--` row of the table above so this card's ruling has to be explicit about it (renamed to `TestRestartBareTerminatorMeansABareRestart` by this card — see Ruling and Review correction)
+
+## Ruling (2026-08-20)
+
+**Outcome (1) — reject, matching `up` — with the terminator consumed rather than
+left in the name list.** The pairing matters: it is what dissolves the objection
+the card itself raises against (1).
+
+One precision the Summary table invites a reader to miss, measured rather than
+inferred: `up`/`down`/`stop` do not perform a name check at all. They read a
+positional argument as a **plan** name only, so in a plan-less config `dva up s1`
+is rc=1 even though `s1` IS a declared entry. What restart now shares with them is
+the outcome for an unknown name, not the mechanism — it remains the only lifecycle
+verb taking entry names positionally, which is both why it was the last one exposed
+to this defect and why it is the only one that can tell a declared name from a typo.
+
+Outcome (2), rejecting only when *no* name matched, was rejected on the card's own
+worst row. `restart -- --no-wat s1` matches `s1`, so under (2) it stays rc=0 with
+the typo discarded — the exact "does something while ignoring what you asked for"
+shape TASK-198 calls the worse half of its own defect. A partial-match rule
+preserves batch invocations by preserving the silent drop that makes them wrong.
+
+Outcome (3), keeping exit 0 on its own terms, would leave `restart` the last
+lifecycle verb disagreeing with its siblings, with no argument for the difference
+beyond a deleted command's precedent.
+
+The card's stated cost of (1) — that `dva restart -- "$@"` with an empty `"$@"`
+becomes an error, breaking the idiom `--` exists for — is real under (1) alone, and
+is why the terminator is now consumed inside `restartCmd`. With it consumed, the
+empty case means "no names given", which is what a bare `dva restart` already
+means. TASK-198 measured the opposite escalation (dropping the token turned
+`restart --` into a whole-stack bounce at rc=0) and kept the token to prevent it;
+that reasoning was sound *without* a name guard beside it and does not survive
+having one. Silently doing more is the direction a guard must not drift in — but
+here doing more is what the idiom means, and the alternative is not doing less, it
+is exiting 1 on a correct invocation.
+
+Consumed in `restartCmd` only. `parseDvaFlags` still keeps the terminator, because
+`dva up` takes no positional names at all and relies on the surviving token to
+reject a stray `--`. Dropping it centrally would newly accept one everywhere.
+
+**All four tokens, ruled explicitly:**
+
+| token | before | after |
+| --- | --- | --- |
+| `restart zzznosuchservice` | rc=0, nothing ran | **rc=1**, nothing ran |
+| `restart -` | rc=0, nothing ran | **rc=1**, nothing ran |
+| `restart -- --no-wat s1` | rc=0, **s1 ran, typo discarded** | **rc=1**, nothing ran |
+| `restart --` | rc=0, nothing ran | rc=0/rc=1, **whatever a bare `restart` does here** |
+
+The first three are one class — after `--` a token is a name whatever it spells, so
+one name-shaped check answers all three. The fourth moves in the other direction
+and is the only row where behaviour widens; that is the terminator consumption
+above, and it makes `restart --` behave as a bare `restart` does in the same config.
+The fourth row's "after" is deliberately not a fixed outcome: see the Review
+correction below, where writing one down as if it were fixed is what produced the
+one real defect this branch shipped and then removed.
+
+Validated against `SortedStack()` — the **declared** entries, before tag filtering.
+A name that exists but is excluded by `--tag` still selects nothing legitimately and
+keeps its warning, so TASK-198's Open Question on the empty selection is untouched,
+as this card requires.
+
+`TestRestartBareTerminatorChangesNothing` was **renamed** to
+`TestRestartBareTerminatorMeansABareRestart` (via a first, wrong
+`…MeansEveryEntry`, see the Review correction); under this ruling the old name
+asserts the opposite of what the test does. Its comment keeps 198's measured A/B table and
+adds this card's row, so the inversion is visible in the diff rather than silent.
+
+Two message defects surfaced by probing the built binary, both fixed in `71dcd3c`:
+the headline read `unknown a stack entry name` (the noun was shared with
+`rejectUnknownFlags`, which only ever drops it into a sentence), and `restart -`
+suggested *both* `s1` and `s2`, since one character is two edits from any
+two-character name. `similarTo` now also requires the distance to be shorter than
+the input; `restart s3` still suggests both at distance 1.
+
+## Verification (2026-08-20)
+
+Branch `celee__fix__207-restart-unknown-name`, commits `9834ffc` (the ruling) and
+`71dcd3c` (the message fixes), on `origin/master` = `8c48687`.
+
+**The new tests can fail.** A/B with `restart_names_test.go` held byte-identical and
+only `compose.go`/`selectors.go` reverted to `origin/master`: **10 of 12 subtests
+FAIL**, plus both rewritten tests. The 2 that pass on master are the `restart -- s1`
+row in each fixture — unchanged by design, since TASK-198 already fixed it — so they
+are the positive control proving the guard did not break the working path, not a
+vacuous pass.
+
+**Against the built binary** (`bin/dva`, `Commit=9834ffc`, two-entry script fixture;
+exit codes captured with no pipeline in the way):
+
+```
+restart zzznosuchservice  rc=1  ran=[]                              (was rc=0)
+up      zzznosuchservice  rc=1  ran=[]                              (unchanged)
+down    zzznosuchservice  rc=1  ran=[]                              (unchanged)
+stop    zzznosuchservice  rc=1  ran=[]                              (unchanged)
+restart -                 rc=1  ran=[]                              (was rc=0)
+restart -- --no-wat s1    rc=1  ran=[]                              (was rc=0, s1 ran)
+restart --                rc=0  ran=[s1_stop s1_up s2_stop s2_up]   (was rc=0, nothing)
+restart -- s1             rc=0  ran=[s1_stop s1_up]                 (unchanged)
+restart s1                rc=0  ran=[s1_stop s1_up]                 (unchanged)
+```
+
+Only the `restart` rows changed. The three sibling verbs are identical to the card's
+Summary table, which is the point: restart moved to them, not they to it.
+
+**Gates.** `go test ./internal/cli/ -count=1` ok. `make test` ok — 9 packages under
+`-race`, cli coverage 74.6%. Card bindings re-measured after the disposition was
+written: `dva stack up` references **0** (was 1), `func TestRestartUnknownNameRuling`
+**1** (was 0), `writeRestartPlanProbeConfig` within 30 lines of it **1** (was 0).
+
+## Review correction (2026-08-20) — `dec4e3e`
+
+An adversarial review measured the Ruling's central claim false and it was right.
+The claim was that consuming the terminator makes `dva restart --` *identical to a
+bare `dva restart`*. Verified in the plan-less fixture only. In a config with
+several plans and no `default_plan`:
+
+```
+dva restart        rc=1  multiple plans configured; specify one: dva restart <p1|p2>
+dva restart --     rc=0  s1_stop s1_up s2_stop s2_up          ← before dec4e3e
+```
+
+So the terminator path did what the bare path is explicitly *refused*: TASK-198's
+escalation, arriving from the other side. The cause is gate ordering, not the name
+guard. `requirePlanSelection` runs on the **raw** args, where `["--"]` counts as "a
+token was given" and passes; `dropFlagTerminator` then leaves zero names, which
+lifecycle reads as "every entry". `dec4e3e` re-applies the gate, and the two agree again.
+(That first attempt gated on the empty name list, which is *not* the terminator's
+signature — see the second correction below.)
+
+**The test asserted the divergence as correct.** `TestRestartUnknownNameRuling`'s
+`the terminator alone` row hardcoded all four markers and ran under *both* fixtures,
+so it measured the wrong behaviour and read it as agreement. A literal expectation
+cannot catch this; the claim is about two invocations, so the assertion has to be
+about two invocations. The row moved out of the table into
+`TestRestartBareTerminatorMeansABareRestart`, which runs a bare `restart` and a
+`restart --` in the same fixture and requires the same error text or the same
+success, and the same markers. A/B with the plan gate removed and the test file
+byte-identical: that test **FAILs on the plans fixture and passes on the plan-less
+one**. The plans fixture is the one that must flip when the mechanism is removed;
+the plan-less subtest staying green is the control that says the failure is the
+mechanism and not the file.
+
+**Re-measured, two binaries, `8c48687` vs `dec4e3e`** (sha256 differ; markers via a
+script fixture):
+
+```
+                                     master 8c48687          final (f0abf944)
+plans, no default   restart          rc=1 refused            rc=1 refused
+plans, no default   restart --       rc=0 nothing            rc=1 refused  (now identical)
+plans, no default   restart --tag T  rc=0 acts               rc=0 acts     (parity kept)
+plans, no default   restart --mode --rc=0 nothing            rc=0 whole stack (see below)
+no plans            restart          rc=0 whole stack        rc=0 whole stack
+no plans            restart --       rc=0 nothing            rc=0 whole stack (the ruling)
+default_plan: p1    restart          rc=0 p1 only            rc=0 p1 only
+default_plan: p1    restart --       rc=1 refused            rc=1 refused (unchanged)
+```
+
+Row 2's master column read "rc=0 whole stack" until the second review corrected it.
+That measurement belongs to `523f359`, this branch *before* the correction, not to
+master: master leaves `--` in the name list, where it matches no entry, so it warns
+and does nothing. Three binaries, sha256 recorded: master `2d8bc83e46a9` rc=0
+nothing, pre-fix `7b82895e68f4` rc=0 whole stack, final `f0abf9449eeb` rc=1 refused.
+
+**The default_plan shape is the one exception and it is pre-existing** — identical
+on both binaries. `rejectSuppressedDefaultPlan` classifies any `args[0]` starting
+with `-` as a flag, and `--` is not a flag. That helper is shared with
+`up`/`down`/`stop`, so narrowing it from inside restart's card would decide three
+other commands by accident — the trap TASK-198 recorded when it deferred this class
+here. Opened as **TASK-210**, and the exception is now stated in `restart --help`
+and in USAGE.md rather than left as a false identity claim.
+
+Two smaller findings from the same review, both fixed in `dec4e3e`: a *second* `--`
+was told to "move it before the `--`", meaningless advice for a token that is `--`
+(it now gets its own line), and the dash rows asserted only that the message
+contains `"-"`, true of most errors this command emits — the table now pins the
+guard's own wording, so those rows cannot pass on someone else's error.
+
+One finding was left out of scope and carded: a value-taking flag with no value is
+silently dropped, so `dva restart --mode` restarts everything on master and here
+alike. This branch adds a second spelling that reaches it (`--mode --`), which is
+how it was noticed. **TASK-211**.
+
+## Second review correction (2026-08-20) — the fix was too wide
+
+Two independent reviews of `dec4e3e` — a subagent against the diff, a peer session
+against two freshly built binaries — landed on the same class of defect from
+different sides. All of it is fixed on this branch; measurements are against the
+final binary `f0abf9449eeb` unless another sha is named.
+
+**The gate refused nine shapes, not one.** `dec4e3e` guarded on `len(names) == 0`,
+reading an empty name list as the terminator's signature. It is not: every stack
+selector empties it too. Measured in a two-plan, no-`default_plan` config with
+tagged entries:
+
+```
+                        master 8c48687        dec4e3e            final
+restart --tag web       rc=0, s1 bounced      rc=1 refused       rc=0, s1 bounced
+restart -T web          rc=0, s1 bounced      rc=1 refused       rc=0, s1 bounced
+restart --exclude-tag   rc=0, s1 bounced      rc=1 refused       rc=0, s1 bounced
+restart --mode dev      rc=1 "mode not found" rc=1 "plans"       rc=1 "mode not found"
+up --tag web            rc=0                  rc=0               rc=0
+stop --tag web          rc=0                  rc=0               rc=0
+```
+
+`up` and `stop` never changed, so `dec4e3e` made restart the one lifecycle verb
+whose tag filter needed a plan name, and it answered "you mistyped a mode" with
+"pick a plan". The gate is now applied to the raw args rather than to the name
+list: strip `--debug`/`--json` as `requirePlanSelection` itself does, drop the
+terminator, and require that nothing else survived. `TestRestartStackFlagsDoNotNeedAPlanName`
+pins the two shapes against each other in one fixture — four selectors that must
+act, and a bare `--` that must still be refused. Removing the gate fails the
+terminator row; restoring the `len(names)` form fails the four selector rows.
+
+**The help claimed a parity that does not exist.** `restart --help` said an
+unknown name is an error "as it is for up, down and stop". None of the three ever
+compares a token to the declared stack entries: `dva up s1` is rc=1 `plan 's1' not
+found` even where `s1` is declared, and `down`/`stop` refuse positionals wholesale.
+USAGE.md, edited in the same commit, said the opposite and was right. The help now
+states the rule as restart's own.
+
+**The default_plan exception was stated too narrowly.** `restart --help`, USAGE.md
+and TASK-210 all scoped it to "a config with a `default_plan`". Measured in a
+config with **one** plan and no `default_plan` key at all: `dva restart --` is
+rc=1 `flags suppress the default plan "p1"` on master, `dec4e3e` and the final
+binary alike, because `Config.DefaultPlan` treats a lone plan as the implicit
+default. A reader who greps their `dva.yml` for the key and finds none would
+conclude the exception does not apply. All three now say "a resolvable default
+plan — an explicit `default_plan`, or a lone plan".
+
+**The help documented only the reassuring half of the ruling.** "does what a bare
+`dva restart` does" was followed by the refusal and not by the other consequence:
+in a plan-less config it stops and starts every declared entry. `dva restart --
+"$@"` with an empty `"$@"` was a no-op on master and is now either a whole-stack
+bounce or rc=1 — neither is the old behaviour, and a wrapper script is exactly
+where that matters. Both directions are now stated in `restart --help` and USAGE.md.
+
+**The suggestion threshold was one-sided.** `d < len(s)`, added in `71dcd3c` to
+stop `dva restart -` suggesting both `s1` and `s2`, left the mirror open: with a
+one-character entry `b` declared, `dva restart wob` suggested it (d=2 against a
+3-character input). It is now `d < min(len(s), len(c))`, with
+`TestSimilarToWeighsBothNames` pinning both directions. The comment's claim that
+the rule "costs the name caller nothing real" was wrong and is corrected there:
+configs with one-character entry names get no suggestions at all, and the printed
+list of declared entries is the fallback.
+
+**One divergence from master is shipped deliberately.** `dva restart --mode --`
+(and `--env --`, `--tag --`) is rc=0 whole stack here and rc=0 nothing on master.
+The cause is TASK-211: the flag's value is swallowed by the terminator and the
+flag is silently dropped, so the invocation reduces to "no names given", which the
+ruling says means a bare restart. Master is not consistent here either — a bare
+`dva restart --mode` already restarts everything on master — so this makes two
+spellings of the same mistake agree rather than introducing a new rule. The honest
+fix is TASK-211's, not another special case in this RunE.
+
+**Two card defects found by the same reviews and fixed:** TASK-211 claimed `--var`
+shares the missing-value defect. It does not — `--var` is handled in
+`parsePlanFlags` (`plan_lifecycle.go:192`) and already errors `--var requires
+KEY=VAL` on both binaries; `parseDvaFlags` has no `--var` case. Its cited range
+`compose.go:762-780` was also off; the four value-taking cases span `764-783`. And
+TASK-211's frontmatter quoted the very call-site count TASK-208 exists to retire.
+
+## Technical Notes
+
+Both fixtures used by the sweep behave identically, which is the point of
+measuring both: `detectPlanRoute` returns `ok=false` for "no plans" *and* for
+"several plans, none selected", so the stack path — and this defect — is
+reachable with plans configured. The plans fixture is two plans (`p1`, `p2`) and
+no `default_plan`; see `writeRestartPlanProbeConfig` in the test file, added by
+TASK-198.
+
+Exit codes must be captured without a pipeline in the way (`cmd >/dev/null 2>&1;
+echo $?`). `cmd | head` reports head's status, and that has been misread as rc=0
+twice in this repo's measurements.

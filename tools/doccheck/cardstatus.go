@@ -12,10 +12,10 @@ import (
 // declare while it sits there.
 //
 // Resolved by longest matching path prefix — never by splitting the path on "/" and indexing a
-// segment. tasks/_archive/done/ exists, so an nth-segment reader classifies an archived done-card
-// by the "done" segment instead of the "_archive" one, checking it against the wrong permitted
+// segment. tasks/archive/done/ exists, so an nth-segment reader classifies an archived done-card
+// by the "done" segment instead of the "archive" one, checking it against the wrong permitted
 // set. A peer session made exactly that mistake on 2026-09-03 and reported two closed cards
-// (superseded, valid under _archive/) as dangling because it compared them to the done/ zone's
+// (superseded, valid under archive/) as dangling because it compared them to the done/ zone's
 // stricter set (TASK-287).
 type cardZone struct {
 	prefix    string
@@ -23,11 +23,11 @@ type cardZone struct {
 	skip      bool // true for tasks/plan/: not a card, no status: field to check
 }
 
-// cardZones is the zone table TASK-287 froze. `superseded` is permitted only under _archive/
+// cardZones is the zone table TASK-287 froze. `superseded` is permitted only under archive/
 // because every superseded card lives there and is closed work; done/ is for cards that were
 // actually completed in place.
 var cardZones = []cardZone{
-	{prefix: "tasks/_archive/", permitted: []string{"done", "superseded"}},
+	{prefix: "tasks/archive/", permitted: []string{"done", "superseded"}},
 	{prefix: "tasks/done/", permitted: []string{"done"}},
 	{prefix: "tasks/todo/", permitted: []string{"todo"}},
 	{prefix: "tasks/issue/", permitted: []string{"todo"}},

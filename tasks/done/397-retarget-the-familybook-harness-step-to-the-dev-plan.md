@@ -31,7 +31,7 @@ quality-review-evidence:
   - "수정 선행 커밋 396d639가 master에 속함을 `git branch --contains`로, 워크트리 기반 history에 포함됨을 `git merge-base --is-ancestor 396d639 fee1624`로 독립 확인했다"
   - "`--project infra` 스코프 유지 근거(자식명 infra 불변, validateCompositionFlagScope 결선)를 devbox dva.yaml 현행·6881c81^ 대조로 독립 재확인했다"
   - "지적 1건(low)을 의식적 채택으로 기록했다 — 기준 2 human 바인딩의 [x]는 에이전트 측 증거 + 독립 리뷰 재실행으로 채택하며, TASK-379 기준 4의 선례와 같은 처리다 (하단 리뷰 대응 참조)"
-quality-review-receipt: tasks/receipts/TASK-397/done-review-be14a7f6ecd17914faf86c13a5b6dcfdc4bacd23d47d9980b99861d97ce026dd.json
+quality-review-receipt: tasks/done/evidence/TASK-397/done-review-be14a7f6ecd17914faf86c13a5b6dcfdc4bacd23d47d9980b99861d97ce026dd.json
 created: 2026-09-15
 source: "TASK-328 실기동 회차(2026-09-15) — dogfood-run.sh의 steps_familybook이 존재하지 않는 plan hybrid를 가리킨다"
 depends-on: []

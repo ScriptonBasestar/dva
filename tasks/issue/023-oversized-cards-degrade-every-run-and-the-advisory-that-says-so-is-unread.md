@@ -27,7 +27,7 @@ ADVISORY (degrades a run, does not stop it)
 ## Evidence
 
 ```
-$ for f in $(find tasks -maxdepth 2 -name '*.md' -not -path 'tasks/_archive/*' -size +19k); do echo "$(wc -c < $f) $f"; done | sort -rn
+$ for f in $(find tasks -maxdepth 2 -name '*.md' -not -path 'tasks/archive/*' -size +19k); do echo "$(wc -c < $f) $f"; done | sort -rn
    35265  (done zone, 보드 게이트 도입 카드)
    25875  (done zone, dogfood 하네스)
    25821  (issue zone, 레거시 done 리뷰 증거)

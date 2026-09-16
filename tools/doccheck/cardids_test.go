@@ -124,13 +124,13 @@ func TestLeadingZeroFilenameNumbersCollide(t *testing.T) {
 }
 
 // TestPlanAndTaskNamespacesDoNotCollideByNumber preserves both plan exclusions: active plans
-// live in tasks/plan/, while completed plans live under tasks/_archive/plan/. Either may have
+// live in tasks/plan/, while completed plans live under tasks/archive/plan/. Either may have
 // the same filename number as a TASK card without entering the task filename namespace.
 func TestPlanAndTaskNamespacesDoNotCollideByNumber(t *testing.T) {
 	res := cardFixture(t,
 		archiveCard{path: "tasks/todo/006-task.md", body: "---\nid: TASK-900\nstatus: todo\n---\n\n# Task\n"},
 		archiveCard{path: "tasks/plan/006-active-plan.md", body: "---\nid: PLAN-006\n---\n\n# Active plan\n"},
-		archiveCard{path: "tasks/_archive/plan/006-archived-plan.md", body: "---\nid: PLAN-006\nstatus: done\n---\n\n# Archived plan\n"},
+		archiveCard{path: "tasks/archive/plan/006-archived-plan.md", body: "---\nid: PLAN-006\nstatus: done\n---\n\n# Archived plan\n"},
 	)
 	if res.DuplicateFilenameNums != 0 {
 		t.Fatalf("duplicate_filename_numbers = %d, want 0; detail: %v", res.DuplicateFilenameNums, res.DuplicateFilenameDetail)
@@ -146,7 +146,7 @@ func TestPlanAndTaskNamespacesDoNotCollideByNumber(t *testing.T) {
 func TestFilenameNumbersAreScopedByIDNamespace(t *testing.T) {
 	res := cardFixture(t,
 		archiveCard{path: "tasks/issue/001-issue.md", body: "---\nid: ISSUE-001\nstatus: todo\n---\n\n# Issue\n"},
-		archiveCard{path: "tasks/_archive/001-task.md", body: "---\nid: TASK-001\nstatus: done\n---\n\n# Task\n"},
+		archiveCard{path: "tasks/archive/001-task.md", body: "---\nid: TASK-001\nstatus: done\n---\n\n# Task\n"},
 	)
 	if res.DuplicateFilenameNums != 0 {
 		t.Fatalf("duplicate_filename_numbers = %d, want 0; detail: %v", res.DuplicateFilenameNums, res.DuplicateFilenameDetail)

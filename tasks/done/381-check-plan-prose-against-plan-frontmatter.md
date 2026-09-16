@@ -10,7 +10,7 @@ created: 2026-09-13
 quality-review: conditional
 quality-reviewed-at: 2026-09-14
 quality-review-evidence: "review-381(독립 리뷰어, 작업 미참여)이 네 기준을 전부 재실행하고 결함 세 형태를 독립적으로 재파종해 셋 다 rc=1로 발화함을 확인했다. 판정은 conditional — 게이트는 공허하지 않으나 범용 수량사(개·건)를 카드 계수로 읽는 오탐 클래스가 남아 있고, 그 형태의 산문이 PLAN-007·009에 이미 존재한다. 미해결 발견은 ISSUE-016·017·018로 분리했다."
-quality-review-receipt: tasks/receipts/TASK-381/done-review-747206df0e6d69d0a11a3c2e3c17ecd7451aad7f4bb1c772c0267596fd6fe45a.json
+quality-review-receipt: tasks/done/evidence/TASK-381/done-review-747206df0e6d69d0a11a3c2e3c17ecd7451aad7f4bb1c772c0267596fd6fe45a.json
 reviewed-card-sha256-algorithm: "plain-file-sha256 of the reviewed revision (27c4dfe). TASK-381 declares no blocks:, so ce task validate never reaches the receipt check and no CE canonical digest is obtainable for this card."
 source: "PLAN-009의 산문/frontmatter 불일치(TASK-380 D-2)를 사람이 눈으로 발견. 같은 형태를 보는 기계가 없다"
 depends-on: []

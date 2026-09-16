@@ -10,14 +10,14 @@
 //     does not exist and still exit 0 (TASK-136)
 //   - binding tools: grep and find use absolute paths so agent shell wrappers
 //     cannot change a criterion's corpus or output (TASK-221)
-//   - archive frontmatter: every card under tasks/_archive/ carries `id:` or
+//   - archive frontmatter: every card under tasks/archive/ carries `id:` or
 //     `type:`. Older ce tested those fields before testing whether the file was
 //     archived, so a card missing both was audited against a format that
 //     postdates it; fixed ce skips the archive before reading it and reports
 //     nothing there. Neither build asserts this property — only this does, and
 //     the upgrade widens its remit rather than retiring it (TASK-206)
 //   - card zone/status: every task card's `status:` is permitted in the zone
-//     (tasks/todo|done|issue|_archive/) it physically sits in, resolved by
+//     (tasks/todo|done|issue|archive/) it physically sits in, resolved by
 //     longest matching path prefix rather than by indexing a path segment; a
 //     card zone missing `status:` entirely is an error; tasks/plan/ files are
 //     skipped, since plans carry no `status:` field (TASK-287)

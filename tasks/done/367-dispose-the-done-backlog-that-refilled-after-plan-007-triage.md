@@ -54,7 +54,7 @@ PLAN-007 §External은 두 항목을 "카드 없음, 만들지 않는다"로 남
 `quality-review-evidence`를 함께 요구한다. PLAN-007은 값이 없던 시절 Tier B 36장을
 `conditional` + evidence 문구로 우회했다.
 
-**그 우회의 흔적이 남아 있다.** `tasks/_archive/done/`의 `quality-review: conditional`
+**그 우회의 흔적이 남아 있다.** `tasks/archive/done/`의 `quality-review: conditional`
 **48장** 중 상당수는 리뷰된 카드가 아니라 우회된 waiver다. 지금은 정직한 값이 존재하므로
 그 48장은 **읽는 사람을 오도한다** — `conditional`은 "조건부로 통과했다"로 읽히지
 "리뷰하지 않기로 했다"로 읽히지 않는다.

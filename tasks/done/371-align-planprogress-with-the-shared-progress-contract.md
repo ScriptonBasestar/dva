@@ -12,7 +12,7 @@ needs-human: false
 blocks: [TASK-354]
 quality-review: conditional
 quality-reviewed-at: 2026-09-14
-quality-review-receipt: tasks/receipts/TASK-371/done-review-1b0bc79fe4489d6918cfbe63ade7ff42c9c050e59a60fe332e70dbd0fa006df9.json
+quality-review-receipt: tasks/done/evidence/TASK-371/done-review-1b0bc79fe4489d6918cfbe63ade7ff42c9c050e59a60fe332e70dbd0fa006df9.json
 quality-review-evidence: "독립 리뷰 review-371(Claude Opus 5, 저자 아님, 2026-09-10 작업 미참여). 완료 기준 셋을 bare로 재실행해 go test ./tools/planprogress 0, make doc-check 0, ce task validate --all 1(이 카드 자신의 receipt 부재 하나뿐). 절삭 계약은 tools/planprogress/check.go의 truncatedPercent를 소스에서 읽고 check_test.go의 TestTruncatedPercent 표로 확인했다 — 15/16=93, 16/26=61, 7/19=36, 2/3=66은 전부 반올림과 갈리는 값이고 0/0=0이 0 나눗셈을 막는다. conditional인 이유는 코드가 아니라 기록이다: 카드의 verification-evidence가 근거 없는 소급 독립 리뷰를 주장했고, 이 커밋이 그것을 철회한다"
 verification-evidence: "2026-09-10: go test ./tools/planprogress, make doc-check, and ce task validate --all passed. 2026-09-14 정정 — 같은 줄이 주장하던 'independent review confirmed shared truncation contract'는 철회한다. 뒷받침하는 산출물이 없고, 카드를 연 커밋(36594bb2 12:33:49)과 닫은 커밋(5fc87d79 12:49:49)이 16분 간격 동일 저자이며 그 문장 자체가 구현자의 닫는 커밋 안에서 추가됐다. 실재하는 독립 리뷰는 2026-09-14의 것이 최초이고 아래 receipt가 그것이다."
 ---

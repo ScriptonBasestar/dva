@@ -23,7 +23,7 @@ sits in. A card in `tasks/done/` may claim `status: todo` and validate clean.
 DVA is not currently exposed to that, because it carries its own gate:
 `tools/doccheck`'s `checkCardStatus` holds the zone table TASK-287 froze
 (`tasks/done/` → `done`, `tasks/todo/` and `tasks/issue/` → `todo`,
-`tasks/_archive/` → `done|superseded`) and fails the build on a mismatch. That
+`tasks/archive/` → `done|superseded`) and fails the build on a mismatch. That
 local gate is what caught ISSUE-003's stale `todo` on 2026-09-13, three days
 after the field went wrong. `ce task validate` had reported the same card
 `✅ Valid` throughout.

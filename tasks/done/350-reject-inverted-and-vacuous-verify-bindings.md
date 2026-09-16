@@ -75,9 +75,9 @@ doccheck는 이미 bare wrapped tool(`binding_tool.go`)과 escaped pipe·외부 
 - (A)는 지금 보드에 0건이다 (TASK-332에서 고쳤다). 예방 규칙이며, 재발 시 조용히 통과하는
   종류라 사후 발견이 어렵다.
 - **(B)의 적용 범위는 열린 존(`tasks/todo`, `tasks/doing`)뿐이다.** `tasks/done`과
-  `tasks/_archive`에는 같은 형태가 각각 26건·70건 있고, 이미 닫힌 카드를 소급 수정하는 것은
+  `tasks/archive`에는 같은 형태가 각각 26건·70건 있고, 이미 닫힌 카드를 소급 수정하는 것은
   기록 위조다. (A)는 예방 규칙이라 열린 존만 검사해도 충분하다.
-- 선행 사례: `tasks/_archive/136-a-verify-binding-can-name-a-test-that-does-not-exist-and-still-pass.md`.
+- 선행 사례: `tasks/archive/136-a-verify-binding-can-name-a-test-that-does-not-exist-and-still-pass.md`.
   그때는 *존재하지 않는 테스트 이름*을 막았고, 이번은 *존재하지만 아무것도 증명하지 않는 명령*을 막는다.
 - **(C) 세 번째 형태가 TASK-323 리뷰에서 드러났다: 문서 카드의 `grep -qF '<문장>'`.**
   이건 (A)처럼 역전돼 있지도, (B)처럼 공허하지도 않고 실제로 한 파일의 한 문장을 겨눈다.

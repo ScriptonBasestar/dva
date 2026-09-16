@@ -26,7 +26,7 @@ func archiveFixture(t *testing.T, cards ...archiveCard) Result {
 }
 
 // TestArchiveFrontmatter_flagsCardsDetectionWouldReject pins the guard against the shapes that
-// actually reach tasks/_archive/ and fail ce's canonical detection. Without it the check could be
+// actually reach tasks/archive/ and fail ce's canonical detection. Without it the check could be
 // defanged — by a prefix edit, or by a frontmatter parser that accepts anything — and still print
 // a clean sweep, which is the vacuous-pass shape TASK-206 was filed about.
 func TestArchiveFrontmatter_flagsCardsDetectionWouldReject(t *testing.T) {
@@ -101,7 +101,7 @@ func TestArchiveFrontmatter_flagsCardsDetectionWouldReject(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			res := archiveFixture(t, archiveCard{"tasks/_archive/001-x.md", tt.body})
+			res := archiveFixture(t, archiveCard{"tasks/archive/001-x.md", tt.body})
 			if res.ArchiveCards != 1 {
 				t.Fatalf("archive_cards=%d, want 1 — the sweep did not reach the fixture", res.ArchiveCards)
 			}
@@ -141,7 +141,7 @@ func TestArchiveFrontmatter_acceptsEitherFieldAlone(t *testing.T) {
 		{"indented opening fence, which ce trims too", "  ---\nid: TASK-001\ntitle: \"x\"\n---\n\n# Body\n"},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			res := archiveFixture(t, archiveCard{"tasks/_archive/001-x.md", tt.body})
+			res := archiveFixture(t, archiveCard{"tasks/archive/001-x.md", tt.body})
 			if res.ArchiveCards != 1 {
 				t.Fatalf("archive_cards=%d, want 1", res.ArchiveCards)
 			}
@@ -156,7 +156,7 @@ func TestArchiveFrontmatter_acceptsEitherFieldAlone(t *testing.T) {
 // the prefix with none read as a card means the sweep stopped reaching the archive, which would
 // otherwise print exactly what a clean archive prints.
 func TestArchiveFrontmatter_failsWhenArchiveYieldsNoCards(t *testing.T) {
-	res := archiveFixture(t, archiveCard{"tasks/_archive/notes.txt", "not a card\n"})
+	res := archiveFixture(t, archiveCard{"tasks/archive/notes.txt", "not a card\n"})
 	if res.ArchiveFilesSeen == 0 {
 		t.Fatal("archive_files_seen=0, want 1 — the prefix matched nothing")
 	}
@@ -198,7 +198,7 @@ func TestArchiveFrontmatter_sweepsTheRealCorpus(t *testing.T) {
 	t.Logf("swept %d archived card(s) from %d file(s) under %s", res.ArchiveCards, res.ArchiveFilesSeen, archivePrefix)
 }
 
-// TestArchiveFrontmatter_reportsAnUnreadableCard pins that a card under tasks/_archive/ which
+// TestArchiveFrontmatter_reportsAnUnreadableCard pins that a card under tasks/archive/ which
 // cannot be read fails this gate, and that the archive guard is one of the things failing it.
 //
 // It matters because ce no longer says anything here. Fixed ce decides the archive exemption
@@ -209,7 +209,7 @@ func TestArchiveFrontmatter_sweepsTheRealCorpus(t *testing.T) {
 // The assertions are split because inside dva the failure is reported three times, and a
 // Check-level assertion cannot tell which pass produced it. The link scan, the archive guard, and
 // the card zone/status guard (TASK-287) each read every non-symlink markdown candidate under
-// tasks/_archive/ independently and format their read failures identically (check.go, archive.go,
+// tasks/archive/ independently and format their read failures identically (check.go, archive.go,
 // cardstatus.go), so `res.OK` stays false even with the archive guard's error deleted — measured,
 // by deleting it. The direct call is therefore the assertion that can fail; the Check-level count
 // pins the duplication as a measured fact rather than an assumption, and will fail loudly if any
@@ -231,8 +231,8 @@ func TestArchiveFrontmatter_reportsAnUnreadableCard(t *testing.T) {
 	}
 
 	const (
-		broken = "tasks/_archive/206-unreadable.md"
-		intact = "tasks/_archive/206-readable.md"
+		broken = "tasks/archive/206-unreadable.md"
+		intact = "tasks/archive/206-readable.md"
 	)
 	root := t.TempDir()
 	writeFile(t, root, "docs/a.md", "# A\n\nSee [self](a.md).\n")

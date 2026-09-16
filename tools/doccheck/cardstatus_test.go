@@ -21,28 +21,28 @@ func cardFixture(t *testing.T, cards ...archiveCard) Result {
 }
 
 // TestZoneResolvesArchiveDoneAsArchive pins the longest-prefix rule against the exact collision
-// TASK-287 names: tasks/_archive/done/ exists, and an nth-segment reader takes its "done"
-// segment as the zone instead of "_archive", checking a closed card against the stricter done/
-// set. A card here declares status: superseded, valid only under _archive/; if the zone were
+// TASK-287 names: tasks/archive/done/ exists, and an nth-segment reader takes its "done"
+// segment as the zone instead of "archive", checking a closed card against the stricter done/
+// set. A card here declares status: superseded, valid only under archive/; if the zone were
 // misresolved as done/ (permits only "done") this would wrongly fail.
 func TestZoneResolvesArchiveDoneAsArchive(t *testing.T) {
-	zone, ok := resolveCardZone("tasks/_archive/done/001-x.md")
+	zone, ok := resolveCardZone("tasks/archive/done/001-x.md")
 	if !ok {
-		t.Fatal("tasks/_archive/done/001-x.md resolved to no zone")
+		t.Fatal("tasks/archive/done/001-x.md resolved to no zone")
 	}
-	if zone.prefix != "tasks/_archive/" {
-		t.Fatalf("zone prefix = %q, want tasks/_archive/ — an archived done-card must not be classified by its done/ segment", zone.prefix)
+	if zone.prefix != "tasks/archive/" {
+		t.Fatalf("zone prefix = %q, want tasks/archive/ — an archived done-card must not be classified by its done/ segment", zone.prefix)
 	}
 
 	res := cardFixture(t, archiveCard{
-		path: "tasks/_archive/done/001-x.md",
+		path: "tasks/archive/done/001-x.md",
 		body: "---\nid: TASK-001\nstatus: superseded\n---\n\n# Body\n",
 	})
 	if res.CardsChecked != 1 {
 		t.Fatalf("cards_checked=%d, want 1", res.CardsChecked)
 	}
 	if res.StatusMismatches != 0 {
-		t.Errorf("status_mismatches=%d on a card valid under its real zone (_archive/); detail=%v", res.StatusMismatches, res.CardStatusDetail)
+		t.Errorf("status_mismatches=%d on a card valid under its real zone (archive/); detail=%v", res.StatusMismatches, res.CardStatusDetail)
 	}
 	if !res.OK {
 		t.Errorf("Check reported FAIL on a card whose status is permitted in its longest-matching zone; errors=%v", res.Errors)
@@ -143,8 +143,8 @@ func TestCardStatus_acceptsPermittedStatusPerZone(t *testing.T) {
 		archiveCard{path: "tasks/todo/010-a.md", body: "---\nid: TASK-010\nstatus: todo\n---\n\n# A\n"},
 		archiveCard{path: "tasks/done/011-b.md", body: "---\nid: TASK-011\nstatus: done\n---\n\n# B\n"},
 		archiveCard{path: "tasks/issue/012-c.md", body: "---\nid: TASK-012\nstatus: todo\n---\n\n# C\n"},
-		archiveCard{path: "tasks/_archive/013-d.md", body: "---\nid: TASK-013\nstatus: done\n---\n\n# D\n"},
-		archiveCard{path: "tasks/_archive/014-e.md", body: "---\nid: TASK-014\nstatus: superseded\n---\n\n# E\n"},
+		archiveCard{path: "tasks/archive/013-d.md", body: "---\nid: TASK-013\nstatus: done\n---\n\n# D\n"},
+		archiveCard{path: "tasks/archive/014-e.md", body: "---\nid: TASK-014\nstatus: superseded\n---\n\n# E\n"},
 	)
 	if res.CardsChecked != 5 {
 		t.Fatalf("cards_checked=%d, want 5", res.CardsChecked)

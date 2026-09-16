@@ -60,7 +60,7 @@ TASK-333의 범위를 interaction으로 좁힌 것이 의도였는지 리뷰가 
   plan에는 그 변환이 없다. **그 차이를 확인하고 고르라.**
 - `schema_version`은 이 카드에서 **현재값에서 minor 한 칸** 올라간다. 추가 전용이므로 minor가
   맞고, 그 bump가 소비자가 존재 여부로 분기할 근거다 — 근거는
-  `tasks/_archive/done/272-freeze-manifest-route-identity.md:191`.
+  `tasks/archive/done/272-freeze-manifest-route-identity.md:191`.
   **구체적인 번호를 적지 않는다**: TASK-333이 1.6→1.7로 올렸고 그다음날
   `0111e8b`(CI profile discovery)가 1.8로 다시 올려, 이 카드가 적어둔 숫자는
   하루 만에 틀린 값이 됐다. 착수 시점의 `internal/cli/manifest.go`를 보고 결정하라.

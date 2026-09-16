@@ -52,7 +52,7 @@ complete is a worse surface than no alias.
 - `mergeInteraction`은 두 필드를 **항상 parent에서** 가져온다: `cloneImportedInteraction`이
   스탬프보다 **먼저** `Subcommands`로 재귀하므로 자식은 config 안에서 zero value다.
 - manifest `schema_version` 1.6 → 1.7. 추가 전용이므로 minor
-  (근거: `tasks/_archive/done/272-freeze-manifest-route-identity.md:191`).
+  (근거: `tasks/archive/done/272-freeze-manifest-route-identity.md:191`).
 - `Owner`에 `omitempty`를 **일부러 붙이지 않았다**. 모든 항목에 owner가 하나씩 있으므로
   "없음"이 신호가 될 여지가 없다. 대신 `ManifestDynCmd` 생성자 전부를 확인해
   `"owner": ""`가 새지 않는 것을 확인했다.

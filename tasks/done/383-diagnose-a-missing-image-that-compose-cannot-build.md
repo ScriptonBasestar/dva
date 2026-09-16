@@ -15,7 +15,7 @@ verification-evidence: "완료 기준 9개 전부 bare 실행 exit 0. make build
 quality-review: conditional
 quality-reviewed-at: 2026-09-14
 quality-review-evidence: "독립 리뷰 review-383-2(Claude Opus 5, 저자 아님)가 07502a6 을 판정했다. 미검증 가정(compose config 의 build 키 형태)을 실제 Docker Compose 5.5.1 로 직접 측정해 닫았고 — 키는 null 이 아니라 생략된다 — 프로덕션 코드 변형 6건으로 테스트가 실제로 무는지 확인했다. MEDIUM 둘(§리뷰가 바꾼 것)은 조건으로 걸렸고 여기서 전부 고쳤다. verdict 값은 리뷰어가 낸 그대로 남긴다"
-quality-review-receipt: tasks/receipts/TASK-383/done-review-3de50a802747601b712e6ed0b3983c4c39bc51bba979b4114993b9b3153ec060.json
+quality-review-receipt: tasks/done/evidence/TASK-383/done-review-3de50a802747601b712e6ed0b3983c4c39bc51bba979b4114993b9b3153ec060.json
 ---
 
 ## Summary

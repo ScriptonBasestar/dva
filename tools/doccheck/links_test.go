@@ -194,7 +194,7 @@ func TestLinks_failsWhenAnchorOnlyInsideFence(t *testing.T) {
 // its (changeable) state (TASK-143).
 func TestLinks_resolvesMovedTaskLink(t *testing.T) {
 	root := t.TempDir()
-	referrer := "tasks/_archive/113-old.md"
+	referrer := "tasks/archive/113-old.md"
 	moved := "tasks/done/153-app-up.md"
 	writeFile(t, root, referrer, "---\nid: TASK-113\nstatus: done\n---\n\n# 113\n\nSee [153](../todo/153-app-up.md).\n")
 	writeFile(t, root, moved, "---\nid: TASK-153\nstatus: done\n---\n\n# 153\n")
@@ -218,7 +218,7 @@ func TestLinks_resolvesMovedTaskLink(t *testing.T) {
 func TestLinks_reportsStaleWrittenTaskPathFromDocsWithoutFailing(t *testing.T) {
 	root := t.TempDir()
 	referrer := "docs/guide.md"
-	moved := "tasks/_archive/done/153-app-up.md"
+	moved := "tasks/archive/done/153-app-up.md"
 	writeFile(t, root, referrer, "# Guide\n\nSee [153](../tasks/todo/153-app-up.md).\n")
 	writeFile(t, root, moved, "---\nid: TASK-153\nstatus: done\n---\n\n# 153\n")
 	inv := mustInventory(t, root, referrer, moved)
@@ -283,8 +283,8 @@ func TestLinks_taskLinkGenuinelyMissingStaysBroken(t *testing.T) {
 func TestLinks_ambiguousTaskLinkIsAnError(t *testing.T) {
 	root := t.TempDir()
 	referrer := "tasks/todo/100-ref.md"
-	// The link points into _archive/ (absent); the basename lives in BOTH todo/ and done/.
-	writeFile(t, root, referrer, "# 100\n\nSee [dup](../_archive/200-dup.md).\n")
+	// The link points into archive/ (absent); the basename lives in BOTH todo/ and done/.
+	writeFile(t, root, referrer, "# 100\n\nSee [dup](../archive/200-dup.md).\n")
 	writeFile(t, root, "tasks/todo/200-dup.md", "# 200 todo\n")
 	writeFile(t, root, "tasks/done/200-dup.md", "# 200 done\n")
 	inv := mustInventory(t, root, referrer, "tasks/todo/200-dup.md", "tasks/done/200-dup.md")
@@ -341,7 +341,7 @@ func TestLinks_inlineCodeTaskPathGenuinelyMissingFails(t *testing.T) {
 func TestLinks_ambiguousInlineCodeTaskPathIsAnError(t *testing.T) {
 	root := t.TempDir()
 	referrer := "tasks/todo/100-ref.md"
-	writeFile(t, root, referrer, "# 100\n\n[self](100-ref.md)\n\nverify: `tasks/_archive/200-dup.md`\n")
+	writeFile(t, root, referrer, "# 100\n\n[self](100-ref.md)\n\nverify: `tasks/archive/200-dup.md`\n")
 	writeFile(t, root, "tasks/todo/200-dup.md", "# 200 todo\n")
 	writeFile(t, root, "tasks/done/200-dup.md", "# 200 done\n")
 	inv := mustInventory(t, root, referrer, "tasks/todo/200-dup.md", "tasks/done/200-dup.md")
@@ -357,7 +357,7 @@ func TestLinks_ambiguousInlineCodeTaskPathIsAnError(t *testing.T) {
 // path (TASK-143 review M3).
 func TestLinks_movedTaskLinkAnchorCheckedAgainstResolved(t *testing.T) {
 	root := t.TempDir()
-	referrer := "tasks/_archive/113-old.md"
+	referrer := "tasks/archive/113-old.md"
 	moved := "tasks/done/153-app-up.md"
 	writeFile(t, root, referrer, "---\nid: TASK-113\nstatus: done\n---\n\n# 113\n\nSee [153 section](../todo/153-app-up.md#the-heading).\n")
 	writeFile(t, root, moved, "---\nid: TASK-153\nstatus: done\n---\n\n# 153\n\n## The Heading\n")
@@ -368,7 +368,7 @@ func TestLinks_movedTaskLinkAnchorCheckedAgainstResolved(t *testing.T) {
 	}
 
 	// Same link, anchor absent from the resolved file → broken. Asserted on the anchor named in
-	// the detail, not on !res2.OK: the fixture writes a card under tasks/_archive/, so the
+	// the detail, not on !res2.OK: the fixture writes a card under tasks/archive/, so the
 	// archive frontmatter guard also runs over it, and any failure of that check would satisfy
 	// a bare !OK and let this test pass while the anchor logic it owns was broken.
 	writeFile(t, root, moved, "# 153\n\n## Some Other Heading\n")

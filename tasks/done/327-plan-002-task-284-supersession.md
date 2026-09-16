@@ -25,7 +25,7 @@ PLAN-002를 읽는 사람은 245 계약이 아직 유효하다고 오해한다.
 
 ## Completion Criteria
 
-- [x] PLAN-002에 245 §7-4/§8-5 → 284 supersession 노트가 TASK-281 노트와 같은 형식으로 있다 | verify: `/usr/bin/grep -Eq 'TASK-284.*(supersed|대체|우선)' tasks/_archive/plan/002-command-surface-delivery.md`
+- [x] PLAN-002에 245 §7-4/§8-5 → 284 supersession 노트가 TASK-281 노트와 같은 형식으로 있다 | verify: `/usr/bin/grep -Eq 'TASK-284.*(supersed|대체|우선)' tasks/archive/plan/002-command-surface-delivery.md`
 - [x] 노트가 가리키는 코드 위치(`internal/cli/config_env_safewrite.go` tempName 주석)와 형태가 일치한다 | verify: human — 주석의 이름 형태와 노트 문구 대조
 - [x] 문서 게이트 | verify: `make doc-check`
 

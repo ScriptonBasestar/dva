@@ -83,7 +83,7 @@ ignored `tmp/`에 둔다. 이 카드에서 과거 리뷰 영수증을 손으로 
 `fix` **10** 대 `bug` **8**이고, `fix` 10장은 **전부 todo**다. 즉 최근에 쓴 결함 카드는
 예외 없이 `fix`를 골랐고 `bug`는 닫힌 카드 쪽에만 남아 있다. 살아 있는 관례는 `fix`다.
 
-그런데 `_archive`까지 포함하면 `bug`가 **128장**이다. 다수결로는 어느 쪽도 결론이 아니다 —
+그런데 `archive`까지 포함하면 `bug`가 **128장**이다. 다수결로는 어느 쪽도 결론이 아니다 —
 "최근 관례" 대 "역사적 코퍼스"로 답이 갈린다.
 
 그래서 이 항목의 근거는 다수결이 아니라 **스키마 권한**이다. `type`의 허용값은
@@ -128,9 +128,9 @@ PLAN-008은 그 여덟 장을 **한 번에 한 장씩 직렬로** 연다. 이 �
 
    **순서: type 수정 → 바인딩 경로 수정 → 아카이브.** done/334는 세 작업이 동시에
    겨냥한다 — 이 카드가 `type`을 고치고, 별도로 오늘 진행 중인 수정이 done/334 자신의
-   `## Completion Criteria`(line 59 근처) verify 바인딩 경로를(TASK-282가 `_archive`로
+   `## Completion Criteria`(line 59 근처) verify 바인딩 경로를(TASK-282가 `archive`로
    옮겨가며 깨진 `tasks/done/282-…` 참조를) 고치고, TASK-367이 done/334 파일 자체를
-   `_archive`로 옮긴다. `type` 수정과 바인딩 경로 수정이 아카이브보다 먼저 끝나야 한다 —
+   `archive`로 옮긴다. `type` 수정과 바인딩 경로 수정이 아카이브보다 먼저 끝나야 한다 —
    아카이브가 먼저 일어나면 파일이 `tasks/done` 밖으로 나가 이 카드의 스코프
    (§Completion Criteria 2번, `tasks/todo tasks/done tasks/plan`만 훑는다) 바깥이 되고,
    `type: decision`이 고쳐지지 않은 채로 판정만 초록이 되는 동일한 실패 패턴이 재발한다.
@@ -187,8 +187,8 @@ CI가 `ce`를 provision하지 않는다는 재현 명령, `.gz-git.yaml`의 `bra
 엔진이 받는 값 중 이 카드의 성격에 가장 가까운 것을 골랐다 — 엔진 스키마에 `decision`을
 추가하는 것은 별개의 결정이고 이 카드의 범위가 아니다(§2 참조).
 
-**2. `tasks/_archive`의 `type: fix` 61장은 고치지 않는다.** `ce task validate`가
-`_archive`를 돌지 않으므로 게이트에 영향이 없고, 닫힌 기록을 grep 통과시키려 고쳐 쓰는
+**2. `tasks/archive`의 `type: fix` 61장은 고치지 않는다.** `ce task validate`가
+`archive`를 돌지 않으므로 게이트에 영향이 없고, 닫힌 기록을 grep 통과시키려 고쳐 쓰는
 것은 TASK-350이 말하는 기록 위조다. §Completion Criteria 2번 바인딩의 스코프를
 `tasks/todo tasks/done tasks/plan`으로 명시해 이 경계를 기계로 고정했다.
 
@@ -214,7 +214,7 @@ controller는 DVA의 prose `verification-evidence`를 파일 경로로 거부하
 도달해도 CE와 다른 digest를 `tmp/task/...`에 쓴다. 둘을 통과시키는 수기 JSON은 역사적
 controller review가 아니다. [[ISSUE-001]]의 `ce-agent-kit` validator/migration과
 `ce-workbook/task_management` issuer 공동 owner가 CE-compatible digest와
-`tasks/receipts/` 영구 발급 경로를 제공하고, 별도 reviewer가 실제 review를 수행할 때까지
+`tasks/done/evidence/` 영구 발급 경로를 제공하고, 별도 reviewer가 실제 review를 수행할 때까지
 보드는 not-ready다.
 
 **7. 2026-09-12 재측정 — receipt 외 실패는 2건이 더 있었고, 둘 다 고쳤다.** 6번은
@@ -230,7 +230,7 @@ controller review가 아니다. [[ISSUE-001]]의 `ce-agent-kit` validator/migrat
 
 같은 파일 C5 바인딩은 **다른** 카드의 zone 경로(`tasks/done/323-….md`)를 적고 있었다.
 validate는 자기 경로만 검사하므로 이건 거부되지 않았지만 결함은 동일하다 — 323이
-`_archive`로 가는 순간 깨진다. 이 카드 §작업 1번이 기록하는 done/334의 깨진
+`archive`로 가는 순간 깨진다. 이 카드 §작업 1번이 기록하는 done/334의 깨진
 `tasks/done/282-…` 참조가 정확히 그렇게 생긴 것이다. 같이 고쳤고, 고친 뒤에도
 바인딩이 exit 0 하는 것을 확인했다.
 
@@ -363,7 +363,7 @@ $ echo $?
 
 6번과 8번은 "이 카드는 [[ISSUE-001]] 해소 전까지 완료 불가"로 끝난다. 그 문장은 오늘
 참이 아니다. [[TASK-384]]가 TASK-344·371의 **독립 리뷰를 새로 수행하고** 그 영수증을
-`tasks/receipts/` 아래 추적되는 위치에 발급하면서 두 done blocker가 사라졌다.
+`tasks/done/evidence/` 아래 추적되는 위치에 발급하면서 두 done blocker가 사라졌다.
 
 ```
 $ ce task validate --all | tail -1
@@ -428,7 +428,7 @@ $ ce task gate --json
 | # | 바인딩 | rc | 비고 |
 |---|---|---|---|
 | 1 | `ce task gate` | **0** | `READY — task_board_ready`, validate/lint/preflight 전부 pass |
-| 2 | 살아 있는 zone에 `fix`·`decision` type 부재 | **0** | `_archive`는 범위 밖 |
+| 2 | 살아 있는 zone에 `fix`·`decision` type 부재 | **0** | `archive`는 범위 밖 |
 | 3 | `## Acceptance Criteria` 부재 | **0** | regression-guard |
 | 4 | 선언 AND 러너의 공유 게이트 호출 | **0** | 9번 시점 rc 1 → 0 |
 | 5 | 게이트 배치와 CI의 `ce` 해결 기록 | 충족 | 8번 |
@@ -451,7 +451,7 @@ $ ce task gate --json
 ## Completion Criteria
 
 - [x] `ce task gate`가 보드 전체에 대해 ready로 종료한다 | verify: `ce task gate`
-- [x] `type: fix`와 `type: decision`이 보드에서 사라진다 (스코프는 살아 있는 zone만이다 — `_archive`는 역사적 코퍼스이고 `type: fix` 61장을 포함해 이 카드의 범위 밖이다. 경계는 실수가 아니라 의도다: `ce task validate`도 `_archive`는 돌지 않고, 닫힌 기록을 grep 통과시키려 고쳐 쓰는 것은 TASK-350이 말하는 기록 위조다. 그래서 이 카드를 TASK-367보다 먼저 끝낸다, §작업 1번 순서 참조) | verify: `! /usr/bin/grep -rqE '^type: (fix|decision)$' tasks/todo tasks/done tasks/plan`
+- [x] `type: fix`와 `type: decision`이 보드에서 사라진다 (스코프는 살아 있는 zone만이다 — `archive`는 역사적 코퍼스이고 `type: fix` 61장을 포함해 이 카드의 범위 밖이다. 경계는 실수가 아니라 의도다: `ce task validate`도 `archive`는 돌지 않고, 닫힌 기록을 grep 통과시키려 고쳐 쓰는 것은 TASK-350이 말하는 기록 위조다. 그래서 이 카드를 TASK-367보다 먼저 끝낸다, §작업 1번 순서 참조) | verify: `! /usr/bin/grep -rqE '^type: (fix|decision)$' tasks/todo tasks/done tasks/plan`
 - [x] `## Acceptance Criteria`가 보드에서 사라진다 (regression-guard — 착수 시점에 이미 0장) | verify: `! /usr/bin/grep -rq '^## Acceptance Criteria$' tasks/todo tasks/done tasks/plan`
 - [x] 저장소 게이트가 `ce task gate`를 호출한다 — validate를 재구현하지 않는다. `## 게이트 연결`이 제시한 두 붙일 자리(통합 러너 선언 `.gz-git.yaml` 또는 `make doc-check`) 중 사람이 어느 쪽을 골라도 이 바인딩은 만족되어야 한다 — 한쪽만 하드코딩하지 않는다. 러너 경로를 고르는 쪽은 **선언과 호출을 함께** 잰다: `.gz-git.yaml`에 `readiness:` 선언이 있고, 그 디렉토리의 러너가 실제로 공유 게이트를 부를 때만 통과한다 — 러너 파일이 놓여 있기만 한 상태(오늘)와 러너가 판정을 재구현한 상태는 둘 다 실패한다. 주석에서 명령을 언급하는 것만으로는 어느 쪽에서도 통과하지 않는다 — 실제 호출 줄이어야 한다 | verify: `{ /usr/bin/grep -qE '^[[:space:]]*readiness:' .gz-git.yaml && /usr/bin/grep -rhE 'ce task gate' .gz-git/readiness/ | /usr/bin/grep -qvE '^[[:space:]]*#'; } || { /usr/bin/grep -hE 'ce task gate' Makefile 2>/dev/null | /usr/bin/grep -qvE '^[[:space:]]*#'; }`
 - [x] 게이트를 어디에 붙였는지와 CI의 `ce` 해결 여부가 근거와 함께 기록됐다 | verify: human — 이 카드 `## 결정 기록` 절에 선택과 그 근거, 그리고 CI에서 `ce`가 해결되는지 확인한 결과가 적혀 있는지 확인

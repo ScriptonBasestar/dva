@@ -17,7 +17,7 @@ upstream-ref: "ce-agent-kit#5"
 ## Summary
 
 `ce task lint`는 보드 인벤토리를 `zone` / `kind` / `storage` 세 클래스로만
-분류한다. [[TASK-388]]이 만든 `tasks/receipts/`는 이 셋 어디에도 맞지 않아
+분류한다. [[TASK-388]]이 만든 `tasks/done/evidence/`는 이 셋 어디에도 맞지 않아
 `unknown`으로 보고되고, 카드가 아니므로 개수는 정확히 0이다.
 
 지금 당장 무엇도 깨지지 않는다 — lint는 여전히 CLEAN을 보고하고 게이트는
@@ -33,7 +33,7 @@ upstream-ref: "ce-agent-kit#5"
 ```
 $ ce task lint
 TASK LINT — CLEAN (6 dir(s), 410 card(s), …)
-  _archive/        storage                315
+  archive/        storage                315
   done/            zone                    77
   issue/           kind                    10
   plan/            kind                     4
@@ -41,7 +41,7 @@ TASK LINT — CLEAN (6 dir(s), 410 card(s), …)
   todo/            zone                     4
 ```
 
-`tasks/receipts/`는 28개의 `TASK-*` 하위 디렉터리에 durable 리뷰 영수증을 담고
+`tasks/done/evidence/`는 28개의 `TASK-*` 하위 디렉터리에 durable 리뷰 영수증을 담고
 있다 (예: TASK-344와 TASK-371 각각 `done-review-<digest>.json`을 보유).
 
 이 디렉터리는 [[TASK-388]]을 통해 보드의 1급 아티팩트가 되었다 — 리뷰 영수증을
@@ -56,7 +56,7 @@ Resolution Criteria가 지금 이 위치의 존재에 결속되어 있다.
 
 ## Expected vs Actual
 
-- Expected: lint의 분류 어휘가 `tasks/receipts/`처럼 카드가 아닌 보드 아티팩트를
+- Expected: lint의 분류 어휘가 `tasks/done/evidence/`처럼 카드가 아닌 보드 아티팩트를
   담는 디렉터리를 위한 클래스를 갖거나, 최소한 그 디렉터리를 의도적으로 알려진
   비-카드 디렉터리로 선언한다.
 - Actual: 세 클래스(`zone`/`kind`/`storage`) 중 무엇에도 속하지 않아 `unknown`
@@ -90,19 +90,30 @@ ce-workbook/task_management로 적혀 있었다; 아래 소유권 절이 정정�
 
 ## Resolution Criteria
 
-- [ ] lint의 분류 어휘가 `tasks/receipts/`와 같은 비-카드 보드 아티팩트
+- [ ] lint의 분류 어휘가 `tasks/done/evidence/`와 같은 비-카드 보드 아티팩트
       디렉터리를 위한 클래스를 갖거나, 그 디렉터리가 다른 방식으로 명시적으로
       선언되어 더 이상 `unknown`으로 보고되지 않는다 | verify: human — upstream
       lint 출력에서 `receipts/`가 `unknown`이 아닌 선언된 클래스로 나오는지 확인
       (DVA 쪽에서 이 어휘 변경 여부를 기계로 판단할 근거가 약하므로 인간 확인에
       의존한다)
-- [ ] `tasks/receipts/`가 여전히 존재하고 비어있지 않다 (회귀 감시 — 위 upstream
+- [ ] `tasks/done/evidence/`가 여전히 존재하고 비어있지 않다 (회귀 감시 — 위 upstream
       수정이 이 디렉터리 자체를 없애거나 잘못 옮기지 않았는지에 대한 약한 신호일
-      뿐, 분류 어휘가 실제로 개선되었는지는 증명하지 못한다) | verify: `/usr/bin/find tasks/receipts -mindepth 1 -maxdepth 1 -type d -print -quit`
+      뿐, 분류 어휘가 실제로 개선되었는지는 증명하지 못한다) | verify: `/usr/bin/find tasks/done/evidence -mindepth 1 -maxdepth 1 -type d -print -quit`
+
+## Resolution — TASK-403 마이그레이션으로 전제 해소 (2026-09-16)
+
+[[TASK-403]]이 `tasks/receipts/`를 canonical `<canonical>/evidence` 구조
+(`tasks/done/evidence/`)로 옮겼다. lint가 무조건 허용하는 2-세그먼트 구조이므로
+이 카드가 관찰한 `receipts/ unknown` 행은 더 이상 존재하지 않고, 2026-09-16
+`ce task lint`는 structural issue 0건(CLEAN)을 보고한다. 첫 기준의 로컬 충족
+근거가 "선언된 클래스"가 아니라 "구조 안으로의 편입"이라는 점은 다르지만,
+이슈의 실질 요구(보드 인벤토리가 리뷰 증거 저장소를 설명할 수 있을 것)는
+충족된다. 상류 어휘(class vocabulary) 자체의 개선 여부는 [[ISSUE-004]] 계열의
+upstream 관심사로 ce-agent-kit#5에 그대로 둔다.
 
 ## Related
 
 - [[TASK-381]] — 이 관찰이 나온 종료 확인 작업.
-- [[TASK-388]] — `tasks/receipts/`를 보드의 durable 위치로 만든 작업.
-- [[ISSUE-001]] — Resolution Criteria가 `tasks/receipts/`의 존재에 결속된 카드.
+- [[TASK-388]] — `tasks/done/evidence/`를 보드의 durable 위치로 만든 작업.
+- [[ISSUE-001]] — Resolution Criteria가 `tasks/done/evidence/`의 존재에 결속된 카드.
 - [[ISSUE-004]] — 외부 소유 결함을 DVA 카드로 남기는 선례.

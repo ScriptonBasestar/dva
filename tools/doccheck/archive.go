@@ -23,7 +23,7 @@ import (
 //  4. canonicalFrozenZone(path) -> "Skipped: archived..."
 //
 // so a card reaching step 3 was judged as unfinished current work, in a directory named
-// `_archive`, against a card format that postdates it. 7391ac64 hoists the zone decision into
+// `archive`, against a card format that postdates it. 7391ac64 hoists the zone decision into
 // Validator.Validate ahead of both the decision-doc route and validateCanonicalTask, so an
 // archived card is exempt before anything reads it. Measured across both binaries: 13 cards the
 // old one reported red — 10 with neither field, 3 with malformed YAML — every one of them skips
@@ -49,7 +49,7 @@ import (
 //   - `ce task validate --all` excludes the archive during its tree walk, so none of this ever
 //     fired there — measured, 7 files validated against 200 archived cards on disk. The old
 //     misjudgement was reachable only by explicit path, which is how an audit sweep reaches it.
-const archivePrefix = "tasks/_archive/"
+const archivePrefix = "tasks/archive/"
 
 // canonicalFields are the frontmatter keys that satisfy step 3 above. Both are listed because
 // it accepts *either* — confirmed against source, where the whole test is a presence lookup for

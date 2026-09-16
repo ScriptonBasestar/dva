@@ -15,7 +15,7 @@ verification-evidence: "완료 기준 7개의 verify 바인딩 전부 bare 실�
 quality-review: conditional
 quality-reviewed-at: 2026-09-14
 quality-review-evidence: "독립 리뷰 review-390(Claude Opus 5, 저자 아님)이 5889fc3을 판정했다. 모든 수치·인용·종료코드가 재현됐고 지적 넷은 전부 산문 귀속 결함이었다(§리뷰 지적 넷). 넷 다 같은 브랜치에서 접었고 조건은 충족됐다 — verdict 값은 리뷰어가 낸 그대로 남긴다. 리뷰어는 tasks/done/344·371에 임시 한 줄을 넣어 digest 핀 강제를 실증한 뒤 되돌렸다(트리 clean)"
-quality-review-receipt: tasks/receipts/TASK-390/done-review-9beb5af3bfc17605bd2337a42a8b72cd0b8d645e0257fa896eaff8a4876287d7.json
+quality-review-receipt: tasks/done/evidence/TASK-390/done-review-9beb5af3bfc17605bd2337a42a8b72cd0b8d645e0257fa896eaff8a4876287d7.json
 ---
 
 ## Summary

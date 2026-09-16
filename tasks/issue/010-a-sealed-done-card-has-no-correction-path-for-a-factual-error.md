@@ -50,7 +50,7 @@ digest 범위의 정본은 이 저장소가 아니라 `ce` 쪽에 있고, 여기
 ```
 $ printf '\n<!-- digest probe -->\n' >> tasks/done/376-*.md
 $ ce task validate tasks/done/376-*.md
-❌ quality-review-receipt tasks/receipts/TASK-376/done-review-9515457848....json
+❌ quality-review-receipt tasks/done/evidence/TASK-376/done-review-9515457848....json
    pins reviewed-card-sha256 9515457848... but this card digests to 296edf609b...:
    the card changed after it was reviewed
 $ git checkout -- tasks/done/376-*.md && ce task validate tasks/done/376-*.md
@@ -60,7 +60,7 @@ $ git checkout -- tasks/done/376-*.md && ce task validate tasks/done/376-*.md
 반대 방향도 쟀다. 같은 카드에서 `quality-review-receipt` **그 한 줄만** 다른 경로로
 바꾸고(같은 바이트의 receipt를 `tmp/probe-376.json`에 복사해 두고 포인터를 그쪽으로
 돌렸다) 다시 validate하면 `✅ Valid`다. 즉 본문 한 줄을 더하면 깨지는 봉인이 이
-필드의 값 변경에는 반응하지 않는다 — `tasks/receipts/` 이관([[TASK-388]])이 18장의
+필드의 값 변경에는 반응하지 않는다 — `tasks/done/evidence/` 이관([[TASK-388]])이 18장의
 포인터를 고치면서도 봉인을 깨지 않은 근거가 이것이다.
 
 구체적 오류: TASK-376의 `quality-review-evidence`가 "Low 5건을 같은 브랜치에서 전부

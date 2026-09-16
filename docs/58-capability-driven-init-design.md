@@ -1,7 +1,7 @@
 # 58. Capability-driven init 설계와 결정 기록
 
 > 상태: **결정됨** (TASK-249, `decision-status: decided`, 2026-09-03). 구현은
-> [TASK-250](../tasks/_archive/done/250-implement-capability-driven-init.md)(`status: done`, commit `4cc0fdc`)이
+> [TASK-250](../tasks/archive/done/250-implement-capability-driven-init.md)(`status: done`, commit `4cc0fdc`)이
 > 완료했다. 이 문서는 채택된 계약과 기각된 대안을 소유한다. 그 계약이 TASK-250 구현·TASK-233
 > 결정과 충돌하지 않음을 검증한 기록은 [docs/59](59-capability-driven-init-verification.md)가,
 > label/증거 인벤토리는 [docs/60](60-capability-driven-init-label-inventory.md)이 각각 소유한다.
@@ -38,7 +38,7 @@ Capability evidence는 plan의 존재를 정당화할 수 있지만, 그것만�
 ## 4. TASK-233과의 충돌 분석과 해소
 
 결정 전에 알려야 했던 사실 하나: 완료기준 4(세 label을 생성 기본값에서 배제)는
-`tasks/_archive/233-capability-driven-plan-presets.md`의 이미 닫힌 Decision(`status: done`,
+`tasks/archive/233-capability-driven-plan-presets.md`의 이미 닫힌 Decision(`status: done`,
 `verification-status: verified`)과 표면적으로 충돌한다.
 
 > Use `local-infra` as the preferred generated default only when all selected providers are
@@ -64,7 +64,7 @@ Capability evidence는 plan의 존재를 정당화할 수 있지만, 그것만�
 
 ### 좁은 질문 — D8은 어느 표면을 구속하는가
 
-TASK-233은 `tasks/_archive/`에 있다. 완료기준 4를 채택하면서 233의 Decision을 무효화하려면 done
+TASK-233은 `tasks/archive/`에 있다. 완료기준 4를 채택하면서 233의 Decision을 무효화하려면 done
 카드를 제자리에서 수정하는 것이 아니라 명시적으로 supersede하는 새 카드가 필요할 수 있다. 따라서
 결정 전에 먼저 답해야 할 좁은 질문은: **D8은 Go `init` 생성기만 구속하는가, 아니면 `am` 프리셋
 코퍼스까지 구속하는가.** 전자라면 완료기준 4와 233은 서로 다른 표면을 말하므로 공존한다. 후자라면
@@ -97,7 +97,7 @@ TASK-233은 `tasks/_archive/`에 있다. 완료기준 4를 채택하면서 233�
 ### 완료기준 4 — 233과의 공존
 
 `local-infra`·`local-dev`·`full-stack`을 Go init 생성기의 생성 기본값에서 배제하는 것은 이 결정으로
-확정된다. `tasks/_archive/233-capability-driven-plan-presets.md`의 Decision("Use `local-infra` as
+확정된다. `tasks/archive/233-capability-driven-plan-presets.md`의 Decision("Use `local-infra` as
 the preferred generated default...")은 `am` 프리셋 코퍼스 표면에 대한 것이므로 무효화되지 않고
 그대로 유효하다. 두 카드는 서로 다른 생성기(Go init 바이너리 vs. `am` flow 기반 preset)를
 가리키므로 같은 이름이 한쪽에서 배제되고 다른 쪽에서 허용되는 것은 모순이 아니다.
@@ -114,5 +114,5 @@ cadence, change threshold)에 대한 Decision Record는 크기 상한을 지키�
 - Label/증거 인벤토리(완료기준 3): [docs/60](60-capability-driven-init-label-inventory.md)
 - Census 거버넌스 Decision Record(완료기준 10): [docs/61](61-capability-driven-init-census-governance.md)
 - 선언된 native 명령 발견 결정(TASK-339): [docs/63](63-init-native-declaration-discovery.md)
-- Implementation: [TASK-250](../tasks/_archive/done/250-implement-capability-driven-init.md)
-- Parent plan: [PLAN-002](../tasks/_archive/plan/002-command-surface-delivery.md)
+- Implementation: [TASK-250](../tasks/archive/done/250-implement-capability-driven-init.md)
+- Parent plan: [PLAN-002](../tasks/archive/plan/002-command-surface-delivery.md)

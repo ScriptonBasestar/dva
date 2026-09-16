@@ -25,7 +25,7 @@ accepted.</input>
    blockers.
 3. Re-run validation for the changed layers with the exact `DVA_COMMAND` stage 30
    selected; otherwise use the installed executable the baseline recorded. Verify it
-   by SHA-256 before use and fall back to `candidate_dva_archive`. Do not reuse
+   by SHA-256 before use and fall back to `candidate_dvaarchive`. Do not reuse
    historical success or substitute another binary. When no recorded artifact
    survives, record the substitution as step-3 non-compliance, state what is no
    longer provable, and re-derive the before side from committed source — tests

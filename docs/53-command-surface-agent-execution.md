@@ -1,6 +1,6 @@
 # Command Surface 작업의 에이전트 실행 런북
 
-이 문서는 [PLAN-002](../tasks/_archive/plan/002-command-surface-delivery.md)를 새 Codex 세션에서
+이 문서는 [PLAN-002](../tasks/archive/plan/002-command-surface-delivery.md)를 새 Codex 세션에서
 실행 세션 규칙과 시작 프롬프트를 소유한다.
 제품·보안 계약과 task acceptance criteria는 PLAN-002와 각 task card가 정본이며 여기서 반복하지
 않는다. 이 런북은 **어떻게 실행할지**만 정한다.
@@ -44,19 +44,19 @@ diff와 명령 결과를 다시 확인한다.
 
 | Wave | Task | 세션 종료 조건 |
 | --- | --- | --- |
-| 완료 | [TASK-245](../tasks/_archive/done/245-freeze-env-bridge-contract.md) | Option A 결정 승인 완료 |
-| 완료 | [TASK-247](../tasks/_archive/done/247-freeze-required-env-command-policy.md) | 결정·검증·통합 완료 |
-| 1 | [TASK-249](../tasks/_archive/done/249-redesign-capability-driven-init.md) | init contract 사용자 결정이 기록·검증됨 |
-| 1 | [TASK-244](../tasks/_archive/done/244-validate-plan-declaration-drift.md) | D6/D7 구현·독립 review·통합 완료 |
-| 완료 | [TASK-264](../tasks/_archive/done/264-restore-imported-command-ownership.md) | owner 복구·통합 완료 |
-| 완료 | [TASK-265](../tasks/_archive/done/265-decide-interaction-env-file-contract.md) | env_file 결정 승인 완료 |
-| 1 | [TASK-266](../tasks/_archive/done/266-deprecate-and-reject-interaction-env-file.md) | TASK-265 결정 구현 |
-| 2 | [TASK-248](../tasks/_archive/done/248-enforce-required-env-command-policy.md) | TASK-247·264·265 위에서 loader safety 구현·통합 완료 |
-| 2 | [TASK-250](../tasks/_archive/done/250-implement-capability-driven-init.md) | TASK-244·249 결과 구현·통합 완료 |
-| 3 | [TASK-246](../tasks/_archive/done/246-implement-secure-config-env-bridge.md) | TASK-245 결정·TASK-248 contract 위에서 구현·통합 완료 |
-| 4 | [TASK-252](../tasks/_archive/done/252-decide-top-level-env-promotion.md) | 영구 유지 결정 또는 promotion evidence 요청이 기록됨 |
-| 조건부 | [TASK-251](../tasks/_archive/251-build-env-migration-evidence-gate.md) | TASK-252가 요청한 경우 gate 통합, 아니면 N/A 종료 |
-| 조건부 재개 | [TASK-252](../tasks/_archive/done/252-decide-top-level-env-promotion.md) | TASK-251 evidence를 사용한 최종 결정 기록 |
+| 완료 | [TASK-245](../tasks/archive/done/245-freeze-env-bridge-contract.md) | Option A 결정 승인 완료 |
+| 완료 | [TASK-247](../tasks/archive/done/247-freeze-required-env-command-policy.md) | 결정·검증·통합 완료 |
+| 1 | [TASK-249](../tasks/archive/done/249-redesign-capability-driven-init.md) | init contract 사용자 결정이 기록·검증됨 |
+| 1 | [TASK-244](../tasks/archive/done/244-validate-plan-declaration-drift.md) | D6/D7 구현·독립 review·통합 완료 |
+| 완료 | [TASK-264](../tasks/archive/done/264-restore-imported-command-ownership.md) | owner 복구·통합 완료 |
+| 완료 | [TASK-265](../tasks/archive/done/265-decide-interaction-env-file-contract.md) | env_file 결정 승인 완료 |
+| 1 | [TASK-266](../tasks/archive/done/266-deprecate-and-reject-interaction-env-file.md) | TASK-265 결정 구현 |
+| 2 | [TASK-248](../tasks/archive/done/248-enforce-required-env-command-policy.md) | TASK-247·264·265 위에서 loader safety 구현·통합 완료 |
+| 2 | [TASK-250](../tasks/archive/done/250-implement-capability-driven-init.md) | TASK-244·249 결과 구현·통합 완료 |
+| 3 | [TASK-246](../tasks/archive/done/246-implement-secure-config-env-bridge.md) | TASK-245 결정·TASK-248 contract 위에서 구현·통합 완료 |
+| 4 | [TASK-252](../tasks/archive/done/252-decide-top-level-env-promotion.md) | 영구 유지 결정 또는 promotion evidence 요청이 기록됨 |
+| 조건부 | [TASK-251](../tasks/archive/251-build-env-migration-evidence-gate.md) | TASK-252가 요청한 경우 gate 통합, 아니면 N/A 종료 |
+| 조건부 재개 | [TASK-252](../tasks/archive/done/252-decide-top-level-env-promotion.md) | TASK-251 evidence를 사용한 최종 결정 기록 |
 
 TASK-245·265 결정이 승인됐다. 다음은 TASK-248과 TASK-266이다.
 TASK-246은 TASK-248이 통합되기 전 시작하지 않는다.
@@ -99,8 +99,8 @@ registration을 변경하지 않는다. 선택 후 같은 session을 이어서 d
 
 ## 6. 변하지 않는 guardrail
 
-세부 계약은 [PLAN-002 §4](../tasks/_archive/plan/002-command-surface-delivery.md#4-env-bridge의-비협상-수용-조건),
-[§5](../tasks/_archive/plan/002-command-surface-delivery.md#5-promotion-evidence-contract)와 target task card가 소유한다.
+세부 계약은 [PLAN-002 §4](../tasks/archive/plan/002-command-surface-delivery.md#4-env-bridge의-비협상-수용-조건),
+[§5](../tasks/archive/plan/002-command-surface-delivery.md#5-promotion-evidence-contract)와 target task card가 소유한다.
 Root는 변경 전에 해당 조항을 확인하고, 완화·선행·우회가 필요해지면 scope를 넓히지 말고 멈춘다.
 
 ## 7. 검증과 Git 완료 조건
@@ -122,7 +122,7 @@ configured source branch direct integration과 push, task worktree·local branch
 
 ```text
 TARGET_TASK: TASK-248
-PLAN: tasks/_archive/plan/002-command-surface-delivery.md
+PLAN: tasks/archive/plan/002-command-surface-delivery.md
 RUNBOOK: docs/53-command-surface-agent-execution.md
 
 이 세션은 TARGET_TASK 하나만 소유한다. PLAN 전체나 다음 task를 선행 구현하지 마라.
