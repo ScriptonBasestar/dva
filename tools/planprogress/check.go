@@ -204,7 +204,8 @@ func parsePlan(data string) (plan, error) {
 	}
 
 	var p plan
-	for _, line := range lines[1:end] {
+	for i := 1; i < end; i++ {
+		line := lines[i]
 		if line == "" || line[0] == ' ' || line[0] == '\t' || line[0] == '#' {
 			continue // indented/blank/comment lines are not top-level frontmatter fields
 		}
@@ -217,7 +218,23 @@ func parsePlan(data string) (plan, error) {
 		case "id":
 			p.id = strings.Trim(val, `"'`)
 		case "scope":
-			p.scope = strings.Trim(val, `"'`)
+			if val == ">" || val == "|" || strings.HasPrefix(val, ">") || strings.HasPrefix(val, "|") {
+				var scopeLines []string
+				for j := i + 1; j < end; j++ {
+					sub := lines[j]
+					if sub == "" {
+						continue
+					}
+					if sub[0] == ' ' || sub[0] == '\t' {
+						scopeLines = append(scopeLines, strings.TrimSpace(sub))
+					} else {
+						break
+					}
+				}
+				p.scope = strings.TrimSpace(strings.Join(scopeLines, " "))
+			} else {
+				p.scope = strings.Trim(val, `"'`)
+			}
 		case "children":
 			children, err := parseChildren(val)
 			if err != nil {
@@ -256,10 +273,10 @@ func extractSection(body []string, heading string) string {
 	in := false
 	for _, line := range body {
 		trimmed := strings.TrimRight(line, " \t\r")
-		if in && strings.HasPrefix(trimmed, "## ") {
+		if in && (strings.HasPrefix(trimmed, "## ") || strings.HasPrefix(trimmed, "# ")) {
 			break
 		}
-		if trimmed == heading {
+		if trimmed == heading || strings.HasPrefix(trimmed, heading+" ") || strings.HasPrefix(trimmed, heading+"(") || strings.HasPrefix(trimmed, heading+" —") || strings.HasPrefix(trimmed, heading+" -") || strings.HasPrefix(trimmed, heading+":") {
 			in = true
 			continue
 		}

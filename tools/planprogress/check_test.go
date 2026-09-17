@@ -351,3 +351,39 @@ func TestTruncatedPercent(t *testing.T) {
 		}
 	}
 }
+
+func TestIssue018Fixes(t *testing.T) {
+	// (1) Folded scalar scope: >
+	data := `---
+id: PLAN-F6A
+scope: >
+  TASK-1, 2, 3 folded scalar body
+children: [TASK-1, TASK-2, TASK-3]
+total-tasks: 3
+---
+## Goal (2026)
+body under a decorated heading
+
+# Appendix
+content in appendix
+`
+	p, err := parsePlan(data)
+	if err != nil {
+		t.Fatalf("parsePlan() error = %v", err)
+	}
+	if want := "TASK-1, 2, 3 folded scalar body"; p.scope != want {
+		t.Errorf("p.scope = %q, want %q", p.scope, want)
+	}
+
+	// (2) Decorated heading: ## Goal (2026)
+	if want := "body under a decorated heading"; p.goal != want {
+		t.Errorf("p.goal = %q, want %q", p.goal, want)
+	}
+
+	// (3) Higher-level heading # terminates extractSection
+	body := []string{"## Goal", "", "first paragraph.", "", "# Appendix", "", "should this be excluded from Goal?"}
+	got := extractSection(body, "## Goal")
+	if want := "first paragraph."; got != want {
+		t.Errorf("extractSection() = %q, want %q", got, want)
+	}
+}
