@@ -9,6 +9,9 @@ ownership: local
 created: 2026-09-15
 discovered-at: 2026-09-15
 discovered-in: "TASK-395 작업 세션 (2026-09-15)"
+resolution: fixed
+resolved-at: 2026-09-17T02:06:41Z
+resolution-summary: "Resolved as fixed."
 ---
 
 ## Summary
@@ -77,5 +80,5 @@ fatal: validation failed, cannot remove working tree: '.../source/.git' is not a
 
 ## Resolution Criteria
 
-- [ ] 등록부에서 그 항목이 사라진다 | verify: `git worktree list | /usr/bin/grep -c dogfood-dva` 출력이 0
-- [ ] doctor가 더는 detached 경고를 내지 않는다 | verify: `ce task run-doctor 2>&1 | /usr/bin/grep -c "no branch"` 출력이 0
+- [x] 등록부에서 그 항목이 사라진다 | verify: `git worktree list | /usr/bin/grep -c dogfood-dva` 출력이 0
+- [x] doctor가 더는 detached 경고를 내지 않는다 | verify: `ce task run-doctor 2>&1 | /usr/bin/grep -c "no branch"` 출력이 0

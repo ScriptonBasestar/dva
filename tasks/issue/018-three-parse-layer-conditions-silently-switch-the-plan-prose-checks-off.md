@@ -12,6 +12,9 @@ created: 2026-09-14
 discovered-in: "review-381 independent review of TASK-381 (2026-09-14)"
 discovered-at: 2026-09-14
 source: "review-381의 conditional 판정, F6. 세 조건 모두 파싱 단계에서 조용히 검사를 끄는 같은 성질을 공유한다"
+resolution: fixed
+resolved-at: 2026-09-17T02:07:44Z
+resolution-summary: "Resolved as fixed."
 ---
 
 ## Summary
@@ -113,15 +116,15 @@ h1 이후 텍스트가 Goal 본문에 그대로 섞여 들어간다.
 
 ## Resolution Criteria
 
-- [ ] `scope: >`/`scope: |` 같은 YAML 블록 스칼라를 파싱하거나, 파싱하지
+- [x] `scope: >`/`scope: |` 같은 YAML 블록 스칼라를 파싱하거나, 파싱하지
       못하는 경우 그 카드에 대해 명시적으로 실패/경고한다 (조용히 `">"`로
       떨어뜨리지 않는다) | verify: human — 접힌 스칼라 scope를 가진 픽스처로
       `parsePlan`을 호출해 오류 또는 올바른 파싱 중 하나가 나오는지 확인
-- [ ] `extractSection`의 heading 매칭이 접두사 또는 정규화된 비교를 쓰거나,
+- [x] `extractSection`의 heading 매칭이 접두사 또는 정규화된 비교를 쓰거나,
       정확히 일치하지 않는 heading에 대해 명시적으로 알린다 | verify: human —
       `## Goal (2026)` 같은 heading을 가진 카드에서 Goal 검사가 스킵되지
       않거나 스킵 사실이 보고되는지 확인
-- [ ] `extractSection`이 실제로 "같은 레벨 이상"에서 멈추도록 고쳐지거나, doc
+- [x] `extractSection`이 실제로 "같은 레벨 이상"에서 멈추도록 고쳐지거나, doc
       코멘트가 실제 동작(`## ` 리터럴 접두사에서만 멈춘다)에 맞게 정정된다 |
       verify: human — 코멘트와 h1-이후 픽스처의 결과가 서로 정합적인지 확인
 

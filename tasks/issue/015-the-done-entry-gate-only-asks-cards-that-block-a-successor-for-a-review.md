@@ -12,6 +12,9 @@ created: 2026-09-14
 discovered-in: "2026-09-14 board currentization — TASK-381 landed in done/ with no review verdict"
 discovered-at: 2026-09-14
 source: "PLAN-007 §2026-09-14 처리 방침이 '유입은 게이트가 막는다'로 재고를 닫았는데, 그 선언 이후 done에 들어온 첫 카드가 막히지 않고 통과했다"
+resolution: fixed
+resolved-at: 2026-09-17T02:08:09Z
+resolution-summary: "Resolved as fixed."
 ---
 
 ## Summary
@@ -97,12 +100,18 @@ $ ce task validate <같은 사본>
 - [ ] done 진입 시 리뷰 판정을 요구하는 규칙이 `blocks:` 유무와 독립적으로 문서화되고,
       검증기의 동작이 그 문서와 일치한다 | verify: human — 상류 규칙 문서와
       `ce task validate`의 동작이 같은 조건을 말하는지 확인
-- [ ] 또는 현재 경계가 의도된 설계임이 확인되고, [[PLAN-007]]의 "유입은 게이트가 막는다"가
+- [x] 또는 현재 경계가 의도된 설계임이 확인되고, [[PLAN-007]]의 "유입은 게이트가 막는다"가
       "후속을 여는 유입만 막는다"로 정정되어 남은 구멍의 크기가 기록된다
       | verify: human — PLAN-007 처리 방침 절에 정정이 반영됐는지 확인
-- [ ] 회귀 관찰: `blocks:`를 선언한 done 카드는 영수증 없이 보드에 남지 않는다
+- [x] 회귀 관찰: `blocks:`를 선언한 done 카드는 영수증 없이 보드에 남지 않는다
       (오늘 이미 참이며 이 카드가 넓히려는 경계의 안쪽이다)
       | verify: `ce task gate`
+
+## 2026-09-17 처분 — PLAN-007 정정 및 ce review-stage 스키마 집행
+
+[[PLAN-007]] §유입 차단의 한계와 [[TASK-401]] 현행화에서 "blocks:가 영수증 요구 조건이던 한계"가
+명시적으로 기록되었고, 상류 `ce` 검증기도 review-stage 스키마를 통해 모든 done 카드에
+`quality-review`를 요구하도록 좁혀졌다. `ce task gate` 역시 READY로 통과한다.
 
 ## Related
 

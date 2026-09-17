@@ -97,6 +97,6 @@ receipts가 보존하므로, "봉인 대 예산" 충돌은 카드를 줄이지 �
 
 ## Resolution Criteria
 
-- [ ] 살아 있는(`done`이 아닌) 카드가 예산 안에 든다 | verify: `test 0 -eq $(/usr/bin/find tasks/issue tasks/plan tasks/todo -maxdepth 1 -name '*.md' -size +20000c | /usr/bin/grep -c .)`
-- [ ] `done` 존 다섯 장을 어떻게 할지 결정되고 기록된다 | verify: human — 이 카드나 후속 커밋에서 결정과 근거를 읽는다
-- [ ] 보드 게이트 통과 | verify: `ce task gate` (regression-guard)
+- [x] 살아 있는(`done`이 아닌) 카드가 예산 안에 든다 | verify: `test 0 -eq $(/usr/bin/find tasks/issue tasks/plan tasks/todo -maxdepth 1 -name '*.md' -size +20000c | /usr/bin/grep -c .)`
+- [x] `done` 존 다섯 장을 어떻게 할지 결정되고 기록된다 | verify: human — 이 카드나 후속 커밋에서 결정과 근거를 읽는다
+- [x] 보드 게이트 통과 | verify: `ce task gate` (regression-guard)
