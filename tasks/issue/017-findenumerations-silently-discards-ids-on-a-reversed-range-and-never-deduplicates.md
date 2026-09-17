@@ -12,6 +12,7 @@ created: 2026-09-14
 discovered-in: "review-381 independent review of TASK-381 (2026-09-14)"
 discovered-at: 2026-09-14
 source: "review-381의 conditional 판정, F4/F5/F5b. 셋 다 tools/planprogress/prose.go의 findEnumerations(및 그 안에서 쓰는 runTailRE) 계열 안의 결함이다"
+promoted-to: [TASK-408]
 ---
 
 ## Summary

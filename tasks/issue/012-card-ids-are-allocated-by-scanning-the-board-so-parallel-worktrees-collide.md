@@ -9,6 +9,7 @@ ownership: local
 created: 2026-09-14
 discovered-in: "TASK-388 (dev/claude/mbp/fix/durable-receipt-path), 2026-09-14 리베이스 중"
 discovered-at: 2026-09-14
+promoted-to: [TASK-407]
 ---
 
 ## Summary

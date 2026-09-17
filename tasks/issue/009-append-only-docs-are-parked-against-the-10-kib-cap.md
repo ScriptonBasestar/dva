@@ -11,6 +11,7 @@ discovered-in: "TASK-380 — docs/dogfood/primeno1.md에 네 줄을 더하려다
 discovered-at: 2026-09-13
 ownership: local
 created: 2026-09-13
+promoted-to: [TASK-405]
 ---
 
 ## Summary

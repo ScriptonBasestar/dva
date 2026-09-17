@@ -11,6 +11,7 @@ discovered-in: "TASK-387 — TASK-376의 quality-review-evidence가 리뷰 지�
 discovered-at: 2026-09-14
 ownership: local
 created: 2026-09-14
+promoted-to: [TASK-406]
 ---
 
 ## Summary
