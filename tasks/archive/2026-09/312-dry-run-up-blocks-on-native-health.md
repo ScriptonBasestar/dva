@@ -1,0 +1,51 @@
+---
+id: TASK-312
+title: "--dry-run up waits on native entry health checks"
+type: bug
+priority: P1
+effort: S
+exec-tier: standard
+created-at: 2026-09-05T10:30:00+09:00
+source: "docs/dogfood/{scripton-db-orchestrator,scripton-dns-bridge}.md"
+status: done
+quality-review: waived
+quality-reviewed-at: 2026-09-14
+quality-review-evidence: "레거시 일괄 처분(2026-09-14). 이 카드는 2026-09-05(4f267fc2)에 done/으로 들어왔고, 독립 done 리뷰를 요구하는 규칙은 그보다 뒤인 1c85d8d0(2026-09-10, docs(tasks): require independent done review)에서 생겼다. 규칙이 없던 때의 변경 맥락 없이 오늘 판정을 지어내지 않는다 — PLAN-008이 여덟 장에 세운 선례를 그대로 적용한다. 판정 부재를 판정으로 위장하지 않기 위해 waived로 남긴다"
+archived-at: 2026-09-17T11:53:00+09:00
+verified-at: 2026-09-17T11:53:00+09:00
+verification-summary: "Verified TestUpDryRunSkipsEntryHealthWait passes in internal/lifecycle."
+---
+
+# Task 312: `--dry-run up <plan>`이 native health check를 실제 대기
+
+## Summary
+
+`dva --dry-run up <plan>`이 native entry의 health check를 실제로 폴링하면서
+ready_timeout(120초 이상)까지 블록되어, 일부 프로젝트에서는 dry-run으로 plan을 확인하는
+것 자체가 불가능했다. 원인은 `Orchestrator.Up`의 entry-level health wait가 `opts.DryRun`을
+확인하지 않고 `opts.Wait`만 보던 것이었고, dry-run일 때는 대기 대신 `would wait for
+entry "<name>"` 한 줄만 출력하도록 고쳐 해결했다.
+
+## Repro
+
+`cd ~/mydevbox/scripton-db-orchestrator-devbox && timeout 20 dva --dry-run up hybrid`
+→ compose/api dry-run 라인 출력 후 `http://localhost:11100/health/live` ready_timeout(120s)까지 블록.
+
+## Completion Criteria
+
+- [x] dry-run에서 health wait를 건너뛰고 "would wait for …"만 출력, 테스트 추가 | verify: `make test`
+- 2026-09-05 추가 재현: scripton-gitrump-devbox `dva --dry-run up dev`(native gitrumpd, ready_timeout 60)가 200초 이상 정지, kill 필요. 이 프로젝트에서는 dry-run으로 plan 확인 자체가 불가능했다.
+
+## Resolution (2026-09-05)
+
+- 원인: `Orchestrator.Up`(internal/lifecycle/orchestrator.go)의 entry-level health wait가
+  `opts.Wait`(CLI 기본 true)만 보고 `opts.DryRun`을 확인하지 않았다. 이 경로의
+  `WaitUntilReadyWithContext`는 ready_timeout을 적용하지 않아 ctx 취소까지 폴링한다.
+  `PlanChildExecutor.WaitReady`와 `startModeProcesses`는 이미 dry-run을 건너뛰고 있었다.
+- 수정: dry-run이면 대기하지 않고
+  `[health] (dry-run) would wait for entry "<name>": <check>=<type> <target> (ready_timeout=Ns)`
+  한 줄만 stderr에 출력 (`describeHealthChecks`, health.go).
+- 테스트: `TestUpDryRunSkipsEntryHealthWait`(orchestrator_dry_run_health_unix_test.go) —
+  닫힌 포트 http check + DryRun/Wait. 수정 라인을 되돌리면 ctx 5s 타임아웃까지 대기해
+  실패하는 것을 확인함.
+- 검증: `make build`, `make test`, `make lint` exit 0.

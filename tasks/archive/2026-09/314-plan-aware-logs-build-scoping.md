@@ -1,0 +1,51 @@
+---
+id: TASK-314
+title: "logs/build <plan>: scope to plan services and buildable services"
+type: bug
+priority: P2
+effort: S
+exec-tier: standard
+created-at: 2026-09-05T10:30:00+09:00
+source: "docs/dogfood/{flow-knowchain,scripton-db-orchestrator}.md"
+status: done
+quality-review: waived
+quality-reviewed-at: 2026-09-14
+quality-review-evidence: "레거시 일괄 처분(2026-09-14). 이 카드는 2026-09-05(ab8bfc54)에 done/으로 들어왔고, 독립 done 리뷰를 요구하는 규칙은 그보다 뒤인 1c85d8d0(2026-09-10, docs(tasks): require independent done review)에서 생겼다. 규칙이 없던 때의 변경 맥락 없이 오늘 판정을 지어내지 않는다 — PLAN-008이 여덟 장에 세운 선례를 그대로 적용한다. 판정 부재를 판정으로 위장하지 않기 위해 waived로 남긴다"
+archived-at: 2026-09-17T11:53:00+09:00
+verified-at: 2026-09-17T11:53:00+09:00
+verification-summary: "Verified plan compose log and build scoping tests in internal/cli."
+---
+
+# Task 314: `dva logs/build <plan>` 서비스 범위 지정
+
+## Summary
+
+`dva logs/build <plan>`에 `-f` 같은 추가 플래그를 함께 넘기면 plan의 서비스 서브셋이
+통째로 버려져, logs는 서비스 미지정으로 profile 뒤 서비스의 로그가 빠지고 build는 build
+컨텍스트가 없는 서비스까지 인자에 포함되는 문제가 있었다. 서비스 이름이 실제로 있을 때만
+서브셋을 대체하도록 인자 필터링을 고치고, build는 엔트리 compose 파일의 `build:` 유무로
+이미지 전용 서비스를 제외하도록 해 해결했다.
+
+## Repro
+
+- `cd ~/mydevbox/flow-knowchain-devbox && dva --dry-run --debug logs docker-full` → `compose logs -f` (서비스 미지정). profile 뒤 서비스는 로그 미출력.
+- `cd ~/mydevbox/scripton-db-orchestrator-devbox && dva --dry-run build hybrid` → `compose build postgres redis kafka prometheus …` (build 컨텍스트 없는 서비스 포함).
+
+## Completion Criteria
+
+- [x] logs가 plan entry services로 범위를 좁힘, build는 build 컨텍스트 있는 서비스만 전달(또는 인자 생략) | verify: `make test`
+
+## Resolution (2026-09-05)
+
+- 원인: `planComposeLogArgs`/`planComposeBuildArgs`가 passthrough가 하나라도 있으면 plan
+  services 서브셋을 버렸다. `dva logs docker-full -f`의 `-f`가 서비스 목록을 지워 profile 뒤
+  서비스가 빠졌다.
+- 수정 (internal/cli/logs.go, build.go): `passthroughNamesServices`가 플래그(값을 먹는 플래그의
+  값 포함)를 걸러 **서비스 이름이 있을 때만** 서브셋을 대체한다.
+- build: `composeBuildableServices`가 엔트리 compose 파일(include 포함, compose_inspection.go
+  `extractComposeBuildable`)에서 `build:` 유무를 읽어 이미지 전용 서비스를 인자에서 제외. 파일에
+  없는 서비스는 그대로 통과(미선언 ≠ 이미지 전용), 파일을 못 읽으면 서브셋 그대로. 전부 이미지
+  전용이면 `nothing to build`를 출력하고 compose build를 실행하지 않는다.
+- USAGE.md plan 예시 아래에 범위 규칙 문단 추가.
+- 테스트: logs/build arg 표 갱신(플래그 유지·값 플래그), `plan_build_scope_test.go`
+  (buildable 필터, all-image, 파일 없음, include 파싱). 수정을 되돌리면 5개 서브테스트 실패 확인.
