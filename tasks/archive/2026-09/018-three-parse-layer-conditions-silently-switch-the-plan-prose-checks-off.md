@@ -2,7 +2,7 @@
 id: ISSUE-018
 title: "Three parse-layer conditions silently switch the plan prose checks off"
 type: bug
-status: todo
+status: done
 priority: P2
 severity: low
 effort: S

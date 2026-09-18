@@ -2,7 +2,7 @@
 id: ISSUE-016
 title: "planprogress pairs any Korean counter in the sentence with an id enumeration"
 type: bug
-status: todo
+status: done
 priority: P2
 severity: medium
 effort: S

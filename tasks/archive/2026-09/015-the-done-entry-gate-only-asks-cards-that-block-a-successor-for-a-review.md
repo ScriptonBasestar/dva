@@ -2,7 +2,7 @@
 id: ISSUE-015
 title: "The done-entry gate only asks cards that block a successor for a review"
 type: bug
-status: todo
+status: done
 priority: P2
 severity: medium
 effort: S

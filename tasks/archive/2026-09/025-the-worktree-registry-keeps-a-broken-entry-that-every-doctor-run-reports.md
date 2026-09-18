@@ -2,7 +2,7 @@
 id: ISSUE-025
 title: "The worktree registry keeps a broken entry that every doctor run reports"
 type: bug
-status: todo
+status: done
 priority: P2
 severity: low
 ownership: local

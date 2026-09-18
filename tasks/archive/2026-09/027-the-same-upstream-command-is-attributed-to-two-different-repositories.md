@@ -3,7 +3,7 @@ id: ISSUE-027
 title: "The same upstream command is attributed to two different repositories"
 type: bug
 ownership: local
-status: todo
+status: done
 priority: P2
 severity: low
 effort: S
