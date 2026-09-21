@@ -313,6 +313,33 @@ ruling is ever revisited to declare a limit here, it needs a starting threshold 
 the current worst file or a grandfathered list, because CI would otherwise go red on
 thirteen files on day one.
 
+## Parallel-safe card-ID allocation (worktree isolation)
+
+To prevent card-ID collisions when multiple agents/operators work on parallel
+worktrees, follow the git-workflow worktree isolation pattern:
+
+- Worktree directory naming: `~/worktrees/<product>/<repo>/<actor>__<host>__<type>__<slug>`
+  (e.g., `~/worktrees/misc/dva/opencode__mbp__feat__task-405`)
+- Each worktree claims card IDs only from IDs visible in its own isolated worktree
+- New card ID = max(id seen in current worktree) + 1, **never** guess across worktrees
+- Before creating a new task card, run `make doc-check` to verify no duplicate IDs
+- `tools/doccheck/cardids.go::func checkDuplicateCardIDs` scans `tasks/` directories
+  and reports duplicates — exit code 0 = IDs are unique across all state directories
+
+This rule is enforced by `make doc-check` (TASK-090) and `ce task validate` (TASK-221),
+which both use `/usr/bin/grep` and `/usr/bin/find` with absolute paths so the recorded
+corpus and ordering are reproducible in an ordinary shell. A card can therefore sit in
+`tasks/done/` with an old ID value — neither `ce task validate --all` nor `ce task gate`
+objects: both report the board READY — but `make doc-check` catches the conflict as
+`DUP-ID  <path>: zone tasks/<zone> permits id: N, found "M"`.
+
+When archiving a task no longer breaks inbound links: `make doc-check` stays green across
+a move without a repoint pass (TASK-143). The checker resolves a
+`tasks/<state>/NNN-…` markdown link — and the same path written inside inline code
+(where `verify:` bindings live, invisible to the link scan) — to whichever state directory
+actually holds `NNN-…`. One match resolves the reference; zero is a genuine broken link;
+more than one is an ambiguity the gate refuses to guess.
+
 <!-- skills:auto:start -->
 ## AI Skills
 
