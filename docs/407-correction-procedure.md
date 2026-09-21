@@ -1,63 +1,57 @@
-# TASK-407 Correction Procedure: Rename with Sealed-Card Unreachable + Old-ID Sweep
+# Card rename procedure: fixing a duplicate card ID (TASK-407)
 
-## Overview
+When `make doc-check` reports a `DUP-ID` conflict — two card files claiming one
+task id after parallel worktrees allocated the same number — rename exactly one
+of the two cards following this procedure.
 
-This procedure handles the rename of task cards when card IDs need to be reassigned due to worktree parallelism collisions. It ensures that:
-1. Sealed cards (already reviewed/committed) are marked unreachable during rename
-2. Old-ID references are swept and documented
-3. No duplicate IDs are left across worktrees
+## 1. Allocate the replacement ID
 
-## Rename Procedure
+- New card ID = max(id visible in the current worktree) + 1.
+- **Never** guess across worktrees; each worktree claims IDs only from its own
+  visible tree (rule: `Parallel-safe card-ID allocation (worktree isolation)`
+  in `AGENTS.md`).
+- Before creating the renamed card, run `make doc-check` to confirm the
+  `DUP-ID` it reports is the one being fixed and no other duplicate exists.
 
-### 1. Verify Current State
+## 2. Rename the card
 
-Before starting any rename, verify the following:
+1. Rename the file `tasks/<state>/NNN-<slug>.md` to the new number and update
+   its frontmatter `id:` to match.
+2. After any `ce task move`, sync the frontmatter `status:` field by hand —
+   the mover relocates the file but does not write frontmatter (ISSUE-013) —
+   then run `make doc-check`, which enforces zone/status agreement.
+3. Commit only the renamed card path plus this procedure doc when it changes;
+   never bundle unrelated cards into the same commit.
 
-- **[x]** All [x] criteria in the card's `doing/` state are marked complete
-- **[x]** Authorization A is preserved (for TASK-406, this means the 2 auth [x] criteria remain)
-- **[ ]** 376 evidence receipt unchanged (digest: `e0def05ee5aeeaf84570e8a9bce038197f8632e279a96251564f65a3332407aa`)
-- **[ ]** No fabricated receipts exist (only 1 original file in `tasks/done/evidence/TASK-376/`)
-- **[ ]** Worktree isolation: card IDs are claimed only from IDs visible in the current worktree
+## 3. Sealed-card unreachable case
 
-### 2. Sealed-Card Unreachable Check
+A sealed card cannot be renamed — treat it as unreachable and rename the other
+side instead:
 
-If the card has been `finalized/reviewed/committed` (host-controlled gate), it is **sealed** and unreachable for rename:
+- Sealed means the card sits in `tasks/done/` with a `quality-review` verdict
+  in its frontmatter, optionally with a review receipt under
+  `tasks/done/evidence/<TASK-ID>/`. Done cards and their receipts are
+  immutable: do not move, edit, or re-id them.
+- If the duplicate pair is one sealed card and one live card, the live card
+  is always the one renamed.
+- If both cards claiming the id are sealed, stop and escalate to the host:
+  resolving it requires a human decision about which history stands. Record
+  the `DUP-ID` output and both card paths in the escalation; do not force a
+  rename.
 
-- Sealed cards: `TASK-405` (3/3 [x], finalized/reviewed/committed: NO — host-controlled gate preserved deliberately)
-- Sealed cards: `TASK-406` (2/2 [x] auth A, finalized/reviewed/committed: NO — authorization A preserved)
-- Unsealed cards can proceed with rename; sealed cards cannot
+## 4. Old-ID sweep
 
-### 3. Old-ID Sweep
+After the rename, sweep every reference to the retired ID:
 
-After rename, sweep for old-ID references:
-
-- Scan all `tasks/` directories for references to the old card ID
-- Verify no duplicate IDs exist across all state directories (`todo/`, `doing/`, `done/`, `archive/`)
-- Run `make doc-check` to confirm no `DUP-ID` errors
-- Document any old-ID references found and their resolution
-
-### 4. New Card ID Allocation
-
-Following worktree isolation pattern:
-
-- New card ID = max(id seen in current worktree) + 1
-- **Never** guess across worktrees — each worktree claims IDs only from its own visible IDs
-- Before creating the new card, run `make doc-check` to verify no duplicate IDs
-- The `tools/doccheck/cardids.go::func checkDuplicateCardIDs` function scans `tasks/` directories and reports duplicates; exit code 0 = IDs are unique across all state directories
-
-### 5. Post-Rename Verification
-
-After completing the rename:
-
-- **[x]** Run `make doc-check` — all gates pass (no broken links, no DUP-ID conflicts, size limits OK)
-- **[x]** Verify AGENTS.md has the parallel-safe card-ID allocation rule (worktree isolation pattern)
-- **[x]** Verify `docs/407-correction-procedure.md` exists and references the rename procedure + sealed-card unreachable case + old-id sweep
-- **[x]** Verify C3 contract: `/usr/bin/grep -q 'func checkDuplicateCardIDs' /Users/archmagece/mywork/scripton/dva/tools/doccheck/cardids.go` exits 0
-- **[ ]** If card was moved to `done/`, update frontmatter `status: done` (ISSUE-013: `ce task move` does not auto-write `status:` field)
-
-## Evidence Preservation
-
-- 376 receipt (`digest: e0def05ee5aeeaf84570e8a9bce038197f8632e279a96251564f65a3332407aa`) must remain unchanged
-- No fabricated receipts — only 1 original file in `tasks/done/evidence/TASK-376/`
-- AGENTS.md parallel-safe rule must be present (added in this task)
-- `tools/doccheck/cardids.go::func checkDuplicateCardIDs` must exist and pass contract verification
+1. Search all card zones for the old id string:
+   `/usr/bin/grep -rq --include='*.md' 'OLD-ID' tasks/` (absolute path keeps
+   the invocation reproducible in an ordinary shell).
+2. Repoint each match to the new ID, or to whichever state directory actually
+   holds the card — doccheck resolves `tasks/<state>/NNN-…` links and the same
+   path inside inline code (where `verify:` bindings live) to the single
+   directory holding `NNN-…` (TASK-143), so one match resolves and zero is a
+   genuine broken link.
+3. Re-run `make doc-check` and confirm zero `DUP-ID` lines; also run
+   `go test ./tools/doccheck/` when the sweep touched checker-adjacent files.
+4. Confirm the duplicate-ID guard is still wired:
+   `/usr/bin/grep -q 'func checkDuplicateCardIDs' tools/doccheck/cardids.go`.
