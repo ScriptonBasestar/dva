@@ -4,7 +4,9 @@
 //     heading anchors resolve against the git inventory (tracked + non-ignored
 //     untracked); git symlink aliases (mode 120000) are skipped once
 //   - size: every .md under docs/ and workflows/ is ≤500 lines and ≤10240 bytes,
-//     with no per-file exemption
+//     with no per-file exemption; documents past 80% of either limit are
+//     reported as HEADROOM warnings without failing the gate (TASK-405)
+//     (`go run ./tools/doccheck --near-limit` lists them reproducibly)
 //   - verify bindings: every `go test … -run …` written in inline code selects at
 //     least one test declared in the tree, so a binding cannot name a test that
 //     does not exist and still exit 0 (TASK-136)
@@ -40,8 +42,19 @@ func main() {
 	if err != nil {
 		fail(err)
 	}
-	if len(os.Args) > 1 {
-		root = os.Args[1]
+	args := os.Args[1:]
+	if len(args) > 0 && (args[0] == "--near-limit" || args[0] == "-near-limit") {
+		args = args[1:]
+		if len(args) > 0 {
+			root = args[0]
+		}
+		if err := runNearLimit(root); err != nil {
+			fail(err)
+		}
+		return
+	}
+	if len(args) > 0 {
+		root = args[0]
 	}
 
 	inv, err := LoadInventory(root)
@@ -65,6 +78,7 @@ func printReport(res Result) {
 	fmt.Printf("stale_link_paths:   %d\n", res.StaleLinkPaths)
 	fmt.Printf("stale_link_paths_docs: %d\n", res.StaleLinkPathsDocs)
 	fmt.Printf("oversized_docs:      %d\n", res.OversizedDocs)
+	fmt.Printf("headroom_docs:       %d\n", res.HeadroomDocs)
 	fmt.Printf("test_funcs_found:    %d (from %d _test.go files)\n", res.TestFuncsFound, res.TestFilesSwept)
 	fmt.Printf("run_patterns:        %d\n", res.RunPatternsChecked)
 	fmt.Printf("unmatched_run:       %d\n", res.UnmatchedRunFlags)
@@ -90,6 +104,9 @@ func printReport(res Result) {
 	fmt.Printf("filename_numbers:    %d (duplicate: %d)\n", res.FilenameNumbersSeen, res.DuplicateFilenameNums)
 	for _, d := range res.OversizedDetail {
 		fmt.Printf("  OVERSIZE %s\n", d)
+	}
+	for _, d := range res.HeadroomDetail {
+		fmt.Printf("  HEADROOM %s\n", d)
 	}
 	for _, d := range res.BrokenDetail {
 		fmt.Printf("  BROKEN   %s\n", d)

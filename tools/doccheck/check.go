@@ -26,9 +26,13 @@ type Result struct {
 	// StaleLinkPaths counts task-card links that resolve by their stable basename while the
 	// relative path written in the document no longer exists in the inventory. This is a
 	// maintenance signal, not a broken link: state-directory moves are intentional (TASK-143).
-	StaleLinkPaths         int
-	StaleLinkPathsDocs     int
-	OversizedDocs          int
+	StaleLinkPaths     int
+	StaleLinkPathsDocs int
+	OversizedDocs      int
+	// HeadroomDocs counts size-enforced documents past 80% of either limit
+	// while still under both hard limits (TASK-405). Advisory: reported but
+	// never added to Errors, so the gate still passes.
+	HeadroomDocs           int
 	TestFilesSwept         int
 	TestFuncsFound         int
 	RunPatternsChecked     int
@@ -69,6 +73,7 @@ type Result struct {
 	BrokenDetail            []string
 	StaleLinkPathDetail     []string
 	OversizedDetail         []string
+	HeadroomDetail          []string
 	UnmatchedRunDetail      []string
 	PortabilityDetail       []string
 	ArchiveDetail           []string
@@ -133,6 +138,11 @@ func Check(in CheckInput) Result {
 				res.OversizedDocs++
 				res.OversizedDetail = append(res.OversizedDetail,
 					fmt.Sprintf("%s: %d lines, %d bytes (limits %d lines, %d bytes)",
+						e.Path, lines, nbytes, maxDocLines, maxDocBytes))
+			} else if isHeadroom(lines, nbytes) {
+				res.HeadroomDocs++
+				res.HeadroomDetail = append(res.HeadroomDetail,
+					fmt.Sprintf("%s: %d lines, %d bytes (headroom: over 80%% of %d lines / %d bytes)",
 						e.Path, lines, nbytes, maxDocLines, maxDocBytes))
 			}
 		}
