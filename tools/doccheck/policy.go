@@ -7,6 +7,24 @@ const (
 	maxDocBytes = 10240 // 10 KiB
 )
 
+// Headroom thresholds (TASK-405): a size-enforced document past 80% of either
+// limit is reported as a warning before the hard gate fails. Advisory only —
+// oversize stays fatal and headroom never flips the outcome.
+const (
+	headroomLineWarn = 400  // 80% of maxDocLines
+	headroomByteWarn = 8192 // 80% of maxDocBytes
+)
+
+// isHeadroom reports whether a size-enforced document is past 80% of either
+// limit while still under both hard limits. Oversized documents are not
+// headroom: they fail the gate instead of warning.
+func isHeadroom(lines, nbytes int) bool {
+	if lines > maxDocLines || nbytes > maxDocBytes {
+		return false
+	}
+	return lines > headroomLineWarn || nbytes > headroomByteWarn
+}
+
 // Git ls-files modes (high bits of the 6-digit octal mode).
 const (
 	modeRegular = 0o100644
