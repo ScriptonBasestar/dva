@@ -119,6 +119,19 @@ func TestCheckPlanProse(t *testing.T) {
 			}(),
 			wantN: 0,
 		},
+		{
+			// TASK-408 probe P5: a wikilink enumeration naming an id outside children
+			// must be reported, not silently skipped (ISSUE-017 F5b).
+			name: "a wikilink enumeration naming an id outside children is reported",
+			p: func() plan {
+				p := childrenOf("TASK-1")
+				p.id = "PLAN-WIKILINK"
+				p.goal = "[[TASK-1]], [[TASK-9]] 두 장이 남았다"
+				return p
+			}(),
+			wantAny: []string{"children: does not list", "TASK-9"},
+			wantN:   1,
+		},
 	}
 
 	for _, tt := range tests {
@@ -254,11 +267,12 @@ func TestFindEnumerations(t *testing.T) {
 		{"reversed range contributes only its anchor", "TASK-365..358", nil},
 		{"reversed range does not swallow the run after it", "TASK-365..358, 366, 367",
 			[]string{"TASK-365", "TASK-366", "TASK-367"}},
-		// Wikilink enumerations are invisible to findEnumerations: runTailRE needs the
-		// separator to follow the anchor immediately, and "]]" intervenes. This is a KNOWN
-		// GAP tracked on ISSUE-021 C — recognizing the board's own cross-reference notation
-		// is out of scope here. Pinned so the silence is recorded rather than accidental.
-		{"wikilink enumeration is not recognized (ISSUE-021 C)", "[[TASK-1]], [[TASK-9]] 두 장이 남았다", nil},
+		// Wikilink enumerations use the board's own cross-reference notation
+		// ("[[TASK-1]], [[TASK-9]]"): the separator may be wrapped in brackets
+		// (ISSUE-017 F5b, ISSUE-021 C, TASK-408).
+		{"wikilink enumeration is recognized", "[[TASK-1]], [[TASK-9]] 두 장이 남았다", []string{"TASK-1", "TASK-9"}},
+		{"wikilink middot run is recognized", "[[TASK-344]]·[[TASK-350]]·[[TASK-343]]", []string{"TASK-344", "TASK-350", "TASK-343"}},
+		{"mixed plain and wikilink run is recognized", "TASK-371, [[TASK-344]], 350", []string{"TASK-371", "TASK-344", "TASK-350"}},
 		{"two mentions joined by prose stay isolated", "TASK-343 depends-on TASK-344", nil},
 	}
 
