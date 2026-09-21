@@ -3,7 +3,7 @@ id: TASK-405
 title: "Append-only documents are parked against the 10 KiB cap with no headroom signal"
 type: feature
 priority: P2
-status: doing
+status: review
 created: 2026-09-17
 ---
 
