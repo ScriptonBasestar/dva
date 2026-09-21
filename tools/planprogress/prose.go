@@ -65,7 +65,12 @@ var (
 	rangeTailRE = regexp.MustCompile(`^\.\.0*(\d+)`)
 	// runTailRE continues an anchor as a separated run: "TASK-371, 344, 350" or
 	// "TASK-344·350·343". Continuations may drop the "TASK-" prefix, which the live plans do.
-	runTailRE = regexp.MustCompile(`^\s*[,·]\s*(?:TASK-)?0*(\d+)`)
+	// Wikilink cross-references ("[[TASK-1]], [[TASK-9]]") are the board's own notation
+	// (ISSUE-017 F5b, ISSUE-021 C): the separator may be preceded by the previous id's
+	// closing brackets and followed by the next id's opening brackets, and each continued
+	// id may carry its own closing brackets. Without this the whole enumeration was
+	// invisible and checkPlanProse passed silently.
+	runTailRE = regexp.MustCompile(`^\s*(?:\]\])?\s*[,·]\s*(?:\[\[)?\s*(?:TASK-)?0*(\d+)(?:\]\])?`)
 	// countPhraseRE matches a counted quantity: a digit or a native Korean numeral followed by
 	// 장/개/건. Sino-Korean numeral words (일, 이, 삼 …) are excluded on purpose: they are
 	// indistinguishable from ordinary words at this level and the digit form covers the same
@@ -153,6 +158,11 @@ func findEnumerations(sentence string) []enumMatch {
 		}
 		start := pos + loc[0]
 		end := pos + loc[1]
+		// An anchor written as a wikilink ("[[TASK-1]]") starts after its opening
+		// brackets; include them so the reported enumeration text reads as written.
+		if start >= 2 && sentence[start-2:start] == "[[" {
+			start -= 2
+		}
 		first, err := strconv.Atoi(sentence[pos+loc[2] : pos+loc[3]])
 		if err != nil {
 			pos = end
