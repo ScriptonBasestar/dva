@@ -107,7 +107,7 @@ ci:
           run: 'bad=$(gofmt -s -l .); test -z "$bad" || { printf "%s\n" "$bad"; exit 1; }'
         - &ci-docs
           name: docs
-          run: go run ./tools/doccheck && go run ./tools/cilabels && go run ./tools/flowcheck && go run ./tools/planprogress
+          run: go run ./tools/doccheck && go run ./tools/cilabels && go run ./tools/flowcheck && go run ./tools/planprogress && go run ./tools/yamlcheck && go run ./tools/changelogcheck
           depends_on: [format]
         - &ci-vet
           name: vet
