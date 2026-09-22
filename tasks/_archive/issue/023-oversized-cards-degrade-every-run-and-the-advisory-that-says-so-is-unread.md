@@ -10,6 +10,9 @@ created: 2026-09-14
 discovered-at: 2026-09-14
 discovered-in: "TASK-393 independent review — reviewer noticed a gate advisory nobody had registered"
 upstream-ref: "ce-agent-kit#5"
+resolution: fixed
+resolved-at: 2026-09-21T10:00:05Z
+resolution-summary: "Resolved as fixed."
 ---
 
 ## Summary

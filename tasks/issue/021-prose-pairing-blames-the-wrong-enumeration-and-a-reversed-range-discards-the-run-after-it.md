@@ -10,6 +10,7 @@ created: 2026-09-14
 discovered-in: "review-planprogress independent review of TASK-391 (2026-09-14)"
 discovered-at: 2026-09-14
 source: "[[ISSUE-016]] F3의 잔여분과 [[ISSUE-017]]가 남긴 두 미결 — TASK-391이 F1과 중복 제거를 닫으면서 남긴 것"
+promoted-to: [TASK-409]
 ---
 
 ## Summary

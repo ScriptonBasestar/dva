@@ -11,6 +11,9 @@ discovered-in: "TASK-386 (dev/claude/mbp/fix/quote-unbackticked-verify-bindings,
 discovered-at: 2026-09-14
 source: "TASK-386 리뷰(review-386)의 informational 지적. 두 검사가 같은 바인딩에 대해 반대 형태를 요구한다"
 upstream-ref: "ce-agent-kit#3"
+resolution: fixed
+resolved-at: 2026-09-21T10:00:05Z
+resolution-summary: "Resolved as fixed."
 ---
 
 ## Summary

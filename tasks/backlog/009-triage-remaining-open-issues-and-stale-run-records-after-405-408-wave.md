@@ -30,11 +30,11 @@ created: 2026-09-21
 
 | 이슈 | 태스크 | 상태 |
 |---|---|---|
-| ISSUE-009 | TASK-405 | done (독립 리뷰 pass, 이 브랜치). ISSUE-009 archived |
-| ISSUE-010 | TASK-406 | review (`dev/opencode/mbp/docs/task-406`). 구현 세션 리뷰 금지 |
-| ISSUE-012 | TASK-407 | done (독립 리뷰 pass, 이 브랜치). ISSUE-012 archived. 잔여 ISSUE-033 |
-| ISSUE-017 | TASK-408 | done (독립 리뷰 pass, 이 브랜치). ISSUE-017 archived |
-| ISSUE-021 | TASK-409 | review (`dev/opencode/mbp/fix/task-409`). 구현 세션 리뷰 금지 |
+| ISSUE-009 | TASK-405 | done (독립 리뷰 pass). ISSUE-009 archived |
+| ISSUE-010 | TASK-406 | review. 구현 세션 리뷰 금지 |
+| ISSUE-012 | TASK-407 | done (독립 리뷰 pass). ISSUE-012 archived. 잔여 ISSUE-033 |
+| ISSUE-017 | TASK-408 | done (독립 리뷰 pass). ISSUE-017 archived |
+| ISSUE-021 | TASK-409 | review. 구현 세션 리뷰 금지. 트리아지 쪽 `todo/409`는 DUP-ID라 폐기 |
 
 ### 상류 유지 (DVA에서 수정 불가, 이슈로 존치)
 
@@ -52,12 +52,11 @@ P1: ISSUE-004 (컨트롤러 스코프), ISSUE-032 (`issue-promote apply`가 trun
 
 | 항목 | 처분 |
 |---|---|
-| TASK-405·407·408 독립 리뷰 | 이 브랜치 `done/` + `quality-review: pass`. ISSUE-009·012·017 `_archive/issue/` |
-| TASK-406 | 다른 세션 리뷰. 이 세션이 구현함 |
-| TASK-409 | 다른 세션 리뷰. 이 세션이 구현함. 트리아지 쪽 `todo/409`는 DUP-ID라 폐기 |
+| TASK-405·407·408 독립 리뷰 | `done/` + `quality-review: pass`. ISSUE-009·012·017 `_archive/issue/` |
+| TASK-406 | 로컬 master에 합침. 카드는 `review/` |
+| TASK-409 | 로컬 master에 합침. 카드는 `review/`. 트리아지 쪽 `todo/409`는 DUP-ID라 폐기 |
 | TASK-370 | 다음 `release-notes/v*.md`까지 보류 |
 | ISSUE-033 | 승격하지 않음. 407의 가드는 DUP-ID |
 | `done-finalize` | 돌리지 않음. hang + ISSUE-024 |
 | 원격 | ISSUE-034. `git push`는 integrate를 요구하고 `branch-integrate`는 upstream을 요구함 |
-
-통합 순서 (원격이 열린 뒤): 이 리뷰 브랜치 → 409(리뷰 후) → 406(리뷰 후) → 트리아지.
+| ISSUE-011·023 | 이 브랜치에서 archive |
