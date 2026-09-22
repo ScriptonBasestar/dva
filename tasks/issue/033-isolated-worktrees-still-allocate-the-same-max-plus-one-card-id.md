@@ -37,6 +37,12 @@ numbers.
 - Actual: the rule reads as if isolation prevents collision; isolation plus
   `max+1` is exactly the collision.
 
+## 소유권 — 이 저장소다
+
+충돌은 이 저장소 `AGENTS.md` Parallel-safe 규칙과 `max(id)+1` 할당 관례에서
+난다. DUP-ID 가드는 이미 있고, 할당기 자체 수정은 별 설계다. 지금은 승격하지
+않는다.
+
 ## Related
 
 - TASK-407 — tasks/done/407-card-ids-are-allocated-by-scanning-the-board-so-parallel-worktrees-collide.md
