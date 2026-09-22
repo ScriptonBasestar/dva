@@ -33,12 +33,14 @@ import (
 //     (b) pairing is symmetric. A count and an enumeration pair only when each is the other's
 //     nearest neighbour in the sentence, so "TASK-1·2와 TASK-3·4·5, 세 장이 겹친다" does not
 //     hand the same "세 장" to the far enumeration as well. Symmetry narrows F3; it does not
-//     remove it, and this comment said otherwise until review-planprogress measured the
-//     counterexample. Reorder the same sentence and the false positive returns:
+//     remove it. Reorder the same sentence and the false positive returns:
 //     "다섯 장 — TASK-1·2와 TASK-3·4·5" (five children, written as two groups) still reports
 //     "counts 5 card(s) beside an enumeration naming 2". Symmetry guarantees that only ONE
 //     enumeration is blamed; it does not establish that the blamed one is the count's subject.
-//     The residue is tracked on ISSUE-021, not claimed as fixed here.
+//     Merging 와-joined enumerations would silence that reorder and break F3; skipping a pair
+//     whenever a sentence has two enumerations would miss a real mismatch. The regex does not
+//     know a count's grammatical subject, so TASK-409 locks this residue as the rule's intent
+//     (TestIssue021PairingResidue) rather than pretending otherwise.
 //   - total-tasks is only comparable to prose in `scope:`, which by definition describes the
 //     whole plan. In `## Goal` a count legitimately describes a subset — PLAN-009 says
 //     "다섯 장(TASK-344·350·343·354·338)" about five of its seven children — so there the

@@ -226,6 +226,37 @@ func TestIssue016FalsePositives(t *testing.T) {
 // deduplicate a repeated id in a comma run, so "TASK-1, 1, 2" read as three ids for two
 // distinct cards — and a "세 장" beside it then matched that wrong total, reporting a
 // miscount as correct. Arrived as a red reproduction behind the "knownbroken" tag.
+// TestIssue021PairingResidue locks the leftover of symmetric pairing (ISSUE-021 A /
+// TASK-409). The F3 sentence is clean because the count sits next to the three-id
+// group. Reverse the order and the same true five-card claim is blamed on the nearer
+// two-id group. That is the rule: nearest-neighbour, not grammatical subject.
+func TestIssue021PairingResidue(t *testing.T) {
+	t.Run("count before two 와-joined enumerations blames the nearer group", func(t *testing.T) {
+		p := childrenOf("TASK-1", "TASK-2", "TASK-3", "TASK-4", "TASK-5")
+		p.id = "PLAN-ISSUE-021-A"
+		p.goal = "다섯 장 — TASK-1·2와 TASK-3·4·5"
+		got := checkPlanProse(p, p.id)
+		if len(got) != 1 {
+			t.Fatalf("checkPlanProse() = %v (%d defects), want 1 (ISSUE-021 A residue)", got, len(got))
+		}
+		if !strings.Contains(got[0], "counts 5 card(s) beside an enumeration naming 2") {
+			t.Errorf("defect = %q, want counts 5 naming 2", got[0])
+		}
+		if !strings.Contains(got[0], "TASK-1·2") {
+			t.Errorf("defect = %q, want the nearer enumeration TASK-1·2 blamed", got[0])
+		}
+	})
+	t.Run("the F3 order remains clean", func(t *testing.T) {
+		p := childrenOf("TASK-1", "TASK-2", "TASK-3", "TASK-4", "TASK-5")
+		p.id = "PLAN-ISSUE-021-B"
+		p.goal = "TASK-1·2와 TASK-3·4·5, 세 장이 겹친다"
+		got := checkPlanProse(p, p.id)
+		if len(got) != 0 {
+			t.Fatalf("checkPlanProse() = %v, want none", got)
+		}
+	})
+}
+
 func TestIssue017Deduplication(t *testing.T) {
 	sentence := "TASK-1, 1, 2"
 	want := []string{"TASK-1", "TASK-2"}
