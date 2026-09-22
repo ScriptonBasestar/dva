@@ -11,6 +11,9 @@ discovered-in: "review-planprogress independent review of TASK-391 (2026-09-14)"
 discovered-at: 2026-09-14
 source: "[[ISSUE-016]] F3의 잔여분과 [[ISSUE-017]]가 남긴 두 미결 — TASK-391이 F1과 중복 제거를 닫으면서 남긴 것"
 promoted-to: [TASK-409]
+resolution: fixed
+resolved-at: 2026-09-22T08:48:13Z
+resolution-summary: "Resolved as fixed by TASK-409."
 ---
 
 ## Summary
@@ -101,7 +104,7 @@ B·C는 초록이 무엇을 뜻하는지 모르게 만든다는 점에서 A보�
 
 ## Resolution Criteria
 
-- [ ] A: 어순을 바꾼 반례가 더 이상 오탐을 내지 않거나, 왜 내는지가 규칙의
+- [x] A: 어순을 바꾼 반례가 더 이상 오탐을 내지 않거나, 왜 내는지가 규칙의
       의도로 코드에 적혀 있다 | verify: human — `prose.go`의 파일 코멘트를 읽고,
       "다섯 장 — TASK-1·2와 TASK-3·4·5"에 대한 코드의 실제 동작이 코멘트가
       서술하는 동작과 일치하는지 확인한다

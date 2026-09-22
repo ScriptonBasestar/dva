@@ -12,6 +12,9 @@ discovered-at: 2026-09-14
 ownership: local
 created: 2026-09-14
 promoted-to: [TASK-406]
+resolution: fixed
+resolved-at: 2026-09-22T08:48:13Z
+resolution-summary: "Resolved as fixed by TASK-406."
 ---
 
 ## Summary
@@ -154,8 +157,8 @@ $ git checkout -- tasks/done/376-*.md && ce task validate tasks/done/376-*.md
 
 ## Resolution Criteria
 
-- [ ] 봉인된 done 카드의 사실관계 정정 절차가 문서로 존재한다 | verify: `human — 절차 문서를 읽고, 위조(리뷰 없이 digest 갱신)와 구분되는 지점이 명시돼 있는지 확인`
-- [ ] TASK-376의 `quality-review-evidence`가 Low 한 건의 전반부 미적용을 반영한다 | verify: `human — 376의 quality-review-evidence를 읽고, '전부 수정했다'가 사라졌는지와 미적용 한 건이 어느 지적인지 문장 안에서 읽히는지 확인`
+- [x] 봉인된 done 카드의 사실관계 정정 절차가 문서로 존재한다 | verify: `human — 절차 문서를 읽고, 위조(리뷰 없이 digest 갱신)와 구분되는 지점이 명시돼 있는지 확인`
+- [x] TASK-376의 `quality-review-evidence`가 Low 한 건의 전반부 미적용을 반영한다 | verify: `human — 376의 quality-review-evidence를 읽고, '전부 수정했다'가 사라졌는지와 미적용 한 건이 어느 지적인지 문장 안에서 읽히는지 확인`
 
 ## Related
 
