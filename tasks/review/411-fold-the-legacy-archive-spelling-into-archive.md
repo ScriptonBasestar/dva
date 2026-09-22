@@ -33,10 +33,27 @@ depends-on: [TASK-410]
 
 ## Completion Criteria
 
-- [x] 옛 철자 디렉터리가 남아 있지 않다 | verify: `! test -d tasks/archive`
+- [x] 저장소에 옛 철자 경로의 카드가 남아 있지 않다 | verify: `test -z "$(git ls-files tasks/archive)"`
 - [x] 보드 게이트에 `legacy-storage-dir` 경고가 없다 | verify: `! ce task gate 2>&1 | /usr/bin/grep -q 'legacy-storage-dir'`
 - [x] 접은 뒤에도 plan 진행률이 맞고 문서 게이트가 통과한다 | verify: `make doc-check` (regression-guard)
 - [x] 보드 게이트가 READY다 | verify: `ce task gate 2>&1 | /usr/bin/grep -q '^READY —'`
+
+## 2026-09-22 통합 후 관측 — 기준 한 줄을 고쳤다
+
+처음 쓴 기준은 `! test -d tasks/archive`였다. 새 워크트리에서는 통과하고 기본
+체크아웃에서는 실패한다 — git은 파일만 지우고 빈 디렉터리는 남기며, 그 안에
+**gitignore된 CE 런타임 잔재**(`tasks/archive/.ce/`, 2026-08-20자 audit·heartbeat)가
+남아 디렉터리를 살려 두기 때문이다.
+
+접기가 보장하는 것은 저장소의 내용이지 체크아웃의 로컬 미추적 상태가 아니다.
+그래서 기준을 `git ls-files`로 옮겼다 — 어느 체크아웃에서 물어도 같은 답이 나온다.
+
+`rmdir`이 거부해서 알았다. `rm -rf`였다면 남의 런타임 상태를 조용히 지웠을 것이다.
+
+**남은 잔재는 건드리지 않았다.** `tasks/.ce`, `tasks/todo/.ce`, `tasks/done/.ce`,
+`tasks/archive/.ce` 넷이 같은 시기 잔재로 남아 있고, 내가 만든 것이 아니며 저장소
+내용도 아니다. 지울지는 사용자 판단이다 — `tasks/archive/.ce`만 지우면 그 디렉터리가
+사라진다.
 
 ## Out of scope
 
