@@ -3,8 +3,11 @@ id: TASK-407
 title: "Card ids are allocated by scanning the board, so parallel worktrees collide"
 type: feature
 priority: P2
-status: review
+status: done
 created: 2026-09-17
+quality-review: pass
+quality-reviewed-at: 2026-09-22T02:19:30Z
+quality-review-evidence: "Independent review (opencode, not the implementer). C1: AGENTS.md Parallel-safe card-ID allocation is present. Isolated worktrees still both do max+1 from the same snapshot; the live guard is pre-claim `make doc-check` plus DUP-ID. Non-blocking follow-up ISSUE-033. C2: docs/407-correction-procedure.md §3 sealed-unreachable and §4 old-ID sweep. C3: `func checkDuplicateCardIDs` at tools/doccheck/cardids.go:44; `go test ./tools/doccheck/` pass."
 ---
 
 ## Summary
@@ -23,3 +26,8 @@ created: 2026-09-17
 ## Sources
 
 - ISSUE-012 — tasks/issue/012-card-ids-are-allocated-by-scanning-the-board-so-parallel-worktrees-collide.md
+- ISSUE-033 — tasks/issue/033-isolated-worktrees-still-allocate-the-same-max-plus-one-card-id.md
+
+## Review Attempts
+
+- 2026-09-22T02:19:30Z | reviewer: opencode (independent of implementer) | executor-tier: standard | finding: pass | verification: AGENTS.md Parallel-safe section; docs/407-correction-procedure.md §3–§4; `func checkDuplicateCardIDs` at cardids.go:44; `go test ./tools/doccheck/` pass | outcome: pass | next: done | non-blocking: ISSUE-033 (isolated max+1 still races; DUP-ID is the live guard)

@@ -3,8 +3,11 @@ id: TASK-408
 title: "findEnumerations silently discards ids on a reversed range and never deduplicates"
 type: feature
 priority: P2
-status: review
+status: done
 created: 2026-09-17
+quality-review: pass
+quality-reviewed-at: 2026-09-22T02:19:30Z
+quality-review-evidence: "Independent review (opencode, not the implementer). C1: TestCheckPlanProse/a_wikilink_enumeration_naming_an_id_outside_children_is_reported covers `[[TASK-1]], [[TASK-9]]` reporting TASK-9. C2: `go test ./tools/planprogress/` pass on 2026-09-22. Title-scope B/C already closed by TASK-394/391; not re-opened."
 ---
 
 ## Summary
@@ -22,3 +25,7 @@ created: 2026-09-17
 ## Sources
 
 - ISSUE-017 — tasks/issue/017-findenumerations-silently-discards-ids-on-a-reversed-range-and-never-deduplicates.md
+
+## Review Attempts
+
+- 2026-09-22T02:19:30Z | reviewer: opencode (independent of implementer) | executor-tier: standard | finding: pass | verification: TestCheckPlanProse wikilink case; `go test ./tools/planprogress/` pass | outcome: pass | next: done
