@@ -34,7 +34,7 @@ created: 2026-09-21
 | ISSUE-010 | TASK-406 | review. 구현 세션 리뷰 금지 |
 | ISSUE-012 | TASK-407 | done (독립 리뷰 pass). ISSUE-012 archived. 잔여 ISSUE-033 |
 | ISSUE-017 | TASK-408 | done (독립 리뷰 pass). ISSUE-017 archived |
-| ISSUE-021 | TASK-409 | review. 구현 세션 리뷰 금지 |
+| ISSUE-021 | TASK-409 | review. 구현 세션 리뷰 금지. 트리아지 쪽 `todo/409`는 DUP-ID라 폐기 |
 
 ### 상류 유지 (DVA에서 수정 불가, 이슈로 존치)
 
