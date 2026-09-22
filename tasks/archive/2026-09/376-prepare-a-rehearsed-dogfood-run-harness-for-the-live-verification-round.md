@@ -18,7 +18,7 @@ source: "2026-09-13 사람 작업 분류 — TASK-328·348이 미뤄지는 이�
 blocks: [TASK-328, TASK-348]
 quality-review: conditional
 quality-reviewed-at: 2026-09-14
-quality-review-evidence: "독립 리뷰 review-376(core:code-reviewer, 저자 아님). Critical 0 / High 2 / Medium 3 / Low 5. High 2건(스텝 루프의 stdin 삼킴, bare word가 --execute 대상을 덮어씀)과 Medium 2건(purge 미리보기가 docker 오류를 자원 목록처럼 출력, 기동 실패 후 파괴적 스텝 강행), Low 5건을 같은 브랜치에서 전부 수정했다. 세 번째 Medium(카드 Evidence staleness)은 인자 없는 출력 블록을 현재 출력으로 재생성하고 primeno1 항목을 TASK-379 재조준 사실로 대체해 닫았다. --execute 경로는 이 워크스테이션이 컨테이너 105개가 도는 살아있는 개발 환경이라 여전히 정적 리뷰로만 닫았다 — conditional의 근거가 이것이다"
+quality-review-evidence: "독립 리뷰 review-376(core:code-reviewer, 저자 아님). Critical 0 / High 2 / Medium 3 / Low 5. High 2건(스텝 루프의 stdin 삼킴, bare word가 --execute 대상을 덮어씀)과 Medium 2건(purge 미리보기가 docker 오류를 자원 목록처럼 출력, 기동 실패 후 파괴적 스텝 강행)은 같은 브랜치에서 수정했다. Low 5건 중 후반부(`:394` 대조군 캐시)는 같은 브랜치에서 수정했고, 전반부(`:441/:446` 로그·미리보기 temp 파일 trap 부재)는 적용하지 않았다 — EXIT trap이 emit_report()가 인용하는 STEP_LOG_FILE을 지워 리포트를 깨뜨리기 때문 (TASK-387). 세 번째 Medium(카드 Evidence staleness)은 인자 없는 출력 블록을 현재 출력으로 재생성하고 primeno1 항목을 TASK-379 재조준 사실로 대체해 닫았다. --execute 경로는 이 워크스테이션이 컨테이너 105개가 도는 살아있는 개발 환경이라 여전히 정적 리뷰로만 닫았다 — conditional의 근거가 이것이다"
 quality-review-receipt: tasks/done/evidence/TASK-376/done-review-9515457848da06f480f0b08878eed6c35f3f88811bc3c01b62c55af7f16d9d78.json
 ---
 
