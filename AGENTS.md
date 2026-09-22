@@ -49,6 +49,8 @@ DVA는 개발 환경 오케스트레이터입니다. 핵심 방향은 `stack:`�
 대조한다. 경로는 `tasks/done/evidence/<TASK-ID>/done-review-<sha>.json`이며 Git이 추적한다.
 `tmp/` 아래에 두면 그것을 만든 체크아웃에서만 유효해 카드의 판정이 재현되지 않는다
 (TASK-388). 규칙과 근거는 `tasks/done/evidence/README.md`.
+봉인된 done 카드의 사실관계 정정은 위조(리뷰 없이 digest 갱신)가 아니라
+[docs/406-sealed-card-correction.md](docs/406-sealed-card-correction.md)다.
 
 ## Repository Map
 
