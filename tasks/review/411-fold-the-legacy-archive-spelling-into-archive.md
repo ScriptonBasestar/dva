@@ -5,7 +5,7 @@ type: chore
 priority: P2
 effort: S
 exec-tier: standard
-status: todo
+status: review
 created: 2026-09-22
 depends-on: [TASK-410]
 ---
@@ -33,10 +33,10 @@ depends-on: [TASK-410]
 
 ## Completion Criteria
 
-- [ ] 옛 철자 디렉터리가 남아 있지 않다 | verify: `! test -d tasks/archive`
-- [ ] 보드 게이트에 `legacy-storage-dir` 경고가 없다 | verify: `! ce task gate 2>&1 | /usr/bin/grep -q 'legacy-storage-dir'`
-- [ ] 접은 뒤에도 plan 진행률이 맞고 문서 게이트가 통과한다 | verify: `make doc-check` (regression-guard)
-- [ ] 보드 게이트가 READY다 | verify: `ce task gate 2>&1 | /usr/bin/grep -q 'READY'`
+- [x] 옛 철자 디렉터리가 남아 있지 않다 | verify: `! test -d tasks/archive`
+- [x] 보드 게이트에 `legacy-storage-dir` 경고가 없다 | verify: `! ce task gate 2>&1 | /usr/bin/grep -q 'legacy-storage-dir'`
+- [x] 접은 뒤에도 plan 진행률이 맞고 문서 게이트가 통과한다 | verify: `make doc-check` (regression-guard)
+- [x] 보드 게이트가 READY다 | verify: `ce task gate 2>&1 | /usr/bin/grep -q '^READY —'`
 
 ## Out of scope
 

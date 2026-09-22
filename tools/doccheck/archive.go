@@ -50,15 +50,17 @@ import (
 //     fired there — measured, 7 files validated against 200 archived cards on disk. The old
 //     misjudgement was reachable only by explicit path, which is how an audit sweep reaches it.
 //
-// The board is mid-migration from `tasks/archive/` to `tasks/_archive/`. archivePrefixes lists
-// both spellings and every classification here goes through isArchivePath so the guard cannot
-// depend on which one the board currently uses; archivePrefix stays as the conventional spelling
-// for display text (counts, error messages) where naming one directory reads better than listing
-// both.
-const archivePrefix = "tasks/archive/"
+// archivePrefix is the canonical archive directory — what the board holds on disk since the
+// TASK-411 fold — and the spelling used in display text (counts, error messages), where naming
+// one directory reads better than listing both. Classification never uses it alone: every check
+// here goes through isArchivePath over archivePrefixes, so the guard does not depend on which
+// spelling a given checkout uses.
+const archivePrefix = "tasks/_archive/"
 
-// archivePrefixes is the full set of accepted archive-zone spellings — see archivePrefix.
-var archivePrefixes = []string{archivePrefix, "tasks/_archive/"}
+// archivePrefixes is the full set of accepted archive-zone spellings. The legacy `tasks/archive/`
+// stays accepted because a worktree branched before the fold still carries it, and a checker that
+// silently sees nothing there reports "no defects" and "cannot look" identically (ISSUE-035).
+var archivePrefixes = []string{archivePrefix, "tasks/archive/"}
 
 // isArchivePath reports whether path falls under any accepted archive-zone spelling.
 func isArchivePath(path string) bool {
