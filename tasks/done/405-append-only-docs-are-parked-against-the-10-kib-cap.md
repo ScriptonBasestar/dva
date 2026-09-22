@@ -3,8 +3,11 @@ id: TASK-405
 title: "Append-only documents are parked against the 10 KiB cap with no headroom signal"
 type: feature
 priority: P2
-status: review
+status: done
 created: 2026-09-17
+quality-review: pass
+quality-reviewed-at: 2026-09-22T02:19:30Z
+quality-review-evidence: "Independent review (opencode, not the implementer). C1: `go run ./tools/doccheck --near-limit` lists 22 docs, docs/42 245 lines 10233 bytes first. C2: `go test ./tools/doccheck/` pass; headroom is warning-only. C3: docs/dogfood/README.md TASK-405 section names 500/10240, 80% warning, split-on-HEADROOM, split-by-date/project plus index line, no exemptions."
 ---
 
 ## Summary
@@ -20,3 +23,7 @@ created: 2026-09-17
 ## Sources
 
 - ISSUE-009 — tasks/issue/009-append-only-docs-are-parked-against-the-10-kib-cap.md
+
+## Review Attempts
+
+- 2026-09-22T02:19:30Z | reviewer: opencode (independent of implementer) | executor-tier: standard | finding: pass | verification: `go run ./tools/doccheck --near-limit` (22 docs, docs/42 first); `go test ./tools/doccheck/` pass; human read of docs/dogfood/README.md TASK-405 section | outcome: pass | next: done
