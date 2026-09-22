@@ -2,7 +2,7 @@
 id: ISSUE-011
 title: "The validator suggests a binding form that doc-check rejects"
 type: bug
-status: todo
+status: done
 priority: P2
 severity: low
 ownership: upstream

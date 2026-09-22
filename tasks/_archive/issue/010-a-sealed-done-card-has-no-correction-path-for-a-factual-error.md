@@ -2,7 +2,7 @@
 id: ISSUE-010
 title: "A receipt-sealed done card has no correction path for a factual error in its own record"
 type: bug
-status: todo
+status: done
 priority: P2
 effort: M
 exec-tier: strong

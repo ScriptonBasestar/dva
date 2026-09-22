@@ -2,7 +2,7 @@
 id: ISSUE-023
 title: "Oversized cards degrade every run and the advisory that says so is unread"
 type: bug
-status: todo
+status: done
 priority: P2
 severity: low
 ownership: split

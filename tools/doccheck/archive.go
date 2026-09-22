@@ -49,7 +49,26 @@ import (
 //   - `ce task validate --all` excludes the archive during its tree walk, so none of this ever
 //     fired there — measured, 7 files validated against 200 archived cards on disk. The old
 //     misjudgement was reachable only by explicit path, which is how an audit sweep reaches it.
+//
+// The board is mid-migration from `tasks/archive/` to `tasks/_archive/`. archivePrefixes lists
+// both spellings and every classification here goes through isArchivePath so the guard cannot
+// depend on which one the board currently uses; archivePrefix stays as the conventional spelling
+// for display text (counts, error messages) where naming one directory reads better than listing
+// both.
 const archivePrefix = "tasks/archive/"
+
+// archivePrefixes is the full set of accepted archive-zone spellings — see archivePrefix.
+var archivePrefixes = []string{archivePrefix, "tasks/_archive/"}
+
+// isArchivePath reports whether path falls under any accepted archive-zone spelling.
+func isArchivePath(path string) bool {
+	for _, prefix := range archivePrefixes {
+		if strings.HasPrefix(path, prefix) {
+			return true
+		}
+	}
+	return false
+}
 
 // canonicalFields are the frontmatter keys that satisfy step 3 above. Both are listed because
 // it accepts *either* — confirmed against source, where the whole test is a presence lookup for
@@ -161,7 +180,7 @@ func unquoteKey(key string) string {
 // exit 0.
 func checkArchiveFrontmatter(root string, inv []InventoryEntry) (filesSeen, checked int, msgs, errs []string) {
 	for _, e := range inv {
-		if !strings.HasPrefix(e.Path, archivePrefix) || isSymlinkMode(e.Mode) {
+		if !isArchivePath(e.Path) || isSymlinkMode(e.Mode) {
 			continue
 		}
 		filesSeen++

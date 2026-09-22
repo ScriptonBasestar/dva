@@ -2,7 +2,7 @@
 id: ISSUE-009
 title: "Append-only documents are parked against the 10 KiB cap with no headroom signal"
 type: bug
-status: todo
+status: done
 priority: P2
 effort: S
 exec-tier: standard

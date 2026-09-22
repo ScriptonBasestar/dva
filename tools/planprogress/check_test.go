@@ -216,6 +216,8 @@ func TestZoneFromPath(t *testing.T) {
 		{"done/248-x.md", zoneClosed},
 		{"archive/251-x.md", zoneClosed},
 		{"archive/done/244-x.md", zoneClosed},
+		{"_archive/251-x.md", zoneClosed},
+		{"_archive/2026-09/030-closed-task.md", zoneClosed},
 		{"issue/1-x.md", zoneOther},
 	}
 	for _, tt := range tests {
@@ -305,32 +307,40 @@ func TestIsPlanCardFileFenceShapes(t *testing.T) {
 	}
 }
 
+// TestBuildTaskIndexSkipsPlanCardsInDatedArchivePartition runs against both archive
+// spellings. The board is migrating "archive/" to "_archive/"; the filter that keeps an
+// archived PLAN-N card from being indexed by its filename number as TASK-N has to survive
+// that rename, or a completed plan starts silently satisfying a real child of the same id.
 func TestBuildTaskIndexSkipsPlanCardsInDatedArchivePartition(t *testing.T) {
-	root := t.TempDir()
-	files := map[string]string{
-		"tasks/archive/2026-09/030-closed-task.md":   "---\nid: TASK-30\nstatus: done\n---\n",
-		"tasks/archive/2026-09/005-archived-plan.md": "---\nid: PLAN-005\ntype: plan\nstatus: done\n---\n",
-	}
-	for rel, content := range files {
-		full := filepath.Join(root, filepath.FromSlash(rel))
-		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
-			t.Fatal(err)
-		}
-		if err := os.WriteFile(full, []byte(content), 0o644); err != nil {
-			t.Fatal(err)
-		}
-	}
+	for _, archiveDir := range []string{"archive", "_archive"} {
+		t.Run(archiveDir, func(t *testing.T) {
+			root := t.TempDir()
+			files := map[string]string{
+				"tasks/" + archiveDir + "/2026-09/030-closed-task.md":   "---\nid: TASK-30\nstatus: done\n---\n",
+				"tasks/" + archiveDir + "/2026-09/005-archived-plan.md": "---\nid: PLAN-005\ntype: plan\nstatus: done\n---\n",
+			}
+			for rel, content := range files {
+				full := filepath.Join(root, filepath.FromSlash(rel))
+				if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.WriteFile(full, []byte(content), 0o644); err != nil {
+					t.Fatal(err)
+				}
+			}
 
-	idx, err := buildTaskIndex(root)
-	if err != nil {
-		t.Fatalf("buildTaskIndex() error = %v", err)
-	}
+			idx, err := buildTaskIndex(root)
+			if err != nil {
+				t.Fatalf("buildTaskIndex() error = %v", err)
+			}
 
-	if rec, ok := idx["TASK-30"]; !ok || !rec.closed {
-		t.Errorf("TASK-30 = %+v, ok=%v; want closed (dated archive partition)", idx["TASK-30"], ok)
-	}
-	if _, ok := idx["TASK-5"]; ok {
-		t.Error("buildTaskIndex() indexed an archived plan card by its filename number; a completed plan would then satisfy a real TASK-5 child")
+			if rec, ok := idx["TASK-30"]; !ok || !rec.closed {
+				t.Errorf("TASK-30 = %+v, ok=%v; want closed (dated archive partition)", idx["TASK-30"], ok)
+			}
+			if _, ok := idx["TASK-5"]; ok {
+				t.Error("buildTaskIndex() indexed an archived plan card by its filename number; a completed plan would then satisfy a real TASK-5 child")
+			}
+		})
 	}
 }
 

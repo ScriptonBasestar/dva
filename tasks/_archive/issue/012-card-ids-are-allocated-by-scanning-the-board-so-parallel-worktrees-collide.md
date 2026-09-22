@@ -2,7 +2,7 @@
 id: ISSUE-012
 title: "Card ids are allocated by scanning the board, so parallel worktrees collide"
 type: bug
-status: todo
+status: done
 priority: P2
 severity: medium
 ownership: local

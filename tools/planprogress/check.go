@@ -35,9 +35,12 @@ type taskRecord struct {
 var cardFilenameRE = regexp.MustCompile(`^0*(\d+)-.+\.md$`)
 
 // buildTaskIndex walks <root>/tasks, excluding tasks/plan/ and archived plan cards, and
-// classifies every card file by id. A path under tasks/done/ or tasks/archive/ (at any
-// depth) is closed; a path under tasks/todo/ or tasks/doing/ is open; anything else found
-// under tasks/ is recorded but counted as neither.
+// classifies every card file by id. A path under tasks/done/, tasks/archive/, or
+// tasks/_archive/ (at any depth) is closed — the board is migrating the archive
+// directory from "archive/" to "_archive/", so both spellings are accepted rather than
+// this tool depending on which one the board currently uses; a path under tasks/todo/ or
+// tasks/doing/ is open; anything else found under tasks/ is recorded but counted as
+// neither.
 func buildTaskIndex(root string) (taskIndex, error) {
 	tasksDir := filepath.Join(root, "tasks")
 	idx := taskIndex{}
@@ -57,11 +60,12 @@ func buildTaskIndex(root string) (taskIndex, error) {
 			return nil
 		}
 		// Archived plan cards no longer carry a "plan" segment — the dated archive
-		// partitions (tasks/archive/<YYYY-MM>/) hold every card flat — so a completed
+		// partitions (tasks/archive/<YYYY-MM>/, tasks/_archive/<YYYY-MM>/) hold every
+		// card flat — so a completed
 		// plan would otherwise be indexed by its filename number as a TASK card and
 		// silently satisfy a real child of that id. The frontmatter id tells the truth:
 		// plans declare PLAN-N, never TASK-N.
-		if strings.HasPrefix(rel, "archive/") && isPlanCardFile(path) {
+		if isArchiveRel(rel) && isPlanCardFile(path) {
 			return nil
 		}
 		m := cardFilenameRE.FindStringSubmatch(filepath.Base(rel))
@@ -121,11 +125,29 @@ func isPlanCardFile(path string) bool {
 
 var planIDRE = regexp.MustCompile(`(?m)^id: *"?PLAN-\d+`)
 
+// isArchiveRel reports whether a tasks-relative path sits in the archive zone under either
+// spelling. The board is migrating its archive directory from the legacy "archive/" to the
+// canonical "_archive/"; both are recognized for as long as either may be present on disk, and
+// both callers — the zone classifier and the archived-plan-card filter in buildTaskIndex — go
+// through here so the two cannot learn a new spelling at different times.
+func isArchiveRel(rel string) bool {
+	for _, name := range [...]string{"archive", "_archive"} {
+		if rel == name || strings.HasPrefix(rel, name+"/") {
+			return true
+		}
+	}
+	return false
+}
+
+// zoneFromPath accepts both "archive" and "_archive" as the closed archive zone. The
+// board is migrating its archive directory from the legacy "archive/" spelling to the
+// canonical "_archive/"; this tool must not depend on which spelling the board currently
+// uses, so both are recognized for as long as either may be present on disk.
 func zoneFromPath(rel string) zone {
 	switch {
 	case rel == "done" || strings.HasPrefix(rel, "done/"):
 		return zoneClosed
-	case rel == "archive" || strings.HasPrefix(rel, "archive/"):
+	case isArchiveRel(rel):
 		return zoneClosed
 	case rel == "todo" || strings.HasPrefix(rel, "todo/"):
 		return zoneOpen

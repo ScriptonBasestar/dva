@@ -2,7 +2,7 @@
 id: ISSUE-021
 title: "Prose pairing blames the wrong enumeration and a reversed range discards the run after it"
 type: bug
-status: todo
+status: done
 priority: P2
 severity: low
 ownership: local

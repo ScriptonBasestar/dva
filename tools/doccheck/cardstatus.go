@@ -23,15 +23,29 @@ type cardZone struct {
 	skip      bool // true for tasks/plan/: not a card, no status: field to check
 }
 
-// cardZones is the zone table TASK-287 froze. `superseded` is permitted only under archive/
-// because every superseded card lives there and is closed work; done/ is for cards that were
-// actually completed in place.
-var cardZones = []cardZone{
-	{prefix: "tasks/archive/", permitted: []string{"done", "superseded"}},
-	{prefix: "tasks/done/", permitted: []string{"done"}},
-	{prefix: "tasks/todo/", permitted: []string{"todo"}},
-	{prefix: "tasks/issue/", permitted: []string{"todo"}},
-	{prefix: "tasks/plan/", skip: true},
+// archiveCardStatuses are the status values permitted under an archive zone, whichever spelling
+// it uses. `superseded` is permitted only here because every superseded card lives in the
+// archive and is closed work; done/ is for cards that were actually completed in place.
+var archiveCardStatuses = []string{"done", "superseded"}
+
+// cardZones is the zone table TASK-287 froze. The board is mid-migration from `tasks/archive/`
+// to `tasks/_archive/`, so cardZones carries one entry per spelling in archivePrefixes (defined
+// in archive.go) rather than a single hardcoded prefix — both entries share archiveCardStatuses
+// so the two spellings are judged identically, and resolveCardZone's longest-prefix rule still
+// applies cleanly since the two prefixes never nest inside each other.
+var cardZones = buildCardZones()
+
+func buildCardZones() []cardZone {
+	zones := make([]cardZone, 0, len(archivePrefixes)+4)
+	for _, prefix := range archivePrefixes {
+		zones = append(zones, cardZone{prefix: prefix, permitted: archiveCardStatuses})
+	}
+	return append(zones,
+		cardZone{prefix: "tasks/done/", permitted: []string{"done"}},
+		cardZone{prefix: "tasks/todo/", permitted: []string{"todo"}},
+		cardZone{prefix: "tasks/issue/", permitted: []string{"todo"}},
+		cardZone{prefix: "tasks/plan/", skip: true},
+	)
 }
 
 // resolveCardZone returns the zone governing path, chosen by the longest matching prefix among

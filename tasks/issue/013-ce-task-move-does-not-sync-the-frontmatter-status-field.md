@@ -111,3 +111,22 @@ ce-workbook/task_management로 적혀 있었다; 아래 소유권 절이 정정�
 - [[ISSUE-007]] — 같은 필드를 다루지만 다른 커맨드의 다른 결함 (validate가
   검사하지 않음 vs move가 쓰지 않음).
 - [[ISSUE-004]] — 외부 소유 결함을 DVA 카드로 남기는 선례.
+
+## 2026-09-22 추가 관측 — `resolve` + `archive` 경로도 같은 결함이다
+
+`move`만의 문제가 아니다. `ce task resolve <issue> fixed --by TASK-N` 뒤
+`ce task archive`로 닫힌 이슈 카드 **7장 전부**가 `status: todo`로 남아 있었다:
+ISSUE-009·010·011·012·017·021·023 (`tasks/_archive/issue/`).
+
+세 카드 모두 `resolution: fixed`, `resolved-at`, `resolution-summary`를 제대로
+갖고 있다. 해결 사실은 기록됐고 `status:` 한 필드만 거짓말을 한다 — `move`에서
+관찰된 것과 정확히 같은 모양이다.
+
+**왜 여태 안 잡혔나.** `move` 결함은 즉시 빨갛게 된다(`tasks/done/` zone 검사).
+`resolve`+`archive` 결함은 조용했다 — `doccheck`가 `tasks/archive/` 철자만 알아서
+`tasks/_archive/` 아래를 **아예 보지 않았기** 때문이다(ISSUE-035). 검사기가 못 보는
+디렉터리는 "결함 0건"과 구분되지 않는다. TASK-410이 철자를 넓히자 7장이 한꺼번에
+드러났다.
+
+7장의 `status:`는 TASK-410 브랜치에서 `done`으로 정정했다. 상류가 고쳐야 할 것은
+카드가 아니라 명령이다 — 종료를 결정한 명령이 종료를 쓰지 않는다.

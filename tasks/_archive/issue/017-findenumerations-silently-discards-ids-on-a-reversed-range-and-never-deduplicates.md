@@ -2,7 +2,7 @@
 id: ISSUE-017
 title: "findEnumerations silently discards ids on a reversed range and never deduplicates"
 type: bug
-status: todo
+status: done
 priority: P2
 severity: low
 effort: S
