@@ -10,6 +10,9 @@ created: 2026-09-14
 discovered-in: "TASK-388 (dev/claude/mbp/fix/durable-receipt-path), 2026-09-14 리베이스 중"
 discovered-at: 2026-09-14
 promoted-to: [TASK-407]
+resolution: fixed
+resolved-at: 2026-09-22T02:32:30Z
+resolution-summary: "Resolved as fixed by TASK-407."
 ---
 
 ## Summary
@@ -94,7 +97,7 @@ ISSUE-027 · TASK-399로 재번호했다. 즉 **손실은 없었지만 그건 �
 둘이 한 트리에서 만나는 순간도 오지 않았다 — 게이트는 정직하게 초록불이었다.
 
 `[[TASK-NNN]]` wikilink는 별개로 전혀 검사되지 않는다. `tools/doccheck/markdown.go:15`가
-추출하는 것은 인라인 링크 `[text](target)`와 참조 정의 `[label]: target` 둘뿐이고
+추출하는 것은 인라인 링크 `[text](../../issue/target)`와 참조 정의 `[label]: target` 둘뿐이고
 doccheck 어디에도 `[[...]]`를 읽는 코드가 없다.
 
 ## 개명이 남긴 것 — 존재 검사로는 잡을 수 없는 오조준

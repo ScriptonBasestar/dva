@@ -12,6 +12,9 @@ discovered-at: 2026-09-13
 ownership: local
 created: 2026-09-13
 promoted-to: [TASK-405]
+resolution: fixed
+resolved-at: 2026-09-22T02:32:30Z
+resolution-summary: "Resolved as fixed by TASK-405."
 ---
 
 ## Summary
