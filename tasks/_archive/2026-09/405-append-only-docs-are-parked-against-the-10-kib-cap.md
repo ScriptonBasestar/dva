@@ -4,6 +4,9 @@ title: "Append-only documents are parked against the 10 KiB cap with no headroom
 type: feature
 priority: P2
 status: done
+archived-at: 2026-09-22
+verified-at: 2026-09-22
+verification-summary: "Re-verified 2026-09-22. C1 `go run ./tools/doccheck --near-limit` lists 23 docs (docs/42 245 lines 10233 bytes first; the card records 22 as of 2026-09-19, a dated observation). C2 `go test ./tools/doccheck/` ok and `make doc-check` exit 0 with HEADROOM lines present, so headroom stays warning-only. C3 docs/dogfood/README.md 'Append-only 리포트 분리 규약 (TASK-405)' names 500/10240, the 80% signal, the HEADROOM-to-next-append split point, date/project split plus one index line, and the no-exemption rule. No follow-up."
 created: 2026-09-17
 quality-review: pass
 quality-reviewed-at: 2026-09-22T02:19:30Z

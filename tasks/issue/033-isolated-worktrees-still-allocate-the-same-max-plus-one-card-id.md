@@ -45,5 +45,5 @@ numbers.
 
 ## Related
 
-- TASK-407 — tasks/done/407-card-ids-are-allocated-by-scanning-the-board-so-parallel-worktrees-collide.md
+- TASK-407 — tasks/todo/407-card-ids-are-allocated-by-scanning-the-board-so-parallel-worktrees-collide.md
 - ISSUE-012 — tasks/issue/012-card-ids-are-allocated-by-scanning-the-board-so-parallel-worktrees-collide.md

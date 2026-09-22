@@ -48,7 +48,7 @@ receipt. Use it as the shape, not as a backdate.
 ## 4. Archived cards
 
 Once the file leaves `tasks/done/`, step 1 of the seal is false. Editing
-`tasks/archive/` does not forge a done receipt. Still do not rewrite the
+`tasks/_archive/` does not forge a done receipt. Still do not rewrite the
 historical receipt. Record the correction on the archived card and leave
 `quality-review-receipt` pointing at the old file.
 

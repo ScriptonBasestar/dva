@@ -4,6 +4,9 @@ title: "findEnumerations silently discards ids on a reversed range and never ded
 type: feature
 priority: P2
 status: done
+archived-at: 2026-09-22
+verified-at: 2026-09-22
+verification-summary: "Re-verified 2026-09-22. C1 the wikilink enumeration is recognized, not skipped — TestCheckPlanProse/a_wikilink_enumeration_naming_an_id_outside_children_is_reported passes and TestFindEnumerations now carries wikilink/middot/mixed cases. Title-scope B and C re-measured as already closed: reversed_range_does_not_swallow_the_run_after_it and TestIssue017Deduplication both pass (TASK-394, TASK-391). C2 `go test ./tools/planprogress/` ok, `make doc-check` exit 0. No follow-up."
 created: 2026-09-17
 quality-review: pass
 quality-reviewed-at: 2026-09-22T02:19:30Z
