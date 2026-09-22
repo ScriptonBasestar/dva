@@ -1,6 +1,6 @@
 # Command Surface Renewal 작업의 에이전트 실행 런북
 
-이 문서는 [PLAN-003](../tasks/archive/2026-09/003-command-surface-renewal-discovery.md)을 새 Codex 세션에서
+이 문서는 [PLAN-003](../tasks/_archive/2026-09/003-command-surface-renewal-discovery.md)을 새 Codex 세션에서
 실행 세션 규칙과 시작 프롬프트를 소유한다. 제품 계약과 acceptance criteria는 PLAN-003과 target
 card가 정본이다. PLAN-002 전용 [기존 런북](53-command-surface-agent-execution.md)의 내용은
 이 계획에 적용하지 않는다.
@@ -36,20 +36,20 @@ lead이고 root가 실제 code, diff, pinned revision과 gate 결과를 확인�
 
 | Wave | Task | 종료 조건 |
 | --- | --- | --- |
-| 완료 | [TASK-262](../tasks/archive/2026-09/262-restore-imported-plan-execution.md) | imported-plan owner contract 복구·독립 review·통합 완료 |
-| 완료 | [TASK-253](../tasks/archive/2026-09/253-align-help-groups-and-discovery-descriptions.md) | help 정비 구현·독립 review·통합 완료 |
-| 완료 | [TASK-264](../tasks/archive/2026-09/264-restore-imported-command-ownership.md) | imported interaction/provision owner 복구·독립 review·통합 완료 |
-| 완료 | [TASK-254](../tasks/archive/2026-09/254-discover-command-metadata-registry.md) | metadata 소유권 evidence 기록·통합 완료 |
-| 완료 | [TASK-259](../tasks/archive/2026-09/259-discover-qualified-project-addressing.md) | addressing evidence와 recommendation 기록·통합 완료 |
-| 1 | [TASK-267](../tasks/archive/2026-09/267-repair-subproject-exposure-defects.md) | TASK-259 §5의 문법 독립 노출 결함 수리 |
-| 2 | [TASK-255](../tasks/archive/2026-09/255-decide-kubectl-route-compatibility.md) | TASK-254 근거를 사용한 사람 승인 decision 기록 |
-| 2 | [TASK-257](../tasks/archive/2026-09/257-decide-validate-route-compatibility.md) | TASK-254 근거를 사용한 사람 승인 decision 기록 |
-| 2 | [TASK-272](../tasks/archive/2026-09/272-freeze-manifest-route-identity.md) | manifest route identity 표현 사람 승인 기록 |
-| 2 | [TASK-263](../tasks/archive/2026-09/263-decide-qualified-project-addressing.md) | TASK-259 근거와 TASK-264 owner 복구 위에서 address/exposure 사람 승인 기록 |
-| 3 | [TASK-256](../tasks/archive/2026-09/256-implement-kubectl-route-decision.md) | TASK-255 결정 구현·통합 |
-| 3 | [TASK-258](../tasks/archive/2026-09/258-implement-validate-route-decision.md) | TASK-257 결정 구현·통합 |
-| 3 | [TASK-260](../tasks/archive/2026-09/260-freeze-cross-project-plan-composition.md) | TASK-262·263 위에서 composition 사람 승인 기록 |
-| 4 | [TASK-261](../tasks/archive/2026-09/261-decide-vnext-vocabulary-and-migration.md) | 선행 결과를 근거로 사람 승인 또는 현행 유지 기록 |
+| 완료 | [TASK-262](../tasks/_archive/2026-09/262-restore-imported-plan-execution.md) | imported-plan owner contract 복구·독립 review·통합 완료 |
+| 완료 | [TASK-253](../tasks/_archive/2026-09/253-align-help-groups-and-discovery-descriptions.md) | help 정비 구현·독립 review·통합 완료 |
+| 완료 | [TASK-264](../tasks/_archive/2026-09/264-restore-imported-command-ownership.md) | imported interaction/provision owner 복구·독립 review·통합 완료 |
+| 완료 | [TASK-254](../tasks/_archive/2026-09/254-discover-command-metadata-registry.md) | metadata 소유권 evidence 기록·통합 완료 |
+| 완료 | [TASK-259](../tasks/_archive/2026-09/259-discover-qualified-project-addressing.md) | addressing evidence와 recommendation 기록·통합 완료 |
+| 1 | [TASK-267](../tasks/_archive/2026-09/267-repair-subproject-exposure-defects.md) | TASK-259 §5의 문법 독립 노출 결함 수리 |
+| 2 | [TASK-255](../tasks/_archive/2026-09/255-decide-kubectl-route-compatibility.md) | TASK-254 근거를 사용한 사람 승인 decision 기록 |
+| 2 | [TASK-257](../tasks/_archive/2026-09/257-decide-validate-route-compatibility.md) | TASK-254 근거를 사용한 사람 승인 decision 기록 |
+| 2 | [TASK-272](../tasks/_archive/2026-09/272-freeze-manifest-route-identity.md) | manifest route identity 표현 사람 승인 기록 |
+| 2 | [TASK-263](../tasks/_archive/2026-09/263-decide-qualified-project-addressing.md) | TASK-259 근거와 TASK-264 owner 복구 위에서 address/exposure 사람 승인 기록 |
+| 3 | [TASK-256](../tasks/_archive/2026-09/256-implement-kubectl-route-decision.md) | TASK-255 결정 구현·통합 |
+| 3 | [TASK-258](../tasks/_archive/2026-09/258-implement-validate-route-decision.md) | TASK-257 결정 구현·통합 |
+| 3 | [TASK-260](../tasks/_archive/2026-09/260-freeze-cross-project-plan-composition.md) | TASK-262·263 위에서 composition 사람 승인 기록 |
+| 4 | [TASK-261](../tasks/_archive/2026-09/261-decide-vnext-vocabulary-and-migration.md) | 선행 결과를 근거로 사람 승인 또는 현행 유지 기록 |
 
 TASK-262·253·247·264·259·254 완료. 다음 변경 세션은 PLAN-002 TASK-248, 그 뒤 TASK-267과
 product critical path TASK-259→263→260이다. TASK-255·257은 TASK-254 근거 위에서 착수 가능하고,
@@ -101,7 +101,7 @@ PR/MR은 만들지 않는다.
 
 ```text
 TARGET_TASK: TASK-267
-PLAN: tasks/archive/2026-09/003-command-surface-renewal-discovery.md
+PLAN: tasks/_archive/2026-09/003-command-surface-renewal-discovery.md
 RUNBOOK: docs/54-command-surface-renewal-agent-execution.md
 
 이 세션은 TARGET_TASK 하나만 소유한다. PLAN 전체나 dependent task를 선행 구현하지 마라.

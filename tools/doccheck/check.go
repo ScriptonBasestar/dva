@@ -26,9 +26,15 @@ type Result struct {
 	// StaleLinkPaths counts task-card links that resolve by their stable basename while the
 	// relative path written in the document no longer exists in the inventory. This is a
 	// maintenance signal, not a broken link: state-directory moves are intentional (TASK-143).
-	StaleLinkPaths     int
-	StaleLinkPathsDocs int
-	OversizedDocs      int
+	StaleLinkPaths int
+	// StaleLinkPathsArchive counts the stale-path subset ISSUE-036 measured: a citing file that
+	// itself sits under an archive prefix. Those paths are history — they were correct when the
+	// card was archived — so they are counted here instead of joining StaleLinkPathDetail, which
+	// exists to show a human what to fix. Folding a further batch of archived cards to a new
+	// spelling grows this number, not the detail list.
+	StaleLinkPathsArchive int
+	StaleLinkPathsDocs    int
+	OversizedDocs         int
 	// HeadroomDocs counts size-enforced documents past 80% of either limit
 	// while still under both hard limits (TASK-405). Advisory: reported but
 	// never added to Errors, so the gate still passes.
@@ -185,10 +191,15 @@ func Check(in CheckInput) Result {
 			}
 			if outcome.stale != "" {
 				res.StaleLinkPaths++
-				if strings.HasPrefix(e.Path, "docs/") {
+				switch {
+				case strings.HasPrefix(e.Path, "docs/"):
 					res.StaleLinkPathsDocs++
+					res.StaleLinkPathDetail = append(res.StaleLinkPathDetail, outcome.stale)
+				case isArchivePath(e.Path):
+					res.StaleLinkPathsArchive++
+				default:
+					res.StaleLinkPathDetail = append(res.StaleLinkPathDetail, outcome.stale)
 				}
-				res.StaleLinkPathDetail = append(res.StaleLinkPathDetail, outcome.stale)
 			}
 		}
 	}

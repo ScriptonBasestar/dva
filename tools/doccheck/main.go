@@ -77,6 +77,7 @@ func printReport(res Result) {
 	fmt.Printf("broken_links:        %d\n", res.BrokenLinks)
 	fmt.Printf("stale_link_paths:   %d\n", res.StaleLinkPaths)
 	fmt.Printf("stale_link_paths_docs: %d\n", res.StaleLinkPathsDocs)
+	fmt.Printf("stale_link_paths_archive: %d (suppressed, ISSUE-036)\n", res.StaleLinkPathsArchive)
 	fmt.Printf("oversized_docs:      %d\n", res.OversizedDocs)
 	fmt.Printf("headroom_docs:       %d\n", res.HeadroomDocs)
 	fmt.Printf("test_funcs_found:    %d (from %d _test.go files)\n", res.TestFuncsFound, res.TestFilesSwept)

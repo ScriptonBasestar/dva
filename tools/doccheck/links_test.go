@@ -194,9 +194,9 @@ func TestLinks_failsWhenAnchorOnlyInsideFence(t *testing.T) {
 // its (changeable) state (TASK-143).
 func TestLinks_resolvesMovedTaskLink(t *testing.T) {
 	root := t.TempDir()
-	referrer := "tasks/archive/113-old.md"
+	referrer := "tasks/todo/113-old.md"
 	moved := "tasks/done/153-app-up.md"
-	writeFile(t, root, referrer, "---\nid: TASK-113\nstatus: done\n---\n\n# 113\n\nSee [153](../todo/153-app-up.md).\n")
+	writeFile(t, root, referrer, "---\nid: TASK-113\nstatus: todo\n---\n\n# 113\n\nSee [153](../todo/153-app-up.md).\n")
 	writeFile(t, root, moved, "---\nid: TASK-153\nstatus: done\n---\n\n# 153\n")
 	inv := mustInventory(t, root, referrer, moved)
 
@@ -204,11 +204,35 @@ func TestLinks_resolvesMovedTaskLink(t *testing.T) {
 	if !res.OK {
 		t.Fatalf("expected the moved task link to resolve; errors=%v detail=%v", res.Errors, res.BrokenDetail)
 	}
-	if res.StaleLinkPaths != 1 || res.StaleLinkPathsDocs != 0 {
-		t.Fatalf("stale links total/docs=%d/%d want 1/0; detail=%v", res.StaleLinkPaths, res.StaleLinkPathsDocs, res.StaleLinkPathDetail)
+	if res.StaleLinkPaths != 1 || res.StaleLinkPathsDocs != 0 || res.StaleLinkPathsArchive != 0 {
+		t.Fatalf("stale links total/docs/archive=%d/%d/%d want 1/0/0; detail=%v", res.StaleLinkPaths, res.StaleLinkPathsDocs, res.StaleLinkPathsArchive, res.StaleLinkPathDetail)
 	}
 	if !containsAny(res.StaleLinkPathDetail, "tasks/todo/153-app-up.md", "tasks/done/153-app-up.md") {
 		t.Fatalf("expected written and resolved paths in stale detail, got %v", res.StaleLinkPathDetail)
+	}
+}
+
+// Given a task link written by a card that itself sits under the archive zone, When links are
+// checked, Then the stale path is counted in StaleLinkPathsArchive instead of the human-facing
+// detail list — that population is closed history a fold cannot avoid re-staling in bulk, and
+// the detail list exists to show what to fix (ISSUE-036).
+func TestLinks_suppressesStaleWrittenTaskPathFromArchivedCard(t *testing.T) {
+	root := t.TempDir()
+	referrer := "tasks/archive/2026-09/113-old.md"
+	moved := "tasks/done/153-app-up.md"
+	writeFile(t, root, referrer, "---\nid: TASK-113\nstatus: done\n---\n\n# 113\n\nSee [153](../../todo/153-app-up.md).\n")
+	writeFile(t, root, moved, "---\nid: TASK-153\nstatus: done\n---\n\n# 153\n")
+	inv := mustInventory(t, root, referrer, moved)
+
+	res := Check(CheckInput{Root: root, Inventory: inv})
+	if !res.OK {
+		t.Fatalf("expected the moved task link to resolve; errors=%v detail=%v", res.Errors, res.BrokenDetail)
+	}
+	if res.StaleLinkPaths != 1 || res.StaleLinkPathsDocs != 0 || res.StaleLinkPathsArchive != 1 {
+		t.Fatalf("stale links total/docs/archive=%d/%d/%d want 1/0/1; detail=%v", res.StaleLinkPaths, res.StaleLinkPathsDocs, res.StaleLinkPathsArchive, res.StaleLinkPathDetail)
+	}
+	if len(res.StaleLinkPathDetail) != 0 {
+		t.Fatalf("archive-sourced stale path must not appear in the detail list, got %v", res.StaleLinkPathDetail)
 	}
 }
 

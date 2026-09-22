@@ -2,7 +2,7 @@
 id: ISSUE-036
 title: "Archive fold turned 4 STALE path warnings into 293 and drowned the signal"
 type: bug
-status: todo
+status: done
 priority: P2
 effort: M
 severity: medium
@@ -10,6 +10,9 @@ ownership: local
 discovered-in: "TASK-411 (fold the legacy archive spelling into _archive)"
 discovered-at: 2026-09-22
 created: 2026-09-22
+resolution: fixed
+resolved-at: 2026-09-22T13:53:51Z
+resolution-summary: "Resolved as fixed."
 ---
 
 ## Summary
@@ -75,9 +78,26 @@ $ make doc-check 2>&1 | grep STALE | sed 's#^  STALE *##;s#/.*##' | sort | uniq 
 
 ## Resolution Criteria
 
-- [ ] 사람이 읽을 수 있는 크기로 돌아온다 — 개별 STALE 줄이 40건 이하 | verify: `test "$(make doc-check 2>&1 | /usr/bin/grep -c '^  STALE')" -le 40`
-- [ ] `docs/` 아래 STALE 인용이 0건이다 | verify: `! make doc-check 2>&1 | /usr/bin/grep 'STALE *docs/'`
-- [ ] 문서 게이트가 통과한다 | verify: `make doc-check`
+- [x] 사람이 읽을 수 있는 크기로 돌아온다 — 개별 STALE 줄이 40건 이하 | verify: `test "$(make doc-check 2>&1 | /usr/bin/grep -c '^  STALE')" -le 40`
+- [x] `docs/` 아래 STALE 인용이 0건이다 | verify: `! make doc-check 2>&1 | /usr/bin/grep 'STALE *docs/'`
+- [x] 문서 게이트가 통과한다 | verify: `make doc-check`
+
+## 2026-09-22 해결
+
+권장안 그대로 구현했다.
+
+1. `tools/doccheck/check.go`: `Result.StaleLinkPathsArchive` 신설. 인용한 파일(`e.Path`)이
+   `isArchivePath`(아카이브 프리픽스 둘 다)에 걸리면 `StaleLinkPathDetail`에 줄을 찍지 않고
+   이 카운터만 올린다. `docs/`발 STALE은 그대로 상세 목록에 남는다. `main.go`에
+   `stale_link_paths_archive: N (suppressed, ISSUE-036)` 요약 줄을 추가했다.
+   `TestLinks_suppressesStaleWrittenTaskPathFromArchivedCard` 신설, 음성 프로브로
+   비어있지-않음을 확인(분기를 `false && ...`로 죽이면 FAIL 재현).
+2. `docs/53,54,58,59,61` 5개 파일의 `tasks/archive/` 인용 42건을 `tasks/_archive/`로
+   고쳤다(문자열 치환; STALE 37건 전부 포함, 나머지 5건은 같은 줄에 인용이 여럿이거나
+   STALE로 잡히지 않은 표기).
+
+결과: STALE 293 → 0줄(요약 `stale_link_paths_archive: 256 (suppressed)`). `make doc-check`,
+`go test ./tools/...` 전부 통과.
 
 ## 소유권 — 이 저장소다
 
