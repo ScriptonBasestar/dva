@@ -6,6 +6,9 @@ priority: P2
 effort: M
 exec-tier: standard
 status: done
+archived-at: 2026-09-23
+verified-at: 2026-09-23
+verification-summary: "Re-verified 2026-09-23. release-notes/v0.3.0.md SHA-256 is e9f7220eb0143105e261b7077dfe75ed9e620a6293d98539ecc995da7c8fb61c. releaseworkflow postflight for tag v0.3.0 at 629c34c1fe7359dc515a9090a8abbf6444beca71 passed with the exact seven assets and checksums. make release-postflight was not re-run because dist, bin, and tmp already exist in this checkout. No follow-up."
 quality-review: pass
 quality-reviewed-at: 2026-09-23
 quality-review-evidence: "Independent ce-judge review410 PASS: approved identity, preflight/publication/postflight, exact seven assets, remote body and safe release-worktree cleanup verified."
@@ -47,3 +50,8 @@ docs/52의 승인된 immutable commit·notes SHA-256으로 공개한다. 이 카
   The tracked source notes and their approved SHA-256 remain unchanged.
 - Clean detached release worktree removed without force after postflight. No release branch existed.
 - Existing ISSUE-039, PLAN-006~009 archive decisions, and tasks-local runtime remnants remain untouched.
+
+## Archive
+
+- [x] 아카이브
+- 후속: 없음

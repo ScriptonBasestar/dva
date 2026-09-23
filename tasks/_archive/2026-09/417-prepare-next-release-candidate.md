@@ -6,6 +6,9 @@ priority: P2
 effort: M
 exec-tier: standard
 status: done
+archived-at: 2026-09-23
+verified-at: 2026-09-23
+verification-summary: "Re-verified 2026-09-23. internal/config.Version, CHANGELOG [0.3.0] - 2026-09-23, and release-notes/v0.3.0.md describe that release. make check-generate and make release-check exited 0. Full CI e6b7e8f8b5a327b377433845e15ffa46 was not re-run; its 2026-09-23 attestation remains the record. Notes SHA-256 unchanged. No follow-up."
 quality-review: pass
 quality-review-receipt: tasks/done/evidence/TASK-417/done-review-33feafc92a2a57fd6d3bf81c03aa39fb349e70a266a57a80a1390e0af58c12d0.json
 quality-reviewed-at: 2026-09-23
@@ -39,3 +42,8 @@ depends-on: [TASK-416, TASK-411, TASK-419]
 - 기존 v0.2.0 노트 SHA-256은
   `7905843de27f4c3c7fcb43474165fa16bee89c0e381ff2577d4dc7e656d2a818`로 유지했다.
 - 공개 tag/Release는 생성하지 않았다. 승인된 immutable identity의 공개는 TASK-418이다.
+
+## Archive
+
+- [x] 아카이브
+- 후속: 없음

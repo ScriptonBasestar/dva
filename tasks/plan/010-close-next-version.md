@@ -3,9 +3,9 @@ id: PLAN-010
 title: "개발·검증·문서 증거를 정합화하고 0.3.0을 마감한다"
 type: plan
 scope: "보드 게이트 복구, 완료 증거 정합화, 다음 릴리스 후보 및 공개"
-progress: 100
+progress: 87
 total-tasks: 8
-completed-tasks: 8
+completed-tasks: 7
 children: [TASK-415, TASK-410, TASK-411, TASK-416, TASK-419, TASK-417, TASK-370, TASK-418]
 target-date: "2026-09-30"
 created: 2026-09-23
@@ -15,6 +15,12 @@ created: 2026-09-23
 
 빈 보드가 아니라 검증된 릴리스 범위를 만든다. 현재 목록은 [보드 인덱스](../README.md),
 공개 절차는 [런북](../../docs/52-manual-release-runbook.md)이 소유한다.
+
+## Current state (2026-09-23 아카이브 재검증)
+
+자식 8장 중 7장은 `tasks/_archive/2026-09/`에 있다. TASK-411만 `tasks/blocked/`다.
+추적된 옛 아카이브 철자는 접혔지만, 이 체크아웃의 `ce task gate`가
+`legacy-storage-dir`를 계속 낸다. 완료 수는 그 카드가 다시 닫히기 전의 7이다.
 
 ## Children
 

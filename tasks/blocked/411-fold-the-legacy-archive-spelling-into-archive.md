@@ -5,7 +5,7 @@ type: chore
 priority: P2
 effort: S
 exec-tier: standard
-status: done
+status: blocked
 quality-review: pass
 quality-reviewed-at: 2026-09-23
 quality-review-evidence: "Independent ce-judge review410 after TASK-410 receipt and TASK-415 zone fix: all four verify bindings passed. Original fold has 413 R100 renames; disclosed non-rename changes inspected. make doc-check and ce task gate READY. No findings."
@@ -37,7 +37,7 @@ depends-on: [TASK-410]
 ## Completion Criteria
 
 - [x] 저장소에 옛 철자 경로의 카드가 남아 있지 않다 | verify: `test -z "$(git ls-files tasks/archive)"`
-- [x] 보드 게이트에 `legacy-storage-dir` 경고가 없다 | verify: `! ce task gate 2>&1 | /usr/bin/grep -q 'legacy-storage-dir'`
+- [ ] 보드 게이트에 `legacy-storage-dir` 경고가 없다 | verify: `! ce task gate 2>&1 | /usr/bin/grep -q 'legacy-storage-dir'`
 - [x] 접은 뒤에도 plan 진행률이 맞고 문서 게이트가 통과한다 | verify: `make doc-check` (regression-guard)
 - [x] 보드 게이트가 READY다 | verify: `ce task gate 2>&1 | /usr/bin/grep -q '^READY —'`
 
@@ -65,7 +65,7 @@ depends-on: [TASK-410]
 
 ## Sources
 
-- ISSUE-035 — tasks/issue/035-repository-tooling-hardcodes-the-legacy-archive-spelling-and-cannot-see-archive.md
+- ISSUE-035 — tasks/_archive/issue/035-repository-tooling-hardcodes-the-legacy-archive-spelling-and-cannot-see-archive.md
 - [[TASK-410]] — 선행 조건
 
 ## Review Attempts
@@ -113,3 +113,16 @@ depends-on: [TASK-410]
 TASK-410 receipt와 TASK-415 zone 수정 뒤 네 기준을 독립 재실행해 모두 통과했다.
 위 Review Attempts의 실패는 과거 상태다. primary checkout의 ignore된 잔재 삭제는
 검증 범위가 아니며, 이 판정은 Git 추적 카드와 깨끗한 task worktree에 대한 것이다.
+
+## 2026-09-23 아카이브 재검증 — 되돌림
+
+기준 2는 이 체크아웃에서 미충족이다. `ce task gate`는 READY이면서도
+`legacy-storage-dir` 경고를 낸다. 추적 파일은 없다(`git ls-files tasks/archive`가
+비어 기준 1은 충족). 경고가 보는 것은 gitignore된 `tasks/archive/.ce`
+(heartbeat·audit, 2026-08-20)가 살려 둔 디렉터리다. `make doc-check`는 통과해
+기준 3도 충족하고, 게이트 출력의 `READY —`로 기준 4도 충족한다.
+
+잔재는 지우지 않았다. 이 카드와 `tasks/README.md`가 이미 그 삭제를 사람 결정으로
+남겨 두었다. 기준 문장을 깨끗한 워크트리로 좁히지 않으므로 아카이브하지 않고
+`blocked/`로 되돌린다. 후속 카드는 만들지 않았다. 사람이 잔재를 지우거나 기준 2를
+명시적으로 바꾸기 전에는 닫히지 않는다.

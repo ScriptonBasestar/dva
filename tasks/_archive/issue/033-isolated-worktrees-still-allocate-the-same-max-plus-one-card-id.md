@@ -60,5 +60,5 @@ Parallel-safe 절을 다시 써서 "`max(id)+1` 자체는 같은 스냅샷 충�
 
 ## Related
 
-- TASK-407 — tasks/todo/407-card-ids-are-allocated-by-scanning-the-board-so-parallel-worktrees-collide.md
+- TASK-407 — tasks/blocked/407-card-ids-are-allocated-by-scanning-the-board-so-parallel-worktrees-collide.md
 - ISSUE-012 — tasks/issue/012-card-ids-are-allocated-by-scanning-the-board-so-parallel-worktrees-collide.md

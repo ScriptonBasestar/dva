@@ -8,6 +8,9 @@ exec-tier: standard
 created-at: 2026-09-09
 source: "v0.2.0 게시 후 도착한 독립 검증 D-1·D-5"
 status: done
+archived-at: 2026-09-23
+verified-at: 2026-09-23
+verification-summary: "Re-verified 2026-09-23. C1 release-notes/v0.2.0.md SHA-256 is 7905843de27f4c3c7fcb43474165fa16bee89c0e381ff2577d4dc7e656d2a818. C2 CHANGELOG.md does not contain the frozen 4-example sentence. C3 release-notes/v0.3.0.md places depends_on on the step, matching CIStep.DependsOn; CIProfile has none. C4 make doc-check exit 0. No follow-up."
 quality-review: pass
 quality-reviewed-at: 2026-09-23
 quality-review-evidence: "Independent ce-judge review410 PASS: all four criteria verified against ci.go, validated v0.3.0 YAML, frozen v0.2.0 digest and doc-check."
@@ -70,3 +73,8 @@ TASK-417의 v0.3.0 노트를 작성한 뒤 별도 ce-judge가 `internal/config/c
 `DependsOn`은 `CIStep`에만 있고 새 예제도 step 아래에 둔다. 추출한 YAML의 config validate,
 기존 v0.2.0 SHA-256, CHANGELOG의 3개 예시 사실, doc-check가 모두 통과했다.
 위 conditional-close와 reopened 기록은 당시의 이력이며 이제 네 기준 모두 완료했다.
+
+## Archive
+
+- [x] 아카이브
+- 후속: 없음

@@ -6,6 +6,9 @@ priority: P1
 effort: S
 exec-tier: standard
 status: done
+archived-at: 2026-09-23
+verified-at: 2026-09-23
+verification-summary: "Re-verified 2026-09-23. cardZones permits review and backlog; backlog is not skip, and BACKLOG-009 has status backlog. Review/todo duplicate and undeclared-directory tests passed in go test ./tools/doccheck/. make doc-check exit 0 with undeclared 0. ce task gate READY. No follow-up."
 created: 2026-09-23
 source: "2026-09-23 배치 7 통합 중 실측 — TASK-412 카드가 review/와 todo/에 동시에 존재했는데 doccheck가 `duplicate: 0`을 보고했다"
 quality-review: pass
@@ -124,3 +127,8 @@ card_ids duplicate: 0)와 `ce task gate`(`READY — task_board_ready`)로 검증
 ## Review Attempts
 
 - 2026-09-23T02:21:57Z | reviewer: task414-review (independent of implementer, fresh session) | executor-tier: standard | finding: pass | verification: commit 78444808 full diff read (`git show --stat`/`git show`); AC1/AC3/AC4 verify bindings re-executed live — `TestCardZonesDeclareReviewAndBacklog`, `TestDuplicateCardIDAcrossReviewAndTodo`, `TestUndeclaredBoardDirectoryFailsTheGate` present and `go test ./tools/doccheck/...` → ok; AC5 `make doc-check` → board_dirs_seen: 7 (undeclared: 0), status_mismatches: 0, card_ids duplicate: 0, filename_numbers duplicate: 0, doc-check: OK; AC6 `ce task gate` → `READY — task_board_ready`; AC2 (human) — read Completion Record's backlog permitted-vs-skip rationale, sound; regression sweep `go build ./...`, `go vet ./tools/doccheck/...`, `gofmt -l tools/doccheck/` all clean; diff scope confirmed limited to tools/doccheck/{cardstatus,check,main}.go + 2 new test files + BACKLOG-009 status field + this card | outcome: pass | next: done
+
+## Archive
+
+- [x] 아카이브
+- 후속: 없음

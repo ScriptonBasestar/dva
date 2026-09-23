@@ -6,6 +6,9 @@ priority: P2
 effort: M
 exec-tier: standard
 status: done
+archived-at: 2026-09-23
+verified-at: 2026-09-23
+verification-summary: "Re-verified 2026-09-23. Makefile ci and ci-full call dva ci commit and dva ci full. Resolved ci_profiles steps do not invoke make. Removing yamlcheck from the docs step made make doc-check fail in ciparity; dva.yml was restored with an empty diff. dva ci accepts only a profile name (MaximumNArgs 1). make doc-check exit 0 and ce task gate READY. No follow-up."
 created: 2026-09-22
 depends-on: [TASK-412]
 source: "2026-09-22 done-board 재검증 중 확인 — dva-ci 스킬이 처방한 Make→DVA 별칭 방향이 이 저장소에서 미이행"
@@ -169,3 +172,8 @@ AC2는 과거 독립 리뷰의 실제 누락 주입·원복 기록과 현재 set
 대조했으며 이번 읽기 전용 리뷰에서는 실제 파일 변경 실험을 반복하지 않았다.
 프로파일 단위 위임(AC3)은 CLI의 MaximumNArgs(1)과 플래그 정의로 재확인했다.
 기존 quality-review-evidence는 당시 조건부 판정의 이력으로 보존한다.
+
+## Archive
+
+- [x] 아카이브
+- 후속: 없음

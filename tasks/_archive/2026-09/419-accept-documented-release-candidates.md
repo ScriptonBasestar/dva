@@ -6,6 +6,9 @@ priority: P1
 effort: S
 exec-tier: standard
 status: done
+archived-at: 2026-09-23
+verified-at: 2026-09-23
+verification-summary: "Re-verified 2026-09-23. TestPendingReleaseCandidate accepts only a populated dated section whose source version is newer than the reachable tag, and rejects empty, mismatched, undated, invalid-date, and same-or-older candidates. go test ./tools/changelogcheck and make doc-check passed. No follow-up."
 quality-review: pass
 quality-reviewed-at: 2026-09-23
 quality-review-evidence: "Independent ce-judge review419: corrected leading-zero SemVer finding, rechecked source/tag/heading/date/order/content boundaries; go test -race -count=1 and go vet ./tools/changelogcheck, gofmt and diff check passed. Candidate Git fixture not independently run; real 0.3.0 candidate will exercise main path in TASK-417."
@@ -29,3 +32,8 @@ docs/52는 tag 전에 Unreleased를 버전 섹션으로 확정하지만, changel
 `dva ci commit` de4b306596f165d0af7f811028ac5d53 succeeded in 4m40.353677625s.
 Earlier run 0abc7a33517b29df26414bcecbe2abdd failed on another session’s golangci-lint lock;
 that process ended before retry. No lock was bypassed or deleted.
+
+## Archive
+
+- [x] 아카이브
+- 후속: 없음

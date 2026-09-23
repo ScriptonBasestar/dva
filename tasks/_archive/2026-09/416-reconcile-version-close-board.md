@@ -6,6 +6,9 @@ priority: P2
 effort: M
 exec-tier: standard
 status: done
+archived-at: 2026-09-23
+verified-at: 2026-09-23
+verification-summary: "Re-verified 2026-09-23. PLAN-006 has 29 children, each present once under tasks/_archive/2026-09/. README separates that history from PLAN-010. TASK-413 corrected binding passes and ISSUE-038 is archived fixed. make doc-check exit 0 and ce task gate READY. Follow-up is TASK-411, returned to blocked because this checkout still prints legacy-storage-dir."
 quality-review: pass
 quality-reviewed-at: 2026-09-23
 quality-review-evidence: "Independent ce-judge review410: actual 11-file docs/board diff inspected, all 29 PLAN-006 children found once in archive, TASK-328 failures preserved, TASK-411/413 independent verdicts checked. Issue archive evidence wording corrected. git diff --check, card validate, make doc-check and ce task gate passed. No source changes; full CI not repeated."
@@ -29,3 +32,8 @@ TASK-411 네 기준과 TASK-413 정정 기준은 독립 ce-judge가 재검증해
 ISSUE-035/038은 해결·아카이브하며 기존 본문을 보존했다. ISSUE-037에는 날짜가 있는
 해결 확인을 추가한 뒤 아카이브했으며, archive 명령 자체가 그 본문을 바꾸지 않았음을 확인했다.
 TASK-328의 실제 실패 exit와 역사 receipt는 수정하지 않았다.
+
+## Archive
+
+- [x] 아카이브
+- 후속: TASK-411은 이 체크아웃의 `legacy-storage-dir` 경고 때문에 아카이브하지 않고 `blocked/`로 되돌렸다.

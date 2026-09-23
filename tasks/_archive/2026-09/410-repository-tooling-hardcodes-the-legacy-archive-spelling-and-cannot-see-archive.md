@@ -6,6 +6,9 @@ priority: P2
 effort: S
 exec-tier: standard
 status: done
+archived-at: 2026-09-23
+verified-at: 2026-09-23
+verification-summary: "Re-verified 2026-09-23. TestZoneFromPath, TestArchiveSpelling, and TestBuildTaskIndexSkipsPlanCardsInDatedArchivePartition/_archive passed. go test ./tools/planprogress/ ./tools/doccheck/ and make doc-check passed. Historical receipt left unchanged. No follow-up."
 created: 2026-09-22
 blocks: [TASK-411]
 quality-review: pass
@@ -58,7 +61,12 @@ quality-review-evidence: "Independent review (Claude Sonnet 5, not the implement
 
 ## Sources
 
-- ISSUE-035 — tasks/issue/035-repository-tooling-hardcodes-the-legacy-archive-spelling-and-cannot-see-archive.md
+- ISSUE-035 — tasks/_archive/issue/035-repository-tooling-hardcodes-the-legacy-archive-spelling-and-cannot-see-archive.md
+
+## Archive
+
+- [x] 아카이브
+- 후속: 없음
 
 ## Review Attempts
 

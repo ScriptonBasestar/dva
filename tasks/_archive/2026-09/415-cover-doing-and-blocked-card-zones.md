@@ -7,6 +7,9 @@ effort: S
 exec-tier: standard
 created: 2026-09-23
 status: done
+archived-at: 2026-09-23
+verified-at: 2026-09-23
+verification-summary: "Re-verified 2026-09-23. cardZones permits doing and blocked. TestCardZonesDeclareDoingAndBlocked and TestDuplicateCardIDAcrossDoingAndBlocked passed. go test ./tools/doccheck and make doc-check passed. No follow-up."
 quality-review: pass
 quality-reviewed-at: 2026-09-23
 quality-review-evidence: "Independent ce-judge review410, not implementer: source diff and PLAN-010/TASK-370/416/417/418 metadata reviewed. go test ./tools/doccheck, make doc-check and ce task gate PASS. CI 02a44afdadb3434c6f9cf82e0e36754e succeeded in 2m13.219705583s with matching attestation. Three queue metadata findings corrected and revalidated. No remaining findings."
@@ -37,3 +40,8 @@ quality-review-evidence: "Independent ce-judge review410, not implementer: sourc
 - `dva ci commit`: 02a44afdadb3434c6f9cf82e0e36754e, succeeded, 2m13.219705583s.
 - `make doc-check`: PASS; unknown board directories 0, duplicate IDs 0.
 - TASK-410 independent review and canonical receipt restored `ce task gate` READY.
+
+## Archive
+
+- [x] 아카이브
+- 후속: 없음
