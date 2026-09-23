@@ -101,10 +101,18 @@ func TestMergeLifecycleEntryRunners(t *testing.T) {
 		Name:          "api",
 		DefaultRunner: "native",
 		Runners: map[string]any{
-			"native": map[string]any{"dir": "apps/api", "run": "go run ./cmd/api"},
+			"native": &NativeRunnerConfig{
+				Dir: "apps/api",
+				Run: "go run ./cmd/api",
+				Env: map[string]string{"BASE": "1"},
+			},
 		},
 	}
 	other := &LifecycleEntry{Runners: map[string]any{
+		"native": &NativeRunnerConfig{
+			Build: "go build ./cmd/api",
+			Env:   map[string]string{"OVERRIDE": "1"},
+		},
 		"docker": map[string]any{"image": "myorg/api:dev"},
 	}}
 
@@ -117,6 +125,58 @@ func TestMergeLifecycleEntryRunners(t *testing.T) {
 	}
 	if len(merged.Runners) != 2 {
 		t.Errorf("expected 2 runners, got %d", len(merged.Runners))
+	}
+	native, ok := merged.Runners["native"].(*NativeRunnerConfig)
+	if !ok {
+		t.Fatalf("native runner type = %T, want *NativeRunnerConfig", merged.Runners["native"])
+	}
+	if native.Dir != "apps/api" || native.Run != "go run ./cmd/api" || native.Build != "go build ./cmd/api" {
+		t.Errorf("native runner = %#v, want inherited dir/run and overridden build", native)
+	}
+	if native.Env["BASE"] != "1" || native.Env["OVERRIDE"] != "1" {
+		t.Errorf("native env = %#v, want key-level merge", native.Env)
+	}
+}
+
+func TestMergeLifecycleEntryTypedRunnerConfigs(t *testing.T) {
+	base := &LifecycleEntry{Runners: map[string]any{
+		"process": &ProcessPluginConfig{Command: "serve", Dir: "app", ReadyTimeout: 10},
+		"script":  &ScriptPluginConfig{Up: "up", Down: "down"},
+		"docker":  &DockerPluginConfig{Image: "base", Ports: []string{"8080:80"}, Env: map[string]string{"A": "1"}},
+		"helm":    &HelmPluginConfig{Chart: "chart", Values: []string{"base.yml"}, Set: map[string]string{"a": "1"}},
+		"tilt":    &TiltPluginConfig{Dir: "base", Args: []string{"--base"}},
+	}}
+	override := &LifecycleEntry{Runners: map[string]any{
+		"process": &ProcessPluginConfig{ReadyTimeout: 20},
+		"script":  &ScriptPluginConfig{Stop: "stop"},
+		"docker":  &DockerPluginConfig{Ports: []string{}, Env: map[string]string{"B": "2"}},
+		"helm":    &HelmPluginConfig{Set: map[string]string{"b": "2"}},
+		"tilt":    &TiltPluginConfig{Args: []string{"--override"}},
+	}}
+
+	merged, err := MergeLifecycleEntry(base, override)
+	if err != nil {
+		t.Fatal(err)
+	}
+	process := merged.Runners["process"].(*ProcessPluginConfig)
+	if process.Command != "serve" || process.Dir != "app" || process.ReadyTimeout != 20 {
+		t.Errorf("process runner = %#v", process)
+	}
+	script := merged.Runners["script"].(*ScriptPluginConfig)
+	if script.Up != "up" || script.Down != "down" || script.Stop != "stop" {
+		t.Errorf("script runner = %#v", script)
+	}
+	docker := merged.Runners["docker"].(*DockerPluginConfig)
+	if docker.Image != "base" || docker.Ports == nil || len(docker.Ports) != 0 || docker.Env["A"] != "1" || docker.Env["B"] != "2" {
+		t.Errorf("docker runner = %#v", docker)
+	}
+	helm := merged.Runners["helm"].(*HelmPluginConfig)
+	if helm.Chart != "chart" || helm.Values[0] != "base.yml" || helm.Set["a"] != "1" || helm.Set["b"] != "2" {
+		t.Errorf("helm runner = %#v", helm)
+	}
+	tilt := merged.Runners["tilt"].(*TiltPluginConfig)
+	if tilt.Dir != "base" || len(tilt.Args) != 1 || tilt.Args[0] != "--override" {
+		t.Errorf("tilt runner = %#v", tilt)
 	}
 }
 

@@ -14,12 +14,9 @@ import (
 	"github.com/ScriptonBasestar/dva/internal/config"
 )
 
-// haltExitTimeout bounds how long haltProcess waits for a SIGTERM'd process to actually
-// exit before returning. Without this wait, Up's already-running check (same PID file, same
-// IsProcessRunning probe) can observe the process mid-shutdown and skip starting a
-// replacement — the entry is left stopped while restart/up report it as running. The wait
-// makes Stop's return synchronous with the process actually being gone, matching the
-// semantics Down/removeProcess already get for free by deleting the PID file.
+// haltExitTimeout bounds the wait for a SIGTERM'd process in Stop and Down.
+// Both retain the PID file until exit is confirmed so Up cannot launch a
+// replacement while the original process is still shutting down.
 const (
 	haltExitTimeout      = 5 * time.Second
 	haltExitPollInterval = 50 * time.Millisecond
@@ -125,7 +122,7 @@ func (p *ProcessPlugin) Down(ctx context.Context, pctx *PluginContext) error {
 		pctx.Logger.Info("dry-run", "action", "remove process", "name", pctx.Entry.Name)
 		return nil
 	}
-	return p.removeProcess(pctx)
+	return p.removeProcess(ctx, pctx)
 }
 
 func (p *ProcessPlugin) Stop(ctx context.Context, pctx *PluginContext) error {
@@ -197,8 +194,10 @@ func (p *ProcessPlugin) haltProcess(ctx context.Context, pctx *PluginContext) er
 	return nil
 }
 
-// removeProcess sends SIGTERM and removes PID/log files (Vagrant destroy semantics).
-func (p *ProcessPlugin) removeProcess(pctx *PluginContext) error {
+// removeProcess sends SIGTERM and, once the process has exited, removes PID/log files
+// (Vagrant destroy semantics). Keeping those files on a failed stop prevents a live,
+// untracked process from being started a second time.
+func (p *ProcessPlugin) removeProcess(ctx context.Context, pctx *PluginContext) error {
 	name := pctx.Entry.Name
 	pidFile := filepath.Join(pctx.ConfigDir, config.DotDirName, config.PidsDirName, name+".pid")
 	logFile := filepath.Join(pctx.ConfigDir, config.DotDirName, config.LogsDirName, name+".log")
@@ -218,15 +217,22 @@ func (p *ProcessPlugin) removeProcess(pctx *PluginContext) error {
 		if err := requireProcessGroupPID(pid); err != nil {
 			return fmt.Errorf("remove %s: %w", name, err)
 		}
-		if err := terminateProcessGroup(pid); err == nil {
-			fmt.Fprintf(os.Stderr, "[-] removed %s (pid %d)\n", name, pid)
-		} else if errors.Is(err, errProcessGroupsUnsupported) {
-			return fmt.Errorf("remove %s: %w", name, err)
+		if IsProcessRunning(pid) {
+			if err := terminateProcessGroup(pid); err != nil {
+				return fmt.Errorf("remove %s: terminate pid %d: %w", name, pid, err)
+			}
+			if !waitForProcessExit(ctx, pid, haltExitTimeout) {
+				if err := ctx.Err(); err != nil {
+					return fmt.Errorf("remove %s: pid %d did not exit: %w", name, pid, err)
+				}
+				return fmt.Errorf("remove %s: pid %d did not exit within %s", name, pid, haltExitTimeout)
+			}
 		}
 	}
 
 	_ = os.Remove(pidFile)
 	_ = os.Remove(logFile)
+	fmt.Fprintf(os.Stderr, "[-] removed %s (pid %d)\n", name, pid)
 	return nil
 }
 

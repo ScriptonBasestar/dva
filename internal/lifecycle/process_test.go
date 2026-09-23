@@ -2,6 +2,7 @@ package lifecycle
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"os"
 	"os/exec"
@@ -148,6 +149,89 @@ func TestProcessPlugin_StopProcess_NoPidFile(t *testing.T) {
 	err := p.Down(context.Background(), pctx)
 	if err != nil {
 		t.Fatalf("stopping non-existent process should not error: %v", err)
+	}
+}
+
+func TestProcessPlugin_DownWaitsForExitBeforeRemovingState(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("process plugin requires Unix process groups")
+	}
+
+	dir := t.TempDir()
+	pctx := &PluginContext{
+		Entry: &config.LifecycleEntry{
+			Name:    "delayed-exit",
+			Process: &config.ProcessPluginConfig{Command: "trap 'sleep 0.1; exit 0' TERM; touch ready; while true; do sleep 0.05; done"},
+		},
+		ConfigDir: dir,
+		Env:       config.NewEnvironment(nil, dir, dir),
+		Logger:    slog.Default(),
+	}
+	p := &ProcessPlugin{}
+	if _, err := p.Up(context.Background(), pctx); err != nil {
+		t.Fatalf("Up: %v", err)
+	}
+
+	pidFile := filepath.Join(dir, config.DotDirName, config.PidsDirName, "delayed-exit.pid")
+	logFile := filepath.Join(dir, config.DotDirName, config.LogsDirName, "delayed-exit.log")
+	pid := readPIDFile(t, pidFile)
+	t.Cleanup(func() { _ = exec.Command("kill", "-9", "-"+strconv.Itoa(pid)).Run() })
+	waitForFile(t, filepath.Join(dir, "ready"), "the TERM handler to be installed")
+
+	if err := p.Down(context.Background(), pctx); err != nil {
+		t.Fatalf("Down: %v", err)
+	}
+	if IsProcessRunning(pid) {
+		t.Fatalf("process pid %d is still running after Down", pid)
+	}
+	if _, err := os.Stat(pidFile); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("pid file state after successful Down: %v, want removed", err)
+	}
+	if _, err := os.Stat(logFile); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("log file state after successful Down: %v, want removed", err)
+	}
+}
+
+func TestProcessPlugin_DownCancellationRetainsStateForLiveProcess(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("process plugin requires Unix process groups")
+	}
+
+	dir := t.TempDir()
+	pctx := &PluginContext{
+		Entry: &config.LifecycleEntry{
+			Name:    "ignores-term",
+			Process: &config.ProcessPluginConfig{Command: "trap '' TERM; touch ready; while true; do sleep 0.05; done"},
+		},
+		ConfigDir: dir,
+		Env:       config.NewEnvironment(nil, dir, dir),
+		Logger:    slog.Default(),
+	}
+	p := &ProcessPlugin{}
+	if _, err := p.Up(context.Background(), pctx); err != nil {
+		t.Fatalf("Up: %v", err)
+	}
+
+	pidFile := filepath.Join(dir, config.DotDirName, config.PidsDirName, "ignores-term.pid")
+	logFile := filepath.Join(dir, config.DotDirName, config.LogsDirName, "ignores-term.log")
+	pid := readPIDFile(t, pidFile)
+	t.Cleanup(func() { _ = exec.Command("kill", "-9", "-"+strconv.Itoa(pid)).Run() })
+	waitForFile(t, filepath.Join(dir, "ready"), "the TERM handler to be installed")
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	err := p.Down(ctx, pctx)
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("Down error = %v, want context cancellation", err)
+	}
+	if !IsProcessRunning(pid) {
+		t.Fatalf("process pid %d stopped despite ignoring SIGTERM", pid)
+	}
+	if got := readPIDFile(t, pidFile); got != pid {
+		t.Fatalf("pid file = %d, want live process pid %d", got, pid)
+	}
+	if _, err := os.Stat(logFile); err != nil {
+		t.Fatalf("log file removed after failed Down: %v", err)
 	}
 }
 

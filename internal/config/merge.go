@@ -188,6 +188,22 @@ func mergeComposeConfig(base, other *ComposePluginConfig) {
 	}
 }
 
+func mergeNativeRunnerConfig(base, other *NativeRunnerConfig) {
+	if other.Dir != "" {
+		base.Dir = other.Dir
+	}
+	if other.Build != "" {
+		base.Build = other.Build
+	}
+	if other.PostBuild != "" {
+		base.PostBuild = other.PostBuild
+	}
+	if other.Run != "" {
+		base.Run = other.Run
+	}
+	base.Env = mergeStringMap(base.Env, other.Env)
+}
+
 func mergeProcessConfig(base, other *ProcessPluginConfig) {
 	if other.Command != "" {
 		base.Command = other.Command
@@ -218,6 +234,31 @@ func mergeDockerConfig(base, other *DockerPluginConfig) {
 	}
 	if other.Name != "" {
 		base.Name = other.Name
+	}
+	if other.Ports != nil {
+		base.Ports = other.Ports
+	}
+	if other.Volumes != nil {
+		base.Volumes = other.Volumes
+	}
+	if other.Options != nil {
+		base.Options = other.Options
+	}
+	base.Env = mergeStringMap(base.Env, other.Env)
+}
+
+func mergeDockerRunnerConfig(base, other *DockerRunnerConfig) {
+	if other.Image != "" {
+		base.Image = other.Image
+	}
+	if other.Run != "" {
+		base.Run = other.Run
+	}
+	if other.Build != "" {
+		base.Build = other.Build
+	}
+	if other.Command != "" {
+		base.Command = other.Command
 	}
 	if other.Ports != nil {
 		base.Ports = other.Ports
@@ -274,6 +315,90 @@ func mergeKustomizeConfig(base, other *KustomizePluginConfig) {
 	}
 	if other.Context != "" {
 		base.Context = other.Context
+	}
+}
+
+func mergeTiltConfig(base, other *TiltPluginConfig) {
+	if other.Dir != "" {
+		base.Dir = other.Dir
+	}
+	if other.Args != nil {
+		base.Args = other.Args
+	}
+}
+
+func mergeSkaffoldConfig(base, other *SkaffoldPluginConfig) {
+	if other.Config != "" {
+		base.Config = other.Config
+	}
+	if other.Profile != "" {
+		base.Profile = other.Profile
+	}
+	if other.Args != nil {
+		base.Args = other.Args
+	}
+}
+
+func mergePodmanComposeConfig(base, other *PodmanComposePluginConfig) {
+	if other.Files != nil {
+		base.Files = other.Files
+	}
+	if other.ProjectName != "" {
+		base.ProjectName = other.ProjectName
+	}
+}
+
+func mergeVagrantConfig(base, other *VagrantPluginConfig) {
+	if other.Dir != "" {
+		base.Dir = other.Dir
+	}
+	if other.Machine != "" {
+		base.Machine = other.Machine
+	}
+}
+
+func mergeSAMConfig(base, other *SAMPluginConfig) {
+	if other.Template != "" {
+		base.Template = other.Template
+	}
+	if other.Port != 0 {
+		base.Port = other.Port
+	}
+	if other.Args != nil {
+		base.Args = other.Args
+	}
+}
+
+func mergeServerlessConfig(base, other *ServerlessPluginConfig) {
+	if other.Dir != "" {
+		base.Dir = other.Dir
+	}
+	if other.Port != 0 {
+		base.Port = other.Port
+	}
+	if other.Args != nil {
+		base.Args = other.Args
+	}
+}
+
+func mergeMultipassConfig(base, other *MultipassPluginConfig) {
+	if other.Name != "" {
+		base.Name = other.Name
+	}
+	if other.Image != "" {
+		base.Image = other.Image
+	}
+	if other.CPUs != 0 {
+		base.CPUs = other.CPUs
+	}
+	if other.Memory != "" {
+		base.Memory = other.Memory
+	}
+	if other.Disk != "" {
+		base.Disk = other.Disk
+	}
+	if other.CloudInit != "" {
+		base.CloudInit = other.CloudInit
 	}
 }
 
@@ -591,10 +716,86 @@ func mergeSiteEntryOverride(base, other *SiteEntryOverride) *SiteEntryOverride {
 }
 
 func mergeRunnerConfig(base, other any) any {
-	if baseCompose, ok := base.(*ComposePluginConfig); ok {
-		if otherCompose, ok := other.(*ComposePluginConfig); ok {
-			mergeComposeConfig(baseCompose, otherCompose)
-			return baseCompose
+	switch baseConfig := base.(type) {
+	case *NativeRunnerConfig:
+		if otherConfig, ok := other.(*NativeRunnerConfig); ok {
+			mergeNativeRunnerConfig(baseConfig, otherConfig)
+			return baseConfig
+		}
+	case *ComposePluginConfig:
+		if otherConfig, ok := other.(*ComposePluginConfig); ok {
+			mergeComposeConfig(baseConfig, otherConfig)
+			return baseConfig
+		}
+	case *ProcessPluginConfig:
+		if otherConfig, ok := other.(*ProcessPluginConfig); ok {
+			mergeProcessConfig(baseConfig, otherConfig)
+			return baseConfig
+		}
+	case *ScriptPluginConfig:
+		if otherConfig, ok := other.(*ScriptPluginConfig); ok {
+			mergeScriptConfig(baseConfig, otherConfig)
+			return baseConfig
+		}
+	case *DockerPluginConfig:
+		if otherConfig, ok := other.(*DockerPluginConfig); ok {
+			mergeDockerConfig(baseConfig, otherConfig)
+			return baseConfig
+		}
+	case *DockerRunnerConfig:
+		if otherConfig, ok := other.(*DockerRunnerConfig); ok {
+			mergeDockerRunnerConfig(baseConfig, otherConfig)
+			return baseConfig
+		}
+	case *KubectlPluginConfig:
+		if otherConfig, ok := other.(*KubectlPluginConfig); ok {
+			mergeKubectlConfig(baseConfig, otherConfig)
+			return baseConfig
+		}
+	case *HelmPluginConfig:
+		if otherConfig, ok := other.(*HelmPluginConfig); ok {
+			mergeHelmConfig(baseConfig, otherConfig)
+			return baseConfig
+		}
+	case *KustomizePluginConfig:
+		if otherConfig, ok := other.(*KustomizePluginConfig); ok {
+			mergeKustomizeConfig(baseConfig, otherConfig)
+			return baseConfig
+		}
+	case *TiltPluginConfig:
+		if otherConfig, ok := other.(*TiltPluginConfig); ok {
+			mergeTiltConfig(baseConfig, otherConfig)
+			return baseConfig
+		}
+	case *SkaffoldPluginConfig:
+		if otherConfig, ok := other.(*SkaffoldPluginConfig); ok {
+			mergeSkaffoldConfig(baseConfig, otherConfig)
+			return baseConfig
+		}
+	case *PodmanComposePluginConfig:
+		if otherConfig, ok := other.(*PodmanComposePluginConfig); ok {
+			mergePodmanComposeConfig(baseConfig, otherConfig)
+			return baseConfig
+		}
+	case *VagrantPluginConfig:
+		if otherConfig, ok := other.(*VagrantPluginConfig); ok {
+			mergeVagrantConfig(baseConfig, otherConfig)
+			return baseConfig
+		}
+	case *SAMPluginConfig:
+		if otherConfig, ok := other.(*SAMPluginConfig); ok {
+			mergeSAMConfig(baseConfig, otherConfig)
+			return baseConfig
+		}
+	case *ServerlessPluginConfig:
+		if otherConfig, ok := other.(*ServerlessPluginConfig); ok {
+			mergeServerlessConfig(baseConfig, otherConfig)
+			return baseConfig
+		}
+	case *MultipassPluginConfig:
+		if otherConfig, ok := other.(*MultipassPluginConfig); ok {
+			mergeMultipassConfig(baseConfig, otherConfig)
+			return baseConfig
 		}
 	}
 

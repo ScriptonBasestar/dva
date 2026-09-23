@@ -88,6 +88,13 @@ See USAGE.md's "run" section for worked examples.`,
 		}
 		e := rt.env
 
+		// An interaction is an execution route, including its preview and confirmation
+		// paths. Refuse an incomplete owner environment before either can expose a
+		// runnable command (or ask the user to approve one).
+		if rt.report.Incomplete() {
+			return envIncompleteError(rt.report)
+		}
+
 		// Merge interaction-level environment
 		e.MergeVars(resolved.Environment)
 
@@ -189,6 +196,12 @@ func runSubprojectCommand(parentCfg *config.Config, project, cmdName string, cmd
 	// winning — and roots the run at the child config directory (TASK-264).
 	rt := ownedRuntime(subCfg)
 	subEnv := rt.env
+
+	// Keep direct-child routes on the same fail-closed policy as root and imported
+	// interactions. This must precede --dry-run and destructive confirmation.
+	if rt.report.Incomplete() {
+		return envIncompleteError(rt.report)
+	}
 
 	subEnv.MergeVars(resolved.Environment)
 
