@@ -317,16 +317,24 @@ thirteen files on day one.
 
 ## Parallel-safe card-ID allocation (worktree isolation)
 
-To prevent card-ID collisions when multiple agents/operators work on parallel
-worktrees, follow the git-workflow worktree isolation pattern:
+Card IDs are picked locally, per worktree, with no shared coordination service —
+follow the git-workflow worktree isolation pattern, then let detection catch what
+isolation cannot prevent:
 
 - Worktree directory naming: `~/worktrees/<product>/<repo>/<actor>__<host>__<type>__<slug>`
   (e.g., `~/worktrees/misc/dva/opencode__mbp__feat__task-405`)
 - Each worktree claims card IDs only from IDs visible in its own isolated worktree
-- New card ID = max(id seen in current worktree) + 1, **never** guess across worktrees
+- New card ID = max(id seen in current worktree) + 1, **never** guess across worktrees.
+  This picks a good id in the common case, but it is **not** collision-proof: two
+  worktrees cut from the same board snapshot compute the same max and can mint the
+  same id — worktree isolation does not stop this, because both sides are isolated
+  from each other in exactly the same way at exactly the same moment.
 - Before creating a new task card, run `make doc-check` to verify no duplicate IDs
 - `tools/doccheck/cardids.go::func checkDuplicateCardIDs` scans `tasks/` directories
-  and reports duplicates — exit code 0 = IDs are unique across all state directories
+  and reports duplicates — exit code 0 = IDs are unique across all state directories.
+  This detector, run after the fact, is the actual guard against a collision, not the
+  `max+1` rule above; treat any `DUP-ID` finding as expected fallout of parallel
+  allocation, to be resolved via the rename procedure below, not as a process failure.
 
 This rule is enforced by `make doc-check` (TASK-090) and `ce task validate` (TASK-221),
 which both use `/usr/bin/grep` and `/usr/bin/find` with absolute paths so the recorded
