@@ -5,10 +5,13 @@ type: feature
 priority: P2
 effort: M
 exec-tier: standard
-status: review
+status: done
 created: 2026-09-22
 depends-on: [TASK-412]
 source: "2026-09-22 done-board 재검증 중 확인 — dva-ci 스킬이 처방한 Make→DVA 별칭 방향이 이 저장소에서 미이행"
+quality-review: conditional
+quality-reviewed-at: 2026-09-23T00:00:00Z
+quality-review-evidence: "Independent review (Claude Sonnet 5, task413-review, not the implementer of 4f5637a4/cb98f64c). AC1 clause 1 (`grep -q 'dva ci' Makefile`) passes; clause 2 (`! grep -qE '^\\s+run:.*\\bmake\\b' dva.yml`) still fails literally — reproduced independently. Read skills/dva-ci/SKILL.md directly: the 'Make aliases point to DVA, never back into the same alias' rule sits under 'Configure or migrate' scoped to `ci.profiles`, not a blanket ban on dva.yml ever shelling to make. The 5 remaining `run: ...make...` lines (interaction.build.replace, provision.default, provision.reset) are outside the `ci:` block; git blame confirms all 5 predate the Sept ci.profiles work (2026-03-25/2026-03-31), so they are pre-existing, not a regression from this card. Scope argument judged sound; filed non-blocking [[ISSUE-038]] to tighten AC1's verify string or resolve the 5 lines later. AC2: re-executed the human drill myself — removed ` go run ./tools/yamlcheck` from dva.yml's commit/docs step, `make doc-check` failed with `ciparity: ERROR: ... runs tools dva.yml's commit/docs step does not: yamlcheck` (exit 1), restored dva.yml and confirmed `git diff --stat dva.yml` empty (byte-identical). AC3: verified internal/cli/ci.go directly — `Args: cobra.MaximumNArgs(1)` and only a `--project` flag beyond dry-run/json/debug; no step-selection option exists, confirming the profile-granularity reasoning. AC4: `make doc-check` passes clean, ciparity step reports OK (6/6/6 tool sets match). AC5: `ce task gate` → READY — task_board_ready. Also ran `go build ./...` (clean) and `go test ./...` (all packages ok, including new tools/ciparity tests TestRepoDocCheckAndDocsStepAgree/TestRepoFullProfileDocsStepAgreesWithCommit). Read full diff of both commits: no regressions, no undisclosed scope. Checked the implementer's claim of a `ce` `[~]`-marker validator fix: no such fix exists in this repo's diff (ce lives in a separate repo) — it is a documented workaround (writing `[ ]` instead), correctly out of this card's scope; `ce task validate` on this card passes clean."
 ---
 
 ## Summary
@@ -145,3 +148,8 @@ never back into the same alias")과는 다른 층위다.
 - `skills/dva-ci/SKILL.md` — "Make aliases point to DVA, never back into the same alias"
 - `docs/53-ci-profiles.md` — CI 프로필과 실행 규약
 - [[TASK-412]] — 선행 조건
+- [[ISSUE-038]] — AC1 verify 범위 caveat, 이 카드 리뷰에서 파생
+
+## Review Attempts
+
+- 2026-09-23T00:00:00Z | reviewer: Claude Sonnet 5 (task413-review, independent of implementer of 4f5637a4/cb98f64c) | executor-tier: standard | finding: conditional | verification: AC1 clause 1 passes, clause 2 fails literally (reproduced) but scope argument judged sound against skills/dva-ci/SKILL.md's actual text (rule is ci.profiles-scoped) and git blame (5 lines predate this card by ~6 months); AC2 human drill re-executed independently (injected drift → make doc-check failed via ciparity, restored dva.yml byte-identical); AC3 verified against internal/cli/ci.go (`Args: cobra.MaximumNArgs(1)`, only `--project` flag, no step-selection) — reasoning holds; AC4 `make doc-check` clean (ciparity OK, 6/6/6); AC5 `ce task gate` → READY; `go build ./...` and `go test ./...` clean repo-wide including new tools/ciparity tests; full diff of both commits read, no regressions or undisclosed scope; `[~]`-marker claim checked — no ce-repo fix present (expected, ce is a separate repo), correctly scoped as a documented workaround, not this card's fix | repair: none needed | outcome: conditional pass | next: done, non-blocking follow-up filed as [[ISSUE-038]]
