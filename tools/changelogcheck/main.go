@@ -29,12 +29,17 @@ package main
 
 import (
 	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
+	"time"
 )
 
 // drainThreshold is the number of qualifying commits at which an empty `## [Unreleased]`
@@ -117,6 +122,157 @@ func inspectUnreleased(content string) unreleasedState {
 	return unreleasedEmpty
 }
 
+// releaseVersion is the deliberately narrow stable release version the release workflow uses:
+// three non-negative decimal components, with no pre-release or build suffix. Changelogcheck
+// only recognizes this exact shape for a pending candidate, so a free-form heading cannot turn
+// an otherwise empty Unreleased section into a pass.
+type releaseVersion struct {
+	major uint64
+	minor uint64
+	patch uint64
+}
+
+var releaseVersionRE = regexp.MustCompile(`^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$`)
+var releaseHeadingRE = regexp.MustCompile(`^## \[((?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*))\] - (\d{4}-\d{2}-\d{2})$`)
+
+func parseReleaseVersion(value string) (releaseVersion, error) {
+	match := releaseVersionRE.FindStringSubmatch(value)
+	if match == nil {
+		return releaseVersion{}, fmt.Errorf("must be a stable X.Y.Z version, got %q", value)
+	}
+	parts := [3]uint64{}
+	for i := range parts {
+		parsed, err := strconv.ParseUint(match[i+1], 10, 64)
+		if err != nil {
+			return releaseVersion{}, fmt.Errorf("parse version %q: %w", value, err)
+		}
+		parts[i] = parsed
+	}
+	return releaseVersion{major: parts[0], minor: parts[1], patch: parts[2]}, nil
+}
+
+func (v releaseVersion) newerThan(other releaseVersion) bool {
+	if v.major != other.major {
+		return v.major > other.major
+	}
+	if v.minor != other.minor {
+		return v.minor > other.minor
+	}
+	return v.patch > other.patch
+}
+
+// sourceVersion reads the current source declaration rather than importing config.Version.
+// changelogcheck accepts an optional root for fixture and detached-worktree checks; importing
+// this tool's compiled package would inspect the checkout that compiled the tool, not that root.
+// AST parsing also ensures a comment or lookalike string cannot masquerade as the declaration.
+func sourceVersion(root string) (string, error) {
+	path := filepath.Join(root, "internal", "config", "version.go")
+	file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
+	if err != nil {
+		return "", fmt.Errorf("parse source Version: %w", err)
+	}
+
+	var value string
+	found := false
+	for _, decl := range file.Decls {
+		gen, ok := decl.(*ast.GenDecl)
+		if !ok || gen.Tok != token.VAR {
+			continue
+		}
+		for _, spec := range gen.Specs {
+			values, ok := spec.(*ast.ValueSpec)
+			if !ok {
+				continue
+			}
+			for i, name := range values.Names {
+				if name.Name != "Version" {
+					continue
+				}
+				if found || i >= len(values.Values) {
+					return "", fmt.Errorf("source Version must have exactly one string literal declaration")
+				}
+				literal, ok := values.Values[i].(*ast.BasicLit)
+				if !ok || literal.Kind != token.STRING {
+					return "", fmt.Errorf("source Version must be a string literal")
+				}
+				value, err = strconv.Unquote(literal.Value)
+				if err != nil {
+					return "", fmt.Errorf("unquote source Version: %w", err)
+				}
+				found = true
+			}
+		}
+	}
+	if !found {
+		return "", fmt.Errorf("source Version declaration not found")
+	}
+	return value, nil
+}
+
+// pendingReleaseCandidate recognizes only the release shape the manual runbook requires:
+// empty Unreleased, then the current source version's immediately following dated and populated
+// section. The source version must be strictly newer than the reachable release tag. This is not
+// a generic nonempty-section escape hatch: mismatched, old, undated, or empty sections fail.
+func pendingReleaseCandidate(root, content, tag string) (version string, ok bool) {
+	source, err := sourceVersion(root)
+	if err != nil {
+		return "", false
+	}
+	sourceParsed, err := parseReleaseVersion(source)
+	if err != nil {
+		return "", false
+	}
+	if !strings.HasPrefix(tag, "v") {
+		return "", false
+	}
+	tagParsed, err := parseReleaseVersion(strings.TrimPrefix(tag, "v"))
+	if err != nil || !sourceParsed.newerThan(tagParsed) {
+		return "", false
+	}
+
+	lines := strings.Split(content, "\n")
+	start := -1
+	for i, line := range lines {
+		if strings.TrimSpace(line) == "## [Unreleased]" {
+			start = i
+			break
+		}
+	}
+	if start < 0 {
+		return "", false
+	}
+
+	heading := -1
+	for i := start + 1; i < len(lines); i++ {
+		if strings.HasPrefix(lines[i], "## ") {
+			heading = i
+			break
+		}
+		if strings.TrimSpace(lines[i]) != "" {
+			return "", false
+		}
+	}
+	if heading < 0 {
+		return "", false
+	}
+	match := releaseHeadingRE.FindStringSubmatch(lines[heading])
+	if match == nil || match[1] != source {
+		return "", false
+	}
+	if _, err := time.Parse("2006-01-02", match[2]); err != nil {
+		return "", false
+	}
+	for _, line := range lines[heading+1:] {
+		if strings.HasPrefix(line, "## ") {
+			break
+		}
+		if strings.TrimSpace(line) != "" {
+			return source, true
+		}
+	}
+	return "", false
+}
+
 // git runs a git command in dir. Every failure here means "cannot measure", never "measured
 // zero", so callers degrade rather than report a clean run.
 func git(dir string, args ...string) (string, error) {
@@ -185,6 +341,12 @@ func main() {
 		fmt.Println("changelogcheck: FAIL")
 		os.Exit(1)
 	case unreleasedEmpty:
+		if version, ok := pendingReleaseCandidate(root, string(body), tag); ok {
+			fmt.Printf("changelogcheck: OK — %d loggable commit(s) touching %s since %s; "+
+				"Unreleased is drained into the populated pending %s release section\n",
+				n, codePathsLabel(), tag, version)
+			return
+		}
 		if n >= drainThreshold {
 			fmt.Fprintf(os.Stderr, "ERROR: %d commit(s) touching %s since %s are feat/fix/refactor, "+
 				"but '## [Unreleased]' in %s is empty (threshold %d). Write them up before the backlog "+

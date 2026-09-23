@@ -1,6 +1,10 @@
 package main
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
 
 func TestIsLoggable(t *testing.T) {
 	tests := []struct {
@@ -103,5 +107,78 @@ func TestInspectUnreleased(t *testing.T) {
 func TestDrainThresholdIsDeliberate(t *testing.T) {
 	if drainThreshold != 10 {
 		t.Errorf("drainThreshold = %d, want 10 — if this changed deliberately, update the package comment too", drainThreshold)
+	}
+}
+
+func writeSourceVersion(t *testing.T, root, body string) {
+	t.Helper()
+	path := filepath.Join(root, "internal", "config", "version.go")
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestPendingReleaseCandidate(t *testing.T) {
+	const candidate = "# Changelog\n\n## [Unreleased]\n\n## [0.3.0] - 2026-09-23\n\n### Added\n- release content\n\n## [0.2.0] - 2026-09-09\n"
+	tests := []struct {
+		name, source, changelog, tag string
+		want                         bool
+	}{
+		{"current newer source and immediate populated dated section", "package config\nvar Version = \"0.3.0\"\n", candidate, "v0.2.0", true},
+		{"same source version as tag", "package config\nvar Version = \"0.2.0\"\n", candidate, "v0.2.0", false},
+		{"older source version than tag", "package config\nvar Version = \"0.1.9\"\n", candidate, "v0.2.0", false},
+		{"candidate heading does not match source", "package config\nvar Version = \"0.3.1\"\n", candidate, "v0.2.0", false},
+		{"source version is not stable semver", "package config\nvar Version = \"0.3.0-rc.1\"\n", candidate, "v0.2.0", false},
+		{"source version has a leading zero identifier", "package config\nvar Version = \"0.03.0\"\n", "## [Unreleased]\n\n## [0.03.0] - 2026-09-23\n\n- content\n", "v0.2.0", false},
+		{"candidate heading has no date", "package config\nvar Version = \"0.3.0\"\n", "## [Unreleased]\n\n## [0.3.0]\n\n- content\n", "v0.2.0", false},
+		{"candidate heading has invalid date", "package config\nvar Version = \"0.3.0\"\n", "## [Unreleased]\n\n## [0.3.0] - 2026-02-30\n\n- content\n", "v0.2.0", false},
+		{"candidate section is empty", "package config\nvar Version = \"0.3.0\"\n", "## [Unreleased]\n\n## [0.3.0] - 2026-09-23\n\n## [0.2.0] - 2026-09-09\n", "v0.2.0", false},
+		{"arbitrary immediate section cannot bypass", "package config\nvar Version = \"0.3.0\"\n", "## [Unreleased]\n\n## Notes\n\n- content\n\n## [0.3.0] - 2026-09-23\n\n- release content\n", "v0.2.0", false},
+		{"malformed reachable tag", "package config\nvar Version = \"0.3.0\"\n", candidate, "release-0.2.0", false},
+		{"reachable tag has a leading zero identifier", "package config\nvar Version = \"0.3.0\"\n", candidate, "v0.02.0", false},
+		{"candidate heading has a leading zero identifier", "package config\nvar Version = \"0.3.0\"\n", "## [Unreleased]\n\n## [0.03.0] - 2026-09-23\n\n- content\n", "v0.2.0", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			root := t.TempDir()
+			writeSourceVersion(t, root, tt.source)
+			_, got := pendingReleaseCandidate(root, tt.changelog, tt.tag)
+			if got != tt.want {
+				t.Errorf("pendingReleaseCandidate() = %t, want %t", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestParseReleaseVersionRejectsLeadingZeroIdentifiers(t *testing.T) {
+	for _, value := range []string{"00.3.0", "0.03.0", "0.3.00"} {
+		t.Run(value, func(t *testing.T) {
+			if _, err := parseReleaseVersion(value); err == nil {
+				t.Errorf("parseReleaseVersion(%q) succeeded, want leading-zero rejection", value)
+			}
+		})
+	}
+}
+
+func TestSourceVersionRejectsMalformedDeclarations(t *testing.T) {
+	tests := []struct {
+		name, body string
+	}{
+		{"missing", "package config\nvar Commit = \"dev\"\n"},
+		{"not a literal", "package config\nvar Version = buildVersion()\n"},
+		{"duplicate", "package config\nvar Version = \"0.3.0\"\nvar Version = \"0.3.1\"\n"},
+		{"syntax error", "package config\nvar Version = \"0.3.0\n"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			root := t.TempDir()
+			writeSourceVersion(t, root, tt.body)
+			if _, err := sourceVersion(root); err == nil {
+				t.Error("sourceVersion() succeeded on malformed declaration")
+			}
+		})
 	}
 }
