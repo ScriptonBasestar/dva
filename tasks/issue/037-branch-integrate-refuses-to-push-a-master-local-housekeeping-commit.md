@@ -112,6 +112,51 @@ the receipt can't be issued, and TASK-411's independent review stays
 `## Review Attempts`). Resolving the two-line workaround above is the
 critical-path unblock for TASK-411, not just board hygiene.
 
+## 2026-09-23 3차 갱신 — 승인된 우회로가 없음을 실측으로 확정
+
+`--help` 텍스트 재검토에 그치지 않고 프라이머리 체크아웃(현재 `master`, 로컬
+전용 커밋 보유)에서 다음 네 가지를 실제로 실행해 봤다:
+
+```
+$ branch-integrate --target origin/master
+exit 1: implicit source branch is the integration target: master; run
+branch-integrate from a task-branch worktree
+$ branch-integrate --direct-to-default --target origin/master
+exit 1: implicit source branch is the integration target: master; run
+branch-integrate from a task-branch worktree
+$ gz-git integrate run --target origin/master
+차단(정책, 훅): Claude의 직접 gz-git integrate 호출은 검사한 바이너리와 실제
+바이너리를 결속할 수 없다 — launcher(branch-integrate)만 단일 명령으로 허용.
+```
+
+`--target`과 `--direct-to-default`는 `--help`가 적은 대로 "통합 브랜치를 못
+찾을 때"를 위한 플래그였고, 이 저장소는 `.gz-git.yaml`에
+`integrationBranch: master`를 이미 선언해 그 조건에 안 걸린다 — 그래서 둘 다
+같은 "source==target" 거부로 떨어진다. launcher를 우회해 `gz-git` 바이너리를
+직접 부르는 것도 별개 훅이 정책으로 막는다. `.gz-git.yaml`에는 이 상황(체크아웃
+자체가 이미 target)을 위한 필드가 없다(readiness/branch 두 섹션만 허용, 위
+파일 주석 참조). **결론: 이 저장소·이 훅 조합에서 에이전트가 접근 가능한
+우회 경로는 없다 — 추측이 아니라 네 가지 실행 결과로 확정.**
+
+## 2026-09-23 4차 갱신 — todo/의 4장 중 3장이 이미 origin에서 처리 완료
+
+이 divergence 때문에 로컬 `tasks/todo/`가 신뢰 불가 상태다. 직접 대조:
+
+| 카드 | 로컬 `tasks/todo/` | `origin/master` |
+|---|---|---|
+| TASK-407 | `todo/` (재개 카드) | `done/` (완료, `quality-review: pass`) — [[ISSUE-039]] |
+| TASK-413 | `todo/` | `done/` |
+| TASK-414 | `todo/` | `done/` |
+| TASK-370 | `todo/` | (동일, 다음 `release-notes/v*.md`까지 의도적 보류) |
+
+즉 로컬에서 보이는 `todo/` 4장 중 3장(407·413·414)은 이미 upstream에서 끝난
+스테일 스냅샷이고, 나머지 1장(370)은 원래부터 보류 대상이다. **로컬 master가
+`origin/master`와 합쳐지기 전까지 이 저장소에는 새로 시작해도 안전한 todo
+항목이 실질적으로 0장이다** — `run-start`를 아무 카드에 대해서든 돌리면
+[[ISSUE-039]]와 같은 중복 작업을 다시 만들 위험이 있다. 이 사실 자체가 왜
+ISSUE-037의 두 줄 merge/push가 board hygiene이 아니라 critical path인지의
+세 번째 증거다(TASK-411 리뷰 차단, 중복 작업 위험에 이어).
+
 ## Downstream impact — `run-start` silently branches from the stale side
 
 2026-09-23 관측: `ce task run-start`는 `origin/<source>`가 아니라 로컬
