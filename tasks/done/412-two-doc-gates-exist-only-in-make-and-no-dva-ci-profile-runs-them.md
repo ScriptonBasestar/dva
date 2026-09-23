@@ -5,7 +5,12 @@ type: bug
 priority: P2
 effort: S
 exec-tier: standard
-status: review
+status: done
+verified-at: 2026-09-23
+verification-summary: "Verified 2026-09-23. dva.yml `&ci-docs` now chains yamlcheck and changelogcheck; `full` reuses the same anchor. AC1-AC4 re-executed independently (all exit 0). AC5 (`human —`) approved by the user on the recorded run 235f0daab28a7e69e282327b7f7d81f5 / profile commit / succeeded / 3m41.341619542s. Integrated as 3d406aca."
+quality-review: pass
+quality-reviewed-at: 2026-09-23
+quality-review-evidence: "AC1-AC4는 독립 검증자(task-validator, 구현 세션과 분리된 에이전트)가 worktree dev/claude/mbp/fix/task-412 에서 각 verify: 바인딩을 직접 재실행해 판정했다 — 카드의 Evidence 절을 신뢰하지 않고 명령을 다시 돌렸고 네 건 모두 exit 0. 스코프 검사도 함께 수행해 변경이 dva.yml 의 &ci-docs 한 줄과 이 카드 파일로 한정됨을 확인했다(스코프 이탈 없음). AC5는 `human —` 바인딩이라 에이전트가 판정할 수 없고, 사용자가 2026-09-23 직접 승인했다 — 기록된 run 235f0daab28a7e69e282327b7f7d81f5 은 profile commit, 결과 succeeded, 경과 3m41.341619542s 로 skills/dva-ci/SKILL.md 가 배제하는 timeout·busy·취소 어디에도 해당하지 않는다. blocks: 미선언 카드라 receipt 파일은 요구되지 않는다(TASK-409 선례)."
 created: 2026-09-22
 source: "2026-09-22 done-board 재검증 중 확인 — `dva docs-check`가 없는 이유를 추적하다 make와 dva.yml의 게이트 집합이 갈라져 있음을 실측"
 ---
@@ -67,3 +72,17 @@ CHANGELOG 드리프트 검사는 실행되지 않은 채 "통과"로 보고된�
 - AC5 `dva ci commit` → run `235f0daab28a7e69e282327b7f7d81f5`, profile `commit`, **succeeded**, 경과 3m41.341619542s. timeout·busy·취소 아님.
 
 변경 범위: `dva.yml` 의 `&ci-docs` 스텝 한 줄에 `go run ./tools/yamlcheck && go run ./tools/changelogcheck` 추가. 스텝 분할 없음, `depends_on` 그래프 불변.
+
+## Review
+
+2026-09-23, 사람 리뷰. 기계 검증 AC1–AC4는 독립 검증자가 worktree에서 각 `verify:`
+바인딩을 재실행해 전부 exit 0 확인 — 카드의 Evidence 자체를 신뢰하지 않고 명령을
+다시 돌렸다. 스코프는 `dva.yml` 의 `&ci-docs` 한 줄과 이 카드 파일로 한정됐다.
+
+AC5(`human —`)는 사용자가 승인했다. 기록된 run `235f0daab28a7e69e282327b7f7d81f5`
+는 profile `commit`, 결과 `succeeded`, 경과 3m41.341619542s 로 `skills/dva-ci/SKILL.md`
+가 배제하는 timeout·busy·취소 어디에도 해당하지 않는다.
+
+통합: `dev/claude/mbp/fix/task-412` → `master` fast-forward `3d406aca`, origin 푸시
+완료, worktree·로컬/원격 브랜치 reclaim 완료.
+
