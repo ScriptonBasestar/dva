@@ -9,10 +9,10 @@ status: blocked
 created: 2026-09-22
 depends-on: [TASK-410]
 blocked-at: 2026-09-23T00:00:00Z
-blocked-on: "AC3/AC4 currently fail live: (1) tasks/done/410-...md declares
+blocked-on: "AC3/AC4 currently fail live: (1) TASK-410's done card declares
   `blocks: [TASK-411]` but no `quality-review-receipt`, which `ce task validate`
   now treats as an error, so `ce task gate` reads NOT READY --
-  task_validate_failed; (2) an untracked `tasks/issue/037-...md` in the working
+  task_validate_failed; (2) an untracked ISSUE-037 card in the working
   tree has an invalid priority and a missing Expected-vs-Actual section, which
   fails `make doc-check`. Neither cause is inside TASK-411's own fold commits
   (5d5c099b, 97291cdb) -- both are external to this card's diff. Retry once
@@ -94,7 +94,7 @@ blocked-on: "AC3/AC4 currently fail live: (1) tasks/done/410-...md declares
   unrelated, uncommitted card, not by anything in tasks/_archive or tasks/archive.
   AC4 `ce task gate 2>&1 | /usr/bin/grep -q '^READY —'` -> FAIL, gate reports
   `NOT READY — task_validate_failed`; with ISSUE-037 aside the failure narrows to
-  one invalid card: `tasks/done/410-...md` -- "Done card blocks TASK-411 but
+  one invalid card: TASK-410's done card -- "Done card blocks TASK-411 but
   declares no quality-review-receipt: the successors were unblocked on an
   unrecorded review." TASK-410's done card (commit eb230bc7, a separate,
   already-passed independent review of TASK-410, not this session's work) carries
@@ -107,7 +107,7 @@ blocked-on: "AC3/AC4 currently fail live: (1) tasks/done/410-...md declares
   5d5c099b` confirms 413 pure renames (`R100`, no content diffs) plus two
   disclosed non-fold changes bundled in the same commit --
   `tools/doccheck/archive.go` (archivePrefix repointed to `_archive/`) and a new
-  `tasks/issue/036-...md` -- both named and justified in the commit message
+  ISSUE-036 card -- both named and justified in the commit message
   ("Two defects found and recorded rather than silently absorbed"), same
   disclosure pattern TASK-410's review accepted. Design-constraint spot-check:
   `tasks/_archive/` holds both `2026-09/` (417 files, month partition) and
