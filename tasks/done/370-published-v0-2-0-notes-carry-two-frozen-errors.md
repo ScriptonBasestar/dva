@@ -7,7 +7,10 @@ effort: S
 exec-tier: standard
 created-at: 2026-09-09
 source: "v0.2.0 게시 후 도착한 독립 검증 D-1·D-5"
-status: todo
+status: done
+quality-review: pass
+quality-reviewed-at: 2026-09-23
+quality-review-evidence: "Independent ce-judge review410 PASS: all four criteria verified against ci.go, validated v0.3.0 YAML, frozen v0.2.0 digest and doc-check."
 depends-on: [TASK-417]
 reopened: 2026-09-17
 reopen-reason: "2026-09-17 batch re-verification: criterion 3 (next-release ci.profiles wording check) is still open, so the card cannot archive. Prior 2026-09-11 conditional close covered criteria 1, 2, 4 only — its bindings were: shasum 7905843d match (criterion 1), no '4개에서 실제로 죽은 config' in CHANGELOG (criterion 2), make doc-check (criterion 4)."
@@ -40,7 +43,7 @@ CHANGELOG 쪽 D-1은 이 카드와 같은 커밋에서 고쳤고, D-5는 CHANGEL
 
 - [x] 게시된 노트가 게시 당시 바이트 그대로다 — 이 카드는 고치는 카드가 아니라 굳었다고 적는 카드다 | verify: `/usr/bin/shasum -a 256 release-notes/v0.2.0.md | /usr/bin/grep -q 7905843de27f4c3c7fcb43474165fa16bee89c0e381ff2577d4dc7e656d2a818`
 - [x] CHANGELOG의 예시 개수는 3이다 (게시된 노트는 4로 굳었고, 옳은 쪽은 CHANGELOG다) | verify: `! /usr/bin/grep -q '4개에서 실제로 죽은 config' CHANGELOG.md`
-- [ ] 다음 릴리스 노트를 쓸 때 `ci.profiles` 서술을 이번 노트가 아니라 `internal/config/ci.go`에서 다시 유도했고, `depends_on`이 step 아래에 있다 | verify: human — 다음 `release-notes/v*.md` 작성 시 확인. 이 카드는 그때 닫힌다
+- [x] 다음 릴리스 노트를 쓸 때 `ci.profiles` 서술을 이번 노트가 아니라 `internal/config/ci.go`에서 다시 유도했고, `depends_on`이 step 아래에 있다 | verify: human — 다음 `release-notes/v*.md` 작성 시 확인. 이 카드는 그때 닫힌다
 - [x] 문서 게이트 통과 | verify: `make doc-check` (regression-guard)
 
 > **conditional-close:** 기준 3은 다음 릴리스 노트 작성 시 확인하는 미래 이벤트로, 지금 닫히는 다른
@@ -60,3 +63,10 @@ CHANGELOG 쪽 D-1은 이 카드와 같은 커밋에서 고쳤고, D-5는 CHANGEL
 - `dva config migrate`의 `dva.yaml` 지원(TASK-304)은 이 카드와 같은 커밋에서 CHANGELOG에
   추가했다. 게시된 노트에는 없지만 노트는 breaking과 새 표면을 다루는 문서이고 이것은
   둘 다 아니라, 굳은 오류로 세지 않는다.
+
+## Final review (2026-09-23)
+
+TASK-417의 v0.3.0 노트를 작성한 뒤 별도 ce-judge가 `internal/config/ci.go`와 대조했다.
+`DependsOn`은 `CIStep`에만 있고 새 예제도 step 아래에 둔다. 추출한 YAML의 config validate,
+기존 v0.2.0 SHA-256, CHANGELOG의 3개 예시 사실, doc-check가 모두 통과했다.
+위 conditional-close와 reopened 기록은 당시의 이력이며 이제 네 기준 모두 완료했다.

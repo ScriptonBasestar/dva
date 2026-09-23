@@ -6,10 +6,11 @@ GitHub tag와 Release 생성은 승인된 commit의 clean detached worktree에�
 
 ## 준비
 
-1. `CHANGELOG.md`의 `## [Unreleased]`를 `## [<version>] - <YYYY-MM-DD>` 섹션으로 확정하고
-   비어 있는 `## [Unreleased]`를 다시 올립니다. **tag를 만들기 전에** 끝냅니다 — tag 이후에는
-   그 릴리스의 내용이 어디에도 기록되지 않은 채로 공개됩니다. 이 단계를 건너뛰어 쌓이는 드리프트는
-   `make doc-check`의 `changelogcheck`가 릴리스 시점이 아니라 상시로 잡습니다.
+1. `internal/config/version.go`의 `Version`을 릴리스 버전으로 올리고,
+   `CHANGELOG.md`의 `## [Unreleased]`를 그 버전과 날짜가 있는 비어 있지 않은 후보 섹션으로
+   확정한 뒤 비어 있는 `## [Unreleased]`를 다시 올립니다. **tag를 만들기 전에** 끝냅니다 —
+   tag 이후에는 그 릴리스의 내용이 어디에도 기록되지 않은 채로 공개됩니다. 이 단계를 건너뛰어
+   쌓이는 드리프트는 `make doc-check`의 `changelogcheck`가 릴리스 시점이 아니라 상시로 잡습니다.
 2. 릴리스 commit을 source branch에 통합하고 push한 뒤 local/remote tip과 같은지 확인합니다.
 3. 그 commit에 lightweight tag를 만들되 별도로 push하지 않습니다. GoReleaser가 공개 과정에서
    tag와 Release를 함께 생성합니다.

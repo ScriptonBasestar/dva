@@ -4,6 +4,8 @@ All notable changes to DVA are documented here.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-23
+
 ### Added
 - **stack 엔트리의 `optional`·`primary`와 `runners.native.post_build`** (TASK-319): 네 건의
   dogfood 마이그레이션에서 나온 native 엔트리 표현력 결함을 덮습니다. `optional: true`인
@@ -19,7 +21,7 @@ All notable changes to DVA are documented here.
   명령들에 대한 `Bash(dva <name> *)`·`Bash(dva run <name> *)` deny 패턴을 Claude Code
   설정으로 투영합니다 ([USAGE.md](USAGE.md#interaction-파괴적-명령과-agent-deny-destructive))
 - **plan `alias`와 단일 부모 `extends`** (TASK-307): `alias`는 다른 plan을 그대로 가리키는
-  별칭이고(`description` 외의 필드와 공존 불가, 체인·자기참조·미정의 참조는 검증 에러),
+  별칭이고(`description` 외의 필드와 공존 불가, 체인은 최대 10단계까지 허용, 순환·자기참조·미정의 참조와 깊이 초과는 검증 에러),
   `extends`는 부모를 기반으로 필드를 덮어씁니다 — 스칼라는 자식 우선, `vars`는 키 병합,
   `entries`는 `name`으로 매칭해 같은 이름이면 서비스 합집합이 아니라 통째로 교체합니다.
   단일 부모, 깊이 3단계, `composes:` plan은 `extends` 불가입니다
@@ -72,6 +74,15 @@ All notable changes to DVA are documented here.
   달린 블록이 0개면 무효한 통과를 막기 위해 실패합니다
 
 ### Fixed
+- **필수 환경 입력 오류를 `dva run` 실행 전에 차단합니다**: 필수 `env_file` 누락·파싱
+  오류는 일반 실행, dry-run, destructive 확인 전에 실패합니다. 선택 입력의 부재는 허용하며,
+  import한 interaction은 소유 child의 환경을 검사합니다
+- **process runner가 종료를 확인한 뒤 상태를 지웁니다**: SIGTERM 뒤 최대 5초 또는 호출
+  context까지 기다리며, 실패·취소 시 PID와 로그를 보존해 살아 있는 프로세스를 잃지 않습니다
+- **typed runner override가 상속 설정을 보존합니다**: 값이 있는 scalar는 덮어쓰고 map은 키별로 병합하며
+  명시한 list는 교체합니다. 일부 필드만 바꿀 때 나머지 runner 설정이 사라지는 문제를 고칩니다
+- **native readiness의 무한 대기를 막습니다**: 준비 전에 프로세스가 종료하면 PID·로그
+  경로를 포함해 실패하고, composition readiness는 엔트리 `ready_timeout`(기본 30초)을 지킵니다
 - **`dva config migrate`가 원본 포매팅을 보존합니다**: CRLF 구분자와 균일 CRLF 출력, 끝에 붙은
   주석 문단, keep-chomp(`|+`) 스칼라의 빈 줄이 그대로 남습니다. 표현할 수 없는 섹션 순서는
   이유를 설명하고, anchor가 걸린 섹션의 안전하지 않은 재정렬은 차단합니다
