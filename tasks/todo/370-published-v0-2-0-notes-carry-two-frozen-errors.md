@@ -8,6 +8,7 @@ exec-tier: standard
 created-at: 2026-09-09
 source: "v0.2.0 게시 후 도착한 독립 검증 D-1·D-5"
 status: todo
+depends-on: [TASK-417]
 reopened: 2026-09-17
 reopen-reason: "2026-09-17 batch re-verification: criterion 3 (next-release ci.profiles wording check) is still open, so the card cannot archive. Prior 2026-09-11 conditional close covered criteria 1, 2, 4 only — its bindings were: shasum 7905843d match (criterion 1), no '4개에서 실제로 죽은 config' in CHANGELOG (criterion 2), make doc-check (criterion 4)."
 ---

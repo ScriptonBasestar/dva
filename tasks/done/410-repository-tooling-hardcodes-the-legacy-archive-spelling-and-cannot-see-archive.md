@@ -9,6 +9,7 @@ status: done
 created: 2026-09-22
 blocks: [TASK-411]
 quality-review: pass
+quality-review-receipt: tasks/done/evidence/TASK-410/done-review-c5b58f0ea33e1443707088627fd645461919bcfd3f08228494ffd42808c4b64f.json
 quality-reviewed-at: 2026-09-23T00:00:00Z
 quality-review-evidence: "Independent review (Claude Sonnet 5, not the implementer of 32e9fb09). C1: `go test ./tools/planprogress/ -run TestZoneFromPath -v` → PASS. C2: `go test ./tools/doccheck/ -run TestArchiveSpelling -v` → PASS (4 subtests). C3: `go test ./tools/planprogress/ -run TestBuildTaskIndexSkipsPlanCardsInDatedArchivePartition -v` → PASS, both archive/ and _archive/ subtests ran (not a zero-match false pass); asserts TASK-30 closed and TASK-5 absent from index. C4: `go test ./tools/planprogress/ ./tools/doccheck/ && make doc-check` → both ok, doc-check OK (archive_cards: 425 under tasks/_archive/, confirming visibility). Also verified `go build ./...` and `go test ./...` clean across the whole repo. Read the full diff (32e9fb09): zoneFromPath, buildTaskIndex, archivePrefixes/isArchivePath, buildCardZones all route through shared helpers so the two spellings cannot diverge; longest-prefix zone resolution is order-independent and the two prefixes never nest. Side effect noted: same commit corrected status: on 7 archived issue cards (newly visible defect, cross-referenced on ISSUE-013) — disclosed in the commit message, not hidden, and out of TASK-410's own criteria but not a regression."
 ---

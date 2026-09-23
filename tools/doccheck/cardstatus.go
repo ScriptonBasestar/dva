@@ -37,7 +37,7 @@ var archiveCardStatuses = []string{"done", "superseded"}
 var cardZones = buildCardZones()
 
 func buildCardZones() []cardZone {
-	zones := make([]cardZone, 0, len(archivePrefixes)+4)
+	zones := make([]cardZone, 0, len(archivePrefixes)+8)
 	for _, prefix := range archivePrefixes {
 		zones = append(zones, cardZone{prefix: prefix, permitted: archiveCardStatuses})
 	}
@@ -46,6 +46,8 @@ func buildCardZones() []cardZone {
 		cardZone{prefix: "tasks/todo/", permitted: []string{"todo"}},
 		cardZone{prefix: "tasks/issue/", permitted: []string{"todo"}},
 		cardZone{prefix: "tasks/review/", permitted: []string{"review"}},
+		cardZone{prefix: "tasks/doing/", permitted: []string{"doing"}},
+		cardZone{prefix: "tasks/blocked/", permitted: []string{"blocked"}},
 		// tasks/backlog/ is declared permitted, not skip, on purpose (TASK-414): skip would also
 		// exempt backlog cards from checkDuplicateCardIDs and checkDuplicateFilenameNumbers, which
 		// is the exact blind spot this task closes for tasks/review/. BACKLOG-009 was given

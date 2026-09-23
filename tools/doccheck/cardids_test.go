@@ -65,6 +65,40 @@ func TestDuplicateCardIDAcrossReviewAndTodo(t *testing.T) {
 	}
 }
 
+// TestDuplicateCardIDAcrossDoingAndBlocked proves that the two lifecycle zones participate in
+// the same duplicate-id sweep as todo/review/done. If either prefix is omitted from cardZones,
+// its copy is silently skipped and this collision looks clean.
+func TestDuplicateCardIDAcrossDoingAndBlocked(t *testing.T) {
+	res := cardFixture(t,
+		archiveCard{path: "tasks/doing/415-x.md", body: "---\nid: TASK-415\nstatus: doing\n---\n\n# Doing copy\n"},
+		archiveCard{path: "tasks/blocked/415-x.md", body: "---\nid: TASK-415\nstatus: blocked\n---\n\n# Blocked copy\n"},
+	)
+	if res.DuplicateCardIDs != 1 {
+		t.Fatalf("duplicate_card_ids = %d, want 1 for TASK-415 spanning doing/ and blocked/; detail=%v", res.DuplicateCardIDs, res.DuplicateIDDetail)
+	}
+	joined := strings.Join(res.DuplicateIDDetail, "\n")
+	for _, want := range []string{"TASK-415", "tasks/doing/415-x.md", "tasks/blocked/415-x.md"} {
+		if !strings.Contains(joined, want) {
+			t.Errorf("detail %q does not name %q", joined, want)
+		}
+	}
+}
+
+// TestDuplicateFilenameNumberAcrossDoingAndBlocked proves that both lifecycle zones also enter
+// the filename-number sweep, even when their frontmatter IDs differ.
+func TestDuplicateFilenameNumberAcrossDoingAndBlocked(t *testing.T) {
+	res := cardFixture(t,
+		archiveCard{path: "tasks/doing/415-x.md", body: "---\nid: TASK-900\nstatus: doing\n---\n\n# Doing copy\n"},
+		archiveCard{path: "tasks/blocked/415-x.md", body: "---\nid: TASK-901\nstatus: blocked\n---\n\n# Blocked copy\n"},
+	)
+	if res.DuplicateCardIDs != 0 {
+		t.Fatalf("duplicate_card_ids = %d, want 0 because IDs differ", res.DuplicateCardIDs)
+	}
+	if res.DuplicateFilenameNums != 1 {
+		t.Fatalf("duplicate_filename_numbers = %d, want 1 for TASK-415 spanning doing/ and blocked/; detail=%v", res.DuplicateFilenameNums, res.DuplicateFilenameDetail)
+	}
+}
+
 // TestDistinctCardIDsPass is the control: the check must not fire on a well-formed tree, and
 // must count the ids it saw. Without the count a broken walk would report zero duplicates and
 // look identical to a clean tree.

@@ -144,11 +144,13 @@ func TestCardStatus_acceptsPermittedStatusPerZone(t *testing.T) {
 		archiveCard{path: "tasks/todo/010-a.md", body: "---\nid: TASK-010\nstatus: todo\n---\n\n# A\n"},
 		archiveCard{path: "tasks/done/011-b.md", body: "---\nid: TASK-011\nstatus: done\n---\n\n# B\n"},
 		archiveCard{path: "tasks/issue/012-c.md", body: "---\nid: TASK-012\nstatus: todo\n---\n\n# C\n"},
-		archiveCard{path: "tasks/archive/013-d.md", body: "---\nid: TASK-013\nstatus: done\n---\n\n# D\n"},
-		archiveCard{path: "tasks/archive/014-e.md", body: "---\nid: TASK-014\nstatus: superseded\n---\n\n# E\n"},
+		archiveCard{path: "tasks/doing/013-d.md", body: "---\nid: TASK-013\nstatus: doing\n---\n\n# D\n"},
+		archiveCard{path: "tasks/blocked/014-e.md", body: "---\nid: TASK-014\nstatus: blocked\n---\n\n# E\n"},
+		archiveCard{path: "tasks/archive/015-f.md", body: "---\nid: TASK-015\nstatus: done\n---\n\n# F\n"},
+		archiveCard{path: "tasks/archive/016-g.md", body: "---\nid: TASK-016\nstatus: superseded\n---\n\n# G\n"},
 	)
-	if res.CardsChecked != 5 {
-		t.Fatalf("cards_checked=%d, want 5", res.CardsChecked)
+	if res.CardsChecked != 7 {
+		t.Fatalf("cards_checked=%d, want 7", res.CardsChecked)
 	}
 	if res.StatusMismatches != 0 {
 		t.Errorf("status_mismatches=%d on all-permitted cards; detail=%v", res.StatusMismatches, res.CardStatusDetail)
@@ -195,6 +197,35 @@ func TestCardZonesDeclareReviewAndBacklog(t *testing.T) {
 	}
 }
 
+// TestCardZonesDeclareDoingAndBlocked keeps both active lifecycle zones in the same status
+// sweep as todo/review/done. They must reject a status valid only in the other zone.
+func TestCardZonesDeclareDoingAndBlocked(t *testing.T) {
+	for _, tt := range []struct {
+		path, permitted, invalid string
+	}{
+		{"tasks/doing/411-x.md", "doing", "blocked"},
+		{"tasks/blocked/412-x.md", "blocked", "doing"},
+	} {
+		t.Run(tt.permitted, func(t *testing.T) {
+			zone, ok := resolveCardZone(tt.path)
+			if !ok || zone.prefix != "tasks/"+tt.permitted+"/" {
+				t.Fatalf("resolveCardZone(%s) = (%+v, %t), want tasks/%s/ zone", tt.path, zone, ok, tt.permitted)
+			}
+			if !slices.Contains(zone.permitted, tt.permitted) {
+				t.Fatalf("tasks/%s/ zone permits %v, want it to include %q", tt.permitted, zone.permitted, tt.permitted)
+			}
+
+			res := cardFixture(t, archiveCard{path: tt.path, body: "---\nid: TASK-411\nstatus: " + tt.invalid + "\n---\n\n# Wrong state\n"})
+			if res.StatusMismatches != 1 || res.OK {
+				t.Fatalf("status_mismatches=%d, OK=%t; want one rejected status in tasks/%s/: %v", res.StatusMismatches, res.OK, tt.permitted, res.CardStatusDetail)
+			}
+			if !containsAny(res.CardStatusDetail, `found "`+tt.invalid+`"`) {
+				t.Errorf("detail %v does not name rejected status %q", res.CardStatusDetail, tt.invalid)
+			}
+		})
+	}
+}
+
 // TestUndeclaredBoardDirectoryFailsTheGate pins the persisting rule TASK-414's Design section
 // calls for: adding two more prefixes was not enough, since the same silent gap recurs the next
 // time the board grows a directory nobody adds to cardZones. A tasks/*/ directory that cardZones
@@ -222,9 +253,11 @@ func TestUndeclaredBoardDirectoryFailsTheGate(t *testing.T) {
 		archiveCard{path: "tasks/done/002-b.md", body: "---\nid: TASK-002\nstatus: done\n---\n\n# B\n"},
 		archiveCard{path: "tasks/issue/003-c.md", body: "---\nid: TASK-003\nstatus: todo\n---\n\n# C\n"},
 		archiveCard{path: "tasks/review/004-d.md", body: "---\nid: TASK-004\nstatus: review\n---\n\n# D\n"},
-		archiveCard{path: "tasks/backlog/005-e.md", body: "---\nid: BACKLOG-005\nstatus: backlog\n---\n\n# E\n"},
-		archiveCard{path: "tasks/archive/006-f.md", body: "---\nid: TASK-006\nstatus: done\n---\n\n# F\n"},
-		archiveCard{path: "tasks/plan/007-g.md", body: "---\nid: PLAN-007\ntype: plan\n---\n\n# G\n"},
+		archiveCard{path: "tasks/doing/005-e.md", body: "---\nid: TASK-005\nstatus: doing\n---\n\n# E\n"},
+		archiveCard{path: "tasks/blocked/006-f.md", body: "---\nid: TASK-006\nstatus: blocked\n---\n\n# F\n"},
+		archiveCard{path: "tasks/backlog/007-g.md", body: "---\nid: BACKLOG-007\nstatus: backlog\n---\n\n# G\n"},
+		archiveCard{path: "tasks/archive/008-h.md", body: "---\nid: TASK-008\nstatus: done\n---\n\n# H\n"},
+		archiveCard{path: "tasks/plan/009-i.md", body: "---\nid: PLAN-009\ntype: plan\n---\n\n# I\n"},
 	)
 	if clean.UndeclaredBoardDirs != 0 {
 		t.Fatalf("undeclared_board_dirs=%d, want 0 on an all-declared board; errors=%v", clean.UndeclaredBoardDirs, clean.Errors)
