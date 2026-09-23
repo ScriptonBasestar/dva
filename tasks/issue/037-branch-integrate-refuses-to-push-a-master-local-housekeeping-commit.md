@@ -112,6 +112,18 @@ the receipt can't be issued, and TASK-411's independent review stays
 `## Review Attempts`). Resolving the two-line workaround above is the
 critical-path unblock for TASK-411, not just board hygiene.
 
+## Downstream impact — `run-start` silently branches from the stale side
+
+2026-09-23 관측: `ce task run-start`는 `origin/<source>`가 아니라 로컬
+`master`에서 새 태스크 브랜치를 딴다. 이 카드가 기록하는 divergence가 열려
+있는 동안 새로 시작하는 모든 태스크는 이미 `origin/master`에 반영된 커밋을
+못 보고 시작하며, 경고도 없다. 실제로 이 세션에서 TASK-407의 재개된 카드를
+다시 고치는 워크트리를 열었더니, 정확히 같은 수정이 다른 세션에서 이미
+`origin/master`에 병합·완료돼 있었다 — 로컬이 그 사실을 볼 수 없어서였다.
+그 중복 작업의 폐기 시도가 [[ISSUE-039]]를 낳았다. 즉 이 카드가 열려 있는
+기간이 길어질수록 TASK-411 지연뿐 아니라 이런 중복·낭비 작업의 위험도
+누적된다.
+
 ## 소유권 — 이 저장소다
 
 원인은 워크스테이션 설치본(`~/.claude/hooks/scripts/guard-git-integration.sh`,
