@@ -139,3 +139,15 @@ ISSUE-024가 막고 있는 상태다.
    `tasks/archive/.ce` 넷이 2026-08-20자로 남아 있다. gitignore 대상이고 저장소
    내용이 아니다. `tasks/archive/.ce`가 옛 디렉터리를 살려 두는 유일한 이유다.
    에이전트가 만든 것이 아니므로 지우지 않았다 — 사용자 판단.
+
+## 2026-09-23 현행화 — 3번·5번 닫힘, 1번 갱신
+
+- **3번(ISSUE-036 분할) 낡음.** 권장안 그대로 구현되어 이미 `resolution: fixed`로
+  `_archive/issue/`에 있다. 재판단 대상 아님.
+- **5번(ISSUE-034) 닫힘.** 훅 소스 재검증으로 "교착"이 아니라 "cd 리터럴 누락 시
+  cwd 오판"으로 확정, `resolve … wontfix` 후 archive.
+- **1번 갱신.** TASK-410 독립 리뷰 pass, `done/`. TASK-411은 독립 리뷰가
+  `blocked/`로 냈다 — TASK-410 done 카드에 `quality-review-receipt`가 없고
+  (`done-finalize`가 로컬 `master`/`origin` 불일치로 dry-run조차 거부), 새
+  ISSUE-037(로컬 하우스키핑 커밋을 origin에 못 올림)이 그 선행 조건. 2·4·6번은
+  변화 없음(각각 사람 판단·미승격·사용자 판단 보류).
