@@ -300,7 +300,7 @@ check-generate:
 		after=$$(git diff --binary --no-ext-diff -- $(GEN_LIBRARY) $(WF_LIBRARY)/shared-guardrails.md $(WF_PUBLIC_FLOWS) AGENTS.md .agents/skills claude-plugin/skills docs/agent-deny-rules.md | git hash-object --stdin); \
 		[ "$$before" = "$$after" ] || { echo "ERROR: generated files are stale — run 'make generate' and commit"; exit 1; }
 
-## doc-check: Enforce doc size limits, markdown links, CI labels, flow decision gates, plan/task progress consistency (TASK-090) and CHANGELOG drift (CI)
+## doc-check: Enforce doc size limits, markdown links, CI labels, flow decision gates, plan/task progress consistency (TASK-090), CHANGELOG drift and Makefile/dva.yml docs-gate parity (CI)
 doc-check:
 	go run ./tools/doccheck
 	go run ./tools/cilabels
@@ -308,6 +308,7 @@ doc-check:
 	go run ./tools/planprogress
 	go run ./tools/yamlcheck
 	go run ./tools/changelogcheck
+	go run ./tools/ciparity
 
 ## commit-check: Hold commit subjects since the gate's baseline to the format SSOT (CI)
 commit-check:
@@ -375,10 +376,18 @@ help:
 	@grep -E '^##' $(MAKEFILE_LIST) | sed 's/## /  /' | column -t -s ':'
 
 # DVA with CI profile support supervises the whole run, including callers from other AI sessions.
+# TASK-413: this is the one Makefile→DVA delegation point (docs/53-ci-profiles.md:
+# "make ci -> dva ci commit -> native tools"). ci.profiles only runs as a whole profile
+# (`dva ci --help` takes at most one profile name, never an individual step) so
+# delegation is profile-granular, not step-selective — a fast, docs-only path stays
+# possible only because `make doc-check` keeps calling its own leaf tools directly
+# instead of going through here (see doc-check below and tools/ciparity).
 DVA ?= dva
 .PHONY: ci ci-full
+## ci: Supervise the local commit CI profile via `dva ci commit` (docs/53-ci-profiles.md)
 ci:
 	$(DVA) ci commit
 
+## ci-full: Supervise the full CI profile via `dva ci full` (docs/53-ci-profiles.md)
 ci-full:
 	$(DVA) ci full
