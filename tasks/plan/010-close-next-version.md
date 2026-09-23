@@ -3,9 +3,9 @@ id: PLAN-010
 title: "개발·검증·문서 증거를 정합화하고 0.3.0을 마감한다"
 type: plan
 scope: "보드 게이트 복구, 완료 증거 정합화, 다음 릴리스 후보 및 공개"
-progress: 87
+progress: 100
 total-tasks: 8
-completed-tasks: 7
+completed-tasks: 8
 children: [TASK-415, TASK-410, TASK-411, TASK-416, TASK-419, TASK-417, TASK-370, TASK-418]
 target-date: "2026-09-30"
 created: 2026-09-23
