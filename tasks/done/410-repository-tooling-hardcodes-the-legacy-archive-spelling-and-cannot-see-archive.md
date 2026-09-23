@@ -5,9 +5,12 @@ type: bug
 priority: P2
 effort: S
 exec-tier: standard
-status: review
+status: done
 created: 2026-09-22
 blocks: [TASK-411]
+quality-review: pass
+quality-reviewed-at: 2026-09-23T00:00:00Z
+quality-review-evidence: "Independent review (Claude Sonnet 5, not the implementer of 32e9fb09). C1: `go test ./tools/planprogress/ -run TestZoneFromPath -v` → PASS. C2: `go test ./tools/doccheck/ -run TestArchiveSpelling -v` → PASS (4 subtests). C3: `go test ./tools/planprogress/ -run TestBuildTaskIndexSkipsPlanCardsInDatedArchivePartition -v` → PASS, both archive/ and _archive/ subtests ran (not a zero-match false pass); asserts TASK-30 closed and TASK-5 absent from index. C4: `go test ./tools/planprogress/ ./tools/doccheck/ && make doc-check` → both ok, doc-check OK (archive_cards: 425 under tasks/_archive/, confirming visibility). Also verified `go build ./...` and `go test ./...` clean across the whole repo. Read the full diff (32e9fb09): zoneFromPath, buildTaskIndex, archivePrefixes/isArchivePath, buildCardZones all route through shared helpers so the two spellings cannot diverge; longest-prefix zone resolution is order-independent and the two prefixes never nest. Side effect noted: same commit corrected status: on 7 archived issue cards (newly visible defect, cross-referenced on ISSUE-013) — disclosed in the commit message, not hidden, and out of TASK-410's own criteria but not a regression."
 ---
 
 ## Summary
@@ -55,3 +58,7 @@ blocks: [TASK-411]
 ## Sources
 
 - ISSUE-035 — tasks/issue/035-repository-tooling-hardcodes-the-legacy-archive-spelling-and-cannot-see-archive.md
+
+## Review Attempts
+
+- 2026-09-23T00:00:00Z | reviewer: Claude Sonnet 5 (independent of implementer, commit 32e9fb09 co-authored Claude Opus 5) | executor-tier: standard | finding: pass | verification: all 4 completion-criteria `verify:` bindings executed directly, all 4 green with real (non-vacuous) subtest evidence; `go test ./... ` and `go build ./...` also clean repo-wide; full diff of 32e9fb09 read for regressions/scope | outcome: pass | next: done
