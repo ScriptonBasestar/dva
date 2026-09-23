@@ -95,3 +95,11 @@ task_cleanup*.go`의 정합성 검사)에 있다. 이 저장소가 할 수 있�
 - [ ] 상류에서 evidence 서술 경로가 소유 정합성 검사를 촉발하지 않게 된다 | verify: human — ce-agent-kit의 cleanup 검사가 전용 바인딩 필드만 검사하는지 읽어 확인한다
 - [ ] 세 카드의 dry-run이 더는 그 사유로 BLOCKED가 아니다 | verify: `ce task done-finalize $(/usr/bin/find tasks -name '391-stop-planprogress-from-pairing-any-korean-counter-with-an-enumeration.md') --dry-run 2>&1 | /usr/bin/grep -c "ownership reconciliation"` 출력이 0
 - [ ] 보드 게이트 통과 | verify: `ce task gate` (regression-guard)
+
+## 2026-09-23 TASK-410 재현
+
+사용자가 보고한 dry-run은 증거의 `./tools/planprogress/`, `./tools/doccheck/`,
+`tasks/_archive/`, `./`를 ownership reconciliation 대상으로 읽고, TASK-411의
+`depends-on: [TASK-410]` 구조 참조도 제거 차단으로 읽었다. 기존 두 유형의 새 사례다.
+TASK-415에서 독립 리뷰와 canonical receipt로 보드 검증은 복구했으며,
+finalize 성공은 TASK-411 완료의 선행 조건이 아니다. 증거·참조를 지워 우회하지 않는다.

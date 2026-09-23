@@ -2,7 +2,7 @@
 id: ISSUE-037
 title: "branch-integrate refuses to push a master-local housekeeping commit"
 type: bug
-status: todo
+status: done
 priority: P2
 effort: S
 exec-tier: standard
@@ -11,6 +11,9 @@ ownership: local
 discovered-in: "2026-09-23 TASK-410 독립 리뷰 — review-run이 카드를 done/으로 옮기며 master에 직접 커밋"
 discovered-at: 2026-09-23
 created: 2026-09-23
+resolution: fixed
+resolved-at: 2026-09-23T04:01:44Z
+resolution-summary: "Resolved as fixed by TASK-416."
 ---
 
 ## Summary
@@ -191,3 +194,10 @@ launcher/hook 자체의 재설계는 [[Out of scope]]에 남긴다.
 - `branch-integrate --help` — "Run a bare integrate from a task-branch worktree,
   not from the target checkout."
 - [[ISSUE-034]] — 닮은 증상, 다른 경로
+
+## 2026-09-23 해결 확인
+
+검토 시 로컬 master, origin/master 및 원격 refs/heads/master가
+`1d7544b5d8bca73d55a30669e1b1268afe9f811b`로 일치했다. 이후 TASK-415도
+정식 ce task run-finish로 c33d946b에 통합·push·회수됐다. 분기 차단은 해소됐고
+TASK-410의 별도 finalize 제한은 ISSUE-024가 소유한다. 과거 재현은 아래 기록으로 보존한다.

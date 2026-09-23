@@ -2,7 +2,7 @@
 id: ISSUE-035
 title: "Repository tooling hardcodes the legacy archive spelling and cannot see _archive"
 type: bug
-status: todo
+status: done
 priority: P2
 effort: S
 exec-tier: standard
@@ -12,6 +12,9 @@ discovered-in: "2026-09-22 board review after TASK-406·409 — `ce task gate` w
 discovered-at: 2026-09-22
 created: 2026-09-22
 promoted-to: [TASK-410]
+resolution: fixed
+resolved-at: 2026-09-23T04:05:11Z
+resolution-summary: "Resolved as fixed by TASK-410."
 ---
 
 ## Summary

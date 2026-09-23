@@ -17,6 +17,14 @@ created: 2026-09-05
 설계 카드를 하나씩 처리한다. `reports/`·`tmp/`는 ignore 대상이라 이 카드가 상태의 정본이다.
 카드는 `tasks/todo/`, 완료는 `tasks/done/`, 이 문서는 순서·의존·상태만 소유한다.
 
+## Current state (2026-09-23)
+
+이 plan의 29개 자식은 모두 완료되어 `tasks/_archive/2026-09/`에 보관돼 있다.
+완료 범위와 증거는 각 카드가 소유한다. 아래의 2026-09-05~13 기록은 당시의 착수 순서와 관측을 보존하는 역사 기록이다.
+특히 TASK-328은 일부 lifecycle 명령의 실패를 결함으로 승격한 실기동 회차이며 모든
+lifecycle이 성공했다는 뜻이 아니다. TASK-329와 TASK-348은 각각 독립 리뷰 pass receipt를
+갖고 아카이브됐다. plan 자체의 아카이브는 별도 사람 결정 대기다.
+
 ## Starting state (2026-09-05)
 
 - 완료·통합: TASK-303, 304, 305, 306, 308, 310 (dva master d7636a3, e3c562d, 9b74de9, b2c2d13).
@@ -39,7 +47,7 @@ created: 2026-09-05
 | 8 | ~~TASK-322~~ init 탐지 결함 | 완료 2026-09-07. P2 M. 249 재설계와 겹치지 않는 탐지 버그만. 잔여 항목은 339·340으로 분리 |
 | 9 | ~~TASK-315~~ compose profiles | 완료·통합 2026-09-08(master 5f2d85d). P2 M. 후속 345·346·347·348 파생 |
 | 10 | ~~TASK-318~~ 섹션 순서 자동 정렬 | 완료 2026-09-08. P3 S. 재리뷰가 결함 8장(TASK-358~365)을 파생시켰고, 그 묶음은 PLAN-008이 소유한다(2026-09-09 신설) |
-| 10a | 실기동 검증 회차 (TASK-328) | 311 완료로 착수 가능. primeno1 native 6종(gate 체인+`exec`), familybook/flow-taskchain composition plan을 `dva up`/`status`/`down --purge` 실제 실행으로 확인하고 각 리포트에 출력 첨부. 결함이 나오면 카드로 승격 |
+| 10a | ~~실기동 검증 회차 (TASK-328)~~ | 완료·아카이브. primeno1 native 6종과 familybook/flow-taskchain의 실제 실행을 관측했고, 실패 exit는 결함으로 승격했다. receipt가 보존한 결과를 모든 lifecycle 성공으로 일반화하지 않는다 |
 | 11 | ~~TASK-323~~ 문서 의미 공백 | 완료 2026-09-08. P3 S. `--env` 문구는 307 결정 전이라 보류했고, USAGE.md 분할·예제 검증은 356·357로 분리 |
 
 ## Needs-human (결정 후 착수)
@@ -68,13 +76,14 @@ created: 2026-09-05
 - 세션 종료 2026-09-05 저녁(dva 2cb184e): 이 세션은 TASK-324 완료, PLAN-006/TASK-323 현행화, familybook 자식 통합
   (`.gz-git.yaml` workspace 항목 + `integration: {}`)까지. 다른 세션이 311·313·314·317을 병행 처리했으므로
   다음 착수 전 `git log origin/master`와 `tasks/todo/` 재확인.
-- 실기동 검증 미실시: primeno1 native 엔트리(gate 체인 + `exec`)와 familybook/flow-taskchain composition plan은
-  dry-run까지만 확인. TASK-311 완료 후 실기동 회차 필요.
+- 당시 실기동 검증 미실시: 이 2026-09-05 관측 당시에는 primeno1 native 엔트리와
+  familybook/flow-taskchain이 dry-run까지만 확인된 상태였다. 후속 TASK-328의 아카이브
+  receipt가 실제 회차와 승격된 결함을 소유한다.
 
-## Session handoff (2026-09-05 밤)
+## Historical session handoff (2026-09-05 밤)
 
 - 세션 1회차 종료 시점: 1~5·4a 통합 완료(master 2cb184e). 316은 분석만 카드에 기록, worktree 없음.
-- 다음 착수(2026-09-13 갱신): 318·323까지 닫혀 §Order의 기계적 항목은 전부 소진됐고, 선행 TASK-379(하네스 재조준)도 같은 날 닫혔다. **§Order에 남은 것은 10a 실기동(TASK-328) 하나뿐**이고, 사람이 실제로 돌려야 닫힐 카드다. 이 문장은 §Order만 센다 — 계획 전체의 잔여는 frontmatter의 26/29, 즉 3장이고 나머지 둘은 TASK-348(§Children `### Compose follow-up sequence` 4번, 사람이 소유한 실기동 회차)과 TASK-329(§남은 순서 미지정 1장)다.
+- 다음 착수(2026-09-13 갱신): 이 문단은 당시 §Order의 잔여를 기록한다. 후속 TASK-328·329·348은 모두 완료·독립 리뷰 pass 후 아카이브되어, 현재 frontmatter 29/29와 위 Current state가 정본이다.
   사람 결정 대기 4장(307, 309, 319, 321)은 2026-09-13 기준 **전부 완료**다(§Needs-human 참조).
   315 후속 345~348은 §Order에 편입하지 않고 compose 묶음으로 함께 처리.
 - 잔여 사람 작업: §Devbox integration state의 scripton-dashboard·familybook 2건과 TASK-328·348의
@@ -83,7 +92,9 @@ created: 2026-09-05
 
 ## Children
 
-착수 순서는 §Order와 §Needs-human이 정본이다. 아래는 26장 전부를 **현재 위치와 함께**
+아래 배치는 역사 기록이며 현재 29개 자식은 모두 아카이브됐다.
+
+착수 순서는 당시 §Order와 §Needs-human이 정본이었다. 아래는 29장 전부를 **당시 위치와 함께**
 나열한 것으로, 목적은 순서를 다시 적는 것이 아니라 **어느 자식이 어느 절에도 놓이지
 않았는지 드러내는 것**이다. frontmatter `children:`는 planprogress가 세고, 이 절은
 validate가 요구한다 — 둘은 다른 질문에 답한다.
@@ -102,9 +113,8 @@ validate가 요구한다 — 둘은 다른 질문에 답한다.
 - TASK-315 — compose profiles: stack 러너 옵션과 PlanEntry profiles (done)
 - TASK-318 — 섹션 순서 자동 정렬 (done). 재리뷰가 파생시킨 8장은 **PLAN-008이 소유**한다
 - TASK-323 — 문서 의미 공백 (done)
-- TASK-328 — 실기동 검증 회차 (todo). §Order에 남은 유일한 미완 항목이다. 선행
-  TASK-379(하네스 재조준)는 2026-09-13에 닫혔다 — 남은 blocker는 사람이 파괴적
-  회차를 잡는 것뿐이다
+- TASK-328 — 실기동 검증 회차 (done, archived). 실제 회차의 실패 exit는 결함으로
+  승격됐으며, receipt가 결과와 범위를 보존한다
 
 ### §Needs-human에 놓인 4장 — 전부 완료
 
@@ -131,15 +141,14 @@ validate가 요구한다 — 둘은 다른 질문에 답한다.
   조건 둘(`SIGDOCK_CLIENTS_FILE`, 남아 있는 `sigdock-idp` 자원)이 오늘 이
   워크스테이션에서 이미 위반이다. TASK-328 회차를 잡기 전에 사람이 치워야 한다.
 
-### 남은 순서 미지정 1장 — TASK-329
+### 당시 남은 순서 미지정 1장 — TASK-329
 
 완료된 TASK-249·339·340은 더 이상 실행 순서를 필요로 하지 않고, compose 번들은 아래
 §Compose follow-up sequence가 소유한다. 이 plan의 미완 자식 중 §Order·§Needs-human 어느
 쪽에도 아직 놓이지 않은 것은 TASK-329 하나다.
 
-- TASK-329 — familybook devbox `dva.yaml` → `dva.yml` rename (todo). 착지 관측은 TASK-378이 담당한다. 외부 readiness 브랜치가
-  실제로 착지했는지 확인한 뒤에만 다시 순서를 부여한다. 그 전에는 다른 plan 자식이나 내부
-  코드 작업의 선행 조건으로 취급하지 않는다.
+- TASK-329 — familybook devbox `dva.yaml` → `dva.yml` rename (done, archived). TASK-378의
+  landed 검사가 선행 조건을 확인했고, 독립 리뷰 receipt가 rename과 validate 결과를 보존한다.
 
 ### Compose follow-up sequence (currentized 2026-09-10)
 
@@ -147,9 +156,8 @@ validate가 요구한다 — 둘은 다른 질문에 답한다.
 2. TASK-347 is done independently: generator guidance selects profiles on plan entries.
 3. TASK-346 is done: validation checks the compose profile source of truth without creating a
    second dva.yml declaration.
-4. TASK-348 remains the final human-owned real-image-build observation. It follows 345 and
-   346 because it verifies their user-facing compose path, and agents must not perform the
-   lifecycle build it requires.
+4. TASK-348 completed the real-image-build observation and is archived with an independent
+   review receipt. It followed 345 and 346 to verify their user-facing compose path.
 
 ## Rules
 

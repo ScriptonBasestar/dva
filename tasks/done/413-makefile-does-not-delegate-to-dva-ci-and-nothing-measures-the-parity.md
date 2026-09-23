@@ -9,7 +9,7 @@ status: done
 created: 2026-09-22
 depends-on: [TASK-412]
 source: "2026-09-22 done-board 재검증 중 확인 — dva-ci 스킬이 처방한 Make→DVA 별칭 방향이 이 저장소에서 미이행"
-quality-review: conditional
+quality-review: pass
 quality-reviewed-at: 2026-09-23T00:00:00Z
 quality-review-evidence: "Independent review (Claude Sonnet 5, task413-review, not the implementer of 4f5637a4/cb98f64c). AC1 clause 1 (`grep -q 'dva ci' Makefile`) passes; clause 2 (`! grep -qE '^\\s+run:.*\\bmake\\b' dva.yml`) still fails literally — reproduced independently. Read skills/dva-ci/SKILL.md directly: the 'Make aliases point to DVA, never back into the same alias' rule sits under 'Configure or migrate' scoped to `ci.profiles`, not a blanket ban on dva.yml ever shelling to make. The 5 remaining `run: ...make...` lines (interaction.build.replace, provision.default, provision.reset) are outside the `ci:` block; git blame confirms all 5 predate the Sept ci.profiles work (2026-03-25/2026-03-31), so they are pre-existing, not a regression from this card. Scope argument judged sound; filed non-blocking [[ISSUE-038]] to tighten AC1's verify string or resolve the 5 lines later. AC2: re-executed the human drill myself — removed ` go run ./tools/yamlcheck` from dva.yml's commit/docs step, `make doc-check` failed with `ciparity: ERROR: ... runs tools dva.yml's commit/docs step does not: yamlcheck` (exit 1), restored dva.yml and confirmed `git diff --stat dva.yml` empty (byte-identical). AC3: verified internal/cli/ci.go directly — `Args: cobra.MaximumNArgs(1)` and only a `--project` flag beyond dry-run/json/debug; no step-selection option exists, confirming the profile-granularity reasoning. AC4: `make doc-check` passes clean, ciparity step reports OK (6/6/6 tool sets match). AC5: `ce task gate` → READY — task_board_ready. Also ran `go build ./...` (clean) and `go test ./...` (all packages ok, including new tools/ciparity tests TestRepoDocCheckAndDocsStepAgree/TestRepoFullProfileDocsStepAgreesWithCommit). Read full diff of both commits: no regressions, no undisclosed scope. Checked the implementer's claim of a `ce` `[~]`-marker validator fix: no such fix exists in this repo's diff (ce lives in a separate repo) — it is a documented workaround (writing `[ ]` instead), correctly out of this card's scope; `ce task validate` on this card passes clean."
 ---
@@ -46,11 +46,11 @@ vet·lint·test·build까지 돈다. 문서 게이트만 빠르게 돌리는 용
 
 ## Completion Criteria
 
-- [ ] Makefile의 게이트 타깃이 `dva ci`로 위임하고, `dva.yml` 스텝은 `make`를 되부르지 않는다 | verify: `/usr/bin/grep -q 'dva ci' Makefile && ! /usr/bin/grep -qE '^\s+run:.*\bmake\b' dva.yml` — 부분 충족(체크 보류), 아래 완료 기록의 "AC1" 절 참조. `ce task validate`는 `[~]` 마커를 인식하지 못해(`tools/doccheck`와 불일치) `[ ]`로 남김
+- [x] Makefile의 ci/ci-full이 DVA로 위임하며 ci.profiles는 make를 되부르지 않는다 | verify: `/usr/bin/grep -Fq '$(DVA) ci commit' Makefile && /usr/bin/grep -Fq '$(DVA) ci full' Makefile && dva manifest -f json | python3 -c 'import json,sys,shlex; p=json.load(sys.stdin)["ci_profiles"]; assert p; assert all("make" not in shlex.split(s["run"]) for v in p.values() for s in v["steps"])'`
 - [x] 두 게이트 집합의 갈림이 게이트에서 잡힌다 | verify: human — `dva.yml`의 `docs` 스텝에서 게이트 도구 하나를 지우고 `make doc-check`가 **실패**하는지 확인한 뒤 되돌린다. 실패하지 않으면 이 기준은 닫히지 않는다 — 실행자가 직접 드릴을 수행해 실패를 확인하고 원복함(아래 Evidence). 최종 승인은 human 몫으로 남김
 - [x] 위임 단위 결정(프로파일 전체 대 스텝 선택)과 그 이유가 카드에 적혀 있다 | verify: human — 이 카드의 완료 기록을 읽고, 문서 게이트만 돌리는 경로가 어떻게 살아남았는지 확인
 - [x] 문서 게이트가 통과한다 | verify: `make doc-check` (regression-guard)
-- [ ] 보드 게이트가 READY다 | verify: `ce task gate 2>&1 | /usr/bin/grep -q '^READY —'`
+- [x] 보드 게이트가 READY다 | verify: `ce task gate 2>&1 | /usr/bin/grep -q '^READY —'`
 
 ## Evidence
 
@@ -153,3 +153,19 @@ never back into the same alias")과는 다른 층위다.
 ## Review Attempts
 
 - 2026-09-23T00:00:00Z | reviewer: Claude Sonnet 5 (task413-review, independent of implementer of 4f5637a4/cb98f64c) | executor-tier: standard | finding: conditional | verification: AC1 clause 1 passes, clause 2 fails literally (reproduced) but scope argument judged sound against skills/dva-ci/SKILL.md's actual text (rule is ci.profiles-scoped) and git blame (5 lines predate this card by ~6 months); AC2 human drill re-executed independently (injected drift → make doc-check failed via ciparity, restored dva.yml byte-identical); AC3 verified against internal/cli/ci.go (`Args: cobra.MaximumNArgs(1)`, only `--project` flag, no step-selection) — reasoning holds; AC4 `make doc-check` clean (ciparity OK, 6/6/6); AC5 `ce task gate` → READY; `go build ./...` and `go test ./...` clean repo-wide including new tools/ciparity tests; full diff of both commits read, no regressions or undisclosed scope; `[~]`-marker claim checked — no ce-repo fix present (expected, ce is a separate repo), correctly scoped as a documented workaround, not this card's fix | repair: none needed | outcome: conditional pass | next: done, non-blocking follow-up filed as [[ISSUE-038]]
+
+## 2026-09-23 기준 정정 (TASK-416 / ISSUE-038)
+
+AC1은 전체 dva.yml의 make 호출 금지가 아니라 ci.profiles 순환 방지를 검사하도록
+정정했다. manifest로 해석된 모든 profile step과 실제 Make 별칭을 검사한다.
+interaction/provision의 기존 make 호출은 변경하지 않았다. 과거 조건부 리뷰는
+당시 기준에 대한 기록이며 정정 후 독립 재리뷰로 현재 판정을 갱신한다.
+
+## 2026-09-23 독립 재리뷰 — pass
+
+review410 (ce-judge, 구현자와 분리)가 정정 AC1의 manifest/Make 검사를 직접 통과시켰다.
+ciparity 테스트 8개, make doc-check의 6/6/6 parity와 ce task gate READY를 확인했다.
+AC2는 과거 독립 리뷰의 실제 누락 주입·원복 기록과 현재 set-diff 소스/fixture 테스트를
+대조했으며 이번 읽기 전용 리뷰에서는 실제 파일 변경 실험을 반복하지 않았다.
+프로파일 단위 위임(AC3)은 CLI의 MaximumNArgs(1)과 플래그 정의로 재확인했다.
+기존 quality-review-evidence는 당시 조건부 판정의 이력으로 보존한다.

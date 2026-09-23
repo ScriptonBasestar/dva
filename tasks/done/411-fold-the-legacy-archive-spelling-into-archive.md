@@ -5,20 +5,12 @@ type: chore
 priority: P2
 effort: S
 exec-tier: standard
-status: blocked
+status: done
+quality-review: pass
+quality-reviewed-at: 2026-09-23
+quality-review-evidence: "Independent ce-judge review410 after TASK-410 receipt and TASK-415 zone fix: all four verify bindings passed. Original fold has 413 R100 renames; disclosed non-rename changes inspected. make doc-check and ce task gate READY. No findings."
 created: 2026-09-22
 depends-on: [TASK-410]
-blocked-at: 2026-09-23T00:00:00Z
-blocked-on: "AC3/AC4 currently fail live: (1) TASK-410's done card declares
-  `blocks: [TASK-411]` but no `quality-review-receipt`, which `ce task validate`
-  now treats as an error, so `ce task gate` reads NOT READY --
-  task_validate_failed; (2) an untracked ISSUE-037 card in the working
-  tree has an invalid priority and a missing Expected-vs-Actual section, which
-  fails `make doc-check`. Neither cause is inside TASK-411's own fold commits
-  (5d5c099b, 97291cdb) -- both are external to this card's diff. Retry once
-  TASK-410's done card carries a quality-review-receipt and the ISSUE-037 card
-  is either committed in valid form or removed from the tree, then re-run
-  `ce task gate` and `make doc-check`."
 ---
 
 ## Summary
@@ -46,8 +38,8 @@ blocked-on: "AC3/AC4 currently fail live: (1) TASK-410's done card declares
 
 - [x] 저장소에 옛 철자 경로의 카드가 남아 있지 않다 | verify: `test -z "$(git ls-files tasks/archive)"`
 - [x] 보드 게이트에 `legacy-storage-dir` 경고가 없다 | verify: `! ce task gate 2>&1 | /usr/bin/grep -q 'legacy-storage-dir'`
-- [ ] 접은 뒤에도 plan 진행률이 맞고 문서 게이트가 통과한다 | verify: `make doc-check` (regression-guard) -- 현재 FAIL, 원인은 아래 Review Attempts 참조 (TASK-411 diff와 무관)
-- [ ] 보드 게이트가 READY다 | verify: `ce task gate 2>&1 | /usr/bin/grep -q '^READY —'` -- 현재 FAIL, 원인은 아래 Review Attempts 참조 (TASK-411 diff와 무관)
+- [x] 접은 뒤에도 plan 진행률이 맞고 문서 게이트가 통과한다 | verify: `make doc-check` (regression-guard)
+- [x] 보드 게이트가 READY다 | verify: `ce task gate 2>&1 | /usr/bin/grep -q '^READY —'`
 
 ## 2026-09-22 통합 후 관측 — 기준 한 줄을 고쳤다
 
@@ -115,3 +107,9 @@ blocked-on: "AC3/AC4 currently fail live: (1) TASK-410's done card declares
   declares intentional. | outcome: blocked | next: tasks/blocked/, retry after
   TASK-410's done card gets a quality-review-receipt and the ISSUE-037 card is
   fixed or removed from the tree; re-run AC3/AC4 then re-review.
+
+## 2026-09-23 재리뷰 완료
+
+TASK-410 receipt와 TASK-415 zone 수정 뒤 네 기준을 독립 재실행해 모두 통과했다.
+위 Review Attempts의 실패는 과거 상태다. primary checkout의 ignore된 잔재 삭제는
+검증 범위가 아니며, 이 판정은 Git 추적 카드와 깨끗한 task worktree에 대한 것이다.

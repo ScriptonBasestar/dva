@@ -2,7 +2,7 @@
 id: ISSUE-038
 title: "AC1's literal grep for dva.yml run:...make... doesn't scope to ci.profiles"
 type: bug
-status: todo
+status: done
 priority: P2
 effort: S
 exec-tier: standard
@@ -11,6 +11,9 @@ ownership: local
 discovered-in: "TASK-413 quality review, 2026-09-23 — AC1's verify checks all of dva.yml, not just ci.profiles"
 discovered-at: 2026-09-23
 created: 2026-09-23
+resolution: fixed
+resolved-at: 2026-09-23T04:06:18Z
+resolution-summary: "Resolved as fixed by TASK-416."
 ---
 
 ## Summary
