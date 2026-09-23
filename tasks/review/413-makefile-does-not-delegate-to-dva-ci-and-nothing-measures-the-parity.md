@@ -5,7 +5,7 @@ type: feature
 priority: P2
 effort: M
 exec-tier: standard
-status: todo
+status: review
 created: 2026-09-22
 depends-on: [TASK-412]
 source: "2026-09-22 done-board 재검증 중 확인 — dva-ci 스킬이 처방한 Make→DVA 별칭 방향이 이 저장소에서 미이행"
