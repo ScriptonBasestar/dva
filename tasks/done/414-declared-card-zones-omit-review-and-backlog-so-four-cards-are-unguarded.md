@@ -5,9 +5,12 @@ type: bug
 priority: P1
 effort: S
 exec-tier: standard
-status: review
+status: done
 created: 2026-09-23
 source: "2026-09-23 배치 7 통합 중 실측 — TASK-412 카드가 review/와 todo/에 동시에 존재했는데 doccheck가 `duplicate: 0`을 보고했다"
+quality-review: pass
+quality-reviewed-at: 2026-09-23
+quality-review-evidence: "AC1/AC3/AC4는 독립 리뷰어(task414-review, 구현 세션과 분리)가 worktree dev/claude/mbp/fix/task-414 에서 각 verify: 바인딩을 직접 재실행해 판정했다 — TestCardZonesDeclareReviewAndBacklog, TestDuplicateCardIDAcrossReviewAndTodo, TestUndeclaredBoardDirectoryFailsTheGate 모두 존재하고 `go test ./tools/doccheck/...` PASS. AC5(`make doc-check`)는 board_dirs_seen: 7 (undeclared: 0), status_mismatches: 0, card_ids duplicate: 0 으로 카드의 완료 기록과 일치. AC6(`ce task gate`)는 `READY — task_board_ready` 출력. AC2(`human —`)는 Completion Record의 backlog permitted-vs-skip 근거(skip은 중복검사에서도 제외되어 review/에서 닫은 사각지대를 backlog/에 재개방한다는 논리)를 읽고 타당하다고 판단. 스코프 확인: 커밋 78444808의 diff 전체를 읽어 tools/doccheck/{cardstatus,check,main}.go + 2건의 신규 테스트 파일 + BACKLOG-009 status 필드 + 카드 파일 자신으로 한정됨을 확인(스코프 이탈 없음). 회귀 확인: go build ./..., go vet ./tools/doccheck/..., gofmt -l tools/doccheck/ 전부 클린."
 ---
 
 ## Summary
@@ -117,3 +120,7 @@ card_ids duplicate: 0)와 `ce task gate`(`READY — task_board_ready`)로 검증
 - `tools/doccheck/cardids.go:41-70` — zone 밖 파일을 건너뛰는 지점
 - `tasks/README.md` — `review/`·`backlog/`를 보드 구조로 문서화하는 곳
 - [[TASK-407]] — DUP-ID를 방어선으로 지목한 카드
+
+## Review Attempts
+
+- 2026-09-23T02:21:57Z | reviewer: task414-review (independent of implementer, fresh session) | executor-tier: standard | finding: pass | verification: commit 78444808 full diff read (`git show --stat`/`git show`); AC1/AC3/AC4 verify bindings re-executed live — `TestCardZonesDeclareReviewAndBacklog`, `TestDuplicateCardIDAcrossReviewAndTodo`, `TestUndeclaredBoardDirectoryFailsTheGate` present and `go test ./tools/doccheck/...` → ok; AC5 `make doc-check` → board_dirs_seen: 7 (undeclared: 0), status_mismatches: 0, card_ids duplicate: 0, filename_numbers duplicate: 0, doc-check: OK; AC6 `ce task gate` → `READY — task_board_ready`; AC2 (human) — read Completion Record's backlog permitted-vs-skip rationale, sound; regression sweep `go build ./...`, `go vet ./tools/doccheck/...`, `gofmt -l tools/doccheck/` all clean; diff scope confirmed limited to tools/doccheck/{cardstatus,check,main}.go + 2 new test files + BACKLOG-009 status field + this card | outcome: pass | next: done
