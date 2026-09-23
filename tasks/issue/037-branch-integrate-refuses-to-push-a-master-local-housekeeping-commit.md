@@ -83,6 +83,21 @@ origin/master`도 막는다: "대상 브랜치의 raw merge는 허용하지 않�
 만들어 `branch-integrate`로 정식 통합하는 방법도 있으나, 이미 만들어진 로컬
 커밋을 폐기해야 하므로 위 2줄이 더 간단하다.
 
+**2026-09-23 재갱신 — divergence가 8/8로 더 벌어짐, merge 경로는 여전히
+유효할 것으로 보임(파일 하나가 겹치지만 라인은 안 겹침).** 이 세션의
+하우스키핑 커밋(ISSUE-034 wontfix 확정, BACKLOG-009 정리, 이 카드 자체,
+ISSUE-039)이 로컬 쪽에 4개 더 쌓여 로컬이 `eb230bc7`(TASK-410) 기준 8개 앞,
+`origin/master`도 TASK-407·413·414 통합으로 8개 앞이 됐다
+(`git rev-list --left-right --count origin/master...master` → `8  8`, 분기점
+`a2e75dd3`). `git diff a2e75dd3 master --name-only`와
+`git diff a2e75dd3 origin/master --name-only`로 양쪽이 건드린 파일을 실측
+대조한 결과, 겹치는 파일이 하나 있다 — BACKLOG-009 카드: 로컬은
+문서 끝에 새 절을 추가했고 원격은 frontmatter에 `status: backlog` 한 줄을
+끼워 넣었다. 서로 다른 라인 범위라 3-way merge가 충돌 없이 자동 병합될
+가능성이 높지만, 실제 merge를 실행하기 전까지는 git이 그렇게 판단할지
+확정할 수 없다 — 나머지 겹치지 않는 파일들과 달리 이 파일만은 사람이 병합
+직후 diff를 눈으로 확인하는 편이 안전하다.
+
 ## Downstream impact — TASK-411's review is blocked on this
 
 `ce task done-finalize tasks/done/410-repository-tooling-hardcodes-the-legacy-archive-spelling-and-cannot-see-archive.md --dry-run` refuses outright:
