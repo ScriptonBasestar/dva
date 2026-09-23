@@ -95,6 +95,7 @@ func printReport(res Result) {
 	fmt.Printf("archive_missing:     %d\n", res.ArchiveMissing)
 	fmt.Printf("cards_checked:       %d\n", res.CardsChecked)
 	fmt.Printf("status_mismatches:   %d\n", res.StatusMismatches)
+	fmt.Printf("board_dirs_seen:     %d (undeclared: %d)\n", res.BoardDirsSeen, res.UndeclaredBoardDirs)
 	fmt.Printf("issue_cards:         %d (read %d)\n", res.IssueCardsSeen, res.IssueCardsRead)
 	fmt.Printf("ownership_unclassified: %d\n", res.OwnershipUnclassified)
 	fmt.Printf("ownership_mismatched:   %d\n", res.OwnershipMismatched)
@@ -135,6 +136,9 @@ func printReport(res Result) {
 	}
 	for _, d := range res.DuplicateFilenameDetail {
 		fmt.Printf("  DUP-NUM  %s\n", d)
+	}
+	for _, d := range res.UndeclaredBoardDirDetail {
+		fmt.Printf("  BOARD-DIR %s\n", d)
 	}
 	for _, e := range res.Errors {
 		fmt.Printf("  ERROR    %s\n", e)

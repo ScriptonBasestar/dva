@@ -40,6 +40,31 @@ func TestDuplicateCardIDsAcrossZones(t *testing.T) {
 	}
 }
 
+// TestDuplicateCardIDAcrossReviewAndTodo pins the exact live counter-example TASK-414 measured:
+// TASK-412 sat in both tasks/review/ and tasks/todo/ at once, on the same worktree, and doccheck
+// reported card_ids duplicate: 0 because tasks/review/ resolved to no zone (resolveCardZone
+// ok=false) and was skipped by checkDuplicateCardIDs entirely. With tasks/review/ declared, the
+// same id crossing review/ and todo/ must be caught the same way it already is across todo/ and
+// done/ (TestDuplicateCardIDsAcrossZones).
+func TestDuplicateCardIDAcrossReviewAndTodo(t *testing.T) {
+	res := cardFixture(t,
+		archiveCard{path: "tasks/review/412-x.md", body: "---\nid: TASK-412\nstatus: review\n---\n\n# Review copy\n"},
+		archiveCard{path: "tasks/todo/412-x.md", body: "---\nid: TASK-412\nstatus: todo\n---\n\n# Todo copy\n"},
+	)
+	if res.DuplicateCardIDs != 1 {
+		t.Fatalf("duplicate_card_ids = %d, want 1 for TASK-412 spanning review/ and todo/; detail=%v", res.DuplicateCardIDs, res.DuplicateIDDetail)
+	}
+	joined := strings.Join(res.DuplicateIDDetail, "\n")
+	for _, want := range []string{"TASK-412", "tasks/review/412-x.md", "tasks/todo/412-x.md"} {
+		if !strings.Contains(joined, want) {
+			t.Errorf("detail %q does not name %q", joined, want)
+		}
+	}
+	if res.OK {
+		t.Fatal("Check reported OK with TASK-412 claimed by both review/ and todo/")
+	}
+}
+
 // TestDistinctCardIDsPass is the control: the check must not fire on a well-formed tree, and
 // must count the ids it saw. Without the count a broken walk would report zero duplicates and
 // look identical to a clean tree.

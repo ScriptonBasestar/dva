@@ -2,6 +2,7 @@
 id: BACKLOG-009
 title: "Triage remaining open issues and stale run records after 405-408 wave"
 type: idea
+status: backlog
 priority: P2
 effort: M
 created: 2026-09-21

@@ -5,7 +5,7 @@ type: bug
 priority: P1
 effort: S
 exec-tier: standard
-status: todo
+status: review
 created: 2026-09-23
 source: "2026-09-23 배치 7 통합 중 실측 — TASK-412 카드가 review/와 todo/에 동시에 존재했는데 doccheck가 `duplicate: 0`을 보고했다"
 ---
@@ -66,12 +66,43 @@ git은 경로가 달라 충돌로 보지 않고, 게이트는 zone 밖이라 보
 
 ## Completion Criteria
 
-- [ ] `tasks/review/`가 선언된 zone이고 `status: review`를 허용한다 | verify: `/usr/bin/grep -rq 'TestCardZonesDeclareReviewAndBacklog' tools/doccheck/ && go test ./tools/doccheck/ 2>&1 | /usr/bin/grep -q '^ok'`
-- [ ] `tasks/backlog/`가 선언된 zone이고, permitted든 skip이든 그 선택 이유가 카드에 적혀 있다 | verify: human — 완료 기록에서 backlog의 permitted set 결정과 근거를 읽는다
-- [ ] `review/`와 `todo/`에 걸친 같은 id가 중복으로 잡힌다 | verify: `/usr/bin/grep -rq 'TestDuplicateCardIDAcrossReviewAndTodo' tools/doccheck/ && go test ./tools/doccheck/ 2>&1 | /usr/bin/grep -q '^ok'`
-- [ ] 선언되지 않은 `tasks/*/` 디렉터리가 존재하면 게이트가 실패한다 | verify: `/usr/bin/grep -rq 'TestUndeclaredBoardDirectoryFailsTheGate' tools/doccheck/ && go test ./tools/doccheck/ 2>&1 | /usr/bin/grep -q '^ok'`
-- [ ] 현재 보드가 통과한다 | verify: `make doc-check` (regression-guard)
-- [ ] 보드 게이트가 READY다 | verify: `ce task gate 2>&1 | /usr/bin/grep -q '^READY —'`
+- [x] `tasks/review/`가 선언된 zone이고 `status: review`를 허용한다 | verify: `/usr/bin/grep -rq 'TestCardZonesDeclareReviewAndBacklog' tools/doccheck/ && go test ./tools/doccheck/ 2>&1 | /usr/bin/grep -q '^ok'`
+- [x] `tasks/backlog/`가 선언된 zone이고, permitted든 skip이든 그 선택 이유가 카드에 적혀 있다 | verify: human — 완료 기록에서 backlog의 permitted set 결정과 근거를 읽는다
+- [x] `review/`와 `todo/`에 걸친 같은 id가 중복으로 잡힌다 | verify: `/usr/bin/grep -rq 'TestDuplicateCardIDAcrossReviewAndTodo' tools/doccheck/ && go test ./tools/doccheck/ 2>&1 | /usr/bin/grep -q '^ok'`
+- [x] 선언되지 않은 `tasks/*/` 디렉터리가 존재하면 게이트가 실패한다 | verify: `/usr/bin/grep -rq 'TestUndeclaredBoardDirectoryFailsTheGate' tools/doccheck/ && go test ./tools/doccheck/ 2>&1 | /usr/bin/grep -q '^ok'`
+- [x] 현재 보드가 통과한다 | verify: `make doc-check` (regression-guard)
+- [x] 보드 게이트가 READY다 | verify: `ce task gate 2>&1 | /usr/bin/grep -q '^READY —'`
+
+## Completion Record (2026-09-23)
+
+`cardZones`(`tools/doccheck/cardstatus.go`)에 두 항목을 추가했다:
+
+```go
+cardZone{prefix: "tasks/review/", permitted: []string{"review"}},
+cardZone{prefix: "tasks/backlog/", permitted: []string{"backlog"}},
+```
+
+**`tasks/backlog/`는 skip이 아니라 permitted로 선언했다.** 이유: `skip`은
+`checkDuplicateCardIDs`·`checkDuplicateFilenameNumbers`에서도 그 파일을 제외한다는
+뜻이다. 그것이 정확히 이 카드가 `tasks/review/`에 대해 닫는 사각지대(TASK-412
+실측 증거)이므로, `tasks/backlog/`를 skip으로 선언하면 같은 종류의 구멍을
+`backlog/`에 다시 여는 셈이 된다. permitted로 선언하면 두 중복 검사가 계속
+`backlog/` 카드를 보되, 그 대가로 `status:` 필드가 필요해진다 — 기존
+`BACKLOG-009`에 `status: backlog`를 추가해 충족시켰다(permitted set은 review/
+카드가 실제로 쓰는 값 `status: review`를 그대로 따랐다).
+
+Design 절이 지적한 재발 경로(두 접두사를 추가하는 것만으로는 다음 zone이 생길 때
+같은 침묵이 반복된다)를 닫기 위해, 접두사 목록에서 파생되는 일반 가드
+`checkUndeclaredBoardDirectories`를 추가했다: `tasks/*/`의 최상위 디렉터리 이름이
+`cardZones`가 아는 이름 집합(별도로 손으로 유지하는 목록이 아니라
+`declaredBoardDirs()`가 `cardZones`에서 직접 파생)에 없으면 게이트가 실패한다.
+이제 zone 선언이 빠지면 특정 검사가 조용히 건너뛰는 대신 이 가드가 즉시 잡는다.
+
+새 테스트 3건(`TestCardZonesDeclareReviewAndBacklog`,
+`TestDuplicateCardIDAcrossReviewAndTodo`, `TestUndeclaredBoardDirectoryFailsTheGate`)과
+전체 `go test ./tools/doccheck/...` 통과, 실제 저장소 트리에 대한
+`make doc-check`(board_dirs_seen: 7, undeclared: 0 / status_mismatches: 0 /
+card_ids duplicate: 0)와 `ce task gate`(`READY — task_board_ready`)로 검증했다.
 
 ## Out of scope
 

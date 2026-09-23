@@ -1,6 +1,7 @@
 package main
 
 import (
+	"slices"
 	"strings"
 	"testing"
 )
@@ -151,6 +152,82 @@ func TestCardStatus_acceptsPermittedStatusPerZone(t *testing.T) {
 	}
 	if res.StatusMismatches != 0 {
 		t.Errorf("status_mismatches=%d on all-permitted cards; detail=%v", res.StatusMismatches, res.CardStatusDetail)
+	}
+}
+
+// TestCardZonesDeclareReviewAndBacklog pins the two zones TASK-414 found missing from cardZones:
+// a card sitting under either directory used to resolve to no zone at all (resolveCardZone
+// ok=false), which silently excluded it from checkCardStatus, checkDuplicateCardIDs and
+// checkDuplicateFilenameNumbers alike. tasks/review/ permits status: review; tasks/backlog/
+// permits status: backlog (declared, not skipped — see buildCardZones for why skip was rejected).
+func TestCardZonesDeclareReviewAndBacklog(t *testing.T) {
+	zone, ok := resolveCardZone("tasks/review/410-x.md")
+	if !ok || zone.prefix != "tasks/review/" {
+		t.Fatalf("resolveCardZone(tasks/review/410-x.md) = (%+v, %t), want tasks/review/ zone", zone, ok)
+	}
+	if !slices.Contains(zone.permitted, "review") {
+		t.Fatalf("tasks/review/ zone permits %v, want it to include \"review\"", zone.permitted)
+	}
+
+	zone, ok = resolveCardZone("tasks/backlog/009-x.md")
+	if !ok || zone.prefix != "tasks/backlog/" {
+		t.Fatalf("resolveCardZone(tasks/backlog/009-x.md) = (%+v, %t), want tasks/backlog/ zone", zone, ok)
+	}
+	if zone.skip {
+		t.Fatal("tasks/backlog/ must not be skip: skip would also exempt it from the duplicate-id and duplicate-filename-number sweeps")
+	}
+	if !slices.Contains(zone.permitted, "backlog") {
+		t.Fatalf("tasks/backlog/ zone permits %v, want it to include \"backlog\"", zone.permitted)
+	}
+
+	res := cardFixture(t,
+		archiveCard{path: "tasks/review/020-r.md", body: "---\nid: TASK-020\nstatus: review\n---\n\n# R\n"},
+		archiveCard{path: "tasks/backlog/021-b.md", body: "---\nid: BACKLOG-021\nstatus: backlog\n---\n\n# B\n"},
+	)
+	if res.CardsChecked != 2 {
+		t.Fatalf("cards_checked=%d, want 2", res.CardsChecked)
+	}
+	if res.StatusMismatches != 0 {
+		t.Errorf("status_mismatches=%d on review/backlog cards using their permitted status; detail=%v", res.StatusMismatches, res.CardStatusDetail)
+	}
+	if !res.OK {
+		t.Errorf("Check reported FAIL on review/backlog cards using their permitted status; errors=%v", res.Errors)
+	}
+}
+
+// TestUndeclaredBoardDirectoryFailsTheGate pins the persisting rule TASK-414's Design section
+// calls for: adding two more prefixes was not enough, since the same silent gap recurs the next
+// time the board grows a directory nobody adds to cardZones. A tasks/*/ directory that cardZones
+// does not declare — permitted or skip — must fail the gate instead of being silently invisible
+// to checkCardStatus, checkDuplicateCardIDs and checkDuplicateFilenameNumbers.
+func TestUndeclaredBoardDirectoryFailsTheGate(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "docs/a.md", "# A\n\nSee [self](a.md).\n")
+	writeFile(t, root, "tasks/staging/900-x.md", "---\nid: TASK-900\nstatus: staging\n---\n\n# X\n")
+	res := Check(CheckInput{Root: root, Inventory: mustInventory(t, root, "docs/a.md", "tasks/staging/900-x.md")})
+
+	if res.UndeclaredBoardDirs != 1 {
+		t.Fatalf("undeclared_board_dirs=%d, want 1; errors=%v", res.UndeclaredBoardDirs, res.Errors)
+	}
+	if res.OK {
+		t.Error("Check reported OK with an undeclared tasks/*/ directory on disk")
+	}
+	if !containsAny(res.UndeclaredBoardDirDetail, "tasks/staging/") {
+		t.Errorf("detail %v does not name the undeclared directory tasks/staging/", res.UndeclaredBoardDirDetail)
+	}
+
+	// The control: every currently declared board directory must not trip this guard.
+	clean := cardFixture(t,
+		archiveCard{path: "tasks/todo/001-a.md", body: "---\nid: TASK-001\nstatus: todo\n---\n\n# A\n"},
+		archiveCard{path: "tasks/done/002-b.md", body: "---\nid: TASK-002\nstatus: done\n---\n\n# B\n"},
+		archiveCard{path: "tasks/issue/003-c.md", body: "---\nid: TASK-003\nstatus: todo\n---\n\n# C\n"},
+		archiveCard{path: "tasks/review/004-d.md", body: "---\nid: TASK-004\nstatus: review\n---\n\n# D\n"},
+		archiveCard{path: "tasks/backlog/005-e.md", body: "---\nid: BACKLOG-005\nstatus: backlog\n---\n\n# E\n"},
+		archiveCard{path: "tasks/archive/006-f.md", body: "---\nid: TASK-006\nstatus: done\n---\n\n# F\n"},
+		archiveCard{path: "tasks/plan/007-g.md", body: "---\nid: PLAN-007\ntype: plan\n---\n\n# G\n"},
+	)
+	if clean.UndeclaredBoardDirs != 0 {
+		t.Fatalf("undeclared_board_dirs=%d, want 0 on an all-declared board; errors=%v", clean.UndeclaredBoardDirs, clean.Errors)
 	}
 }
 

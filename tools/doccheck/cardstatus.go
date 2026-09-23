@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"sort"
 	"strings"
 )
 
@@ -44,8 +45,70 @@ func buildCardZones() []cardZone {
 		cardZone{prefix: "tasks/done/", permitted: []string{"done"}},
 		cardZone{prefix: "tasks/todo/", permitted: []string{"todo"}},
 		cardZone{prefix: "tasks/issue/", permitted: []string{"todo"}},
+		cardZone{prefix: "tasks/review/", permitted: []string{"review"}},
+		// tasks/backlog/ is declared permitted, not skip, on purpose (TASK-414): skip would also
+		// exempt backlog cards from checkDuplicateCardIDs and checkDuplicateFilenameNumbers, which
+		// is the exact blind spot this task closes for tasks/review/. BACKLOG-009 was given
+		// `status: backlog` to satisfy this.
+		cardZone{prefix: "tasks/backlog/", permitted: []string{"backlog"}},
 		cardZone{prefix: "tasks/plan/", skip: true},
 	)
+}
+
+// declaredBoardDirs returns the top-level tasks/ directory names cardZones declares, derived
+// from each zone's prefix rather than kept as a second hand-written list — a list separate from
+// cardZones is exactly how tasks/review/ and tasks/backlog/ went undeclared before TASK-414.
+func declaredBoardDirs() map[string]struct{} {
+	dirs := make(map[string]struct{}, len(cardZones))
+	for _, z := range cardZones {
+		name := strings.TrimSuffix(strings.TrimPrefix(z.prefix, "tasks/"), "/")
+		dirs[name] = struct{}{}
+	}
+	return dirs
+}
+
+// checkUndeclaredBoardDirectories reports every top-level tasks/ directory not declared in
+// cardZones. A card sitting under such a directory is invisible to every zone-gated check —
+// checkCardStatus, checkDuplicateCardIDs, checkDuplicateFilenameNumbers alike — which is exactly
+// how tasks/review/ and tasks/backlog/ went unguarded until a duplicate id crossing review/ and
+// todo/ was measured live (TASK-414). This guard makes the next such gap fail the gate instead of
+// waiting for another live measurement to notice it.
+//
+// dirsSeen counts distinct top-level directories found under tasks/ in the inventory; a file
+// written directly at tasks/ (e.g. tasks/README.md) is not a board directory and is not counted.
+func checkUndeclaredBoardDirectories(inv []InventoryEntry) (dirsSeen, undeclared int, msgs []string) {
+	declared := declaredBoardDirs()
+	seen := map[string]struct{}{}
+	for _, e := range inv {
+		if isSymlinkMode(e.Mode) {
+			continue
+		}
+		rest, ok := strings.CutPrefix(e.Path, "tasks/")
+		if !ok {
+			continue
+		}
+		dir, _, ok := strings.Cut(rest, "/")
+		if !ok || dir == "" {
+			continue
+		}
+		seen[dir] = struct{}{}
+	}
+	dirsSeen = len(seen)
+	names := make([]string, 0, len(seen))
+	for dir := range seen {
+		names = append(names, dir)
+	}
+	sort.Strings(names)
+	for _, dir := range names {
+		if _, ok := declared[dir]; ok {
+			continue
+		}
+		undeclared++
+		msgs = append(msgs, fmt.Sprintf(
+			"tasks/%s/: undeclared board directory — add it to cardZones (permitted or skip) before its cards are covered by any zone-gated check",
+			dir))
+	}
+	return dirsSeen, undeclared, msgs
 }
 
 // resolveCardZone returns the zone governing path, chosen by the longest matching prefix among

@@ -57,6 +57,8 @@ type Result struct {
 	CardsSeen              int
 	CardsChecked           int
 	StatusMismatches       int
+	BoardDirsSeen          int
+	UndeclaredBoardDirs    int
 	// Issue-card ownership (TASK-395, re-based on frontmatter by TASK-398). Every meter below
 	// now fails the gate. The two severities were a staging device, not a permanent split:
 	// OwnershipUnclassified and OwnershipMismatched were fatal from the start because classifying
@@ -64,29 +66,30 @@ type Result struct {
 	// — reporting into another repository — had not happened yet. TASK-399 filed the upstream
 	// issues (seven of them, bundling several cards each) and wrote their numbers back, the count
 	// reached 0, and the promotion the wiring site described was carried out.
-	IssueCardsSeen          int
-	IssueCardsRead          int
-	OwnershipUnclassified   int
-	OwnershipMismatched     int
-	OwnershipUnreasoned     int
-	UpstreamOwned           int
-	UpstreamUnrefed         int
-	CardIDsSeen             int
-	DuplicateCardIDs        int
-	FilenameNumbersSeen     int
-	DuplicateFilenameNums   int
-	Errors                  []string
-	BrokenDetail            []string
-	StaleLinkPathDetail     []string
-	OversizedDetail         []string
-	HeadroomDetail          []string
-	UnmatchedRunDetail      []string
-	PortabilityDetail       []string
-	ArchiveDetail           []string
-	CardStatusDetail        []string
-	UpstreamDetail          []string
-	DuplicateIDDetail       []string
-	DuplicateFilenameDetail []string
+	IssueCardsSeen           int
+	IssueCardsRead           int
+	OwnershipUnclassified    int
+	OwnershipMismatched      int
+	OwnershipUnreasoned      int
+	UpstreamOwned            int
+	UpstreamUnrefed          int
+	CardIDsSeen              int
+	DuplicateCardIDs         int
+	FilenameNumbersSeen      int
+	DuplicateFilenameNums    int
+	Errors                   []string
+	BrokenDetail             []string
+	StaleLinkPathDetail      []string
+	OversizedDetail          []string
+	HeadroomDetail           []string
+	UnmatchedRunDetail       []string
+	PortabilityDetail        []string
+	ArchiveDetail            []string
+	CardStatusDetail         []string
+	UpstreamDetail           []string
+	DuplicateIDDetail        []string
+	DuplicateFilenameDetail  []string
+	UndeclaredBoardDirDetail []string
 }
 
 // Check validates repository-wide relative markdown links against the git
@@ -277,6 +280,11 @@ func Check(in CheckInput) Result {
 	res.CardStatusDetail = statusMsgs
 	res.Errors = append(res.Errors, statusErrs...)
 
+	boardDirsSeen, undeclaredDirs, undeclaredMsgs := checkUndeclaredBoardDirectories(in.Inventory)
+	res.BoardDirsSeen = boardDirsSeen
+	res.UndeclaredBoardDirs = undeclaredDirs
+	res.UndeclaredBoardDirDetail = undeclaredMsgs
+
 	upstream := checkUpstreamRefs(in.Root, in.Inventory)
 	res.IssueCardsSeen = upstream.Seen
 	res.IssueCardsRead = upstream.Read
@@ -401,6 +409,12 @@ func Check(in CheckInput) Result {
 	}
 	if res.StatusMismatches > 0 {
 		res.Errors = append(res.Errors, fmt.Sprintf("%d task card(s) with status: not permitted in their zone", res.StatusMismatches))
+	}
+	// An undeclared tasks/*/ directory is invisible to checkCardStatus, checkDuplicateCardIDs and
+	// checkDuplicateFilenameNumbers alike — the exact silent gap tasks/review/ and tasks/backlog/
+	// sat in until TASK-414 measured a duplicate id crossing review/ and todo/ live.
+	if res.UndeclaredBoardDirs > 0 {
+		res.Errors = append(res.Errors, fmt.Sprintf("%d undeclared tasks/*/ directory(ies) — not covered by any zone-gated check", res.UndeclaredBoardDirs))
 	}
 	// A duplicate id is an error, not a warning: links resolve by id, so the tree is already
 	// ambiguous by the time this fires, and the next card numbered from the highest visible id
