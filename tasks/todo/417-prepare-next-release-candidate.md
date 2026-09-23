@@ -8,7 +8,7 @@ exec-tier: standard
 status: todo
 blocks: [TASK-370, TASK-418]
 created: 2026-09-23
-depends-on: [TASK-416, TASK-411]
+depends-on: [TASK-416, TASK-411, TASK-419]
 ---
 
 ## Summary

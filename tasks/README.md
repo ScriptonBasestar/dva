@@ -5,7 +5,7 @@
 이번 버전의 정본 순서와 의존성은 [[PLAN-010]]이다. TASK-415는 `c33d946b`에 통합되어
 doing/blocked zone 검사를 복구했고, TASK-410의 독립 리뷰 receipt도 복구됐다. TASK-411은
 복구된 네 기준의 독립 재리뷰를 통과했고, TASK-416은 이 인덱스와 PLAN-006의 기록을
-durable 증거에 맞췄다. 그 뒤 TASK-417이 0.3.0 후보를 만들고, TASK-370이 새 노트를 독립
+durable 증거에 맞췄다. TASK-419는 tag 전 CHANGELOG 후보 인식을 보완했다. 그 뒤 TASK-417이 0.3.0 후보를 만들고, TASK-370이 새 노트를 독립
 검토한 뒤, TASK-418이 사람이 수행하는 공개·postflight를 맡는다.
 
 - ISSUE-037: local `master`와 `origin/master` 동기화가 확인되어 해결됨.
