@@ -149,5 +149,16 @@ ISSUE-024가 막고 있는 상태다.
 - **1번 갱신.** TASK-410 독립 리뷰 pass, `done/`. TASK-411은 독립 리뷰가
   `blocked/`로 냈다 — TASK-410 done 카드에 `quality-review-receipt`가 없고
   (`done-finalize`가 로컬 `master`/`origin` 불일치로 dry-run조차 거부), 새
-  ISSUE-037(로컬 하우스키핑 커밋을 origin에 못 올림)이 그 선행 조건. 2·4·6번은
-  변화 없음(각각 사람 판단·미승격·사용자 판단 보류).
+  ISSUE-037(로컬 하우스키핑 커밋을 origin에 못 올림)이 그 선행 조건. 2·6번은
+  변화 없음(각각 사람 판단·사용자 판단 보류).
+- **4번 닫힘 (재갱신).** ISSUE-033은 승격하지 않고 `wontfix`로 닫아
+  `_archive/issue/`로 옮겼다 — TASK-407이 `origin/master`(`fc7c41ef`)에서 이미
+  같은 요구(정직한 문서화)를 충족했기 때문. 할당기 자체 무충돌화는 여전히 별
+  설계 과제지만 이 이슈가 요구한 것은 아니었다.
+- **ISSUE-037 재검토 결과 (신규, 2026-09-23).** `branch-integrate
+  --target`/`--direct-to-default`, `gz-git integrate run` 직접 호출을 모두
+  실측했으나 승인된 우회 경로가 없음을 확정했다(카드 본문 "3차 갱신" 참조).
+  나아가 로컬 `tasks/todo/`의 4장 중 3장(407·413·414)이 이미 `origin/master`
+  에서 `done/`으로 끝났고 실질적으로 새로 시작해도 안전한 todo 항목이 0장임을
+  확인했다 — ISSUE-037의 두 줄 merge/push가 이제 이 저장소의 유일한 실행
+  가능 다음 단계다.
