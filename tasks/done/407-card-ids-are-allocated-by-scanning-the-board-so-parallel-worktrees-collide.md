@@ -7,6 +7,9 @@ status: review
 reopened: 2026-09-22
 reopen-reason: "2026-09-22 done-board re-verification: criterion 1 is unmet by measurement. AGENTS.md's rule is `max(id seen in current worktree) + 1`, so two worktrees cut from the same snapshot see the same max and mint the same id — exactly what the criterion asks be impossible. The rule also does not fall back to stating that DUP-ID detection is the guard rather than allocation uniqueness. Criteria 2 and 3 re-verified as met (see Re-verification). Residue is filed as ISSUE-033."
 created: 2026-09-17
+quality-review: pass
+quality-reviewed-at: 2026-09-23
+quality-review-evidence: "Independent review (separate session from the fc7c41ef implementer) in worktree dev/claude/mbp/feat/task-407. Criterion 1 (human): read AGENTS.md:318-337 verbatim — the section now states plainly that max(id)+1 per worktree is not collision-proof (two worktrees off one snapshot mint the same id), that isolation does not stop this, and that tools/doccheck/cardids.go::checkDuplicateCardIDs (gated by make doc-check) is the actual post-hoc guard; grepped AGENTS.md and docs/ for any remaining prevention claim — none found, and docs/407-correction-procedure.md:9-11 references the same rule without re-claiming prevention. Criterion 2: docs/407-correction-procedure.md read in full — covers rename steps, sealed-card-unreachable escalation, and old-ID sweep. Criterion 3: `/usr/bin/grep -q 'func checkDuplicateCardIDs' tools/doccheck/cardids.go` re-run, exit 0. `ce task gate 2>&1 | /usr/bin/grep -q '^READY —'` re-run, matched (READY — task_board_ready). `make doc-check` re-run clean (doc-check: OK, cilabels/flowcheck/planprogress/yamlcheck/changelogcheck all OK). Scope check: `git show fc7c41ef` touches only AGENTS.md (the Parallel-safe section) and this card file — no unrelated changes. Independence: commit fc7c41ef predates this review session and was already pushed to origin/dev/claude/mbp/feat/task-407 before review started."
 ---
 
 ## Summary
@@ -31,6 +34,7 @@ created: 2026-09-17
 ## Review Attempts
 
 - 2026-09-22T02:19:30Z | reviewer: opencode (independent of implementer) | executor-tier: standard | finding: pass | verification: AGENTS.md Parallel-safe section; docs/407-correction-procedure.md §3–§4; `func checkDuplicateCardIDs` at cardids.go:44; `go test ./tools/doccheck/` pass | outcome: pass | next: done | non-blocking: ISSUE-033 (isolated max+1 still races; DUP-ID is the live guard)
+- 2026-09-23T00:00:00Z | reviewer: claude (independent of implementer; separate session from commit fc7c41ef) | executor-tier: standard | finding: pass | verification: AGENTS.md:318-337 re-read verbatim — now says max+1 is not collision-proof and names checkDuplicateCardIDs (make doc-check) as the actual guard, with no contradicting leftover sentence in the section or in docs/407-correction-procedure.md; `/usr/bin/grep -q 'func checkDuplicateCardIDs' tools/doccheck/cardids.go` exit 0; `ce task gate 2>&1 | /usr/bin/grep -q '^READY —'` matched; `make doc-check` clean; `git show fc7c41ef` scoped to AGENTS.md + this card only | outcome: pass | next: done | non-blocking: ISSUE-033 remains open as the pre-existing follow-up for the underlying race (unchanged by this doc-only fix)
 
 ## Re-verification (2026-09-22)
 
