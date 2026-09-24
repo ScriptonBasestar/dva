@@ -10,8 +10,11 @@ v0.3.0 공개 자체는 유지된다. TASK-418은 사용자 승인 뒤 [v0.3.0](
 공개했고, 이번 재검증에서 postflight 도구가 원격 identity·7개 자산·checksum을 다시 확인했다.
 
 - ISSUE-037: local `master`와 `origin/master` 동기화가 확인되어 해결됨.
-- ISSUE-024: `done-finalize`의 artifact ownership/정당한 역참조 제한은 상류 이슈로 유지한다.
-- ISSUE-039: 이미 upstream에 합쳐진 중복 워크트리의 폐기는 사람 전용이다.
+- ISSUE-014: 영수증 디렉터리 `unknown` 분류는 TASK-403으로 닫혀 아카이브됐다.
+- ISSUE-005: `run-list` 운영 증상은 닫혔다. 영수증 종단 상태만 TASK-422다.
+- ISSUE-024: finalize 차단은 우회하지 않는다. 남은 작업은 TASK-430이다.
+- ISSUE-039: 중복 워크트리 폐기는 사람 전용 TASK-436이다. 훅 재설계는 그 밖이다.
+- 그 외 열린 상류 이슈의 남은 기준은 TASK-420–436이다.
 - PLAN-006~009의 아카이브와 `tasks/` 아래 네 `.ce` 잔재 삭제도 기존 사람 결정 대기다.
   루트 `.ce/task-runtime.yaml`은 ACTIVE 런타임 선언이므로 보존한다.
 

@@ -258,3 +258,8 @@ digest … ce-workbook/task_management still owns the legacy controller dialect"
 > 읽힌다. 시간순 경위 서술을 요지 중심으로 재구성해 27.6KB → 예산 안으로 줄였다.
 > 리뷰 근거 사실(validator 메시지 census, 실측 표, 폐기·정정 이력, 소유권 귀속)은
 > 전부 남겼고, 삭제된 서술의 전문은 Git 이력에 있다.
+
+## 후속 (2026-09-24)
+
+DVA에서 닫힌 기준은 그대로다. 남은 상류 계약은
+[TASK-420](../todo/420-legacy-done-review-receipts.md)가 소유한다.

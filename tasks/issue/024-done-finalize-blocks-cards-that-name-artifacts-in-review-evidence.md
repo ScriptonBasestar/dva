@@ -103,3 +103,8 @@ task_cleanup*.go`의 정합성 검사)에 있다. 이 저장소가 할 수 있�
 `depends-on: [TASK-410]` 구조 참조도 제거 차단으로 읽었다. 기존 두 유형의 새 사례다.
 TASK-415에서 독립 리뷰와 canonical receipt로 보드 검증은 복구했으며,
 finalize 성공은 TASK-411 완료의 선행 조건이 아니다. 증거·참조를 지워 우회하지 않는다.
+
+## 후속 (2026-09-24)
+
+우회 없이 남긴 상류 제한은
+[TASK-430](../todo/430-done-finalize-ignores-evidence-paths.md)가 소유한다.

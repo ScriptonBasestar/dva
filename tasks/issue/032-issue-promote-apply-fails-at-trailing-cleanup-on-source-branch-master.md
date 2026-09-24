@@ -33,3 +33,9 @@ created: 2026-09-21
 
 `ce-agent-kit#10` 관련 상류 도구(`ce task issue-promote`)의 결함이다. master 체크아웃에서 issue-promote 실행 시 cleanup --apply가 소스 브랜치를 거부하여 전체 트랜잭션이 실패하는 문제다.
 
+## 후속 (2026-09-24)
+
+소스 브랜치 거부는 `task_cleanup.go`에 그대로다. 이 보드에서 apply를 다시
+돌리지는 않는다. 작업은
+[TASK-435](../todo/435-issue-promote-on-source-branch.md)가 소유한다.
+

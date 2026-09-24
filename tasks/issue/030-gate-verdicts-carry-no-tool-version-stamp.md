@@ -81,3 +81,8 @@ $ grep -n version internal/usecase/task/gate.go
 - [ ] gate/validate/run-finish 판정 산출물에 도구 버전 스탬프가 있다 | verify:
       human — 상류 반영 후 이 저장소에서 `ce task gate` 출력과 신규 수신
       JSON에 버전 필드가 실제로 나타나는지 확인한다
+
+## 후속 (2026-09-24)
+
+2026-09-24 gate JSON에는 도구 버전이 없다. 작업은
+[TASK-433](../todo/433-stamp-tool-version-on-gate-verdicts.md)가 소유한다.

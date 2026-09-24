@@ -80,3 +80,8 @@ evidence를 새로 쓰는 방향으로 헤매고, 실제 수리(스칼라 변환
 - [ ] 리스트형 `quality-review-evidence`가 정직하게 보고되거나 수용된다 | verify:
       human — 상류 반영 후 이 저장소에서 리스트형 evidence 카드의 validate 출력이
       "필드 부재"가 아닌지 확인한다
+
+## 후속 (2026-09-24)
+
+리스트를 빈 스칼라로 읽는 경로는 상류에 그대로다. 작업은
+[TASK-434](../todo/434-report-list-form-review-evidence.md)가 소유한다.

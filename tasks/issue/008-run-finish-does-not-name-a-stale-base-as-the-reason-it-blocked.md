@@ -138,3 +138,8 @@ repository"로 적는다. 기준 전부가 메시지 변경이므로 이 저장�
 This is a `ce` task-runtime defect and cannot be fixed in this repository; it
 belongs with [[ISSUE-005]], [[ISSUE-006]] and [[ISSUE-007]] as upstream work.
 It is filed here because this board is where the evidence was produced.
+
+## 후속 (2026-09-24)
+
+거부 메시지는 여전히 stale base를 말하지 않는다. 작업은
+[TASK-425](../todo/425-name-stale-base-on-run-finish.md)가 소유한다.

@@ -69,3 +69,8 @@ $ /usr/bin/grep -rhoE '^quality-review(ed-at|-date):' tasks/done | sort | uniq -
 - [ ] 영수증 날짜 필드 이름이 상류 스키마에 하나로 고정된다 | verify: human — canonical validator가 그 필드를 enum/required로 다루는지 읽고 확인한다
 - [ ] 이 보드의 done 존에 이름이 하나만 남는다 | verify: `! /usr/bin/grep -rqE '^quality-review-date:' tasks/done`
 - [ ] 보드 게이트 통과 | verify: `ce task gate` (regression-guard)
+
+## 후속 (2026-09-24)
+
+날짜 필드 이름은 아직 스키마에 하나로 고정되지 않았다. 작업은
+[TASK-429](../todo/429-one-review-receipt-date-field.md)가 소유한다.

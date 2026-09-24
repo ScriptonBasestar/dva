@@ -86,3 +86,9 @@ worktrunk 다음 버전 배포일에 모든 저장소의 작업이 하루 막힌
 
 - [ ] PATH의 golangci-lint가 mise가 고른 aqua 2.13.2와 일치한다 | verify: human — devenv 수정 후 `which -a golangci-lint`의 첫 줄이 aqua 경로인지 확인한다
 - [ ] mise의 worktrunk 핀이 exact 버전을 가리킨다 | verify: human — devenv 소스의 mise config에서 `"cargo:worktrunk"` 값이 `latest`가 아닌지 확인한다
+
+## 후속 (2026-09-24)
+
+2026-09-24에도 golangci-lint 2.12.2가 PATH 앞이고 worktrunk 핀은 `latest`다.
+사람 작업은 [TASK-431](../todo/431-align-host-golangci-and-worktrunk-pins.md)가 소유한다.
+설치된 `~/devenv`는 직접 고치지 않는다.

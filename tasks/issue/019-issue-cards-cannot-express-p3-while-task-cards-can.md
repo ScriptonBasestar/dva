@@ -64,3 +64,8 @@ priority로 정렬한 큐가 실제 급함과 어긋난다. **잘못된 값이 �
 - [[ISSUE-005]] — 이 제약을 처음 밟은 카드. P1 → P2 + severity low로 내렸다.
 - [[ISSUE-011]] — 같은 계열: 상류 검증기의 어휘·조언이 이 저장소의 다른 규칙과
   어긋나는 자리.
+
+## 후속 (2026-09-24)
+
+issue priority enum은 여전히 P0–P2다. 작업은
+[TASK-427](../todo/427-issue-priority-p3-or-documented-refusal.md)가 소유한다.

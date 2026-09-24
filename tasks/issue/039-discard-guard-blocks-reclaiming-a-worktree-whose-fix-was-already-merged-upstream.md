@@ -95,3 +95,9 @@ TD-71이 언급하는 "통합하지 않고 버리는 결정을 받아들일 채�
 - [[ISSUE-037]] — 이 사례를 유발한 로컬/원격 divergence
 - TASK-407 — `origin/master` 기준으로는 이미 `done/`에 있는 완료된 원본 작업
   (커밋 `fc7c41ef`/`e5ed747b`/`5870da00`; 로컬 `master`는 아직 미반영)
+
+## 후속 (2026-09-24)
+
+워크트리 `claude__mbp__fix__task-407`은 2026-09-24에도 남아 있다. 사람 폐기는
+[TASK-436](../todo/436-reclaim-duplicate-task-407-worktree.md)가 소유한다.
+훅 재설계는 그 카드 밖이다.

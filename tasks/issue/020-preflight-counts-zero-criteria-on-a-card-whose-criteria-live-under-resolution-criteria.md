@@ -73,3 +73,8 @@ $ ce task validate tasks/done/002-…
 - [[ISSUE-011]] — 같은 계열: 상류 검증기의 어휘가 다른 규칙과 어긋난다.
 - [[ISSUE-019]] — 같은 계열: kind에 따라 같은 필드가 다른 값 집합을 갖는다.
 - [[TASK-354]] — §Notes에 이 형태를 처음 기록한 카드.
+
+## 후속 (2026-09-24)
+
+2026-09-24 preflight는 issue 존 카드를 `criteria: 0`으로 셌다. 작업은
+[TASK-428](../todo/428-count-resolution-criteria-in-preflight.md)가 소유한다.

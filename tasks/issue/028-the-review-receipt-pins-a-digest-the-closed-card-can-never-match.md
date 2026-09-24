@@ -143,3 +143,8 @@ NOT READY — task_validate_failed (validate)
 - [[ISSUE-024]] — 같은 done-finalize/영수증 계열의 다른 결함
 - [[TASK-399]] — 이 카드를 상류에 보고한 실행
 - [[TASK-401]] — 로컬 완화(plain 핀 → 정규 핀 재발행)와 전칭 반례 기록
+
+## 후속 (2026-09-24)
+
+로컬 canonical 핀으로 게이트는 초록이다. 검사기가 두 핀을 구분하는 일은
+[TASK-432](../todo/432-canonical-review-receipt-digest.md)가 소유한다.

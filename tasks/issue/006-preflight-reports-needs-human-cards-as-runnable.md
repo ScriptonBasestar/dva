@@ -111,3 +111,8 @@ lifecycle 규칙은 ce-agent-kit에서만 작성"이라고 적는 별개 개념�
 - [ ] Preflight distinguishes agent-runnable cards from human-only cards in its verdict and its per-card records | verify: human — upstream tests cover a queue that is entirely human-only
 - [ ] A DVA preflight run reports agent-runnable 0 for the current four cards | verify: human — fresh output from this repository is linked here
 - [ ] An automated loop can terminate on the verdict alone | verify: human — the run-all skill's exit condition reads the new field, not the card bodies
+
+## 후속 (2026-09-24)
+
+판정은 여전히 `needs-human`을 보지 않는다. 작업은
+[TASK-423](../todo/423-separate-needs-human-from-agent-runnable.md)가 소유한다.

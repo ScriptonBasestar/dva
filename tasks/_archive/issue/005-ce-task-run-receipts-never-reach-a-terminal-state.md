@@ -2,7 +2,7 @@
 id: ISSUE-005
 title: "ce task run-* receipts never reach a terminal state"
 type: bug
-status: todo
+status: done
 priority: P2
 effort: M
 exec-tier: standard
@@ -12,6 +12,9 @@ discovered-at: 2026-09-13
 ownership: upstream
 created: 2026-09-13
 upstream-ref: "ce-agent-kit#2"
+resolution: fixed
+resolved-at: 2026-09-24T12:42:44Z
+resolution-summary: "Resolved as fixed."
 ---
 
 ## Summary
@@ -148,3 +151,10 @@ the fix lands upstream"으로 적는다. 남은 기준 1(영수증 스키마의 
 - [ ] The run receipt schema carries an explicit terminal-state field, and `run-finish` and `run-abort` set it | verify: human — upstream schema and tests are linked here
 - [x] `ce task run-list` reports live executions in this repository and exits 0 with no live execution outstanding | verify: human — fresh output from this repository is linked here
 - [x] BLOCKED names the executions it is blocked on | verify: human — upstream output distinguishes a stale receipt from an abandoned worktree
+
+## 2026-09-24 정리
+
+기준 2·3은 그대로 충족이다. `ce task run-list`는 살아 있는 실행과 settled
+건수를 내고 rc 0이다. 기준 1(영수증의 종단 상태 필드)은 운영 증상과 분리해
+[TASK-422](../../todo/422-terminal-state-on-run-receipts.md)로 넘긴다.
+이 카드는 그 운영 증상이 사라졌으므로 닫는다.

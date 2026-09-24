@@ -115,3 +115,8 @@ the safe state.
 - [ ] `ce task validate` rejects a status value outside the declared vocabulary and one its zone refutes | verify: human — upstream tests cover an unknown value, an empty value, and a zone mismatch
 - [ ] The shared validator rejects the same inputs DVA's doccheck sweep rejects today | verify: human — both gates are run on the same fixtures and the outputs are linked here
 - [ ] `tools/doccheck`'s checkCardStatus sweep and zone table are removed once the shared gate covers them | verify: human — the removal commit is linked here and `make doc-check` still fails on a zone-mismatched fixture through the shared gate
+
+## 후속 (2026-09-24)
+
+로컬 sweep은 상류 검사가 보이기 전에 지우지 않는다. 그 순서는
+[TASK-424](../todo/424-validate-owns-zone-status.md)가 소유한다.

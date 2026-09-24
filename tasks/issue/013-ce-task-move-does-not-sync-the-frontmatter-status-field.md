@@ -130,3 +130,8 @@ ISSUE-009·010·011·012·017·021·023 (`tasks/_archive/issue/`).
 
 7장의 `status:`는 TASK-410 브랜치에서 `done`으로 정정했다. 상류가 고쳐야 할 것은
 카드가 아니라 명령이다 — 종료를 결정한 명령이 종료를 쓰지 않는다.
+
+## 후속 (2026-09-24)
+
+2026-09-24에 ISSUE-014를 닫을 때도 `resolve`는 `status:`를 쓰지 않았다.
+작업은 [TASK-426](../todo/426-write-frontmatter-status-on-move-and-close.md)가 소유한다.
