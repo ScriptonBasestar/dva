@@ -2,7 +2,7 @@
 id: ISSUE-014
 title: "ce task lint classifies the receipts directory as unknown"
 type: bug
-status: todo
+status: done
 priority: P2
 severity: low
 effort: S
@@ -12,6 +12,9 @@ discovered-in: "TASK-381 (check-plan-prose-against-plan-frontmatter) 종료 중 
 discovered-at: 2026-09-14
 source: "TASK-381 종료 확인 중 ce task lint의 DIRS 표에서 receipts/가 unknown 0건으로 나오는 것을 발견"
 upstream-ref: "ce-agent-kit#5"
+resolution: fixed
+resolved-at: 2026-09-24T12:22:52Z
+resolution-summary: "Resolved as fixed by TASK-403."
 ---
 
 ## Summary
@@ -90,13 +93,13 @@ ce-workbook/task_management로 적혀 있었다; 아래 소유권 절이 정정�
 
 ## Resolution Criteria
 
-- [ ] lint의 분류 어휘가 `tasks/done/evidence/`와 같은 비-카드 보드 아티팩트
+- [x] lint의 분류 어휘가 `tasks/done/evidence/`와 같은 비-카드 보드 아티팩트
       디렉터리를 위한 클래스를 갖거나, 그 디렉터리가 다른 방식으로 명시적으로
       선언되어 더 이상 `unknown`으로 보고되지 않는다 | verify: human — upstream
       lint 출력에서 `receipts/`가 `unknown`이 아닌 선언된 클래스로 나오는지 확인
       (DVA 쪽에서 이 어휘 변경 여부를 기계로 판단할 근거가 약하므로 인간 확인에
       의존한다)
-- [ ] `tasks/done/evidence/`가 여전히 존재하고 비어있지 않다 (회귀 감시 — 위 upstream
+- [x] `tasks/done/evidence/`가 여전히 존재하고 비어있지 않다 (회귀 감시 — 위 upstream
       수정이 이 디렉터리 자체를 없애거나 잘못 옮기지 않았는지에 대한 약한 신호일
       뿐, 분류 어휘가 실제로 개선되었는지는 증명하지 못한다) | verify: `/usr/bin/find tasks/done/evidence -mindepth 1 -maxdepth 1 -type d -print -quit`
 
@@ -110,6 +113,13 @@ ce-workbook/task_management로 적혀 있었다; 아래 소유권 절이 정정�
 이슈의 실질 요구(보드 인벤토리가 리뷰 증거 저장소를 설명할 수 있을 것)는
 충족된다. 상류 어휘(class vocabulary) 자체의 개선 여부는 [[ISSUE-004]] 계열의
 upstream 관심사로 ce-agent-kit#5에 그대로 둔다.
+
+2026-09-24 재측정. `ce task lint --json`은 `clean: true`, `structure: []`다.
+`tasks/receipts/`는 없고 `tasks/done/evidence/TASK-329`가 남아 있다. 설치된
+`ce`는 여전히 0.8.4(`ba6bf71b`)라 분류 어휘에 새 클래스가 생긴 것은 아니다.
+관찰된 `unknown` 행이 사라진 쪽이 이 카드의 해결이다.
+`ce task resolve`는 `status:`를 쓰지 않는다([[ISSUE-013]]). 아카이브 존은
+`done`만 허용하므로 이 필드는 닫으면서 직접 `done`으로 맞췄다.
 
 ## Related
 
