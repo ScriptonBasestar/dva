@@ -85,4 +85,4 @@ $ grep -n version internal/usecase/task/gate.go
 ## 후속 (2026-09-24)
 
 2026-09-24 gate JSON에는 도구 버전이 없다. 작업은
-[TASK-433](../todo/433-stamp-tool-version-on-gate-verdicts.md)가 소유한다.
+[TASK-433](../review/433-stamp-tool-version-on-gate-verdicts.md)가 소유한다.

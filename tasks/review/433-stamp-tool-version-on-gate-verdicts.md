@@ -5,7 +5,7 @@ type: bug
 priority: P3
 effort: S
 exec-tier: standard
-status: todo
+status: review
 created: 2026-09-24
 ---
 
@@ -21,7 +21,11 @@ created: 2026-09-24
 
 ## Completion Criteria
 
-- [ ] `ce task gate --json`과 신규 run-finish 영수증에 도구 버전 필드가 있다 | verify: human — 상류 반영 후 이 저장소 출력에 그 필드가 있다
+- [x] `ce task gate --json`과 신규 run-finish 영수증에 도구 버전 필드가 있다 | verify: human — 상류 반영 후 이 저장소 출력에 그 필드가 있다
+
+## Evidence
+
+ce-agent-kit `5d70c9d8`. 이 저장소에서 `ce task gate --json`은 `tool_version: v0.8.4-345-g5d70c9d8`, `tool_revision: 5d70c9d8…`를 냈다. finish 영수증 구조체에는 `tool_revision`이 있고, `run-finish`가 그 값을 채운다.
 
 ## Out of scope
 

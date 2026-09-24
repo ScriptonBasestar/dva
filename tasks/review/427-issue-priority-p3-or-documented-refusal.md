@@ -5,7 +5,7 @@ type: bug
 priority: P3
 effort: S
 exec-tier: standard
-status: todo
+status: review
 created: 2026-09-24
 ---
 
@@ -22,7 +22,11 @@ ce-agent-kit#3.
 
 ## Completion Criteria
 
-- [ ] issue 카드가 P3를 허용하거나, 거부 이유가 상류 스키마 문서에 있다 | verify: human — `canonical_validator.go`의 issue priority enum 또는 그 문서가 이 카드에 링크된다
+- [x] issue 카드가 P3를 허용하거나, 거부 이유가 상류 스키마 문서에 있다 | verify: human — `canonical_validator.go`의 issue priority enum 또는 그 문서가 이 카드에 링크된다
+
+## Evidence
+
+ce-agent-kit `5d70c9d8`가 issue priority에 P3를 넣었다. `ce task new issue --priority P3`도 같은 목록을 쓴다. 기본값은 P1 그대로다. `TestIssuePriorityAllowsP3`가 통과했다.
 
 ## Out of scope
 

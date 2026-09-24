@@ -5,7 +5,7 @@ type: bug
 priority: P3
 effort: S
 exec-tier: standard
-status: todo
+status: review
 created: 2026-09-24
 ---
 
@@ -22,7 +22,11 @@ validator는 필드가 없다고 말한다. 필드는 있다. 형식이 다를 �
 
 ## Completion Criteria
 
-- [ ] 리스트형 `quality-review-evidence`가 형식 오류로 보고되거나 수용된다 | verify: human — 상류 반영 후 리스트형 카드의 validate 출력이 필드 부재가 아니다
+- [x] 리스트형 `quality-review-evidence`가 형식 오류로 보고되거나 수용된다 | verify: human — 상류 반영 후 리스트형 카드의 validate 출력이 필드 부재가 아니다
+
+## Evidence
+
+ce-agent-kit `5d70c9d8`. 리스트형 필드는 `quality-review-evidence must be a single-line scalar`로 보고된다. `TestListFormReviewEvidenceNamesTheType`이 그 문장을 고정한다.
 
 ## Out of scope
 

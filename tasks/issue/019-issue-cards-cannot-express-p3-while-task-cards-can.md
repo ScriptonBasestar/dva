@@ -68,4 +68,4 @@ priority로 정렬한 큐가 실제 급함과 어긋난다. **잘못된 값이 �
 ## 후속 (2026-09-24)
 
 issue priority enum은 여전히 P0–P2다. 작업은
-[TASK-427](../todo/427-issue-priority-p3-or-documented-refusal.md)가 소유한다.
+[TASK-427](../review/427-issue-priority-p3-or-documented-refusal.md)가 소유한다.

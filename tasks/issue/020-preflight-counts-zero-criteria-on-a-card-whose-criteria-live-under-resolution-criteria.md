@@ -77,4 +77,4 @@ $ ce task validate tasks/done/002-…
 ## 후속 (2026-09-24)
 
 2026-09-24 preflight는 issue 존 카드를 `criteria: 0`으로 셌다. 작업은
-[TASK-428](../todo/428-count-resolution-criteria-in-preflight.md)가 소유한다.
+[TASK-428](../review/428-count-resolution-criteria-in-preflight.md)가 소유한다.

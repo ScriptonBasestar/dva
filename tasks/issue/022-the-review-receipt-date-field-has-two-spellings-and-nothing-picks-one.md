@@ -73,4 +73,4 @@ $ /usr/bin/grep -rhoE '^quality-review(ed-at|-date):' tasks/done | sort | uniq -
 ## 후속 (2026-09-24)
 
 날짜 필드 이름은 아직 스키마에 하나로 고정되지 않았다. 작업은
-[TASK-429](../todo/429-one-review-receipt-date-field.md)가 소유한다.
+[TASK-429](../review/429-one-review-receipt-date-field.md)가 소유한다.
