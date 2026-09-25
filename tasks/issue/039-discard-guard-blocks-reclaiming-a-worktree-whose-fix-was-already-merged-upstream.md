@@ -99,5 +99,16 @@ TD-71이 언급하는 "통합하지 않고 버리는 결정을 받아들일 채�
 ## 후속 (2026-09-24)
 
 워크트리 `claude__mbp__fix__task-407`은 2026-09-24에도 남아 있다. 사람 폐기는
-[TASK-436](../todo/436-reclaim-duplicate-task-407-worktree.md)가 소유한다.
+[TASK-436](../blocked/436-reclaim-duplicate-task-407-worktree.md)가 소유한다.
 훅 재설계는 그 카드 밖이다.
+
+## 2026-09-25 재확인
+
+현재 TASK-436 작업에서도 같은 ref를 확인했다. worktree는 clean, branch HEAD는
+`4ce30f26`, source `master`는 `a9d33977`이며 `master`는 해당 HEAD의 조상이 아니다.
+branch upstream은 설정되지 않았고 `git ls-remote --heads origin
+dev/claude/mbp/fix/task-407`는 결과가 없다. `ce task run-status task-407 --json`은
+ACTIVE·`finishReady: false`·`run-status/run-abort`만 허용한다고 보고한다. 유일한
+커밋은 AGENTS.md와 TASK-407 문서만 바꾸며 주요 설명은 source에 이미 반영됐지만,
+카드 상태 기록은 달라졌다. 그러므로 자동 abort/branch deletion은 실행하지 않고
+사람의 ref 처분 결정을 기다린다.

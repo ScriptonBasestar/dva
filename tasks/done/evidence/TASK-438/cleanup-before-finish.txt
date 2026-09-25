@@ -1,0 +1,13 @@
+## master...origin/master
+worktree /Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/cleanup/control
+HEAD 652c7f8973ab80168ea834dd34575d4625001c72
+branch refs/heads/master
+
+worktree /Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/cleanup/worktrees/task-438-cleanup/codex__e2e__test__cleanup
+HEAD 46d1071d4ca043531bce34f0e7bce19f5d9b3041
+branch refs/heads/dev/codex/e2e/test/cleanup
+
+46d1071d4ca043531bce34f0e7bce19f5d9b3041 refs/heads/dev/codex/e2e/test/cleanup
+652c7f8973ab80168ea834dd34575d4625001c72 refs/heads/master
+## dev/codex/e2e/test/cleanup...origin/dev/codex/e2e/test/cleanup
+46d1071d4ca043531bce34f0e7bce19f5d9b3041

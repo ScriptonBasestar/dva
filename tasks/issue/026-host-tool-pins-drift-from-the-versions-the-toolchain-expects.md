@@ -84,11 +84,19 @@ worktrunk 다음 버전 배포일에 모든 저장소의 작업이 하루 막힌
 
 ## Resolution Criteria
 
-- [ ] PATH의 golangci-lint가 mise가 고른 aqua 2.13.2와 일치한다 | verify: human — devenv 수정 후 `which -a golangci-lint`의 첫 줄이 aqua 경로인지 확인한다
-- [ ] mise의 worktrunk 핀이 exact 버전을 가리킨다 | verify: human — devenv 소스의 mise config에서 `"cargo:worktrunk"` 값이 `latest`가 아닌지 확인한다
+- [ ] 실행된 golangci-lint가 mise가 선택한 Aqua 2.13.2다 | verify: human — `mise which golangci-lint`가 Aqua 2.13.2를 가리키고 `golangci-lint --version`이 2.13.2인지 확인한다
+- [ ] worktrunk 0.74.0 핀이 live `~/devenv` 설치본에 반영된다 | verify: human — 설치본 mise config와 `mise which worktrunk`가 0.74.0을 가리키는지 확인한다
 
 ## 후속 (2026-09-24)
 
-2026-09-24에도 golangci-lint 2.12.2가 PATH 앞이고 worktrunk 핀은 `latest`다.
-사람 작업은 [TASK-431](../todo/431-align-host-golangci-and-worktrunk-pins.md)가 소유한다.
-설치된 `~/devenv`는 직접 고치지 않는다.
+2026-09-25 재측정에서 `which -a golangci-lint`의 첫 항목은 mise shim이다.
+`mise which golangci-lint`는 Aqua 2.13.2 바이너리를 가리키고 실행도 2.13.2를
+보고하므로, raw PATH 항목 순서는 실제 선택을 나타내지 않는다. worktrunk source pin은
+`ce-devenv@7273dd62`에서 0.74.0으로 수정·통합됐다.
+
+통합 뒤 지정 설치기 `make install`은 live
+`/Users/archmagece/devenv/config/docker/config.json`에 source에는 없는 로컬 Docker Hub
+자격 증명 항목이 있다고 보고 거부했다. force를 사용하면 그 drift를 덮어써 자격 증명을
+잃을 수 있으므로 설치를 멈췄다. source는 고쳤지만 live worktrunk config는 아직 그대로다.
+사람의 자격 증명 보존/처분 결정을 거쳐 설치를 끝내기 전까지 이 이슈는 열어 둔다.
+작업 기록은 [TASK-431](../blocked/431-align-host-golangci-and-worktrunk-pins.md)이다.

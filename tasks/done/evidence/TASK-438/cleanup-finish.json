@@ -1,0 +1,272 @@
+{
+  "schemaVersion": 1,
+  "status": "BLOCKED",
+  "task": "cleanup",
+  "allowedActions": null,
+  "reason": "integration succeeded but task recovery cleanup failed; post-operation evidence failed: task recovery is incomplete",
+  "nextAction": "resolve gz-git diagnostics and retry",
+  "finishReady": false,
+  "receipt": {
+    "task": "cleanup",
+    "operation": "finish",
+    "status": "BLOCKED",
+    "owner": {
+      "actor": "codex",
+      "host": "e2e",
+      "kind": "agent"
+    },
+    "branch": "dev/codex/e2e/test/cleanup",
+    "worktree": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/cleanup/worktrees/task-438-cleanup/codex__e2e__test__cleanup",
+    "reason": "integration succeeded but task recovery cleanup failed",
+    "createdAt": "2026-09-25T00:44:37.356733Z",
+    "sourceHead": "46d1071d4ca043531bce34f0e7bce19f5d9b3041",
+    "sourceHeadBefore": "652c7f8973ab80168ea834dd34575d4625001c72",
+    "baseHead": "652c7f8973ab80168ea834dd34575d4625001c72",
+    "taskHead": "46d1071d4ca043531bce34f0e7bce19f5d9b3041",
+    "sourcePushed": true,
+    "worktreeRemoved": false,
+    "localBranchRemoved": false,
+    "remoteBranchRemoved": false,
+    "tool_version": "unknown",
+    "tool_revision": "unknown",
+    "diagnostics": [
+      {
+        "command": "git",
+        "executable": "/usr/bin/git",
+        "args": [
+          "status",
+          "--porcelain"
+        ],
+        "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/cleanup/worktrees/task-438-cleanup/codex__e2e__test__cleanup",
+        "exitCode": 0
+      },
+      {
+        "command": "git",
+        "executable": "/usr/bin/git",
+        "args": [
+          "rev-parse",
+          "--abbrev-ref",
+          "--symbolic-full-name",
+          "@{u}"
+        ],
+        "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/cleanup/worktrees/task-438-cleanup/codex__e2e__test__cleanup",
+        "exitCode": 0,
+        "stdout": "origin/dev/codex/e2e/test/cleanup\n"
+      },
+      {
+        "command": "git",
+        "executable": "/usr/bin/git",
+        "args": [
+          "rev-list",
+          "--left-right",
+          "--count",
+          "@{u}...HEAD"
+        ],
+        "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/cleanup/worktrees/task-438-cleanup/codex__e2e__test__cleanup",
+        "exitCode": 0,
+        "stdout": "0\t0\n"
+      },
+      {
+        "command": "git",
+        "executable": "/usr/bin/git",
+        "args": [
+          "rev-parse",
+          "HEAD"
+        ],
+        "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/cleanup/worktrees/task-438-cleanup/codex__e2e__test__cleanup",
+        "exitCode": 0,
+        "stdout": "46d1071d4ca043531bce34f0e7bce19f5d9b3041\n"
+      },
+      {
+        "command": "git",
+        "executable": "/usr/bin/git",
+        "args": [
+          "rev-parse",
+          "master"
+        ],
+        "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/cleanup/control",
+        "exitCode": 0,
+        "stdout": "652c7f8973ab80168ea834dd34575d4625001c72\n"
+      },
+      {
+        "command": "git",
+        "executable": "/usr/bin/git",
+        "args": [
+          "merge-base",
+          "master",
+          "HEAD"
+        ],
+        "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/cleanup/worktrees/task-438-cleanup/codex__e2e__test__cleanup",
+        "exitCode": 0,
+        "stdout": "652c7f8973ab80168ea834dd34575d4625001c72\n"
+      },
+      {
+        "command": "gz-git",
+        "executable": "/Users/archmagece/go/bin/gz-git",
+        "args": [
+          "integrate",
+          "check"
+        ],
+        "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/cleanup/worktrees/task-438-cleanup/codex__e2e__test__cleanup",
+        "exitCode": 0,
+        "stdout": "integrate check: dev/codex/e2e/test/cleanup  (target=origin/master, default=origin/master, integration=master)\n\n  PASS  freshness — based on origin/master tip\n  PASS  merge-tree — no conflict with origin/master\n  PASS  cross-merge — no other open branches\n  PASS  working-tree — clean\n  PASS  push — pushed\n  PASS  readiness contract — fixture\n  INFO  readiness provenance — mode=contract-v1 source=46d1071d4ca043531bce34f0e7bce19f5d9b3041 target=652c7f8973ab80168ea834dd34575d4625001c72 ManifestPath=.gz-git.yaml ContractDigest=2625e7953b59fc7cd7236a9c3e001f35fc3653453f9bbefacdc1ecff47ad5f99 ManifestOID=feda50920abb22cc05a88aa02584cdcccf3822ff RunnerPath=.gz-git/readiness/check RunnerOID=0604dd61ea01e69345d01e15f19d4f07e93d11e0 ReadinessTreeOID=52dfc31a7c7fcca110c78f2f84dcef14f7bb6424 Status=ready Duration=157ms\n\nREADY to integrate into origin/master — 0 warning(s)\n"
+      },
+      {
+        "command": "gz-git",
+        "executable": "/Users/archmagece/go/bin/gz-git",
+        "args": [
+          "integrate",
+          "run"
+        ],
+        "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/cleanup/worktrees/task-438-cleanup/codex__e2e__test__cleanup",
+        "exitCode": 3,
+        "stdout": "integrate check: dev/codex/e2e/test/cleanup  (target=origin/master, default=origin/master, integration=master)\n\n  PASS  freshness — based on origin/master tip\n  PASS  merge-tree — no conflict with origin/master\n  PASS  cross-merge — no other open branches\n  PASS  working-tree — clean\n  PASS  push — pushed\n  PASS  readiness contract — fixture\n  INFO  readiness provenance — mode=contract-v1 source=46d1071d4ca043531bce34f0e7bce19f5d9b3041 target=652c7f8973ab80168ea834dd34575d4625001c72 ManifestPath=.gz-git.yaml ContractDigest=2625e7953b59fc7cd7236a9c3e001f35fc3653453f9bbefacdc1ecff47ad5f99 ManifestOID=feda50920abb22cc05a88aa02584cdcccf3822ff RunnerPath=.gz-git/readiness/check RunnerOID=0604dd61ea01e69345d01e15f19d4f07e93d11e0 ReadinessTreeOID=52dfc31a7c7fcca110c78f2f84dcef14f7bb6424 Status=ready Duration=161ms\n\nREADY to integrate into origin/master — 0 warning(s)\n\nINTEGRATED dev/codex/e2e/test/cleanup (46d1071d4ca043531bce34f0e7bce19f5d9b3041) -\u003e origin/master\nRECLAIM incomplete: worktree remove /Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/cleanup/worktrees/task-438-cleanup/codex__e2e__test__cleanup: error: failed to delete '/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/cleanup/worktrees/task-438-cleanup/codex__e2e__test__cleanup': Permission denied\n",
+        "stderr": "reclaim incomplete\n"
+      },
+      {
+        "command": "git",
+        "executable": "/usr/bin/git",
+        "args": [
+          "rev-parse",
+          "master"
+        ],
+        "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/cleanup/control",
+        "exitCode": 0,
+        "stdout": "46d1071d4ca043531bce34f0e7bce19f5d9b3041\n"
+      },
+      {
+        "command": "git",
+        "executable": "/usr/bin/git",
+        "args": [
+          "rev-list",
+          "--count",
+          "origin/master..master"
+        ],
+        "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/cleanup/control",
+        "exitCode": 0,
+        "stdout": "0\n"
+      },
+      {
+        "command": "git",
+        "executable": "/usr/bin/git",
+        "args": [
+          "show-ref",
+          "--verify",
+          "--quiet",
+          "refs/heads/dev/codex/e2e/test/cleanup"
+        ],
+        "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/cleanup/control",
+        "exitCode": 0
+      },
+      {
+        "command": "git",
+        "executable": "/usr/bin/git",
+        "args": [
+          "ls-remote",
+          "--exit-code",
+          "--heads",
+          "origin",
+          "dev/codex/e2e/test/cleanup"
+        ],
+        "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/cleanup/control",
+        "exitCode": 0,
+        "stdout": "46d1071d4ca043531bce34f0e7bce19f5d9b3041\trefs/heads/dev/codex/e2e/test/cleanup\n"
+      }
+    ]
+  },
+  "diagnostics": [
+    {
+      "command": "git",
+      "executable": "/usr/bin/git",
+      "args": [
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/cleanup/worktrees/task-438-cleanup/codex__e2e__test__cleanup",
+      "exitCode": 0
+    },
+    {
+      "command": "git",
+      "executable": "/usr/bin/git",
+      "args": [
+        "rev-parse",
+        "--abbrev-ref",
+        "--symbolic-full-name",
+        "@{u}"
+      ],
+      "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/cleanup/worktrees/task-438-cleanup/codex__e2e__test__cleanup",
+      "exitCode": 0,
+      "stdout": "origin/dev/codex/e2e/test/cleanup\n"
+    },
+    {
+      "command": "git",
+      "executable": "/usr/bin/git",
+      "args": [
+        "rev-list",
+        "--left-right",
+        "--count",
+        "@{u}...HEAD"
+      ],
+      "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/cleanup/worktrees/task-438-cleanup/codex__e2e__test__cleanup",
+      "exitCode": 0,
+      "stdout": "0\t0\n"
+    },
+    {
+      "command": "git",
+      "executable": "/usr/bin/git",
+      "args": [
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/cleanup/worktrees/task-438-cleanup/codex__e2e__test__cleanup",
+      "exitCode": 0,
+      "stdout": "46d1071d4ca043531bce34f0e7bce19f5d9b3041\n"
+    },
+    {
+      "command": "git",
+      "executable": "/usr/bin/git",
+      "args": [
+        "rev-parse",
+        "master"
+      ],
+      "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/cleanup/control",
+      "exitCode": 0,
+      "stdout": "652c7f8973ab80168ea834dd34575d4625001c72\n"
+    },
+    {
+      "command": "git",
+      "executable": "/usr/bin/git",
+      "args": [
+        "merge-base",
+        "master",
+        "HEAD"
+      ],
+      "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/cleanup/worktrees/task-438-cleanup/codex__e2e__test__cleanup",
+      "exitCode": 0,
+      "stdout": "652c7f8973ab80168ea834dd34575d4625001c72\n"
+    },
+    {
+      "command": "gz-git",
+      "executable": "/Users/archmagece/go/bin/gz-git",
+      "args": [
+        "integrate",
+        "check"
+      ],
+      "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/cleanup/worktrees/task-438-cleanup/codex__e2e__test__cleanup",
+      "exitCode": 0,
+      "stdout": "integrate check: dev/codex/e2e/test/cleanup  (target=origin/master, default=origin/master, integration=master)\n\n  PASS  freshness — based on origin/master tip\n  PASS  merge-tree — no conflict with origin/master\n  PASS  cross-merge — no other open branches\n  PASS  working-tree — clean\n  PASS  push — pushed\n  PASS  readiness contract — fixture\n  INFO  readiness provenance — mode=contract-v1 source=46d1071d4ca043531bce34f0e7bce19f5d9b3041 target=652c7f8973ab80168ea834dd34575d4625001c72 ManifestPath=.gz-git.yaml ContractDigest=2625e7953b59fc7cd7236a9c3e001f35fc3653453f9bbefacdc1ecff47ad5f99 ManifestOID=feda50920abb22cc05a88aa02584cdcccf3822ff RunnerPath=.gz-git/readiness/check RunnerOID=0604dd61ea01e69345d01e15f19d4f07e93d11e0 ReadinessTreeOID=52dfc31a7c7fcca110c78f2f84dcef14f7bb6424 Status=ready Duration=157ms\n\nREADY to integrate into origin/master — 0 warning(s)\n"
+    },
+    {
+      "command": "gz-git",
+      "executable": "/Users/archmagece/go/bin/gz-git",
+      "args": [
+        "integrate",
+        "run"
+      ],
+      "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/cleanup/worktrees/task-438-cleanup/codex__e2e__test__cleanup",
+      "exitCode": 3,
+      "stdout": "integrate check: dev/codex/e2e/test/cleanup  (target=origin/master, default=origin/master, integration=master)\n\n  PASS  freshness — based on origin/master tip\n  PASS  merge-tree — no conflict with origin/master\n  PASS  cross-merge — no other open branches\n  PASS  working-tree — clean\n  PASS  push — pushed\n  PASS  readiness contract — fixture\n  INFO  readiness provenance — mode=contract-v1 source=46d1071d4ca043531bce34f0e7bce19f5d9b3041 target=652c7f8973ab80168ea834dd34575d4625001c72 ManifestPath=.gz-git.yaml ContractDigest=2625e7953b59fc7cd7236a9c3e001f35fc3653453f9bbefacdc1ecff47ad5f99 ManifestOID=feda50920abb22cc05a88aa02584cdcccf3822ff RunnerPath=.gz-git/readiness/check RunnerOID=0604dd61ea01e69345d01e15f19d4f07e93d11e0 ReadinessTreeOID=52dfc31a7c7fcca110c78f2f84dcef14f7bb6424 Status=ready Duration=161ms\n\nREADY to integrate into origin/master — 0 warning(s)\n\nINTEGRATED dev/codex/e2e/test/cleanup (46d1071d4ca043531bce34f0e7bce19f5d9b3041) -\u003e origin/master\nRECLAIM incomplete: worktree remove /Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/cleanup/worktrees/task-438-cleanup/codex__e2e__test__cleanup: error: failed to delete '/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/cleanup/worktrees/task-438-cleanup/codex__e2e__test__cleanup': Permission denied\n",
+      "stderr": "reclaim incomplete\n"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 ---
 id: ISSUE-030
-title: "Gate verdicts carry no tool version stamp, so host disagreement is unrestorable"
+title: "Validate and review receipts still omit the tool version stamp"
 type: bug
 status: todo
 priority: P2
@@ -78,11 +78,11 @@ $ grep -n version internal/usecase/task/gate.go
 
 ## Resolution Criteria
 
-- [ ] gate/validate/run-finish 판정 산출물에 도구 버전 스탬프가 있다 | verify:
-      human — 상류 반영 후 이 저장소에서 `ce task gate` 출력과 신규 수신
-      JSON에 버전 필드가 실제로 나타나는지 확인한다
+- [x] gate JSON과 신규 run-finish 영수증에 같은 `tool_version`/`tool_revision`이 있다 | verify: human — [TASK-433](../done/433-stamp-tool-version-on-gate-verdicts.md)의 통합 커밋·테스트 및 `ce task gate --json` 출력을 확인
+- [ ] validate 판정과 리뷰 영수증도 생성 도구의 `tool_version`/`tool_revision`을 기록하고, 도구 버전 불일치를 재검증 대상으로 알린다 | verify: human — 상류 구현·회귀 테스트와 실제 validate/receipt JSON을 확인
 
-## 후속 (2026-09-24)
+## 후속 (2026-09-25)
 
-2026-09-24 gate JSON에는 도구 버전이 없다. 작업은
-[TASK-433](../review/433-stamp-tool-version-on-gate-verdicts.md)가 소유한다.
+[TASK-433](../done/433-stamp-tool-version-on-gate-verdicts.md)이 gate JSON과 신규
+run-finish 영수증을 닫았다. validate 판정과 리뷰 영수증의 도구 출처 및 버전
+불일치 진단은 여전히 열려 있다.

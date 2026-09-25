@@ -1,0 +1,5 @@
+worktree=/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/stale/worktrees/task-438-stale/codex__e2e__test__stale
+branch=dev/codex/e2e/test/stale
+task_head=6c31141485f8d1eeda077d279d1599471d69a076
+base_head=a0e3fa51a3bcd57695195a611c9bdd61e94c7b1a
+source_head=b6f4d8bbc0470322daeaff74d4618bb8b8369a4f

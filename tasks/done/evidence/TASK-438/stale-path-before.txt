@@ -1,0 +1,3 @@
+path=/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/stale/worktrees/task-438-stale/codex__e2e__test__stale
+test-e=true
+test-d=true

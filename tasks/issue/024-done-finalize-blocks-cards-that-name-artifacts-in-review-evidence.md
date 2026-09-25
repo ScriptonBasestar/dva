@@ -107,4 +107,18 @@ finalize 성공은 TASK-411 완료의 선행 조건이 아니다. 증거·참조
 ## 후속 (2026-09-24)
 
 우회 없이 남긴 상류 제한은
-[TASK-430](../todo/430-done-finalize-ignores-evidence-paths.md)가 소유한다.
+[TASK-430](../blocked/430-done-finalize-ignores-evidence-paths.md)가 소유한다.
+
+## 2026-09-25 후속 — canonical review receipt 보존 범위
+
+TASK-430의 독립 리뷰에서 새 경계가 확인됐다. `quality-review-evidence`의 경로 산문과
+`depends-on` 같은 카드 간 참조는 비소유로 다루는 것이 이 이슈의 해결 범위다.
+하지만 TASK-410의 `quality-review-receipt`는 Git 추적 canonical receipt 경로를
+명시적으로 가리키며, 현재 cleanup의 닫힌 소유 루트(`tasks/receipts/<ID>`,
+`docs/task-reviews/<ID>`)에는 `tasks/done/evidence/<ID>`가 없다. 이 경로는 여전히
+`ownership reconciliation`을 일으킬 수 있다.
+
+권장: 실제 TASK-410 dry-run으로 추가 blocker를 확인한 뒤, durable receipt를 cleanup이
+삭제할 산출물인지 보존되는 포인터인지 별도 계약으로 정한다. receipt를 prose로 재분류해
+검사를 우회하지 않는다. 이 결정 전까지 TASK-430은 blocked이며, 현재 구현은 별도
+worktree에 보존하고 상류 통합하지 않는다.

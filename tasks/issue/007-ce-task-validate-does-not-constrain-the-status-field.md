@@ -118,5 +118,7 @@ the safe state.
 
 ## 후속 (2026-09-24)
 
-로컬 sweep은 상류 검사가 보이기 전에 지우지 않는다. 그 순서는
-[TASK-424](../todo/424-validate-owns-zone-status.md)가 소유한다.
+상류 live-zone 검사는 `0f0a5f3c`에 들어갔지만 archive·누락 status·alias 차이가
+남아 [ISSUE-041](041-upstream-status-validator-contract-parity.md)에 기록했다.
+전체 parity가 확인될 때까지 로컬 sweep은 유지한다. 후속은
+[TASK-424](../blocked/424-validate-owns-zone-status.md)가 소유한다.

@@ -1,0 +1,30 @@
+TASK-425 stale-base `run-finish` reproduction
+Date: 2026-09-25
+
+CE source: ce-agent-kit@05b0b4ae3c18517df2d7635f3b185da4ee3d9baf
+Temporary binary build (DVA declares no CE fixture/build interaction):
+  go build -trimpath -buildvcs=true -o <temporary>/ce ./cmd/ce
+Fixture tools: wt 0.74.0; gz-git version 0.8.0
+
+Fixture procedure:
+1. Create a mktemp-contained bare origin, control checkout, and configured
+   `worktree-roots.e2e`; seed and push fixture `master`.
+2. Run `GIT_WORK_HOST=e2e CE_TASK_ACTOR=codex ce task run-start
+   task-425-stale-base --type fix --json`; commit and push the task branch.
+3. Advance and push only fixture `master`, leaving the task worktree unchanged.
+4. From the control checkout run `ce task run-finish task-425-stale-base --json`.
+
+Observed Git evidence:
+  fixture source head: c81d3cc5944c4f48c3ed2d77a2aded69d06b9fe6
+  fixture task head:   42b877cf8e1c260309200153f13ea35584cf3154
+  git merge-base --is-ancestor master HEAD exit: 1
+
+Observed finish result (process exit 1):
+  status: BLOCKED
+  receipt.status: BLOCKED
+  provider `gz-git integrate check` exit: 1
+  reason: task branch is based on a commit that is no longer the source tip
+  nextAction: rebase onto the source tip in the worktree, then retry run-finish
+
+The mktemp fixture, its bare remote, worktrees, and temporary CE binary were
+listed and removed after the capture.

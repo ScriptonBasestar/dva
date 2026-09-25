@@ -1,0 +1,4 @@
+worktree=/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/cleanup/worktrees/task-438-cleanup/codex__e2e__test__cleanup
+branch=dev/codex/e2e/test/cleanup
+task_head=46d1071d4ca043531bce34f0e7bce19f5d9b3041
+source_head=652c7f8973ab80168ea834dd34575d4625001c72

@@ -261,5 +261,35 @@ digest … ce-workbook/task_management still owns the legacy controller dialect"
 
 ## 후속 (2026-09-24)
 
-DVA에서 닫힌 기준은 그대로다. 남은 상류 계약은
-[TASK-420](../todo/420-legacy-done-review-receipts.md)가 소유한다.
+DVA에서 닫힌 기준은 그대로다. 남은 controller 통합 기준은 상류에 남는다.
+[TASK-420](../done/420-legacy-done-review-receipts.md)는 ce-agent-kit issuer/validator
+기준을 구현했고, 실제 ce-workbook controller run은 별도 증거가 필요하다.
+
+## TASK-420 독립 리뷰 (2026-09-25)
+
+첫 구현 `dd73a0a7`은 missing/prose/file 형태의 `quality-review-evidence`를
+발급기 테스트에서 바꾸지만, `quality-review-evidence`가 없는 done 카드는 CE
+validator가 계속 거부한다. 이 거부는 검토 근거 없이 승인 verdict를 통과시키지
+않기 위해 유지한다. 이번 기준의 세 legacy 형태는 `quality-review-evidence`가
+아니라 completion evidence 입력이다. 새 독립 리뷰가 실제 근거를 non-empty
+`quality-review-evidence`에 먼저 기록한 다음 receipt를 만들고, 그 receipt를
+done-card fixture에 연결해 validator까지 통과시키는 round-trip 테스트가 필요하다.
+
+`dd73a0a7`은 발급 CLI, digest 생성, 세 입력 형태별 JSON 출력까지 통과했지만
+위 round-trip이 없어 TASK-420 독립 리뷰는 FAIL이었다. 수정 범위는
+`[TASK-420](../done/420-legacy-done-review-receipts.md)`에 반영했다.
+
+## TASK-420 후속 결과 (2026-09-25)
+
+후속 commit `988e7de6319beaea2d8705448bce930f950756ed`는 legacy
+completion-evidence 입력 3형태(absent/prose/file-backed) 각각에서 fresh한
+non-empty `quality-review-evidence`를 먼저 기록하고 canonical receipt를 발급한 뒤,
+receipt와 verdict를 붙인 done-card fixture를 `NewValidator.Validate`까지 왕복시킨다.
+별도 negative fixture는 reviewer evidence가 없으면 validator가 계속 거부하는지 확인한다.
+독립 구현 리뷰는 **PASS**, exact commit의 full CI도 PASS했고, 커밋은 CE `master`에
+통합됐다.
+
+이 결과는 **ce-agent-kit issuer/validator 계약**을 닫지만 이 이슈 전체를 닫지는 않는다.
+ce-workbook controller가 이 발급 경로를 호출해 `TASK-312`를 새 리뷰로 마이그레이션한
+기록은 아직 없다. 따라서 Resolution Criteria 1·2는 유지한다. 특히 criterion 2의
+ce-workbook issuer 항목과 criterion 1의 실제 controller run이 남았다.

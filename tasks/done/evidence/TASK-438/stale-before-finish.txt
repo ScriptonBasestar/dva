@@ -1,0 +1,13 @@
+## master...origin/master
+worktree /Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/stale/control
+HEAD b6f4d8bbc0470322daeaff74d4618bb8b8369a4f
+branch refs/heads/master
+
+worktree /Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/stale/worktrees/task-438-stale/codex__e2e__test__stale
+HEAD 6c31141485f8d1eeda077d279d1599471d69a076
+branch refs/heads/dev/codex/e2e/test/stale
+
+6c31141485f8d1eeda077d279d1599471d69a076 refs/heads/dev/codex/e2e/test/stale
+b6f4d8bbc0470322daeaff74d4618bb8b8369a4f refs/heads/master
+## dev/codex/e2e/test/stale...origin/dev/codex/e2e/test/stale
+6c31141485f8d1eeda077d279d1599471d69a076

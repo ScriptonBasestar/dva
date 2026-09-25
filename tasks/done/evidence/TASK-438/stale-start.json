@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "status": "ACTIVE",
+  "task": "stale",
+  "allowedActions": [
+    "run-status"
+  ],
+  "reason": "task execution started",
+  "nextAction": "work in the task worktree; use run-status to evaluate finish readiness",
+  "finishReady": false,
+  "execution": {
+    "task": "stale",
+    "type": "test",
+    "source": "master",
+    "owner": {
+      "actor": "codex",
+      "host": "e2e",
+      "kind": "agent"
+    },
+    "branch": "dev/codex/e2e/test/stale",
+    "worktree": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/stale/worktrees/task-438-stale/codex__e2e__test__stale",
+    "startedAt": "2026-09-25T00:44:31.847519Z",
+    "updatedAt": "2026-09-25T00:44:31.847519Z"
+  },
+  "diagnostics": [
+    {
+      "command": "wt",
+      "executable": "/Users/archmagece/.local/share/mise/shims/wt",
+      "args": [
+        "--config-set",
+        "worktree-path = \"/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/stale/worktrees/task-438-stale/codex__e2e__test__stale\"",
+        "switch",
+        "--create",
+        "--base",
+        "master",
+        "--no-cd",
+        "--format=json",
+        "dev/codex/e2e/test/stale"
+      ],
+      "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/stale/control",
+      "exitCode": 0,
+      "stdout": "{\"action\":\"created\",\"branch\":\"dev/codex/e2e/test/stale\",\"path\":\"/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/stale/worktrees/task-438-stale/codex__e2e__test__stale\",\"created_branch\":true,\"base_branch\":\"master\"}\n",
+      "stderr": "✓ Created branch dev/codex/e2e/test/stale from master and worktree @ ~/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/stale/worktrees/task-438-stale/codex__e2e__test__stale\n"
+    },
+    {
+      "command": "wt",
+      "executable": "/Users/archmagece/.local/share/mise/shims/wt",
+      "args": [
+        "--config-set",
+        "list.json-schema = 2",
+        "list",
+        "--format=json"
+      ],
+      "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/stale/control",
+      "exitCode": 0,
+      "stdout": "{\n  \"schema\": 2,\n  \"repo\": {\n    \"default_branch\": \"master\"\n  },\n  \"collected\": {\n    \"ci\": false,\n    \"summary\": false\n  },\n  \"items\": [\n    {\n      \"branch\": \"master\",\n      \"head\": {\n        \"sha\": \"a0e3fa51a3bcd57695195a611c9bdd61e94c7b1a\",\n        \"short_sha\": \"a0e3fa5\",\n        \"subject\": \"test: seed task 438 fixture\",\n        \"committed_at\": \"2026-09-25T00:44:30Z\"\n      },\n      \"worktree\": {\n        \"path\": \"/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/stale/control\",\n        \"main\": true,\n        \"current\": true,\n        \"previous\": true,\n        \"detached\": false,\n        \"branch_mismatch\": false,\n        \"duplicate_branch\": false,\n        \"changes\": {\n          \"staged\": false,\n          \"modified\": false,\n          \"untracked\": false,\n          \"renamed\": false,\n          \"deleted\": false,\n          \"conflicted\": false,\n          \"diff\": {\n            \"added\": 0,\n            \"deleted\": 0\n          }\n        }\n      },\n      \"upstream\": {\n        \"remote\": \"origin\",\n        \"branch\": \"master\",\n        \"ahead\": 0,\n        \"behind\": 0\n      },\n      \"display\": {\n        \"state\": \"is_main\",\n        \"symbols\": \"^|\",\n        \"statusline\": \"master  \\u001b[2m^\\u001b[22m\\u001b[2m|\\u001b[22m\"\n      }\n    },\n    {\n      \"branch\": \"dev/codex/e2e/test/stale\",\n      \"head\": {\n        \"sha\": \"a0e3fa51a3bcd57695195a611c9bdd61e94c7b1a\",\n        \"short_sha\": \"a0e3fa5\",\n        \"subject\": \"test: seed task 438 fixture\",\n        \"committed_at\": \"2026-09-25T00:44:30Z\"\n      },\n      \"worktree\": {\n        \"path\": \"/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/stale/worktrees/task-438-stale/codex__e2e__test__stale\",\n        \"main\": false,\n        \"current\": false,\n        \"previous\": false,\n        \"detached\": false,\n        \"branch_mismatch\": true,\n        \"duplicate_branch\": false,\n        \"changes\": {\n          \"staged\": false,\n          \"modified\": false,\n          \"untracked\": false,\n          \"renamed\": false,\n          \"deleted\": false,\n          \"conflicted\": false,\n          \"diff\": {\n            \"added\": 0,\n            \"deleted\": 0\n          }\n        }\n      },\n      \"default_branch\": {\n        \"ahead\": 0,\n        \"behind\": 0,\n        \"diff\": {\n          \"added\": 0,\n          \"deleted\": 0\n        },\n        \"orphan\": false,\n        \"integration\": {\n          \"reason\": \"same_commit\"\n        },\n        \"merge_conflicts\": false\n      },\n      \"display\": {\n        \"state\": \"empty\",\n        \"symbols\": \"_⚑\",\n        \"statusline\": \"dev/codex/e2e/test/stale  \\u001b[33m\\u001b[2m⚑\\u001b[39m\\u001b[22m\\u001b[2m_\\u001b[22m\"\n      }\n    }\n  ]\n}\n"
+    }
+  ]
+}

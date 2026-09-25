@@ -1,0 +1,250 @@
+{
+  "schemaVersion": 1,
+  "status": "BLOCKED",
+  "task": "stale",
+  "allowedActions": null,
+  "reason": "task branch is based on a0e3fa51a3bcd57695195a611c9bdd61e94c7b1a, but the current source tip is b6f4d8bbc0470322daeaff74d4618bb8b8369a4f; the branch is based on a commit that is no longer the source tip",
+  "nextAction": "rebase onto the source tip in the worktree, then retry run-finish",
+  "finishReady": false,
+  "receipt": {
+    "task": "stale",
+    "operation": "finish",
+    "status": "BLOCKED",
+    "owner": {
+      "actor": "codex",
+      "host": "e2e",
+      "kind": "agent"
+    },
+    "branch": "dev/codex/e2e/test/stale",
+    "worktree": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/stale/worktrees/task-438-stale/codex__e2e__test__stale",
+    "reason": "task branch is based on a0e3fa51a3bcd57695195a611c9bdd61e94c7b1a, but the current source tip is b6f4d8bbc0470322daeaff74d4618bb8b8369a4f; the branch is based on a commit that is no longer the source tip",
+    "createdAt": "2026-09-25T00:44:33.480623Z",
+    "sourceHead": "b6f4d8bbc0470322daeaff74d4618bb8b8369a4f",
+    "sourceHeadBefore": "b6f4d8bbc0470322daeaff74d4618bb8b8369a4f",
+    "baseHead": "a0e3fa51a3bcd57695195a611c9bdd61e94c7b1a",
+    "taskHead": "6c31141485f8d1eeda077d279d1599471d69a076",
+    "sourcePushed": true,
+    "worktreeRemoved": false,
+    "localBranchRemoved": false,
+    "remoteBranchRemoved": false,
+    "tool_version": "unknown",
+    "tool_revision": "unknown",
+    "diagnostics": [
+      {
+        "command": "git",
+        "executable": "/usr/bin/git",
+        "args": [
+          "status",
+          "--porcelain"
+        ],
+        "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/stale/worktrees/task-438-stale/codex__e2e__test__stale",
+        "exitCode": 0
+      },
+      {
+        "command": "git",
+        "executable": "/usr/bin/git",
+        "args": [
+          "rev-parse",
+          "--abbrev-ref",
+          "--symbolic-full-name",
+          "@{u}"
+        ],
+        "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/stale/worktrees/task-438-stale/codex__e2e__test__stale",
+        "exitCode": 0,
+        "stdout": "origin/dev/codex/e2e/test/stale\n"
+      },
+      {
+        "command": "git",
+        "executable": "/usr/bin/git",
+        "args": [
+          "rev-list",
+          "--left-right",
+          "--count",
+          "@{u}...HEAD"
+        ],
+        "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/stale/worktrees/task-438-stale/codex__e2e__test__stale",
+        "exitCode": 0,
+        "stdout": "0\t0\n"
+      },
+      {
+        "command": "git",
+        "executable": "/usr/bin/git",
+        "args": [
+          "rev-parse",
+          "HEAD"
+        ],
+        "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/stale/worktrees/task-438-stale/codex__e2e__test__stale",
+        "exitCode": 0,
+        "stdout": "6c31141485f8d1eeda077d279d1599471d69a076\n"
+      },
+      {
+        "command": "git",
+        "executable": "/usr/bin/git",
+        "args": [
+          "rev-parse",
+          "master"
+        ],
+        "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/stale/control",
+        "exitCode": 0,
+        "stdout": "b6f4d8bbc0470322daeaff74d4618bb8b8369a4f\n"
+      },
+      {
+        "command": "git",
+        "executable": "/usr/bin/git",
+        "args": [
+          "merge-base",
+          "master",
+          "HEAD"
+        ],
+        "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/stale/worktrees/task-438-stale/codex__e2e__test__stale",
+        "exitCode": 0,
+        "stdout": "a0e3fa51a3bcd57695195a611c9bdd61e94c7b1a\n"
+      },
+      {
+        "command": "gz-git",
+        "executable": "/Users/archmagece/go/bin/gz-git",
+        "args": [
+          "integrate",
+          "check"
+        ],
+        "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/stale/worktrees/task-438-stale/codex__e2e__test__stale",
+        "exitCode": 1,
+        "stdout": "integrate check: dev/codex/e2e/test/stale  (target=origin/master, default=origin/master, integration=master)\n\n  FAIL  freshness — 1 commits behind origin/master — git rebase origin/master\n  PASS  merge-tree — no conflict with origin/master\n  PASS  cross-merge — no other open branches\n  PASS  working-tree — clean\n  PASS  push — pushed\n  PASS  readiness contract — fixture\n  INFO  readiness provenance — mode=contract-v1 source=6c31141485f8d1eeda077d279d1599471d69a076 target=b6f4d8bbc0470322daeaff74d4618bb8b8369a4f ManifestPath=.gz-git.yaml ContractDigest=2625e7953b59fc7cd7236a9c3e001f35fc3653453f9bbefacdc1ecff47ad5f99 ManifestOID=feda50920abb22cc05a88aa02584cdcccf3822ff RunnerPath=.gz-git/readiness/check RunnerOID=0604dd61ea01e69345d01e15f19d4f07e93d11e0 ReadinessTreeOID=52dfc31a7c7fcca110c78f2f84dcef14f7bb6424 Status=ready Duration=167ms\n\nNOT READY — 1 failure(s), 0 warning(s)\n",
+        "stderr": "not ready\n"
+      },
+      {
+        "command": "git",
+        "executable": "/usr/bin/git",
+        "args": [
+          "rev-parse",
+          "master"
+        ],
+        "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/stale/control",
+        "exitCode": 0,
+        "stdout": "b6f4d8bbc0470322daeaff74d4618bb8b8369a4f\n"
+      },
+      {
+        "command": "git",
+        "executable": "/usr/bin/git",
+        "args": [
+          "rev-list",
+          "--count",
+          "origin/master..master"
+        ],
+        "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/stale/control",
+        "exitCode": 0,
+        "stdout": "0\n"
+      },
+      {
+        "command": "git",
+        "executable": "/usr/bin/git",
+        "args": [
+          "show-ref",
+          "--verify",
+          "--quiet",
+          "refs/heads/dev/codex/e2e/test/stale"
+        ],
+        "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/stale/control",
+        "exitCode": 0
+      },
+      {
+        "command": "git",
+        "executable": "/usr/bin/git",
+        "args": [
+          "ls-remote",
+          "--exit-code",
+          "--heads",
+          "origin",
+          "dev/codex/e2e/test/stale"
+        ],
+        "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/stale/control",
+        "exitCode": 0,
+        "stdout": "6c31141485f8d1eeda077d279d1599471d69a076\trefs/heads/dev/codex/e2e/test/stale\n"
+      }
+    ]
+  },
+  "diagnostics": [
+    {
+      "command": "git",
+      "executable": "/usr/bin/git",
+      "args": [
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/stale/worktrees/task-438-stale/codex__e2e__test__stale",
+      "exitCode": 0
+    },
+    {
+      "command": "git",
+      "executable": "/usr/bin/git",
+      "args": [
+        "rev-parse",
+        "--abbrev-ref",
+        "--symbolic-full-name",
+        "@{u}"
+      ],
+      "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/stale/worktrees/task-438-stale/codex__e2e__test__stale",
+      "exitCode": 0,
+      "stdout": "origin/dev/codex/e2e/test/stale\n"
+    },
+    {
+      "command": "git",
+      "executable": "/usr/bin/git",
+      "args": [
+        "rev-list",
+        "--left-right",
+        "--count",
+        "@{u}...HEAD"
+      ],
+      "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/stale/worktrees/task-438-stale/codex__e2e__test__stale",
+      "exitCode": 0,
+      "stdout": "0\t0\n"
+    },
+    {
+      "command": "git",
+      "executable": "/usr/bin/git",
+      "args": [
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/stale/worktrees/task-438-stale/codex__e2e__test__stale",
+      "exitCode": 0,
+      "stdout": "6c31141485f8d1eeda077d279d1599471d69a076\n"
+    },
+    {
+      "command": "git",
+      "executable": "/usr/bin/git",
+      "args": [
+        "rev-parse",
+        "master"
+      ],
+      "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/stale/control",
+      "exitCode": 0,
+      "stdout": "b6f4d8bbc0470322daeaff74d4618bb8b8369a4f\n"
+    },
+    {
+      "command": "git",
+      "executable": "/usr/bin/git",
+      "args": [
+        "merge-base",
+        "master",
+        "HEAD"
+      ],
+      "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/stale/worktrees/task-438-stale/codex__e2e__test__stale",
+      "exitCode": 0,
+      "stdout": "a0e3fa51a3bcd57695195a611c9bdd61e94c7b1a\n"
+    },
+    {
+      "command": "gz-git",
+      "executable": "/Users/archmagece/go/bin/gz-git",
+      "args": [
+        "integrate",
+        "check"
+      ],
+      "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/stale/worktrees/task-438-stale/codex__e2e__test__stale",
+      "exitCode": 1,
+      "stdout": "integrate check: dev/codex/e2e/test/stale  (target=origin/master, default=origin/master, integration=master)\n\n  FAIL  freshness — 1 commits behind origin/master — git rebase origin/master\n  PASS  merge-tree — no conflict with origin/master\n  PASS  cross-merge — no other open branches\n  PASS  working-tree — clean\n  PASS  push — pushed\n  PASS  readiness contract — fixture\n  INFO  readiness provenance — mode=contract-v1 source=6c31141485f8d1eeda077d279d1599471d69a076 target=b6f4d8bbc0470322daeaff74d4618bb8b8369a4f ManifestPath=.gz-git.yaml ContractDigest=2625e7953b59fc7cd7236a9c3e001f35fc3653453f9bbefacdc1ecff47ad5f99 ManifestOID=feda50920abb22cc05a88aa02584cdcccf3822ff RunnerPath=.gz-git/readiness/check RunnerOID=0604dd61ea01e69345d01e15f19d4f07e93d11e0 ReadinessTreeOID=52dfc31a7c7fcca110c78f2f84dcef14f7bb6424 Status=ready Duration=167ms\n\nNOT READY — 1 failure(s), 0 warning(s)\n",
+      "stderr": "not ready\n"
+    }
+  ]
+}

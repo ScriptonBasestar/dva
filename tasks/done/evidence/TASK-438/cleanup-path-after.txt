@@ -1,0 +1,3 @@
+path=/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__upstream-followup-wave/tmp/task-438-runtime-evidence/fixture-root/cleanup/worktrees/task-438-cleanup/codex__e2e__test__cleanup
+test-e=true
+test-d=true
