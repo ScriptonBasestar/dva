@@ -34,13 +34,11 @@ import (
 //
 // The inventory (inventory.go:82-85) merges tracked files with untracked non-ignored ones, so
 // an unstaged scratch copy of a card fails the gate repo-wide with no waiver path. That reach
-// is inherited, not new — checkCardStatus already fails on an untracked malformed card through
-// the same inventory — and it is kept deliberately: a duplicate that only appears once staged
-// is a duplicate someone has already started building on.
+// is deliberate: a duplicate that only appears once staged is a duplicate someone has already
+// started building on.
 //
-// Only files under a declared card zone are considered, and tasks/plan/ is excluded, matching
-// checkCardStatus. Cards whose frontmatter declares no id are skipped: a missing id: is not a
-// duplicate, and the zone sweep already has its own opinion about malformed frontmatter.
+// Only files under a declared card zone are considered, and tasks/plan/ is excluded. Cards whose
+// frontmatter declares no id are skipped: a missing id: is not a duplicate.
 func checkDuplicateCardIDs(root string, inv []InventoryEntry) (idsSeen, duplicates int, msgs, errs []string) {
 	paths := map[string][]string{}
 	for _, e := range inv {

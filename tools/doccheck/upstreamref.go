@@ -98,9 +98,9 @@ type upstreamRefCounts struct {
 // checkUpstreamRefs counts issue cards by ownership classification and report trail.
 //
 // Seen counts every non-symlink markdown file under tasks/issue/; Read counts those whose body
-// was read (frontmatter state included). The pair carries the same "walk broke, not clean"
-// distinction checkCardStatus draws: Seen>0 with Read==0 means the sweep stopped reaching the
-// zone, an error rather than a clean zero.
+// was read (frontmatter state included). The pair carries the "walk broke, not clean"
+// distinction: Seen>0 with Read==0 means the sweep stopped reaching the zone, an error rather
+// than a clean zero.
 //
 // Classifying is not optional, and that was the load-bearing asymmetry while the stage lasted.
 // If a card could stay unclassified at no cost, nobody would ever write `upstream` and Unrefed

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"reflect"
 	"strings"
 	"testing"
 )
@@ -11,8 +10,7 @@ import (
 // it decides whether a path is "the archive", or the checker regresses to recognising only
 // whichever spelling it hardcodes and silently stops covering cards under the other one. It
 // exercises the real classification functions directly (isArchivePath, resolveCardZone) and the
-// two call sites that consume them (checkArchiveFrontmatter via archiveFixture,
-// checkCardStatus via cardFixture) rather than re-implementing their logic here.
+// archive-frontmatter consumer. CE's selected strict dialect owns status validation.
 func TestArchiveSpelling(t *testing.T) {
 	const (
 		legacyPath    = "tasks/archive/001-x.md"
@@ -66,7 +64,7 @@ func TestArchiveSpelling(t *testing.T) {
 		}
 	})
 
-	t.Run("cardstatus.go: resolveCardZone resolves both spellings to the same permitted set", func(t *testing.T) {
+	t.Run("cardstatus.go: resolveCardZone covers both spellings for identity checks", func(t *testing.T) {
 		legacyZone, ok := resolveCardZone(legacyPath)
 		if !ok {
 			t.Fatalf("resolveCardZone(%q) resolved to no zone", legacyPath)
@@ -75,39 +73,8 @@ func TestArchiveSpelling(t *testing.T) {
 		if !ok {
 			t.Fatalf("resolveCardZone(%q) resolved to no zone", canonicalPath)
 		}
-		if legacyZone.skip != canonicalZone.skip {
-			t.Errorf("skip differs: %s=%v %s=%v", legacyPath, legacyZone.skip, canonicalPath, canonicalZone.skip)
-		}
-		if !reflect.DeepEqual(legacyZone.permitted, canonicalZone.permitted) {
-			t.Errorf("permitted differs: %s=%v %s=%v", legacyPath, legacyZone.permitted, canonicalPath, canonicalZone.permitted)
-		}
-	})
-
-	t.Run("cardstatus.go: checkCardStatus judges both spellings identically", func(t *testing.T) {
-		// status: superseded is permitted only in an archive zone (see archiveCardStatuses).
-		// Both spellings must accept it.
-		resOK := cardFixture(t,
-			archiveCard{path: legacyPath, body: "---\nid: TASK-001\nstatus: superseded\n---\n\n# Body\n"},
-			archiveCard{path: canonicalPath, body: "---\nid: TASK-002\nstatus: superseded\n---\n\n# Body\n"},
-		)
-		if resOK.StatusMismatches != 0 {
-			t.Fatalf("StatusMismatches = %d, want 0 — status: superseded is valid under either archive spelling: %v",
-				resOK.StatusMismatches, resOK.CardStatusDetail)
-		}
-
-		// An impermissible status must be rejected identically under either spelling.
-		resBad := cardFixture(t,
-			archiveCard{path: legacyPath, body: "---\nid: TASK-001\nstatus: bogus\n---\n\n# Body\n"},
-			archiveCard{path: canonicalPath, body: "---\nid: TASK-002\nstatus: bogus\n---\n\n# Body\n"},
-		)
-		if resBad.StatusMismatches != 2 {
-			t.Fatalf("StatusMismatches = %d, want 2 — status: bogus is invalid under either archive spelling: %v",
-				resBad.StatusMismatches, resBad.CardStatusDetail)
-		}
-		for _, path := range []string{legacyPath, canonicalPath} {
-			if !containsAny(resBad.CardStatusDetail, strings.ToLower(path+": zone")) {
-				t.Errorf("CardStatusDetail = %v, want an entry for %s", resBad.CardStatusDetail, path)
-			}
+		if legacyZone.skip || canonicalZone.skip {
+			t.Errorf("archive zones must remain eligible for identity checks: %s=%v %s=%v", legacyPath, legacyZone.skip, canonicalPath, canonicalZone.skip)
 		}
 	})
 }

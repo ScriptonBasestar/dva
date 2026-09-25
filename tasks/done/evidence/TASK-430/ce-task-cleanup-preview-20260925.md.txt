@@ -1,0 +1,50 @@
+# TASK-430 shared cleanup preview evidence — 2026-09-25
+
+## Execution context
+
+- Working directory: clean DVA source checkout `/Users/archmagece/mywork/scripton/dva`.
+- Cleanup binary: `/Users/archmagece/mywork/ce/ce-agent-kit/build/ce`.
+- Binary version: ce-agent-kit 0.8.4, build `359-g1e408857`, commit
+  `1e40885766e480ea9aac194b15976c7b71d6d5cd`, `Dirty: false`.
+- Both commands were preview-only: no `--apply` flag was passed.
+- A script compared `git status --porcelain` before and after both commands. Both were empty
+  and identical; the script exited 0 with `git status before/after identical (clean)`.
+
+## Original ISSUE-024 repro cards
+
+Exact command:
+
+```text
+/Users/archmagece/mywork/ce/ce-agent-kit/build/ce task cleanup tasks/_archive/2026-09/391-stop-planprogress-from-pairing-any-korean-counter-with-an-enumeration.md tasks/_archive/2026-09/393-review-the-eight-done-cards-that-entered-after-the-review-rule.md tasks/_archive/2026-09/394-preserve-the-run-after-a-malformed-range-and-pin-the-wikilink-gap.md
+```
+
+Exit: `0`.
+
+```text
+Preview finalized-card cleanup against local source master:
+  WOULD REMOVE tasks/_archive/2026-09/391-stop-planprogress-from-pairing-any-korean-counter-with-an-enumeration.md
+  WOULD REMOVE tasks/_archive/2026-09/393-review-the-eight-done-cards-that-entered-after-the-review-rule.md
+  WOULD REMOVE tasks/_archive/2026-09/394-preserve-the-run-after-a-malformed-range-and-pin-the-wikilink-gap.md
+No files changed; rerun with --apply and explicit IDs/paths (or --all) to remove selected cards.
+3 removable finalized card group(s).
+```
+
+## TASK-410 follow-up preview
+
+Exact command:
+
+```text
+/Users/archmagece/mywork/ce/ce-agent-kit/build/ce task cleanup tasks/_archive/2026-09/410-repository-tooling-hardcodes-the-legacy-archive-spelling-and-cannot-see-archive.md
+```
+
+Exit: `0`.
+
+```text
+Preview finalized-card cleanup against local source master:
+  WOULD REMOVE tasks/_archive/2026-09/410-repository-tooling-hardcodes-the-legacy-archive-spelling-and-cannot-see-archive.md
+No files changed; rerun with --apply and explicit IDs/paths (or --all) to remove selected cards.
+1 removable finalized card group(s).
+```
+
+Neither output contains `ownership reconciliation`; all four selected cards are removable,
+and the preview left the source worktree unchanged. No card was applied or deleted.

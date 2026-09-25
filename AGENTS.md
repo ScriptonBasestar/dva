@@ -223,16 +223,14 @@ literally that suggestion fails the rule above, because both tools are named bar
 form satisfying both exists; only the advice is one edit short, so write the prefixed form
 directly instead of discovering it at the second gate.
 
-**`ce task move` does not write the frontmatter `status:` field (ISSUE-013).** It relocates
-the card and syncs a **body** `**Status**` table cell when one exists — printing
-"(no Status cell found to sync)" when none does — but the frontmatter key keeps its old
-value. A card can therefore sit in `tasks/done/` with `status: todo`. Neither
-`ce task validate --all` nor `ce task gate` objects: both report the board READY. The only
-check that catches it is `make doc-check`, as
-`STATUS  <path>: zone tasks/done/ permits status: done, found "todo"`. So after every
-`ce task move`, edit the frontmatter yourself and run `make doc-check` — not just the board
-gate — before committing a zone change. This was measured the hard way on 2026-09-14, with
-the issue already open on the board and nothing surfacing it at the moment of use.
+**ISSUE-013 was fixed upstream, but an installed `ce` may predate the fix.** Commit
+`8f2ed451` makes current CE source write frontmatter `status:` during `move`, `resolve`,
+and `archive`. This workstation's installed binary may lag that source: an older binary
+can move a card and sync a body `**Status**` cell without updating frontmatter, and the
+board validator may still report READY. After `ce task move`, verify the frontmatter
+matches the destination; correct it manually only if stale, then run `make doc-check`
+before committing a zone change. This keeps the 2026-09-14 ISSUE-013 observation useful
+for older installed versions without describing it as current source behavior.
 
 ## Flow decision-path gate (flowcheck)
 
@@ -334,7 +332,11 @@ isolation cannot prevent:
   and reports duplicates — exit code 0 = IDs are unique across all state directories.
   This detector, run after the fact, is the actual guard against a collision, not the
   `max+1` rule above; treat any `DUP-ID` finding as expected fallout of parallel
-  allocation, to be resolved via the rename procedure below, not as a process failure.
+  allocation, to be resolved via the linked correction procedure, not as a process failure.
+- If `make doc-check` reports `DUP-ID`, follow
+  [docs/407-correction-procedure.md](docs/407-correction-procedure.md) to select the
+  renamable card and sweep its old-ID references instead of introducing a new
+  allocation scheme.
 
 This rule is enforced by `make doc-check` (TASK-090) and `ce task validate` (TASK-221),
 which both use `/usr/bin/grep` and `/usr/bin/find` with absolute paths so the recorded

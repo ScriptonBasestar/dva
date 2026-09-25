@@ -54,9 +54,6 @@ type Result struct {
 	ArchiveFilesSeen       int
 	ArchiveCards           int
 	ArchiveMissing         int
-	CardsSeen              int
-	CardsChecked           int
-	StatusMismatches       int
 	BoardDirsSeen          int
 	UndeclaredBoardDirs    int
 	// Issue-card ownership (TASK-395, re-based on frontmatter by TASK-398). Every meter below
@@ -85,7 +82,6 @@ type Result struct {
 	UnmatchedRunDetail       []string
 	PortabilityDetail        []string
 	ArchiveDetail            []string
-	CardStatusDetail         []string
 	UpstreamDetail           []string
 	DuplicateIDDetail        []string
 	DuplicateFilenameDetail  []string
@@ -273,13 +269,6 @@ func Check(in CheckInput) Result {
 	res.ArchiveDetail = archiveMsgs
 	res.Errors = append(res.Errors, archiveErrs...)
 
-	cardsSeen, checked, mismatches, statusMsgs, statusErrs := checkCardStatus(in.Root, in.Inventory)
-	res.CardsSeen = cardsSeen
-	res.CardsChecked = checked
-	res.StatusMismatches = mismatches
-	res.CardStatusDetail = statusMsgs
-	res.Errors = append(res.Errors, statusErrs...)
-
 	boardDirsSeen, undeclaredDirs, undeclaredMsgs := checkUndeclaredBoardDirectories(in.Inventory)
 	res.BoardDirsSeen = boardDirsSeen
 	res.UndeclaredBoardDirs = undeclaredDirs
@@ -317,10 +306,9 @@ func Check(in CheckInput) Result {
 	// Promoting costs nothing once the count is clear and locks the property in: a new
 	// upstream-owned card now cannot reach master without naming where it was reported.
 	//
-	// The old advisory's one hard edge, still load-bearing: a zone the sweep saw but read nothing from is a broken walk,
-	// the same seen/checked split checkCardStatus guards. Every countable outcome above is fine at
-	// zero; this one is not, because it means the meter stopped looking, not that it looked and
-	// found nothing.
+	// The old advisory's one hard edge, still load-bearing: a zone the sweep saw but read nothing
+	// from is a broken walk. Every countable outcome above is fine at zero; this one is not,
+	// because it means the meter stopped looking, not that it looked and found nothing.
 	//
 	// Its limit, measured rather than assumed: this guard needs Seen>0, so a sweep that misses the
 	// zone entirely (a wrong issueZonePrefix) reports issue_cards: 0 and exits 0 here. It cannot be
@@ -400,19 +388,8 @@ func Check(in CheckInput) Result {
 	if res.ArchiveMissing > 0 {
 		res.Errors = append(res.Errors, fmt.Sprintf("%d archived card(s) rejected by the archive frontmatter guard", res.ArchiveMissing))
 	}
-	// Files resolved to a card zone but none read as a card means the sweep stopped reaching
-	// them — the same "walk broke, not clean" distinction ArchiveFilesSeen/ArchiveCards draws
-	// above. Gated on CardsSeen, unlike "zero links checked": a tree with no tasks/ directory at
-	// all (any fixture built by this package's other tests) is a legitimate state (TASK-287).
-	if res.CardsSeen > 0 && res.CardsChecked == 0 {
-		res.Errors = append(res.Errors, fmt.Sprintf("vacuous: %d file(s) resolved to a task-card zone, zero read as cards", res.CardsSeen))
-	}
-	if res.StatusMismatches > 0 {
-		res.Errors = append(res.Errors, fmt.Sprintf("%d task card(s) with status: not permitted in their zone", res.StatusMismatches))
-	}
-	// An undeclared tasks/*/ directory is invisible to checkCardStatus, checkDuplicateCardIDs and
-	// checkDuplicateFilenameNumbers alike — the exact silent gap tasks/review/ and tasks/backlog/
-	// sat in until TASK-414 measured a duplicate id crossing review/ and todo/ live.
+	// An undeclared tasks/*/ directory is invisible to the duplicate-card-id and
+	// duplicate-filename-number checks alike. The status contract belongs to CE's strict dialect.
 	if res.UndeclaredBoardDirs > 0 {
 		res.Errors = append(res.Errors, fmt.Sprintf("%d undeclared tasks/*/ directory(ies) — not covered by any zone-gated check", res.UndeclaredBoardDirs))
 	}

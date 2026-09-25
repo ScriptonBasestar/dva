@@ -17,9 +17,10 @@ of the two cards following this procedure.
 
 1. Rename the file `tasks/<state>/NNN-<slug>.md` to the new number and update
    its frontmatter `id:` to match.
-2. After any `ce task move`, sync the frontmatter `status:` field by hand —
-   the mover relocates the file but does not write frontmatter (ISSUE-013) —
-   then run `make doc-check`, which enforces zone/status agreement.
+2. After any `ce task move`, verify that frontmatter `status:` matches the
+   destination. CE source at `8f2ed451` and later writes it automatically; an older
+   installed binary may leave it stale, in which case correct it by hand. Then run
+   `make doc-check`, which enforces zone/status agreement.
 3. Commit only the renamed card path plus this procedure doc when it changes;
    never bundle unrelated cards into the same commit.
 

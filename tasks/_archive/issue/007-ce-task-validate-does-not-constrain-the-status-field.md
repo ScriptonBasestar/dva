@@ -2,7 +2,7 @@
 id: ISSUE-007
 title: "ce task validate does not constrain the status field"
 type: bug
-status: todo
+status: done
 priority: P2
 effort: S
 exec-tier: standard
@@ -12,24 +12,24 @@ discovered-at: 2026-09-13
 ownership: split
 created: 2026-09-13
 upstream-ref: "ce-agent-kit#3"
+resolution: fixed
+resolved-at: 2026-09-25T04:45:47Z
+resolution-summary: "Resolved as fixed by TASK-424."
 ---
 
 ## Summary
 
-`ce task validate` accepts any value in a card's `status` field — a value from
-no vocabulary, or no value at all — and never compares it to the zone the card
+The CE default dialect accepts any value in a card's `status` field — a value from
+no vocabulary, or no value at all — and does not compare it to the zone the card
 sits in. A card in `tasks/done/` may claim `status: todo` and validate clean.
 
-DVA is not currently exposed to that, because it carries its own gate:
-`tools/doccheck`'s `checkCardStatus` holds the zone table TASK-287 froze
-(`tasks/done/` → `done`, `tasks/todo/` and `tasks/issue/` → `todo`,
-`tasks/archive/` → `done|superseded`) and fails the build on a mismatch. That
-local gate is what caught ISSUE-003's stale `todo` on 2026-09-13, three days
-after the field went wrong. `ce task validate` had reported the same card
-`✅ Valid` throughout.
+DVA used to avoid the gap through `tools/doccheck`'s copied `checkCardStatus` zone table,
+which caught ISSUE-003's stale `todo` on 2026-09-13 while `ce task validate` reported the card
+valid. TASK-424 has now selected CE's strict repository dialect, verified its status contract,
+and removed that local copy.
 
-The defect is therefore not that DVA is unprotected. It is that the protection
-lives in the wrong repository. `tools/doccheck`'s status sweep is a
+At discovery, the defect was not that DVA was unprotected. It was that the protection
+lived in the wrong repository. `tools/doccheck`'s status sweep is a
 repository-local copy of a board judgement the shared gate should own — the
 exact duplication that drifts the moment one copy is fixed, and the reason the
 shared `ce task gate` exists.
@@ -53,10 +53,13 @@ Observed 2026-09-13. Both files were restored.
 
 ## Expected vs Actual
 
-- Expected: the shared validator draws `status` from a declared vocabulary and
-  rejects a value its zone refutes, so a repository does not need its own copy.
-- Actual: every value passes the shared validator; only DVA's local doccheck
-  sweep dissents.
+- Expected: CE's default dialect keeps existing repository compatibility; a repository that
+  opts into strict mode gets zone/status validation from the shared validator and does not need
+  a local copy.
+- Actual at discovery (2026-09-13): every value passed the default validator; only DVA's local
+  doccheck sweep dissented. CE now provides an opt-in strict dialect. In strict mode the
+  resolver's canonical `issue/ + status: done + resolution:` output is allowed; the old DVA
+  copy did not model that terminal exception, as recorded in TASK-424 evidence.
 
 ## Impact
 
@@ -78,19 +81,19 @@ field nor the transition that would keep it honest.
 
 ## Recommended Resolution
 
-Move the zone/status constraint into `ce task validate`, then delete
-`tools/doccheck`'s `checkCardStatus` sweep and its zone table rather than
-keeping both. Two gates agreeing is not redundancy here — it is the drift
-surface.
+The selected resolution is an opt-in strict dialect in `ce task validate`, preserving
+CE's default compatibility while allowing repositories to delegate the board status rule
+to the shared validator. DVA selected strict mode, removed `checkCardStatus`, and retained
+identity and duplicate-ID/filename checks in `tools/doccheck`.
 
 If upstream instead concludes that zone is authoritative and `status` is a
 redundant copy with no reader, removing the field from the schema closes this
 just as well. What cannot stand is an unvalidated field that each repository
 polices on its own.
 
-Sequencing matters: DVA must not delete its local sweep before the shared one
-lands and is observed rejecting the same inputs. Until then the duplication is
-the safe state.
+Sequencing mattered: DVA kept its local sweep until CE strict mode, producer round-trips,
+paired fixtures, whole-board validation, and independent TASK-424 review passed. The selected
+resolver terminal-issue exception is documented in TASK-424 evidence.
 
 ## 소유권 — 갈린다 (2026-09-15 명시)
 
@@ -112,13 +115,14 @@ the safe state.
 
 ## Resolution Criteria
 
-- [ ] `ce task validate` rejects a status value outside the declared vocabulary and one its zone refutes | verify: human — upstream tests cover an unknown value, an empty value, and a zone mismatch
-- [ ] The shared validator rejects the same inputs DVA's doccheck sweep rejects today | verify: human — both gates are run on the same fixtures and the outputs are linked here
-- [ ] `tools/doccheck`'s checkCardStatus sweep and zone table are removed once the shared gate covers them | verify: human — the removal commit is linked here and `make doc-check` still fails on a zone-mismatched fixture through the shared gate
+- [x] `ce task validate` rejects a status value outside the declared vocabulary and one its zone refutes | verify: human — strict CE fixtures reject unknown, empty, missing, alias, and zone-mismatched values
+- [x] The shared validator rejects the same invalid ordinary live/archive inputs DVA's sweep rejected; resolver terminal issue behavior is separately documented | verify: human — paired CE/DVA zone/archive fixtures and resolved-issue evidence in TASK-424
+- [x] `tools/doccheck`'s `checkCardStatus` sweep and status table are removed after the shared gate covers them | verify: human — TASK-424 selected strict policy, removed the local sweep, `ce task validate --all` and `ce task gate` pass, and `make doc-check` passes as the repository-owned documentation/source gate
 
 ## 후속 (2026-09-24)
 
 상류 live-zone 검사는 `0f0a5f3c`에 들어갔지만 archive·누락 status·alias 차이가
-남아 [ISSUE-041](041-upstream-status-validator-contract-parity.md)에 기록했다.
-전체 parity가 확인될 때까지 로컬 sweep은 유지한다. 후속은
-[TASK-424](../blocked/424-validate-owns-zone-status.md)가 소유한다.
+남아 [ISSUE-041](../../issue/041-upstream-status-validator-contract-parity.md)에 기록했다. CE
+`dba2348b`에 repository-owned strict dialect가 통합된 뒤 TASK-424가 DVA에서 선택하고
+paired status fixture, producer round-trip, 전체 보드 gate를 검증했다. 후속은
+[TASK-424](../../done/424-validate-owns-zone-status.md)가 소유한다.

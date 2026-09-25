@@ -3,7 +3,10 @@ id: TASK-407
 title: "Card ids are allocated by scanning the board, so parallel worktrees collide"
 type: feature
 priority: P2
-status: review
+status: done
+quality-review: pass
+quality-reviewed-at: 2026-09-25
+quality-review-evidence: "Independent done-review PASS by /root/review_433_434 on 2026-09-25: the revised criteria match AGENTS.md's collision disclosure, linked renamable-card procedure, old-ID sweep, duplicate-ID gate, and current CE frontmatter-status behavior; doc-check also passes."
 reopened: 2026-09-22
 reopen-reason: "2026-09-22 done-board re-verification: criterion 1 is unmet by measurement. AGENTS.md's rule is `max(id seen in current worktree) + 1`, so two worktrees cut from the same snapshot see the same max and mint the same id — exactly what the criterion asks be impossible. The rule also does not fall back to stating that DUP-ID detection is the guard rather than allocation uniqueness. Criteria 2 and 3 re-verified as met (see Re-verification). Residue is filed as ISSUE-033."
 created: 2026-09-17
@@ -74,4 +77,8 @@ No new card was opened — this card *is* the unfinished work, and ISSUE-033 is 
 사용자가 승인한 기존 결정(분산 allocator 미구현)을 기준에 반영했다. 기준 1은
 충돌 없는 발급을 더 이상 요구하지 않고, 현재 정본 `AGENTS.md`가 collision risk와
 사후 DUP-ID guard를 정확히 설명하는지 묻는다. 기존 독립 리뷰는 변경 전 기준을
-검토했으므로 새 기준에 대한 독립 done-review가 필요하다.
+검토했고 아래에 독립 done-review PASS를 기록했다.
+
+## 2026-09-25 독립 done-review
+
+- 2026-09-25 | reviewer: /root/review_433_434 (independent review agent) | executor-tier: strong | finding: pass | verification: revised criteria vs `AGENTS.md`; linked `docs/407-correction-procedure.md` renamable-card choice, sealed-card handling and old-ID sweep; `tools/doccheck/cardids.go::checkDuplicateCardIDs`; CE `8f2ed451` frontmatter behavior | outcome: pass | next: done | non-blocking: TASK-436 lifecycle reclamation remains separate

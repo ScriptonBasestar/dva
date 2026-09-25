@@ -2,7 +2,7 @@
 id: ISSUE-024
 title: "done-finalize blocks cards that name artifacts in review evidence"
 type: bug
-status: todo
+status: done
 priority: P2
 severity: medium
 ownership: upstream
@@ -10,6 +10,9 @@ created: 2026-09-15
 discovered-at: 2026-09-14
 discovered-in: "TASK-392 done-finalize (2026-09-14) — 통과한 카드와 막힌 카드의 차이에서"
 upstream-ref: "ce-agent-kit#4"
+resolution: fixed
+resolved-at: 2026-09-25T04:32:54Z
+resolution-summary: "Resolved as fixed by TASK-430."
 ---
 
 ## Summary
@@ -92,9 +95,9 @@ task_cleanup*.go`의 정합성 검사)에 있다. 이 저장소가 할 수 있�
 
 ## Resolution Criteria
 
-- [ ] 상류에서 evidence 서술 경로가 소유 정합성 검사를 촉발하지 않게 된다 | verify: human — ce-agent-kit의 cleanup 검사가 전용 바인딩 필드만 검사하는지 읽어 확인한다
-- [ ] 세 카드의 dry-run이 더는 그 사유로 BLOCKED가 아니다 | verify: `ce task done-finalize $(/usr/bin/find tasks -name '391-stop-planprogress-from-pairing-any-korean-counter-with-an-enumeration.md') --dry-run 2>&1 | /usr/bin/grep -c "ownership reconciliation"` 출력이 0
-- [ ] 보드 게이트 통과 | verify: `ce task gate` (regression-guard)
+- [x] 상류에서 evidence 서술 경로가 소유 정합성 검사를 촉발하지 않게 된다 | verify: human — ce-agent-kit의 cleanup 검사가 전용 바인딩 필드만 검사하는지 읽어 확인한다
+- [x] 세 카드의 dry-run이 더는 그 사유로 BLOCKED가 아니다 | verify: `ce task done-finalize $(/usr/bin/find tasks -name '391-stop-planprogress-from-pairing-any-korean-counter-with-an-enumeration.md') --dry-run 2>&1 | /usr/bin/grep -c "ownership reconciliation"` 출력이 0
+- [x] 보드 게이트 통과 | verify: `ce task gate` (regression-guard)
 
 ## 2026-09-23 TASK-410 재현
 
@@ -107,7 +110,7 @@ finalize 성공은 TASK-411 완료의 선행 조건이 아니다. 증거·참조
 ## 후속 (2026-09-24)
 
 우회 없이 남긴 상류 제한은
-[TASK-430](../blocked/430-done-finalize-ignores-evidence-paths.md)가 소유한다.
+[TASK-430](../../done/430-done-finalize-ignores-evidence-paths.md)가 소유한다.
 
 ## 2026-09-25 후속 — canonical review receipt 보존 범위
 
@@ -118,7 +121,50 @@ TASK-430의 독립 리뷰에서 새 경계가 확인됐다. `quality-review-evid
 `docs/task-reviews/<ID>`)에는 `tasks/done/evidence/<ID>`가 없다. 이 경로는 여전히
 `ownership reconciliation`을 일으킬 수 있다.
 
-권장: 실제 TASK-410 dry-run으로 추가 blocker를 확인한 뒤, durable receipt를 cleanup이
-삭제할 산출물인지 보존되는 포인터인지 별도 계약으로 정한다. receipt를 prose로 재분류해
-검사를 우회하지 않는다. 이 결정 전까지 TASK-430은 blocked이며, 현재 구현은 별도
-worktree에 보존하고 상류 통합하지 않는다.
+결정: Git 추적 canonical receipt는 durable 감사 증거로 보존하고 cleanup ownership
+검사는 실제 산출물 경로와 구분한다. 사용자가 이 방향을 승인했으며 TASK-430이
+별도 worktree에서 계약·테스트를 구현 중이다. dry-run 증거와 독립 리뷰가 남아 있어
+ISSUE-024는 열린 상태로 둔다.
+
+clean CE branch `dev/codex/mbp/fix/cleanup-durable-review-receipts`의 commits
+`c8e47681`/`0a35898e`가 semantic reference와 Git 추적 receipt 경계를 재구성한다.
+Focused filesystem/CLI suites, lint, validate, gate는 통과했다. Full CI run
+`6f7fc19a4287ad3da2c604440ae210a5`는 `go test -race ./...` 단계에서 10분 제한으로
+끝났으며 test failure는 기록되지 않았다 (ISSUE-073). 독립 리뷰와 full CI 결과가
+남아 있어 ISSUE-024는 todo 상태다.
+
+## 2026-09-25 독립 리뷰 — receipt 경계 보완 필요
+
+CE TASK-329의 독립 리뷰는 `0a35898e`를 FAIL 처리했다. 정규 receipt 경로 형태와
+TASK ID만 맞으면 Git 추적, 파일 존재, receipt 유효성을 확인하지 않고 ownership
+검사에서 건너뛴다. 따라서 missing, malformed, 또는 삭제 후보 경로를 본문에 싣지 않은
+untracked canonical-shaped 파일도 허용될 수 있다. 또한 preview에는 durable receipt 예외가
+있지만 apply 재검증에는 없어, 추적된 유효 receipt의 `reviewed-card-path`가 cleanup 대상이면
+적용이 rollback될 수 있다. `{}`인 untracked lookalike 및 missing/malformed receipt의 음성
+검사와 preview/apply 왕복 검사가 필요하다.
+
+리뷰는 선행 `c8e47681`이 task semantic edge도 ownership 대상에서 제외하는 방향이 CE의
+보존 이슈 ISSUE-051의 “카드에서는 구조화 간선만 본다” 결정 기록과 충돌한다고 추가로
+지적했다. 기존 판정을 조용히 덮어쓰지 말고 CE 쪽에 새 계약을 채택하거나 해당 기록을
+대체한다는 근거를 남겨야 한다. 수정, 독립 재검토, exact-HEAD full CI가 끝날 때까지
+ISSUE-024와 TASK-430은 열린 상태다.
+
+## 2026-09-25 후속 구현
+
+CE `ed1f4574`는 receipt 예외를 실제 존재하는 Git 추적 JSON과 64-hex
+`reviewed-card-sha256` 형식까지 검증한다. missing, `{}` malformed, untracked, 비정규
+파일명 receipt가 계속 막는 회귀를 추가했고 preview/apply는 같은 reference 판정을 쓴다.
+tracked receipt가 `reviewed-card-path`로 제거 대상을 언급해도 receipt를 남기고 cleanup하는
+apply test가 있다. TASK-329에 ISSUE-051의 과거 범위와 새 계약의 supersession을 기록했고
+archived 카드는 수정하지 않았다.
+
+Exact implementation commit `ed1f4574019eb86e6c46fe96443bddbfd85c8a48`의 full
+`dva ci commit` run `391b80213ee4fb464990c245ae5bf308`는 7m18s PASS, attestation 동일이다.
+그 뒤 CI 증거만 기록한 `ec4112bd`가 추가됐다. 독립 최종 리뷰와 현재 branch HEAD의 CI
+증거 연결 확인은 독립 리뷰에서 PASS했다. review evidence를 기록한 `1e408857`도
+push했고 CE source master/origin에 통합·push, task worktree/branch 회수까지 완료했다.
+통합 binary의 DVA TASK-410 preview는 ownership reconciliation 차단 없이 archived card
+1건을 `WOULD REMOVE`로 판정했고 파일은 바꾸지 않았다. 원래 TASK-391/393/394 preview도
+모두 `WOULD REMOVE`를 반환해 이 이슈의 cleanup 재현 조건은 해소됐다. 정확한 명령과 출력을
+[TASK-430 tracked preview evidence](../../done/evidence/TASK-430/ce-task-cleanup-preview-20260925.md.txt)에
+기록했다. TASK-430의 최종 독립 done-review PASS 후 ISSUE-024를 fixed로 resolve했다.

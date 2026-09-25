@@ -1,0 +1,147 @@
+# TASK-424 strict status parity evidence — 2026-09-25
+
+## Versions and selected policy
+
+- DVA task worktree: `/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__resolve-upstream-blockers`.
+- Shared CE source: master `dba2348b48618e671d133438cec496cc0853e7ab`.
+- CE binary built from that source with `make build`: version 0.8.4, build
+  `364-gdba2348b`, `Dirty: false`.
+- DVA selects the repository-owned strict dialect in `ce-tasks.yaml`:
+
+  ```yaml
+  card-dialect:
+    strict-status: true
+  ```
+
+## Paired status fixtures
+
+The pre-removal DVA fixture suite was run from the clean source checkout at
+`97b1a97d807caa966b8fbdf16130ca8574cfed2b`:
+
+```text
+go test ./tools/doccheck -run 'TestCardStatusMismatchFailsWithNamedFile|TestMissingStatusIsErrorAndPlansAreSkipped|TestCardStatus_acceptsPermittedStatusPerZone|TestCardZonesDeclareReviewAndBacklog|TestCardZonesDeclareDoingAndBlocked|TestArchiveSpelling' -count=1 -v
+```
+
+Exit: `0`. This covers valid statuses in todo, doing, review, blocked, done, issue,
+backlog, `archive/`, and `_archive/`; missing and zone-mismatched values; and identical
+archive classification under both spellings.
+
+The integrated CE strict-validator fixtures were run from the exact source revision above:
+
+```text
+go test ./internal/usecase/task -run 'TestValidator_Validate_(statusContractParity|statusZoneFixtures|archivedStatusContract)$|TestValidator_DefaultStatusCompatibilityAcceptsAliasAndArchiveFreeze' -count=1 -v
+go test ./internal/adapter/cli/commands -run 'TestTaskStrictStatusProducerRoundTrips|TestTaskValidate_strictDialectIncludesArchive' -count=1 -v
+```
+
+Both commands exited `0`. The validator fixtures accept the matching zone literals, reject
+missing, empty, alias, unknown, and mismatched statuses, and check `done`/`superseded`, invalid
+values, missing status, and nested archived cards in both archive spellings. CLI producer
+fixtures round-trip `new → move → archive` and `new issue → resolve`, then validate all output
+under the strict policy. CE intentionally permits the resolver's terminal state under
+`issue/` only when `status: done` has a nonempty `resolution:`; see
+`ce-agent-kit/internal/usecase/task/validator_status.go` and its `new issue → resolve` round
+trip. CE lint separately requires resolved issues to be archived.
+
+## DVA corpus parity after removing the local sweep
+
+The DVA `tools/doccheck` fixture suite passed after restoring the trailing-comment duplicate-ID
+regression alongside the quoted-hash parser test:
+
+```text
+go test ./tools/doccheck
+ok  github.com/ScriptonBasestar/dva/tools/doccheck  1.735s
+```
+
+The shared strict validator was run against the same DVA task worktree before ISSUE-024 was
+resolved:
+
+```text
+/Users/archmagece/mywork/ce/ce-agent-kit/build/ce task validate --all
+Summary: 491 valid, 0 invalid (total: 491)
+exit: 0
+```
+
+That earlier state had `ce task lint --json` returning `"clean": true`; `ce task gate` returned
+`TASK PREFLIGHT — READY`, `validate pass`, `lint pass`, `preflight pass`, and
+`READY — task_board_ready` (22 total, 22 runnable, 0 unrunnable).
+
+Before ISSUE-024 was resolved at `2026-09-25T04:32:54Z`, the pre-removal DVA doccheck binary
+reported exit `0`, `broken_links: 0`, `cards_checked: 488`, and `status_mismatches: 0` on this
+worktree. After CE `task resolve` wrote the canonical `status: done` and `resolution: fixed`
+pair, a reproducible build of the same old DVA source reported one expected mismatch: the old
+guard permits only `todo` under `tasks/issue/`, while CE strict intentionally accepts its own
+resolved-issue output. This is the concrete behavior showing why a duplicate local status
+judgment must not override the shared validator.
+
+```text
+mkdir tmp/task424-legacy-source
+git archive 97b1a97d807caa966b8fbdf16130ca8574cfed2b | tar -x -C tmp/task424-legacy-source
+TASK_ROOT="$PWD"
+(cd tmp/task424-legacy-source && go build -o "$TASK_ROOT/tmp/task424-legacy-source/legacy-doccheck" ./tools/doccheck)
+"$TASK_ROOT/tmp/task424-legacy-source/legacy-doccheck" "$TASK_ROOT"
+```
+
+Current post-resolve output: exit `1`, `broken_links: 0`, `cards_checked: 488`,
+`status_mismatches: 1`, naming ISSUE-024 (`status: done`, `resolution: fixed`). CE lint marked
+the resolved issue as one `resolved-issue` stray and suggested `_archive`; it was then archived
+to `tasks/_archive/issue/`, after which lint returned `"clean": true`.
+
+The current repository documentation/source gate also passed after the TASK-430 evidence link
+was added:
+
+```text
+make doc-check
+broken_links: 0
+doc-check: OK
+cilabels: OK
+flowcheck: OK
+planprogress: OK
+yamlcheck: OK
+changelogcheck: OK
+ciparity: OK
+exit: 0
+```
+
+The legacy DVA source fixture suite and the CE strict fixtures agree on ordinary live/archive
+zone literals. The resolved-issue terminal exception is additional CE-owned semantics and is
+covered by the strict CLI round trip. The current DVA board is revalidated under the selected
+CE policy after ISSUE-024 archival and PLAN-011 count synchronization. Local identity-zone
+checks, duplicate-ID/filename checks, and the undeclared-board-directory guard remain in
+doccheck. `checkCardStatus` and its status-specific report were removed only after the selected
+CE policy and producer round-trips landed and passed.
+
+## Final board and repository gate after state transitions
+
+After TASK-424 passed independent done-review, moved to `tasks/done/`, ISSUE-024/007/041 were
+resolved and archived, and ISSUE-044 was filed, the current board checks returned:
+
+```text
+ce task validate --all
+Summary: 492 valid, 0 invalid (total: 492)
+exit: 0
+
+ce task lint --json
+"clean": true
+cards: 492
+exit: 0
+
+ce task gate
+validate pass
+lint pass
+preflight pass
+READY — task_board_ready
+22 total, 22 runnable, 0 unrunnable
+exit: 0
+
+make doc-check
+broken_links: 0
+duplicate card IDs: 0
+doc-check: OK
+cilabels: OK
+flowcheck: OK
+planprogress: OK
+yamlcheck: OK
+changelogcheck: OK
+ciparity: OK
+exit: 0
+```
