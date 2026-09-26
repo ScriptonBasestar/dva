@@ -7,6 +7,9 @@ effort: M
 exec-tier: standard
 status: done
 created: 2026-09-26
+quality-review: pass
+quality-reviewed-at: 2026-09-26
+quality-review-evidence: "Independent review (feature-dev:code-reviewer) of 03cd29aa found one defect: a declared plaintext path matching the sops naming heuristic was suggested as its own sops_source (source_is_target). Fixed in b742b52d with a regression case; re-review PASS. make test, lint, doc-check and check-generate exit 0; each new test fails with its implementation line reverted."
 ---
 
 ## Summary
