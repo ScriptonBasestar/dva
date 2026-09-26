@@ -16,13 +16,13 @@ created: 2026-09-23
 빈 보드가 아니라 검증된 릴리스 범위를 만든다. 현재 목록은 [보드 인덱스](../README.md),
 공개 절차는 [런북](../../docs/52-manual-release-runbook.md)이 소유한다.
 
-## Current state (2026-09-25)
+## Current state (2026-09-27)
 
-자식 8장 모두 완료됐다(7장은 `tasks/_archive/2026-09/`, TASK-411은 `tasks/done/`).
-독립 재리뷰에서 TASK-411의 추적 파일 범위와 무시된 런타임 잔재 보존을 확인했다.
-2026-09-23에 기록한 `legacy-storage-dir` 진단은 현재 재측정에서는 재현되지 않는다.
+자식 8장 모두 완료됐고 `v0.3.0` 태그가 공개됐다(7장은 `tasks/_archive/2026-09/`,
+TASK-411은 `tasks/done/`). 그 뒤 착지한 TASK-440(sops_source 안내)은 CHANGELOG
+`Unreleased`에 있으며 이 계획이 아니라 다음 릴리스 범위다.
 현재 이 체크아웃의 `ce task gate --json`은 `READY`이며
-`tool_version: v0.8.4-345-g5d70c9d8`을 기록한다.
+`tool_version: v0.8.4-364-gdba2348b`를 기록한다.
 
 ## Children
 

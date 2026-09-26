@@ -86,3 +86,8 @@ $ grep -n version internal/usecase/task/gate.go
 [TASK-433](../done/433-stamp-tool-version-on-gate-verdicts.md)이 gate JSON과 신규
 run-finish 영수증을 닫았다. validate 판정과 리뷰 영수증의 도구 출처 및 버전
 불일치 진단은 여전히 열려 있다.
+
+## 재측정 (2026-09-27)
+
+kit dba2348b에서도 `tool_version`을 다루는 코드는 gate와 task runtime(run-finish)
+경로뿐이며 validate와 리뷰 영수증에는 여전히 없다. 두 번째 기준은 열린 채 유지한다.

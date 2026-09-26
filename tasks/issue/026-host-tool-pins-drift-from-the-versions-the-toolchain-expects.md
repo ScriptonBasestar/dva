@@ -132,3 +132,13 @@ a supported installer while preserving existing live config drift. The exact fin
 `ce task run-finish pin-worktrunk-0740` result was DONE: it integrated/pushed
 `7273dd62d9eaced4428fe769a4f1cdff7f3e4c2a` and reclaimed the worktree and local/remote branches.
 This final comparison supersedes the earlier preliminary 22-to-21 count.
+
+## 2026-09-27 재발 증거
+
+설치된 `ce`(0.8.4, a1a07dae 빌드)가 원격 master가 이미 쓰는 `ce-tasks.yaml`
+`card-dialect.strict-status` 필드를 몰라 `ce task new`·`validate`·gate가 모두 실패했다.
+kit을 dba2348b로 fast-forward하고 `make install_cli`로 재설치해 복구했다. 재빌드는
+호스트 Go 환경의 `GOSUMDB=off` 때문에 go.mod가 요구하는 go 1.26.6 툴체인을 받지 못해
+실패했고, 일회성 `GOSUMDB=sum.golang.org`로만 통과했다. 두 원인 모두 워크스테이션
+상태이므로 수정 위치는 이 저장소가 아니라 devenv 정본(`GOSUMDB`)과 ce의 설정 스키마
+대비 설치 버전 점검(`run-doctor`)이다.
