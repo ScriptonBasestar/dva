@@ -1424,23 +1424,22 @@ env_file:
 그래서 이 선언이 빠져도 `up`/`run`은 멀쩡히 돌고, `dva config env`를 처음 쓸 때에야
 `no_encrypted_env_entry`로 거절됩니다. 설정 루트에 `.sops.yaml`, `*.enc`, `*.sops.*`
 파일이나 `secrets.sources.*.sops`가 있는데 선언이 없으면 `dva doctor`가 advisory 행으로
-알려주고, 거절 메시지도 감지한 파일을 넣은 선언 예시를 함께 보여줍니다. `dva init`도 같은
-탐지를 스캐폴딩 시점에 수행합니다: 프로젝트 루트에 sops 암호화 후보 파일이 있으면 생성되는
-`dva.yml`에 위와 같은 `env_file` 엔트리를 미리 채워 넣고, `.sops.yaml`만 있고 후보 파일이
-없으면 아무것도 추가하지 않습니다.
+알려주고, 거절 메시지도 감지한 파일을 넣은 선언 예시를 함께 보여줍니다.
 
-##### 두 개의 명시적 커맨드
+##### 명시적 커맨드
 
 | Command | 하는 일 |
 |---------|---------|
 | `dva config env edit [TARGET]` | `sops_source`를 sops 편집 세션으로 엽니다. 평문 target은 만들지도 읽지도 않습니다 |
 | `dva config env unseal [TARGET]` | `sops_source`를 복호화해 평문 target을 씁니다 |
+| `dva config env reseal [TARGET]` | 기존 `sops_source`를 현재 creation rule로 다시 암호화합니다. 평문 target은 읽지도 쓰지도 않습니다 |
 
 ```bash
 dva config env unseal                 # sops_source를 선언한 엔트리가 하나일 때
 dva config env unseal .env.staging    # 여러 개일 때는 엔트리의 path를 그대로 지정
 dva config env unseal --force         # 이미 있는 평문 target을 교체
 dva config env edit                   # 암호화 소스 편집 (target은 그대로 stale)
+dva config env reseal                 # 기존 암호화 소스를 현재 키로 다시 암호화
 ```
 
 `[TARGET]`은 dva.yml에 적힌 `path` 문자열 그대로입니다. `sops_source`를 선언한 엔트리가

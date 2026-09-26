@@ -37,6 +37,7 @@ subcommands here are explicit, one target at a time.
 
   dva config env edit     edit the encrypted source with sops
   dva config env unseal   write the decrypted target
+  dva config env reseal   re-encrypt the encrypted source in place
 
 DVA does not own age or KMS keys, does not create encrypted sources, and never
 prints a decrypted value. See USAGE.md, "config env".`,
@@ -112,6 +113,7 @@ func init() {
 
 	configEnvCmd.AddCommand(configEnvUnsealCmd)
 	configEnvCmd.AddCommand(configEnvEditCmd)
+	configEnvCmd.AddCommand(configEnvResealCmd)
 	configCmd.AddCommand(configEnvCmd)
 }
 
