@@ -10,6 +10,7 @@ quality-reviewed-at: 2026-09-25
 quality-review-evidence: "Independent fresh done-review PASS by /root/rereview_task424 at 2026-09-25T04:42:20Z; confirmed strict policy selection, durable paired evidence, intentional resolved-issue exception, retained identity/duplicate-ID/filename checks, and restored trailing-comment regression test."
 status: done
 created: 2026-09-24
+archived-at: 2026-09-27
 ---
 
 ## Summary

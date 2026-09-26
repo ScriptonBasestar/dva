@@ -11,6 +11,7 @@ depends-on: [TASK-425, TASK-433]
 quality-review: pass
 quality-reviewed-at: 2026-09-25
 quality-review-evidence: "Independent done-review PASS by /root/review_433_434: verified both fixture verdicts and identity evidence, regression coverage for stale Check/cleanup exit 3/no automatic rebase, exact-HEAD CI for 71b1d169, master/origin integration, and complete task worktree/branch reclaim. The separate ISSUE-043 recovery gap was closed by TASK-439."
+archived-at: 2026-09-27
 ---
 
 ## Summary
@@ -39,7 +40,7 @@ by TASK-439.
 
 - The stale fixture returned exit 1 and names base `a0e3fa51a3bcd57695195a611c9bdd61e94c7b1a` and source tip `b6f4d8bbc0470322daeaff74d4618bb8b8369a4f`. Its next action is `rebase onto the source tip in the worktree, then retry run-finish`; task identity and Git worktree/path/ref snapshots match before and after.
 - The cleanup fixture returned exit 3 after local integration/push. Its reason remains `integration succeeded but task recovery cleanup failed`; cleanup flags are false, path exists before/after, and the post-failure `run-status` inventory mismatch is recorded under ISSUE-043.
-- Both fixtures use local bare remotes and the reviewed CE implementation at `7046479e71d04b14d17a7e60f8612bb8f751d52b`; the equivalent rebased source `71b1d1699313414013062b0d2bc9c44af13fadb4` passed full CI. They do not touch the DVA runtime or origin and use no force push. Full commands and snapshots: [`TASK-438 evidence`](evidence/TASK-438/README.md).
+- Both fixtures use local bare remotes and the reviewed CE implementation at `7046479e71d04b14d17a7e60f8612bb8f751d52b`; the equivalent rebased source `71b1d1699313414013062b0d2bc9c44af13fadb4` passed full CI. They do not touch the DVA runtime or origin and use no force push. Full commands and snapshots: [`TASK-438 evidence`](../../done/evidence/TASK-438/README.md).
 
 The exact CI-tested commit `71b1d1699313414013062b0d2bc9c44af13fadb4` is now
 `master` and `origin/master`. `ce task run-status` recorded `DONE`,

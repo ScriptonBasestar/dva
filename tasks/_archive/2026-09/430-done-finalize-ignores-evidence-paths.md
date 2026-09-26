@@ -10,6 +10,7 @@ quality-reviewed-at: 2026-09-25
 quality-review-evidence: "Independent final done-review PASS by /root/final_review_task430 on 2026-09-25T04:29:06Z: all four criteria, tracked preview receipt, CE implementation run, and TASK-410 boundary were verified; evidence SHA-256 89c6cccf8fce83247cff8f030036bdc9fbc22936baef0f07dfe5edff3308cc29."
 status: done
 created: 2026-09-24
+archived-at: 2026-09-27
 ---
 
 ## Summary
@@ -27,11 +28,11 @@ Git 추적 canonical `quality-review-receipt`는 보존하고, 그 밖의 소유
 - [x] 존재하고 유효하며 Git 추적된 canonical review receipt만 transient cleanup에서 보존된다; missing, malformed, untracked lookalikes는 거부된다 | verify: human — exact implementation CI run `391b80213ee4fb464990c245ae5bf308`
 - [x] preview와 apply 재검증이 같은 receipt 예외를 적용하고 receipt 보존 cleanup이 완료된다 | verify: human — exact implementation CI run `391b80213ee4fb464990c245ae5bf308`
 - [x] untracked receipt lookalike와 legacy explicit artifact binding은 계속 cleanup을 막는다 | verify: human — exact implementation CI run `391b80213ee4fb464990c245ae5bf308`
-- [x] dry-run이 receipt 보존 범위에서는 ownership reconciliation으로 BLOCKED되지 않는다 | verify: human — [tracked cleanup preview evidence](evidence/TASK-430/ce-task-cleanup-preview-20260925.md.txt) records exact commands, binary revision, exit status, output, and unchanged worktree status
+- [x] dry-run이 receipt 보존 범위에서는 ownership reconciliation으로 BLOCKED되지 않는다 | verify: human — [tracked cleanup preview evidence](../../done/evidence/TASK-430/ce-task-cleanup-preview-20260925.md.txt) records exact commands, binary revision, exit status, output, and unchanged worktree status
 
 ## Evidence
 
-- [TASK-410 cleanup preview](evidence/TASK-430/ce-task-cleanup-preview-20260925.md.txt)
+- [TASK-410 cleanup preview](../../done/evidence/TASK-430/ce-task-cleanup-preview-20260925.md.txt)
 
 ## Out of scope
 

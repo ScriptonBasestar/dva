@@ -10,6 +10,7 @@ status: done
 quality-review: pass
 quality-reviewed-at: 2026-09-25
 quality-review-evidence: "Independent final review by /root/review_433_434 on 2026-09-25: board counts, PLAN-011 progress, CE integration, ISSUE-043 resolution, receipts, and gates match; no stale facts remain."
+archived-at: 2026-09-27
 ---
 
 ## Summary

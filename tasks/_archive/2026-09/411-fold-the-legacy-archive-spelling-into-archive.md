@@ -11,6 +11,7 @@ depends-on: [TASK-410]
 quality-review: pass
 quality-reviewed-at: 2026-09-25
 quality-review-evidence: "Independent read-only review PASS by /root/review_437: gate READY, no tracked tasks/archive files, make doc-check and diff-check pass; primary checkout's ignored tasks/archive/.ce remains intact under .gitignore:45."
+archived-at: 2026-09-27
 ---
 
 ## Summary

@@ -10,6 +10,7 @@ created: 2026-09-24
 quality-review: pass
 quality-reviewed-at: 2026-09-25
 quality-review-evidence: "독립 done-review PASS: 원시 파일 해시 receipt는 canonical digest를 표시하며 거부되고, canonical 핀은 통과하며 이후 본문 변경은 다시 거부된다. 통합 commit 80efba9561773b8dcea54c2ba47d58992eb90e2a와 commit CI 6b88756eacac6c7e04f6ec57bdab50d2 PASS."
+archived-at: 2026-09-27
 ---
 
 ## Summary

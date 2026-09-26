@@ -10,6 +10,7 @@ created: 2026-09-24
 quality-review: pass
 quality-reviewed-at: 2026-09-25
 quality-review-evidence: "독립 done-review PASS: 이슈 검증기와 신규 issue 생성 경로가 P0–P3를 공유하고 기본값 P1을 유지한다. TestIssuePriorityAllowsP3 및 commit CI 70534773fe86bae9bc7227252b4f77cb 통과."
+archived-at: 2026-09-27
 ---
 
 ## Summary

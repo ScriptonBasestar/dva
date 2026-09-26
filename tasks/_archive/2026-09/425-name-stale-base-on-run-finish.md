@@ -10,6 +10,7 @@ created: 2026-09-24
 quality-review: pass
 quality-reviewed-at: 2026-09-25
 quality-review-evidence: "독립 done-review PASS: 격리 fixture의 실제 run-finish 출력이 BLOCKED, stale source-tip 사유, worktree rebase 조치를 기록하며 no-force-push SHA 증거와 링크가 있다."
+archived-at: 2026-09-27
 ---
 
 ## Summary
@@ -37,7 +38,7 @@ stale base를 이유로 명명하는 좁은 동작은 `ce-agent-kit#2`에서 구
 
 - Integrated implementation: `ce-agent-kit@8f2ed4514e010ec61cae35ec18d6fa8ea4ea85b8`, `internal/usecase/taskruntime/service_lifecycle.go:249-252`.
 - Stale/current-base branch test: `internal/usecase/taskruntime/integration_provider_test.go:354`.
-- Actual stale-base finish capture: [2026-09-25 fixture output](evidence/TASK-425/stale-base-run-finish-2026-09-25.txt), run with `ce-agent-kit@05b0b4ae3c18517df2d7635f3b185da4ee3d9baf` using `ce task run-finish task-425-stale-base --json`. The isolated fixture advanced only `master`; `run-finish` returned `BLOCKED`, named the source-tip mismatch, and directed a rebase. Independent done-review: PASS.
+- Actual stale-base finish capture: [2026-09-25 fixture output](../../done/evidence/TASK-425/stale-base-run-finish-2026-09-25.txt), run with `ce-agent-kit@05b0b4ae3c18517df2d7635f3b185da4ee3d9baf` using `ce task run-finish task-425-stale-base --json`. The isolated fixture advanced only `master`; `run-finish` returned `BLOCKED`, named the source-tip mismatch, and directed a rebase. Independent done-review: PASS.
 
 The broader ISSUE-008 follow-up TASK-438 will add the commit identities to the
 verdict and strengthen the no-force-push fixture. TASK-425 only closes this

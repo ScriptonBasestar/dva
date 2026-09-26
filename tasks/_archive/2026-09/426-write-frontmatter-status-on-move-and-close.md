@@ -10,6 +10,7 @@ created: 2026-09-24
 quality-review: pass
 quality-reviewed-at: 2026-09-25
 quality-review-evidence: "독립 done-review PASS: move, resolve, archive가 본문 Status 셀 유무와 무관하게 frontmatter status를 기록하고, 회귀·superseded 테스트가 해당 동작을 고정한다."
+archived-at: 2026-09-27
 ---
 
 ## Summary

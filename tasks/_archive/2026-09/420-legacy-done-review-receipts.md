@@ -10,6 +10,7 @@ created: 2026-09-24
 quality-review: pass
 quality-reviewed-at: 2026-09-25
 quality-review-evidence: "Independent done-review by /root/review_433_434: verified commit 988e7de6 round-trips all three legacy completion-evidence forms through NewValidator while preserving missing reviewer-evidence rejection; exact full CI, source integration, and task-branch cleanup pass."
+archived-at: 2026-09-27
 ---
 
 ## Summary

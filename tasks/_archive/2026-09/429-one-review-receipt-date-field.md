@@ -10,6 +10,7 @@ created: 2026-09-24
 quality-review: pass
 quality-reviewed-at: 2026-09-25
 quality-review-evidence: "독립 done-review PASS: quality-reviewed-at 정본과 quality-review-date 경고 후 무시 정책이 구현·테스트와 일치한다. 전체 commit CI 70534773fe86bae9bc7227252b4f77cb 통과."
+archived-at: 2026-09-27
 ---
 
 ## Summary

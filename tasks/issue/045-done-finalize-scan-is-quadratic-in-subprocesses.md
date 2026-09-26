@@ -8,6 +8,7 @@ severity: medium
 discovered-in: "done-finalize scan spawns uncached git subprocesses per card and file"
 discovered-at: 2026-09-27
 ownership: upstream
+upstream-ref: "ce-agent-kit (not yet filed; evidence lives here until reported)"
 created: 2026-09-27
 ---
 
@@ -18,6 +19,11 @@ created: 2026-09-27
 ## Reproduction
 
 1. 
+
+## 소유권 — 상류다
+
+결함은 ce-agent-kit의 `done-finalize` 정리 스캔 구현에 있다. dva는 보드 규모와 실측
+증거만 제공하며, 우회용 로컬 정리 스크립트를 두지 않는다.
 
 ## Expected vs Actual
 
@@ -44,3 +50,9 @@ created: 2026-09-27
 `cleanup source changed; preview again`으로 아무것도 적용하지 못하고 끝났다. 실행 중
 다른 태스크가 master에 통합되었기 때문이다. 스캔이 길수록 동시 통합과 경합해 헛돌 확률이
 커지므로, 이 비용은 성능뿐 아니라 정리 작업의 완료 가능성 문제다.
+
+재시도(master 고정)는 4시간 37분(user 7103s, sys 7411s) 만에 19장을 적용했다. 적용
+방식은 아카이브가 아니라 **삭제**여서 PLAN-010/011의 `children`이 존재하지 않는 카드를
+가리키게 되어 `planprogress`와 `validate`가 실패했고 16개 링크가 깨졌다. 저장소 선례
+(0ba36ee1)대로 삭제를 되돌리고 카드를 `tasks/_archive/2026-09/`에 `archived-at`과 함께
+옮겨 해결했다. 계획 자식 카드를 삭제하는 finalize는 이 보드 규약과 맞지 않는다.

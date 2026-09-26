@@ -10,6 +10,7 @@ created: 2026-09-24
 quality-review: pass
 quality-reviewed-at: 2026-09-25
 quality-review-evidence: "Independent done-review PASS: gate JSON and new run-finish receipts share the BuildToolVersion stamp; fallback tests and commit CI pass; TASK-433 integrated at 33deb918."
+archived-at: 2026-09-27
 ---
 
 ## Summary

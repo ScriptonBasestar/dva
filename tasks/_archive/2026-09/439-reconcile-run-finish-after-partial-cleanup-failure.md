@@ -15,6 +15,7 @@ quality-review-evidence: >-
   completion criteria against integrated CE commit 7eaf596a, full CI run
   3b919373 (unchanged attestation), fail-closed/no-mutation/list/idempotence
   tests, and the DONE run-finish receipt with all push and cleanup flags true.
+archived-at: 2026-09-27
 ---
 
 ## Summary

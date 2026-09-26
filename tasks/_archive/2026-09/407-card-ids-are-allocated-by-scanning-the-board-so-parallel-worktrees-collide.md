@@ -10,6 +10,7 @@ quality-review-evidence: "Independent done-review PASS by /root/review_433_434 o
 reopened: 2026-09-22
 reopen-reason: "2026-09-22 done-board re-verification: criterion 1 is unmet by measurement. AGENTS.md's rule is `max(id seen in current worktree) + 1`, so two worktrees cut from the same snapshot see the same max and mint the same id — exactly what the criterion asks be impossible. The rule also does not fall back to stating that DUP-ID detection is the guard rather than allocation uniqueness. Criteria 2 and 3 re-verified as met (see Re-verification). Residue is filed as ISSUE-033."
 created: 2026-09-17
+archived-at: 2026-09-27
 ---
 
 ## Summary

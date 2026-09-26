@@ -10,6 +10,7 @@ created: 2026-09-24
 quality-review: pass
 quality-reviewed-at: 2026-09-25
 quality-review-evidence: "독립 done-review PASS: issue Resolution Criteria 집계와 runnable 처리의 경계가 구현·출력과 일치한다. 설치본 preflight 수치와 commit CI 70534773fe86bae9bc7227252b4f77cb 통과."
+archived-at: 2026-09-27
 ---
 
 ## Summary

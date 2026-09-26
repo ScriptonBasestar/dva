@@ -10,6 +10,7 @@ created: 2026-09-24
 quality-review: pass
 quality-reviewed-at: 2026-09-25
 quality-review-evidence: "Independent TASK-422 review (ce-explorer, not implementer): PASS; verified the integrated TaskReceipt status field, finish/abort append paths, terminal status precedence, and DONE/ABORTED persistence tests at ce-agent-kit master 05b0b4ae3c18517df2d7635f3b185da4ee3d9baf."
+archived-at: 2026-09-27
 ---
 
 ## Summary

@@ -10,6 +10,7 @@ created: 2026-09-24
 quality-review: pass
 quality-reviewed-at: 2026-09-25
 quality-review-evidence: "Independent review (not implementer) PASS for source-branch apply guard, detached-HEAD refusal, and preserved cleanup refusal. The reviewer noted link assertions could be more explicit; focused behavior tests and full DVA commit CI passed."
+archived-at: 2026-09-27
 ---
 
 ## Summary
