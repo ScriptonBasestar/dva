@@ -14,7 +14,7 @@ quality-review-evidence: "Independent review (feature-dev:code-reviewer) of 03cd
 
 ## Summary
 
-`dva config env edit`가 초기 설정 직후 `no env_file entry declares sops_source`로 자주 실패한다. `sops_source`는 로딩에 관여하지 않는 메타데이터라 `up`/`run`에서 드러나지 않고, init·doctor·agent-mesh flow·skills 어디에도 언급이 없다. sops 사용 흔적이 있을 때만 선언을 안내하고, AI flow가 dva.yml을 만들거나 고칠 때 이 필드를 반영하게 한다. 무조건 기본 생성은 하지 않는다. init 자동 병합은 BACKLOG-010이 소유한다.
+`dva config env edit`가 초기 설정 직후 `no env_file entry declares sops_source`로 자주 실패한다. `sops_source`는 로딩에 관여하지 않는 메타데이터라 `up`/`run`에서 드러나지 않고, init·doctor·agent-mesh flow·skills 어디에도 언급이 없다. sops 사용 흔적이 있을 때만 선언을 안내하고, AI flow가 dva.yml을 만들거나 고칠 때 이 필드를 반영하게 한다. 무조건 기본 생성은 하지 않는다. init 자동 선언은 TASK-441(BACKLOG-010 승격)이 처리했다.
 
 ## Completion Criteria
 

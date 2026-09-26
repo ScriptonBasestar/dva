@@ -5,8 +5,11 @@ type: feature
 priority: P3
 effort: S
 exec-tier: standard
-status: todo
+status: done
 created: 2026-09-27
+quality-review: pass
+quality-reviewed-at: 2026-09-27
+quality-review-evidence: "Independent review of 93dc14c found sops evidence changed init path selection (manifest+.env.enc lost native-only guidance; lone .env.enc scaffolded). Fixed in 7c9d7f04 with 4 added InitSops tests; re-review PASS with with/without-.env.enc repros across compose/makefile/manifest/empty and loader EncryptedEnvEntries check. make test, lint, doc-check, check-generate exit 0."
 ---
 
 ## Summary
