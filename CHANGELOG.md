@@ -12,6 +12,11 @@ All notable changes to DVA are documented here.
   `dva config env`의 `no_encrypted_env_entry` 메시지도 같은 예시와 감지된 파일을 담습니다
   (code는 그대로). agent-mesh flow와 `dva-config` 스킬의 스키마·규칙·체크리스트가 이제
   `sops_source`를 가르칩니다.
+- **`dva init`이 sops 암호화 후보를 감지해 `env_file`을 선언 (TASK-441)**: 프로젝트 루트에
+  sops로 암호화된 것으로 보이는 파일(`*.enc`, `*.sops.*` 등)이 있으면 생성되는 `dva.yml`에
+  `env_file: [{path, sops_source}]` 엔트리를 함께 써 넣습니다. `.sops.yaml`만 있고 실제
+  후보 파일이 없으면 아무것도 추가하지 않습니다 — 존재하지 않는 파일을 `sops_source`로
+  가리키지 않습니다.
 
 ## [0.3.0] - 2026-09-23
 

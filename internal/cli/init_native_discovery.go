@@ -50,10 +50,16 @@ type nativeScaffoldDiscovery struct {
 	ports       []portMapping
 	portSource  string
 	hasTest     bool
+	// envFileTarget/envFileSource are the sops_source declaration TASK-441
+	// scaffolds when the project root carries a sops-encrypted candidate.
+	// Both are empty when DetectSopsEvidence found nothing to point at — a
+	// bare .sops.yaml with no matching candidate must not invent a target.
+	envFileTarget string
+	envFileSource string
 }
 
 func (d nativeScaffoldDiscovery) hasEvidence() bool {
-	return len(d.entries) > 0 || len(d.subprojects) > 0 || len(d.ports) > 0
+	return len(d.entries) > 0 || len(d.subprojects) > 0 || len(d.ports) > 0 || d.envFileSource != ""
 }
 
 // parsePortMappingsManifest reads the first manifest in the documented,
@@ -307,6 +313,7 @@ func discoverNativeScaffold(dir string) (nativeScaffoldDiscovery, error) {
 	}
 
 	result := nativeScaffoldDiscovery{subprojects: subprojects, ports: ports, portSource: portSource}
+	result.envFileTarget, result.envFileSource = discoverSopsEnvFileEntry(dir)
 	if testTarget, exists := targetByName["test"]; exists && len(testTarget.Recipe) > 0 {
 		if testTarget.Unsupported != "" {
 			return nativeScaffoldDiscovery{}, fmt.Errorf("makefile target test uses unsupported or unresolved variable %s", testTarget.Unsupported)
@@ -387,6 +394,10 @@ func generateDiscoveredConfig(discovery nativeScaffoldDiscovery, lang string, ev
 			b.WriteString(", but no declared dev-* recipe was found")
 		}
 		b.WriteString(".\n")
+	}
+	if discovery.envFileSource != "" {
+		_, _ = fmt.Fprintf(&b, "\nenv_file:\n  - path: %s\n    sops_source: %s\n",
+			strconv.Quote(discovery.envFileTarget), strconv.Quote(discovery.envFileSource))
 	}
 	if len(discovery.entries) > 0 {
 		b.WriteString("\nstack:\n")

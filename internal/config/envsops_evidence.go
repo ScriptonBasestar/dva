@@ -2,9 +2,19 @@ package config
 
 import (
 	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 )
+
+// NewForSopsDetection returns a bare Config rooted at dir, for evidence-only
+// detection before a dva.yml exists — dva init's own scan (TASK-441). It
+// declares no secrets.sources and no env_file, so DetectSopsEvidence sees
+// exactly what a fresh directory shows: the naming-convention scan and the
+// .sops.yaml check, nothing a not-yet-written config could have declared.
+func NewForSopsDetection(dir string) *Config {
+	return &Config{filePath: filepath.Join(dir, FileName)}
+}
 
 // SopsEvidence is what a project directory shows about sops use without anyone
 // having declared it in env_file.

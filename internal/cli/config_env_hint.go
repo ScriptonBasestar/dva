@@ -23,7 +23,59 @@ func sopsDeclarationExample(c *config.Config, ev config.SopsEvidence) string {
 	if len(ev.Candidates) > 0 {
 		source = ev.Candidates[0]
 	}
+	return formatEnvFileSopsDeclaration(target, source)
+}
+
+// formatEnvFileSopsDeclaration renders the inline env_file entry syntax
+// USAGE.md documents. It exists so every caller that hands the user a
+// pasteable declaration — this hint, the doctor row, and dva init's own
+// scaffold (TASK-441) — shares one fmt.Sprintf instead of drifting copies.
+func formatEnvFileSopsDeclaration(target, source string) string {
 	return fmt.Sprintf("env_file: [{path: %s, sops_source: %s}]", target, source)
+}
+
+// sopsTargetForCandidate derives the plaintext env file name a sops-encrypted
+// candidate most likely decrypts to, by stripping or collapsing the naming
+// convention looksSopsEncrypted matched: a trailing .enc/.sops suffix, or a
+// .sops./.enc. infix (secrets.sops.env -> secrets.env, .env.enc.yaml ->
+// .env.yaml). It returns "" when the candidate carries none of those markers,
+// which DetectSopsEvidence never produces but a defensive caller should still
+// treat as "nothing to derive".
+func sopsTargetForCandidate(candidate string) string {
+	lower := strings.ToLower(candidate)
+	switch {
+	case strings.HasSuffix(lower, ".enc"):
+		return candidate[:len(candidate)-len(".enc")]
+	case strings.HasSuffix(lower, ".sops"):
+		return candidate[:len(candidate)-len(".sops")]
+	case strings.Contains(lower, ".sops."):
+		idx := strings.Index(lower, ".sops.")
+		return candidate[:idx] + candidate[idx+len(".sops"):]
+	case strings.Contains(lower, ".enc."):
+		idx := strings.Index(lower, ".enc.")
+		return candidate[:idx] + candidate[idx+len(".enc"):]
+	default:
+		return ""
+	}
+}
+
+// discoverSopsEnvFileEntry reports the env_file entry `dva init` should
+// scaffold for dir, or ("", "") when there is nothing to point at (TASK-441).
+// It reuses DetectSopsEvidence on a bare, not-yet-written Config rather than
+// re-implementing the naming scan, and refuses to declare a sops_source that
+// names a file that does not exist: CreationRules (a lone .sops.yaml) with no
+// matching Candidates produces nothing, never a guessed target.
+func discoverSopsEnvFileEntry(dir string) (target, source string) {
+	ev := config.NewForSopsDetection(dir).DetectSopsEvidence()
+	if len(ev.Candidates) == 0 {
+		return "", ""
+	}
+	source = ev.Candidates[0]
+	target = sopsTargetForCandidate(source)
+	if target == "" || target == source {
+		target = ".env"
+	}
+	return target, source
 }
 
 // sopsEvidenceSummary names what was found, or "" when nothing was.

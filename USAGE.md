@@ -1424,7 +1424,10 @@ env_file:
 그래서 이 선언이 빠져도 `up`/`run`은 멀쩡히 돌고, `dva config env`를 처음 쓸 때에야
 `no_encrypted_env_entry`로 거절됩니다. 설정 루트에 `.sops.yaml`, `*.enc`, `*.sops.*`
 파일이나 `secrets.sources.*.sops`가 있는데 선언이 없으면 `dva doctor`가 advisory 행으로
-알려주고, 거절 메시지도 감지한 파일을 넣은 선언 예시를 함께 보여줍니다.
+알려주고, 거절 메시지도 감지한 파일을 넣은 선언 예시를 함께 보여줍니다. `dva init`도 같은
+탐지를 스캐폴딩 시점에 수행합니다: 프로젝트 루트에 sops 암호화 후보 파일이 있으면 생성되는
+`dva.yml`에 위와 같은 `env_file` 엔트리를 미리 채워 넣고, `.sops.yaml`만 있고 후보 파일이
+없으면 아무것도 추가하지 않습니다.
 
 ##### 두 개의 명시적 커맨드
 
