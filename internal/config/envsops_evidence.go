@@ -32,7 +32,13 @@ func (e SopsEvidence) Found() bool { return e.CreationRules || len(e.Candidates)
 // plaintext secret must not be opened by a diagnostic.
 func (c *Config) DetectSopsEvidence() SopsEvidence {
 	var ev SopsEvidence
+	// A declared plaintext path is never a source candidate, whatever its name:
+	// suggesting it would render {path: X, sops_source: X}, which every bridge
+	// command refuses as source_is_target.
 	seen := map[string]bool{}
+	for _, e := range c.AllEnvFileConfigs() {
+		seen[e.Path] = true
+	}
 	add := func(p string) {
 		if p != "" && !seen[p] {
 			seen[p] = true

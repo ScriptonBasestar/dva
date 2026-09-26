@@ -24,6 +24,11 @@ func TestDoctorEnvSopsDeclaration(t *testing.T) {
 			files: map[string]string{".env": "A=1\n"},
 		},
 		{
+			name:  "a declared plaintext path is not a candidate",
+			yaml:  "version: \"0.1.45\"\nenv_file: [.env.enc]\n",
+			files: map[string]string{".env.enc": "A=1\n"},
+		},
+		{
 			name:  "declared source stays silent",
 			yaml:  simpleBridgeYAML(".env", "secrets.env.enc"),
 			files: map[string]string{".sops.yaml": "creation_rules: []\n", "secrets.env.enc": "ENC"},
