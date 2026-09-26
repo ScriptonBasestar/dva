@@ -5,7 +5,7 @@ type: feature
 priority: P2
 effort: M
 exec-tier: standard
-status: doing
+status: done
 created: 2026-09-26
 ---
 
@@ -15,7 +15,7 @@ created: 2026-09-26
 
 ## Completion Criteria
 
-- [ ] 암호화 엔트리가 없을 때 `config env edit` 에러가 선언 예시와 감지된 sops 후보 경로를 보여주고 code는 `no_encrypted_env_entry`로 유지된다 | verify: `go test ./internal/cli/ -run 'EnvBridge|FaultRow|NoEncrypted'`
-- [ ] sops 흔적은 있는데 선언이 없으면 doctor가 advisory 행을 내고, 흔적이 없거나 선언이 있으면 행이 없다 | verify: `go test ./internal/cli/ -run DoctorEnvSops`
-- [ ] agent-mesh library·flow·skills가 `sops_source`를 설명하고 생성물이 최신이다 | verify: `make check-generate`
-- [ ] 전체 테스트 통과 | verify: `make test` (regression-guard)
+- [x] 암호화 엔트리가 없을 때 `config env edit` 에러가 선언 예시와 감지된 sops 후보 경로를 보여주고 code는 `no_encrypted_env_entry`로 유지된다 | verify: `go test ./internal/cli/ -run 'EnvBridge|FaultRow|NoEncrypted'`
+- [x] sops 흔적은 있는데 선언이 없으면 doctor가 advisory 행을 내고, 흔적이 없거나 선언이 있으면 행이 없다 | verify: `go test ./internal/cli/ -run DoctorEnvSops`
+- [x] agent-mesh library·flow·skills가 `sops_source`를 설명하고 생성물이 최신이다 | verify: `make check-generate`
+- [x] 전체 테스트 통과 | verify: `make test` (regression-guard)
