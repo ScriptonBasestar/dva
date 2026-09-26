@@ -20,7 +20,7 @@ func selectEncryptedEntry(c *config.Config, target string) (config.EnvFileConfig
 	// happens to name a plaintext entry. With no encrypted entry at all there is
 	// no selection problem to report — the feature is simply not configured.
 	if len(encrypted) == 0 {
-		return config.EnvFileConfig{}, bridgeErr(codeNoEncryptedEntry, "no env_file entry declares sops_source")
+		return config.EnvFileConfig{}, bridgeErr(codeNoEncryptedEntry, "%s", noEncryptedEntryMessage(c))
 	}
 
 	if target == "" {

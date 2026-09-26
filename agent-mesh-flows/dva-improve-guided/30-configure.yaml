@@ -346,7 +346,7 @@ steps:
           dependency), and do not duplicate plan up/down actions with raw lifecycle commands.
       11. **Provision evidence** — Generate only profiles backed by actual setup work;
           never invent `default`, `full`, or `reset` profiles to satisfy a template.
-      12. **`env_file:` object format** — Prefer `{ files: [...] }` (optional `required:`); plain string path is also valid.
+      12. **`env_file:` object format** — Prefer `{ files: [...] }` (optional `required:`); plain string path is also valid. When the project shows sops evidence (`.sops.yaml`, `*.enc`, `*.sops.*`, `secrets.sources.*.sops`), the entry that file decrypts to must declare `sops_source:`; without evidence, never invent one.
       13. **Built-in checks first** — Do not generate custom Docker socket, Compose
           file, or env-file checks already emitted by `dva doctor`. Add `checks:` only
           for project-specific prerequisites.
@@ -483,6 +483,7 @@ steps:
             required: true
           - path: .env
             required: false
+            sops_source: .env.enc     # optional: sops-encrypted file that produces this plaintext
         required: false               # optional: mark all listed files required
 
       # --- Infrastructure Orchestration Declarations ---
@@ -1124,7 +1125,15 @@ steps:
             required: true
           - path: .env
             required: false
+            sops_source: .env.enc
       ```
+
+      `sops_source` names the sops-encrypted file (committed) that produces the plaintext `path`
+      (gitignored). It never affects loading, so omitting it does not break `up` or `run` — it only
+      makes `dva config env edit/unseal/seal/show` refuse with `no_encrypted_env_entry`. When the
+      project root has `.sops.yaml`, a `*.enc` / `*.sops.*` file, or `secrets.sources.*.sops`, declare
+      `sops_source` on the env_file entry that file decrypts to. Without such evidence, omit it: a
+      `sops_source` pointing at a file that does not exist is a false declaration.
 
       ### Commonly Misused Fields
 
@@ -2120,6 +2129,7 @@ steps:
       ### Structure
       - [ ] Section order follows canonical: version → vars → environment → env_file → stack → plans → environments → sites → health_checks → interaction → provision → modules → subprojects → endpoints → infra → ssh → devcontainer
       - [ ] `env_file:` uses object format (`files:` array; optional top-level `required:`)
+      - [ ] sops evidence present (`.sops.yaml`, `*.enc`, `*.sops.*`) → the matching `env_file` entry declares `sops_source:`
       - [ ] `stack:` section present (no legacy `compose:` root-level)
       - [ ] New/rewrite config has at least one named `plans:` entry
       - [ ] Custom `checks:` do not duplicate built-in doctor checks

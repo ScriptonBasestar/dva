@@ -121,6 +121,9 @@ func runDoctorChecks(c *config.Config) []DoctorResult {
 	envReport := config.InspectEnvFiles(c.EnvFile, c.FileDir())
 	results = append(results, envInputResults(envReport)...)
 
+	// Built-in: sops in use but not declared on any env_file entry.
+	results = append(results, checkEnvSopsDeclaration(c)...)
+
 	// Built-in: non-Compose stack entry files exist
 	results = append(results, checkStackFiles(c)...)
 
@@ -449,6 +452,26 @@ func sameStringSet(a, b []string) bool {
 // reports exactly what the runtime will decide.
 func checkEnvFiles(c *config.Config) []DoctorResult {
 	return envInputResults(config.InspectEnvFiles(c.EnvFile, c.FileDir()))
+}
+
+// checkEnvSopsDeclaration reports sops evidence that no env_file entry claims.
+//
+// sops_source never affects loading, so its absence cannot fail `up`; the first
+// place it shows is `dva config env` refusing. Without evidence there is no row:
+// most projects do not use sops, and a row for them would be noise.
+func checkEnvSopsDeclaration(c *config.Config) []DoctorResult {
+	if len(c.EncryptedEnvEntries()) > 0 {
+		return nil
+	}
+	ev := c.DetectSopsEvidence()
+	if !ev.Found() {
+		return nil
+	}
+	return []DoctorResult{{
+		Name:    "Encrypted env source declared",
+		Finding: "sops files found but no env_file entry declares sops_source: " + sopsEvidenceSummary(ev),
+		FixHint: "Declare the source in dva.yml, e.g. " + sopsDeclarationExample(c, ev),
+	}}
 }
 
 // envInputResults renders one report into doctor rows, in declaration order.

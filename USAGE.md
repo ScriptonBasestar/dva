@@ -1421,6 +1421,11 @@ env_file:
 우선순위, `dva config show` 출력은 이 필드가 있든 없든 완전히 동일합니다. 즉 기존
 `env_file` 동작에 대한 변경이 아니라, 평문 옆에 출처를 적어두는 메타데이터입니다.
 
+그래서 이 선언이 빠져도 `up`/`run`은 멀쩡히 돌고, `dva config env`를 처음 쓸 때에야
+`no_encrypted_env_entry`로 거절됩니다. 설정 루트에 `.sops.yaml`, `*.enc`, `*.sops.*`
+파일이나 `secrets.sources.*.sops`가 있는데 선언이 없으면 `dva doctor`가 advisory 행으로
+알려주고, 거절 메시지도 감지한 파일을 넣은 선언 예시를 함께 보여줍니다.
+
 ##### 두 개의 명시적 커맨드
 
 | Command | 하는 일 |

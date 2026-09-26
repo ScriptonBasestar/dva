@@ -12,6 +12,7 @@
 ### Structure
 - [ ] Section order follows canonical: version → vars → environment → env_file → stack → plans → environments → sites → health_checks → interaction → provision → modules → subprojects → endpoints → infra → ssh → devcontainer
 - [ ] `env_file:` uses object format (`files:` array; optional top-level `required:`)
+- [ ] sops evidence present (`.sops.yaml`, `*.enc`, `*.sops.*`) → the matching `env_file` entry declares `sops_source:`
 - [ ] `stack:` section present (no legacy `compose:` root-level)
 - [ ] New/rewrite config has at least one named `plans:` entry
 - [ ] Custom `checks:` do not duplicate built-in doctor checks

@@ -56,6 +56,7 @@ env_file:                       # .env file loading (optional)
       required: true
     - path: .env
       required: false
+      sops_source: .env.enc     # optional: sops-encrypted file that produces this plaintext
   required: false               # optional: mark all listed files required
 
 # --- Infrastructure Orchestration Declarations ---
@@ -697,7 +698,15 @@ env_file:
       required: true
     - path: .env
       required: false
+      sops_source: .env.enc
 ```
+
+`sops_source` names the sops-encrypted file (committed) that produces the plaintext `path`
+(gitignored). It never affects loading, so omitting it does not break `up` or `run` — it only
+makes `dva config env edit/unseal/seal/show` refuse with `no_encrypted_env_entry`. When the
+project root has `.sops.yaml`, a `*.enc` / `*.sops.*` file, or `secrets.sources.*.sops`, declare
+`sops_source` on the env_file entry that file decrypts to. Without such evidence, omit it: a
+`sops_source` pointing at a file that does not exist is a false declaration.
 
 ### Commonly Misused Fields
 

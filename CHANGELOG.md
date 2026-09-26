@@ -4,6 +4,15 @@ All notable changes to DVA are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- **`sops_source` 누락을 알려주는 경로**: 설정 루트에 sops 흔적(`.sops.yaml`, `*.enc`,
+  `*.sops.*`, `secrets.sources.*.sops`)이 있는데 어떤 `env_file` 엔트리도 `sops_source`를
+  선언하지 않으면 `dva doctor`가 advisory 행과 붙여넣을 수 있는 선언 예시를 보여줍니다.
+  `dva config env`의 `no_encrypted_env_entry` 메시지도 같은 예시와 감지된 파일을 담습니다
+  (code는 그대로). agent-mesh flow와 `dva-config` 스킬의 스키마·규칙·체크리스트가 이제
+  `sops_source`를 가르칩니다.
+
 ## [0.3.0] - 2026-09-23
 
 ### Added
