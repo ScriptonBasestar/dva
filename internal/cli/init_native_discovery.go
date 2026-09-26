@@ -58,8 +58,26 @@ type nativeScaffoldDiscovery struct {
 	envFileSource string
 }
 
+// hasEvidence reports Makefile/port/subproject evidence only. Sops evidence
+// deliberately does not count here (TASK-441 review fix): this predicate
+// selects *which generator runs* — the discovered-config writer vs. the
+// native-only guidance vs. the "no dva.yml" refusal — and a sops candidate
+// alone must not change that choice. A lone .env.enc with no compose file and
+// no language manifest must still refuse exactly as before; a language
+// manifest with no Makefile targets must still get generateNativeOnlyConfigIn's
+// guidance, not the discovered-config writer's unrelated "0 declared Makefile
+// native entries" framing. Every path that does write a dva.yml still gets the
+// env_file entry — see hasSopsEnvFile and its two call sites in init_scaffold.go.
 func (d nativeScaffoldDiscovery) hasEvidence() bool {
-	return len(d.entries) > 0 || len(d.subprojects) > 0 || len(d.ports) > 0 || d.envFileSource != ""
+	return len(d.entries) > 0 || len(d.subprojects) > 0 || len(d.ports) > 0
+}
+
+// hasSopsEnvFile reports whether discovery found a sops candidate worth
+// declaring. It is checked in addition to, never instead of, hasEvidence() at
+// call sites that decide whether to merge/append the env_file entry into a
+// dva.yml that was already going to be written for another reason.
+func (d nativeScaffoldDiscovery) hasSopsEnvFile() bool {
+	return d.envFileSource != ""
 }
 
 // parsePortMappingsManifest reads the first manifest in the documented,
@@ -383,6 +401,23 @@ func isInstructionOnlyRecipe(recipe []string) bool {
 		}
 	}
 	return true
+}
+
+// appendSopsEnvFileBlock adds the sops_source env_file entry to content when
+// discovery found a candidate. It is for the generateNativeOnlyConfigIn path
+// only (init_scaffold.go): that generator's output is comment-only text with
+// no other top-level keys, so a plain text append is safe and does not need
+// mergeInitDiscovery's YAML-aware "base wins" rule. Every other path that
+// writes a dva.yml gets env_file through generateDiscoveredConfig instead.
+func appendSopsEnvFileBlock(content string, discovery nativeScaffoldDiscovery) string {
+	if !discovery.hasSopsEnvFile() {
+		return content
+	}
+	if !strings.HasSuffix(content, "\n") {
+		content += "\n"
+	}
+	return content + fmt.Sprintf("\nenv_file:\n  - path: %s\n    sops_source: %s\n",
+		strconv.Quote(discovery.envFileTarget), strconv.Quote(discovery.envFileSource))
 }
 
 func generateDiscoveredConfig(discovery nativeScaffoldDiscovery, lang string, evidence langEvidence) string {

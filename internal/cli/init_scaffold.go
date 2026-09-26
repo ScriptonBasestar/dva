@@ -289,6 +289,7 @@ func scaffoldDvaYmlWithPreview(dir, tmpl string, preview bool) (bool, error) {
 			effectiveTmpl = nativeLang
 		}
 		content := generateNativeOnlyConfigIn(effectiveTmpl, nativeEvidence)
+		content = appendSopsEnvFileBlock(content, discovered)
 		if preview {
 			printDvaYmlPreview(target, content)
 			return true, nil
@@ -321,7 +322,13 @@ func scaffoldDvaYmlWithPreview(dir, tmpl string, preview bool) (bool, error) {
 	}
 
 	content := generateConfigIn(dir, tmpl)
-	if discovered.hasEvidence() {
+	// discovered.hasEvidence() alone decides whether Makefile/port/subproject
+	// evidence merges in; hasSopsEnvFile() is checked in addition (not
+	// instead), because a compose file already justifies writing dva.yml on
+	// its own — a sops candidate found alongside it must still be declared,
+	// even when there is no other discovered content to merge (TASK-441
+	// review fix).
+	if discovered.hasEvidence() || discovered.hasSopsEnvFile() {
 		content, err = mergeInitDiscovery(content, generateDiscoveredConfig(discovered, nativeLang, nativeEvidence))
 		if err != nil {
 			return false, err
