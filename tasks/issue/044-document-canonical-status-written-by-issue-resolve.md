@@ -5,13 +5,16 @@ type: bug
 priority: P3
 effort: XS
 exec-tier: cheap
-status: todo
+status: done
 severity: medium
 ownership: upstream
 upstream-ref: "ce-agent-kit#3 (related strict-status contract; this docs/test follow-up is not separately filed)"
 discovered-in: "Document canonical status written by issue resolve"
 discovered-at: 2026-09-25
 created: 2026-09-25
+resolution: fixed
+resolved-at: 2026-09-27T07:36:14Z
+resolution-summary: "Resolved as fixed."
 ---
 
 ## Summary
@@ -56,3 +59,9 @@ DVA records the observed status-policy comparison and local reproduction. ce-age
 the resolver reference, resolver test name, and direct negative validator fixture because all
 three live in its source. The upstream reference points to the related strict-status contract;
 this documentation/test-name follow-up has not been separately filed in CE.
+
+## Resolution (2026-09-27)
+
+Fixed upstream in ce-agent-kit `a4c8c51d` and `5323497c`, integrated by
+`ce task run-finish resolve-docs-status-field` (DONE). The reference, help text, and
+resolver test now name the four fields `resolve` writes, including `status: done`.

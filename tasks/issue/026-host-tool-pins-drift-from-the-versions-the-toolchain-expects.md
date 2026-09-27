@@ -106,7 +106,7 @@ canonical marketplace identity 누락, 오래된 upstream exclusion cache, CLAUD
 `config/claude/settings.json`, `config/codex/config.toml`의 네 preference 차이를 찾았다.
 non-force 설치는 이를 거부하며 force가 live 자격 증명과 설정을 덮을 수 있다. 자격 증명
 및 설정을 보존하는 지정 설치 경로를 확인할 때까지 install은 보류한다.
-작업 기록은 [TASK-431](../blocked/431-align-host-golangci-and-worktrunk-pins.md)이다.
+작업 기록은 [TASK-431](../review/431-align-host-golangci-and-worktrunk-pins.md)이다.
 
 2026-09-25 read-only audit confirmed the source branch changes only the worktrunk pin and
 found no static reference to that config key from the failing check targets or tests. The

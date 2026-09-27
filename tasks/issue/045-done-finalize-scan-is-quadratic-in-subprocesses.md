@@ -3,13 +3,16 @@ id: ISSUE-045
 title: "done-finalize scan spawns uncached git subprocesses per card and file"
 type: bug
 priority: P2
-status: todo
+status: done
 severity: medium
 discovered-in: "done-finalize scan spawns uncached git subprocesses per card and file"
 discovered-at: 2026-09-27
 ownership: upstream
 upstream-ref: "ce-agent-kit (not yet filed; evidence lives here until reported)"
 created: 2026-09-27
+resolution: fixed
+resolved-at: 2026-09-27T07:36:14Z
+resolution-summary: "Resolved as fixed."
 ---
 
 ## Summary
@@ -56,3 +59,12 @@ created: 2026-09-27
 가리키게 되어 `planprogress`와 `validate`가 실패했고 16개 링크가 깨졌다. 저장소 선례
 (0ba36ee1)대로 삭제를 되돌리고 카드를 `tasks/_archive/2026-09/`에 `archived-at`과 함께
 옮겨 해결했다. 계획 자식 카드를 삭제하는 finalize는 이 보드 규약과 맞지 않는다.
+
+## Resolution (2026-09-27)
+
+Fixed upstream in ce-agent-kit `039dccdd` (branch `perf/done-finalize-scan-cache`,
+integrated by `ce task run-finish done-finalize-scan-cache`, DONE). The cleanup scan runs
+one `git ls-files -z` and memoizes source matches; absolute and `..` paths still defer
+to git. Measured `done-finalize-all --dry-run` on this board: >580s → 62.6s. Installed
+`ce` rebuilt at `v0.8.4-368-g039dccdd`. The archive-instead-of-finalize convention for
+this board is unchanged, because finalize still deletes cards that PLAN `children` cite.

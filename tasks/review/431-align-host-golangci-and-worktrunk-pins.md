@@ -5,8 +5,8 @@ type: chore
 priority: P2
 effort: S
 exec-tier: standard
-needs-human: true
-status: blocked
+needs-human: false
+status: review
 created: 2026-09-24
 ---
 
@@ -31,7 +31,7 @@ drift가 남아 있다. non-force 설치가 이를 중단하며 force는 기존 
 
 - [x] mise shim이 Aqua 2.13.2를 선택하고 실행된 golangci-lint가 2.13.2를 보고한다 | verify: human — `mise which golangci-lint`와 `golangci-lint --version` 결과를 이 카드에 기록한다
 - [x] Source master pins worktrunk to 0.74.0 and task-relevant checks do not worsen the unchanged-source baseline | verify: human — integrated commit `7273dd62`; final `run-finish` readiness reports `make check` 22→22 and `make lint` 23→23 with no changed-path diagnostics
-- [ ] 통합된 source의 worktrunk 핀 0.74.0이 기존 live 설정을 보존하며 설치된다 | verify: human — 지정 설치 결과와 설치본 config, `mise which wt`, `wt --version` 확인
+- [x] 통합된 source의 worktrunk 핀 0.74.0이 기존 live 설정을 보존하며 설치된다 | verify: human — 지정 설치 결과와 설치본 config, `mise which wt`, `wt --version` 확인
 
 ## Out of scope
 
@@ -51,3 +51,4 @@ drift가 남아 있다. non-force 설치가 이를 중단하며 force는 기존 
 - `ce task run-finish pin-worktrunk-0740 --json` completed DONE. It verified readiness against `origin/master`, integrated and pushed `7273dd62d9eaced4428fe769a4f1cdff7f3e4c2a`, then removed the task worktree and local/remote branches. Final baseline counts were `make check` 22→22 and `make lint` 23→23, with no changed-path diagnostics; these supersede the earlier 22→21 preliminary count.
 - The executable provided by the `cargo:worktrunk` package is `wt`, not `worktrunk`: `mise which wt` resolves to the installed `cargo-worktrunk/latest/bin/wt`, and `wt --version` reports 0.74.0. A normal `mise install cargo:worktrunk@0.74.0` reports that version already installed. The host executable is already at the pinned version, but the live `~/devenv` config and a drift-preserving install remain unverified.
 - Installer drift audit found managed `config/docker/config.json` differences and generated `config/claude/settings.json` plus `config/codex/config.toml` differences (four shared preference values). No force install was run. Preserve these live files until a safe supported install path exists.
+- 2026-09-27 install: live `jq = "1.8.1"` drift was first adopted into source (`03c1466e`, `ce task run-finish adopt-live-jq-pin` DONE). The non-force `make install` then reported exactly one drift path, `config/mise/config.toml`, whose only remaining difference was `cargo:worktrunk` `latest`→`0.74.0` (the intended change); the earlier docker/Claude/Codex drift was no longer reported. With that reviewed, `make install FORCE=1` installed `03c1466e` and preserved 11 declared local inputs. Afterwards `diff` of source and installed `config/mise/config.toml` is empty, `mise which wt` resolves to `cargo-worktrunk/0.74.0/bin/wt`, and `wt --version` reports `wt 0.74.0`.
