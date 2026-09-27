@@ -11,6 +11,7 @@ ownership: upstream
 upstream-ref: "ce-agent-kit#3 (related strict-status contract; this docs/test follow-up is not separately filed)"
 discovered-in: "Document canonical status written by issue resolve"
 discovered-at: 2026-09-25
+archived-at: 2026-09-27
 created: 2026-09-25
 resolution: fixed
 resolved-at: 2026-09-27T07:36:14Z
