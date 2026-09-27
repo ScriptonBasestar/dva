@@ -195,6 +195,6 @@ ACTIVE 선언이므로 보존했다.
 ## 2026-09-28 종료
 
 남은 판정 항목이 모두 닫혔다. ISSUE-024는 해결·보관됐고, ISSUE-039의 운영 잔여였던
-TASK-436은 브랜치를 보존한 채 superseded로 종료했으며 discard 수명주기 결함은 상류로
-이관했다. 열린 이슈는 ISSUE-004·006(task-manager-devbox W13·W14 채택 추적)과
-ISSUE-039(상류 추적) 세 장이며 각자 owner가 있다. 이 트리아지 카드는 역할을 다해 보관한다.
+TASK-436은 CE `run-discard`로 중복 worktree를 회수해 완료됐다(`fa0d518e`). 열린 이슈는
+ISSUE-004·006(task-manager-devbox W13·W14 채택 추적)과 ISSUE-046(미푸시 브랜치 소유자 확인)
+세 장이며 각자 처리 경로가 있다. 이 트리아지 카드는 역할을 다해 보관한다.
