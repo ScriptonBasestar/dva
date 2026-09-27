@@ -47,3 +47,9 @@ names `ce-agent-kit` as the active CE source but names no successor for that Pyt
 controller. `ce-agent-kit`'s current `ce task preflight` has no selector or
 `_allowed_paths()` path. Implementing the desired queue disposition there would be a
 new feature, not a continuation of the deleted owner.
+
+## 재개 조건 (2026-09-27)
+
+제품 owner가 canonical repository, CLI entry point, external/human disposition contract를
+명시하면 ISSUE-040을 갱신하고 범위를 다시 추정한다. ce-agent-kit#1은 과거 보고처이므로
+구현 owner로 간주하지 않는다.

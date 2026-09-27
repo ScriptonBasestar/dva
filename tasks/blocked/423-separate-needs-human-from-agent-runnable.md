@@ -15,7 +15,7 @@ created: 2026-09-24
 그대로다. preflight는 기준과 `verify:`가 있는지만 보고 runnable을 센다.
 `needs-human: true`와 `verify: human —`은 그 판정에 닿지 않는다. 사람만 할 수
 있는 큐가 READY로 보이고, 그 판정을 믿는 루프는 끝날 곳을 모른다.
-소유는 ce-agent-kit#1.
+원래 upstream-ref ce-agent-kit#1은 역사적 보고처이며 현재 구현 owner를 확인하지 못했다. TASK-421이 제품 owner·저장소·CLI·disposition contract를 정한 뒤에 재개한다.
 
 방향: runnable과 agent가 실행할 수 있는 수를 나눈다. 사람 전용 카드를
 unrunnable로 합치지 않는다. 사람은 그 카드를 계속 볼 수 있어야 한다.

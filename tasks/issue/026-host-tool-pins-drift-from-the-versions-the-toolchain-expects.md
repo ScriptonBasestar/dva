@@ -14,10 +14,10 @@ upstream-ref: "ce-agent-kit#6"
 
 ## Summary
 
-워크스테이션 도구 두 개의 원래 drift를 추적한다. golangci-lint는 재측정 결과
-mise가 의도한 Aqua 2.13.2를 정상 선택해 별도 수정이 필요 없다. worktrunk source pin은
-devenv master commit `7273dd62`에 0.74.0으로 통합됐다. live 설정에 pin을 반영하는
-안전한 설치는 기존 로컬 drift를 보존할 경로가 없어 미완료다.
+워크스테이션 도구 두 개의 drift를 추적한다. worktrunk source pin은 devenv master
+commit `7273dd62`에 통합됐지만, 2026-09-27 독립 재측정은 wt 선택 경로가 아직 latest임을
+보였다. 같은 리뷰에서 golangci-lint는 기대 버전 2.13.2 대신 2.12.2였다. 두 live 기준
+모두 현재 미해결이다.
 
 **1. (해결됨) golangci-lint 2.12.2가 mise가 고른 2.13.2보다 PATH에서 앞선다.** mise 전역
 설정은 `"aqua:golangci/golangci-lint" = "2.13.2"`를 고르고, 2.13.2는 go1.27.0으로
@@ -86,7 +86,7 @@ worktrunk 다음 버전 배포일에 모든 저장소의 작업이 하루 막힌
 
 ## Resolution Criteria
 
-- [x] 실행된 golangci-lint가 mise가 선택한 Aqua 2.13.2다 | verify: human — `mise which golangci-lint`가 Aqua 2.13.2를 가리키고 `golangci-lint --version`이 2.13.2인지 확인한다
+- [ ] 실행된 golangci-lint가 mise가 선택한 Aqua 2.13.2다 | verify: human — `mise which golangci-lint`가 Aqua 2.13.2를 가리키고 `golangci-lint --version`이 2.13.2인지 확인한다
 - [ ] worktrunk 0.74.0 핀이 live `~/devenv` 설치본에 반영된다 | verify: human — 설치본 mise config와 `mise which wt`, `wt --version`이 0.74.0을 확인한다
 
 ## 후속 (2026-09-24)
@@ -106,7 +106,7 @@ canonical marketplace identity 누락, 오래된 upstream exclusion cache, CLAUD
 `config/claude/settings.json`, `config/codex/config.toml`의 네 preference 차이를 찾았다.
 non-force 설치는 이를 거부하며 force가 live 자격 증명과 설정을 덮을 수 있다. 자격 증명
 및 설정을 보존하는 지정 설치 경로를 확인할 때까지 install은 보류한다.
-작업 기록은 [TASK-431](../review/431-align-host-golangci-and-worktrunk-pins.md)이다.
+작업 기록은 [TASK-431](../blocked/431-align-host-golangci-and-worktrunk-pins.md)이다.
 
 2026-09-25 read-only audit confirmed the source branch changes only the worktrunk pin and
 found no static reference to that config key from the failing check targets or tests. The
@@ -142,3 +142,12 @@ kit을 dba2348b로 fast-forward하고 `make install_cli`로 재설치해 복구�
 실패했고, 일회성 `GOSUMDB=sum.golang.org`로만 통과했다. 두 원인 모두 워크스테이션
 상태이므로 수정 위치는 이 저장소가 아니라 devenv 정본(`GOSUMDB`)과 ce의 설정 스키마
 대비 설치 버전 점검(`run-doctor`)이다.
+
+## 2026-09-27 독립 재측정
+
+TASK-431 reviewer는 `mise which golangci-lint`와 실행 버전 모두 2.12.2,
+`mise which wt` 경로 `cargo-worktrunk/latest/bin/wt`, `wt --version` 0.74.0을 기록했다.
+실행 버전만 맞는 것은 pinned installation 경로의 증거가 아니다. 과거 FORCE=1과
+11개 입력 보존 주장은 durable before/after evidence가 없고 report의 03c1466e source
+commit도 canonical checkout에서 확인되지 않았다. source pin 통합 및 readiness 비교는
+통과 상태로 유지하며, live criteria가 검증될 때까지 이 이슈를 열어 둔다.

@@ -25,8 +25,9 @@ state transition.
 
 DVA currently has each shape:
 
-- ISSUE-001 is a P0 external receipt-contract blocker owned by ce-agent-kit
-  and ce-workbook/task_management.
+- ISSUE-001 tracks the remaining DVA-owned migration of a legacy done-review to
+  durable CE-compatible evidence. TASK-420 closes the CE issuer contract; no live
+  ce-workbook controller currently owns a cross-repository run for TASK-312.
 - TASK-329 and TASK-348 require external project readiness or a real build.
 - TASK-307, TASK-309, TASK-319, TASK-321, and TASK-351 await an explicit
   human design decision.
@@ -109,3 +110,10 @@ lifecycle 규칙은 ce-agent-kit에서만 작성"이라고 적는 별개 개념�
 
 2026-09-24 재측정에서도 상류 계약은 그대로다. 작업은
 [TASK-421](../blocked/421-admit-external-and-human-only-cards.md)가 소유한다.
+
+## 소유권 재측정 (2026-09-27)
+
+ce-agent-kit#1은 TASK-399의 역사적 보고처다. 그 보고가 가리킨 Python
+entry_selection controller는 퇴역했고 현재 selector successor는 카탈로그에 없다.
+TASK-421은 새 제품 owner·canonical repository·CLI route·disposition contract가 ISSUE-040에서
+결정될 때까지 blocked이며, 기존 issue reference만으로 ce-agent-kit 구현을 지시하지 않는다.

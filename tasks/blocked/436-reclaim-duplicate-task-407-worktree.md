@@ -43,3 +43,13 @@ Blocked until the shared lifecycle provides an approved cleanup/recovery route. 
 ## Sources
 
 - [ISSUE-039](../issue/039-discard-guard-blocks-reclaiming-a-worktree-whose-fix-was-already-merged-upstream.md)
+
+## 2026-09-27 재측정
+
+ce task run-status task-407 --json은 상태 ACTIVE, finishReady false, upstream 미설정으로
+반환했고 허용 동작은 run-status와 run-abort뿐이었다. worktree는
+/Users/archmagece/worktrees/misc/dva/claude__mbp__fix__task-407에 clean 상태로
+남아 있고 branch dev/claude/mbp/fix/task-407의 HEAD는 4ce30f26. source master보다
+51 commit 뒤지고 8개 고유 commit이 있어 통합 상태가 같지 않다. 소유자 결정 없이
+rebase·abort·직접 삭제하지 않는다. 재개 조건은 owner가 이 branch의 고유 변경을
+보존/폐기할지 정하고 shared lifecycle이 지원하는 처리 경로를 제공하는 것이다.

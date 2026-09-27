@@ -9,7 +9,7 @@ exec-tier: strong
 severity: medium
 discovered-in: "TASK-312 done-review and TASK-354 gate currentization"
 discovered-at: 2026-09-10
-ownership: upstream
+ownership: local
 created: 2026-09-10
 upstream-ref: "ce-agent-kit#7"
 ---
@@ -64,11 +64,10 @@ As of 2026-09-10 this was an active repository gate blocker: at DVA HEAD
 **원칙은 그대로다.** 검토 없이 digest만 채우는 것은 위조이며, validator가 기대
 digest를 출력한다는 사실이 그 금지를 완화하지 않는다.
 
-**남은 것은 상류다.** 1번(레거시 controller dialect)과 2번의 상류 쪽은
-`ce-agent-kit`(validator 계약)과 `ce-workbook/task_management`(controller
-dialect)이 소유하고, `ce-agent-kit#7`으로 보고됐다([[TASK-399]]). §Priority의
-criterion 1·2가 그 작업이다. 이 보드는 그 진척을 강제할 수 없다(PLAN-007 §External
-이 같은 이유로 그쪽 항목에 카드를 두지 않았다).
+**당시 소유권 기록 — 2026-09-27 정정.** 위 문단은 ISSUE-001의 2026-09-14 상태를
+보존한다. TASK-420이 CE issuer/validator 계약을 닫았고 ce-workbook controller가
+퇴역했으므로, 현재 남은 TASK-312 review migration의 owner는 DVA host다. ce-agent-kit#7은
+발견 당시의 보고처이며 현행 실행 owner가 아니다.
 
 ## pin은 어느 digest를 박았는지가 정한다 (2026-09-14 실측, 2026-09-15 현행화)
 
@@ -210,38 +209,22 @@ Done card blocks %s but declares no quality-review-receipt: the successors were 
   cover all three shapes: missing evidence (`TASK-312`), prose evidence
   (`TASK-344`/`TASK-371`), and a current controller-created card.
 
-## 소유권 — 상류다 (2026-09-15 명시)
+## 소유권 — 이 저장소다
 
-검증 계약의 정본은 상류에 있다 — Priority 절이 "ce-agent-kit still owns the canonical
-digest … ce-workbook/task_management still owns the legacy controller dialect"로 적는다.
-이 저장소 절반에 해당하던 기준들은 TASK-388·TASK-384로 이미 닫혔고, 남은 기준은 전부
-상류 검증 계약에 묶여 있다. 보고는 [[TASK-399]]가 `ce-agent-kit#7`로 수행했다.
-
-> **2026-09-15 정정 — 묶음이 틀렸었다.** 이 카드는 처음에 `ce-agent-kit#2`(`run-*`
-> 수명주기)로 보고됐다. 근거로 적힌 문장은 "셋 다 '실행 기록'이라는 같은 자료구조를
-> 공유한다"였는데 거짓이다 — ISSUE-005 · ISSUE-008이 다루는 것은 `run-*` **실행
-> 영수증**(레지스트리 항목)이고 이 카드가 다루는 것은 **리뷰 영수증**
-> (`done-review-<sha>.json`)이다. 한국어로 둘 다 "영수증"이라 불릴 뿐 서로 다른
-> 산출물이며, 같은 단어로 불린다는 것을 같은 자료구조라는 근거로 썼다. [[ISSUE-027]]이
-> 기록한 오류와 같은 계열이다 — 그쪽은 grep이 "이름이 등장한다"와 "구현이 있다"를
-> 섞었고 이쪽은 명명이 "같게 불린다"와 "같다"를 섞었다.
->
-> 독립 리뷰가 잡아냈고, #2에서 해당 절을 떼어 `ce-agent-kit#7`(리뷰 영수증 계약)로
-> 옮겼다. 옮기면서 Summary 2(컨트롤러의 PyYAML 정규화 ↔ CE canonical JSON 다이제스트
-> 불일치)도 함께 실었다 — 첫 보고에는 Summary 1만 담겼고 2·3이 누락돼 있었다.
-> Summary 3(`tmp/` 경로)은 TASK-388이 이 저장소 안에서 닫았으므로 상류 보고 대상이
-> 아니다.
+TASK-420은 CE canonical issuer/validator 기준을 닫았고 resolution criterion 2를 만족한다.
+ce-workbook의 현재 master에는 TASK-045에서 제거된 Python engine/execution controller가
+없다. 남은 TASK-312 review migration은 DVA host가 소유한다: 독립 리뷰어가 현재 구현과
+근거를 판정하고, fresh evidence 기록 뒤 `ce task review-receipt`를 호출해 Git 추적 경로에
+저장한다. TASK-312는 archive에 있어 `ce task validate --all`에서 역사 문서로 skip된다.
+따라서 해당 board validator는 TASK-312 receipt의 검증 증거가 아니다. 최종 archived card에
+대해 `ce task review-receipt`를 다시 실행해 그 출력의 canonical
+`reviewed-card-sha256`이 저장된 JSON과 일치하는지 대조한다. ce-agent-kit#7은 이슈 발견
+당시의 역사적 상류 보고처이며 현재 실행 owner를 뜻하지 않는다.
 
 ## Resolution Criteria
 
-- [ ] `TASK-312` can receive a fresh `done-review` verdict despite absent
-  completion evidence, without claiming that a historical completion receipt
-  existed | verify: human — a joint runtime fix or documented migration
-  procedure is linked here and a fresh controller run records the review
-- [ ] Missing, prose, and current file-backed completion-evidence shapes all
-  produce CE-compatible canonical digests | verify: human — upstream tests for
-  both the ce-agent-kit validator contract and ce-workbook issuer are linked
-  here
+- [ ] DVA performs a fresh independent review of archived TASK-312, updates the current quality-review verdict/date/evidence after an independent PASS and stores the first CE canonical receipt at a tracked DVA path | verify: human — separate reviewer evidence, ce task review-receipt output, the tracked first-receipt pointer, and its canonical digest round trip are linked here; archive cards are skipped by validate
+- [x] Absent, prose, and file-backed completion-evidence inputs each produce a CE-compatible canonical receipt after fresh non-empty reviewer evidence is recorded | verify: human — TASK-420 commit 988e7de6, exact CI, independent review, and validator round-trip tests
 - [x] New review receipts are written to a durable tracked location rather
   than remaining under ignored `tmp/` | verify: `! /usr/bin/grep -rn '^quality-review-receipt: tmp/' tasks`
   — TASK-388이 저장소 안에서 닫았다. 상류 발급기를 기다릴 필요가 없었다
@@ -250,8 +233,7 @@ digest … ce-workbook/task_management still owns the legacy controller dialect"
   ready | verify: `ce task gate --json`
   — 2026-09-14 정정. 원문은 "genuine controller-produced review receipts"라고 적었고
   그 절반은 오늘도 거짓이다 — 두 receipt는 TASK-384에서 **독립 리뷰어와 저자가 손으로
-  발급했다.** controller 발급은 여전히 없고, 그것은 이 이슈의 criterion 1·2가 소유한
-  상류 작업이다. 바인딩(`ce task gate --json`)은 발급 주체를 재지 않으므로
+  발급했다.** controller 발급은 여전히 없으며 이 DVA review receipt의 필수 경로도 아니다. TASK-420은 criterion 2를 닫았고, TASK-312의 새 검토는 criterion 1의 DVA host 작업이다. 바인딩(`ce task gate --json`)은 발급 주체를 재지 않으므로
   통과하는 동안 산문만 거짓이 되는 형태였다. 오늘 참인 것만 남긴다.
 
 > **본문 압축 (2026-09-15, [[TASK-396]]).** 이 카드는 활성 존에서 매 게이트 실행마다
@@ -259,11 +241,11 @@ digest … ce-workbook/task_management still owns the legacy controller dialect"
 > 리뷰 근거 사실(validator 메시지 census, 실측 표, 폐기·정정 이력, 소유권 귀속)은
 > 전부 남겼고, 삭제된 서술의 전문은 Git 이력에 있다.
 
-## 후속 (2026-09-24)
+## 후속 (2026-09-24; 2026-09-27 현행화)
 
-DVA에서 닫힌 기준은 그대로다. 남은 controller 통합 기준은 상류에 남는다.
-[TASK-420](../done/420-legacy-done-review-receipts.md)는 ce-agent-kit issuer/validator
-기준을 구현했고, 실제 ce-workbook controller run은 별도 증거가 필요하다.
+당시 기록은 남은 controller 통합을 상류 작업으로 설명했다. 2026-09-27 소유권 재측정은 그 전제를 수정했다.
+[TASK-420](../_archive/2026-09/420-legacy-done-review-receipts.md)는 ce-agent-kit issuer/validator
+기준을 구현했고, ce-workbook controller는 퇴역했다. 남은 TASK-312 migration은 DVA host가 fresh review와 durable receipt로 처리해야 한다.
 
 ## TASK-420 독립 리뷰 (2026-09-25)
 
@@ -277,7 +259,7 @@ done-card fixture에 연결해 validator까지 통과시키는 round-trip 테스
 
 `dd73a0a7`은 발급 CLI, digest 생성, 세 입력 형태별 JSON 출력까지 통과했지만
 위 round-trip이 없어 TASK-420 독립 리뷰는 FAIL이었다. 수정 범위는
-`[TASK-420](../done/420-legacy-done-review-receipts.md)`에 반영했다.
+`[TASK-420](../_archive/2026-09/420-legacy-done-review-receipts.md)`에 반영했다.
 
 ## TASK-420 후속 결과 (2026-09-25)
 
@@ -289,7 +271,23 @@ receipt와 verdict를 붙인 done-card fixture를 `NewValidator.Validate`까지 
 독립 구현 리뷰는 **PASS**, exact commit의 full CI도 PASS했고, 커밋은 CE `master`에
 통합됐다.
 
-이 결과는 **ce-agent-kit issuer/validator 계약**을 닫지만 이 이슈 전체를 닫지는 않는다.
-ce-workbook controller가 이 발급 경로를 호출해 `TASK-312`를 새 리뷰로 마이그레이션한
-기록은 아직 없다. 따라서 Resolution Criteria 1·2는 유지한다. 특히 criterion 2의
-ce-workbook issuer 항목과 criterion 1의 실제 controller run이 남았다.
+이 결과는 resolution criterion 2를 닫지만 ISSUE-001 전체를 닫지는 않는다.
+ce-workbook controller run을 기다릴 근거는 사라졌다. criterion 1은 DVA host-owned fresh
+TASK-312 review migration으로 구체화했으며, separate reviewer와 durable receipt가 아직
+기록되지 않아 열린 상태다.
+
+## 2026-09-27 소유 범위 현행화
+
+TASK-420은 ce-agent-kit의 canonical receipt 생성·validator round trip을 닫았다. 남은
+DVA TASK-312 migration의 verdict, fresh quality-review-evidence, receipt 저장 경로,
+카드 전이는 DVA host 소유이며 [TASK-444](../todo/444-review-task-312-and-record-a-current-durable-receipt.md)에 등록했다. ce-workbook의 현재 master 0f82bada에는
+task_management/engine 또는 task_management/execution tracked 구현이 없고,
+TASK-045에서 제거된 controller run을 요구해도 실행할 진입점이 없다. ce task
+review-receipt는 canonical digest JSON만 출력하므로 독립 리뷰나 전이를 대신하지
+않는다. Resolution criterion 2는 TASK-420으로 충족됐다. criterion 1은 별도 리뷰어가 archived
+TASK-312를 새로 검토하고 non-empty evidence를 먼저 기록한 뒤 canonical receipt를 만들어
+DVA Git 추적 경로에 저장하고 `ce task review-receipt`의 final-output digest와 저장된 JSON을
+대조하는 작업이다. TASK-312에는 이전 receipt가 없으므로 새 receipt가 최초 기록이다.
+`ce task validate --all` 및 READY gate는 archive skip을 포함한 보드 비회귀 증거로만 남기며,
+archived receipt를 검증했다고 서술하지 않는다. 현재 receipt와 digest round trip이 없어
+ISSUE-001은 열린다.
