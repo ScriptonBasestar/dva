@@ -134,3 +134,13 @@ this issue stays open until W14 ships and DVA adopts it.
 
 The earlier TASK-421 dependency describes the pre-handoff state. The current
 `task-manager-devbox` W14 row declares no W13 dependency; W14 can proceed independently.
+
+## 2026-09-28 제품 구현
+
+taskchain-task-manager `78ed463`이 읽기 전용 `queue`에 `runnable`과
+`agentRunnable` 항목·수를 분리했다. `needs-human: true`와 YAML merge
+입력을 검증하고 사람 전용 카드만 남았을 때 `agentRunnableCount: 0` 및
+`agentRunnable: []`를 확인했다. 독립 리뷰 PASS, 제품 `make check`
+(race taskstore 1019초)와 통합 사전검사를 통과했고 `master/origin`에
+통합·push한 뒤 작업 브랜치·worktree를 회수했다. 이 이슈는 DVA 소비자가
+새 큐를 채택해 실제 preflight 판정을 교체할 때까지 열린다.

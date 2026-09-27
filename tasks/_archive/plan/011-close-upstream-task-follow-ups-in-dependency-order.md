@@ -5,12 +5,13 @@ type: plan
 priority: P2
 effort: L
 scope: "Close upstream task follow-ups in dependency order"
-progress: 94
+progress: 100
 total-tasks: 19
-completed-tasks: 18
+completed-tasks: 19
 children: [TASK-420, TASK-421, TASK-422, TASK-423, TASK-424, TASK-425, TASK-426, TASK-427, TASK-428, TASK-429, TASK-430, TASK-431, TASK-432, TASK-433, TASK-434, TASK-435, TASK-436, TASK-438, TASK-439]
 target-date: "2026-10-09"
 created: 2026-09-25
+status: done
 ---
 
 ## Goal
@@ -18,9 +19,11 @@ created: 2026-09-25
 Close the active upstream follow-up cards in an order that respects required code
 dependencies, independent reviews, and explicit ownership blockers. TASK-421 and
 TASK-423 were handed off on 2026-09-27 to taskchain-task-manager (task-manager-devbox
-W13/W14) and archived as superseded; ISSUE-004/006 track adoption. TASK-436 has
-recorded reclaim authorization and waits for a supported CE discard action. TASK-431
-completed host pin installation with tracked local-input and receipt evidence.
+W13/W14) and archived as superseded; ISSUE-004/006 track adoption. W14's product
+queue shipped in `78ed463`; DVA consumer adoption remains open. TASK-436's
+approved stale worktree was reclaimed through CE `run-discard` with tracked
+receipt and independent Git evidence. TASK-431 completed host pin installation
+with tracked local-input and receipt evidence.
 
 ## Children
 
@@ -40,9 +43,9 @@ completed host pin installation with tracked local-input and receipt evidence.
 | 완료 | TASK-424 validate zone/status ownership | CE `dba2348b` strict policy and producer round trips; DVA paired legacy/strict fixtures, final strict board validation 492/0, duplicate-ID regression restored, `make doc-check`, and identity-scope checks pass; CE resolved-issue terminal status difference is documented; independent done-review PASS |
 | 이관 | TASK-421 controller disposition | 9/27 제품 owner가 taskchain-task-manager로 지정. task-manager-devbox W13으로 이관하고 superseded로 보관 (ISSUE-040 해결) |
 | 이관 | TASK-423 needs-human 실행 구분 | 9/27 task-manager-devbox W14로 이관하고 superseded로 보관. 채택은 ISSUE-006이 추적 |
-| 차단 | TASK-436 duplicate TASK-407 worktree 회수 | 사용자 회수 승인과 branch 내용 판단은 기록됐다. source rebase 충돌 후 shared lifecycle의 검증 가능한 discard 경로가 필요하다 |
+| 완료 | TASK-436 duplicate TASK-407 worktree 회수 | CE `0d4b8b16` `run-discard` ABORTED receipt, original owner `claude/mbp`·performer `codex/mbp`; worktree·local/remote branch 부재를 [추적 증거](../../done/evidence/TASK-436/discard-verification-20260928.json)에 기록하고 독립 done-review PASS 완료 |
 
 ## 계획 밖 상류 이슈 (2026-09-27)
 
-- ISSUE-001은 TASK-420의 canonical receipt 생성 기능과 구분됐다. ce-workbook은 TASK-045에서 legacy Python engine/execution을 제거했고, ce task review-receipt는 정본 digest를 계산할 뿐 독립 verdict·근거·저장 경로·카드 전이를 소유하지 않는다. 마지막 TASK-312 마이그레이션은 [TASK-444](../done/444-review-task-312-and-record-a-current-durable-receipt.md)에서 DVA host의 fresh independent PASS와 first durable receipt로 마쳤고 ISSUE-001을 fixed/archive했다. TASK-444는 PLAN-011 child가 아니다.
+- ISSUE-001은 TASK-420의 canonical receipt 생성 기능과 구분됐다. ce-workbook은 TASK-045에서 legacy Python engine/execution을 제거했고, ce task review-receipt는 정본 digest를 계산할 뿐 독립 verdict·근거·저장 경로·카드 전이를 소유하지 않는다. 마지막 TASK-312 마이그레이션은 [TASK-444](../../done/444-review-task-312-and-record-a-current-durable-receipt.md)에서 DVA host의 fresh independent PASS와 first durable receipt로 마쳤고 ISSUE-001을 fixed/archive했다. TASK-444는 PLAN-011 child가 아니다.
 - 완료/계획 밖 | ISSUE-030 / CE TASK-331 | 구현 `16af8443` 독립 리뷰 PASS 뒤 `f3cfa169`(done-review evidence 포함)가 CE master/origin에 통합·push되고 run-finish가 branch/worktree를 회수했다. exact final-tree `make ci` run ci-20260927-175252-77713 exit 0. source-built CE v0.8.4-372-gf3cfa169에서 validate 16/0, gate READY+revision, review-receipt canonical digest+same tool stamp를 확인했다. mismatch/unknown advisory와 digest hard error는 exact CI regression tests에서 확인했고 ISSUE-030을 fixed/archive했다.

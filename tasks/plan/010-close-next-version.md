@@ -41,7 +41,7 @@ TASK-411은 `tasks/done/`). 그 뒤 착지한 TASK-440(sops_source 안내)은 CH
 
 2026-09-25에 남은 상류 이슈의 기준은 TASK-420–438으로 이관됐다. 현재 일부는
 `review/` 또는 `blocked/`에 있으므로 전부 `todo/`라는 표현은 더 이상 맞지 않는다.
-현재 큐와 의존성은 별도 [PLAN-011](011-close-upstream-task-follow-ups-in-dependency-order.md)이
+완료된 큐와 의존성의 이력은 별도 [PLAN-011](../_archive/plan/011-close-upstream-task-follow-ups-in-dependency-order.md)이
 소유한다. ISSUE-014와 ISSUE-005는 충족된 기준으로 닫았다. 그 태스크는 DVA 우회를
 추가하지 않고 소유 도구 동작을 본다. ISSUE-024의 finalize 차단은 증거 경로·정당한
 참조를 지워 우회하지 않는다. ISSUE-039의 워크트리 폐기는 TASK-436(사람 전용)이다.

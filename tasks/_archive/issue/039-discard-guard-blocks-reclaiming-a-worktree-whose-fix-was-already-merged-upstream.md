@@ -2,7 +2,7 @@
 id: ISSUE-039
 title: "Discard guard blocks reclaiming a worktree whose fix already landed upstream via a parallel session"
 type: bug
-status: todo
+status: done
 priority: P2
 effort: S
 exec-tier: standard
@@ -11,6 +11,9 @@ ownership: local
 discovered-in: "2026-09-23 TASK-407 rework — reopened card's fix duplicated already-merged upstream work"
 discovered-at: 2026-09-23
 created: 2026-09-23
+resolution: fixed
+resolved-at: 2026-09-27T15:34:29Z
+resolution-summary: "Resolved as fixed by TASK-436."
 ---
 
 ## Summary
@@ -108,7 +111,7 @@ TD-71이 언급하는 "통합하지 않고 버리는 결정을 받아들일 채�
 ## 후속 (2026-09-24)
 
 워크트리 `claude__mbp__fix__task-407`은 2026-09-24에도 남아 있다. 회수는
-[TASK-436](../blocked/436-reclaim-duplicate-task-407-worktree.md)가 추적한다.
+[TASK-436](../../done/436-reclaim-duplicate-task-407-worktree.md)가 추적한다.
 훅 재설계는 그 카드 밖이다.
 
 ## 2026-09-25 재확인
@@ -123,3 +126,13 @@ active TASK branch에 보존했다.
 사용자는 회수를 승인했지만 abort는 worktree/ref를 제거하지 않고 direct deletion은
 현재 repository lifecycle policy에서 허용되지 않아 TASK-436을 `blocked/`로 옮겼다.
 지원되는 lifecycle recovery route가 생기면 기존 branch에서 이어간다.
+
+## 해결 (2026-09-28)
+
+CE `0d4b8b16`이 owner-bound `run-discard`를 제공한다. 사용자의 기존
+회수 승인에 따라 TASK-407 실행을 `--take-over-from claude/mbp`와 명시적
+사유로 폐기했다. terminal receipt는 실제 수행자 `codex/mbp`와
+worktree·local branch·remote branch 제거를 기록한다.
+[TASK-436 추적 증거](../../done/evidence/TASK-436/discard-verification-20260928.json)의
+독립 Git 조회도 worktree 미등록, local ref exit 1, origin branch exit 2다.
+TASK-436의 독립 done-review와 함께 이 이슈를 fixed로 resolve/archive했다.

@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-27T15:30:40.896968+00:00",
+  "task": "task-407",
+  "status": "ABORTED",
+  "receipt": {
+    "operation": "discard",
+    "owner": {
+      "actor": "claude",
+      "host": "mbp",
+      "kind": "agent"
+    },
+    "performedBy": {
+      "actor": "codex",
+      "host": "mbp",
+      "kind": "agent"
+    },
+    "branch": "dev/claude/mbp/fix/task-407",
+    "worktree": "/Users/archmagece/worktrees/misc/dva/claude__mbp__fix__task-407",
+    "reason": "discard completed: User-approved reclaim: duplicate TASK-407 fix is already represented on master; current worktree is clean and has no remote task branch",
+    "createdAt": "2026-09-27T15:29:38.731937Z",
+    "worktreeRemoved": true,
+    "localBranchRemoved": true,
+    "remoteBranchRemoved": true,
+    "tool_version": "v0.8.4-373-g0d4b8b16",
+    "tool_revision": "0d4b8b16bdb62d1a3b2f1650703a0958e6d37ebe"
+  },
+  "checks": {
+    "worktreeListed": false,
+    "localBranchExitCode": 1,
+    "remoteBranchExitCode": 2
+  },
+  "sourceHead": "b5e7ce9b2c97dc15b7c65cb4ace4d5ce60347850"
+}
