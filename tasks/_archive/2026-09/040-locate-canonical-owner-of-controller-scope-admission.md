@@ -2,14 +2,18 @@
 id: ISSUE-040
 title: "The historical controller scope contract has no current owner"
 type: bug
-status: todo
+status: done
 priority: P2
 effort: S
 severity: low
 ownership: local
 discovered-in: "TASK-421 upstream owner resolution"
 discovered-at: 2026-09-25
+archived-at: 2026-09-27
 created: 2026-09-25
+resolution: fixed
+resolved-at: 2026-09-27T13:53:24Z
+resolution-summary: "Resolved as fixed."
 ---
 
 ## Summary
@@ -58,3 +62,9 @@ disposition contract. Do not make `tasks/` a synthetic file scope.
 이 이슈는 DVA 보드의 잘못된 소유 표기를 바로잡는 기록이며 이 로컬 기록만 이 저장소가
 소유한다. controller의 구현 소유자는 정해져 있지 않으므로 특정 repository에 책임을
 부여하지 않는다.
+
+## Resolution (2026-09-27)
+
+The product owner named taskchain-task-manager (`~/mydevbox/task-manager-devbox`) as the
+owner. The work is registered there as W13 (external/human-only routing) and W14
+(agent-runnable count).

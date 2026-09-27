@@ -5,13 +5,14 @@ type: bug
 priority: P2
 effort: S
 exec-tier: standard
-status: blocked
+status: superseded
+archived-at: 2026-09-27
 created: 2026-09-24
 ---
 
 ## Summary
 
-[ISSUE-006](../issue/006-preflight-reports-needs-human-cards-as-runnable.md)은
+[ISSUE-006](../../issue/006-preflight-reports-needs-human-cards-as-runnable.md)은
 그대로다. preflight는 기준과 `verify:`가 있는지만 보고 runnable을 센다.
 `needs-human: true`와 `verify: human —`은 그 판정에 닿지 않는다. 사람만 할 수
 있는 큐가 READY로 보이고, 그 판정을 믿는 루프는 끝날 곳을 모른다.
@@ -30,4 +31,10 @@ unrunnable로 합치지 않는다. 사람은 그 카드를 계속 볼 수 있어
 
 ## Sources
 
-- [ISSUE-006](../issue/006-preflight-reports-needs-human-cards-as-runnable.md)
+- [ISSUE-006](../../issue/006-preflight-reports-needs-human-cards-as-runnable.md)
+
+## Handoff (2026-09-27)
+
+The product owner named taskchain-task-manager as the owner. The work is
+registered there as W14 (`task-manager-devbox` task/list.md). This card is archived
+unfinished; the issue in Sources tracks adoption.

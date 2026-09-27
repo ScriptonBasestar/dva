@@ -11,7 +11,7 @@ discovered-in: "2026-09-10 direct queue-run preflight"
 discovered-at: 2026-09-10
 ownership: upstream
 created: 2026-09-10
-upstream-ref: "ce-agent-kit#1"
+upstream-ref: "task-manager-devbox task/list.md W13"
 ---
 
 ## Summary
@@ -109,7 +109,7 @@ lifecycle 규칙은 ce-agent-kit에서만 작성"이라고 적는 별개 개념�
 ## 후속 (2026-09-24)
 
 2026-09-24 재측정에서도 상류 계약은 그대로다. 작업은
-[TASK-421](../blocked/421-admit-external-and-human-only-cards.md)가 소유한다.
+[TASK-421](../_archive/2026-09/421-admit-external-and-human-only-cards.md)가 소유한다.
 
 ## 소유권 재측정 (2026-09-27)
 
@@ -117,3 +117,9 @@ ce-agent-kit#1은 TASK-399의 역사적 보고처다. 그 보고가 가리킨 Py
 entry_selection controller는 퇴역했고 현재 selector successor는 카탈로그에 없다.
 TASK-421은 새 제품 owner·canonical repository·CLI route·disposition contract가 ISSUE-040에서
 결정될 때까지 blocked이며, 기존 issue reference만으로 ce-agent-kit 구현을 지시하지 않는다.
+
+## Owner (2026-09-27)
+
+The product owner assigned this to taskchain-task-manager, tracked as W13 in
+`~/mydevbox/task-manager-devbox/task/list.md`. TASK-421 was archived as handed off;
+this issue stays open until W13 ships and DVA adopts it.

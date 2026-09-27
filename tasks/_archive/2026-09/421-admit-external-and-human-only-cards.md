@@ -5,13 +5,14 @@ type: bug
 priority: P1
 effort: M
 exec-tier: strong
-status: blocked
+status: superseded
+archived-at: 2026-09-27
 created: 2026-09-24
 ---
 
 ## Summary
 
-[ISSUE-004](../issue/004-controller-scope-admission-cannot-represent-external-or-human-only-cards.md)는
+[ISSUE-004](../../issue/004-controller-scope-admission-cannot-represent-external-or-human-only-cards.md)는
 삭제된 Python controller를 현행 상류 동작으로 취급하고 있다. 워크북은
 `task_management/engine`과 `/execution`이 TASK-045에서 삭제됐으며
 `entry_selection.py`도 `cc65f521`에서 제거됐다고 기록한다. 현재 CE 카탈로그에는
@@ -35,8 +36,8 @@ criteria·verify·의존성만 평가하며, 새 selector/controller 경로를 �
 
 ## Sources
 
-- [ISSUE-004](../issue/004-controller-scope-admission-cannot-represent-external-or-human-only-cards.md)
-- [ISSUE-040](../issue/040-locate-canonical-owner-of-controller-scope-admission.md)
+- [ISSUE-004](../../issue/004-controller-scope-admission-cannot-represent-external-or-human-only-cards.md)
+- [ISSUE-040](040-locate-canonical-owner-of-controller-scope-admission.md)
 
 ## Blocker evidence (2026-09-25)
 
@@ -53,3 +54,9 @@ new feature, not a continuation of the deleted owner.
 제품 owner가 canonical repository, CLI entry point, external/human disposition contract를
 명시하면 ISSUE-040을 갱신하고 범위를 다시 추정한다. ce-agent-kit#1은 과거 보고처이므로
 구현 owner로 간주하지 않는다.
+
+## Handoff (2026-09-27)
+
+The product owner named taskchain-task-manager as the owner. The work is
+registered there as W13 (`task-manager-devbox` task/list.md). This card is archived
+unfinished; the issue in Sources tracks adoption.

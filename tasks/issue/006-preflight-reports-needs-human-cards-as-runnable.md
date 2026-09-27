@@ -11,7 +11,7 @@ discovered-in: "2026-09-13 task:run-all loop termination"
 discovered-at: 2026-09-13
 ownership: upstream
 created: 2026-09-13
-upstream-ref: "ce-agent-kit#1"
+upstream-ref: "task-manager-devbox task/list.md W14"
 ---
 
 ## Summary
@@ -116,10 +116,16 @@ lifecycle 규칙은 ce-agent-kit에서만 작성"이라고 적는 별개 개념�
 ## 후속 (2026-09-24)
 
 판정은 여전히 `needs-human`을 보지 않는다. 작업은
-[TASK-423](../blocked/423-separate-needs-human-from-agent-runnable.md)가 소유한다.
+[TASK-423](../_archive/2026-09/423-separate-needs-human-from-agent-runnable.md)가 소유한다.
 
 ## 소유권 재측정 (2026-09-27)
 
 ce-agent-kit#1은 TASK-399의 역사적 보고처이며 현행 구현 owner로 확인되지 않았다.
 TASK-423은 TASK-421/ISSUE-040의 controller owner와 disposition 계약 결정에 종속된다.
 제품 결정 전에는 needs-human 기준의 구현 repository나 CLI route를 가정하지 않는다.
+
+## Owner (2026-09-27)
+
+The product owner assigned this to taskchain-task-manager, tracked as W14 in
+`~/mydevbox/task-manager-devbox/task/list.md`. TASK-423 was archived as handed off;
+this issue stays open until W14 ships and DVA adopts it.
