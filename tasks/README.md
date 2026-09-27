@@ -1,39 +1,19 @@
 # DVA Task Management Board
 
-## 현재 릴리스 및 후속 큐 (2026-09-28)
+## 현재 상태 (2026-09-28)
 
-v0.3.0 공개와 postflight는 완료됐다. PLAN-010 공개 릴리스 범위는 8/8이다. 완료된 상류 후속 큐의 의존 순서는
-[[PLAN-011]]에 보관했다. PLAN-011의 19장 중 완료 17, 이관 2, 차단 0장이다.
-TASK-421/423은 `61ead57b`에서 task-manager-devbox W13/W14로
-이관되어 superseded 보관됐다. TASK-431은 source 0.74.0 핀의 live 설치와
-호스트 lint 2.13.2 검증을 마쳤다. TASK-443은 독립 done-review PASS를 받아 보드 현행화를 완료했다.
-TASK-444의 fresh PASS와 first durable receipt로 ISSUE-001을 fixed 처리해 archive했다.
-TASK-444도 독립 done-review PASS를 받아 완료했다.
-TASK-445는 TASK-431 측정 범위와 TASK-436 기존 회수 승인을 현행화했다.
+v0.3.0 공개와 postflight는 완료됐고 PLAN-010(8/8)과 PLAN-011(19/19)은
+`tasks/_archive/plan/`에 보관됐다. 열린 계획은 없다. 과거 판정은 보관된 카드와 Git 이력이 소유한다.
+TASK-436은 CE `run-discard`로 중복 worktree를 회수해 완료됐고(`fa0d518e`) ISSUE-039는 보관됐다.
+통합 없는 회수의 remote·충돌 경로 잔여는 ce-agent-kit ISSUE-074가 추적한다.
 
-- ISSUE-037: local `master`와 `origin/master` 동기화가 확인되어 해결됨.
-- ISSUE-014: 영수증 디렉터리 `unknown` 분류는 TASK-403으로 닫혀 아카이브됐다.
-- ISSUE-005/TASK-422: 영수증 종단 상태 기록과 조회 보존이 상류에 이미 구현되어 독립 리뷰 후 done 처리했다.
-- ISSUE-007/041: TASK-424가 DVA의 strict status dialect 선택, paired evidence, identity regressions, independent done-review PASS를 마쳐 fixed 처리 후 `tasks/_archive/issue/`에 보관했다.
-- ISSUE-024: finalize 차단은 우회하지 않는다. TASK-430의 `ed1f4574`는 receipt 존재·tracking·digest 검증, missing/untracked/malformed 음성 회귀, preview/apply 일치, ISSUE-051 supersession을 구현했다. exact implementation CI와 upstream independent review PASS, `1e408857` master 통합 완료. TASK-391/393/394 및 TASK-410 DVA previews는 모두 `WOULD REMOVE`, clean worktree로 기록됐으며 DVA 독립 done-review PASS 후 fixed로 resolve했다.
-- ISSUE-004/006: TASK-421/423은 task-manager-devbox W13/W14로 이관됐다. W14 제품 `78ed463`은 독립 리뷰·`make check`를 통과해 master에 통합됐고, DVA 소비자 채택은 ISSUE-006에서 계속 추적한다. W13과 ISSUE-004도 열린다.
-- ISSUE-043: TASK-438 fixture에서 provider가 통합한 뒤 Worktrunk 회수에 실패하면 후속 `run-status`가 inventory 불일치로 막히는 recovery gap을 기록했다. TASK-439는 source containment 확인, 잔여 path/ref 보존, 제한된 receipt에 대한 `run-status`·`run-list`의 `run-recover` 안내, idempotence와 `--no-fetch` 지원을 구현하고 독립 리뷰를 통과해 이슈를 해결·아카이브했다.
-- ISSUE-032/TASK-435: source-branch 승격 차단은 `ce-agent-kit` master `71b1d169`에 포함된 `05b0b4ae` 수정으로 해결됐다.
-- ISSUE-013/019/020/022/028/031/032는 상류 수정 확인 후 `tasks/_archive/issue/`에 보관했다.
-- TASK-431의 source worktrunk pin `7273dd62`를 지정 설치기로 live에 반영했다. `/tmp` 호스트 scope에서 explicit wt 0.74.0과 Aqua golangci-lint 2.13.2가 선택·실행된다. DVA 프로젝트와 CI의 2.12.2는 제품 핀이다. 선언된 로컬 입력 10개는 추적 evidence와 제한된 해시 감사로 보존을 확인했고 generated shared drift는 사용자 선택대로 소스 정본을 유지한다. 독립 done-review 뒤 ISSUE-026을 fixed로 닫았다.
-- TASK-432, TASK-433, TASK-420, TASK-438, TASK-439는 상류 통합·독립 리뷰를 마쳤고 현재 tasks/_archive/2026-09/에 있다. TASK-420은 legacy completion evidence 세 형상에서 fresh non-empty quality-review-evidence를 먼저 기록하고 canonical receipt를 validator까지 왕복 검증했다. TASK-438의 exact-CI commit 71b1d169와 TASK-439의 exact-CI commit 7eaf596a는 CE master/origin에 통합됐고 task branch/worktree 회수도 확인했다. ISSUE-008/042/043은 회귀 수정과 fixture·테스트 증거로 해결·아카이브됐다. ISSUE-001의 마지막 DVA-host TASK-312 migration도 TASK-444에서 독립 PASS와 첫 canonical receipt를 기록해 fixed/archive 처리했다. TASK-312는 archive validation에서 history로 skip되므로 저장 receipt는 별도 canonical-digest round trip으로 확인했다.
-- TASK-424는 CE `96bb3674`의 strict CLI producer round trips와 `dba2348b` 통합을 바탕으로 DVA가 `card-dialect.strict-status`를 선택했다. paired DVA/CE zone·archive fixtures, 최종 전체 board strict validation 492/0, duplicate-ID 회귀 테스트, `make doc-check`가 통과했고 `checkCardStatus` 중복은 제거됐다. CE resolver가 만든 `issue/ + status: done + resolution` 예외는 old guard와 다르며 evidence에 기록했다. 독립 done-review PASS로 `done/`에 이동했다.
-- TASK-430의 `ed1f4574`는 receipt ownership 경계를 보완하고 exact implementation CI 및 upstream independent review를 통과했다. review evidence commit `1e408857`는 master에 통합·push됐고 task branch/worktree 회수 완료. 네 DVA cleanup previews가 `WOULD REMOVE`로 통과해 tracked evidence에 저장됐고, fresh DVA independent done-review PASS 및 ISSUE-024 fixed resolve까지 끝났다.
-- ISSUE-039: 사용자 승인된 TASK-436의 stale worktree를 CE `0d4b8b16`의 `run-discard`로 회수했다. terminal receipt와 별도 Git 조회에서 worktree·local/remote branch 부재를 확인했고 [추적 증거](done/evidence/TASK-436/discard-verification-20260928.json)를 남겼다. 독립 done-review를 마치고 ISSUE-039를 fixed/archive했다.
-- ISSUE-044/045: 상류 통합 후 2026-09-27 1662bb68에서 해결 이슈 아카이브로 이동했다. 현재 active issue 목록에 남기지 않는다.
-- TASK-420–439의 상태와 실행 의존성은 [[PLAN-011]]에서 유지한다. TASK-437·TASK-443·TASK-445는 PLAN-011 child가 아닌 보드 현행화 카드이고 TASK-444는 ISSUE-001 마감 카드라 PLAN-011 child 수에는 포함하지 않는다.
-- ISSUE-004/006의 ce-agent-kit#1은 역사적 보고처다. `61ead57b`가 두 카드의 후속 owner를 taskchain-task-manager로 정해 task-manager-devbox W13/W14로 이관했다.
-- ISSUE-030은 PLAN-011 밖의 ce-agent-kit 작업이었다. TASK-331 구현 `16af8443`은 세 번째 독립 리뷰 PASS와 exact CI PASS를 받았고, review-evidence 카드 커밋 `f3cfa169`까지 `master/origin`에 통합·push됐다. `run-finish`가 source push와 task worktree/branch 회수를 완료했다. 최종 tree CI run `ci-20260927-175252-77713` exit 0; source-built CE `v0.8.4-372-gf3cfa169`의 validate 출력은 16 valid / 0 invalid, `ce task gate --json`은 READY와 revision `f3cfa169`를, review-receipt JSON은 canonical digest와 같은 version/revision을 기록했다. legacy/mismatch/unknown advisory와 digest hard error는 exact CI regression tests 및 독립 리뷰에서 확인해 ISSUE-030을 fixed/archive했다.
-- PLAN-006~009는 `tasks/_archive/plan/`에 보관했고 `make doc-check`가 링크·계획 진행률을 확인했다.
-  `tasks/` 아래 네 `.ce` 텔레메트리 디렉터리의 파일 12개(30,336바이트)는
-  `/Users/archmagece/backups/dva/task-ce-telemetry-20260927`로 이동해 SHA-256을 대조했다.
-  [백업 목록과 해시](done/evidence/TASK-446/telemetry-backup-manifest.json)를 추적한다.
-  루트 `.ce/task-runtime.yaml`은 ACTIVE 런타임 선언으로 남아 있다.
+열린 이슈:
+
+- ISSUE-004/006: task-manager-devbox W13/W14(taskchain-task-manager) 구현·DVA 채택까지 추적한다.
+- ISSUE-046: grok 세션의 미푸시 `env-reseal` 커밋. 소유자 확인 전에는 손대지 않는다.
+
+보드 현행화는 `tasks/`만이 아니라 `git worktree list`와 `ce task run-list`도 함께 확인한다.
+완료 카드는 현행화 태스크 끝에 `tasks/_archive/YYYY-MM/`로 보관한다(`done-finalize`는 카드를 삭제해 plan children을 깨뜨린다).
 
 이 문서는 DVA 프로젝트의 태스크 및 보드 구조, 아카이브 상태를 안내하는 정본 인덱스입니다.
 
