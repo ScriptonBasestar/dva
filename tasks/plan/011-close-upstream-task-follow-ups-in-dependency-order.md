@@ -45,5 +45,5 @@ failed criteria.
 
 ## 계획 밖 상류 이슈 (2026-09-27)
 
-- ISSUE-001은 TASK-420의 canonical receipt 생성 기능과 구분된다. ce-workbook은 TASK-045에서 legacy Python engine/execution을 제거했고, ce task review-receipt는 정본 digest를 계산할 뿐 독립 verdict·근거·저장 경로·카드 전이를 소유하지 않는다. 남은 TASK-312 마이그레이션은 [TASK-444](../todo/444-review-task-312-and-record-a-current-durable-receipt.md)로 등록해 DVA host에서 별도 리뷰어의 새 검토와 durable receipt로 처리하며 PLAN-011 child가 아니다.
+- ISSUE-001은 TASK-420의 canonical receipt 생성 기능과 구분됐다. ce-workbook은 TASK-045에서 legacy Python engine/execution을 제거했고, ce task review-receipt는 정본 digest를 계산할 뿐 독립 verdict·근거·저장 경로·카드 전이를 소유하지 않는다. 마지막 TASK-312 마이그레이션은 [TASK-444](../todo/444-review-task-312-and-record-a-current-durable-receipt.md)에서 DVA host의 fresh independent PASS와 first durable receipt로 마쳤고 ISSUE-001을 fixed/archive했다. TASK-444는 PLAN-011 child가 아니다.
 - 완료/계획 밖 | ISSUE-030 / CE TASK-331 | 구현 `16af8443` 독립 리뷰 PASS 뒤 `f3cfa169`(done-review evidence 포함)가 CE master/origin에 통합·push되고 run-finish가 branch/worktree를 회수했다. exact final-tree `make ci` run ci-20260927-175252-77713 exit 0. source-built CE v0.8.4-372-gf3cfa169에서 validate 16/0, gate READY+revision, review-receipt canonical digest+same tool stamp를 확인했다. mismatch/unknown advisory와 digest hard error는 exact CI regression tests에서 확인했고 ISSUE-030을 fixed/archive했다.

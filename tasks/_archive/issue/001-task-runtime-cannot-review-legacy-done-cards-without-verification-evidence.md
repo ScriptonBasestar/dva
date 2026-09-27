@@ -2,7 +2,7 @@
 id: ISSUE-001
 title: "Review pipeline cannot migrate legacy done cards into CE-compatible durable receipts"
 type: bug
-status: todo
+status: done
 priority: P2
 effort: M
 exec-tier: strong
@@ -12,6 +12,9 @@ discovered-at: 2026-09-10
 ownership: local
 created: 2026-09-10
 upstream-ref: "ce-agent-kit#7"
+resolution: fixed
+resolved-at: 2026-09-27T09:19:41Z
+resolution-summary: "Resolved as fixed by TASK-444."
 ---
 
 ## Summary
@@ -213,17 +216,29 @@ Done card blocks %s but declares no quality-review-receipt: the successors were 
 
 TASK-420은 CE canonical issuer/validator 기준을 닫았고 resolution criterion 2를 만족한다.
 ce-workbook의 현재 master에는 TASK-045에서 제거된 Python engine/execution controller가
-없다. 남은 TASK-312 review migration은 DVA host가 소유한다: 독립 리뷰어가 현재 구현과
-근거를 판정하고, fresh evidence 기록 뒤 `ce task review-receipt`를 호출해 Git 추적 경로에
-저장한다. TASK-312는 archive에 있어 `ce task validate --all`에서 역사 문서로 skip된다.
-따라서 해당 board validator는 TASK-312 receipt의 검증 증거가 아니다. 최종 archived card에
-대해 `ce task review-receipt`를 다시 실행해 그 출력의 canonical
-`reviewed-card-sha256`이 저장된 JSON과 일치하는지 대조한다. ce-agent-kit#7은 이슈 발견
-당시의 역사적 상류 보고처이며 현재 실행 owner를 뜻하지 않는다.
+없다. 남은 TASK-312 review migration은 DVA host가 소유했고 TASK-444에서 마쳤다: 독립
+리뷰어가 현재 구현과 회귀 테스트를 PASS 판정했고, 이전 waived 근거를 역사로 보존한 채
+fresh evidence를 기록했다. source-built CE의 `ce task review-receipt`가 낸 canonical
+digest는 첫 Git 추적 receipt와 다시 대조해 일치했다. TASK-312는 archive에 있어
+`ce task validate --all`에서 역사 문서로 skip된다. 따라서 해당 board validator는 TASK-312
+receipt의 검증 증거가 아니다. ce-agent-kit#7은 이슈 발견 당시의 역사적 상류 보고처이며
+현재 실행 owner를 뜻하지 않는다.
+
+## Resolution evidence (2026-09-27)
+
+TASK-444의 fresh independent PASS는 원래 TASK-312 기준을 현재 구현과
+`TestUpDryRunSkipsEntryHealthWait` 회귀 테스트에 대조했고, targeted Go test가 통과했다.
+2026-09-14 waived rationale를 TASK-312의 Review history에 남기고 현재 pass/date/evidence를
+먼저 기록했다. source-built CE `v0.8.4-372-gf3cfa169`가 만든 canonical digest
+`1eab9b3d14798f6b3ad275caa251bdbcea5a4a2f7132577298f8a85af0b09acf`는
+`tasks/done/evidence/TASK-312/done-review-1eab9b3d14798f6b3ad275caa251bdbcea5a4a2f7132577298f8a85af0b09acf.json`
+에 저장했고 마지막 재실행에서도 digest와 tool stamp가 일치했다. 전체 board의 498/0
+validation과 READY gate는 비회귀 확인에만 사용했으며, archive 카드 skip으로 TASK-312
+receipt를 검증했다고 주장하지 않는다.
 
 ## Resolution Criteria
 
-- [ ] DVA performs a fresh independent review of archived TASK-312, updates the current quality-review verdict/date/evidence after an independent PASS and stores the first CE canonical receipt at a tracked DVA path | verify: human — separate reviewer evidence, ce task review-receipt output, the tracked first-receipt pointer, and its canonical digest round trip are linked here; archive cards are skipped by validate
+- [x] DVA performs a fresh independent review of archived TASK-312, updates the current quality-review verdict/date/evidence after an independent PASS and stores the first CE canonical receipt at a tracked DVA path | verify: human — separate reviewer evidence, `TASK-444`, ce task review-receipt output, the tracked first-receipt pointer, and its canonical digest round trip are linked here; archive cards are skipped by validate
 - [x] Absent, prose, and file-backed completion-evidence inputs each produce a CE-compatible canonical receipt after fresh non-empty reviewer evidence is recorded | verify: human — TASK-420 commit 988e7de6, exact CI, independent review, and validator round-trip tests
 - [x] New review receipts are written to a durable tracked location rather
   than remaining under ignored `tmp/` | verify: `! /usr/bin/grep -rn '^quality-review-receipt: tmp/' tasks`
@@ -244,7 +259,7 @@ ce-workbook의 현재 master에는 TASK-045에서 제거된 Python engine/execut
 ## 후속 (2026-09-24; 2026-09-27 현행화)
 
 당시 기록은 남은 controller 통합을 상류 작업으로 설명했다. 2026-09-27 소유권 재측정은 그 전제를 수정했다.
-[TASK-420](../_archive/2026-09/420-legacy-done-review-receipts.md)는 ce-agent-kit issuer/validator
+[TASK-420](../2026-09/420-legacy-done-review-receipts.md)는 ce-agent-kit issuer/validator
 기준을 구현했고, ce-workbook controller는 퇴역했다. 남은 TASK-312 migration은 DVA host가 fresh review와 durable receipt로 처리해야 한다.
 
 ## TASK-420 독립 리뷰 (2026-09-25)
@@ -259,7 +274,7 @@ done-card fixture에 연결해 validator까지 통과시키는 round-trip 테스
 
 `dd73a0a7`은 발급 CLI, digest 생성, 세 입력 형태별 JSON 출력까지 통과했지만
 위 round-trip이 없어 TASK-420 독립 리뷰는 FAIL이었다. 수정 범위는
-`[TASK-420](../_archive/2026-09/420-legacy-done-review-receipts.md)`에 반영했다.
+`[TASK-420](../2026-09/420-legacy-done-review-receipts.md)`에 반영했다.
 
 ## TASK-420 후속 결과 (2026-09-25)
 
@@ -280,7 +295,7 @@ TASK-312 review migration으로 구체화했으며, separate reviewer와 durable
 
 TASK-420은 ce-agent-kit의 canonical receipt 생성·validator round trip을 닫았다. 남은
 DVA TASK-312 migration의 verdict, fresh quality-review-evidence, receipt 저장 경로,
-카드 전이는 DVA host 소유이며 [TASK-444](../todo/444-review-task-312-and-record-a-current-durable-receipt.md)에 등록했다. ce-workbook의 현재 master 0f82bada에는
+카드 전이는 DVA host 소유이며 [TASK-444](../../todo/444-review-task-312-and-record-a-current-durable-receipt.md)에 등록했다. ce-workbook의 현재 master 0f82bada에는
 task_management/engine 또는 task_management/execution tracked 구현이 없고,
 TASK-045에서 제거된 controller run을 요구해도 실행할 진입점이 없다. ce task
 review-receipt는 canonical digest JSON만 출력하므로 독립 리뷰나 전이를 대신하지
@@ -291,3 +306,16 @@ DVA Git 추적 경로에 저장하고 `ce task review-receipt`의 final-output d
 `ce task validate --all` 및 READY gate는 archive skip을 포함한 보드 비회귀 증거로만 남기며,
 archived receipt를 검증했다고 서술하지 않는다. 현재 receipt와 digest round trip이 없어
 ISSUE-001은 열린다.
+
+## Final status — supersedes the earlier 2026-09-27 snapshot
+
+The preceding paragraph records the state before TASK-444's review completed and is historical.
+TASK-444 then received a fresh independent PASS for archived TASK-312, recorded current
+`quality-review: pass`, date, and non-empty evidence while preserving the 2026-09-14 waiver in
+the card's Review history, and stored the first CE canonical receipt. The final-card
+`reviewed-card-sha256` and CE tool stamps round-trip against the tracked JSON at
+`tasks/done/evidence/TASK-312/done-review-1eab9b3d14798f6b3ad275caa251bdbcea5a4a2f7132577298f8a85af0b09acf.json`.
+`ce task validate --all` skips that archived card as history, so only the separate receipt
+round trip is evidence for the archived card; validate/gate are board non-regression checks.
+CE recorded `resolution: fixed`, `status: done`, and
+`resolution-summary: "Resolved as fixed by TASK-444."`; ISSUE-001 is archived and closed.

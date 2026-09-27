@@ -8,9 +8,10 @@ exec-tier: standard
 created-at: 2026-09-05T10:30:00+09:00
 source: "docs/dogfood/{scripton-db-orchestrator,scripton-dns-bridge}.md"
 status: done
-quality-review: waived
-quality-reviewed-at: 2026-09-14
-quality-review-evidence: "레거시 일괄 처분(2026-09-14). 이 카드는 2026-09-05(4f267fc2)에 done/으로 들어왔고, 독립 done 리뷰를 요구하는 규칙은 그보다 뒤인 1c85d8d0(2026-09-10, docs(tasks): require independent done review)에서 생겼다. 규칙이 없던 때의 변경 맥락 없이 오늘 판정을 지어내지 않는다 — PLAN-008이 여덟 장에 세운 선례를 그대로 적용한다. 판정 부재를 판정으로 위장하지 않기 위해 waived로 남긴다"
+quality-review: pass
+quality-reviewed-at: 2026-09-27
+quality-review-evidence: "Independent read-only review by /root/implement_issue001_workbook on 2026-09-27 returned PASS. It matched the original acceptance criterion to internal/lifecycle/orchestrator.go:158-176 and regression test internal/lifecycle/orchestrator_dry_run_health_unix_test.go:14-56, confirmed historical fix commit 4f267fc2 is reachable, and ran `go test ./internal/lifecycle -run '^TestUpDryRunSkipsEntryHealthWait$' -count=1` successfully (0.398s). The test uses an unreachable HTTP endpoint, asserts the dry-run would-wait output and no health-wait failure; no CLI end-to-end criterion was inferred. The 2026-09-14 waiver is retained below as historical context, not current evidence."
+quality-review-receipt: tasks/done/evidence/TASK-312/done-review-1eab9b3d14798f6b3ad275caa251bdbcea5a4a2f7132577298f8a85af0b09acf.json
 archived-at: 2026-09-17T11:53:00+09:00
 verified-at: 2026-09-17T11:53:00+09:00
 verification-summary: "Verified TestUpDryRunSkipsEntryHealthWait passes in internal/lifecycle."
@@ -49,3 +50,16 @@ entry "<name>"` 한 줄만 출력하도록 고쳐 해결했다.
   닫힌 포트 http check + DryRun/Wait. 수정 라인을 되돌리면 ctx 5s 타임아웃까지 대기해
   실패하는 것을 확인함.
 - 검증: `make build`, `make test`, `make lint` exit 0.
+
+## Review history
+
+### 2026-09-14 legacy waiver (historical, superseded)
+
+이 날짜에 기록했던 판정과 근거는 현재 PASS의 증거로 소급하지 않는다. 당시 텍스트를
+보존한다:
+
+```yaml
+quality-review: waived
+quality-reviewed-at: 2026-09-14
+quality-review-evidence: "레거시 일괄 처분(2026-09-14). 이 카드는 2026-09-05(4f267fc2)에 done/으로 들어왔고, 독립 done 리뷰를 요구하는 규칙은 그보다 뒤인 1c85d8d0(2026-09-10, docs(tasks): require independent done review)에서 생겼다. 규칙이 없던 때의 변경 맥락 없이 오늘 판정을 지어내지 않는다 — PLAN-008이 여덟 장에 세운 선례를 그대로 적용한다. 판정 부재를 판정으로 위장하지 않기 위해 waived로 남긴다"
+```
