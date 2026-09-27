@@ -4,7 +4,10 @@ title: "Close PLAN-011 and archive completed board cards"
 type: chore
 priority: P2
 effort: S
-status: todo
+status: done
+quality-review: pass
+quality-reviewed-at: 2026-09-28
+quality-review-evidence: "Independent read-only review of 89e3e308 PASS: make doc-check OK, ce task validate --all 502 valid/0 invalid, ce task lint CLEAN; renames are status/link-only, evidence links resolve, PLAN-010/011 counts match planprogress, ISSUE-046 repro verified against the live repo, README condensation strands no fact not held by archived cards."
 created: 2026-09-28
 ---
 
