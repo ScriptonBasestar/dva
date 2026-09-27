@@ -6,7 +6,14 @@ priority: P2
 effort: S
 exec-tier: standard
 needs-human: true
+<<<<<<<< HEAD:tasks/done/436-reclaim-duplicate-task-407-worktree.md
 status: done
+|||||||| parent of 89e3e308 (chore(tasks): close PLAN-011, archive completed cards, record ISSUE-046):tasks/blocked/436-reclaim-duplicate-task-407-worktree.md
+status: blocked
+========
+status: superseded
+archived-at: 2026-09-28
+>>>>>>>> 89e3e308 (chore(tasks): close PLAN-011, archive completed cards, record ISSUE-046):tasks/_archive/2026-09/436-reclaim-duplicate-task-407-worktree.md
 created: 2026-09-24
 quality-review: pass
 quality-reviewed-at: 2026-09-28
@@ -15,10 +22,28 @@ quality-review-evidence: "Independent review session /root/review_task443_board_
 
 ## Summary
 
+<<<<<<<< HEAD:tasks/done/436-reclaim-duplicate-task-407-worktree.md
 [ISSUE-039](../_archive/issue/039-discard-guard-blocks-reclaiming-a-worktree-whose-fix-was-already-merged-upstream.md)의
 남은 운영 항목이다. stale branch의 내용이 source에 이미 반영된 것을 확인하고
 사용자가 회수를 승인했다. CE `run-discard`가 정확한 실행 identity와 clean
 worktree, remote 부재를 확인해 2026-09-28에 통합 없이 회수했다.
+|||||||| parent of 89e3e308 (chore(tasks): close PLAN-011, archive completed cards, record ISSUE-046):tasks/blocked/436-reclaim-duplicate-task-407-worktree.md
+[ISSUE-039](../issue/039-discard-guard-blocks-reclaiming-a-worktree-whose-fix-was-already-merged-upstream.md)의
+남은 운영 항목이다. 현재 master로 stale branch를 rebase했을 때 AGENTS.md와 TASK-407
+카드 이력에서 충돌했다. 유용한 복구 절차 직접 링크는 active branch에 보존했지만,
+shared lifecycle은 conflict 상태의 통합 없는 회수 경로를 제공하지 않는다.
+
+사용자가 회수를 이미 승인했다. `run-abort`는 worktree/ref를 제거하지 않고 저장소 정책상
+직접 제거도 사용할 수 없어, CE의 명시적 discard/reclaim 수명주기 동작이 생길 때까지 blocked다.
+========
+[ISSUE-039](../../issue/039-discard-guard-blocks-reclaiming-a-worktree-whose-fix-was-already-merged-upstream.md)의
+남은 운영 항목이다. 현재 master로 stale branch를 rebase했을 때 AGENTS.md와 TASK-407
+카드 이력에서 충돌했다. 유용한 복구 절차 직접 링크는 active branch에 보존했지만,
+shared lifecycle은 conflict 상태의 통합 없는 회수 경로를 제공하지 않는다.
+
+사용자가 회수를 이미 승인했다. `run-abort`는 worktree/ref를 제거하지 않고 저장소 정책상
+직접 제거도 사용할 수 없어, CE의 명시적 discard/reclaim 수명주기 동작이 생길 때까지 blocked다.
+>>>>>>>> 89e3e308 (chore(tasks): close PLAN-011, archive completed cards, record ISSUE-046):tasks/_archive/2026-09/436-reclaim-duplicate-task-407-worktree.md
 
 ## Completion Criteria
 
@@ -43,7 +68,13 @@ worktree, remote 부재를 확인해 2026-09-28에 통합 없이 회수했다.
 
 ## Sources
 
+<<<<<<<< HEAD:tasks/done/436-reclaim-duplicate-task-407-worktree.md
 - [ISSUE-039](../_archive/issue/039-discard-guard-blocks-reclaiming-a-worktree-whose-fix-was-already-merged-upstream.md)
+|||||||| parent of 89e3e308 (chore(tasks): close PLAN-011, archive completed cards, record ISSUE-046):tasks/blocked/436-reclaim-duplicate-task-407-worktree.md
+- [ISSUE-039](../issue/039-discard-guard-blocks-reclaiming-a-worktree-whose-fix-was-already-merged-upstream.md)
+========
+- [ISSUE-039](../../issue/039-discard-guard-blocks-reclaiming-a-worktree-whose-fix-was-already-merged-upstream.md)
+>>>>>>>> 89e3e308 (chore(tasks): close PLAN-011, archive completed cards, record ISSUE-046):tasks/_archive/2026-09/436-reclaim-duplicate-task-407-worktree.md
 
 ## 2026-09-27 재측정
 
@@ -57,6 +88,7 @@ source master보다 53 commit 뒤지고 8개 고유 commit이 있어 통합 상�
 shared lifecycle의 검증 가능한 discard/reclaim 경로다. 그 전에는 기존 worktree를
 그대로 보존한다.
 
+<<<<<<<< HEAD:tasks/done/436-reclaim-duplicate-task-407-worktree.md
 ## 2026-09-28 회수 결과
 
 CE `0d4b8b16`의 `run-discard`가 사용자 승인된 중복 실행을 처리했다.
@@ -65,3 +97,13 @@ CE `0d4b8b16`의 `run-discard`가 사용자 승인된 중복 실행을 처리했
 origin branch 부재를 검증해 terminal `ABORTED` receipt를 추가했다.
 [추적 증거](evidence/TASK-436/discard-verification-20260928.json)는
 source-built CE revision과 별도 Git 조회 종료 코드도 보존한다.
+|||||||| parent of 89e3e308 (chore(tasks): close PLAN-011, archive completed cards, record ISSUE-046):tasks/blocked/436-reclaim-duplicate-task-407-worktree.md
+========
+## Closure (2026-09-28)
+
+Closed as superseded by the user's decision to keep the branch rather than wait for a CE
+discard route. The worktree and branch `dev/claude/mbp/fix/task-407` live on the mbp host
+(absent on mst; `ce task run-status task-407` reports no execution here) and are kept as a
+historical ref; the unique recovery-procedure link already landed on master. The missing
+discard/reclaim lifecycle is tracked upstream via ISSUE-039.
+>>>>>>>> 89e3e308 (chore(tasks): close PLAN-011, archive completed cards, record ISSUE-046):tasks/_archive/2026-09/436-reclaim-duplicate-task-407-worktree.md

@@ -2,9 +2,10 @@
 id: BACKLOG-009
 title: "Triage remaining open issues and stale run records after 405-408 wave"
 type: idea
-status: backlog
+status: done
 priority: P2
 effort: M
+archived-at: 2026-09-28
 created: 2026-09-21
 ---
 
@@ -187,6 +188,13 @@ ISSUE-024가 막고 있는 상태다.
 plan을 `tasks/_archive/plan/`으로 보관했다. 저장소가 무시하던 `tasks/.ce`,
 `tasks/todo/.ce`, `tasks/done/.ce`, `tasks/archive/.ce`의 파일 12개는
 `/Users/archmagece/backups/dva/task-ce-telemetry-20260927`로 이동해 SHA-256을
-대조했다. [추적된 목록](../done/evidence/TASK-446/telemetry-backup-manifest.json)이
+대조했다. [추적된 목록](../../done/evidence/TASK-446/telemetry-backup-manifest.json)이
 백업 위치와 각 파일의 크기·해시를 기록한다. 루트 `.ce/task-runtime.yaml`은
 ACTIVE 선언이므로 보존했다.
+
+## 2026-09-28 종료
+
+남은 판정 항목이 모두 닫혔다. ISSUE-024는 해결·보관됐고, ISSUE-039의 운영 잔여였던
+TASK-436은 브랜치를 보존한 채 superseded로 종료했으며 discard 수명주기 결함은 상류로
+이관했다. 열린 이슈는 ISSUE-004·006(task-manager-devbox W13·W14 채택 추적)과
+ISSUE-039(상류 추적) 세 장이며 각자 owner가 있다. 이 트리아지 카드는 역할을 다해 보관한다.

@@ -6,6 +6,7 @@ priority: P1
 effort: S
 exec-tier: strong
 status: done
+archived-at: 2026-09-28
 created: 2026-09-27
 quality-review: pass
 quality-reviewed-at: 2026-09-27

@@ -9,6 +9,7 @@ quality-review: pass
 quality-reviewed-at: 2026-09-27
 quality-review-evidence: "Independent final review passed after CE TASK-331 integration at f3cfa169. Reviewer verified TASK-443, README, PLAN-011, ISSUE-030 and related ownership/status facts against master; doc-check, ce task validate --all (498 valid/0 invalid), and gate READY passed. CE validate/gate/review-receipt outputs and TASK-331 regression test were rechecked at the integrated source revision."
 status: done
+archived-at: 2026-09-28
 created: 2026-09-27
 ---
 

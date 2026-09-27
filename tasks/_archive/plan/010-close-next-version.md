@@ -9,12 +9,13 @@ completed-tasks: 8
 children: [TASK-415, TASK-410, TASK-411, TASK-416, TASK-419, TASK-417, TASK-370, TASK-418]
 target-date: "2026-09-30"
 created: 2026-09-23
+status: done
 ---
 
 ## Goal
 
-빈 보드가 아니라 검증된 릴리스 범위를 만든다. 현재 목록은 [보드 인덱스](../README.md),
-공개 절차는 [런북](../../docs/52-manual-release-runbook.md)이 소유한다.
+빈 보드가 아니라 검증된 릴리스 범위를 만든다. 현재 목록은 [보드 인덱스](../../README.md),
+공개 절차는 [런북](../../../docs/52-manual-release-runbook.md)이 소유한다.
 
 ## Current state (2026-09-27)
 

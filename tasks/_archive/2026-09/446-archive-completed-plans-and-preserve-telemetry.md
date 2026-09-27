@@ -6,6 +6,7 @@ priority: P2
 effort: S
 exec-tier: standard
 status: done
+archived-at: 2026-09-28
 created: 2026-09-27
 quality-review: pass
 quality-reviewed-at: 2026-09-27
@@ -30,5 +31,5 @@ primary checkout에만 남았던 무시 대상 텔레메트리 디렉터리 네 
 
 - `ce task archive` moved PLAN-006~009 to `tasks/_archive/plan/` without `--force`.
 - `make doc-check` passed after archiving, including link and plan-progress checks.
-- [Telemetry manifest](evidence/TASK-446/telemetry-backup-manifest.json) lists all 12 original relative paths, byte counts, SHA-256 digests, and external backup location. Its own SHA-256 is `6e5caa63f1736a7df6f104262c643eb0d599db1aaebe0daa1f00740e86b18a71`.
+- [Telemetry manifest](../../done/evidence/TASK-446/telemetry-backup-manifest.json) lists all 12 original relative paths, byte counts, SHA-256 digests, and external backup location. Its own SHA-256 is `6e5caa63f1736a7df6f104262c643eb0d599db1aaebe0daa1f00740e86b18a71`.
 - The primary checkout no longer has the four `tasks/**/.ce` directories; `.ce/task-runtime.yaml` still exists.
