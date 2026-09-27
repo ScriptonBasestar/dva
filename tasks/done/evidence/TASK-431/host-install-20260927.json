@@ -1,0 +1,209 @@
+{
+  "source_checkout": "/Users/archmagece/mywork/ce/ce-devenv",
+  "source_revision": "7273dd62d9eaced4428fe769a4f1cdff7f3e4c2a",
+  "previous_release": "/Users/archmagece/.local/share/devenv/releases/3e3d83174344-20260918T045713049838Z",
+  "previous_receipt_sha256": "0e8502db25a1b726a5057b6a293defe754783feab9ed03999307ce7eecd80975",
+  "previous_inputs": {
+    "config/aws/.aws/archmagece_accessKeys.csv": {
+      "exists": true,
+      "bytes": 77
+    },
+    "config/aws/.aws/cli/cache/session.db": {
+      "exists": true,
+      "bytes": 20480
+    },
+    "config/aws/.aws/credentials": {
+      "exists": true,
+      "bytes": 116
+    },
+    "config/claude/settings.local.json": {
+      "exists": true,
+      "bytes": 182
+    },
+    "config/claude/zai-token.env.local": {
+      "exists": true,
+      "bytes": 413
+    },
+    "config/codex/config-default.local.toml": {
+      "exists": true,
+      "bytes": 387
+    },
+    "config/codex/config-omo.local.toml": {
+      "exists": true,
+      "bytes": 9306
+    },
+    "config/codex/config.local.toml": {
+      "exists": true,
+      "bytes": 8039
+    },
+    "workstation/ansible/.vault_pass": {
+      "exists": true,
+      "bytes": 49
+    },
+    "workstation/sops/age.key": {
+      "exists": true,
+      "bytes": 189
+    }
+  },
+  "installation": {
+    "attempt_nonforce_exit": 2,
+    "attempt_nonforce_drift": [
+      "M config/docker/config.json"
+    ],
+    "force_used": true,
+    "forced_drift": [
+      "M config/docker/config.json",
+      "M config/claude/settings.json",
+      "M config/codex/config.toml"
+    ],
+    "new_release": "/Users/archmagece/.local/share/devenv/releases/7273dd62d9ea-20260927T143640807928Z",
+    "new_revision": "7273dd62d9eaced4428fe769a4f1cdff7f3e4c2a",
+    "new_receipt_sha256": "6581c8d3184bbeb3fd365fca80045a948f09ded3bd029b8216222b5a2fcdc431",
+    "receipt_sidecar_sha256": "6581c8d3184bbeb3fd365fca80045a948f09ded3bd029b8216222b5a2fcdc431",
+    "receipt_sidecar_matches": true,
+    "previous_input_list_matches": true,
+    "new_inputs": {
+      "config/aws/.aws/archmagece_accessKeys.csv": {
+        "exists": true,
+        "bytes": 77,
+        "byte_equal_to_previous": true
+      },
+      "config/aws/.aws/cli/cache/session.db": {
+        "exists": true,
+        "bytes": 20480,
+        "byte_equal_to_previous": true
+      },
+      "config/aws/.aws/credentials": {
+        "exists": true,
+        "bytes": 116,
+        "byte_equal_to_previous": true
+      },
+      "config/claude/settings.local.json": {
+        "exists": true,
+        "bytes": 182,
+        "byte_equal_to_previous": true
+      },
+      "config/claude/zai-token.env.local": {
+        "exists": true,
+        "bytes": 413,
+        "byte_equal_to_previous": true
+      },
+      "config/codex/config-default.local.toml": {
+        "exists": true,
+        "bytes": 430,
+        "byte_equal_to_previous": false
+      },
+      "config/codex/config-omo.local.toml": {
+        "exists": true,
+        "bytes": 9306,
+        "byte_equal_to_previous": true
+      },
+      "config/codex/config.local.toml": {
+        "exists": true,
+        "bytes": 9606,
+        "byte_equal_to_previous": false
+      },
+      "workstation/ansible/.vault_pass": {
+        "exists": true,
+        "bytes": 49,
+        "byte_equal_to_previous": true
+      },
+      "workstation/sops/age.key": {
+        "exists": true,
+        "bytes": 189,
+        "byte_equal_to_previous": true
+      }
+    },
+    "all_input_bytes_equal": false,
+    "installed_worktrunk_pin": "0.74.0",
+    "host_wt_path": "/Users/archmagece/.local/share/mise/installs/cargo-worktrunk/0.74.0/bin/wt",
+    "host_wt_version": "0.74.0",
+    "host_golangci_path": "/Users/archmagece/.local/share/mise/installs/aqua-golangci-golangci-lint/2.13.2/golangci-lint-2.13.2-darwin-arm64/golangci-lint",
+    "host_golangci_version": "2.13.2",
+    "docker_config_backup": "/Users/archmagece/backups/devenv/task431-20260927/docker-config-before.json",
+    "docker_config_backup_sha256": "7d6f47a1115e0ae339acf5e44ad23679dc88725936aefc3900d6bd59cbe1a812",
+    "semantic_preservation": {
+      "config/codex/config-default.local.toml": {
+        "old_keys": 7,
+        "new_keys": 8,
+        "removed_keys": 0,
+        "changed_common_keys": [],
+        "added_keys": 1
+      },
+      "config/codex/config.local.toml": {
+        "old_keys": 86,
+        "new_keys": 100,
+        "removed_keys": 0,
+        "changed_common_keys": [
+          "mcp_servers.node_repl.env.BROWSER_USE_CODEX_APP_VERSION",
+          "mcp_servers.node_repl.env.NODE_REPL_TRUSTED_SERVICES"
+        ],
+        "added_keys": 14
+      },
+      "config/docker/config.json": {
+        "old_keys": 10,
+        "new_keys": 13,
+        "removed_keys": 0,
+        "changed_common_keys": [],
+        "added_keys": 3
+      },
+      "config/claude/settings.json": {
+        "old_keys": 88,
+        "new_keys": 86,
+        "removed_keys": [
+          "modelSettings.claude-fable-5-1.effortLevel",
+          "modelSettings.claude-opus-5-5.effortLevel"
+        ],
+        "changed_common_keys": [
+          "model",
+          "modelSettings.claude-opus-5.effortLevel"
+        ],
+        "added_keys": [],
+        "previous_file_backup": "/Users/archmagece/backups/devenv/task431-20260927/claude-settings-before.json",
+        "previous_file_backup_sha256": "f1d14b63b9264a8bd560b8c79317e220d1df641b6e8b6415f414f5ade7678169",
+        "shared_drift_overwritten_by_force": true
+      },
+      "config/codex/config.toml": {
+        "old_keys": 144,
+        "new_keys": 134,
+        "removed_keys": [
+          "desktop.followUpQueueMode",
+          "notify",
+          "plugins.browser@openai-bundled.enabled",
+          "plugins.chrome@openai-bundled.enabled",
+          "plugins.computer-use@openai-bundled.enabled",
+          "plugins.documents@openai-primary-runtime.enabled",
+          "plugins.pdf@openai-primary-runtime.enabled",
+          "plugins.presentations@openai-primary-runtime.enabled",
+          "plugins.spreadsheets@openai-primary-runtime.enabled",
+          "plugins.template-creator@openai-primary-runtime.enabled",
+          "plugins.unified-computer-use@openai-bundled.enabled",
+          "plugins.visualize@openai-bundled.enabled"
+        ],
+        "changed_common_keys": [
+          "model",
+          "model_reasoning_effort"
+        ],
+        "added_keys": [
+          "mcp_servers.cua_repl.command",
+          "mcp_servers.cua_repl.enabled"
+        ],
+        "previous_file_backup": "/Users/archmagece/backups/devenv/task431-20260927/codex-config-before.toml",
+        "previous_file_backup_sha256": "ab2952b4904e0c73d04e7089c0e1dd68bb8528b7da5b38d74f5800c2b4bd4360",
+        "shared_drift_overwritten_by_force": true
+      }
+    },
+    "changed_local_toml_deltas_match_previous_live_generated": {
+      "config/codex/config-default.local.toml": {
+        "delta_leaves": 1,
+        "matching_previous_live_leaves": 1
+      },
+      "config/codex/config.local.toml": {
+        "delta_leaves": 16,
+        "matching_previous_live_leaves": 16
+      }
+    },
+    "restricted_local_hash_audit": "/Users/archmagece/backups/devenv/task431-20260927/local-input-hash-audit.json",
+    "raw_secret_hashes_in_tracked_evidence": false
+  }
+}

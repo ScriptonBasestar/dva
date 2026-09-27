@@ -14,11 +14,11 @@ upstream-ref: "ce-agent-kit#6"
 
 ## Summary
 
-워크스테이션 도구 두 개의 drift를 추적한다. worktrunk source pin은 devenv master
-commit `7273dd62`에 통합됐지만, 2026-09-27 독립 재측정은 wt 선택 경로가 아직 latest임을
-보였다. 같은 리뷰에서 DVA 프로젝트가 의도적으로 선택한 golangci-lint 2.12.2를
-호스트 기준 실패로 해석했다. 프로젝트 밖 전역 Aqua 2.13.2는 재확인해 충족했다.
-live 미해결 기준은 worktrunk 핀 설치 하나다.
+워크스테이션 도구 두 개의 drift를 추적한다. devenv source `7273dd62`의
+worktrunk 0.74.0 핀은 2026-09-27 live host에 설치돼 `/tmp`에서 명시적
+`cargo-worktrunk/0.74.0`을 선택한다. 전역 Aqua lint도 2.13.2로 선택·실행된다.
+DVA 프로젝트와 CI의 lint 2.12.2는 의도된 제품 핀이다. 상세 이전 관측은 아래
+시간순 기록으로 보존하고 최종 판정은 TASK-431의 설치 증거를 따른다.
 
 **1. (해결됨) golangci-lint 2.12.2가 mise가 고른 2.13.2보다 PATH에서 앞선다.** mise 전역
 설정은 `"aqua:golangci/golangci-lint" = "2.13.2"`를 고르고, 2.13.2는 go1.27.0으로
@@ -88,7 +88,7 @@ worktrunk 다음 버전 배포일에 모든 저장소의 작업이 하루 막힌
 ## Resolution Criteria
 
 - [x] 프로젝트 밖 호스트 scope에서 golangci-lint가 Aqua 2.13.2로 선택·실행된다 | verify: human — 2026-09-27 `/tmp`에서 `mise which golangci-lint`와 `golangci-lint --version`이 모두 Aqua 2.13.2; DVA `.mise.toml`과 CI는 제품 2.12.2 핀으로 일치한다
-- [ ] worktrunk 0.74.0 핀이 live `~/devenv` 설치본에 반영된다 | verify: human — 설치본 mise config와 `mise which wt`, `wt --version`이 0.74.0을 확인한다
+- [x] worktrunk 0.74.0 핀이 live `~/devenv` 설치본에 반영된다 | verify: human — 설치본 mise config와 `mise which wt`, `wt --version`이 0.74.0을 확인한다
 
 ## 2026-09-27 범위 교정
 
@@ -117,7 +117,7 @@ canonical marketplace identity 누락, 오래된 upstream exclusion cache, CLAUD
 `config/claude/settings.json`, `config/codex/config.toml`의 네 preference 차이를 찾았다.
 non-force 설치는 이를 거부하며 force가 live 자격 증명과 설정을 덮을 수 있다. 자격 증명
 및 설정을 보존하는 지정 설치 경로를 확인할 때까지 install은 보류한다.
-작업 기록은 [TASK-431](../blocked/431-align-host-golangci-and-worktrunk-pins.md)이다.
+작업 기록은 [[TASK-431]]이다.
 
 2026-09-25 read-only audit confirmed the source branch changes only the worktrunk pin and
 found no static reference to that config key from the failing check targets or tests. The
@@ -164,3 +164,14 @@ commit도 canonical checkout에서 확인되지 않았다. source pin 통합 및
 통과 상태로 유지한다. 이 문단의 golangci 판정은 DVA cwd에서 호스트 기준을 측정한
 역사적 오류이며 위 범위 교정이 현행 판정이다. wt live criterion이 검증될 때까지
 이 이슈를 열어 둔다.
+
+## 2026-09-27 live 설치 완료
+
+[[TASK-431]]의 [추적 설치 증거](../done/evidence/TASK-431/host-install-20260927.json)에
+source `7273dd62`, non-force drift 거부, 보존한 Docker 설정, 강제 설치 receipt,
+이전·새 로컬 입력 10개의 목록·크기·바이트 일치 판정과 의미 비교를 기록했다.
+원문 SHA-256은 제한된 외부 감사 파일에만 남겼다. 새 live release는
+`7273dd62d9ea-20260927T143640807928Z`이고 `forced_drift` 세 경로를 receipt에
+남겼다. `/tmp`에서 `mise which wt`는 explicit `cargo-worktrunk/0.74.0/bin/wt`,
+`wt --version`은 0.74.0, golangci-lint의 선택·실행 버전은 Aqua 2.13.2다.
+두 resolution criteria를 충족했으므로 독립 리뷰 뒤 fixed로 해결한다.
