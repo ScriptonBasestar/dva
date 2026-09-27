@@ -29,8 +29,11 @@ TASK-445는 TASK-431 측정 범위와 TASK-436 기존 회수 승인을 현행화
 - TASK-420–439의 상태와 실행 의존성은 [[PLAN-011]]에서 유지한다. TASK-437·TASK-443·TASK-445는 PLAN-011 child가 아닌 보드 현행화 카드이고 TASK-444는 ISSUE-001 마감 카드라 PLAN-011 child 수에는 포함하지 않는다.
 - ISSUE-004/006의 ce-agent-kit#1은 역사적 보고처다. `61ead57b`가 두 카드의 후속 owner를 taskchain-task-manager로 정해 task-manager-devbox W13/W14로 이관했다.
 - ISSUE-030은 PLAN-011 밖의 ce-agent-kit 작업이었다. TASK-331 구현 `16af8443`은 세 번째 독립 리뷰 PASS와 exact CI PASS를 받았고, review-evidence 카드 커밋 `f3cfa169`까지 `master/origin`에 통합·push됐다. `run-finish`가 source push와 task worktree/branch 회수를 완료했다. 최종 tree CI run `ci-20260927-175252-77713` exit 0; source-built CE `v0.8.4-372-gf3cfa169`의 validate 출력은 16 valid / 0 invalid, `ce task gate --json`은 READY와 revision `f3cfa169`를, review-receipt JSON은 canonical digest와 같은 version/revision을 기록했다. legacy/mismatch/unknown advisory와 digest hard error는 exact CI regression tests 및 독립 리뷰에서 확인해 ISSUE-030을 fixed/archive했다.
-- PLAN-006~009의 아카이브와 `tasks/` 아래 네 `.ce` 잔재 백업은 승인됐고 후속 작업으로 진행한다.
-  루트 `.ce/task-runtime.yaml`은 ACTIVE 런타임 선언이므로 보존한다.
+- PLAN-006~009는 `tasks/_archive/plan/`에 보관했고 `make doc-check`가 링크·계획 진행률을 확인했다.
+  `tasks/` 아래 네 `.ce` 텔레메트리 디렉터리의 파일 12개(30,336바이트)는
+  `/Users/archmagece/backups/dva/task-ce-telemetry-20260927`로 이동해 SHA-256을 대조했다.
+  [백업 목록과 해시](done/evidence/TASK-446/telemetry-backup-manifest.json)를 추적한다.
+  루트 `.ce/task-runtime.yaml`은 ACTIVE 런타임 선언으로 남아 있다.
 
 이 문서는 DVA 프로젝트의 태스크 및 보드 구조, 아카이브 상태를 안내하는 정본 인덱스입니다.
 
@@ -54,7 +57,7 @@ TASK-445는 TASK-431 측정 범위와 TASK-436 기존 회수 승인을 현행화
 `tasks/done/`에 `evidence/`만 남았다. 2026-09-25 후속 작업에서 PLAN-011의
 완료 카드 15장, 단독 TASK-411·TASK-437, TASK-407이 tasks/done/에 기록되어 당시 done 카드는 18장이었다.
 2026-09-27까지 이 완료 배치들은 _archive/2026-09/로 이동했다. 현재 tasks/done/에는
-TASK-442, TASK-443, TASK-444, TASK-445 네 장이 있고 durable review evidence는 tasks/done/evidence/에 보관한다.
+TASK-442, TASK-443, TASK-444, TASK-445, TASK-446 다섯 장이 있고 durable review evidence는 tasks/done/evidence/에 보관한다.
 
 | 배치 | 범위 | 대상 수 | 상태 |
 |:---:|:---|:---:|:---:|

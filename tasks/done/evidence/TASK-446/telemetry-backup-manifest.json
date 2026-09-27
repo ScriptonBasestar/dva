@@ -1,0 +1,56 @@
+{
+  "source": "/Users/archmagece/mywork/scripton/dva",
+  "backup": "/Users/archmagece/backups/dva/task-ce-telemetry-20260927",
+  "file_count": 12,
+  "files": {
+    "tasks/.ce/audit/events.jsonl": {
+      "sha256": "c33fc202ca8bae9e035398ecdb05911aad1c974728884bcc4c7d80dcdb9eb92a",
+      "bytes": 21046
+    },
+    "tasks/.ce/heartbeat/events.jsonl": {
+      "sha256": "e3e1e56d2f686900242f391199b97902be1e3da1e22761ada187d809bab404ab",
+      "bytes": 153
+    },
+    "tasks/.ce/heartbeat/sessions/0de0cf71-25cd-48cb-a79d-da96419cf14d.json": {
+      "sha256": "872dac3401a11e7d8c34b87ac009b1d4fd33cfb88fd5a1350f871dd1bfe807c5",
+      "bytes": 282
+    },
+    "tasks/.ce/heartbeat/sessions/bd0822c5-e88b-4532-86c9-5940fe01abba.json": {
+      "sha256": "49790e6c0e219c89297ae0b89c5cc225d7f6bfa8871f1efecc408d583ed2c6c7",
+      "bytes": 283
+    },
+    "tasks/todo/.ce/audit/events.jsonl": {
+      "sha256": "d514cb842fa038817a49f10490a32688e2fc457e0b1ef3161540c9390b87e782",
+      "bytes": 5993
+    },
+    "tasks/todo/.ce/heartbeat/sessions/23cd4f3b-0cbe-49db-af1e-e1a72d8e33d4.json": {
+      "sha256": "e61ec54667901151d43707ebd395244e10ab6793b04d8209b259d987076e4f54",
+      "bytes": 283
+    },
+    "tasks/todo/.ce/heartbeat/sessions/33f64fce-be2b-4b96-bc4a-c14c740b926b.json": {
+      "sha256": "5b3971e761462867183a5d3129badee921c32a71f014658f8d39917dbc97fdaf",
+      "bytes": 282
+    },
+    "tasks/todo/.ce/heartbeat/sessions/bd0822c5-e88b-4532-86c9-5940fe01abba.json": {
+      "sha256": "428dfe5eaa7481db10923888b91bef23b3cf92b10d398bab4cd812c32785bb3b",
+      "bytes": 282
+    },
+    "tasks/done/.ce/audit/events.jsonl": {
+      "sha256": "c3ced27a47edd66e4ed16f7c046b1bd4bcd4be9eb3366e23773e738fa031197e",
+      "bytes": 286
+    },
+    "tasks/done/.ce/heartbeat/sessions/bd0822c5-e88b-4532-86c9-5940fe01abba.json": {
+      "sha256": "67a1c01864322ed53a0152db11735da604b4bc0469de0b5caf84abda41433bc4",
+      "bytes": 282
+    },
+    "tasks/archive/.ce/audit/events.jsonl": {
+      "sha256": "baeaf5c5ad310e6005c9e1359e5f4719cd7c1f6618f72857c659d6fc242d522a",
+      "bytes": 876
+    },
+    "tasks/archive/.ce/heartbeat/sessions/33f64fce-be2b-4b96-bc4a-c14c740b926b.json": {
+      "sha256": "9537d13d5e17e4468488afc0960c2d1970a2de0cc63e51ee4a5783fb978b36db",
+      "bytes": 288
+    }
+  },
+  "root_runtime_preserved": "/Users/archmagece/mywork/scripton/dva/.ce/task-runtime.yaml"
+}

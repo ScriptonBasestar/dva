@@ -179,3 +179,14 @@ ISSUE-024가 막고 있는 상태다.
 이번 버전 마감 순서는 [[PLAN-010]]이 소유한다. TASK-416의 기록 정합화 뒤 TASK-417이
 0.3.0 후보를 만들고, TASK-370이 새 노트를 검토하며, TASK-418이 사람이 수행하는 공개를
 담당한다.
+
+## 2026-09-27 후속 처분
+
+위 2026-09-23 표의 PLAN-006~009와 `.ce` 잔재 대기 판정은 종료됐다.
+[[TASK-446]]에서 네 완료
+plan을 `tasks/_archive/plan/`으로 보관했다. 저장소가 무시하던 `tasks/.ce`,
+`tasks/todo/.ce`, `tasks/done/.ce`, `tasks/archive/.ce`의 파일 12개는
+`/Users/archmagece/backups/dva/task-ce-telemetry-20260927`로 이동해 SHA-256을
+대조했다. [추적된 목록](../done/evidence/TASK-446/telemetry-backup-manifest.json)이
+백업 위치와 각 파일의 크기·해시를 기록한다. 루트 `.ce/task-runtime.yaml`은
+ACTIVE 선언이므로 보존했다.

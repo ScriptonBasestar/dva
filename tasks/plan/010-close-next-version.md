@@ -45,5 +45,6 @@ TASK-411은 `tasks/done/`). 그 뒤 착지한 TASK-440(sops_source 안내)은 CH
 소유한다. ISSUE-014와 ISSUE-005는 충족된 기준으로 닫았다. 그 태스크는 DVA 우회를
 추가하지 않고 소유 도구 동작을 본다. ISSUE-024의 finalize 차단은 증거 경로·정당한
 참조를 지워 우회하지 않는다. ISSUE-039의 워크트리 폐기는 TASK-436(사람 전용)이다.
-PLAN-006~009 아카이브와 `tasks/` 아래 네 `.ce` 잔재 삭제는 기존 사람 결정 대기다.
+PLAN-006~009는 2026-09-27 `tasks/_archive/plan/`으로 보관했고 `tasks/` 아래 네
+`.ce` 텔레메트리 디렉터리는 SHA-256 검증 후 저장소 밖에 백업했다 ([[TASK-446]]).
 루트 `.ce/task-runtime.yaml`은 ACTIVE 런타임 선언이며 잔재가 아니다.

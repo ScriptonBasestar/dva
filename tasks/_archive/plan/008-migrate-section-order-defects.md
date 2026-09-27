@@ -10,6 +10,7 @@ children: [TASK-365, TASK-363, TASK-359, TASK-358, TASK-361, TASK-362, TASK-364,
 target-date: "2026-10-31"
 created: 2026-09-09
 completed-children: 8
+status: done
 ---
 
 ## Goal

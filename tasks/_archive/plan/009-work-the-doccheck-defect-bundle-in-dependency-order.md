@@ -9,6 +9,7 @@ completed-tasks: 7
 children: [TASK-371, TASK-344, TASK-350, TASK-343, TASK-354, TASK-338, TASK-377]
 target-date: "2026-09-30"
 created: 2026-09-09
+status: done
 ---
 
 ## Goal

@@ -9,6 +9,7 @@ completed-tasks: 13
 children: [TASK-325, TASK-326, TASK-327, TASK-330, TASK-332, TASK-333, TASK-334, TASK-335, TASK-337, TASK-342, TASK-367, TASK-368, TASK-373]
 target-date: "2026-09-30"
 created: 2026-09-05
+status: done
 ---
 
 ## Goal

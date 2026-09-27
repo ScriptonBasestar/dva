@@ -110,7 +110,7 @@ flow-station, lottomaster, mansero, gzh-cli, scripton-code, scripton-dashboard
 
 ## 현재 상태 (최종 갱신 2026-09-05 오후, dva ecae43d)
 
-devbox 변경은 dashboard 1건을 제외하고 전부 각 저장소 소스 브랜치에 통합됨(2026-09-05 저녁, dva 70b6f6f). 남은 상태와 순서는 `tasks/plan/006-devbox-dogfood-followup.md`가 정본.
+devbox 변경은 dashboard 1건을 제외하고 전부 각 저장소 소스 브랜치에 통합됨(2026-09-05 저녁, dva 70b6f6f). 남은 상태와 순서는 `tasks/_archive/plan/006-devbox-dogfood-followup.md`가 정본.
 
 validate 결과: 23개 중 exit 0 / warn 0 이 대다수, warn 1~4는 의도적 drift 예외·compose `name:`·범위 밖 Makefile 제안. 미도입 6개는 리포트에 골격만.
 
@@ -125,4 +125,3 @@ validate 결과: 23개 중 exit 0 / warn 0 이 대다수, warn 1~4는 의도적 
 TASK-305(에러 수집)·306(modes→plans migrate)·308(참조 무결성 warning)이 통합된 빌드로 23개 재검증.
 신규 semantic warning 3건 발견: primeno1 `-M` 잔재(수정), sigdock-idp observability services 미선언(수정), postkit `environments.ci` dead(결정 대기).
 나머지 warning은 의도적 drift 예외(familybook, flow-knowchain, db-orchestrator, sigdock-idp, sigdock-pass)와 compose `name:` 누락(primeno1, signalhub) 뿐.
-
