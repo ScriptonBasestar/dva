@@ -5,9 +5,9 @@ type: plan
 priority: P2
 effort: L
 scope: "Close upstream task follow-ups in dependency order"
-progress: 89
+progress: 94
 total-tasks: 19
-completed-tasks: 17
+completed-tasks: 18
 children: [TASK-420, TASK-421, TASK-422, TASK-423, TASK-424, TASK-425, TASK-426, TASK-427, TASK-428, TASK-429, TASK-430, TASK-431, TASK-432, TASK-433, TASK-434, TASK-435, TASK-436, TASK-438, TASK-439]
 target-date: "2026-10-09"
 created: 2026-09-25
@@ -19,8 +19,8 @@ Close the active upstream follow-up cards in an order that respects required cod
 dependencies, independent reviews, and explicit ownership blockers. TASK-421 and
 TASK-423 were handed off on 2026-09-27 to taskchain-task-manager (task-manager-devbox
 W13/W14) and archived as superseded; ISSUE-004/006 track adoption. TASK-436 has
-recorded reclaim authorization and waits for a supported CE discard action. TASK-431's
-host lint measurement passes; durable worktrunk installation evidence remains.
+recorded reclaim authorization and waits for a supported CE discard action. TASK-431
+completed host pin installation with tracked local-input and receipt evidence.
 
 ## Children
 
@@ -29,7 +29,7 @@ host lint measurement passes; durable worktrunk installation evidence remains.
 | 완료 | TASK-425 stale-base 이유/rebase 안내 | 실제 격리 fixture 로그를 `tasks/done/evidence/TASK-425/`에 기록하고 독립 리뷰 PASS |
 | 완료 | TASK-426 move/resolve/archive frontmatter status | 일반 이동·no-body-status·resolve·archive 테스트와 독립 PASS 확인 |
 | 완료 | TASK-435 issue-promote guard | 상류 master 통합과 독립 리뷰를 마쳤다 |
-| 차단 | TASK-431 host tool pins | source worktrunk pin은 devenv master/origin 7273dd62에 통합·push됐다. `/tmp` 호스트 scope에서 Aqua golangci-lint 2.13.2 선택·실행을 확인했고 DVA 2.12.2는 제품·CI 핀이다. 기준 1·2는 충족됐으며 live worktrunk 설치와 실제 보존 입력·해시·receipt 증거인 기준 3만 남았다 |
+| 완료 | TASK-431 host tool pins | source `7273dd62`의 0.74.0 핀을 지정 설치기로 live에 반영했다. `/tmp`에서 명시적 wt 0.74.0과 Aqua lint 2.13.2를 선택·실행한다. 선언된 로컬 입력 10개와 receipt를 추적 증거로 대조했고 generated shared drift는 사용자 선택에 따라 소스 정본으로 복귀했다. 독립 done-review PASS |
 | 완료 | TASK-427, TASK-428, TASK-429, TASK-434 | 상류 5d70c9d8 구현을 재검증하고 카드별 독립 done-review PASS |
 | 완료 | TASK-422 terminal run receipt | 상류 master에 이미 통합; 독립 리뷰 PASS |
 | 완료 | TASK-430 finalize evidence path | `ed1f4574` fixes receipt validity/tracking checks, negatives, and preview/apply parity; exact implementation CI and upstream independent review PASS, integrated/pushed in `1e408857`; tracked DVA previews for TASK-391/393/394 and TASK-410 all returned `WOULD REMOVE` with unchanged worktree; fresh DVA independent done-review PASS, ISSUE-024 fixed |
@@ -44,5 +44,5 @@ host lint measurement passes; durable worktrunk installation evidence remains.
 
 ## 계획 밖 상류 이슈 (2026-09-27)
 
-- ISSUE-001은 TASK-420의 canonical receipt 생성 기능과 구분됐다. ce-workbook은 TASK-045에서 legacy Python engine/execution을 제거했고, ce task review-receipt는 정본 digest를 계산할 뿐 독립 verdict·근거·저장 경로·카드 전이를 소유하지 않는다. 마지막 TASK-312 마이그레이션은 [TASK-444](../todo/444-review-task-312-and-record-a-current-durable-receipt.md)에서 DVA host의 fresh independent PASS와 first durable receipt로 마쳤고 ISSUE-001을 fixed/archive했다. TASK-444는 PLAN-011 child가 아니다.
+- ISSUE-001은 TASK-420의 canonical receipt 생성 기능과 구분됐다. ce-workbook은 TASK-045에서 legacy Python engine/execution을 제거했고, ce task review-receipt는 정본 digest를 계산할 뿐 독립 verdict·근거·저장 경로·카드 전이를 소유하지 않는다. 마지막 TASK-312 마이그레이션은 [TASK-444](../done/444-review-task-312-and-record-a-current-durable-receipt.md)에서 DVA host의 fresh independent PASS와 first durable receipt로 마쳤고 ISSUE-001을 fixed/archive했다. TASK-444는 PLAN-011 child가 아니다.
 - 완료/계획 밖 | ISSUE-030 / CE TASK-331 | 구현 `16af8443` 독립 리뷰 PASS 뒤 `f3cfa169`(done-review evidence 포함)가 CE master/origin에 통합·push되고 run-finish가 branch/worktree를 회수했다. exact final-tree `make ci` run ci-20260927-175252-77713 exit 0. source-built CE v0.8.4-372-gf3cfa169에서 validate 16/0, gate READY+revision, review-receipt canonical digest+same tool stamp를 확인했다. mismatch/unknown advisory와 digest hard error는 exact CI regression tests에서 확인했고 ISSUE-030을 fixed/archive했다.

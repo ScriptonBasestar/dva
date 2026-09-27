@@ -6,8 +6,11 @@ priority: P2
 effort: S
 exec-tier: standard
 needs-human: false
-status: doing
+status: done
 created: 2026-09-24
+quality-review: pass
+quality-reviewed-at: 2026-09-27
+quality-review-evidence: "Independent review session /root/review_task443_board_refresh verified all three criteria against source 7273dd62, live release/receipt, explicit wt 0.74.0 and Aqua lint 2.13.2, restricted before/after audit of 10 local inputs, generated shared reset chosen by user, and secret-hash redaction. Final board consistency review followed README/PLAN-011/ISSUE-026 correction."
 ---
 
 ## Summary
@@ -31,7 +34,7 @@ receipt를 열거·대조한 결과를 추적 증거에 기록했다.
 
 ## Sources
 
-- [ISSUE-026](../issue/026-host-tool-pins-drift-from-the-versions-the-toolchain-expects.md)
+- [ISSUE-026](../_archive/issue/026-host-tool-pins-drift-from-the-versions-the-toolchain-expects.md)
 
 ## Current evidence
 
@@ -74,7 +77,7 @@ DVA 제품 핀은 이 카드의 대상으로 바꾸지 않는다. devenv source 
 
 ## 2026-09-27 설치 검증
 
-[추적 증거](../done/evidence/TASK-431/host-install-20260927.json)는 설치 전후
+[추적 증거](evidence/TASK-431/host-install-20260927.json)는 설치 전후
 release ID와 receipt SHA-256, 실제 로컬 입력 10개의 경로·크기·바이트 일치 판정,
 설치기 `forced_drift`, 새 receipt sidecar 일치, host 선택 경로·실행 버전을 기록한다.
 비밀 파일의 원문 SHA-256 감사 기록은 제한된 외부 백업에만 둔다.

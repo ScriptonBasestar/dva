@@ -2,7 +2,7 @@
 id: ISSUE-026
 title: "Host tool pins drift from the versions the toolchain expects"
 type: bug
-status: todo
+status: done
 priority: P2
 severity: medium
 ownership: upstream
@@ -10,6 +10,9 @@ created: 2026-09-15
 discovered-at: 2026-09-15
 discovered-in: "mst 호스트 온보딩 후속 (2026-09-15)"
 upstream-ref: "ce-agent-kit#6"
+resolution: fixed
+resolved-at: 2026-09-27T14:55:40Z
+resolution-summary: "Resolved as fixed by TASK-431."
 ---
 
 ## Summary
@@ -35,7 +38,7 @@ PATH에 직접 박혀 shim보다 앞선다. ce-agent-kit의 `make lint`는 툴�
 이전)마저 진단 없이 실패해 "baseline unmeasurable"로 2026-09-15 통합 하나가
 `--allow-skipped-checks` downgrade로 갈 수밖에 없었다.
 
-**2. (source 수정 진행 중) mise의 `"cargo:worktrunk" = "latest"`가 ce의 정확 핀과 충돌한다.** ce는
+**2. (해결됨) mise의 `"cargo:worktrunk" = "latest"`가 ce의 정확 핀과 충돌했다.** ce는
 `worktrunkVersion = "0.74.0"`을 substring 정확 매치로 검사한다. mise의 `latest`는
 지금 우연히 0.74.0이지만, worktrunk가 다음 버전을 내면 모든 저장소의
 `run-doctor`가 같은 차단(BLOCKED)으로 선다. 2026-09-14 mst 온보딩이 하루 종일
@@ -167,7 +170,7 @@ commit도 canonical checkout에서 확인되지 않았다. source pin 통합 및
 
 ## 2026-09-27 live 설치 완료
 
-[[TASK-431]]의 [추적 설치 증거](../done/evidence/TASK-431/host-install-20260927.json)에
+[[TASK-431]]의 [추적 설치 증거](../../done/evidence/TASK-431/host-install-20260927.json)에
 source `7273dd62`, non-force drift 거부, 보존한 Docker 설정, 강제 설치 receipt,
 이전·새 로컬 입력 10개의 목록·크기·바이트 일치 판정과 의미 비교를 기록했다.
 원문 SHA-256은 제한된 외부 감사 파일에만 남겼다. 새 live release는
