@@ -38,3 +38,9 @@ unrunnable로 합치지 않는다. 사람은 그 카드를 계속 볼 수 있어
 The product owner named taskchain-task-manager as the owner. The work is
 registered there as W14 (`task-manager-devbox` task/list.md). This card is archived
 unfinished; the issue in Sources tracks adoption.
+
+## Dependency correction (2026-09-27)
+
+The earlier TASK-421 dependency above describes the pre-handoff state. The product
+owner's current `task-manager-devbox` W14 row declares no W13 dependency, so W14
+can proceed independently after its handoff.

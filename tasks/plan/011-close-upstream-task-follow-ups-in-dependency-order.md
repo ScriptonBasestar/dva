@@ -18,10 +18,9 @@ created: 2026-09-25
 Close the active upstream follow-up cards in an order that respects required code
 dependencies, independent reviews, and explicit ownership blockers. TASK-421 and
 TASK-423 were handed off on 2026-09-27 to taskchain-task-manager (task-manager-devbox
-W13/W14) and archived as superseded; ISSUE-004/006 track adoption. Keep TASK-436 blocked until the shared lifecycle supplies a supported
-cleanup route and the TASK-407 owner decides what to do with its active branch. TASK-431
-remains blocked until current host measurements and durable install evidence satisfy its two
-failed criteria.
+W13/W14) and archived as superseded; ISSUE-004/006 track adoption. TASK-436 has
+recorded reclaim authorization and waits for a supported CE discard action. TASK-431's
+host lint measurement passes; durable worktrunk installation evidence remains.
 
 ## Children
 
@@ -30,7 +29,7 @@ failed criteria.
 | 완료 | TASK-425 stale-base 이유/rebase 안내 | 실제 격리 fixture 로그를 `tasks/done/evidence/TASK-425/`에 기록하고 독립 리뷰 PASS |
 | 완료 | TASK-426 move/resolve/archive frontmatter status | 일반 이동·no-body-status·resolve·archive 테스트와 독립 PASS 확인 |
 | 완료 | TASK-435 issue-promote guard | 상류 master 통합과 독립 리뷰를 마쳤다 |
-| 차단 | TASK-431 host tool pins | source worktrunk pin은 devenv master/origin 7273dd62에 통합·push됐고 readiness 비교는 make check 22→22, make lint 23→23, changed-path 진단 없음. 그러나 독립 재측정에서 golangci-lint는 2.12.2를 선택했고 wt 경로는 아직 latest; force install·11개 입력 보존·설치 source commit도 durable evidence로 검증되지 않았다. 기준 1·3을 닫을 추적 가능한 evidence가 필요 |
+| 차단 | TASK-431 host tool pins | source worktrunk pin은 devenv master/origin 7273dd62에 통합·push됐다. `/tmp` 호스트 scope에서 Aqua golangci-lint 2.13.2 선택·실행을 확인했고 DVA 2.12.2는 제품·CI 핀이다. 기준 1·2는 충족됐으며 live worktrunk 설치와 실제 보존 입력·해시·receipt 증거인 기준 3만 남았다 |
 | 완료 | TASK-427, TASK-428, TASK-429, TASK-434 | 상류 5d70c9d8 구현을 재검증하고 카드별 독립 done-review PASS |
 | 완료 | TASK-422 terminal run receipt | 상류 master에 이미 통합; 독립 리뷰 PASS |
 | 완료 | TASK-430 finalize evidence path | `ed1f4574` fixes receipt validity/tracking checks, negatives, and preview/apply parity; exact implementation CI and upstream independent review PASS, integrated/pushed in `1e408857`; tracked DVA previews for TASK-391/393/394 and TASK-410 all returned `WOULD REMOVE` with unchanged worktree; fresh DVA independent done-review PASS, ISSUE-024 fixed |
@@ -41,7 +40,7 @@ failed criteria.
 | 완료 | TASK-424 validate zone/status ownership | CE `dba2348b` strict policy and producer round trips; DVA paired legacy/strict fixtures, final strict board validation 492/0, duplicate-ID regression restored, `make doc-check`, and identity-scope checks pass; CE resolved-issue terminal status difference is documented; independent done-review PASS |
 | 이관 | TASK-421 controller disposition | 9/27 제품 owner가 taskchain-task-manager로 지정. task-manager-devbox W13으로 이관하고 superseded로 보관 (ISSUE-040 해결) |
 | 이관 | TASK-423 needs-human 실행 구분 | 9/27 task-manager-devbox W14로 이관하고 superseded로 보관. 채택은 ISSUE-006이 추적 |
-| 차단 | TASK-436 duplicate TASK-407 worktree 회수 | source rebase가 AGENTS.md와 TASK-407 rename/add/delete history에서 충돌했다. shared lifecycle은 cleanup route를 제공하지 않으며 기존 worktree/branch의 owner disposition이 필요 |
+| 차단 | TASK-436 duplicate TASK-407 worktree 회수 | 사용자 회수 승인과 branch 내용 판단은 기록됐다. source rebase 충돌 후 shared lifecycle의 검증 가능한 discard 경로가 필요하다 |
 
 ## 계획 밖 상류 이슈 (2026-09-27)
 

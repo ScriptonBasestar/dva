@@ -129,3 +129,8 @@ TASK-423은 TASK-421/ISSUE-040의 controller owner와 disposition 계약 결정�
 The product owner assigned this to taskchain-task-manager, tracked as W14 in
 `~/mydevbox/task-manager-devbox/task/list.md`. TASK-423 was archived as handed off;
 this issue stays open until W14 ships and DVA adopts it.
+
+## Dependency correction (2026-09-27)
+
+The earlier TASK-421 dependency describes the pre-handoff state. The current
+`task-manager-devbox` W14 row declares no W13 dependency; W14 can proceed independently.

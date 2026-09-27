@@ -17,8 +17,8 @@ created: 2026-09-24
 카드 이력에서 충돌했다. 유용한 복구 절차 직접 링크는 active branch에 보존했지만,
 shared lifecycle은 conflict 상태의 통합 없는 회수 경로를 제공하지 않는다.
 
-사용자가 회수를 승인했지만 `run-abort`는 worktree/ref를 제거하지 않고 저장소 정책상
-직접 제거도 사용할 수 없어, supported lifecycle recovery route가 생길 때까지 blocked다.
+사용자가 회수를 이미 승인했다. `run-abort`는 worktree/ref를 제거하지 않고 저장소 정책상
+직접 제거도 사용할 수 없어, CE의 명시적 discard/reclaim 수명주기 동작이 생길 때까지 blocked다.
 
 ## Completion Criteria
 
@@ -49,7 +49,9 @@ Blocked until the shared lifecycle provides an approved cleanup/recovery route. 
 ce task run-status task-407 --json은 상태 ACTIVE, finishReady false, upstream 미설정으로
 반환했고 허용 동작은 run-status와 run-abort뿐이었다. worktree는
 /Users/archmagece/worktrees/misc/dva/claude__mbp__fix__task-407에 clean 상태로
-남아 있고 branch dev/claude/mbp/fix/task-407의 HEAD는 4ce30f26. source master보다
-51 commit 뒤지고 8개 고유 commit이 있어 통합 상태가 같지 않다. 소유자 결정 없이
-rebase·abort·직접 삭제하지 않는다. 재개 조건은 owner가 이 branch의 고유 변경을
-보존/폐기할지 정하고 shared lifecycle이 지원하는 처리 경로를 제공하는 것이다.
+남아 있고 branch dev/claude/mbp/fix/task-407의 HEAD는 4ce30f26. 2026-09-27 현재
+source master보다 53 commit 뒤지고 8개 고유 commit이 있어 통합 상태가 같지 않다. 이후 `git cherry`
+재검토에서는 7개가 patch-equivalent하고 마지막 AGENTS.md 수정의 의미도 source
+문서에 반영됐음을 확인했다. 회수 승인과 콘텐츠 판단은 완료됐다. 재개 조건은
+shared lifecycle의 검증 가능한 discard/reclaim 경로다. 그 전에는 기존 worktree를
+그대로 보존한다.

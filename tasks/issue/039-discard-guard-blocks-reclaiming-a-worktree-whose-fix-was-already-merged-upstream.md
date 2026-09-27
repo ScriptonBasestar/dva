@@ -82,6 +82,15 @@ currently offers only `run-status`/`run-abort`, and abort does not remove the
 worktree or refs. Keep the clean worktree and branch intact until the shared task
 lifecycle provides an approved reclaim/recovery action.
 
+## 2026-09-27 해결 방향
+
+사용자의 회수 승인은 이미 기록됐다. `run-abort`는 terminal receipt만 쓰고
+worktree/ref를 남기며 `run-recover`는 통합 뒤 부분 회복만 담당한다. 따라서
+CE task-runtime에 clean worktree, 실행 기록의 정확한 branch/path, 원격 branch
+부재, 실행 owner 또는 명시적 인계 근거를 검사하는 `run-discard`를 추가한다.
+성공하면 작업공간과 로컬 task branch를 회수하고 수행자·사유·결과를 영수증에
+남긴다. 기존 TASK-407 내용은 source와 보관 카드에 반영된 것으로 확인했다.
+
 ## 소유권 — 이 저장소다
 
 원인은 워크스테이션 훅(`~/.claude/hooks/scripts/guard-git-integration.sh`,
@@ -93,7 +102,8 @@ TD-71이 언급하는 "통합하지 않고 버리는 결정을 받아들일 채�
 
 - [[ISSUE-037]] — 이 사례를 유발한 로컬/원격 divergence
 - TASK-407 — `origin/master` 기준으로는 이미 `done/`에 있는 완료된 원본 작업
-  (커밋 `fc7c41ef`/`e5ed747b`/`5870da00`; 로컬 `master`는 아직 미반영)
+  (커밋 `fc7c41ef`/`e5ed747b`/`5870da00`; 당시 로컬 `master`는 미반영,
+  현재 source에는 반영 완료)
 
 ## 후속 (2026-09-24)
 

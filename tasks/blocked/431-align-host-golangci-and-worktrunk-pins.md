@@ -13,17 +13,19 @@ created: 2026-09-24
 ## Summary
 
 source 쪽 `worktrunk` pin과 readiness 비교는 통과했지만 live host acceptance는
-독립 재측정에서 실패했다. 현재 `mise which golangci-lint`와 실행 버전은 2.12.2이고,
-`mise which wt`는 `cargo-worktrunk/latest`를 선택한다. 과거 설치 기록은
+아직 끝나지 않았다. DVA 작업 디렉터리의 `golangci-lint` 2.12.2는
+프로젝트 `.mise.toml`과 CI의 의도된 핀이다. 프로젝트 밖에서는 전역 Aqua
+2.13.2가 선택·실행돼 호스트 기준을 만족한다. `mise which wt`는 여전히
+`cargo-worktrunk/latest`를 선택한다. 과거 설치 기록은
 `FORCE=1` 실행과 11개 입력 보존을 주장하지만 설치 receipt가 없고 보고된 source commit
-`03c1466e`도 canonical checkout에서 확인되지 않았다. source 통합과 두 live 기준은
-별도로 판정해야 하므로 이 카드를 blocked로 되돌린다.
+`03c1466e`도 canonical checkout에서 확인되지 않았다. 남은 차단 사유는
+worktrunk 핀의 live 설치와 실제 보존 입력의 추적 가능한 증거다.
 
 ## Completion Criteria
 
-- [ ] mise가 Aqua 2.13.2를 선택하고 실행된 golangci-lint가 2.13.2를 보고한다 | verify: human — `mise which golangci-lint`와 `golangci-lint --version` 결과를 같은 evidence에 기록한다
+- [x] 프로젝트 밖 호스트 scope에서 mise가 Aqua 2.13.2를 선택하고 실행 버전도 2.13.2를 보고한다 | verify: human — 2026-09-27 `/tmp`에서 `mise which golangci-lint`가 `aqua-golangci-golangci-lint/2.13.2`를 가리키고 `golangci-lint --version`은 2.13.2; DVA의 `.mise.toml`과 CI는 2.12.2를 선언한다
 - [x] Source master pins worktrunk to 0.74.0 and task-relevant checks do not worsen the unchanged-source baseline | verify: human — integrated commit `7273dd62`; final `run-finish` readiness reports `make check` 22→22 and `make lint` 23→23 with no changed-path diagnostics
-- [ ] 통합된 source의 worktrunk 핀 0.74.0이 기존 live 설정을 보존하며 설치된다 | verify: human — 지정 설치 결과·설치본 config·`mise which wt` 경로·`wt --version` 및 force 전후 11개 입력 보존을 추적 가능한 evidence에 기록한다
+- [ ] 통합된 source의 worktrunk 핀 0.74.0이 기존 live 설정을 보존하며 설치된다 | verify: human — 지정 설치 결과·설치본 config·`mise which wt` 경로·`wt --version` 및 설치 전후 실제 로컬 입력 목록·해시·receipt를 추적 가능한 evidence에 기록한다
 
 ## Out of scope
 
@@ -60,3 +62,15 @@ To unblock, capture one tracked install evidence record with current `mise which
 outputs for both tools; a selected explicit `cargo-worktrunk/0.74.0` path; non-force drift
 output; exact source commit and lifecycle receipt; and, if force is required, an enumerated
 before/after comparison of the 11 protected inputs.
+
+## 2026-09-27 재판정
+
+앞 절의 `golangci-lint` 실패 판정은 DVA 프로젝트 scope와 호스트 scope를 혼동했다.
+`tasks` 이외의 `/tmp`에서 전역 Aqua 2.13.2가 실제 선택·실행됐다. DVA 저장소의
+tracked `.mise.toml:16`과 CI `golangci-lint-action`은 함께 2.12.2를 선언한다.
+둘은 각각의 범위에서 정합하다. 호스트 설치 증거는 전역 scope에서 재측정하고,
+DVA 제품 핀은 이 카드의 대상으로 바꾸지 않는다. devenv source master의
+`cargo:worktrunk = "0.74.0"`은 설치 snapshot에는 아직 반영되지 않았다.
+기존 release receipt는 `forced: false`, 보존 입력 10개를 기록한다. 새 설치는
+설치 직전 실제 입력을 열거·해시하고 지정 installer의 drift 판정과 로컬 overlay
+기능으로 보존한 뒤 새 receipt와 함께 검증한다. 과거 11개 주장으로 수를 고정하지 않는다.

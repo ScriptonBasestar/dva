@@ -16,8 +16,9 @@ upstream-ref: "ce-agent-kit#6"
 
 워크스테이션 도구 두 개의 drift를 추적한다. worktrunk source pin은 devenv master
 commit `7273dd62`에 통합됐지만, 2026-09-27 독립 재측정은 wt 선택 경로가 아직 latest임을
-보였다. 같은 리뷰에서 golangci-lint는 기대 버전 2.13.2 대신 2.12.2였다. 두 live 기준
-모두 현재 미해결이다.
+보였다. 같은 리뷰에서 DVA 프로젝트가 의도적으로 선택한 golangci-lint 2.12.2를
+호스트 기준 실패로 해석했다. 프로젝트 밖 전역 Aqua 2.13.2는 재확인해 충족했다.
+live 미해결 기준은 worktrunk 핀 설치 하나다.
 
 **1. (해결됨) golangci-lint 2.12.2가 mise가 고른 2.13.2보다 PATH에서 앞선다.** mise 전역
 설정은 `"aqua:golangci/golangci-lint" = "2.13.2"`를 고르고, 2.13.2는 go1.27.0으로
@@ -86,8 +87,18 @@ worktrunk 다음 버전 배포일에 모든 저장소의 작업이 하루 막힌
 
 ## Resolution Criteria
 
-- [ ] 실행된 golangci-lint가 mise가 선택한 Aqua 2.13.2다 | verify: human — `mise which golangci-lint`가 Aqua 2.13.2를 가리키고 `golangci-lint --version`이 2.13.2인지 확인한다
+- [x] 프로젝트 밖 호스트 scope에서 golangci-lint가 Aqua 2.13.2로 선택·실행된다 | verify: human — 2026-09-27 `/tmp`에서 `mise which golangci-lint`와 `golangci-lint --version`이 모두 Aqua 2.13.2; DVA `.mise.toml`과 CI는 제품 2.12.2 핀으로 일치한다
 - [ ] worktrunk 0.74.0 핀이 live `~/devenv` 설치본에 반영된다 | verify: human — 설치본 mise config와 `mise which wt`, `wt --version`이 0.74.0을 확인한다
+
+## 2026-09-27 범위 교정
+
+2026-09-27 `/tmp`에서 `mise which golangci-lint`는 전역 Aqua 2.13.2를 선택하고
+실행 버전도 2.13.2였다. DVA checkout의 tracked `.mise.toml`은 2.12.2를
+선택하며 CI `golangci-lint-action`도 v2.12.2를 선언한다. 위 첫 기준의 호스트
+scope는 충족됐고 DVA 제품 scope도 자체 선언과 일치한다. 이전의 "호스트 2.12.2
+실패" 문장은 DVA cwd에서 호스트 기준을 측정한 결과다. source에 통합된
+worktrunk 0.74.0 핀이 live release에서 `latest`로 남은 두 번째 기준만 미완료다.
+설치 시점의 실제 로컬 입력을 열거·해시해 설치기 receipt와 대조한다.
 
 ## 후속 (2026-09-24)
 
@@ -150,4 +161,6 @@ TASK-431 reviewer는 `mise which golangci-lint`와 실행 버전 모두 2.12.2,
 실행 버전만 맞는 것은 pinned installation 경로의 증거가 아니다. 과거 FORCE=1과
 11개 입력 보존 주장은 durable before/after evidence가 없고 report의 03c1466e source
 commit도 canonical checkout에서 확인되지 않았다. source pin 통합 및 readiness 비교는
-통과 상태로 유지하며, live criteria가 검증될 때까지 이 이슈를 열어 둔다.
+통과 상태로 유지한다. 이 문단의 golangci 판정은 DVA cwd에서 호스트 기준을 측정한
+역사적 오류이며 위 범위 교정이 현행 판정이다. wt live criterion이 검증될 때까지
+이 이슈를 열어 둔다.
