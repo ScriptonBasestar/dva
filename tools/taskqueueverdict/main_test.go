@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -108,6 +109,170 @@ func TestLoadQueueForwardsExactInvocationAndDoesNotMutateBoard(t *testing.T) {
 	}
 }
 
+func TestExecuteStartTypeBridge(t *testing.T) {
+	bin := t.TempDir()
+	queueArgs := filepath.Join(t.TempDir(), "queue-argv")
+	ceArgs := filepath.Join(t.TempDir(), "ce-argv")
+	ceCWD := filepath.Join(t.TempDir(), "ce-cwd")
+	queueStub := filepath.Join(bin, "taskchain-task-manager")
+	ceStub := filepath.Join(bin, "ce")
+	if err := os.WriteFile(queueStub, []byte("#!/bin/sh\nprintf '%s\\000' \"$@\" > \"$TASK_QUEUE_ARGV\"\nprintf '%s' \"$TASK_QUEUE_JSON\"\n"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(ceStub, []byte("#!/bin/sh\nprintf '%s\\000' \"$@\" >> \"$CE_ARGV\"\npwd > \"$CE_CWD\"\nprintf '%s' \"$CE_STDOUT\"\nprintf '%s' \"$CE_STDERR\" >&2\nexit \"${CE_EXIT:-0}\"\n"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", bin+string(os.PathListSeparator)+os.Getenv("PATH"))
+	t.Setenv("TASK_QUEUE_ARGV", queueArgs)
+	t.Setenv("CE_ARGV", ceArgs)
+	t.Setenv("CE_CWD", ceCWD)
+
+	candidate := string(item("ISSUE-0042", "tasks/issue/42.md", "implementation", false, "tools/taskqueueverdict"))
+	secondCandidate := string(item("TASK-43", "tasks/todo/43.md", "implementation", false, "tools/taskqueueverdict"))
+	human := string(item("TASK-2", "tasks/todo/2.md", "external", true))
+	for _, tc := range []struct {
+		name         string
+		dir          string
+		startType    string
+		queueJSON    string
+		ceStdout     string
+		ceStderr     string
+		ceExit       string
+		wantErr      bool
+		wantErrText  string
+		wantCE       bool
+		wantOutput   string
+		queueInvoked bool
+	}{
+		{
+			name:         "read only without type",
+			queueJSON:    queueJSON(1, 1, "["+candidate+"]", "["+candidate+"]"),
+			wantOutput:   `"state":"candidate"`,
+			queueInvoked: true,
+		},
+		{
+			name:         "candidate starts normalized issue key",
+			startType:    "feat",
+			queueJSON:    queueJSON(1, 1, "["+candidate+"]", "["+candidate+"]"),
+			ceStdout:     "{\"schemaVersion\":2,\"status\":\"ACTIVE\"}\n",
+			wantCE:       true,
+			wantOutput:   "{\"schemaVersion\":2,\"status\":\"ACTIVE\"}\n",
+			queueInvoked: true,
+		},
+		{
+			name:         "human required does not start",
+			startType:    "fix",
+			queueJSON:    queueJSONCounts(1, 1, 0, "["+human+"]", "[]"),
+			wantErr:      true,
+			wantErrText:  `queue verdict is "human_required"`,
+			queueInvoked: true,
+		},
+		{
+			name:         "empty does not start",
+			startType:    "test",
+			queueJSON:    queueJSON(1, 0, "[]", "[]"),
+			wantErr:      true,
+			wantErrText:  `queue verdict is "empty"`,
+			queueInvoked: true,
+		},
+		{
+			name:         "selection required does not start",
+			startType:    "chore",
+			queueJSON:    queueJSON(1, 2, "["+candidate+","+secondCandidate+"]", "["+candidate+","+secondCandidate+"]"),
+			wantErr:      true,
+			wantErrText:  `queue verdict is "selection_required"`,
+			queueInvoked: true,
+		},
+		{
+			name:         "invalid queue does not start",
+			startType:    "perf",
+			queueJSON:    "{",
+			wantErr:      true,
+			queueInvoked: true,
+		},
+		{
+			name:         "invalid type does not query queue",
+			startType:    "deploy",
+			queueJSON:    queueJSON(1, 1, "["+candidate+"]", "["+candidate+"]"),
+			wantErr:      true,
+			queueInvoked: false,
+		},
+		{
+			name:         "alternate board does not query queue or start CE",
+			dir:          "../other-board",
+			startType:    "feat",
+			queueJSON:    queueJSON(1, 1, "["+candidate+"]", "["+candidate+"]"),
+			wantErr:      true,
+			queueInvoked: false,
+		},
+		{
+			name:         "CE failure preserves structured response",
+			startType:    "docs",
+			queueJSON:    queueJSON(1, 1, "["+candidate+"]", "["+candidate+"]"),
+			ceStdout:     "{\"status\":\"BLOCKED\",\"receipt\":{\"worktree\":\"/tmp/created\"}}\n",
+			ceStderr:     "blocked\n",
+			ceExit:       "1",
+			wantErr:      true,
+			wantCE:       true,
+			wantOutput:   "{\"status\":\"BLOCKED\",\"receipt\":{\"worktree\":\"/tmp/created\"}}\n",
+			queueInvoked: true,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			_ = os.Remove(queueArgs)
+			_ = os.Remove(ceArgs)
+			_ = os.Remove(ceCWD)
+			t.Setenv("TASK_QUEUE_JSON", tc.queueJSON)
+			t.Setenv("CE_STDOUT", tc.ceStdout)
+			t.Setenv("CE_STDERR", tc.ceStderr)
+			t.Setenv("CE_EXIT", tc.ceExit)
+			var output bytes.Buffer
+			dir := tc.dir
+			if dir == "" {
+				dir = "tasks"
+			}
+			err := execute(context.Background(), dir, tc.startType, &output)
+			if (err != nil) != tc.wantErr {
+				t.Fatalf("execute error = %v, want error = %t", err, tc.wantErr)
+			}
+			if tc.wantErrText != "" && (err == nil || !strings.Contains(err.Error(), tc.wantErrText)) {
+				t.Fatalf("execute error = %v, want containing %q", err, tc.wantErrText)
+			}
+			if tc.wantErr && tc.wantOutput == "" && output.Len() != 0 {
+				t.Fatalf("error output = %q, want no success output", output.String())
+			}
+			if tc.wantOutput != "" && !strings.Contains(output.String(), tc.wantOutput) {
+				t.Fatalf("output = %q, want containing %q", output.String(), tc.wantOutput)
+			}
+			_, queueErr := os.Stat(queueArgs)
+			if (queueErr == nil) != tc.queueInvoked {
+				t.Fatalf("queue invoked = %t, want %t (err=%v)", queueErr == nil, tc.queueInvoked, queueErr)
+			}
+			gotCE, ceErr := os.ReadFile(ceArgs)
+			if (ceErr == nil) != tc.wantCE {
+				t.Fatalf("CE invoked = %t, want %t (err=%v)", ceErr == nil, tc.wantCE, ceErr)
+			}
+			if tc.wantCE {
+				want := "task\x00run-start\x00issue-42\x00--type\x00" + tc.startType + "\x00--json\x00"
+				if string(gotCE) != want {
+					t.Fatalf("CE argv = %q, want %q", gotCE, want)
+				}
+				gotCWD, err := os.ReadFile(ceCWD)
+				if err != nil {
+					t.Fatal(err)
+				}
+				wantCWD, err := os.Getwd()
+				if err != nil {
+					t.Fatal(err)
+				}
+				if strings.TrimSpace(string(gotCWD)) != wantCWD {
+					t.Fatalf("CE cwd = %q, want %q", gotCWD, wantCWD)
+				}
+			}
+		})
+	}
+}
+
 func TestSafeAllowedPath(t *testing.T) {
 	for _, tc := range []struct {
 		path string
@@ -122,6 +287,9 @@ func TestSafeAllowedPath(t *testing.T) {
 }
 
 func item(id, path, mode string, human bool, allowed ...string) json.RawMessage {
+	if allowed == nil {
+		allowed = []string{}
+	}
 	value := queueItem{Path: path, ExecutionMode: mode, NeedsHuman: human, AllowedPaths: allowed}
 	value.Card.ID = id
 	encoded, err := json.Marshal(value)
@@ -132,5 +300,9 @@ func item(id, path, mode string, human bool, allowed ...string) json.RawMessage 
 }
 
 func queueJSON(version, count int, runnable, agent string) string {
-	return fmt.Sprintf(`{"outputVersion":%d,"runnableCount":%d,"agentRunnableCount":%d,"runnable":%s,"agentRunnable":%s}`, version, count, count, runnable, agent)
+	return queueJSONCounts(version, count, count, runnable, agent)
+}
+
+func queueJSONCounts(version, runnableCount, agentCount int, runnable, agent string) string {
+	return fmt.Sprintf(`{"outputVersion":%d,"runnableCount":%d,"agentRunnableCount":%d,"runnable":%s,"agentRunnable":%s}`, version, runnableCount, agentCount, runnable, agent)
 }

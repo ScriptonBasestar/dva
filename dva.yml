@@ -35,6 +35,13 @@ interaction:
     shell: false
     workdir: "."
 
+  task-queue-start:
+    description: "Start CE runtime for the sole agent candidate with an explicit branch type"
+    command: "go run ./tools/taskqueueverdict --dir tasks --start-type"
+    runner: local
+    shell: false
+    workdir: "."
+
   # 'build' is a reserved DVA command — override it with a replace hook.
   # 'clean' stopped being one (docs/43): teardown is now 'dva down <plan> --purge',
   # and a flag has no interaction key to hook. It is an ordinary command here.

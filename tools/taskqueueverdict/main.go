@@ -57,29 +57,126 @@ type verdict struct {
 
 func main() {
 	dir := flag.String("dir", "tasks", "TaskChain board directory")
+	startType := flag.String("start-type", "", "CE task branch type (feat|fix|refactor|docs|test|chore|perf)")
 	flag.Parse()
 	if flag.NArg() != 0 {
 		fail(fmt.Errorf("unexpected arguments: %s", strings.Join(flag.Args(), " ")))
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), queueTimeout)
-	defer cancel()
-	q, err := loadQueue(ctx, *dir)
-	if err != nil {
+	if err := execute(context.Background(), *dir, *startType, os.Stdout); err != nil {
+		if startErr, ok := errors.AsType[*runStartError](err); ok {
+			failCode(err, startErr.exitCode)
+		}
 		fail(err)
 	}
-	v := classify(q)
-	encoded, err := json.Marshal(v)
-	if err != nil {
-		fail(fmt.Errorf("encode verdict: %w", err))
-	}
-	fmt.Println(string(encoded))
 }
 
 func fail(err error) {
-	fmt.Fprintln(os.Stderr, "task-queue-verdict:", err)
-	os.Exit(1)
+	failCode(err, 1)
 }
+
+func failCode(err error, code int) {
+	fmt.Fprintln(os.Stderr, "task-queue-verdict:", err)
+	os.Exit(code)
+}
+
+// execute preserves the original verdict output unless an operator explicitly
+// selects a CE branch type. A start request is deliberately a second phase:
+// queue validation completes before CE, and every non-candidate verdict fails
+// without calling CE's lifecycle writer.
+func execute(ctx context.Context, dir, startType string, stdout io.Writer) error {
+	if startType != "" && !validStartType(startType) {
+		return fmt.Errorf("invalid --start-type %q (want feat, fix, refactor, docs, test, chore, or perf)", startType)
+	}
+	if startType != "" && dir != "tasks" {
+		return fmt.Errorf("CE start is bound to the repository tasks board, got --dir %q", dir)
+	}
+
+	queueCtx, cancelQueue := context.WithTimeout(ctx, queueTimeout)
+	q, err := loadQueue(queueCtx, dir)
+	cancelQueue()
+	if err != nil {
+		return err
+	}
+	v := classify(q)
+	if startType == "" {
+		encoded, err := json.Marshal(v)
+		if err != nil {
+			return fmt.Errorf("encode verdict: %w", err)
+		}
+		_, err = fmt.Fprintln(stdout, string(encoded))
+		return err
+	}
+	if v.State != "candidate" {
+		return fmt.Errorf("CE run-start requires one candidate; queue verdict is %q", v.State)
+	}
+	key, err := runtimeKey(v.Candidate)
+	if err != nil {
+		return err
+	}
+	output, err := runStart(ctx, key, startType)
+	if len(output) > 0 {
+		if _, writeErr := stdout.Write(output); writeErr != nil {
+			return writeErr
+		}
+	}
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func validStartType(value string) bool {
+	switch value {
+	case "feat", "fix", "refactor", "docs", "test", "chore", "perf":
+		return true
+	default:
+		return false
+	}
+}
+
+func runtimeKey(raw json.RawMessage) (string, error) {
+	var item queueItem
+	if err := json.Unmarshal(raw, &item); err != nil {
+		return "", fmt.Errorf("decode candidate: %w", err)
+	}
+	normalized, ok := normalizedQueueID(item.Card.ID)
+	if !ok {
+		return "", errors.New("candidate has invalid card id")
+	}
+	return strings.ToLower(normalized), nil
+}
+
+// runStart forwards successful CE JSON without interpreting its versioned
+// response envelope. CE owns that contract and any lifecycle state it writes.
+func runStart(ctx context.Context, key, startType string) ([]byte, error) {
+	cmd := exec.CommandContext(ctx, "ce", "task", "run-start", key, "--type", startType, "--json")
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout, cmd.Stderr = &stdout, &stderr
+	err := cmd.Run()
+	if err != nil {
+		code := 1
+		if exitErr, ok := errors.AsType[*exec.ExitError](err); ok {
+			code = exitErr.ExitCode()
+		}
+		if stderr.Len() > 0 {
+			return stdout.Bytes(), &runStartError{exitCode: code, err: fmt.Errorf("CE run-start failed: %w: %s", err, strings.TrimSpace(stderr.String()))}
+		}
+		return stdout.Bytes(), &runStartError{exitCode: code, err: fmt.Errorf("CE run-start failed: %w", err)}
+	}
+	if stderr.Len() > 0 {
+		_, _ = os.Stderr.Write(stderr.Bytes())
+	}
+	return stdout.Bytes(), nil
+}
+
+type runStartError struct {
+	exitCode int
+	err      error
+}
+
+func (e *runStartError) Error() string { return e.err.Error() }
+func (e *runStartError) Unwrap() error { return e.err }
 
 func loadQueue(ctx context.Context, dir string) (queue, error) {
 	cmd := exec.CommandContext(ctx, "taskchain-task-manager", "queue", "--dir", dir, "--json")

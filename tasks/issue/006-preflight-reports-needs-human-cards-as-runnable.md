@@ -170,3 +170,11 @@ W07 부분 작업 [[TASK-449]]에서 `dva task-queue`가 제품 `queue`의
 사람용 `runnable`은 버리지 않으며 후보 한 건도 실행·claim·완료로 간주하지 않는다.
 현재 보드의 실측은 0/0 `empty`다. 사람 전용 종료와 자동 루프의 terminal
 계약은 아직 검증되지 않아 이 이슈는 열린 상태다.
+
+## 2026-09-28 단일 후보 시작 브리지
+
+[[TASK-451]]은 명시적인 CE branch type과 정확히 한 agent `candidate`가
+있을 때만 `ce task run-start`로 연결한다. `human_required`와 다중 후보는
+CE를 호출하지 않고, CE의 비성공 JSON도 복구 증거로 노출한다. 현재 실제
+보드는 0/0이어서 시작하지 않는 경로만 실측했다. 자동 루프의 종료·재시도,
+사람 전용 terminal은 W07b2b 실제 host 검증 전까지 열린다.
