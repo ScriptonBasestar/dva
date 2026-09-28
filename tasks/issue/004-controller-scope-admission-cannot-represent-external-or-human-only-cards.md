@@ -23,7 +23,7 @@ executor that modifies product files, but it cannot represent cards whose
 truthful work is exclusively external, human-operated, or a controller-owned
 state transition.
 
-DVA currently has each shape:
+At discovery, DVA had each shape:
 
 - ISSUE-001 tracks the remaining DVA-owned migration of a legacy done-review to
   durable CE-compatible evidence. TASK-420 closes the CE issuer contract; no live
@@ -139,3 +139,20 @@ todo를 구분해 라우팅하며, 부정확한 경로 범위와 terminal/unknow
 아직 이 출력을 사용하지 않으므로 위 Resolution Criteria를 완료로 표시하지
 않는다. W07에서 실제 DVA 카드로 새 큐를 검증하고 외부·결정 카드의 종료 전이와
 rollback 증거를 확정한다.
+
+## 2026-09-28 DVA 조회 채택
+
+W07 부분 작업 [[TASK-449]]가 `dva task-queue`를 저장소 소유의 읽기 전용
+interaction으로 연결했다. 이 명령은 taskchain-task-manager의 `queue --dir tasks
+--json`을 설정 루트에서 실행해 stdout/stderr/exit를 그대로 전달한다. 제품
+`9e8fac7`에서 만든 로컬 바이너리 SHA-256은
+`d2ca31f2880a1420efef3503dba2333f62c0ddd84648b06f4c75b5a62ad6ecd0`이다.
+현재 DVA 보드에는 P1 ISSUE-004와 P2 ISSUE-006만 있어 결과는
+`runnableCount: 0`, `agentRunnableCount: 0`이다. 이것은 과거 ISSUE-001과
+외부·결정 카드의 실제 전이를 재현한 증거가 아니다. 합성 fixture에서 P0 외부,
+결정 todo, 범위가 있는 구현 todo를 각각 분류하고 P1/P2를 제외했으며,
+`tasks/`·절대·부모 탐색·glob 범위는 전체 결과 실패로 확인했다.
+
+위 Resolution Criteria의 역사적 실제 카드·전이 기준은 여전히 미충족이다.
+새 큐는 분류와 조회만 소유한다. W07의 실행 소비자·terminal/rollback 계약이
+정해져 실제 경로에서 검증되기 전까지 이 이슈는 열린 상태로 둔다.

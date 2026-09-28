@@ -215,6 +215,13 @@ user/project discovery path에 복사합니다. runtime별 경로, per-skill cla
 
 ## Development
 
+이 저장소의 `dva task-queue`는 `PATH`의 `taskchain-task-manager`를 호출해
+`tasks/` 보드의 사람용 `runnable`과 에이전트용 `agentRunnable`을 읽기 전용으로
+보여줍니다. 하위 디렉터리에서 호출해도 저장소의 `tasks/`를 사용합니다.
+이 interaction은 카드를 선택하거나 claim·전이하지 않으며, 자동 실행 루프의
+종료 판정을 구현하지 않습니다. 호출 전에는 사용하려는 task-manager 바이너리의
+버전과 SHA-256을 확인하세요.
+
 ```bash
 make build      # Build → ./bin/dva
 make test       # Run tests

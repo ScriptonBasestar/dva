@@ -22,7 +22,7 @@ runner exists that can satisfy them. A card whose every remaining criterion is
 `verify: human — …` is structurally perfect, so it is reported runnable to an
 agent that cannot run it.
 
-DVA's queue is currently entirely this shape. `ce task preflight --zone
+At discovery, DVA's queue was entirely this shape. `ce task preflight --zone
 doing,todo --json` returns `verdict: READY`, `total: 4`, `runnable: 4`,
 `unrunnable: 0`. All four cards carry `needs-human: true` in frontmatter, and
 their remaining criteria are human-bound. Agent-runnable work is zero.
@@ -144,3 +144,21 @@ taskchain-task-manager `78ed463`이 읽기 전용 `queue`에 `runnable`과
 (race taskstore 1019초)와 통합 사전검사를 통과했고 `master/origin`에
 통합·push한 뒤 작업 브랜치·worktree를 회수했다. 이 이슈는 DVA 소비자가
 새 큐를 채택해 실제 preflight 판정을 교체할 때까지 열린다.
+
+## 2026-09-28 DVA 조회 채택
+
+W07 부분 작업 [[TASK-449]]에서 `dva task-queue`가 제품 `queue`의
+`runnable`/`agentRunnable` 두 집합을 변형 없이 노출한다. 제품
+`9e8fac7`의 로컬 빌드 SHA-256은
+`d2ca31f2880a1420efef3503dba2333f62c0ddd84648b06f4c75b5a62ad6ecd0`이다.
+합성 fixture의 사람 전용 작업 두 개는 `runnableCount: 2`,
+`agentRunnableCount: 0`, `agentRunnable: []`였고 혼합 fixture는 3/1이었다.
+현재 DVA에는 이전의 네 todo 카드가 없으며 P1/P2 issue 두 개만 남아
+실제 조회는 0/0이다. 이 0/0은 사람 전용 양성 사례가 아니므로 fixture와
+구분해 기록한다. 직접 CLI와 DVA interaction의 출력·종료코드 일치,
+보드 digest 불변 및 lock 부재도 확인했다.
+
+위 Resolution Criteria의 자동 run-all 종료 조건은 아직 미충족이다. 이
+저장소에는 새 큐를 해석하는 agent loop가 없고, 읽기 전용 interaction은
+카드를 선택·claim·전이하지 않는다. W07의 실제 실행 소비자와 rollback
+검증이 완료될 때까지 이 이슈는 열린 상태로 둔다.
