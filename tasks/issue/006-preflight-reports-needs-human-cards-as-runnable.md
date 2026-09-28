@@ -162,3 +162,11 @@ W07 부분 작업 [[TASK-449]]에서 `dva task-queue`가 제품 `queue`의
 저장소에는 새 큐를 해석하는 agent loop가 없고, 읽기 전용 interaction은
 카드를 선택·claim·전이하지 않는다. W07의 실제 실행 소비자와 rollback
 검증이 완료될 때까지 이 이슈는 열린 상태로 둔다.
+
+## 2026-09-28 읽기 전용 verdict
+
+[[TASK-450]]의 `dva task-queue-verdict`는 두 집합을 검증한 뒤
+`empty`·`human_required`·`candidate`·`selection_required`를 구분한다.
+사람용 `runnable`은 버리지 않으며 후보 한 건도 실행·claim·완료로 간주하지 않는다.
+현재 보드의 실측은 0/0 `empty`다. 사람 전용 종료와 자동 루프의 terminal
+계약은 아직 검증되지 않아 이 이슈는 열린 상태다.

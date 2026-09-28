@@ -28,6 +28,13 @@ interaction:
     shell: false
     workdir: "."
 
+  task-queue-verdict:
+    description: "Classify TaskChain agent candidates without selecting one"
+    command: "go run ./tools/taskqueueverdict --dir tasks"
+    runner: local
+    shell: false
+    workdir: "."
+
   # 'build' is a reserved DVA command — override it with a replace hook.
   # 'clean' stopped being one (docs/43): teardown is now 'dva down <plan> --purge',
   # and a flag has no interaction key to hook. It is an ordinary command here.

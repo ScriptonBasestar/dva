@@ -222,6 +222,13 @@ user/project discovery path에 복사합니다. runtime별 경로, per-skill cla
 종료 판정을 구현하지 않습니다. 호출 전에는 사용하려는 task-manager 바이너리의
 버전과 SHA-256을 확인하세요.
 
+`dva task-queue-verdict`는 같은 큐를 검증해 `empty`, `human_required`,
+`candidate`, `selection_required` 중 하나의 버전 있는 JSON 판정을 냅니다.
+`candidate`는 한 건의 **실행 후보**를 뜻하며 선택·claim·완료가 아닙니다.
+사람용 `runnable` 목록은 항상 함께 보존합니다. 이 저장소의 Go toolchain과
+`PATH`의 task-manager 바이너리가 필요하며, 입력/호출 오류는 성공 JSON 없이
+실패합니다. 실제 실행과 종료·복구는 아직 W07b 후속입니다.
+
 ```bash
 make build      # Build → ./bin/dva
 make test       # Run tests
