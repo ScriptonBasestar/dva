@@ -17,6 +17,10 @@ import (
 
 const validTaskQueueJSON = `{"outputVersion":1,"runnable":[{"path":"todo/TASK-1.md","card":{"id":"TASK-1","title":"Human handoff","status":"pending","priority":"P1","dependsOn":null},"needsHuman":true,"executionMode":"external","allowedPaths":[]},{"path":"todo/TASK-2.md","card":{"id":"TASK-2","title":"Implement queue verdict","status":"pending","priority":"P1","dependsOn":null},"needsHuman":false,"executionMode":"implementation","allowedPaths":["tools/taskqueueverdict"]}],"runnableCount":2,"agentRunnable":[{"path":"todo/TASK-2.md","card":{"id":"TASK-2","title":"Implement queue verdict","status":"pending","priority":"P1","dependsOn":null},"needsHuman":false,"executionMode":"implementation","allowedPaths":["tools/taskqueueverdict"]}],"agentRunnableCount":1}`
 
+// Handwritten wire golden: field order, raw runnable bytes, and final newline
+// are part of the read-only verdict contract, beyond semantic JSON equality.
+const expectedTaskQueueVerdictCandidate = `{"verdictVersion":1,"state":"candidate","runnableCount":2,"agentRunnableCount":1,"runnable":[{"path":"todo/TASK-1.md","card":{"id":"TASK-1","title":"Human handoff","status":"pending","priority":"P1","dependsOn":null},"needsHuman":true,"executionMode":"external","allowedPaths":[]},{"path":"todo/TASK-2.md","card":{"id":"TASK-2","title":"Implement queue verdict","status":"pending","priority":"P1","dependsOn":null},"needsHuman":false,"executionMode":"implementation","allowedPaths":["tools/taskqueueverdict"]}],"agentRunnable":[{"path":"todo/TASK-2.md","card":{"id":"TASK-2","title":"Implement queue verdict","status":"pending","priority":"P1","dependsOn":null},"needsHuman":false,"executionMode":"implementation","allowedPaths":["tools/taskqueueverdict"]}],"candidate":{"path":"todo/TASK-2.md","card":{"id":"TASK-2","title":"Implement queue verdict","status":"pending","priority":"P1","dependsOn":null},"needsHuman":false,"executionMode":"implementation","allowedPaths":["tools/taskqueueverdict"]}}` + "\n"
+
 // TestTaskQueueVerdictInteractionFromUnrelatedDirectory exercises the checked-in
 // verdict interaction through DVA. It uses the source Go toolchain and a stubbed
 // upstream binary, so the test covers the process boundary without depending on
@@ -61,6 +65,9 @@ exit "$TASK_QUEUE_EXIT"
 			t.Fatalf("exit=%d stderr=%q, want success with empty stderr", code, stderr)
 		}
 		assertTaskQueueVerdictCandidate(t, stdout)
+		if stdout != expectedTaskQueueVerdictCandidate {
+			t.Fatalf("verdict wire output changed:\n got %q\nwant %q", stdout, expectedTaskQueueVerdictCandidate)
+		}
 		assertTaskQueueUpstreamContract(t, argvPath, workdirPath, root)
 	})
 

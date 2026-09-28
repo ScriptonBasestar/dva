@@ -30,9 +30,10 @@ consumer-side provenance check; TaskChain release preparation is tracked in
    as PATH-based interactions.
 2. Read `internal/cli/task_queue_start.go`: the compiled start command rejects
    before queue or CE invocation. Its production activation remains pending.
-3. Read `tools/taskqueueverdict/pin.go`: the staged verifier binds the first
-   PATH result to a hashed snapshot, but is not connected to the compiled
-   start command. Positive host evidence belongs to W07c2.
+3. Read `internal/taskqueue/pin.go`: the verifier binds the first PATH result
+   to a hashed snapshot and is connected to the compiled start command. The
+   production manifest remains unauthorized. Positive host evidence belongs to
+   W07c2a.
 
 ## Expected vs Actual
 
@@ -79,7 +80,9 @@ The compiled `dva task-queue-start` command now fails before TaskChain or CE whi
 no product artifact is approved. A DVA-owned candidate manifest records the
 internal build with `mutationAuthorized: false`; flipping that flag alone cannot
 authorize the candidate. Snapshot/hash execution is covered by injected-pin
-tests but is not connected to the production DVA command. This issue remains
-open until W07c2 provides a published, reviewed artifact, integrates the
-verified queue path into the compiled command, and records positive and
-negative host-level CE call counts.
+tests and the compiled DVA command (TASK-455). The read-only Go verdict tool
+cannot initiate CE. This issue remains open until W07c2a provides a published,
+reviewed artifact, activates the pin, and records positive and negative
+host-level CE call counts. The compiled DVA root normalizes a failed child CE
+exit to 1; W07c2a host checks must assert nonzero failure and inspect CE
+status rather than expect the child's exact exit code.

@@ -1655,7 +1655,9 @@ ci secret job task-queue-start
 `task-queue-start`는 이제 내장 커맨드입니다. 같은 이름의 기존
 `interaction.task-queue-start` 선언은 `dva validate`에서 충돌로 거부되므로
 다른 이름으로 옮겨야 합니다. 현재 내장 커맨드는 승인된 TaskChain 릴리스가
-없어 큐와 CE를 호출하지 않습니다.
+없어 큐와 CE를 호출하지 않습니다. 승인 전 준비된 검증 경로는 DVA 설정
+파일이 있는 저장소의 `tasks/` 보드만 읽고, 해당 저장소에서 CE를 실행합니다.
+`task-queue-verdict`의 Go 도구는 읽기 전용이며 CE 시작 경로가 아닙니다.
 
 **훅 가능 6개** — 예약어 중 `before`/`replace`/`after` 훅을 받는 것:
 

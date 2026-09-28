@@ -25,7 +25,7 @@ TaskChain 후보의 출처 정보를 DVA에 기록하고, 승인된 바이너리
 ## Completion Criteria
 
 - [x] Production task-queue-start rejects when no approved platform pin exists before queue or CE invocation | verify: `go test -tags=integration ./internal/integration -run TestTaskQueueStartInteractionFromUnrelatedDirectory`
-- [x] An injected approved pin executes the exact hashed first PATH binary snapshot; mismatch and replacement fail closed | verify: `go test ./tools/taskqueueverdict -run 'Test(Pin|ExecuteStartTypeBridge)'`
+- [x] An injected approved pin executes the exact hashed first PATH binary snapshot; mismatch and replacement fail closed | verify: `go test ./internal/taskqueue -run 'Test(Start|Pin)'`
 - [x] Read-only queue interactions keep their prior output contract | verify: `go test -tags=integration ./internal/integration -run 'TestTaskQueue(Interaction|VerdictInteraction)FromUnrelatedDirectory'`
 - [x] User documentation identifies the unverified read-only producer and staged start restriction | verify: human — inspect README and interaction descriptions
 
@@ -35,3 +35,4 @@ TaskChain 후보의 출처 정보를 DVA에 기록하고, 승인된 바이너리
 - `dva ci full`: `d55ba50ae7f6b14a748384305047ecf6`, succeeded, 57.84s.
 - `make doc-check`, `ce task gate`, targeted unit/integration tests: PASS.
 - ISSUE-453 remains open for published artifact approval and production activation.
+- TASK-455 moved the pin and its regression tests to `internal/taskqueue`; the criterion's verify binding now targets the moved tests. The approved-pin requirement and prior review finding did not change.

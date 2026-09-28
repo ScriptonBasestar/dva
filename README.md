@@ -233,11 +233,14 @@ user/project discovery path에 복사합니다. runtime별 경로, per-skill cla
 `dva task-queue-start feat`는 컴파일된 DVA 명령입니다. 현재 승인된
 TaskChain 릴리스가 없어 큐와 CE를 호출하기 전에 실패합니다. `feat` 자리는
 명시적인 CE 브랜치 유형(`feat`, `fix`, `refactor`, `docs`, `test`, `chore`,
-`perf`)입니다. 후보 해시는 `tools/taskqueueverdict/taskchain-pins.json`에
+`perf`)입니다. 후보 해시는 `internal/taskqueue/taskchain-pins.json`에
 기록됐지만 공개·검토·전환 절차가 끝나지 않아 `mutationAuthorized: false`입니다.
-해시 검증과 스냅샷 실행 구현은 검증용으로 준비됐으며, 승인된 릴리스가 생기면
-W07c2에서 컴파일된 명령에 통합하고 실제 바이너리로 양성 통합 검사를 해야
-CE 시작을 활성화할 수 있습니다.
+해시 검증과 스냅샷 실행은 컴파일된 명령에 연결됐습니다. 승인된 릴리스가
+생기면 W07c2a에서 manifest를 검토·활성화하고 실제 바이너리로 양성 통합
+검사를 해야 CE 시작을 활성화할 수 있습니다. 읽기 전용 `task-queue-verdict`
+도구의 `--start-type` 경로는 CE 시작에 사용할 수 없습니다.
+컴파일된 DVA 명령은 CE 자식 명령의 실패 종료 코드를 DVA의 일반 오류 코드 1로
+정규화하므로, 운영 검사는 정확한 숫자 대신 실패 여부와 CE 상태를 확인합니다.
 
 ```bash
 make build      # Build → ./bin/dva

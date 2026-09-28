@@ -1,4 +1,4 @@
-package main
+package taskqueue
 
 import (
 	"bytes"
@@ -25,7 +25,6 @@ type artifactPins struct {
 	Artifacts     []artifactPin `json:"artifacts"`
 	loadErr       error
 }
-
 type artifactPin struct {
 	GOOS               string `json:"goos"`
 	GOARCH             string `json:"goarch"`
@@ -100,8 +99,7 @@ func (pins artifactPins) activeForPlatform() (artifactPin, error) {
 	return *active, nil
 }
 
-// pinnedQueueBinary resolves one PATH entry and executes only a hashed snapshot
-// of the file opened there. The caller must clean the snapshot before CE starts.
+// pinnedQueueBinary resolves one PATH entry and runs only a hashed snapshot of it.
 func pinnedQueueBinary(pin artifactPin) (string, func() error, error) {
 	selected, err := exec.LookPath("taskchain-task-manager")
 	if err != nil {

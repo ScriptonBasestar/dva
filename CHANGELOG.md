@@ -6,6 +6,9 @@ All notable changes to DVA are documented here.
 
 ### Added
 
+- **컴파일된 TaskChain 시작 경계 (TASK-455)**: `task-queue-start`가 큐 검증과
+  바이너리 해시 스냅샷을 DVA 내부 코드로 실행합니다. 공개 승인 전 pin은 여전히
+  비활성이라 CE 시작은 거부하며, 읽기 전용 verdict 도구에서는 시작할 수 없습니다.
 - **`sops_source` 누락을 알려주는 경로**: 설정 루트에 sops 흔적(`.sops.yaml`, `*.enc`,
   `*.sops.*`, `secrets.sources.*.sops`)이 있는데 어떤 `env_file` 엔트리도 `sops_source`를
   선언하지 않으면 `dva doctor`가 advisory 행과 붙여넣을 수 있는 선언 예시를 보여줍니다.
