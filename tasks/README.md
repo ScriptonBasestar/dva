@@ -1,6 +1,6 @@
 # DVA Task Management Board
 
-## 현재 상태 (2026-09-28)
+## 현재 상태 (2026-09-29)
 
 v0.3.0 공개와 postflight는 완료됐고 PLAN-010(8/8)과 PLAN-011(19/19)은
 `tasks/_archive/plan/`에 보관됐다. 열린 계획은 없다. 과거 판정은 보관된 카드와 Git 이력이 소유한다.
@@ -10,6 +10,7 @@ TASK-436은 CE `run-discard`로 중복 worktree를 회수해 완료됐고(`fa0d5
 열린 이슈:
 
 - ISSUE-004/006: taskchain-task-manager W13/W14 제품 구현은 완료됐고 DVA 소비자 채택을 추적한다.
+- ISSUE-453: W07c2 배포 전 DVA의 TaskChain 바이너리 출처 고정과 불일치 거부를 추적한다.
 ISSUE-046의 grok 미푸시 브랜치·워크트리는 현재 없고, 같은 제목·파일 범위의
 `env-reseal` 구현은 `master`에 포함돼 있어 이슈를 해결·보관했다. 원래 객체가
 없어 두 커밋의 내용 동등성이나 회수 주체는 확인할 수 없다.
@@ -40,7 +41,7 @@ ISSUE-046의 grok 미푸시 브랜치·워크트리는 현재 없고, 같은 제
 완료 카드 15장, 단독 TASK-411·TASK-437, TASK-407이 tasks/done/에 기록되어 당시 done 카드는 18장이었다.
 2026-09-27까지 이 완료 배치들은 _archive/2026-09/로 이동했다. 2026-09-28에는
 남은 TASK-436과 TASK-447도 독립 검토 기록을 확인한 뒤 _archive/done/에 보관했다.
-현재 tasks/done/에는 카드가 없고 durable review evidence만 tasks/done/evidence/에 남아 있다.
+2026-09-29 현재 `tasks/done/`에는 TASK-449~452 네 장과 durable review evidence가 있다.
 
 | 배치 | 범위 | 대상 수 | 상태 |
 |:---:|:---|:---:|:---:|
