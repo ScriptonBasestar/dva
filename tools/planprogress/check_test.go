@@ -1,9 +1,11 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"testing"
 )
 
@@ -170,6 +172,34 @@ body text is ignored, including a fake field: total-tasks: 999
 		if p.children[i] != want {
 			t.Errorf("children[%d] = %q, want %q", i, p.children[i], want)
 		}
+	}
+}
+
+func TestLoadPlansMissingPlanDirectoryReturnsNoPlans(t *testing.T) {
+	root := t.TempDir()
+
+	plans, err := loadPlans(root)
+	if err != nil {
+		t.Fatalf("loadPlans() error = %v", err)
+	}
+	if len(plans) != 0 {
+		t.Errorf("loadPlans() = %v, want no plans", plans)
+	}
+}
+
+func TestLoadPlansPlanPathIsRegularFileReturnsENOTDIR(t *testing.T) {
+	root := t.TempDir()
+	planPath := filepath.Join(root, "tasks", "plan")
+	if err := os.MkdirAll(filepath.Dir(planPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(planPath, []byte("not a directory"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := loadPlans(root)
+	if !errors.Is(err, syscall.ENOTDIR) {
+		t.Fatalf("loadPlans() error = %v, want ENOTDIR", err)
 	}
 }
 

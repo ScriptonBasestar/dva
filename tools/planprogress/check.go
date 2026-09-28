@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -185,6 +186,9 @@ func loadPlans(root string) ([]plan, error) {
 	planDir := filepath.Join(root, "tasks", "plan")
 	entries, err := os.ReadDir(planDir)
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, nil
+		}
 		return nil, fmt.Errorf("read %s: %w", planDir, err)
 	}
 	var plans []plan

@@ -9,7 +9,7 @@ TASK-436은 CE `run-discard`로 중복 worktree를 회수해 완료됐고(`fa0d5
 
 열린 이슈:
 
-- ISSUE-004/006: task-manager-devbox W13/W14(taskchain-task-manager) 구현·DVA 채택까지 추적한다.
+- ISSUE-004/006: taskchain-task-manager W13/W14 제품 구현은 완료됐고 DVA 소비자 채택을 추적한다.
 - ISSUE-046: grok 세션의 미푸시 `env-reseal` 커밋. 소유자 확인 전에는 손대지 않는다.
 
 보드 현행화는 `tasks/`만이 아니라 `git worktree list`와 `ce task run-list`도 함께 확인한다.
