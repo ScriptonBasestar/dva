@@ -19,10 +19,11 @@ created: 2026-09-29
 `taskchain-task-manager` on `PATH`. The earlier YAML start bridge could pass a
 protocol-compatible stale binary's candidate into CE. TASK-454 replaced that
 production route with a compiled command that disables CE start while no
-artifact is approved. The remaining work is to connect verified producer
-execution to that compiled command after release approval. DVA owns this
-consumer-side provenance check; TaskChain release preparation is tracked in
-`task-manager-devbox/task/list.md` W07c1/W07c2.
+artifact is approved. TASK-455 connected the verified producer path to that
+command; the embedded candidate remains unauthorized. The remaining work is
+approval of a published artifact, pin activation, and positive/negative host
+checks. DVA owns this consumer-side provenance check; TaskChain release
+preparation is tracked in `task-manager-devbox/task/list.md` W07c1/W07c2a.
 
 ## Reproduction
 
@@ -39,14 +40,15 @@ consumer-side provenance check; TaskChain release preparation is tracked in
 
 - Expected: the consumer checks the selected binary against a reviewed,
   pinned source/artifact identity before a CE start; mismatch fails closed.
-- Actual: production CE start is disabled pending approved artifact provenance
-  and compiled-command integration; read-only queue outputs remain unpinned.
+- Actual: the compiled path verifies a pinned snapshot when an approved pin
+  exists, but production CE start remains disabled because the embedded pin is
+  unauthorized. Read-only queue outputs remain unpinned.
 
 ## Impact
 
 The local W07b1/W07b2a evidence used a binary built from product commit
 `9e8fac7`; this establishes that run's provenance, not future invocations.
-The gap blocks a truthful W07c2 release cutover claim. It does not invalidate
+The gap blocks a truthful W07c2a release activation claim. It does not invalidate
 the read-only queue classification or the tested sole-candidate guard.
 
 ## 소유권 — 이 저장소다
@@ -62,15 +64,16 @@ an input, not a substitute for the check.
 - `reason`: a mutable `PATH` selection can change the queue producer without
   changing the DVA consumer or its JSON version.
 - `owner`: DVA owns the consumer check and its failure behavior; W07c1 supplies
-  the product candidate identity, W07c2 supplies the release/cutover decision.
-- `next_action`: pin the reviewed TaskChain artifact identity in DVA and check
-  the exact binary selected for queue before `task-queue-start` reaches CE.
+  the product candidate identity, W07c2a supplies the release/pin decision.
+- `next_action`: after W07c1 and public approval, record the reviewed published
+  artifact pin in DVA, activate it, and prove the selected binary's hash and
+  CE call counts on an actual host. The compiled verifier is already connected.
 - `next_check`: an alternate binary with valid `outputVersion: 1` is rejected
   with no CE invocation, while the matching artifact proceeds.
 
 ## Resolution Criteria
 
-- [ ] A reviewed manifest records TaskChain source commit/tree, build toolchain and platform, build command, and artifact SHA-256 | verify: human — compare W07c1/W07c2 release evidence with the selected binary
+- [ ] A reviewed manifest records TaskChain source commit/tree, build toolchain and platform, build command, and artifact SHA-256 | verify: human — compare W07c1/W07c2a release evidence with the selected binary
 - [ ] DVA verifies the exact selected binary against its pinned artifact identity before any CE runtime mutation | verify: human — matching and mismatching integration runs show CE call counts and binary hashes
 - [ ] A stale or alternate protocol-compatible binary fails closed, and read-only queue inspection remains explicit about provenance | verify: human — run the negative and positive consumer checks and inspect the resulting diagnostics
 
