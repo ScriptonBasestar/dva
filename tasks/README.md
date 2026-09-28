@@ -10,7 +10,9 @@ TASK-436은 CE `run-discard`로 중복 worktree를 회수해 완료됐고(`fa0d5
 열린 이슈:
 
 - ISSUE-004/006: taskchain-task-manager W13/W14 제품 구현은 완료됐고 DVA 소비자 채택을 추적한다.
-- ISSUE-046: grok 세션의 미푸시 `env-reseal` 커밋. 소유자 확인 전에는 손대지 않는다.
+ISSUE-046의 grok 미푸시 브랜치·워크트리는 현재 없고, 같은 제목·파일 범위의
+`env-reseal` 구현은 `master`에 포함돼 있어 이슈를 해결·보관했다. 원래 객체가
+없어 두 커밋의 내용 동등성이나 회수 주체는 확인할 수 없다.
 
 보드 현행화는 `tasks/`만이 아니라 `git worktree list`와 `ce task run-list`도 함께 확인한다.
 완료 카드는 현행화 태스크 끝에 `tasks/_archive/YYYY-MM/`로 보관한다(`done-finalize`는 카드를 삭제해 plan children을 깨뜨린다).
