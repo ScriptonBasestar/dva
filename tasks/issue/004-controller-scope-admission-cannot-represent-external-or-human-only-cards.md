@@ -123,3 +123,19 @@ TASK-421은 새 제품 owner·canonical repository·CLI route·disposition contr
 The product owner assigned this to taskchain-task-manager, tracked as W13 in
 `~/mydevbox/task-manager-devbox/task/list.md`. TASK-421 was archived as handed off;
 this issue stays open until W13 ships and DVA adopts it.
+
+## 2026-09-28 제품 구현
+
+taskchain-task-manager `dc9f7b9`이 읽기 전용 `queue`에
+`execution-mode: implementation|external|decision`과 `allowedPaths`를 추가했다.
+구현 카드는 비어 있지 않은 정확한 저장소 상대 경로를 요구하고, 외부·결정 카드는
+`needs-human: true`와 `allowed-paths` 부재를 요구한다. active P0 issue와 ready
+todo를 구분해 라우팅하며, 부정확한 경로 범위와 terminal/unknown issue를 거부한다.
+독립 리뷰 PASS, 정확한 커밋의 `make check`(taskstore race 693.430초)와 통합
+사전검사 READY 후 제품 master/origin에 통합·push했고 작업 브랜치·worktree를
+회수했다.
+
+**남은 작업은 W07의 DVA 소비자 채택이다.** 현행 CE preflight와 DVA 직접 큐는
+아직 이 출력을 사용하지 않으므로 위 Resolution Criteria를 완료로 표시하지
+않는다. W07에서 실제 DVA 카드로 새 큐를 검증하고 외부·결정 카드의 종료 전이와
+rollback 증거를 확정한다.
