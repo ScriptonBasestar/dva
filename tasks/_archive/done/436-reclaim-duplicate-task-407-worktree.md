@@ -15,14 +15,14 @@ quality-review-evidence: "Independent review session /root/review_task443_board_
 
 ## Summary
 
-[ISSUE-039](../_archive/issue/039-discard-guard-blocks-reclaiming-a-worktree-whose-fix-was-already-merged-upstream.md)의
+[ISSUE-039](../issue/039-discard-guard-blocks-reclaiming-a-worktree-whose-fix-was-already-merged-upstream.md)의
 남은 운영 항목이다. stale branch의 내용이 source에 이미 반영된 것을 확인하고
 사용자가 회수를 승인했다. CE `run-discard`가 정확한 실행 identity와 clean
 worktree, remote 부재를 확인해 2026-09-28에 통합 없이 회수했다.
 
 ## Completion Criteria
 
-- [x] 그 워크트리와 로컬·원격 브랜치가 없다 | verify: human — [회수 영수증과 독립 Git 조회](evidence/TASK-436/discard-verification-20260928.json)에 worktree 미등록, local show-ref exit 1, origin ls-remote exit 2를 기록
+- [x] 그 워크트리와 로컬·원격 브랜치가 없다 | verify: human — [회수 영수증과 독립 Git 조회](../../done/evidence/TASK-436/discard-verification-20260928.json)에 worktree 미등록, local show-ref exit 1, origin ls-remote exit 2를 기록
 
 ## 2026-09-25 확인 결과
 
@@ -43,7 +43,7 @@ worktree, remote 부재를 확인해 2026-09-28에 통합 없이 회수했다.
 
 ## Sources
 
-- [ISSUE-039](../_archive/issue/039-discard-guard-blocks-reclaiming-a-worktree-whose-fix-was-already-merged-upstream.md)
+- [ISSUE-039](../issue/039-discard-guard-blocks-reclaiming-a-worktree-whose-fix-was-already-merged-upstream.md)
 
 ## 2026-09-27 재측정
 
@@ -63,5 +63,5 @@ CE `0d4b8b16`의 `run-discard`가 사용자 승인된 중복 실행을 처리했
 `--take-over-from claude/mbp`로 원래 owner를 명시하고 실제 수행자
 `codex/mbp`를 영수증에 기록했다. Worktrunk 제거 뒤 worktree·local branch·
 origin branch 부재를 검증해 terminal `ABORTED` receipt를 추가했다.
-[추적 증거](evidence/TASK-436/discard-verification-20260928.json)는
+[추적 증거](../../done/evidence/TASK-436/discard-verification-20260928.json)는
 source-built CE revision과 별도 Git 조회 종료 코드도 보존한다.

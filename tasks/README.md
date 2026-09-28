@@ -38,8 +38,9 @@ ISSUE-046의 grok 미푸시 브랜치·워크트리는 현재 없고, 같은 제
 그 뒤 다시 done에 모인 12장을 2026-09-23에 재검증했고, **그 시점에는**
 `tasks/done/`에 `evidence/`만 남았다. 2026-09-25 후속 작업에서 PLAN-011의
 완료 카드 15장, 단독 TASK-411·TASK-437, TASK-407이 tasks/done/에 기록되어 당시 done 카드는 18장이었다.
-2026-09-27까지 이 완료 배치들은 _archive/2026-09/로 이동했다. 현재 tasks/done/에는
-TASK-431, TASK-436, TASK-442, TASK-443, TASK-444, TASK-445, TASK-446 일곱 장이 있고 durable review evidence는 tasks/done/evidence/에 보관한다.
+2026-09-27까지 이 완료 배치들은 _archive/2026-09/로 이동했다. 2026-09-28에는
+남은 TASK-436과 TASK-447도 독립 검토 기록을 확인한 뒤 _archive/done/에 보관했다.
+현재 tasks/done/에는 카드가 없고 durable review evidence만 tasks/done/evidence/에 남아 있다.
 
 | 배치 | 범위 | 대상 수 | 상태 |
 |:---:|:---|:---:|:---:|
