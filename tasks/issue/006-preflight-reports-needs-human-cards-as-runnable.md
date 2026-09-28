@@ -178,3 +178,11 @@ W07 부분 작업 [[TASK-449]]에서 `dva task-queue`가 제품 `queue`의
 CE를 호출하지 않고, CE의 비성공 JSON도 복구 증거로 노출한다. 현재 실제
 보드는 0/0이어서 시작하지 않는 경로만 실측했다. 자동 루프의 종료·재시도,
 사람 전용 terminal은 W07b2b 실제 host 검증 전까지 열린다.
+
+## 2026-09-28 CE host 증거의 범위
+
+[[TASK-452]]는 CE의 실제 start/discard/refusal/retry를 확인했지만 현재
+DVA 보드에는 사람 전용 runnable 카드가 없다. `human_required`에서 CE를
+호출하지 않는 것은 합성 integration fixture가 확인했다. 자동 루프의
+종료 판정과 사람 전용 카드 terminal은 아직 실제 host에서 확인되지 않아
+이 이슈는 열린다.

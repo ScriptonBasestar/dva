@@ -156,3 +156,11 @@ interaction으로 연결했다. 이 명령은 taskchain-task-manager의 `queue -
 위 Resolution Criteria의 역사적 실제 카드·전이 기준은 여전히 미충족이다.
 새 큐는 분류와 조회만 소유한다. W07의 실행 소비자·terminal/rollback 계약이
 정해져 실제 경로에서 검증되기 전까지 이 이슈는 열린 상태로 둔다.
+
+## 2026-09-28 CE host 증거의 범위
+
+[[TASK-452]]는 CE worktree의 같은 owner 재시작, clean discard,
+pre-integration refusal 뒤 재시도를 실제 host에서 확인한다. 이 증거는
+옛 ISSUE-001 또는 외부·결정 카드의 실제 사람 disposition/terminal
+전이가 아니므로 위 Resolution Criteria는 그대로 미충족이다. 해당 카드와
+인간 증거가 있는 실제 경로가 준비될 때까지 이 이슈는 열린다.
