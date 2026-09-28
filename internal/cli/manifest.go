@@ -401,8 +401,9 @@ func buildManifest(c *config.Config) *Manifest {
 				"status": {Type: "query"},
 				"logs":   {Type: "query"},
 			}},
-			"run": {Type: "dynamic_router"},
-			"ls":  {Type: "query"},
+			"run":              {Type: "dynamic_router"},
+			"task-queue-start": {Type: "lifecycle"},
+			"ls":               {Type: "query"},
 			// compose, ktl and logs take no flags of their own; their --help Flags: block is
 			// just -h. Measured, not assumed — the task that filed this counted the two global
 			// flags and --help as three per-command flags.

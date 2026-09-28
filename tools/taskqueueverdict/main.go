@@ -85,6 +85,10 @@ func failCode(err error, code int) {
 // queue validation completes before CE, and every non-candidate verdict fails
 // without calling CE's lifecycle writer.
 func execute(ctx context.Context, dir, startType string, stdout io.Writer) error {
+	return executeWithPins(ctx, dir, startType, stdout, embeddedPins)
+}
+
+func executeWithPins(ctx context.Context, dir, startType string, stdout io.Writer, pins artifactPins) error {
 	if startType != "" && !validStartType(startType) {
 		return fmt.Errorf("invalid --start-type %q (want feat, fix, refactor, docs, test, chore, or perf)", startType)
 	}
@@ -92,9 +96,24 @@ func execute(ctx context.Context, dir, startType string, stdout io.Writer) error
 		return fmt.Errorf("CE start is bound to the repository tasks board, got --dir %q", dir)
 	}
 
+	queueBinary := "taskchain-task-manager"
+	cleanup := func() error { return nil }
+	if startType != "" {
+		pin, err := pins.activeForPlatform()
+		if err != nil {
+			return err
+		}
+		queueBinary, cleanup, err = pinnedQueueBinary(pin)
+		if err != nil {
+			return err
+		}
+	}
 	queueCtx, cancelQueue := context.WithTimeout(ctx, queueTimeout)
-	q, err := loadQueue(queueCtx, dir)
+	q, err := loadQueueBinary(queueCtx, dir, queueBinary)
 	cancelQueue()
+	if cleanupErr := cleanup(); cleanupErr != nil {
+		return fmt.Errorf("remove verified queue snapshot: %w", cleanupErr)
+	}
 	if err != nil {
 		return err
 	}
@@ -179,7 +198,11 @@ func (e *runStartError) Error() string { return e.err.Error() }
 func (e *runStartError) Unwrap() error { return e.err }
 
 func loadQueue(ctx context.Context, dir string) (queue, error) {
-	cmd := exec.CommandContext(ctx, "taskchain-task-manager", "queue", "--dir", dir, "--json")
+	return loadQueueBinary(ctx, dir, "taskchain-task-manager")
+}
+
+func loadQueueBinary(ctx context.Context, dir, binary string) (queue, error) {
+	cmd := exec.CommandContext(ctx, binary, "queue", "--dir", dir, "--json")
 	var stdout, stderr limitedBuffer
 	stdout.limit, stderr.limit = maxQueueOutput, maxQueueOutput
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr

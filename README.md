@@ -219,26 +219,25 @@ user/project discovery path에 복사합니다. runtime별 경로, per-skill cla
 `tasks/` 보드의 사람용 `runnable`과 에이전트용 `agentRunnable`을 읽기 전용으로
 보여줍니다. 하위 디렉터리에서 호출해도 저장소의 `tasks/`를 사용합니다.
 이 interaction은 카드를 선택하거나 claim·전이하지 않으며, 자동 실행 루프의
-종료 판정을 구현하지 않습니다. 호출 전에는 사용하려는 task-manager 바이너리의
-버전과 SHA-256을 확인하세요.
+종료 판정을 구현하지 않습니다. `PATH`에서 선택된 바이너리의 출처는 검증하지
+않으므로, 이 결과만으로 CE 시작을 승인할 수 없습니다.
 
 `dva task-queue-verdict`는 같은 큐를 검증해 `empty`, `human_required`,
 `candidate`, `selection_required` 중 하나의 버전 있는 JSON 판정을 냅니다.
 `candidate`는 한 건의 **실행 후보**를 뜻하며 선택·claim·완료가 아닙니다.
 사람용 `runnable` 목록은 항상 함께 보존합니다. 이 저장소의 Go toolchain과
 `PATH`의 task-manager 바이너리가 필요하며, 입력/호출 오류는 성공 JSON 없이
-실패합니다. 작업 수행과 종료·복구는 W07b 후속입니다.
+실패합니다. 이 읽기 전용 판정도 바이너리 출처를 검증하지 않습니다. 작업 수행과
+종료·복구는 W07b 후속입니다.
 
-`dva task-queue-start feat`는 검증된 에이전트 후보가 정확히 하나일 때만
-CE `task run-start`를 호출합니다. `feat` 자리는 명시적인 CE 브랜치 유형
-(`feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`)입니다. 후보가
-없거나 여러 건이면 시작하지 않습니다. TASK/ISSUE ID를 숫자 정규화한
-`task-N`/`issue-N` 실행 이름으로 사용합니다. CE가 작업트리와 실행 receipt를
-소유하며, 카드 이동·완료·실패 복구는 별도 CE 절차로 처리합니다. 이 명령은
-TaskChain claim/transition을 사용하지 않습니다. `ce`도 `PATH`에서 찾으며,
-시작 대상 보드는 이 저장소의 `tasks`로 고정됩니다. CE가 비성공으로 끝나도
-작업트리 생성 등 일부 상태가 남을 수 있으므로 반환된 CE JSON을 읽고
-`ce task run-status <task-N|issue-N> --json`으로 상태를 확인한 뒤 재시도하세요.
+`dva task-queue-start feat`는 컴파일된 DVA 명령입니다. 현재 승인된
+TaskChain 릴리스가 없어 큐와 CE를 호출하기 전에 실패합니다. `feat` 자리는
+명시적인 CE 브랜치 유형(`feat`, `fix`, `refactor`, `docs`, `test`, `chore`,
+`perf`)입니다. 후보 해시는 `tools/taskqueueverdict/taskchain-pins.json`에
+기록됐지만 공개·검토·전환 절차가 끝나지 않아 `mutationAuthorized: false`입니다.
+해시 검증과 스냅샷 실행 구현은 검증용으로 준비됐으며, 승인된 릴리스가 생기면
+W07c2에서 컴파일된 명령에 통합하고 실제 바이너리로 양성 통합 검사를 해야
+CE 시작을 활성화할 수 있습니다.
 
 ```bash
 make build      # Build → ./bin/dva

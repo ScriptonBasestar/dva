@@ -3,7 +3,6 @@
 package integration
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"os"
@@ -14,8 +13,8 @@ import (
 )
 
 // TestTaskQueueStartInteractionFromUnrelatedDirectory exercises the checked-in
-// start bridge at its DVA boundary. The queue and CE stubs make the test
-// independent of host installations while retaining the two child contracts.
+// start bridge at its DVA boundary. With the staged production pins, an
+// unapproved platform must fail before either child stub can run.
 func TestTaskQueueStartInteractionFromUnrelatedDirectory(t *testing.T) {
 	root, err := filepath.EvalSymlinks(repoRoot())
 	if err != nil {
@@ -24,10 +23,8 @@ func TestTaskQueueStartInteractionFromUnrelatedDirectory(t *testing.T) {
 	board := filepath.Join(root, "tasks")
 	bin := t.TempDir()
 	queueArgv := filepath.Join(t.TempDir(), "queue-argv")
-	queueWorkdir := filepath.Join(t.TempDir(), "queue-workdir")
-	ceArgv := filepath.Join(t.TempDir(), "ce-argv")
-	ceWorkdir := filepath.Join(t.TempDir(), "ce-workdir")
 	ceCalls := filepath.Join(t.TempDir(), "ce-calls")
+	goCalls := filepath.Join(t.TempDir(), "go-calls")
 	writeTaskQueueStartStub(t, filepath.Join(bin, "taskchain-task-manager"), `#!/bin/sh
 printf '%s\000' "$@" > "$TASK_QUEUE_ARGV"
 pwd -P > "$TASK_QUEUE_WORKDIR"
@@ -43,6 +40,7 @@ printf '%s' "$TASK_QUEUE_START_CE_STDOUT"
 printf '%s' "$TASK_QUEUE_START_CE_STDERR" >&2
 exit "$TASK_QUEUE_START_CE_EXIT"
 `)
+	writeTaskQueueStartStub(t, filepath.Join(bin, "go"), "#!/bin/sh\ntouch \"$TASK_QUEUE_GO_CALLS\"\nexit 87\n")
 
 	unrelated := filepath.Join(t.TempDir(), "unrelated", "nested")
 	if err := os.MkdirAll(unrelated, 0o755); err != nil {
@@ -50,86 +48,47 @@ exit "$TASK_QUEUE_START_CE_EXIT"
 	}
 	configPath := filepath.Join(root, "dva.yml")
 	validTask := taskQueueStartJSON("TASK-2")
-	validIssue := taskQueueStartJSON("ISSUE-9")
-	empty := `{"outputVersion":1,"runnableCount":0,"agentRunnableCount":0,"runnable":[],"agentRunnable":[]}`
-	human := `{"outputVersion":1,"runnableCount":1,"agentRunnableCount":0,"runnable":[{"path":"todo/TASK-1.md","card":{"id":"TASK-1"},"needsHuman":true,"executionMode":"external","allowedPaths":[]}],"agentRunnable":[]}`
-	multiple := `{"outputVersion":1,"runnableCount":2,"agentRunnableCount":2,"runnable":[{"path":"todo/TASK-2.md","card":{"id":"TASK-2"},"needsHuman":false,"executionMode":"implementation","allowedPaths":["internal/integration"]},{"path":"todo/TASK-3.md","card":{"id":"TASK-3"},"needsHuman":false,"executionMode":"implementation","allowedPaths":["internal/integration"]}],"agentRunnable":[{"path":"todo/TASK-2.md","card":{"id":"TASK-2"},"needsHuman":false,"executionMode":"implementation","allowedPaths":["internal/integration"]},{"path":"todo/TASK-3.md","card":{"id":"TASK-3"},"needsHuman":false,"executionMode":"implementation","allowedPaths":["internal/integration"]}]}`
-
-	for _, tc := range []struct {
-		name       string
-		queue      string
-		branchType string
-		extraArgs  []string
-		ceStdout   string
-		ceExit     string
-		wantCE     string
-		wantQueue  bool
-		wantOK     bool
-	}{
-		{name: "task candidate", queue: validTask, branchType: "feat", ceStdout: "started task\n", ceExit: "0", wantCE: "task\x00run-start\x00task-2\x00--type\x00feat\x00--json\x00", wantQueue: true, wantOK: true},
-		{name: "issue candidate", queue: validIssue, branchType: "feat", ceStdout: "started issue\n", ceExit: "0", wantCE: "task\x00run-start\x00issue-9\x00--type\x00feat\x00--json\x00", wantQueue: true, wantOK: true},
-		{name: "empty queue", queue: empty, branchType: "feat", ceExit: "0", wantQueue: true},
-		{name: "human only", queue: human, branchType: "feat", ceExit: "0", wantQueue: true},
-		{name: "multiple candidates", queue: multiple, branchType: "feat", ceExit: "0", wantQueue: true},
-		{name: "invalid type", queue: validTask, branchType: "invalid", ceExit: "0"},
-		{name: "alternate board", queue: validTask, branchType: "feat", extraArgs: []string{"--dir", "/tmp/another-board"}, ceExit: "0"},
-		{name: "invalid upstream", queue: "{not JSON", branchType: "feat", ceExit: "0", wantQueue: true},
-		{name: "ce failure after partial mutation", queue: validTask, branchType: "feat", ceStdout: `{"schemaVersion":1,"status":"BLOCKED","receipt":{"worktree":"/tmp/created"}}` + "\n", ceExit: "23", wantCE: "task\x00run-start\x00task-2\x00--type\x00feat\x00--json\x00", wantQueue: true},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			for _, path := range []string{queueArgv, queueWorkdir, ceArgv, ceWorkdir, ceCalls} {
-				if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
-					t.Fatal(err)
-				}
+	t.Run("no approved platform pin", func(t *testing.T) {
+		for _, path := range []string{queueArgv, ceCalls} {
+			if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
+				t.Fatal(err)
 			}
-			before := taskQueueBoardDigest(t, board)
-			code, stdout, _ := runTaskQueueStartDVA(t, unrelated, configPath, bin, tc.branchType, map[string]string{
-				"TASK_QUEUE_ARGV":             queueArgv,
-				"TASK_QUEUE_WORKDIR":          queueWorkdir,
-				"TASK_QUEUE_STDOUT":           tc.queue,
-				"TASK_QUEUE_STDERR":           "",
-				"TASK_QUEUE_EXIT":             "0",
-				"TASK_QUEUE_START_CE_ARGV":    ceArgv,
-				"TASK_QUEUE_START_CE_WORKDIR": ceWorkdir,
-				"TASK_QUEUE_START_CE_CALLS":   ceCalls,
-				"TASK_QUEUE_START_CE_STDOUT":  tc.ceStdout,
-				"TASK_QUEUE_START_CE_STDERR":  "",
-				"TASK_QUEUE_START_CE_EXIT":    tc.ceExit,
-			}, tc.extraArgs...)
-			if after := taskQueueBoardDigest(t, board); after != before {
-				t.Fatal("task-queue-start interaction changed the fixture board")
-			}
-			assertTaskQueueNoLock(t, board)
-			if tc.wantOK {
-				if code != 0 || stdout != tc.ceStdout {
-					t.Fatalf("exit=%d stdout=%q, want exit=0 stdout=%q", code, stdout, tc.ceStdout)
-				}
-			} else if code == 0 || stdout != tc.ceStdout {
-				t.Fatalf("exit=%d stdout=%q, want nonzero exit and preserved CE response %q", code, stdout, tc.ceStdout)
-			}
-
-			if tc.wantQueue {
-				assertTaskQueueStartQueueContract(t, queueArgv, queueWorkdir, root)
-			} else if _, err := os.Stat(queueArgv); !errors.Is(err, os.ErrNotExist) {
-				t.Fatalf("queue was invoked for invalid input: %v", err)
-			}
-			if tc.wantCE == "" {
-				if _, err := os.Stat(ceCalls); !errors.Is(err, os.ErrNotExist) {
-					t.Fatalf("CE was invoked unexpectedly: %v", err)
-				}
-				return
-			}
-			if got, err := os.ReadFile(ceCalls); err != nil || string(got) != "x" {
-				t.Fatalf("CE call count = %q, err=%v, want exactly one", got, err)
-			}
-			if got, err := os.ReadFile(ceArgv); err != nil || !bytes.Equal(got, []byte(tc.wantCE)) {
-				t.Fatalf("CE argv = %q, err=%v", got, err)
-			}
-			if got, err := os.ReadFile(ceWorkdir); err != nil || strings.TrimSpace(string(got)) != root {
-				t.Fatalf("CE workdir = %q, want %q, err=%v", got, root, err)
-			}
+		}
+		before := taskQueueBoardDigest(t, board)
+		code, stdout, stderr := runTaskQueueStartDVA(t, unrelated, configPath, bin, "feat", map[string]string{
+			"TASK_QUEUE_ARGV":             queueArgv,
+			"TASK_QUEUE_WORKDIR":          filepath.Join(t.TempDir(), "queue-workdir"),
+			"TASK_QUEUE_STDOUT":           validTask,
+			"TASK_QUEUE_STDERR":           "",
+			"TASK_QUEUE_EXIT":             "0",
+			"TASK_QUEUE_START_CE_ARGV":    filepath.Join(t.TempDir(), "ce-argv"),
+			"TASK_QUEUE_START_CE_WORKDIR": filepath.Join(t.TempDir(), "ce-workdir"),
+			"TASK_QUEUE_START_CE_CALLS":   ceCalls,
+			"TASK_QUEUE_START_CE_STDOUT":  "started task\n",
+			"TASK_QUEUE_START_CE_STDERR":  "",
+			"TASK_QUEUE_START_CE_EXIT":    "0",
+			"TASK_QUEUE_GO_CALLS":         goCalls,
 		})
-	}
+		if after := taskQueueBoardDigest(t, board); after != before {
+			t.Fatal("task-queue-start interaction changed the fixture board")
+		}
+		assertTaskQueueNoLock(t, board)
+		if code == 0 || stdout != "" {
+			t.Fatalf("exit=%d stdout=%q, want nonzero exit and no child output", code, stdout)
+		}
+		if !strings.Contains(stderr, "no authorized TaskChain binary pin") {
+			t.Fatalf("stderr=%q, want compiled pin rejection", stderr)
+		}
+		if _, err := os.Stat(queueArgv); !errors.Is(err, os.ErrNotExist) {
+			t.Fatalf("TaskChain queue was invoked without an approved pin: %v", err)
+		}
+		if _, err := os.Stat(ceCalls); !errors.Is(err, os.ErrNotExist) {
+			t.Fatalf("CE was invoked without an approved pin: %v", err)
+		}
+		if _, err := os.Stat(goCalls); !errors.Is(err, os.ErrNotExist) {
+			t.Fatalf("PATH Go was invoked before the compiled pin check: %v", err)
+		}
+	})
 }
 
 func taskQueueStartJSON(id string) string {
@@ -168,14 +127,4 @@ func runTaskQueueStartDVA(t *testing.T, cwd, configPath, bin, branchType string,
 	}
 	t.Fatalf("dva task-queue-start: %v", err)
 	return 0, "", ""
-}
-
-func assertTaskQueueStartQueueContract(t *testing.T, argvPath, workdirPath, root string) {
-	t.Helper()
-	if got, err := os.ReadFile(argvPath); err != nil || !bytes.Equal(got, []byte("queue\x00--dir\x00tasks\x00--json\x00")) {
-		t.Fatalf("queue argv = %q, err=%v", got, err)
-	}
-	if got, err := os.ReadFile(workdirPath); err != nil || strings.TrimSpace(string(got)) != root {
-		t.Fatalf("queue workdir = %q, want %q, err=%v", got, root, err)
-	}
 }

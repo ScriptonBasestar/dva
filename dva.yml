@@ -22,22 +22,15 @@ checks:
 
 interaction:
   task-queue:
-    description: "Inspect TaskChain human and agent runnable work"
+    description: "Inspect TaskChain runnable work using an unverified PATH binary; read only"
     command: "taskchain-task-manager queue --dir tasks --json"
     runner: local
     shell: false
     workdir: "."
 
   task-queue-verdict:
-    description: "Classify TaskChain agent candidates without selecting one"
+    description: "Classify candidates from an unverified PATH binary; does not authorize CE start"
     command: "go run ./tools/taskqueueverdict --dir tasks"
-    runner: local
-    shell: false
-    workdir: "."
-
-  task-queue-start:
-    description: "Start CE runtime for the sole agent candidate with an explicit branch type"
-    command: "go run ./tools/taskqueueverdict --dir tasks --start-type"
     runner: local
     shell: false
     workdir: "."

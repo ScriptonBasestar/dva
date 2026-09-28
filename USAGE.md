@@ -83,6 +83,7 @@ Linux에서도 같은 절차로 해당 archive를 선택하고 `sha256sum -c`를
 | `dva config env edit/unseal` | `env_file` 엔트리의 sops 암호화 소스를 편집/복호화 |
 | `dva config env seal/show` | `env_bridge:` 게이트 활성화 시에만: 평문을 암호화/터미널에 표시 |
 | `dva run CMD [ARGS]` | `dva.yml`에 정의된 interaction 커맨드 실행 |
+| `dva task-queue-start <type>` | TaskChain 릴리스 승인 전에는 큐·CE 호출 없이 실패하는 내장 시작 경계 |
 | `dva ls` | 실행 가능한 이름과 interaction 목록 표시 |
 | `dva manifest` | 자동화용 구조화 command manifest 출력 |
 | `dva show` | 선언된 워크스페이스 설정 요약 표시 |
@@ -1641,14 +1642,20 @@ health_checks:
 커맨드와 겹치면 `dva validate`가 exit 1로 실패하고, 설정을 읽을 때마다 경고가 출력됩니다.
 선언이 버려지는 것은 아니며 짧은 형식만 내장 커맨드에게 넘어갑니다 — 아래 규칙을 따릅니다.
 
-**예약어 26개** — 내장 커맨드 이름입니다:
+**예약어 30개** — 내장 커맨드 이름입니다:
 
 ```text
 help  version   ls       compose  up      stop    down   build
 run   provision validate manifest kubectl ktl     ssh    console
 completion init  status   config   logs    restart show   doctor
 skill agent-deny
+ci secret job task-queue-start
 ```
+
+`task-queue-start`는 이제 내장 커맨드입니다. 같은 이름의 기존
+`interaction.task-queue-start` 선언은 `dva validate`에서 충돌로 거부되므로
+다른 이름으로 옮겨야 합니다. 현재 내장 커맨드는 승인된 TaskChain 릴리스가
+없어 큐와 CE를 호출하지 않습니다.
 
 **훅 가능 6개** — 예약어 중 `before`/`replace`/`after` 훅을 받는 것:
 

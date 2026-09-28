@@ -3,6 +3,8 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -119,6 +121,12 @@ func TestExecuteStartTypeBridge(t *testing.T) {
 	if err := os.WriteFile(queueStub, []byte("#!/bin/sh\nprintf '%s\\000' \"$@\" > \"$TASK_QUEUE_ARGV\"\nprintf '%s' \"$TASK_QUEUE_JSON\"\n"), 0o700); err != nil {
 		t.Fatal(err)
 	}
+	queueBytes, err := os.ReadFile(queueStub)
+	if err != nil {
+		t.Fatal(err)
+	}
+	queueDigest := sha256.Sum256(queueBytes)
+	testPins := artifactPins{SchemaVersion: 1, Artifacts: []artifactPin{approvedTestPin(hex.EncodeToString(queueDigest[:]))}}
 	if err := os.WriteFile(ceStub, []byte("#!/bin/sh\nprintf '%s\\000' \"$@\" >> \"$CE_ARGV\"\npwd > \"$CE_CWD\"\nprintf '%s' \"$CE_STDOUT\"\nprintf '%s' \"$CE_STDERR\" >&2\nexit \"${CE_EXIT:-0}\"\n"), 0o700); err != nil {
 		t.Fatal(err)
 	}
@@ -231,7 +239,7 @@ func TestExecuteStartTypeBridge(t *testing.T) {
 			if dir == "" {
 				dir = "tasks"
 			}
-			err := execute(context.Background(), dir, tc.startType, &output)
+			err := executeWithPins(context.Background(), dir, tc.startType, &output, testPins)
 			if (err != nil) != tc.wantErr {
 				t.Fatalf("execute error = %v, want error = %t", err, tc.wantErr)
 			}
