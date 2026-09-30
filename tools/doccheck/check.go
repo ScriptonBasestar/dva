@@ -51,6 +51,7 @@ type Result struct {
 	InvertedGrepBindings   int
 	BareSuiteBindings      int
 	ExistingTodoTestNames  int
+	GateRecursionBindings  int
 	ArchiveFilesSeen       int
 	ArchiveCards           int
 	ArchiveMissing         int
@@ -247,6 +248,14 @@ func Check(in CheckInput) Result {
 			res.WrappedToolBindings += wrappedTools
 			res.BareToolBindings += bareTools
 			res.PortabilityDetail = append(res.PortabilityDetail, toolMsgs...)
+			// Archived bindings are never re-executed by the gate and archived
+			// cards are historical evidence (ISSUE-454), so only active zones
+			// are scanned for gate recursion.
+			if !strings.HasPrefix(e.Path, "tasks/_archive/") {
+				gateRecursions, gateMsgs := checkBindingGateRecursion(e.Path, body)
+				res.GateRecursionBindings += gateRecursions
+				res.PortabilityDetail = append(res.PortabilityDetail, gateMsgs...)
+			}
 		}
 	}
 	for _, e := range scanFiles {
@@ -364,6 +373,9 @@ func Check(in CheckInput) Result {
 	}
 	if res.ExistingTodoTestNames > 0 {
 		res.Errors = append(res.Errors, fmt.Sprintf("%d todo verify binding(s) name an already-declared test", res.ExistingTodoTestNames))
+	}
+	if res.GateRecursionBindings > 0 {
+		res.Errors = append(res.Errors, fmt.Sprintf("%d verify binding(s) invoke ce task gate and would recurse (ISSUE-454)", res.GateRecursionBindings))
 	}
 	if res.BrokenLinks > 0 {
 		res.Errors = append(res.Errors, fmt.Sprintf("%d broken link(s)", res.BrokenLinks))

@@ -87,6 +87,7 @@ func printReport(res Result) {
 	fmt.Printf("inverted_grep_bindings: %d\n", res.InvertedGrepBindings)
 	fmt.Printf("bare_suite_bindings: %d\n", res.BareSuiteBindings)
 	fmt.Printf("existing_todo_test_bindings: %d\n", res.ExistingTodoTestNames)
+	fmt.Printf("gate_recursion_bindings: %d\n", res.GateRecursionBindings)
 	fmt.Printf("archive_cards:       %d (from %d file(s) under %s)\n", res.ArchiveCards, res.ArchiveFilesSeen, archivePrefix)
 	fmt.Printf("archive_missing:     %d\n", res.ArchiveMissing)
 	fmt.Printf("board_dirs_seen:     %d (undeclared: %d)\n", res.BoardDirsSeen, res.UndeclaredBoardDirs)
