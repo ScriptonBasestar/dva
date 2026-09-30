@@ -251,7 +251,7 @@ func Check(in CheckInput) Result {
 			// Archived bindings are never re-executed by the gate and archived
 			// cards are historical evidence (ISSUE-454), so only active zones
 			// are scanned for gate recursion.
-			if !strings.HasPrefix(e.Path, "tasks/_archive/") {
+			if !isArchivePath(e.Path) {
 				gateRecursions, gateMsgs := checkBindingGateRecursion(e.Path, body)
 				res.GateRecursionBindings += gateRecursions
 				res.PortabilityDetail = append(res.PortabilityDetail, gateMsgs...)

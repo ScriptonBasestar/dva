@@ -26,7 +26,7 @@ issue, plan) 카드의 verify 바인딩이 `ce task gate`를 호출하면 doc-ch
 
 - [ ] A verify binding that runs `ce task gate` (with flags, paths, or after `&&`) is rejected with a message naming the recursion, while quoted prose mentioning it is not | verify: `/usr/bin/grep -rq 'func TestBindingGateRecursion(' tools/doccheck && go test ./tools/doccheck`
 - [ ] Cards under `tasks/_archive/` keep passing: the check does not scan archived bindings, so the existing board stays green | verify: `make doc-check` (regression-guard)
-- [ ] The check is wired into the shared gate path (Result counter, hard error, JSON counter) with no repository-local board check beside it | verify: human — inspect tools/doccheck/check.go wiring and ISSUE-454 ownership section
+- [ ] The check is wired into the shared gate path (Result counter, hard error, report counter) with no repository-local board check beside it | verify: human — inspect tools/doccheck/check.go wiring and ISSUE-454 ownership section
 
 ## Out of Scope
 
