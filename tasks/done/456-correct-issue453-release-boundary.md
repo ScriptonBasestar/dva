@@ -35,3 +35,9 @@ pin or close ISSUE-453.
 - Independent code/factual review and separate done-review: PASS (`/root/compiled_queue_boundary`).
 - `dva ci full`: `c7a345bd4f8f81330c7c410605e3feaa`, succeeded, 3m21.26s.
 - `ce task validate --all --require-cards`: 511 valid, 0 invalid; `make doc-check` and `ce task gate`: PASS.
+
+## 바인딩 정정 (2026-09-30, TASK-457)
+
+세 번째 기준의 바인딩에 있던 `ce task gate`를 `ce task validate --all`로 바꿨다.
+게이트의 `bindings` 단계가 체크된 바인딩을 다시 실행하므로, 게이트를 부르는
+바인딩은 게이트를 무한히 재귀 호출한다(2026-09-30 실측: 29분 동안 고아 프로세스 335개).

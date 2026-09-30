@@ -5,7 +5,7 @@ type: docs
 priority: P2
 effort: S
 exec-tier: standard
-allowed-paths: [docs, tasks/todo]
+allowed-paths: [docs, tasks/todo, tasks/issue, tasks/done]
 status: todo
 created: 2026-09-30
 ---

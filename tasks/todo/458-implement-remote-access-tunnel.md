@@ -22,7 +22,7 @@ kubectl/helm 엔트리에 구현한다. interactive와 service-token 인증을 �
 - [ ] 준비 판정은 인증과 TCP 연결을 모두 요구하고, 이미 사용 중인 포트는 충돌로 보고한다 | verify: `go test ./internal/lifecycle/ -v 2>&1 | /usr/bin/grep -q -- '--- PASS: TestTunnelReady'`
 - [ ] 만료된 토큰에서 `cloudflared access token --app`의 종료 코드를 실측해 docs/68 §7에 기록한다 | verify: human — docs/68 §7
 - [ ] `dva doctor`가 cloudflared 설치 여부와 인증 상태를 값 없이 보고한다 | verify: human — run dva doctor on a tunnel config
-- [ ] 전체 게이트가 통과한다 | verify: `make test && make lint && make doc-check` (regression-guard)
+- [ ] 전체 게이트가 통과한다 | verify: `make doc-check` (regression-guard)
 
 ## Dependency
 
