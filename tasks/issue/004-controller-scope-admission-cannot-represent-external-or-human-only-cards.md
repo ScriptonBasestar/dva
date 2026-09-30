@@ -98,12 +98,8 @@ lifecycle 규칙은 ce-agent-kit에서만 작성"이라고 적는 별개 개념�
 
 ## Resolution Criteria
 
-- [ ] Preflight distinguishes executor-owned implementation cards from external
-  and human-only disposition cards | verify: human — upstream selection tests
-  cover P0 issue, external todo, and decision todo shapes
-- [ ] A DVA queue run routes ISSUE-001 and the external/manual cards without a
-  synthetic product-file scope | verify: human — fresh controller evidence is
-  linked here
+- [ ] Preflight distinguishes executor-owned implementation cards from external and human-only disposition cards | verify: human — upstream selection tests cover P0 issue, external todo, and decision todo shapes
+- [ ] A DVA queue run routes ISSUE-001 and the external/manual cards without a synthetic product-file scope | verify: human — fresh controller evidence is linked here
 - [ ] Scope validation remains strict for real implementation cards | verify: human — upstream regression rejects `tasks/`, absolute, parent, and glob paths
 
 ## 후속 (2026-09-24)
