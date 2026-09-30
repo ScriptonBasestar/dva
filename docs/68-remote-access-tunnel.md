@@ -25,10 +25,9 @@ kubeconfig는 `https://127.0.0.1:16443`을 가리키지만, "이 리소스는 �
 ```yaml
 stack:
   remote-k8s:
-    plugin: helm
-    helm:
-      chart: ./charts/app
-      release: app
+    plugin: kubectl
+    kubectl:
+      manifests: [k8s/dev-tools.yaml]
       context: scripton-cluster-cf
     tunnel:
       provider: cloudflared          # v1: cloudflared만 지원
@@ -45,6 +44,15 @@ stack:
 provider 필드는 `kubectl port-forward`와 `ssh -L`을 나중에 추가할 자리다. v1은
 `cloudflared`만 검증을 통과한다.
 
+필드 규칙:
+
+- `provider`, `hostname`, `local`은 필수다. `auth` 기본값은 `interactive`, `ready_timeout`
+  기본값은 `30s`다.
+- `local`은 루프백 주소(`127.0.0.1`, `::1`, `localhost`)만 허용한다. 그 밖의 주소는 인증된
+  터널을 LAN에 노출하므로 검증에서 거부한다.
+- `auth: service-token`이면 `service_token_env.id`와 `.secret`이 필수다.
+- `tunnel:`은 kubectl/helm 엔트리에만 쓸 수 있다. 다른 plugin에 쓰면 검증에서 거부한다.
+
 ## 3. 인증 — 두 모드 모두 지원
 
 DVA는 이메일 OTP나 IdP 로그인을 직접 처리하지 않는다. 인증은 cloudflared와
@@ -55,7 +63,8 @@ Cloudflare Access가 소유하고, DVA는 **인증 상태를 확인하고 로그
 1. `cloudflared access token --app=https://<hostname>` — 종료 코드만 본다.
    stdout에 JWT가 나오므로 **출력은 버리고 로그에 남기지 않는다**.
 2. 종료 코드가 0이 아니면:
-   - TTY가 있으면 `cloudflared access login https://<hostname>`을 전경에서 실행한다.
+   - TTY가 있으면 `cloudflared access login --quiet https://<hostname>`을 전경에서 실행한다.
+     `--quiet`가 없으면 로그인 직후 JWT가 터미널에 출력된다.
      브라우저가 열리고 이메일 OTP 입력이 끝날 때까지 기다린다.
    - TTY가 없으면 바로 실패하고, 실행할 로그인 명령을 원인과 함께 출력한다.
 3. `cloudflared access tcp --hostname <hostname> --url <local>`을 시작한다.
@@ -81,6 +90,10 @@ Cloudflare Access가 소유하고, DVA는 **인증 상태를 확인하고 로그
 
 `ready_timeout`을 넘기면 cloudflared stderr의 마지막 줄을 원인으로 보여 주고 실패한다.
 
+알려진 한계: service-token 모드의 인증 조건은 환경변수가 있는지만 본다. 폐기됐거나 틀린
+토큰도 준비된 것으로 판정되고, 실패는 뒤따르는 kubectl/helm 호출에서 드러난다. 터널을
+통한 종단 확인(TLS 핸드셰이크)은 v1 범위 밖이다.
+
 ## 5. 수명 주기와 소유권
 
 - 이미 다른 프로세스가 `local` 포트를 쓰고 있으면 DVA는 그 포트를 재사용하지 않는다.
@@ -88,6 +101,9 @@ Cloudflare Access가 소유하고, DVA는 **인증 상태를 확인하고 로그
 - DVA가 시작한 cloudflared 프로세스만 종료한다. 기존 process 그룹 계약
   (`internal/lifecycle/process_group_*.go`)을 그대로 쓴다.
 - 여러 엔트리가 같은 `(provider, hostname, local)`을 선언하면 터널을 한 번만 연다.
+  이 중복 제거는 한 `dva` 명령 안에서만 동작한다. 동시에 실행한 다른 `dva` 명령이나
+  사람이 직접 연 터널은 의도적으로 포트 충돌로 보고한다.
+- process 그룹 계약이 지원하지 않는 Windows에서는 `tunnel:`도 지원하지 않는다.
 - `dva doctor`는 cloudflared 설치 여부, 인증 상태(interactive), 환경변수 존재
   여부(service-token)를 보고한다. 값은 출력하지 않는다.
 
