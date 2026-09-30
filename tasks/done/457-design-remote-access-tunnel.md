@@ -8,6 +8,9 @@ exec-tier: standard
 allowed-paths: [docs, tasks/todo, tasks/issue, tasks/done]
 status: done
 created: 2026-09-30
+quality-review: pass
+quality-reviewed-at: 2026-09-30
+quality-review-evidence: "Independent reviewer agent (core:code-reviewer, separate from the author): first pass FAIL at 407a64db (login printed the JWT; review fields missing), re-review PASS at b78025bb. Reviewer re-ran criterion 2 (exit 0) and make doc-check (exit 0), and checked docs/68 against PRODUCT.md boundaries, internal/config/lifecycle.go and cloudflared 2026.9.3 help. docs/68 approved by the user on 2026-09-30."
 ---
 
 ## Summary
