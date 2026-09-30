@@ -89,7 +89,10 @@ func pushKubernetes(ctx context.Context, opts Options) (Report, error) {
 		}
 	}()
 	for sourceKey, destKey := range opts.Target.Keys {
-		data[destKey] = append([]byte(nil), values[sourceKey]...)
+		// Copy into a non-nil slice: append(nil, empty...) yields nil, which
+		// json.Marshal renders as null — a manifest the API server rejects.
+		// A legitimately empty value must ship as "".
+		data[destKey] = append([]byte{}, values[sourceKey]...)
 	}
 	manifest, err := json.Marshal(map[string]any{
 		"apiVersion": "v1",
@@ -153,10 +156,18 @@ func prepareKubernetes(opts Options) (Report, string, string, error) {
 	if _, err := expandKubeconfigPath(opts.Target.Kubeconfig); err != nil {
 		return report, "", "", err
 	}
+	seenDestinations := make(map[string]bool, len(opts.Target.Keys))
 	for source, destination := range opts.Target.Keys {
 		if !kubernetesSecretKey.MatchString(source) || !kubernetesSecretKey.MatchString(destination) {
 			return report, "", "", codeError("invalid_secret_key")
 		}
+		// Same guard as the GitHub sink's validateMappings: a direct caller
+		// bypassing config validation would otherwise get nondeterministic
+		// last-write-wins and a receipt listing one destination twice.
+		if seenDestinations[destination] {
+			return report, "", "", codeError("duplicate_destination_key")
+		}
+		seenDestinations[destination] = true
 	}
 	root, err := canonicalRoot(opts.Root)
 	if err != nil {
@@ -206,9 +217,12 @@ func parseKubernetesSecret(plaintext []byte) (map[string][]byte, error) {
 	values := make(map[string][]byte, len(source.Data)+len(source.StringData))
 	// encoding/json base64-decodes a JSON string into a []byte target, which
 	// is exactly the `data` wire format; invalid base64 is a parse error.
+	// isJSONString first: a YAML-null value decrypts to JSON null, which
+	// json.Unmarshal silently no-ops into a zero target — the key would pass
+	// preflight and die server-side as an undiagnosable unknown receipt.
 	for key, raw := range source.Data {
 		var value []byte
-		if err := json.Unmarshal(raw, &value); err != nil || len(value) > maxSecretValue {
+		if !isJSONString(raw) || json.Unmarshal(raw, &value) != nil || len(value) > maxSecretValue {
 			wipe(value)
 			wipeValues(values)
 			return nil, codeError("invalid_kubernetes_source")
@@ -216,6 +230,10 @@ func parseKubernetesSecret(plaintext []byte) (map[string][]byte, error) {
 		values[key] = value
 	}
 	for key, raw := range source.StringData {
+		if !isJSONString(raw) {
+			wipeValues(values)
+			return nil, codeError("invalid_kubernetes_source")
+		}
 		value, ok := rawJSONString(raw)
 		if !ok {
 			var text string
@@ -238,6 +256,12 @@ func parseKubernetesSecret(plaintext []byte) (map[string][]byte, error) {
 		values[key] = value
 	}
 	return values, nil
+}
+
+// isJSONString requires the raw value to be a JSON string, rejecting null and
+// non-string kinds before decoding can silently zero them.
+func isJSONString(raw json.RawMessage) bool {
+	return len(raw) >= 2 && raw[0] == '"' && raw[len(raw)-1] == '"'
 }
 
 // rawJSONString slices an unescaped JSON string value into its owned backing
@@ -338,6 +362,12 @@ func KubernetesStatus(ctx context.Context, opts Options) (StatusReport, error) {
 	cmd.Stdout, cmd.Stderr = stdout, stderr
 	runErr := cmd.Run()
 
+	// Same explicit over-limit handling as decryptSOPS: a truncated key list
+	// must never be reported as the live truth. Unreachable in practice with
+	// key-names-only output, but consistent by construction.
+	if stdout.exceeded {
+		return report, codeError("secret_status_unavailable")
+	}
 	if runErr != nil {
 		if bytes.Contains(stderr.buf.Bytes(), []byte("(NotFound)")) {
 			report.Missing = sortedDeclaredKeys(opts.Target.Keys)

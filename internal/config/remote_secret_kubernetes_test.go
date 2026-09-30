@@ -43,6 +43,8 @@ func TestSecretKubernetesTarget(t *testing.T) {
 		{"invalid context", "context: scripton-cluster", "context: Scripton_Cluster"},
 		{"invalid namespace", "namespace: primeno1", "namespace: PRIMENO1"},
 		{"invalid name", "name: primeno1-api-secrets", "name: primeno1 api secrets"},
+		{"consecutive dots in name", "name: primeno1-api-secrets", "name: a..b"},
+		{"overlong label in name", "name: primeno1-api-secrets", "name: " + strings.Repeat("a", 64) + ".b"},
 		{"invalid destination key", "db.password", "db password"},
 		{"undefined source", "source: primeno1", "source: missing"},
 		{"empty keys", "keys: {DB_PASS: db.password, REDIS_PASSWORD: redis.password}", "keys: {}"},

@@ -47,12 +47,15 @@ func TestSecretKubernetesStatus(t *testing.T) {
 
 	bin, log := t.TempDir(), filepath.Join(t.TempDir(), "kubectl-args")
 	kubectl := filepath.Join(bin, "kubectl")
-	if err := os.WriteFile(kubectl, []byte("#!/bin/sh\nprintf '%s\\n' \"$*\" > \"$KUBE_ARGS\"\nif [ \"${KUBE_NOT_FOUND:-0}\" = 1 ]; then printf '%s' 'Error from server (NotFound): secrets \"api-secrets\" not found' >&2; exit 1; fi\nprintf '%s\\n' 'db.password' 'redis.password'\n"), 0o700); err != nil {
+	if err := os.WriteFile(kubectl, []byte("#!/bin/sh\nprintf '%s\\n' \"$*\" > \"$KUBE_ARGS\"\nif [ -n \"${KUBECONFIG:-}\" ]; then printf 'set' >> \"$KUBE_ARGS.env\"; else printf 'unset' >> \"$KUBE_ARGS.env\"; fi\nif [ \"${KUBE_NOT_FOUND:-0}\" = 1 ]; then printf '%s' 'Error from server (NotFound): secrets \"api-secrets\" not found' >&2; exit 1; fi\nprintf '%s\\n' 'db.password' 'redis.password'\n"), 0o700); err != nil {
 		t.Fatal(err)
 	}
 	t.Setenv("PATH", bin+string(os.PathListSeparator)+toolPATH(t, map[string]string{"sops": sops}))
 	t.Setenv("SOPS_AGE_KEY_FILE", keyFile)
 	t.Setenv("KUBE_ARGS", log)
+	// The ambient variable a user could have exported must not reach kubectl;
+	// the fake records whether it did.
+	t.Setenv("KUBECONFIG", filepath.Join(t.TempDir(), "must-not-be-read"))
 
 	opts := secretpush.Options{Root: dir, Name: "primeno1-api", Target: secretpush.Target{
 		Kind: "kubernetes", Source: "secret.yaml", Environment: "dev",
@@ -76,6 +79,9 @@ func TestSecretKubernetesStatus(t *testing.T) {
 	}
 	if want := "--kubeconfig " + expanded + " --context scripton-cluster -n primeno1 get secret api-secrets -o go-template="; !strings.HasPrefix(strings.TrimSuffix(string(args), "\n"), want) {
 		t.Fatalf("kubectl argv = %q, want prefix %q", args, want)
+	}
+	if env, err := os.ReadFile(log + ".env"); err != nil || string(env) != "unset" {
+		t.Fatalf("status child env KUBECONFIG = %q, err = %v, want unset", env, err)
 	}
 	for _, value := range []string{"pass", "plain"} {
 		if strings.Contains(strings.TrimSuffix(string(args), "\n"), value) {

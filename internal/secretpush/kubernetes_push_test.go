@@ -32,7 +32,7 @@ func kubeFixture(t *testing.T) (root, state, log string) {
 	}
 	bin := t.TempDir()
 	writeExecutable(t, filepath.Join(bin, "sops"), "#!/bin/sh\nif [ -n \"${SOPS_ARGS_FILE:-}\" ]; then printf '%s' \"$*\" > \"$SOPS_ARGS_FILE\"; fi\nif [ \"${SOPS_EXIT:-0}\" != 0 ]; then printf '%s' \"${SOPS_STDERR:-}\" >&2; exit \"$SOPS_EXIT\"; fi\nprintf '%s' \"${SOPS_JSON:-}\"\n")
-	writeExecutable(t, filepath.Join(bin, "kubectl"), "#!/bin/sh\n: \"${KUBE_LOG:?}\"\n: \"${KUBE_COUNT:=0}\"\nKUBE_COUNT=$((KUBE_COUNT + 1)); export KUBE_COUNT\nprintf '%s\\n' \"$*\" > \"$KUBE_LOG/$KUBE_COUNT\"\nif [ -n \"${KUBE_STDIN_DIR:-}\" ]; then cat > \"$KUBE_STDIN_DIR/$KUBE_COUNT\"; fi\nif [ \"${KUBE_FAIL:-0}\" = 1 ]; then exit 1; fi\nexit 0\n")
+	writeExecutable(t, filepath.Join(bin, "kubectl"), "#!/bin/sh\n: \"${KUBE_LOG:?}\"\n: \"${KUBE_COUNT:=0}\"\nKUBE_COUNT=$((KUBE_COUNT + 1)); export KUBE_COUNT\nprintf '%s\\n' \"$*\" > \"$KUBE_LOG/$KUBE_COUNT\"\nif [ -n \"${KUBECONFIG:-}\" ]; then printf 'set' >> \"$KUBE_LOG/env\"; else printf 'unset' >> \"$KUBE_LOG/env\"; fi\nif [ -n \"${KUBE_STDIN_DIR:-}\" ]; then cat > \"$KUBE_STDIN_DIR/$KUBE_COUNT\"; fi\nif [ \"${KUBE_FAIL:-0}\" = 1 ]; then exit 1; fi\nexit 0\n")
 	t.Setenv("PATH", bin+string(os.PathListSeparator)+os.Getenv("PATH"))
 	return root, state, log
 }
@@ -221,6 +221,203 @@ func TestKubernetesNoPlaintextLeak(t *testing.T) {
 	for _, key := range stored.Keys {
 		if key.State != StateUnknown {
 			t.Fatalf("stored state after failed apply = %+v", stored.Keys)
+		}
+	}
+}
+
+func TestKubernetesRejectsNullValuesBeforeClusterCalls(t *testing.T) {
+	root, state, log := kubeFixture(t)
+	t.Setenv("KUBE_LOG", log)
+	o := kubeOptions(root, state)
+
+	// A YAML-null value decrypts to JSON null, which json.Unmarshal no-ops
+	// into a zero target: the key would pass the existence check and die
+	// server-side as an undiagnosable unknown receipt. It must be a parse
+	// rejection before any cluster call instead.
+	// Replace the quoted JSON string with a bare null — the quotes must go
+	// too, or the value becomes the two-character string "null".
+	t.Setenv("SOPS_JSON", strings.Replace(cannedSecretJSON, `"`+base64.StdEncoding.EncodeToString(kubeSecretValue)+`"`, "null", 1))
+	if _, err := Push(context.Background(), o); code(err) != "invalid_kubernetes_source" {
+		t.Fatalf("data null error = %v", err)
+	}
+	t.Setenv("SOPS_JSON", strings.Replace(cannedSecretJSON, `"`+string(kubeRedisValue)+`"`, "null", 1))
+	o = kubeOptions(root, state)
+	if _, err := Push(context.Background(), o); code(err) != "invalid_kubernetes_source" {
+		t.Fatalf("stringData null error = %v", err)
+	}
+	if entries, _ := os.ReadDir(log); len(entries) != 0 {
+		t.Fatal("kubectl ran for null-valued sources")
+	}
+	if entries, _ := os.ReadDir(state); len(entries) != 0 {
+		t.Fatalf("receipt written for null-valued sources")
+	}
+}
+
+func TestKubernetesShipsEmptyAndEscapedValues(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	root, state, log := kubeFixture(t)
+	stdinDir := t.TempDir()
+	t.Setenv("KUBE_LOG", log)
+	t.Setenv("KUBE_STDIN_DIR", stdinDir)
+	o := kubeOptions(root, state)
+
+	// A legitimately empty value must ship as "" — append(nil, empty...)
+	// yields nil, which json.Marshal renders as null and the API server
+	// rejects after kubectl already ran.
+	t.Setenv("SOPS_JSON", strings.Replace(cannedSecretJSON, string(kubeRedisValue), "", 1))
+	if _, err := Push(context.Background(), o); err != nil {
+		t.Fatal(err)
+	}
+	manifest, err := os.ReadFile(filepath.Join(stdinDir, "1"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := `"redis.password":"` + base64.StdEncoding.EncodeToString(nil) + `"`; !strings.Contains(string(manifest), want) {
+		t.Fatalf("empty value manifest = %s, want %s inside", manifest, want)
+	}
+
+	// The escaped-stringData fallback: rawJSONString declines escapes, so the
+	// value must survive the encoding/json decode with its quotes intact.
+	escaped := `quote "inside" value`
+	raw := fmt.Sprintf(`{"apiVersion":"v1","kind":"Secret","metadata":{"name":"src"},"stringData":{"REDIS_PASSWORD":%q}}`, escaped)
+	t.Setenv("SOPS_JSON", raw)
+	// The escaped fixture carries only REDIS_PASSWORD, so only that key may
+	// be declared for this push.
+	o = kubeOptions(root, state)
+	o.Target.Keys = map[string]string{"REDIS_PASSWORD": "redis.password"}
+	if _, err := Push(context.Background(), o); err != nil {
+		t.Fatal(err)
+	}
+	// The fake numbers invocations per process, so the second push rewrites
+	// stdin file 1 rather than creating file 2.
+	manifest, err = os.ReadFile(filepath.Join(stdinDir, "1"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := `"redis.password":"` + base64.StdEncoding.EncodeToString([]byte(escaped)) + `"`; !strings.Contains(string(manifest), want) {
+		t.Fatalf("escaped value manifest = %s, want %s inside", manifest, want)
+	}
+}
+
+func TestKubernetesStringDataOverridesData(t *testing.T) {
+	root, state, log := kubeFixture(t)
+	stdinDir := t.TempDir()
+	t.Setenv("KUBE_LOG", log)
+	t.Setenv("KUBE_STDIN_DIR", stdinDir)
+
+	// API-server precedence for the SAME key: stringData wins over data.
+	dataSide := []byte("data-side-value-aaaa")
+	stringSide := []byte("string-side-value-b")
+	t.Setenv("SOPS_JSON", fmt.Sprintf(`{"apiVersion":"v1","kind":"Secret","metadata":{"name":"src"},"data":{"DB_PASS":%q},"stringData":{"DB_PASS":%q}}`,
+		base64.StdEncoding.EncodeToString(dataSide), string(stringSide)))
+	o := kubeOptions(root, state)
+	o.Target.Keys = map[string]string{"DB_PASS": "dest"}
+	if _, err := Push(context.Background(), o); err != nil {
+		t.Fatal(err)
+	}
+	manifest, err := os.ReadFile(filepath.Join(stdinDir, "1"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := `"dest":"` + base64.StdEncoding.EncodeToString(stringSide) + `"`; !strings.Contains(string(manifest), want) {
+		t.Fatalf("precedence manifest = %s, want %s inside", manifest, want)
+	}
+	if strings.Contains(string(manifest), base64.StdEncoding.EncodeToString(dataSide)) {
+		t.Fatalf("data value survived stringData override: %s", manifest)
+	}
+}
+
+func TestKubernetesRejectsDuplicateDestinations(t *testing.T) {
+	root, state, log := kubeFixture(t)
+	t.Setenv("SOPS_JSON", cannedSecretJSON)
+	t.Setenv("KUBE_LOG", log)
+
+	o := kubeOptions(root, state)
+	o.Target.Keys = map[string]string{"DB_PASS": "same.dest", "REDIS_PASSWORD": "same.dest"}
+	if _, err := Push(context.Background(), o); code(err) != "duplicate_destination_key" {
+		t.Fatalf("duplicate destination error = %v", err)
+	}
+	if entries, _ := os.ReadDir(log); len(entries) != 0 {
+		t.Fatal("kubectl ran for duplicate destinations")
+	}
+	if entries, _ := os.ReadDir(state); len(entries) != 0 {
+		t.Fatalf("receipt written for duplicate destinations")
+	}
+}
+
+func TestKubernetesDryRunDoesNotInvokeToolsOrWriteReceipt(t *testing.T) {
+	root, state, log := kubeFixture(t)
+	t.Setenv("KUBE_LOG", log)
+	o := kubeOptions(root, state)
+	o.DryRun = true
+
+	report, err := Push(context.Background(), o)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.ID == "" || len(report.Keys) != 2 {
+		t.Fatalf("dry-run report = %+v", report)
+	}
+	if entries, _ := os.ReadDir(log); len(entries) != 0 {
+		t.Fatal("kubectl ran on dry-run")
+	}
+	if entries, _ := os.ReadDir(state); len(entries) != 0 {
+		t.Fatalf("receipt written on dry-run")
+	}
+}
+
+func TestKubernetesChildEnvHasNoAmbiguousKubeconfig(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	root, state, log := kubeFixture(t)
+	t.Setenv("KUBECONFIG", filepath.Join(home, "must", "not", "be", "read"))
+	t.Setenv("SOPS_JSON", cannedSecretJSON)
+	t.Setenv("KUBE_LOG", log)
+
+	if _, err := Push(context.Background(), kubeOptions(root, state)); err != nil {
+		t.Fatal(err)
+	}
+	if env, err := os.ReadFile(filepath.Join(log, "env")); err != nil || string(env) != "unset" {
+		t.Fatalf("kubectl child env KUBECONFIG = %q, err = %v, want unset", env, err)
+	}
+}
+
+func TestKubernetesUninvokableKubectlFailsAsFailed(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	root, state, log := kubeFixture(t)
+	t.Setenv("SOPS_JSON", cannedSecretJSON)
+	t.Setenv("KUBE_LOG", log)
+
+	// A kubectl LookPath accepts but exec cannot start (bad object format)
+	// means the apply never ran: provably failed, not unknown.
+	noexec := t.TempDir()
+	if err := os.WriteFile(filepath.Join(noexec, "kubectl"), []byte("not an executable format\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", noexec+string(os.PathListSeparator)+os.Getenv("PATH"))
+
+	failed, err := Push(context.Background(), kubeOptions(root, state))
+	if code(err) != "secret_push_failed" {
+		t.Fatalf("uninvokable kubectl error = %v", err)
+	}
+	for _, key := range failed.Keys {
+		if key.State != StateFailed {
+			t.Fatalf("state after uninvoked apply = %+v", failed.Keys)
+		}
+	}
+	storedB, err := os.ReadFile(filepath.Join(state, failed.ID+".json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var stored Report
+	if err := json.Unmarshal(storedB, &stored); err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range stored.Keys {
+		if key.State != StateFailed {
+			t.Fatalf("stored state after uninvoked apply = %+v", stored.Keys)
 		}
 	}
 }

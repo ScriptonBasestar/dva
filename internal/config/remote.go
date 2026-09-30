@@ -166,6 +166,22 @@ func validateGitHubSecretTarget(target SecretTarget) error {
 	return nil
 }
 
+// validDNS1123Subdomain matches the API server's IsDNS1123Subdomain, which the
+// bare subdomain regex does not: consecutive dots and labels over 63 chars pass
+// the character-class pattern but the server rejects them — a config error must
+// surface as config validation, not as an unknown receipt after kubectl.
+func validDNS1123Subdomain(name string) bool {
+	if !dns1123SubdomainPattern.MatchString(name) {
+		return false
+	}
+	for label := range strings.SplitSeq(name, ".") {
+		if !dns1123LabelPattern.MatchString(label) {
+			return false
+		}
+	}
+	return true
+}
+
 // validateKubernetesSecretTarget keeps dev-only operation mechanical: a target
 // without environment: dev is a configuration error, not a runtime decision.
 // Kubeconfig accepts an absolute path or ~/ expansion because cluster
@@ -185,7 +201,7 @@ func validateKubernetesSecretTarget(target SecretTarget) error {
 	if !dns1123LabelPattern.MatchString(target.Context) || !dns1123LabelPattern.MatchString(target.Namespace) {
 		return fmt.Errorf("context and namespace must be DNS-1123 labels")
 	}
-	if !dns1123SubdomainPattern.MatchString(target.SecretName) {
+	if !validDNS1123Subdomain(target.SecretName) {
 		return fmt.Errorf("name must be a DNS-1123 subdomain")
 	}
 	seen := map[string]bool{}

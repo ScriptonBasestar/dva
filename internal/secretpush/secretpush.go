@@ -1,5 +1,7 @@
-// Package secretpush decrypts an explicitly declared dotenv file and publishes
-// selected keys as GitHub repository secrets. It never persists secret material.
+// Package secretpush decrypts an explicitly declared SOPS file and publishes
+// selected keys to the declared destination: GitHub repository secrets from a
+// dotenv source, or a Kubernetes Secret on a dev cluster from a k8s Secret
+// source. It never persists secret material.
 package secretpush
 
 import (

@@ -46,7 +46,7 @@ essential/full/vector/postgis를 `pg_version` 하나로 실행하는 전체 선�
 | `secrets.targets.<name>.provider` | `github-actions` 또는 `kubernetes` |
 | `secrets.targets.<name>.repository` | 명시적인 `owner/repository` |
 | `secrets.targets.<name>.source` | 선언된 source 이름 |
-| `secrets.targets.<name>.keys` | 원본 dotenv 키 → GitHub Secret 이름, 1–64개 |
+| `secrets.targets.<name>.keys` | 원본 키 → 대상 Secret 키, 1–64개 |
 | `jobs.<name>.provider/repository` | GitHub Actions와 대상 저장소 |
 | `jobs.<name>.ref` | 실제 원격 branch 또는 tag, 암묵적 기본 브랜치 없음 |
 | `jobs.<name>.timeout` | 양의 유한 시간, 최대 24시간 |
