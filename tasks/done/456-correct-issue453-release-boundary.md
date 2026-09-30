@@ -23,7 +23,7 @@ W07c2a의 남은 승인·실제 host 검증을 분리해 정정한다.
 
 - [x] ISSUE-453의 Summary, Actual, P1 next action은 TASK-455의 compiled 연결 완료와 production pin 비활성을 함께 정확히 설명한다 | verify: human — inspect the current DVA source and issue text
 - [x] ISSUE-453의 해결 기준은 승인 artifact와 양성·불일치 host 검증을 기다리며 완료로 바뀌지 않는다 | verify: human — inspect ISSUE-453 criteria and status
-- [x] 문서·보드 게이트가 정정된 카드와 이슈를 수용한다 | verify: `make doc-check && ce task gate` (regression-guard)
+- [x] 문서·보드 게이트가 정정된 카드와 이슈를 수용한다 | verify: `make doc-check && ce task validate --all` (regression-guard)
 
 ## Dependency
 
