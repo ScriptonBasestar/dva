@@ -20,10 +20,19 @@ type SecretSource struct {
 }
 
 type SecretTarget struct {
-	Provider   string            `yaml:"provider" json:"provider"`
-	Repository string            `yaml:"repository" json:"repository"`
-	Source     string            `yaml:"source" json:"source"`
-	Keys       map[string]string `yaml:"keys" json:"keys"`
+	Provider   string `yaml:"provider" json:"provider"`
+	Repository string `yaml:"repository,omitempty" json:"repository,omitempty"`
+	// Kubernetes destinations (provider: kubernetes) declare their cluster
+	// explicitly; DVA never falls back to an ambient kubeconfig. Environment is
+	// fail-closed: only "dev" is accepted, because PRODUCT.md names stg/prd as
+	// variable-set labels, never as permission to operate that environment.
+	Environment string            `yaml:"environment,omitempty" json:"environment,omitempty"`
+	Kubeconfig  string            `yaml:"kubeconfig,omitempty" json:"kubeconfig,omitempty"`
+	Context     string            `yaml:"context,omitempty" json:"context,omitempty"`
+	Namespace   string            `yaml:"namespace,omitempty" json:"namespace,omitempty"`
+	SecretName  string            `yaml:"name,omitempty" json:"name,omitempty"`
+	Source      string            `yaml:"source" json:"source"`
+	Keys        map[string]string `yaml:"keys" json:"keys"`
 }
 
 // JobConfig describes a finite batch of repository-owned artifact jobs. It is
@@ -59,6 +68,9 @@ type JobImage struct {
 
 var remoteRepositoryPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_.-]*/[A-Za-z0-9][A-Za-z0-9_.-]*$`)
 var secretKeyPattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
+var dns1123LabelPattern = regexp.MustCompile(`^[a-z0-9]([-a-z0-9]{0,61}[a-z0-9])?$`)
+var dns1123SubdomainPattern = regexp.MustCompile(`^[a-z0-9]([-a-z0-9.]{0,251}[a-z0-9])?$`)
+var kubernetesSecretKeyPattern = regexp.MustCompile(`^[-._a-zA-Z0-9]{1,253}$`)
 var jobWorkflowPattern = regexp.MustCompile(`^[A-Za-z0-9_][A-Za-z0-9_.-]*\.ya?ml$`)
 var jobTemplatePattern = regexp.MustCompile(`\{\{input\.([A-Za-z_][A-Za-z0-9_]*)\}\}`)
 
@@ -111,8 +123,8 @@ func validateSecrets(c *SecretsConfig) error {
 	}
 	for _, name := range sortedKeysOf(c.Targets) {
 		target := c.Targets[name]
-		if !validCIName(name) || target.Provider != "github-actions" || !remoteRepositoryPattern.MatchString(target.Repository) {
-			return fmt.Errorf("secrets target %q: expected github-actions and owner/repository", name)
+		if !validCIName(name) {
+			return fmt.Errorf("secrets target %q: invalid name", name)
 		}
 		if _, ok := c.Sources[target.Source]; !ok {
 			return fmt.Errorf("secrets target %q: source %q is undefined", name, target.Source)
@@ -120,17 +132,72 @@ func validateSecrets(c *SecretsConfig) error {
 		if len(target.Keys) == 0 || len(target.Keys) > 64 {
 			return fmt.Errorf("secrets target %q: select between 1 and 64 keys", name)
 		}
-		seen := map[string]bool{}
-		for _, key := range sortedKeysOf(target.Keys) {
-			dest := target.Keys[key]
-			if !secretKeyPattern.MatchString(key) || !secretKeyPattern.MatchString(dest) || len(key) > 256 || len(dest) > 256 || strings.HasPrefix(strings.ToUpper(dest), "GITHUB_") {
-				return fmt.Errorf("secrets target %q: invalid key mapping", name)
+		switch target.Provider {
+		case "github-actions":
+			if err := validateGitHubSecretTarget(target); err != nil {
+				return fmt.Errorf("secrets target %q: %w", name, err)
 			}
-			if seen[strings.ToUpper(dest)] {
-				return fmt.Errorf("secrets target %q: duplicate destination key", name)
+		case "kubernetes":
+			if err := validateKubernetesSecretTarget(target); err != nil {
+				return fmt.Errorf("secrets target %q: %w", name, err)
 			}
-			seen[strings.ToUpper(dest)] = true
+		default:
+			return fmt.Errorf("secrets target %q: provider must be github-actions or kubernetes", name)
 		}
+	}
+	return nil
+}
+
+func validateGitHubSecretTarget(target SecretTarget) error {
+	if !remoteRepositoryPattern.MatchString(target.Repository) {
+		return fmt.Errorf("expected github-actions and owner/repository")
+	}
+	seen := map[string]bool{}
+	for _, key := range sortedKeysOf(target.Keys) {
+		dest := target.Keys[key]
+		if !secretKeyPattern.MatchString(key) || !secretKeyPattern.MatchString(dest) || len(key) > 256 || len(dest) > 256 || strings.HasPrefix(strings.ToUpper(dest), "GITHUB_") {
+			return fmt.Errorf("invalid key mapping")
+		}
+		if seen[strings.ToUpper(dest)] {
+			return fmt.Errorf("duplicate destination key")
+		}
+		seen[strings.ToUpper(dest)] = true
+	}
+	return nil
+}
+
+// validateKubernetesSecretTarget keeps dev-only operation mechanical: a target
+// without environment: dev is a configuration error, not a runtime decision.
+// Kubeconfig accepts an absolute path or ~/ expansion because cluster
+// credentials live outside the checkout; a bare relative path is refused as
+// ambiguous. Destination keys follow Kubernetes secret-key rules, which allow
+// dots and dashes (tls.crt) that GitHub names do not.
+func validateKubernetesSecretTarget(target SecretTarget) error {
+	if target.Environment != "dev" {
+		return fmt.Errorf("kubernetes targets are dev-only: environment must be exactly \"dev\"")
+	}
+	if target.Repository != "" {
+		return fmt.Errorf("kubernetes targets take a cluster name, not repository")
+	}
+	if !filepath.IsAbs(target.Kubeconfig) && !strings.HasPrefix(target.Kubeconfig, "~/") || strings.ContainsAny(target.Kubeconfig, "\x00\r\n") {
+		return fmt.Errorf("kubeconfig must be an absolute or ~/ path")
+	}
+	if !dns1123LabelPattern.MatchString(target.Context) || !dns1123LabelPattern.MatchString(target.Namespace) {
+		return fmt.Errorf("context and namespace must be DNS-1123 labels")
+	}
+	if !dns1123SubdomainPattern.MatchString(target.SecretName) {
+		return fmt.Errorf("name must be a DNS-1123 subdomain")
+	}
+	seen := map[string]bool{}
+	for _, key := range sortedKeysOf(target.Keys) {
+		dest := target.Keys[key]
+		if !kubernetesSecretKeyPattern.MatchString(key) || !kubernetesSecretKeyPattern.MatchString(dest) || len(key) > 253 || len(dest) > 253 {
+			return fmt.Errorf("invalid key mapping")
+		}
+		if seen[dest] {
+			return fmt.Errorf("duplicate destination key")
+		}
+		seen[dest] = true
 	}
 	return nil
 }

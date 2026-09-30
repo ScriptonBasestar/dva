@@ -77,7 +77,8 @@ Linux에서도 같은 절차로 해당 archive를 선택하고 `sha256sum -c`를
 | `dva config init` | 현재 디렉토리에 `dva.yml` 생성 (`dva init` alias 지원) |
 | `dva config docs` | 프로젝트 AI 파트너용 CLAUDE.md/AGENTS.md 생성/갱신 |
 | `dva config migrate` | legacy compose 선언을 `runners` 형태로 재작성 |
-| `dva secret push <target>` | 선언된 SOPS 키를 현재 저장소의 GitHub Actions Secrets에 전송 |
+| `dva secret push <target>` | 선언된 SOPS 키를 GitHub Actions Secrets 또는 dev 클러스터 Kubernetes Secret에 전송 |
+| `dva secret status <target>` | kubernetes 대상 Secret의 존재 여부와 키 이름 대조 보고 (값 미포함) |
 | `dva job run <name>` | 저장소 소유 산출물 작업 실행·대기·검증 |
 | `dva job status/resume/verify <run-id>` | 기록한 원격 실행 조회·대기 재개·digest 검증 |
 | `dva config env edit/unseal` | `env_file` 엔트리의 sops 암호화 소스를 편집/복호화 |
@@ -2325,3 +2326,34 @@ dva validate
 
 `secrets`는 암호화 출처와 전송 대상, `jobs`는 종료하는 원격 산출물 작업을 선언합니다.
 명령·설정·실패 및 재개 규약은 [원격 산출물 작업](docs/62-remote-artifact-jobs.md)을 따릅니다.
+
+전송 대상은 두 가지입니다. `provider: github-actions`는 SOPS dotenv source를 현재
+체크아웃의 GitHub Actions Secrets로 보내고, `provider: kubernetes`는 SOPS로 암호화한
+k8s Secret YAML에서 선언한 키만 골라 dev 클러스터의 이름 붙은 Secret에 적용합니다.
+kubernetes 대상은 `environment: dev` 선언이 필수이며, `kubeconfig`와 `context`도
+명시해야 합니다 — 암묵적인 `KUBECONFIG` 환경변수는 사용하지 않습니다.
+
+```yaml
+secrets:
+  sources:
+    primeno1: {sops: deploy/secrets/dev/primeno1-api-secrets.yaml}
+  targets:
+    primeno1-api:
+      provider: kubernetes
+      environment: dev
+      kubeconfig: ~/.kube/scripton-cluster
+      context: scripton-cluster
+      namespace: primeno1
+      name: primeno1-api-secrets
+      source: primeno1
+      keys: {DB_PASS: db.password, REDIS_PASSWORD: redis.password}
+```
+
+```bash
+dva secret push primeno1-api --dry-run   # 대상 Secret과 키 이름 확인, 미복호화
+dva secret push primeno1-api             # 매핑된 키만 적용 (선언하지 않은 키는 보존)
+dva secret status primeno1-api           # 존재 여부 + 키 이름 대조 (값 미포함)
+```
+
+소유 분할: DVA는 매핑한 키만 소유하고 chart는 `existingSecret`으로 같은 Secret을
+참조합니다. stg/prd는 조작 허가가 아니므로 kubernetes 전송은 dev 클러스터만 지원합니다.

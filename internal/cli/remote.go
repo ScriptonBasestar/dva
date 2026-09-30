@@ -19,7 +19,7 @@ import (
 
 var secretCmd = &cobra.Command{
 	Use: "secret", Short: "Transfer declared secrets without printing plaintext", GroupID: "integration",
-	Long: "Transfer explicitly selected keys from declared SOPS dotenv sources to this checkout's GitHub Actions secrets. Use 'dva secret push <target> --dry-run' to inspect the destination and key names before sending values.",
+	Long: "Transfer explicitly selected keys from declared SOPS sources to a declared destination: this checkout's GitHub Actions secrets, or one named Kubernetes Secret in an explicitly declared dev cluster. Use 'dva secret push <target> --dry-run' to inspect the destination and key names before sending values.",
 }
 var jobCmd = &cobra.Command{
 	Use: "job", Short: "Run and verify repository-owned artifact jobs", GroupID: "integration",
@@ -28,13 +28,18 @@ var jobCmd = &cobra.Command{
 
 // Seams exercise command routing and effect ordering without real remote writes.
 var pushRemoteSecret = secretpush.Push
+var pushKubernetesStatus = secretpush.KubernetesStatus
 var runRemoteJob = jobrun.Run
 
 func init() {
-	push := &cobra.Command{Use: "push <target>", Short: "Push selected SOPS keys to this repository's GitHub Actions secrets", Args: cobra.ExactArgs(1), RunE: runSecretPush}
-	push.Long = "Decrypt the target's SOPS dotenv source, validate all selected keys, and send each value to GitHub through stdin. The target repository must match the owning checkout's origin. Output contains key states only; partial failures stop later writes. Use --project to select a child declaration or --dry-run to preview without decrypting or writing."
+	push := &cobra.Command{Use: "push <target>", Short: "Push selected SOPS keys to the declared GitHub Actions or Kubernetes destination", Args: cobra.ExactArgs(1), RunE: runSecretPush}
+	push.Long = "Decrypt the target's SOPS source, validate all selected keys, and send each value through stdin: to GitHub (dotenv sources) or as one applied Kubernetes Secret manifest (YAML sources, dev clusters only). GitHub targets must match the owning checkout's origin; kubernetes targets name their own kubeconfig, context, and namespace. Output contains key states only. Use --project to select a child declaration or --dry-run to preview without decrypting or writing."
 	push.Flags().String("project", "", "Use a declared child project's own secret targets")
 	secretCmd.AddCommand(push)
+	status := &cobra.Command{Use: "status <target>", Short: "Report which declared keys exist in a kubernetes Secret", Args: cobra.ExactArgs(1), RunE: runSecretStatus}
+	status.Long = "Query the cluster named by a kubernetes secret target and report whether the Secret exists, which keys it holds, and which declared keys are missing. Key names only: secret values never enter this process. GitHub Actions targets are not supported because their API exposes names through push --dry-run already."
+	status.Flags().String("project", "", "Use a declared child project's own secret targets")
+	secretCmd.AddCommand(status)
 	run := &cobra.Command{Use: "run <name>", Short: "Dispatch a declared batch of GitHub Actions workflows", Args: cobra.ExactArgs(1), RunE: runJob}
 	run.Long = "Resolve a named job and its public --input NAME=VALUE arguments, then dispatch its workflows and record exact run IDs. --wait waits for completion; --verify also compares workflow result artifacts with OCI digests and platforms. Secret targets are sent only with --with-secrets. --dry-run previews without remote requests or receipt writes."
 	run.Flags().String("project", "", "Use a declared child project's own jobs")
@@ -118,7 +123,21 @@ func secretOptions(c *config.Config, name string) (secretpush.Options, error) {
 	if !ok {
 		return secretpush.Options{}, fmt.Errorf("secret target source is undefined")
 	}
-	return secretpush.Options{Root: c.FileDir(), Name: name, DryRun: dryRun, Target: secretpush.Target{Source: source.Sops, Repository: target.Repository, Keys: target.Keys}}, nil
+	kind := ""
+	if target.Provider == "kubernetes" {
+		kind = "kubernetes"
+	}
+	return secretpush.Options{Root: c.FileDir(), Name: name, DryRun: dryRun, Target: secretpush.Target{
+		Kind:        kind,
+		Source:      source.Sops,
+		Repository:  target.Repository,
+		Keys:        target.Keys,
+		Environment: target.Environment,
+		Kubeconfig:  target.Kubeconfig,
+		Context:     target.Context,
+		Namespace:   target.Namespace,
+		SecretName:  target.SecretName,
+	}}, nil
 }
 
 func runSecretPush(cmd *cobra.Command, args []string) error {
@@ -133,6 +152,27 @@ func runSecretPush(cmd *cobra.Command, args []string) error {
 	ctx, stop := remoteContext(cmd)
 	defer stop()
 	report, err := pushRemoteSecret(ctx, opts)
+	return printRemoteResult(report, err)
+}
+
+func runSecretStatus(cmd *cobra.Command, args []string) error {
+	if dryRun {
+		return fmt.Errorf("--dry-run is supported by secret push and job run only")
+	}
+	c, err := remoteOwner(cmd)
+	if err != nil {
+		return err
+	}
+	opts, err := secretOptions(c, args[0])
+	if err != nil {
+		return err
+	}
+	if opts.Target.Kind != "kubernetes" {
+		return fmt.Errorf("secret status supports kubernetes targets only")
+	}
+	ctx, stop := remoteContext(cmd)
+	defer stop()
+	report, err := pushKubernetesStatus(ctx, opts)
 	return printRemoteResult(report, err)
 }
 

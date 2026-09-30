@@ -1,6 +1,6 @@
 # 원격 산출물 작업과 시크릿 전송
 
-DVA는 선언된 SOPS 키를 GitHub Actions Secrets에 전달하고, 저장소가 소유한 workflow의
+DVA는 선언된 SOPS 키를 GitHub Actions Secrets이나 dev 클러스터 Kubernetes Secret에 전달하고, 저장소가 소유한 workflow의
 실행과 공개 OCI 이미지 검증 결과를 기록한다. 제품 경계는 [PRODUCT.md](../PRODUCT.md),
 계층 책임은 [ARCHITECTURE.md](../ARCHITECTURE.md)가 소유한다.
 
@@ -43,7 +43,7 @@ essential/full/vector/postgis를 `pg_version` 하나로 실행하는 전체 선�
 | 선언 | 의미 |
 |---|---|
 | `secrets.sources.<name>.sops` | owning 설정 디렉터리 안의 암호화 dotenv 파일 |
-| `secrets.targets.<name>.provider` | 현재 `github-actions`만 지원 |
+| `secrets.targets.<name>.provider` | `github-actions` 또는 `kubernetes` |
 | `secrets.targets.<name>.repository` | 명시적인 `owner/repository` |
 | `secrets.targets.<name>.source` | 선언된 source 이름 |
 | `secrets.targets.<name>.keys` | 원본 dotenv 키 → GitHub Secret 이름, 1–64개 |
@@ -78,6 +78,7 @@ child 명령은 `--project`로 선택한다.
 현재 체크아웃의 canonical GitHub `origin`과 선언한 저장소가 일치해야 한다.
 기준은 로컬 Git 설정의 원본 URL이며 `insteadOf` 재작성은 적용하지 않는다.
 별칭 host, GitHub Enterprise, 교차 저장소 및 조직/environment 전송은 지원하지 않는다.
+kubernetes 목적지의 전송 계약은 [kubernetes Secret 목적지](69-kubernetes-secret-target.md)가 소유한다.
 origin 자체를 바꾸는 행위는 이 신뢰 기준을 바꾸는 행위다.
 
 전송 전에 전체 복호화 성공과 dotenv 문법, 중복·누락 키, 키 매핑과 크기 제한을

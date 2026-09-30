@@ -38,11 +38,22 @@ var maxOutput = 1 << 20 // test seam; limits plaintext retained in memory.
 
 var secretName = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]{0,255}$`)
 
-// Target declares one encrypted dotenv source and its explicit GitHub mapping.
+// Target declares one encrypted source and its explicit destination mapping.
+// Kind selects the sink: empty means GitHub Actions (Repository), "kubernetes"
+// means one named Secret in an explicitly declared cluster.
 type Target struct {
+	Kind       string
 	Source     string
 	Repository string
-	Keys       map[string]string // dotenv source key -> GitHub destination secret
+	Keys       map[string]string // source key -> destination secret key
+	// Kubernetes sink fields. Kubeconfig is an absolute or ~/ path, expanded
+	// at invocation; the ambient KUBECONFIG is stripped from the child env so
+	// the declared file is authoritative.
+	Environment string
+	Kubeconfig  string
+	Context     string
+	Namespace   string
+	SecretName  string
 }
 
 type Options struct {
@@ -60,10 +71,11 @@ type KeyReport struct {
 
 // Report is both the returned safe receipt and the on-disk receipt format.
 type Report struct {
-	ID         string      `json:"id"`
-	Name       string      `json:"name"`
-	Repository string      `json:"repository"`
-	Keys       []KeyReport `json:"keys"`
+	ID          string      `json:"id"`
+	Name        string      `json:"name"`
+	Repository  string      `json:"repository"`
+	Destination string      `json:"destination,omitempty"` // kubernetes sink: context/namespace/secret
+	Keys        []KeyReport `json:"keys"`
 }
 
 // CodeError identifies failure categories without exposing tool output or secrets.
@@ -73,9 +85,17 @@ func (e *CodeError) Error() string { return e.Code }
 
 func codeError(code string) error { return &CodeError{Code: code} }
 
-// Push validates the complete plaintext before it invokes gh. A receipt is
-// atomically persisted before the first remote mutation and after every result.
+// Push validates the complete plaintext before it invokes the sink tool. A
+// receipt is atomically persisted before the first remote mutation and after
+// every result. The sink is selected by Target.Kind: empty means GitHub
+// Actions, "kubernetes" means a named Secret in a declared cluster.
 func Push(ctx context.Context, opts Options) (Report, error) {
+	if opts.Target.Kind == "kubernetes" {
+		return pushKubernetes(ctx, opts)
+	}
+	if opts.Target.Kind != "" {
+		return Report{}, codeError("invalid_declaration")
+	}
 	root, source, mappings, report, err := prepare(ctx, opts)
 	if err != nil {
 		return report, err
@@ -89,7 +109,7 @@ func Push(ctx context.Context, opts Options) (Report, error) {
 	if _, err := exec.LookPath("gh"); err != nil {
 		return report, codeError("gh_unavailable")
 	}
-	plaintext, err := decrypt(ctx, root, source)
+	plaintext, err := decryptSOPS(ctx, root, source, "dotenv", "dotenv")
 	if err != nil {
 		return report, err
 	}
@@ -252,10 +272,13 @@ func validateMappings(keys map[string]string) (mappingSet, error) {
 	return result, nil
 }
 
-func decrypt(ctx context.Context, root, source string) ([]byte, error) {
+// decryptSOPS runs one decrypt pass with explicit input and output formats:
+// dotenv sources round-trip as dotenv; Kubernetes Secret sources are decrypted
+// to JSON so parsing never needs a YAML dependency.
+func decryptSOPS(ctx context.Context, root, source, inputType, outputType string) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(ctx, sopsTimeout)
 	defer cancel()
-	cmd := exec.CommandContext(ctx, "sops", "--decrypt", "--input-type", "dotenv", "--output-type", "dotenv", source)
+	cmd := exec.CommandContext(ctx, "sops", "--decrypt", "--input-type", inputType, "--output-type", outputType, source)
 	cmd.WaitDelay = time.Second
 	cmd.Dir = root
 	cmd.Env = withoutGHRouting(os.Environ())

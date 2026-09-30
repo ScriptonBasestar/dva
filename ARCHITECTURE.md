@@ -85,10 +85,15 @@ queue와 CE 모두 호출하지 않는다. 실제 artifact 승인은 별도 릴�
 
 ### Remote artifact jobs and secret transfer
 
-`internal/secretpush/`는 SOPS 복호화·명시 키 선택·GitHub 전송과 값 없는 결과 기록을
-소유한다. `internal/jobrun/`는 GitHub workflow ID/run ID, 유한 대기, 재조회와 작업별
-결과 기록을 소유하며, `internal/ociverify/`에 공개 OCI 이미지 digest·플랫폼 검증을
-위임한다. `internal/remotetarget/`은 GitHub 목적지를 owning checkout의 origin과 대조한다.
+`internal/secretpush/`는 SOPS 복호화·명시 키 선택·전송과 값 없는 결과 기록을
+소유한다. 목적지는 두 가지다: GitHub Actions(github dotenv → repository secret,
+`remotetarget`으로 origin 대조)와 Kubernetes(k8s Secret YAML → dev 클러스터의 이름
+붙은 Secret). kubernetes 목적지는 `environment: dev`만 받는 기계적 경계를 두고,
+선언된 kubeconfig·context로만 접속하며, 매핑된 키만 담은 매니페스트를 stdin apply로
+보낸다 — 선언하지 않은 키는 보존되므로 DVA는 매핑 키만, chart는 `existingSecret`
+참조로 소유를 나눈다. `internal/jobrun/`는 GitHub workflow ID/run ID, 유한 대기,
+재조회와 작업별 결과 기록을 소유하며, `internal/ociverify/`에 공개 OCI 이미지
+digest·플랫폼 검증을 위임한다.
 CLI는 설정 타입을 runtime 입력으로 변환하고 명시적인 `--with-secrets`만 연결한다.
 세 실행 패키지는 lifecycle·runner·cirun을 호출하지 않는다. 설정·결과 계약은
 [원격 산출물 작업](docs/62-remote-artifact-jobs.md)이 소유한다.

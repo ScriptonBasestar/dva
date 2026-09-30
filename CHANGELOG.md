@@ -6,6 +6,14 @@ All notable changes to DVA are documented here.
 
 ### Added
 
+- **Kubernetes Secret 전송 목적지 (TASK-458)**: `dva secret push`가 `provider: kubernetes`를
+  받습니다. SOPS로 암호화한 k8s Secret YAML에서 선언한 키만 골라 dev 클러스터의 이름 붙은
+  Secret에 stdin apply로 적용합니다. `environment: dev` 선언이 필수이고(plan 환경·context
+  이름에서 추론하지 않음), `kubeconfig`와 `context`도 명시해야 합니다 — 암묵적 `KUBECONFIG`
+  환경변수는 자식 프로세스에서 제거합니다. apply 병합 의미론으로 선언하지 않은 data 키는
+  보존되므로 DVA는 매핑 키만, chart는 `existingSecret` 참조로 소유를 나눕니다. 새
+  `dva secret status <target>`은 kubernetes 대상의 존재 여부와 키 이름 대조를 값 없이
+  보고합니다.
 - **컴파일된 TaskChain 시작 경계 (TASK-455)**: `task-queue-start`가 큐 검증과
   바이너리 해시 스냅샷을 DVA 내부 코드로 실행합니다. 공개 승인 전 pin은 여전히
   비활성이라 CE 시작은 거부하며, 읽기 전용 verdict 도구에서는 시작할 수 없습니다.
