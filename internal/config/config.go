@@ -1097,6 +1097,12 @@ func finalizeLoadedConfig(cfg *Config) ([]string, error) {
 			}
 			cfg.loadProblems = append(cfg.loadProblems, err.Error())
 		}
+		if err := validateEntryTunnel(name, entry); err != nil {
+			if !cfg.deferEntryProblems {
+				return nil, err
+			}
+			cfg.loadProblems = append(cfg.loadProblems, err.Error())
+		}
 	}
 
 	if err := validateEnvSourceDeclarations(cfg); err != nil {

@@ -127,6 +127,9 @@ func runDoctorChecks(c *config.Config) []DoctorResult {
 	// Built-in: non-Compose stack entry files exist
 	results = append(results, checkStackFiles(c)...)
 
+	// Built-in: tunnel access prerequisites declared on remote entries (docs/68)
+	results = append(results, runTunnelDoctorChecks(c)...)
+
 	if envReport.Incomplete() {
 		// Both compose checks below interpolate their paths with env-file-derived
 		// values, and the second starts a compose child. Running them on an

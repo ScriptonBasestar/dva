@@ -290,6 +290,45 @@
         "kubeconfig": { "type": "string", "description": "Path to kubeconfig file" }
       }
     },
+    "tunnel_config": {
+      "type": "object",
+      "description": "Access prerequisite (docs/68): DVA opens this tunnel before the entry runs and closes only the process it started. v1 supports cloudflared only; only kubectl and helm entries may declare it — the Go validator rejects other plugins.",
+      "additionalProperties": false,
+      "required": ["provider", "hostname", "local"],
+      "properties": {
+        "provider": {
+          "type": "string",
+          "description": "Tunnel binary family. v1 accepts only cloudflared.",
+          "examples": ["cloudflared"]
+        },
+        "hostname": {
+          "type": "string",
+          "description": "Access-protected hostname cloudflared connects to"
+        },
+        "local": {
+          "type": "string",
+          "description": "Loopback listener cloudflared forwards to, host:port (e.g. 127.0.0.1:16443). Non-loopback hosts are rejected — an authenticated tunnel must not face the LAN."
+        },
+        "auth": {
+          "type": "string",
+          "description": "interactive (default) or service-token",
+          "enum": ["interactive", "service-token"]
+        },
+        "service_token_env": {
+          "type": "object",
+          "description": "Names of the environment variables carrying the Cloudflare service token — values never live in dva.yml. Required when auth is service-token.",
+          "additionalProperties": false,
+          "properties": {
+            "id": { "type": "string", "description": "Env var name for TUNNEL_SERVICE_TOKEN_ID" },
+            "secret": { "type": "string", "description": "Env var name for TUNNEL_SERVICE_TOKEN_SECRET" }
+          }
+        },
+        "ready_timeout": {
+          "type": "string",
+          "description": "How long DVA waits for auth + TCP readiness before failing, e.g. 30s. Default 30s."
+        }
+      }
+    },
     "helm_runner_config": {
       "type": "object",
       "description": "Helm chart deployment runner configuration",
@@ -957,6 +996,7 @@
             ],
             "additionalProperties": false
           },
+          "tunnel": { "$ref": "#/definitions/tunnel_config" },
           "optional": {
             "type": "boolean",
             "description": "If true, an entry whose declared directory is missing is dropped from the plan instead of failing the plan. The directory checked is the one declared by the runner the plan selected, falling back to source.path when that runner declares none; the skip is reported as a warning on every execution path. Only a missing directory is tolerated: an optional entry naming an undeclared or unresolvable runner still fails the plan (TASK-319, TASK-374)"

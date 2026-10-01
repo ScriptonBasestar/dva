@@ -263,6 +263,9 @@ func (c *Config) Validate() error {
 		if err := validateEntrySource(entryName, entry, c.FileDir()); err != nil {
 			errs = append(errs, err)
 		}
+		if err := validateEntryTunnel(entryName, entry); err != nil {
+			errs = append(errs, err)
+		}
 	}
 
 	// Validate default_mode references an existing mode

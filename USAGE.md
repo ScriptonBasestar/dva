@@ -1193,6 +1193,51 @@ stack:
 엔트리는 다른 stack 엔트리와 동일하게 plan에서 선택합니다 (`--tag infra`로도 필터 가능).
 새 설정은 `stack.<name>.source`를 직접 사용하세요.
 
+### stack.tunnel (원격 접속 선행조건)
+
+kubectl/helm 엔트리가 Cloudflare Access 뒤의 원격 클러스터를 대상으로 할 때
+`tunnel:`은 "엔트리를 실행하기 **전에** 충족되어야 하는 접속 조건"을 선언합니다
+(설계: docs/68). compose/process 등 다른 플러그인 엔트리에 붙이면 설정 검증이
+거부합니다.
+
+```yaml
+stack:
+  remote-app:
+    runners:
+      kubectl: { namespace: myapp-dev, manifests: [k8s/web.yaml] }
+    tunnel:
+      provider: cloudflared
+      hostname: dev-app.example.com
+      local: 127.0.0.1:16443
+      auth: service-token          # 기본값: interactive
+      service_token_env:
+        id: TUN_CF_ID
+        secret: TUN_CF_SECRET
+      ready_timeout: 30s           # 기본값: 30s
+```
+
+동작:
+
+- **인증 먼저, TCP 나중** — `dva up/down/stop/restart/status`가 엔트리를 실행하기
+  전에 인증 조건을 확인하고 cloudflared를 띄운 뒤, `local`이 연결을 받을 때까지
+  폴링합니다.
+- `auth: interactive`(기본) — 캐시된 Access 토큰을 먼저 시도하고, 없으면 TTY가
+  붙어 있을 때만 `cloudflared access login`을 포그라운드로 실행합니다. TTY가
+  없으면(CI, 에이전트) 명령까지 안내하는 오류로 실패합니다.
+- `auth: service-token` — `service_token_env`가 이름을 선언한 OS 환경변수가
+  둘 다 설정돼 있어야 합니다. 값은 자식 프로세스 환경으로만 흐르고 출력·로그에
+  절대 나오지 않습니다.
+- **포트 충돌은 실패** — `local`이 이미 리슨 중이면 그 소유자를 알 수 없으므로
+  재사용하지 않고 실패합니다. 같은 명령 안에서 (provider, hostname, local)이
+  같은 선언은 터널 하나를 공유합니다.
+- **소유 정리** — 명령이 끝나면 DVA가 시작한 cloudflared 프로세스만 종료합니다.
+  사람이 띄워둔 터널은 건드리지 않습니다.
+- `dva doctor`는 tunnel 선언마다 cloudflared 설치 여부와 인증 상태
+  (interactive: 토큰 유무 / service-token: 환경변수 설정 여부, 값 없이)를
+  보고합니다.
+
+완전한 예시: [examples/tunnel-remote.yml](examples/tunnel-remote.yml).
+
 ### plans
 
 `plans`는 실제 실행 가능한 이름입니다.

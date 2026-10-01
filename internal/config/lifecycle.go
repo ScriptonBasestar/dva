@@ -46,6 +46,13 @@ type LifecycleEntry struct {
 	// and working directory resolve against the sourced directory. (TASK-051)
 	Source *SourceConfig `yaml:"source,omitempty"`
 
+	// Tunnel declares an access prerequisite for a remote kubectl/helm entry
+	// (docs/68): DVA opens the tunnel before the entry runs, waits until it is
+	// authenticated and forwarding, and closes only the process it started.
+	// Only cloudflared is supported in v1; validation restricts the field to
+	// kubectl and helm entries. (TASK-459)
+	Tunnel *TunnelConfig `yaml:"tunnel,omitempty"`
+
 	// Optional marks this entry as optional — if the directory it declares does not
 	// exist, the entry is dropped from the plan instead of failing the plan. The
 	// directory consulted is the one belonging to the runner the plan selected, so an
@@ -171,6 +178,7 @@ func (e *LifecycleEntry) UnmarshalYAML(node *yaml.Node) error {
 		HealthChecks  map[string]HealthCheckConfig `yaml:"health_checks"`
 		DefaultRunner string                       `yaml:"default_runner"`
 		Source        *SourceConfig                `yaml:"source"`
+		Tunnel        *TunnelConfig                `yaml:"tunnel"`
 		Optional      bool                         `yaml:"optional"`
 		Primary       bool                         `yaml:"primary"`
 
@@ -202,6 +210,7 @@ func (e *LifecycleEntry) UnmarshalYAML(node *yaml.Node) error {
 	e.HealthChecks = raw.HealthChecks
 	e.DefaultRunner = raw.DefaultRunner
 	e.Source = raw.Source
+	e.Tunnel = raw.Tunnel
 	e.Optional = raw.Optional
 	e.Primary = raw.Primary
 

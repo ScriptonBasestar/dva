@@ -84,6 +84,19 @@ func (o *Orchestrator) Up(ctx context.Context, opts UpOptions) error {
 		return nil
 	}
 
+	// Tunnel declarations are access prerequisites (docs/68): open once per
+	// unique declaration before the entries run, close at command end. Dry-run
+	// executes nothing, so it opens nothing.
+	tunnels := newTunnelManager(o.logger)
+	if !opts.DryRun {
+		defer tunnels.Close()
+		for i := range filtered {
+			if err := tunnels.acquire(&filtered[i], o.env); err != nil {
+				return fmt.Errorf("entry %q tunnel: %w", filtered[i].Name, err)
+			}
+		}
+	}
+
 	// Clone env so exports accumulate without mutating the original
 	envClone := o.env.Clone()
 
@@ -194,6 +207,18 @@ func (o *Orchestrator) Down(ctx context.Context, opts DownOptions) error {
 		return err
 	}
 
+	// Tunnel access prerequisites, same contract as Up: open once per unique
+	// declaration, close at command end, open nothing on dry-run.
+	tunnels := newTunnelManager(o.logger)
+	if !opts.DryRun {
+		defer tunnels.Close()
+		for i := range filtered {
+			if err := tunnels.acquire(&filtered[i], o.env); err != nil {
+				return fmt.Errorf("entry %q tunnel: %w", filtered[i].Name, err)
+			}
+		}
+	}
+
 	// Reverse order for teardown
 	for i, j := 0, len(filtered)-1; i < j; i, j = i+1, j-1 {
 		filtered[i], filtered[j] = filtered[j], filtered[i]
@@ -252,6 +277,18 @@ func (o *Orchestrator) Stop(ctx context.Context, opts StopOptions) error {
 	}
 	if err := o.haltModeProcesses(opts.Mode, opts.DryRun); err != nil {
 		return err
+	}
+
+	// Tunnel access prerequisites, same contract as Up: open once per unique
+	// declaration, close at command end, open nothing on dry-run.
+	tunnels := newTunnelManager(o.logger)
+	if !opts.DryRun {
+		defer tunnels.Close()
+		for i := range filtered {
+			if err := tunnels.acquire(&filtered[i], o.env); err != nil {
+				return fmt.Errorf("entry %q tunnel: %w", filtered[i].Name, err)
+			}
+		}
 	}
 
 	// Reverse order
@@ -325,6 +362,14 @@ func (o *Orchestrator) Restart(ctx context.Context, opts UpOptions) error {
 // Whole-workspace status (no selection) keeps the full compose project list.
 func (o *Orchestrator) Status(ctx context.Context) (*AggregatedStatus, error) {
 	status := &AggregatedStatus{}
+
+	tunnels := newTunnelManager(o.logger)
+	defer tunnels.Close()
+	for i := range o.entries {
+		if err := tunnels.acquire(&o.entries[i], o.env); err != nil {
+			return nil, fmt.Errorf("entry %q tunnel: %w", o.entries[i].Name, err)
+		}
+	}
 
 	for _, entry := range o.entries {
 		pluginType := entry.DetectPlugin()

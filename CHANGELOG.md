@@ -6,6 +6,14 @@ All notable changes to DVA are documented here.
 
 ### Added
 
+- **Cloudflare Access 터널 선언 (TASK-459)**: kubectl/helm 엔트리에 `tunnel:`을
+  선언하면 docs/68의 접속 선행조건을 DVA가 관리합니다. 실행 동사가 엔트리 전에
+  인증(interactive 로그인 또는 service-token 환경변수)을 확인하고 cloudflared
+  access tcp를 띄워 준비를 기다렸다가, 명령이 끝나면 자신이 시작한 프로세스만
+  닫습니다. 이미 리슨 중인 포트는 소유자를 알 수 없어 재사용하지 않고 실패하고,
+  JWT는 출력·로그에 절대 나오지 않습니다. `dva doctor`에 설치·인증 상태 행이
+  추가됐습니다. 예시: `examples/tunnel-remote.yml`.
+
 - **Kubernetes Secret 전송 목적지 (TASK-458)**: `dva secret push`가 `provider: kubernetes`를
   받습니다. SOPS로 암호화한 k8s Secret YAML에서 선언한 키만 골라 dev 클러스터의 이름 붙은
   Secret에 stdin apply로 적용합니다. `environment: dev` 선언이 필수이고(plan 환경·context

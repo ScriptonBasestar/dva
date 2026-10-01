@@ -1,0 +1,58 @@
+# yaml-language-server: $schema=../internal/config/schema.json
+#
+# Example: Remote cluster behind a Cloudflare Access tunnel
+# Use Case: Development against a dev Kubernetes cluster that only accepts
+#           cloudflared access connections (docs/68)
+# Features: kubectl stack runner, tunnel access prerequisite, service-token auth
+#
+# Before `dva up` or `dva doctor`:
+#   brew install cloudflared
+#   export TUN_CF_ID=...      # Cloudflare service-token id
+#   export TUN_CF_SECRET=...  # Cloudflare service-token secret
+#
+# Usage:
+#   dva doctor            # reports cloudflared install + token env state
+#   dva up remote-dev     # opens the tunnel, then applies manifests
+#   dva down remote-dev   # closes only the tunnel DVA opened
+
+version: "0.1.44"
+
+stack:
+  remote-app:
+    description: Application served by the remote dev cluster
+    default_runner: kubectl
+    tunnel:
+      provider: cloudflared
+      hostname: dev-app.example.com
+      local: 127.0.0.1:16443
+      auth: service-token
+      service_token_env:
+        id: TUN_CF_ID
+        secret: TUN_CF_SECRET
+      ready_timeout: 30s
+    runners:
+      kubectl:
+        namespace: myapp-dev
+        context: cf-dev
+        manifests:
+          - k8s/web.yaml
+
+plans:
+  remote-dev:
+    description: Remote cluster development environment
+    environment: dev
+    site: office
+    entries:
+      - name: remote-app
+        runner: kubectl
+        order: 10
+
+environments:
+  dev:
+    environment:
+      APP_ENV: dev
+
+sites:
+  office:
+    vars:
+      DVA_SITE: office
