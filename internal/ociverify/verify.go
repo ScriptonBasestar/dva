@@ -3,20 +3,10 @@ package ociverify
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"net"
-	"net/http"
-	"net/netip"
-	"net/url"
-	"path"
-	"regexp"
 	"strings"
-	"time"
 )
 
 const (
@@ -25,17 +15,6 @@ const (
 	maxTokenBytes    = 1 << 20
 	maxChildren      = 128
 )
-
-var nonPublicRanges = []netip.Prefix{
-	netip.MustParsePrefix("0.0.0.0/8"), netip.MustParsePrefix("10.0.0.0/8"),
-	netip.MustParsePrefix("100.64.0.0/10"), netip.MustParsePrefix("127.0.0.0/8"),
-	netip.MustParsePrefix("169.254.0.0/16"), netip.MustParsePrefix("172.16.0.0/12"),
-	netip.MustParsePrefix("192.0.0.0/24"), netip.MustParsePrefix("192.0.2.0/24"),
-	netip.MustParsePrefix("192.168.0.0/16"), netip.MustParsePrefix("198.18.0.0/15"),
-	netip.MustParsePrefix("198.51.100.0/24"), netip.MustParsePrefix("203.0.113.0/24"),
-	netip.MustParsePrefix("224.0.0.0/4"), netip.MustParsePrefix("240.0.0.0/4"),
-	netip.MustParsePrefix("2001:db8::/32"),
-}
 
 // Options specifies a public image reference and its required digest.
 type Options struct {
@@ -51,25 +30,6 @@ type Result struct {
 	ExpectedDigest string   `json:"expected_digest"`
 	Platforms      []string `json:"platforms,omitempty"`
 	Verified       bool     `json:"verified"`
-}
-
-type reference struct{ registry, repository, selector string }
-type verifier struct {
-	client   *http.Client
-	endpoint string // test-only override; public calls always use HTTPS.
-}
-
-// ValidateReference checks declaration syntax without network access or an
-// expected digest (which is supplied later by the exact workflow's artifact).
-func ValidateReference(reference string, platforms []string) error {
-	if _, err := parseReference(reference); err != nil {
-		return err
-	}
-	if len(platforms) > 16 {
-		return errors.New("too many OCI platforms")
-	}
-	_, err := parsePlatforms(platforms)
-	return err
 }
 
 // Verify fetches and cryptographically verifies a public OCI image manifest.
@@ -167,241 +127,6 @@ func (v verifier) verify(ctx context.Context, opts Options) (Result, error) {
 	}
 	result.Verified = true
 	return result, nil
-}
-
-func (v verifier) fetch(ctx context.Context, ref reference, kind, value string, limit int64) ([]byte, string, error) {
-	base := v.endpoint
-	if base == "" {
-		base = "https://" + ref.registry
-	}
-	u, err := url.Parse(base)
-	if err != nil || u.Scheme == "" || u.Host == "" {
-		return nil, "", errors.New("invalid OCI registry endpoint")
-	}
-	u.Path = path.Join(u.Path, "v2", ref.repository, kind, value)
-	client := *v.client
-	client.CheckRedirect = redirectPolicy(kind == "blobs")
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
-	if err != nil {
-		return nil, "", err
-	}
-	req.Header.Set("Accept", strings.Join([]string{"application/vnd.oci.image.index.v1+json", "application/vnd.oci.image.manifest.v1+json", "application/vnd.docker.distribution.manifest.list.v2+json", "application/vnd.docker.distribution.manifest.v2+json"}, ", "))
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, "", err
-	}
-	if resp.StatusCode == http.StatusUnauthorized {
-		if err := resp.Body.Close(); err != nil {
-			return nil, "", err
-		}
-		token, err := v.token(ctx, &client, ref.registry, resp.Header.Get("WWW-Authenticate"))
-		if err != nil {
-			return nil, "", err
-		}
-		req.Header.Set("Authorization", "Bearer "+token)
-		resp, err = client.Do(req)
-		if err != nil {
-			return nil, "", err
-		}
-	}
-	defer func() { _ = resp.Body.Close() }()
-	if resp.StatusCode != http.StatusOK {
-		return nil, "", fmt.Errorf("OCI %s request returned HTTP %d", kind, resp.StatusCode)
-	}
-	body, err := readBounded(resp.Body, limit)
-	if err != nil {
-		return nil, "", err
-	}
-	actual := digest(body)
-	if header := resp.Header.Get("Docker-Content-Digest"); header != "" && header != actual {
-		return nil, "", errors.New("OCI Docker-Content-Digest does not match response")
-	}
-	mediaType, _, _ := strings.Cut(resp.Header.Get("Content-Type"), ";")
-	return body, mediaType, nil
-}
-
-func (v verifier) token(ctx context.Context, client *http.Client, registry, challenge string) (string, error) {
-	params, ok := bearerParams(challenge)
-	if !ok {
-		return "", errors.New("OCI registry requires unsupported authentication")
-	}
-	realm, err := url.Parse(params["realm"])
-	if err != nil || realm.Scheme != "https" || realm.Host == "" || realm.User != nil {
-		return "", errors.New("OCI bearer token realm is not approved")
-	}
-	if realm.Host != registry && (registry != "registry-1.docker.io" || realm.Host != "auth.docker.io") {
-		return "", errors.New("OCI bearer token realm is not approved")
-	}
-	q := realm.Query()
-	if params["service"] != "" {
-		q.Set("service", params["service"])
-	}
-	if params["scope"] != "" {
-		q.Set("scope", params["scope"])
-	}
-	realm.RawQuery = q.Encode()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, realm.String(), nil)
-	if err != nil {
-		return "", err
-	}
-	tokenClient := *client
-	tokenClient.CheckRedirect = redirectPolicy(false)
-	resp, err := tokenClient.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer func() { _ = resp.Body.Close() }()
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("OCI token request returned HTTP %d", resp.StatusCode)
-	}
-	body, err := readBounded(resp.Body, maxTokenBytes)
-	if err != nil {
-		return "", err
-	}
-	var token struct {
-		Token       string `json:"token"`
-		AccessToken string `json:"access_token"`
-	}
-	if err := json.Unmarshal(body, &token); err != nil {
-		return "", errors.New("invalid OCI token response")
-	}
-	if token.Token != "" {
-		return token.Token, nil
-	}
-	if token.AccessToken != "" {
-		return token.AccessToken, nil
-	}
-	return "", errors.New("OCI token response has no token")
-}
-
-func redirectPolicy(allowBlobs bool) func(*http.Request, []*http.Request) error {
-	return func(next *http.Request, previous []*http.Request) error {
-		if !allowBlobs || next.URL.Scheme != "https" {
-			return errors.New("OCI redirects are not allowed")
-		}
-		if len(previous) != 0 && next.URL.Host != previous[0].URL.Host {
-			next.Header.Del("Authorization")
-		}
-		return nil
-	}
-}
-
-func publicClient() *http.Client {
-	transport := http.DefaultTransport.(*http.Transport).Clone()
-	transport.Proxy = nil
-	transport.DialContext = publicDialContext
-	return &http.Client{Timeout: 30 * time.Second, Transport: transport}
-}
-
-func publicDialContext(ctx context.Context, network, address string) (net.Conn, error) {
-	host, port, err := net.SplitHostPort(address)
-	if err != nil {
-		return nil, err
-	}
-	ips, err := net.DefaultResolver.LookupNetIP(ctx, "ip", host)
-	if err != nil {
-		return nil, err
-	}
-	if len(ips) == 0 {
-		return nil, errors.New("OCI registry host did not resolve")
-	}
-	for _, ip := range ips {
-		if !publicIP(ip) {
-			return nil, fmt.Errorf("OCI registry host resolves to a non-public address")
-		}
-	}
-	// Dial the checked address directly so a second resolver lookup cannot rebind it.
-	dialer := net.Dialer{}
-	var last error
-	for _, ip := range ips {
-		conn, err := dialer.DialContext(ctx, network, net.JoinHostPort(ip.String(), port))
-		if err == nil {
-			return conn, nil
-		}
-		last = err
-	}
-	return nil, last
-}
-
-func publicIP(ip netip.Addr) bool {
-	ip = ip.Unmap()
-	if !ip.IsValid() || !ip.IsGlobalUnicast() || ip.IsPrivate() || ip.IsLoopback() || ip.IsLinkLocalUnicast() || ip.IsMulticast() || ip.IsUnspecified() {
-		return false
-	}
-	for _, prefix := range nonPublicRanges {
-		if prefix.Contains(ip) {
-			return false
-		}
-	}
-	return true
-}
-
-var repositoryComponent = regexp.MustCompile(`^[a-z0-9]+(?:(?:[._]|__|[-]+)[a-z0-9]+)*$`)
-var imageTag = regexp.MustCompile(`^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$`)
-
-func parseReference(s string) (reference, error) {
-	if s == "" || len(s) > 1024 || strings.ContainsAny(s, "?#\\ \t\r\n\x00") || strings.Contains(s, "://") {
-		return reference{}, errors.New("invalid OCI reference")
-	}
-	name, selector, hasDigest := strings.Cut(s, "@")
-	if hasDigest {
-		if !isSHA256(selector) {
-			return reference{}, errors.New("OCI reference digest must be sha256")
-		}
-	} else {
-		i := strings.LastIndex(name, ":")
-		if i < 0 || i < strings.LastIndex(name, "/") {
-			return reference{}, errors.New("OCI reference requires an explicit tag or digest")
-		}
-		selector = name[i+1:]
-		name = name[:i]
-		if !imageTag.MatchString(selector) || name == "" {
-			return reference{}, errors.New("OCI reference requires an explicit tag or digest")
-		}
-	}
-	parts := strings.Split(name, "/")
-	registry := "docker.io"
-	if strings.ContainsAny(parts[0], ".:") || parts[0] == "localhost" {
-		registry, parts = parts[0], parts[1:]
-	}
-	if len(parts) == 0 || strings.Join(parts, "/") == "" {
-		return reference{}, errors.New("OCI reference has no repository")
-	}
-	for _, component := range parts {
-		if !repositoryComponent.MatchString(component) {
-			return reference{}, errors.New("invalid OCI repository component")
-		}
-	}
-	u, err := url.Parse("https://" + registry)
-	if err != nil || u.Hostname() == "" || u.User != nil || u.Path != "" || u.RawQuery != "" || u.Fragment != "" {
-		return reference{}, errors.New("invalid OCI registry host")
-	}
-	if registry == "docker.io" {
-		registry = "registry-1.docker.io"
-		if len(parts) == 1 {
-			parts = append([]string{"library"}, parts...)
-		}
-	}
-	return reference{registry: registry, repository: strings.Join(parts, "/"), selector: selector}, nil
-}
-
-func readBounded(r io.Reader, limit int64) ([]byte, error) {
-	b, err := io.ReadAll(io.LimitReader(r, limit+1))
-	if err != nil {
-		return nil, err
-	}
-	if int64(len(b)) > limit {
-		return nil, errors.New("OCI response exceeds size limit")
-	}
-	return b, nil
-}
-func digest(b []byte) string { sum := sha256.Sum256(b); return "sha256:" + hex.EncodeToString(sum[:]) }
-func isSHA256(s string) bool {
-	if !strings.HasPrefix(s, "sha256:") || len(s) != 71 {
-		return false
-	}
-	_, err := hex.DecodeString(strings.TrimPrefix(s, "sha256:"))
-	return err == nil
 }
 
 type descriptor struct {
