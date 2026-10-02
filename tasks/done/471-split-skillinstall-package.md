@@ -6,8 +6,11 @@ priority: P2
 effort: L
 exec-tier: standard
 allowed-paths: [internal/skillinstall, tasks]
-status: todo
+status: done
 created: 2026-10-02
+quality-review: pass
+quality-reviewed-at: 2026-10-02
+quality-review-evidence: "Independent main-thread review separate from the implementing agent: install.go 1921->386 + 6 files, takeover_backup.go 645->304+308, install_test.go 1779->519+4 files; 3 modified files numstat 0+ (minimal algo), test parity 44=44, 6-symbol byte checks, gates green. Integrated at 64803684."
 ---
 
 ## Summary

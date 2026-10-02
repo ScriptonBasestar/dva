@@ -6,8 +6,11 @@ priority: P3
 effort: S
 exec-tier: standard
 allowed-paths: [internal/config, tasks]
-status: todo
+status: done
 created: 2026-10-02
+quality-review: pass
+quality-reviewed-at: 2026-10-02
+quality-review-evidence: "Independent main-thread review separate from the implementing agent: validate.go 736->525 + validate_schema.go 221; 4 symbols byte-identical vs HEAD, numstat pure, gates green. Integrated at 7c0d00d2."
 ---
 
 ## Summary

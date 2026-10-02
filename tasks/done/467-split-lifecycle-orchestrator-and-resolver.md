@@ -6,8 +6,11 @@ priority: P2
 effort: M
 exec-tier: standard
 allowed-paths: [internal/lifecycle, tasks]
-status: todo
+status: done
 created: 2026-10-02
+quality-review: pass
+quality-reviewed-at: 2026-10-02
+quality-review-evidence: "Independent main-thread review separate from the implementing agent: orchestrator.go 759->421, resolver.go 724->408 + 4 seam files; numstat pure, byte-parity, gates green. Integrated at 07f76402."
 ---
 
 ## Summary

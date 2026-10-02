@@ -6,8 +6,11 @@ priority: P3
 effort: S
 exec-tier: standard
 allowed-paths: [internal/skillclaim, tasks]
-status: todo
+status: done
 created: 2026-10-02
+quality-review: pass
+quality-reviewed-at: 2026-10-02
+quality-review-evidence: "Independent main-thread review separate from the implementing agent: claim.go 639->429 + claim_locks.go; LockSet/Digest/LockedStore/write boundaries awk-verified then deleted, symbol byte-parity, test gates green. Integrated at 7ede2c7c."
 ---
 
 ## Summary

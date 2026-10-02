@@ -6,8 +6,11 @@ priority: P3
 effort: S
 exec-tier: standard
 allowed-paths: [tools/skilldogfood, tasks]
-status: todo
+status: done
 created: 2026-10-02
+quality-review: pass
+quality-reviewed-at: 2026-10-02
+quality-review-evidence: "Independent main-thread review separate from the implementing agent: main.go 1297->431 + skillcopy/verify_steps/verify_contract/snapshot; numstat 0+/866-, 6 symbols byte-identical, main_test.go untouched, gates green. Integrated at c006661c."
 ---
 
 ## Summary

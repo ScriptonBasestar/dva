@@ -6,8 +6,11 @@ priority: P3
 effort: S
 exec-tier: standard
 allowed-paths: [tools/dogfoodrun, tasks]
-status: todo
+status: done
 created: 2026-10-02
+quality-review: pass
+quality-reviewed-at: 2026-10-02
+quality-review-evidence: "Independent main-thread review separate from the implementing agent: dogfood-run.sh 608->392 + dogfood_steps.sh 221; moved blocks byte-identical to HEAD 62-266/301-310, single insertion is the source line, bash -n + ci-lint + --list/--preview exit 0. Integrated at 7cf58d5c."
 ---
 
 ## Summary

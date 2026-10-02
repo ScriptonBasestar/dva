@@ -6,8 +6,11 @@ priority: P2
 effort: L
 exec-tier: standard
 allowed-paths: [internal/cli, tasks]
-status: todo
+status: done
 created: 2026-10-02
+quality-review: pass
+quality-reviewed-at: 2026-10-02
+quality-review-evidence: "Independent main-thread review separate from the implementing agent: compose.go 1364->359, provision.go 668->305, validate.go 1192->261 + 12 seam/test files; numstat pure, gates green, High cleared. Integrated at 519bd704."
 ---
 
 ## Summary

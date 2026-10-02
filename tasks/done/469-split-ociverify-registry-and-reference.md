@@ -6,8 +6,11 @@ priority: P3
 effort: S
 exec-tier: standard
 allowed-paths: [internal/ociverify, tasks]
-status: todo
+status: done
 created: 2026-10-02
+quality-review: pass
+quality-reviewed-at: 2026-10-02
+quality-review-evidence: "Independent main-thread review separate from the implementing agent: verify.go 559->284 + verify_registry/verify_reference; numstat pure, byte-parity, gates green. Integrated at 9cd7be7a."
 ---
 
 ## Summary

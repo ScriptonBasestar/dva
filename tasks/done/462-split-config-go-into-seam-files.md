@@ -6,8 +6,11 @@ priority: P2
 effort: M
 exec-tier: standard
 allowed-paths: [internal/config, tasks]
-status: todo
+status: done
 created: 2026-10-02
+quality-review: pass
+quality-reviewed-at: 2026-10-02
+quality-review-evidence: "Independent main-thread review separate from the implementing agent: config.go+config_test.go seam split; numstat pure deletions, symbol byte-parity vs HEAD, build/vet/gofmt/test gates, package High cleared. Integrated at 152711dd."
 ---
 
 ## Summary

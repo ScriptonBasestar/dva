@@ -6,8 +6,11 @@ priority: P2
 effort: S
 exec-tier: standard
 allowed-paths: [decisions, tasks]
-status: todo
+status: done
 created: 2026-10-02
+quality-review: pass
+quality-reviewed-at: 2026-10-02
+quality-review-evidence: "Independent main-thread review separate from the implementing agent: DECISION-004 ADR + decisions/README.md row verified against template; doc-check passed at integration. Integrated at b91f1d8a."
 ---
 
 ## Summary

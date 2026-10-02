@@ -6,8 +6,11 @@ priority: P2
 effort: M
 exec-tier: standard
 allowed-paths: [internal/config, tasks]
-status: todo
+status: done
 created: 2026-10-02
+quality-review: pass
+quality-reviewed-at: 2026-10-02
+quality-review-evidence: "Independent main-thread review separate from the implementing agent: validate_warnings.go 1575->650 + 6 seam files + 6 test files; numstat pure, test parity, build/vet/gofmt/test gates, High cleared. Integrated at 440d7698."
 ---
 
 ## Summary

@@ -6,8 +6,11 @@ priority: P3
 effort: S
 exec-tier: standard
 allowed-paths: [tools/releaseworkflow, tasks]
-status: todo
+status: done
 created: 2026-10-02
+quality-review: pass
+quality-reviewed-at: 2026-10-02
+quality-review-evidence: "Independent main-thread review separate from the implementing agent: main.go 557->312 + preflight.go 258; 5 symbols byte-identical, numstat 0+/245-, gates green. Integrated at 60ca8b23."
 ---
 
 ## Summary

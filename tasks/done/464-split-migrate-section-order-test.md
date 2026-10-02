@@ -6,8 +6,11 @@ priority: P3
 effort: S
 exec-tier: standard
 allowed-paths: [internal/config, tasks]
-status: todo
+status: done
 created: 2026-10-02
+quality-review: pass
+quality-reviewed-at: 2026-10-02
+quality-review-evidence: "Independent main-thread review separate from the implementing agent: migrate_section_order_test.go 972->558+423; moved block contiguous (HEAD 512-925), test parity 31=17+14, gates green. Integrated at 96692ac7."
 ---
 
 ## Summary

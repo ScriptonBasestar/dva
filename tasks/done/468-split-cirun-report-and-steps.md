@@ -6,8 +6,11 @@ priority: P3
 effort: S
 exec-tier: standard
 allowed-paths: [internal/cirun, tasks]
-status: todo
+status: done
 created: 2026-10-02
+quality-review: pass
+quality-reviewed-at: 2026-10-02
+quality-review-evidence: "Independent main-thread review separate from the implementing agent: cirun.go 848->478 + cirun_report/cirun_steps; fingerprint kept in place; numstat pure, gates green. Integrated at 0c98585d."
 ---
 
 ## Summary
