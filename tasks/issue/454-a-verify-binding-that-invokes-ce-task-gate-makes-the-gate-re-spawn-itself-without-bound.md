@@ -50,4 +50,11 @@ timeout으로 재실행한다. 그 바인딩이 `ce task gate`를 담고 있으�
 ## Resolution Criteria
 
 - [ ] The gate refuses or fails fast when a binding it executes would itself invoke the gate (recursion entry guard), and a timed-out binding leaves no orphaned grandchildren | verify: human — upstream ce-agent-kit guard observed on a reproduction case
-- [ ] DVA doccheck rejects a verify binding invoking `ce task gate` in active-zone cards at authoring time | verify: `/usr/bin/grep -rq 'func TestBindingGateRecursion(' tools/doccheck && go test ./tools/doccheck`
+- [x] DVA doccheck rejects a verify binding invoking `ce task gate` in active-zone cards at authoring time | verify: `/usr/bin/grep -rq 'func TestBindingGateRecursion(' tools/doccheck && go test ./tools/doccheck` (observed: 2026-10-03 — exit 0, [[TASK-460]])
+
+## 2026-10-03 재측정
+
+DVA 측 기준 2는 [[TASK-460]]이 `tools/doccheck`에 구현했고 바인딩이 exit 0으로
+통과해 체크했다. 남은 기준 1(런타임 재귀 가드·프로세스 그룹 종료)은 상류
+ce-agent-kit 소유이고 보고 대기 상태다. DVA가 할 수 있는 일은 없으므로 이 이슈는
+upstream-waiting으로 열어 둔다.
