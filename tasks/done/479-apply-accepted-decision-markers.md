@@ -6,8 +6,11 @@ priority: P1
 effort: S
 exec-tier: standard
 allowed-paths: [CHANGELOG.md, .github/workflows, examples, decisions, tasks]
-status: todo
+status: done
 created: 2026-10-02
+quality-review: pass
+quality-reviewed-at: 2026-10-02
+quality-review-evidence: "Independent main-thread review: DECISION-001/003/004 status grep 3/3, three exempt markers present (filesize High 24 to 21), stale done-card bindings 476/478 rescoped, board gate READY, doc-check pass. Integrated at c40b9859."
 ---
 
 ## Summary
