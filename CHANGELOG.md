@@ -1,4 +1,5 @@
 # Changelog
+<!-- size-limit: exempt, ceiling: 87296 bytes, 1000 lines -- append-only changelog은 분할 시 히스토리가 아니라 미래가 바뀐다 (DECISION-001). ceiling 절반(44KB)에 닿는 릴리스에서 v0.2.x 이하를 아카이브한다. -->
 
 All notable changes to DVA are documented here.
 

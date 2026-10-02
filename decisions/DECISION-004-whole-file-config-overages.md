@@ -3,7 +3,7 @@ id: DECISION-004
 title: "config kind 200라인 상한 vs 온전해야 하는 파일 2건 (ci.yml, full-stack.yml)"
 type: decision
 priority: P3
-status: Proposed
+status: Accepted
 created: 2026-10-02
 ---
 

@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../internal/config/schema.json
+# size-limit: exempt, ceiling: 320 lines -- 예시는 복사해 쓰는 사용자를 위해 온전한 단일 참조여야 한다 (DECISION-004). ceiling 도달 시 예시 자체를 재검토한다.
 #
 # Example: Full-Stack DVA Configuration
 # Use Case: Rails + Node.js + PostgreSQL + Redis

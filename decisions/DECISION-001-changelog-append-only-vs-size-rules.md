@@ -3,7 +3,7 @@ id: DECISION-001
 title: "CHANGELOG.md — append-only 성장과 크기 규칙의 충돌 처리"
 type: decision
 priority: P2
-status: Proposed
+status: Accepted
 created: 2026-10-02
 ---
 

@@ -11,7 +11,7 @@
 
 | ID | 제목 | Status | 핵심 질문 |
 |---|---|---|---|
-| [DECISION-001](DECISION-001-changelog-append-only-vs-size-rules.md) | CHANGELOG.md append-only 성장 vs 크기 규칙 | proposed | 면제 마커+아카이브 정책으로 수렴시킬 것인가 |
+| [DECISION-001](DECISION-001-changelog-append-only-vs-size-rules.md) | CHANGELOG.md append-only 성장 vs 크기 규칙 | accepted | 면제 마커+아카이브 정책으로 수렴시킬 것인가 |
 | [DECISION-002](DECISION-002-generated-immutable-artifacts-size-kind.md) | 생성물·불변 기록의 크기 kind | proposed | flow 생성물과 evidence JSON을 규칙 정본에서 어떻게 다룰 것인가 |
-| [DECISION-003](DECISION-003-json-schemas-ref-split-vs-rules.md) | JSON 스키마 4종 | proposed | $ref 분할(로더 교체 수반) vs 규칙 kind |
-| [DECISION-004](DECISION-004-whole-file-config-overages.md) | 온전해야 하는 config 파일 2건 | proposed | ci.yml·full-stack.yml의 작은 초과를 exempt+ceiling으로 처리할 것인가 |
+| [DECISION-003](DECISION-003-json-schemas-ref-split-vs-rules.md) | JSON 스키마 4종 | accepted | $ref 분할(로더 교체 수반) vs 규칙 kind |
+| [DECISION-004](DECISION-004-whole-file-config-overages.md) | 온전해야 하는 config 파일 2건 | accepted | ci.yml·full-stack.yml의 작은 초과를 exempt+ceiling으로 처리할 것인가 |

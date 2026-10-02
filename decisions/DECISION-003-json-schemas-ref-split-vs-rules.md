@@ -3,7 +3,7 @@ id: DECISION-003
 title: "JSON 스키마 4종 — $ref 분할 vs 규칙 kind vs 수용"
 type: decision
 priority: P3
-status: Proposed
+status: Accepted
 created: 2026-10-02
 ---
 

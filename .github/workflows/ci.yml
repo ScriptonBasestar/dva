@@ -1,3 +1,4 @@
+# size-limit: exempt, ceiling: 280 lines -- 16줄 초과를 없애는 reusable-workflow 분할이 CI 동작 리스크보다 크다 (DECISION-004). ceiling 도달 시 분할을 평가한다.
 name: CI
 
 on:
