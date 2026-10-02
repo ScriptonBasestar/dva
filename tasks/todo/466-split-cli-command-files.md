@@ -32,7 +32,7 @@ cli 패키지의 4개 파일이 한도를 넘는다: `compose.go`(1,364 물리, 
 - [x] `internal/cli/validate.go`가 한도 안에 있다 | verify: `ce validate filesize internal/cli/validate.go` (observed: 2026-10-02 — 261 물리)
 - [x] `internal/cli/provision.go`가 한도 안에 있다 | verify: `ce validate filesize internal/cli/provision.go` (observed: 2026-10-02 — 305 물리)
 - [x] `internal/cli/validate_test.go`가 한도 안에 있다 | verify: `ce validate filesize internal/cli/validate_test.go` (observed: 2026-10-02 — 44 물리)
-- [x] cli 패키지의 다른 어떤 파일도 한도 위반이 아니다 | verify: `! ce validate filesize --all 2>&1 | /usr/bin/grep -q 'internal/cli'`
+- [x] cli 패키지의 다른 어떤 파일도 한도 위반이 아니다 | verify: `! ce validate filesize --all 2>&1 | /usr/bin/grep -q '🟠 internal/cli'` (observed: 2026-10-02 — High 마커 없음; 원 바인딩은 Skipped 안내 줄의 internal/cli 문자열까지 매칭하는 false positive)
 - [x] 이동 후 cli 패키지 테스트가 통과한다 | verify: `go test ./internal/cli/ 2>&1 | /usr/bin/grep -q '^ok'`
 - [x] vet이 깨끗하다 | verify: `go vet ./internal/cli/`
 - [x] diff가 함수·타입 이동만 포함한다 | verify: human — split commit diff review
