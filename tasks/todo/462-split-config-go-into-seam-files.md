@@ -43,7 +43,7 @@ TestProvisionConfig* → `provision_test.go`, 엔드포인트·나머지는 conf
 - [x] `internal/config/config.go`가 config kind 한도 안에 있다 | verify: `ce validate filesize internal/config/config.go` (observed: 2026-10-02 — 450 lines, 전체 9파일 검사 No issues)
 - [x] `internal/config/config_test.go`가 test kind 한도 안에 있다 | verify: `ce validate filesize internal/config/config_test.go` (observed: 2026-10-02 — 447 lines)
 - [x] 이동 후 패키지 전체 테스트가 통과한다 | verify: `go test ./internal/config/ 2>&1 | /usr/bin/grep -q '^ok'` (observed: 2026-10-02 — `-count=1` 재실행 ok 1.2s)
-- [x] vet이 깨끗하다(이동만으로 순환 import·미사용 등 재발 없음) | verify: `! go vet ./internal/config/` (observed: 2026-10-02)
+- [x] vet이 깨끗하다(이동만으로 순환 import·미사용 등 재발 없음) | verify: `go vet ./internal/config/` (observed: 2026-10-02)
 - [x] diff가 함수·타입 이동만 포함한다(시그니처·동작·주석 내용 변경 없음) | verify: human — split commit diff review (observed: 2026-10-02 — main-thread 리뷰: `git diff --numstat` config.go 0+/1181-, config_test.go 0+/666- 순수 삭제, 테스트 수 파리티 37=17+10+4+6)
 - [x] 전체 lint가 통과한다 | verify: human — `make lint` output is linked in Evidence (exceeds the 30s binding budget) (observed: 2026-10-02 — vet ./... + gofmt 544 files + ci-lint 0 issues)
 
