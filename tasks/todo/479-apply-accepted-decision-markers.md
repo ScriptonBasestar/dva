@@ -24,7 +24,7 @@ DECISION-002는 여전히 Proposed(upstream 보고 실행 대기)다.
 - [x] CHANGELOG.md가 High가 아니다 | verify: `! ce validate filesize --all 2>&1 | /usr/bin/grep -q '🟠 CHANGELOG.md'` (observed: 2026-10-02 — 전체 High 24에서 21로, 해당 3건 소멸 확인)
 - [x] ci.yml이 High가 아니다 | verify: `! ce validate filesize --all 2>&1 | /usr/bin/grep -q '🟠 .github/workflows/ci.yml'` (observed: 2026-10-02 — YAML 주석 마커도 게이트가 인정함을 실측)
 - [x] full-stack.yml이 High가 아니다 | verify: `! ce validate filesize --all 2>&1 | /usr/bin/grep -q '🟠 examples/full-stack.yml'` (observed: 2026-10-02)
-- [x] 결정 3건이 Accepted다 | verify: `/usr/bin/grep -c '^status: Accepted' decisions/DECISION-001-changelog-append-only-vs-size-rules.md decisions/DECISION-003-json-schemas-ref-split-vs-rules.md decisions/DECISION-004-whole-file-config-overages.md | /usr/bin/grep -q '^3$'` (observed: 2026-10-02 — 3/3)
+- [x] 결정 3건이 Accepted다 | verify: `/usr/bin/grep -l '^status: Accepted' decisions/DECISION-001-changelog-append-only-vs-size-rules.md decisions/DECISION-003-json-schemas-ref-split-vs-rules.md decisions/DECISION-004-whole-file-config-overages.md | /usr/bin/grep -c . | /usr/bin/grep -q '^3$'` (observed: 2026-10-02 — 3/3; 다중 파일 grep -c는 file:N 행을 출력하므로 -l 목록으로 집계)
 - [x] decisions README 테이블이 확정을 반영한다 | verify: human — diff review (observed: 2026-10-02 — 3행 proposed에서 accepted로)
 - [x] 문서 게이트가 통과한다 | verify: `make doc-check` (regression-guard) (observed: 2026-10-02)
 

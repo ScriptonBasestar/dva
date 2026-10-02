@@ -26,7 +26,7 @@ TASK-477는 run-finish DONE(큐 정리 완료)이지만 카드 자체가 tasks/t
 - [x] 477과 478 카드가 done 존에 있고 todo에는 없다 | verify: `/usr/bin/find tasks -name '477-close-split-cycle-cards.md' | /usr/bin/grep -q 'done/' && /usr/bin/find tasks -name '478-self-close-bookkeeping-cards.md' | /usr/bin/grep -q 'done/' && ! /usr/bin/find tasks -path 'tasks/todo/*' -name '47[78]-*.md' | /usr/bin/grep -q .` (observed: 2026-10-02 — 양쪽 바인딩 워크트리에서 exit 0)
 - [x] 두 카드 모두 quality-review: pass 필드를 가진다 | verify: `/usr/bin/grep -rq --include='477-close-split-cycle-cards.md' '^quality-review: pass' tasks && /usr/bin/grep -rq --include='478-self-close-bookkeeping-cards.md' '^quality-review: pass' tasks` (observed: 2026-10-02 — 2/2)
 - [x] 문서 게이트가 통과한다 | verify: `make doc-check` (regression-guard) (observed: 2026-10-02)
-- [x] 큐의 todo 존에 티킹 완료 카드가 남지 않는다 | verify: `! ce task list 2>&1 | /usr/bin/grep -q 'tasks/todo/47'` (observed: 2026-10-02 — todo에는 459만 잔존)
+- [x] 본 카드가 종결한 477·478이 todo 존에 남지 않는다 — 47x 전역 스코프는 이후 사이클의 정상 진행 카드(TASK-479 등)까지 영구히 잡아 불변식이 성립하지 않아, 종결 대상 2장으로 한정 | verify: `! ce task list 2>&1 | /usr/bin/grep -qE 'todo/47[78]'` (observed: 2026-10-02 — 종결 시 todo 잔존은 459뿐; 스코프 수정 후에도 exit 0)
 
 ## Evidence
 

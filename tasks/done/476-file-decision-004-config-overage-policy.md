@@ -26,7 +26,7 @@ filesize High 47개 분류에서 전체 파일 기준 초과(config yml 계열)�
 
 - [x] `decisions/DECISION-004-whole-file-config-overages.md`가 markdown kind 한도 안에 있다 | verify: `ce validate filesize decisions/DECISION-004-whole-file-config-overages.md` (observed: 2026-10-02 — No issues found)
 - [x] decisions/README.md 색인에 DECISION-004 행이 있다 | verify: `/usr/bin/grep -q 'DECISION-004' decisions/README.md` (observed: 2026-10-02 — 1행 추가)
-- [x] 상태가 Proposed(인간 결정 대기)로 기록돼 있다 | verify: `/usr/bin/grep -q '^status: Proposed' decisions/DECISION-004-whole-file-config-overages.md` (observed: 2026-10-02)
+- [x] 상태가 결정 상태로 기록돼 있다 — 카드 종결 시 Proposed, 2026-10-02 인간 확정으로 Accepted 전환(TASK-479) | verify: `/usr/bin/grep -qE '^status: (Accepted|Superseded)' decisions/DECISION-004-whole-file-config-overages.md` (observed: 2026-10-02 — Accepted; 종결 시점 스냅샷 리터럴은 결정 라이프사이클 전환에 깨지므로 종결 상태 집합으로 수정)
 - [x] 전체 lint가 통과한다 | verify: human — `make lint` output is linked in Evidence (exceeds the 30s binding budget)
 
 ## Evidence
