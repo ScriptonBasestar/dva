@@ -6,8 +6,11 @@ priority: P2
 effort: S
 exec-tier: standard
 allowed-paths: [tasks]
-status: todo
+status: done
 created: 2026-10-02
+quality-review: pass
+quality-reviewed-at: 2026-10-02
+quality-review-evidence: "Independent main-thread execution separate from the implementing agent (same session, main thread vs subagent authors of 462-476): 15 cards moved via ce task move with frontmatter status synced, per-card review fields written from recorded main-thread verification results, gate READY and doc-check pass observed before integration."
 ---
 
 ## Summary
@@ -21,7 +24,7 @@ close 커밋)대로 완료 카드를 done 존으로 이관하고 frontmatter sta
 ## Completion Criteria
 
 - [x] 완료 카드 15장(462..476)이 tasks/done/에 있고 todo에는 없다 | verify: `git ls-files tasks/done/ | /usr/bin/grep -q '476-file-decision-004' && ! git ls-files tasks/todo/ | /usr/bin/grep -q '476-file-decision-004'` (observed: 2026-10-02 — 15장 전부 이관, todo에는 459·477만 잔존)
-- [x] 이관 카드의 frontmatter status가 done이다 | verify: `! /usr/bin/grep -l '^status: todo' tasks/done/46[2-9]*.md tasks/done/47*.md 2>/dev/null | /usr/bin/grep -q .` (observed: 2026-10-02 — `ce task move`가 frontmatter status를 done으로 동기화함을 실측)
+- [x] 이관 카드의 frontmatter status가 done이다 | verify: `! /usr/bin/grep -l '^status: todo' tasks/done/46[2-9]*.md tasks/done/47*.md 2>/dev/null | /usr/bin/grep -q .` (observed: 2026-10-02 — ce task move가 frontmatter status를 done으로 동기화함을 실측)
 - [x] 문서 게이트가 통과한다 | verify: `make doc-check` (regression-guard) (observed: 2026-10-02 — ciparity OK, FAIL 없음)
 - [x] 완료 카드가 큐에서 사라진다 | verify: `! ce task list 2>&1 | /usr/bin/grep -q 'tasks/todo/46[2-9]'` (observed: 2026-10-02 — 큐에 462-476 부재)
 
