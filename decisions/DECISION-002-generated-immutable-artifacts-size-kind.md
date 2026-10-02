@@ -64,3 +64,6 @@ the gate"), 교정 위치는 파일이 아니라 규칙 정본이다.
 - B를 interim으로 쓰면: `file-size.yaml`(repo-root) 신규 + 제거 조건
   기록. 규칙 포크의 drift 비용을 감수하는 기간이 생긴다.
 - flowgen이 마커를 소유하도록 바꾸는 C는 부분 해결이라 채택하지 않는다.
+
+업스트림에 보내지 않은 초안: [생성물·불변 기록 크기 규칙 보고](../docs/69-generated-artifact-upstream-report.md).
+이 결정의 상태는 Proposed다. A/B/C 선택은 사람이 한다. 초안의 규칙 설계는 제안이며 수락된 규칙이 아니다.
