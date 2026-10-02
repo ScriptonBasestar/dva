@@ -6,7 +6,7 @@ priority: P2
 effort: M
 exec-tier: standard
 allowed-paths: [internal/config, tasks]
-status: done
+status: todo
 created: 2026-10-02
 ---
 
