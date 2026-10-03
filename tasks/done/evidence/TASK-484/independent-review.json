@@ -1,0 +1,39 @@
+{
+  "card": "TASK-484",
+  "alsoReviewed": "TASK-482",
+  "verdict": "PASS",
+  "finding": "FAIL #1 corrections hold. ISSUE-454 criterion 1 is checked and runs canonical source validation plus declaration guards and both CE packages with no -run filter. The withdrawn TestBindingGateRecursion workaround is absent from that command. TASK-482 is unsealed and its live criterion matches the checked source regression; the historical receipt is unchanged. adoption.json locks eight expected/actual statuses, the full commit, and error limits 200, 200, 1000. Undated waiting claims are dated history.",
+  "reviewerSession": "01a10227-0d9f-7bb0-b0c7-d370ef960dd5",
+  "reviewerModel": "grok-4.7",
+  "authorSession": "01a10217-de37-7d03-bb8c-2e2a80dd37dc",
+  "reviewedAt": "2026-10-03T14:49:14Z",
+  "source": {
+    "CLAUDE_PLUGIN_SOURCE": "/Users/archmagece/mywork/ce/ce-agent-kit",
+    "HEAD": "1270e1dc47bc7f3a2421de2074b92f619e4298a7",
+    "ancestor378Exit": 0,
+    "ancestor379Exit": 0,
+    "installedRuntimeModified": false
+  },
+  "checks": {
+    "issue454VerifyExit": 0,
+    "issue454Packages": "ok internal/usecase/task 3.932s; ok internal/adapter/cli/commands 80.031s",
+    "issue454RunFilter": "absent",
+    "workaroundTestBindingGateRecursionInIssue454Verify": "absent",
+    "declarationGuards": [
+      "func TestCheckedBindingTimeoutStopsGrandchild",
+      "func TestCheckedBindingEarlyLeaderExitStopsDescendant",
+      "func TestCheckedBindingSetsRecursionMarker",
+      "func TestTaskGateRefusesNestedRun",
+      "func TestTaskGateBindingChildGetsMarker"
+    ],
+    "task484CriteriaExit": [0, 0, 0, 0, 0, 0],
+    "task482CriteriaExit": [0, 0, 0, 0, 0],
+    "task482Criterion5": "make doc-check exit 0",
+    "docCheckExit": 0,
+    "validateAllExit": 0,
+    "validateSummary": "540 valid, 0 invalid",
+    "gateExit": 0,
+    "gateVerdict": "READY — task_board_ready",
+    "historicalTask482Receipt": "tasks/done/evidence/TASK-482/independent-review.json unchanged"
+  }
+}

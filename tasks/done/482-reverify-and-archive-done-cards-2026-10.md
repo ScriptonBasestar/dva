@@ -8,8 +8,8 @@ exec-tier: standard
 allowed-paths: [tasks, docs/70-generated-artifact-upstream-report.md, decisions/DECISION-002-generated-immutable-artifacts-size-kind.md]
 status: done
 quality-review: pass
-quality-reviewed-at: 2026-10-03
-quality-review-evidence: "Separate claude-opus-5-5 reviewer agent PASS (implementer: claude-opus-5-5 main session); tasks/done/evidence/TASK-482/independent-review.json"
+quality-reviewed-at: 2026-10-03T14:49:14Z
+quality-review-evidence: "Independent grok-4.7 session 01a10227-0d9f-7bb0-b0c7-d370ef960dd5 re-review PASS after the TASK-484 criterion correction; tasks/done/evidence/TASK-484/independent-review.json"
 created: 2026-10-03
 ---
 
@@ -25,10 +25,12 @@ open issue 5장과 todo 1장(TASK-459)은 트리아지했다. 재검증 중 발�
 - [x] 재검증한 30장이 `tasks/_archive/2026-10/`에 있고 각 카드에 `archived-at:`이 있다 | verify: `test "$(git ls-files 'tasks/_archive/2026-10/*.md' | xargs /usr/bin/grep -l '^archived-at: 2026-10-03' | wc -l)" -ge 30` (observed: 2026-10-03 — exit 0)
 - [x] TASK-473/474의 빌드 바인딩이 저장소 루트에 바이너리를 남기지 않는다 | verify: `/usr/bin/grep -rq --include='474-split-skilldogfood-*.md' -F 'go build -o /dev/null ./tools/skilldogfood/' tasks && /usr/bin/grep -rq --include='473-split-releaseworkflow-*.md' -F 'go build -o /dev/null ./tools/releaseworkflow/' tasks` (observed: 2026-10-03 — exit 0)
 - [x] 번호가 겹치던 업스트림 초안이 `docs/70`이고 DECISION-002가 그 경로를 가리킨다 | verify: `test -f docs/70-generated-artifact-upstream-report.md && ! test -e docs/69-generated-artifact-upstream-report.md && /usr/bin/grep -q -F 70-generated-artifact-upstream-report.md decisions/DECISION-002-generated-immutable-artifacts-size-kind.md` (observed: 2026-10-03 — exit 0)
-- [x] ISSUE-454의 DVA 측 기준이 체크되고 상류 기준은 열린 채로 남는다 | verify: `/usr/bin/grep -rq --include='454-a-verify-binding-*.md' '^- \[x\] DVA doccheck rejects' tasks && /usr/bin/grep -rq --include='454-a-verify-binding-*.md' '^- \[ \] The gate refuses' tasks` (observed: 2026-10-03 — exit 0)
+- [x] ISSUE-454의 DVA 측 기준이 체크되고 상류 기준은 소스 회귀로 체크된다 | verify: `/usr/bin/grep -rq --include='454-a-verify-binding-*.md' '^- \[x\] DVA doccheck rejects' tasks && /usr/bin/grep -rq --include='454-a-verify-binding-*.md' '^- \[x\] The gate refuses' tasks && /usr/bin/grep -rq --include='454-a-verify-binding-*.md' -F 'ce source validate --source' tasks && /usr/bin/grep -rq --include='454-a-verify-binding-*.md' -F 'TestCheckedBindingEarlyLeaderExitStopsDescendant' tasks && /usr/bin/grep -rq --include='454-a-verify-binding-*.md' -F 'TestTaskGateRefusesNestedRun' tasks` (observed: 2026-10-03 — exit 0)
 - [x] 문서 게이트가 통과한다 | verify: `make doc-check` (regression-guard) (observed: 2026-10-03 — exit 0)
 
-## Triage (Phase 1·2)
+## Triage (2026-10-03 당시)
+
+아래 표는 그날의 트리아지다. ISSUE-454와 ISSUE-461 행은 그 시점의 판정이다.
 
 | 카드 | 판정 | 사유 |
 |:---|:---|:---|
@@ -38,6 +40,10 @@ open issue 5장과 todo 1장(TASK-459)은 트리아지했다. 재검증 중 발�
 | ISSUE-454 | upstream-waiting | DVA 기준 2 체크(바인딩 exit 0). 기준 1은 ce-agent-kit |
 | ISSUE-461 | upstream-waiting | DVA 측 할 일 없음 |
 | TASK-459 | todo 유지 | 남은 두 기준은 실제 자격 증명이 필요한 사람 확인 |
+
+## 2026-10-03 factual correction (TASK-484)
+
+이 카드는 봉인되지 않았다. `blocks:`가 없고 `quality-review-receipt`도 없다. `docs/406`의 digest 검사는 여기 닿지 않는다. 기준 4가 ISSUE-454의 게이트 기준 미체크를 요구하던 것은 폐기했다. 지금 그 기준은 체크된 소스 회귀다. 기존 `tasks/done/evidence/TASK-482/independent-review.json`은 덮어쓰지 않았다. 독립 재리뷰 PASS (2026-10-03T14:49:14Z, grok-4.7 세션 `01a10227-0d9f-7bb0-b0c7-d370ef960dd5`). 기준 1–5 exit 0. 영수증은 [TASK-484 independent-review.json](evidence/TASK-484/independent-review.json).
 
 ## Evidence
 

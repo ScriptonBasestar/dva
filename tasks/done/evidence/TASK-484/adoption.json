@@ -1,0 +1,51 @@
+{
+  "CECommit": "1270e1dc47bc7f3a2421de2074b92f619e4298a7",
+  "rulesSource": "validated canonical CE source/src, via process-local CE_CONFIG_DIR",
+  "installedRuntimeModified": false,
+  "cases": [
+    {
+      "file": "agent-mesh-flows/dva-improve.yaml",
+      "expectedExit": 0,
+      "actualExit": 0
+    },
+    {
+      "file": "agent-mesh-flows/dva-diagnose.yaml",
+      "expectedExit": 0,
+      "actualExit": 0
+    },
+    {
+      "file": "agent-mesh-flows/dva-improve-guided/00-analyze.yaml",
+      "expectedExit": 0,
+      "actualExit": 0
+    },
+    {
+      "file": "agent-mesh-flows/dva-improve-guided/30-configure.yaml",
+      "expectedExit": 0,
+      "actualExit": 0
+    },
+    {
+      "file": "agent-mesh-flows/dva-improve-guided/10-verify.yaml",
+      "expectedExit": 1,
+      "actualExit": 1,
+      "errorLimit": 200
+    },
+    {
+      "file": "agent-mesh-flows/dva-improve-guided/40-execute.yaml",
+      "expectedExit": 1,
+      "actualExit": 1,
+      "errorLimit": 200
+    },
+    {
+      "file": "internal/config/schema.json",
+      "expectedExit": 1,
+      "actualExit": 1,
+      "errorLimit": 1000
+    },
+    {
+      "file": "tasks/done/evidence/TASK-387/done-review-083dc5bd9a2b3f18da4c96dc9cd0c9728082062b40d1ad07c7508ecf407f078b.json",
+      "expectedExit": 0,
+      "actualExit": 0,
+      "lines": 351
+    }
+  ]
+}

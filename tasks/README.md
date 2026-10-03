@@ -5,20 +5,23 @@
 v0.3.0 공개와 postflight는 완료됐고 PLAN-010(8/8)과 PLAN-011(19/19)은
 `tasks/_archive/plan/`에 보관됐다. 열린 계획은 없다. 과거 판정은 보관된 카드와 Git 이력이 소유한다.
 2026-10-03 [[TASK-482]]가 done 카드 30장(TASK-449~481)을 재검증해 전부 `tasks/_archive/2026-10/`로 보관했다.
-`tasks/done/`에는 TASK-482, 이번 결정·인계를 닫은 TASK-483과 durable review evidence가 있다 —
-TASK-482는 다음 정리 주기에 독립 재검증을 받는다.
+`tasks/done/`에는 TASK-482, 결정·인계를 닫은 TASK-483, 정본 소스 후속을 마감한 TASK-484와 durable review evidence가 있다 —
+TASK-482의 현행 기준은 TASK-484에서 별도 grok-4.7 세션이 재검증했다. 기존 리뷰 영수증도 보존했다.
 DECISION-002는 2026-10-03에 Accepted다. 정본 upstream만 택했고 interim B는 쓰지 않는다.
 인계는 [생성물 크기 규칙 보고](../docs/70-generated-artifact-upstream-report.md)다.
-이슈로 제출하지 않았고, ce-agent-kit은 고치지 않았다.
+정본 구현은 ce-agent-kit `1270e1dc47bc7f3a2421de2074b92f619e4298a7`이다. 설치본은 자동으로 바뀌지 않는다.
 
-열린 이슈 (전부 DVA 측에서 처리할 수 있는 작업이 없다):
+열린 이슈:
 
 - ISSUE-004/006 (upstream-waiting): taskchain-task-manager W13/W14 제품 구현은 완료됐고 DVA 실행 소비자 채택과 사람 전용 terminal 실측을 기다린다.
 - ISSUE-453 (blocked, 사람 승인): W07c2a 배포 artifact 승인과 pin 활성화, 양성·음성 host 실측을 기다린다.
-- ISSUE-454 (upstream-waiting): DVA 측 작성 시점 검사([[TASK-460]])는 체크됐고, `ce` 런타임 재귀 가드만 ce-agent-kit 보고를 기다린다.
-- ISSUE-461 (upstream-waiting): bare `ce task run-finish` 자동 선택은 ce-agent-kit 소유다.
 
-열린 todo: TASK-459는 체크된 기준 7개(기계 6 + `make test`·`make lint` 1)가 통과했고, 만료 토큰 종료 코드 실측과 라이브 `dva doctor` 두 사람 확인만 남았다. 그 두 사람 확인은 그대로다. [TASK-483](done/483-accept-decision-002-upstream-handoff.md)은 위 수락과 인계를 완료하고 독립 리뷰 PASS 후 `tasks/done/`으로 옮겼다.
+정본 소스로 닫아 `_archive/issue/`에 둔 이슈. 설치본은 자동으로 바뀌지 않는다.
+
+- ISSUE-454: 정본 ce-agent-kit `9b0b0305a553aec3faceeefd12bd6db6fd5a312d`(TASK-379)가 timeout 뒤 프로세스 그룹의 자손을 끝낸다. DVA 작성 시점 검사([[TASK-460]])와 설치본의 재귀 가드 관찰은 그대로다. 기록은 [[TASK-484]].
+- ISSUE-461: 정본 `1f3f9a74be0cbe9cbb9aa8de943331eb05bdac2e`(TASK-378)가 같은 소유자의 활성 실행이 하나일 때 bare `ce task run-finish`를 고른다. 없거나 여럿이면 거부한다. 기록은 [[TASK-484]].
+
+열린 todo: TASK-459는 체크된 기준 7개(기계 6 + `make test`·`make lint` 1)가 통과했고, 만료 토큰 종료 코드 실측과 라이브 `dva doctor` 두 사람 확인만 남았다. 그 두 사람 확인은 그대로다. [TASK-483](done/483-accept-decision-002-upstream-handoff.md)은 위 수락과 인계를 완료하고 독립 리뷰 PASS 후 `tasks/done/`으로 옮겼다. [TASK-484](done/484-record-ce-378-379-source-followup.md)는 별도 grok-4.7 세션의 독립 재리뷰 PASS 뒤 완료됐다.
 
 보드 현행화는 `tasks/`만이 아니라 `git worktree list`와 `ce task run-list`도 함께 확인한다.
 완료 카드는 현행화 태스크 끝에 `tasks/_archive/YYYY-MM/`로 보관한다(`done-finalize`는 카드를 삭제해 plan children을 깨뜨린다).

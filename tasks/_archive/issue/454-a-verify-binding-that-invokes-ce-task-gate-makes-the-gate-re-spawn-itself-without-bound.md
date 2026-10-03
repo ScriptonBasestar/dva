@@ -3,13 +3,16 @@ id: ISSUE-454
 title: "A verify binding that invokes ce task gate makes the gate re-spawn itself without bound"
 type: bug
 priority: P1
-status: todo
+status: done
 severity: medium
 discovered-in: "2026-09-30 TASK-458 integration readiness check"
 discovered-at: 2026-10-01
 created: 2026-10-01
 ownership: split
-upstream-ref: "ce-agent-kit (report pending — next upstream wave)"
+upstream-ref: "ce-agent-kit 9b0b0305a553aec3faceeefd12bd6db6fd5a312d (TASK-379). 설치본은 이 개정으로 자동 갱신되지 않는다. 이전 값은 report pending이었다."
+resolution: fixed
+resolved-at: 2026-10-03T14:12:06Z
+resolution-summary: "Resolved as fixed by TASK-484."
 ---
 
 ## Summary
@@ -49,10 +52,10 @@ timeout으로 재실행한다. 그 바인딩이 `ce task gate`를 담고 있으�
 
 ## Resolution Criteria
 
-- [ ] The gate refuses or fails fast when a binding it executes would itself invoke the gate (recursion entry guard), and a timed-out binding leaves no orphaned grandchildren | verify: human — upstream ce-agent-kit guard observed on a reproduction case
+- [x] The gate refuses or fails fast when a binding it executes would itself invoke the gate (recursion entry guard), and a timed-out binding leaves no orphaned grandchildren | verify: `test -n "$CLAUDE_PLUGIN_SOURCE" && test -d "$CLAUDE_PLUGIN_SOURCE/internal/usecase/task" && test -d "$CLAUDE_PLUGIN_SOURCE/internal/adapter/cli/commands" && test -f "$CLAUDE_PLUGIN_SOURCE/internal/usecase/task/gate_reexec_descendants_unix_test.go" && test -f "$CLAUDE_PLUGIN_SOURCE/internal/adapter/cli/commands/task_gate_nested_test.go" && /usr/bin/grep -q -F 'func TestCheckedBindingTimeoutStopsGrandchild' "$CLAUDE_PLUGIN_SOURCE/internal/usecase/task/gate_reexec_descendants_unix_test.go" && /usr/bin/grep -q -F 'func TestCheckedBindingEarlyLeaderExitStopsDescendant' "$CLAUDE_PLUGIN_SOURCE/internal/usecase/task/gate_reexec_descendants_unix_test.go" && /usr/bin/grep -q -F 'func TestCheckedBindingSetsRecursionMarker' "$CLAUDE_PLUGIN_SOURCE/internal/usecase/task/gate_reexec_descendants_unix_test.go" && /usr/bin/grep -q -F 'func TestTaskGateRefusesNestedRun' "$CLAUDE_PLUGIN_SOURCE/internal/adapter/cli/commands/task_gate_nested_test.go" && /usr/bin/grep -q -F 'func TestTaskGateBindingChildGetsMarker' "$CLAUDE_PLUGIN_SOURCE/internal/adapter/cli/commands/task_gate_nested_test.go" && ce source validate --source "$CLAUDE_PLUGIN_SOURCE" && ( cd "$CLAUDE_PLUGIN_SOURCE" && go test -count=1 ./internal/usecase/task ./internal/adapter/cli/commands )` (observed: 2026-10-03 — exit 0)
 - [x] DVA doccheck rejects a verify binding invoking `ce task gate` in active-zone cards at authoring time | verify: `/usr/bin/grep -rq 'func TestBindingGateRecursion(' tools/doccheck && go test ./tools/doccheck` (observed: 2026-10-03 — exit 0, [[TASK-460]])
 
-## 2026-10-03 재측정
+## 2026-10-03 재측정 (당시)
 
 DVA 측 기준 2는 [[TASK-460]]이 `tools/doccheck`에 구현했고 바인딩이 exit 0으로
 통과해 체크했다. 남은 기준 1(런타임 재귀 가드·프로세스 그룹 종료)은 상류
@@ -85,4 +88,10 @@ upstream-waiting으로 열어 둔다.
 
 재귀 폭주라는 이 이슈의 관측 피해는 이제 재현되지 않는다. 남은 것은 장시간 바인딩이
 timeout 뒤 자식을 남기는 일반 결함이며, 그 보고는 아직 상류에 없다. 기준 1은 두
-요구가 모두 충족될 때 체크하므로 미체크로 둔다.
+요구가 모두 충족될 때 체크하므로 당시에는 미체크였다.
+
+## 2026-10-03 정본 소스 — TASK-484
+
+위 문단은 당시 설치본 `vcs.revision=f3a8ba78` 관찰이다. 그 시점의 정본 HEAD 기록은 `9b0b0305a553aec3faceeefd12bd6db6fd5a312d`였다.
+
+현재 HEAD는 `1270e1dc47bc7f3a2421de2074b92f619e4298a7`이다. `9b0b0305a553aec3faceeefd12bd6db6fd5a312d`는 그 조상이다. 기준 1은 소스의 `ce source validate`와 선언 가드를 통과한 뒤 `internal/usecase/task`와 `internal/adapter/cli/commands` 패키지 전체를 `go test -count=1`로 돈다. `-run`은 없다. 설치 CLI의 프로덕션 워크플로는 실행하지 않았다.
