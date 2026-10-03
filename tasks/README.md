@@ -5,8 +5,11 @@
 v0.3.0 공개와 postflight는 완료됐고 PLAN-010(8/8)과 PLAN-011(19/19)은
 `tasks/_archive/plan/`에 보관됐다. 열린 계획은 없다. 과거 판정은 보관된 카드와 Git 이력이 소유한다.
 2026-10-03 [[TASK-482]]가 done 카드 30장(TASK-449~481)을 재검증해 전부 `tasks/_archive/2026-10/`로 보관했다.
-`tasks/done/`에는 자기 자신을 닫는 TASK-482와 durable review evidence만 남는다 —
+`tasks/done/`에는 TASK-482, 이번 결정·인계를 닫은 TASK-483과 durable review evidence가 있다 —
 TASK-482는 다음 정리 주기에 독립 재검증을 받는다.
+DECISION-002는 2026-10-03에 Accepted다. 정본 upstream만 택했고 interim B는 쓰지 않는다.
+인계는 [생성물 크기 규칙 보고](../docs/70-generated-artifact-upstream-report.md)다.
+이슈로 제출하지 않았고, ce-agent-kit은 고치지 않았다.
 
 열린 이슈 (전부 DVA 측에서 처리할 수 있는 작업이 없다):
 
@@ -15,7 +18,7 @@ TASK-482는 다음 정리 주기에 독립 재검증을 받는다.
 - ISSUE-454 (upstream-waiting): DVA 측 작성 시점 검사([[TASK-460]])는 체크됐고, `ce` 런타임 재귀 가드만 ce-agent-kit 보고를 기다린다.
 - ISSUE-461 (upstream-waiting): bare `ce task run-finish` 자동 선택은 ce-agent-kit 소유다.
 
-열린 todo: TASK-459는 체크된 기준 7개(기계 6 + `make test`·`make lint` 1)가 통과했고, 만료 토큰 종료 코드 실측과 라이브 `dva doctor` 두 사람 확인만 남았다.
+열린 todo: TASK-459는 체크된 기준 7개(기계 6 + `make test`·`make lint` 1)가 통과했고, 만료 토큰 종료 코드 실측과 라이브 `dva doctor` 두 사람 확인만 남았다. 그 두 사람 확인은 그대로다. [TASK-483](done/483-accept-decision-002-upstream-handoff.md)은 위 수락과 인계를 완료하고 독립 리뷰 PASS 후 `tasks/done/`으로 옮겼다.
 
 보드 현행화는 `tasks/`만이 아니라 `git worktree list`와 `ce task run-list`도 함께 확인한다.
 완료 카드는 현행화 태스크 끝에 `tasks/_archive/YYYY-MM/`로 보관한다(`done-finalize`는 카드를 삭제해 plan children을 깨뜨린다).
