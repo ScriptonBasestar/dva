@@ -58,3 +58,31 @@ DVA 측 기준 2는 [[TASK-460]]이 `tools/doccheck`에 구현했고 바인딩�
 통과해 체크했다. 남은 기준 1(런타임 재귀 가드·프로세스 그룹 종료)은 상류
 ce-agent-kit 소유이고 보고 대기 상태다. DVA가 할 수 있는 일은 없으므로 이 이슈는
 upstream-waiting으로 열어 둔다.
+
+## 2026-10-03 상류 재측정 — resolved-in-part
+
+기준 1은 두 요구를 묶는다. 상류가 그중 **재귀 진입 가드만** 출하했다.
+
+- **해결됨 — 재귀 진입 가드.** 다른 저장소(primeno1-devbox)에서 같은 결함이 상류
+  ISSUE-101로 따로 보고됐고, ce-agent-kit `58e2b79d`("refuse a gate started inside a
+  gate's bindings step", TASK-365)가 고쳤다. bindings 단계는 각 바인딩을
+  `CE_TASK_GATE_ACTIVE=1`로 실행하고, 그 표식이 있는 상태에서 시작된 게이트는 즉시
+  exit 2로 끝난다. 설치된 `ce`(`vcs.revision=f3a8ba78`, `58e2b79d`를 조상으로 포함)에서
+  실측했다:
+
+  ```
+  $ CE_TASK_GATE_ACTIVE=1 ce task gate
+  ce task gate: refusing to run inside another gate's bindings step (CE_TASK_GATE_ACTIVE is set); a verify binding must not invoke the gate
+  exit=2   (0.008s)
+  ```
+
+- **미해결 — timeout 시 손자 프로세스 정리.** `internal/usecase/task/gate_reexec.go`의
+  `runCheckedBinding`은 여전히 `exec.CommandContext(runCtx, "sh", "-c", command)`에
+  `Setpgid`·프로세스 그룹 kill·`WaitDelay`가 없다. 30초 timeout은 `sh`만 죽이고,
+  바인딩이 띄운 손자 프로세스는 남는다. ce-agent-kit의 열린 카드 중 이 요구를
+  추적하는 것은 없다(`orphan|process group|grandchild|setpgid` 검색 0건) — 상류
+  ISSUE-101은 재귀만 요구했고 fixed로 보관됐다.
+
+재귀 폭주라는 이 이슈의 관측 피해는 이제 재현되지 않는다. 남은 것은 장시간 바인딩이
+timeout 뒤 자식을 남기는 일반 결함이며, 그 보고는 아직 상류에 없다. 기준 1은 두
+요구가 모두 충족될 때 체크하므로 미체크로 둔다.

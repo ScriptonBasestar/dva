@@ -61,3 +61,13 @@ Error: task execution states returned
 
 없다 — 기록과 업스트림 보고 대기. 재발 시 메모리
 (ce-run-finish-needs-explicit-task-id)의 절차로 우회한다.
+
+## 2026-10-03 상류 재측정 — 여전히 재현
+
+ce-agent-kit 현행 소스(설치본 `vcs.revision=f3a8ba78`과 같은 계열)에서 경로가
+그대로다. `TaskRunFinish`는 인자가 없으면 빈 task로 `Service.Finish`를 부르고,
+`Finish`는 `s.status(ctx, "", …)`가 돌려준 목록 응답(`listResponse`, "task execution
+states returned" / "select a task")에 `Execution`이 없으므로 그대로 exit 1을 낸다
+(`internal/usecase/taskruntime/service_lifecycle.go`). 단일 ACTIVE 자동 선택이나
+오류 안의 `nextAction` 노출은 없다. 상류 카드에도 이 요구를 추적하는 항목이 없다.
+upstream-waiting 유지.
