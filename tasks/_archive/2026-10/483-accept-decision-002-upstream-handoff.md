@@ -11,6 +11,7 @@ quality-review: pass
 quality-reviewed-at: 2026-10-03
 quality-review-evidence: "Independent grok-4.7 session 01a0fff5-aa2e-7fb0-bf42-456e765b08de PASS; tasks/done/evidence/TASK-483/independent-review.json"
 created: 2026-10-03
+archived-at: 2026-10-05
 ---
 
 ## Summary
@@ -69,11 +70,11 @@ created: 2026-10-03
 
 ## References
 
-- [DECISION-002](../../decisions/DECISION-002-generated-immutable-artifacts-size-kind.md)
-- [결정 색인](../../decisions/README.md)
-- [업스트림 인계](../../docs/70-generated-artifact-upstream-report.md)
-- [보드 현재 상태](../README.md)
-- [TASK-459](../todo/459-implement-remote-access-tunnel.md)
-- [DECISION-003](../../decisions/DECISION-003-json-schemas-ref-split-vs-rules.md)
+- [DECISION-002](../../../decisions/DECISION-002-generated-immutable-artifacts-size-kind.md)
+- [결정 색인](../../../decisions/README.md)
+- [업스트림 인계](../../../docs/70-generated-artifact-upstream-report.md)
+- [보드 현재 상태](../../README.md)
+- [TASK-459](../../todo/459-implement-remote-access-tunnel.md)
+- [DECISION-003](../../../decisions/DECISION-003-json-schemas-ref-split-vs-rules.md)
 
 - 보정 후 독립 재리뷰 PASS: grok-4.7 세션 `01a0fff5-aa2e-7fb0-bf42-456e765b08de`. 구현 세션 `01a0ffe7-96f6-7382-bb5a-536a8a8c9d1e`와 분리됐다. 보정 후 작성자 doc-check·validate exit 0; 코디네이터가 완료 바인딩 7개를 재실행해 모두 exit 0.

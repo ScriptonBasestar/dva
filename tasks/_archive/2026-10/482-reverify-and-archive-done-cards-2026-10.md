@@ -11,6 +11,7 @@ quality-review: pass
 quality-reviewed-at: 2026-10-03T14:49:14Z
 quality-review-evidence: "Independent grok-4.7 session 01a10227-0d9f-7bb0-b0c7-d370ef960dd5 re-review PASS after the TASK-484 criterion correction; tasks/done/evidence/TASK-484/independent-review.json"
 created: 2026-10-03
+archived-at: 2026-10-05
 ---
 
 ## Summary
@@ -43,7 +44,7 @@ open issue 5장과 todo 1장(TASK-459)은 트리아지했다. 재검증 중 발�
 
 ## 2026-10-03 factual correction (TASK-484)
 
-이 카드는 봉인되지 않았다. `blocks:`가 없고 `quality-review-receipt`도 없다. `docs/406`의 digest 검사는 여기 닿지 않는다. 기준 4가 ISSUE-454의 게이트 기준 미체크를 요구하던 것은 폐기했다. 지금 그 기준은 체크된 소스 회귀다. 기존 `tasks/done/evidence/TASK-482/independent-review.json`은 덮어쓰지 않았다. 독립 재리뷰 PASS (2026-10-03T14:49:14Z, grok-4.7 세션 `01a10227-0d9f-7bb0-b0c7-d370ef960dd5`). 기준 1–5 exit 0. 영수증은 [TASK-484 independent-review.json](evidence/TASK-484/independent-review.json).
+이 카드는 봉인되지 않았다. `blocks:`가 없고 `quality-review-receipt`도 없다. `docs/406`의 digest 검사는 여기 닿지 않는다. 기준 4가 ISSUE-454의 게이트 기준 미체크를 요구하던 것은 폐기했다. 지금 그 기준은 체크된 소스 회귀다. 기존 `tasks/done/evidence/TASK-482/independent-review.json`은 덮어쓰지 않았다. 독립 재리뷰 PASS (2026-10-03T14:49:14Z, grok-4.7 세션 `01a10227-0d9f-7bb0-b0c7-d370ef960dd5`). 기준 1–5 exit 0. 영수증은 [TASK-484 independent-review.json](../../done/evidence/TASK-484/independent-review.json).
 
 ## Evidence
 
@@ -73,4 +74,4 @@ open issue 5장과 todo 1장(TASK-459)은 트리아지했다. 재검증 중 발�
   잔여 참조 0, 범위 밖 변경 0, 바인딩 5개 exit 0, `git diff --check` 깨끗.
   지적 1건 — 기준 2의 grep이 이 카드 자신의 본문에도 걸려 수정을 되돌려도 통과했다 →
   `--include`로 473/474 카드에만 걸리게 고쳤다. 상세는
-  [independent-review.json](evidence/TASK-482/independent-review.json).
+  [independent-review.json](../../done/evidence/TASK-482/independent-review.json).

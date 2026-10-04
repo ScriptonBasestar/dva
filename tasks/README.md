@@ -1,27 +1,29 @@
 # DVA Task Management Board
 
-## 현재 상태 (2026-10-03)
+## 현재 상태 (2026-10-05)
 
 v0.3.0 공개와 postflight는 완료됐고 PLAN-010(8/8)과 PLAN-011(19/19)은
 `tasks/_archive/plan/`에 보관됐다. 열린 계획은 없다. 과거 판정은 보관된 카드와 Git 이력이 소유한다.
 2026-10-03 [[TASK-482]]가 done 카드 30장(TASK-449~481)을 재검증해 전부 `tasks/_archive/2026-10/`로 보관했다.
-`tasks/done/`에는 TASK-482, 결정·인계를 닫은 TASK-483, 정본 소스 후속을 마감한 TASK-484와 durable review evidence가 있다 —
-TASK-482의 현행 기준은 TASK-484에서 별도 grok-4.7 세션이 재검증했다. 기존 리뷰 영수증도 보존했다.
+2026-10-05 [[TASK-485]]가 TASK-482·483·484를 재검증해 `tasks/_archive/2026-10/`로 보관했다(아래 Batch 10).
+`tasks/done/`에는 자기 자신을 닫는 TASK-485와 durable review evidence만 남는다 —
+TASK-485는 다음 정리 주기에 독립 재검증을 받는다.
 DECISION-002는 2026-10-03에 Accepted다. 정본 upstream만 택했고 interim B는 쓰지 않는다.
 인계는 [생성물 크기 규칙 보고](../docs/70-generated-artifact-upstream-report.md)다.
-정본 구현은 ce-agent-kit `1270e1dc47bc7f3a2421de2074b92f619e4298a7`이다. 설치본은 자동으로 바뀌지 않는다.
+정본 구현은 ce-agent-kit `1270e1dc47bc7f3a2421de2074b92f619e4298a7`이다. 설치본은 자동으로 바뀌지 않는다 —
+2026-10-05 실측으로 설치된 `ce`(`vcs.revision=62db34ea`)는 이 커밋과 아래 두 수정을 모두 조상으로 포함한다.
 
 열린 이슈:
 
 - ISSUE-004/006 (upstream-waiting): taskchain-task-manager W13/W14 제품 구현은 완료됐고 DVA 실행 소비자 채택과 사람 전용 terminal 실측을 기다린다.
 - ISSUE-453 (blocked, 사람 승인): W07c2a 배포 artifact 승인과 pin 활성화, 양성·음성 host 실측을 기다린다.
 
-정본 소스로 닫아 `_archive/issue/`에 둔 이슈. 설치본은 자동으로 바뀌지 않는다.
+정본 소스로 닫아 `_archive/issue/`에 둔 이슈. 설치본은 자동으로 바뀌지 않는다 — 2026-10-05 설치본 `62db34ea`는 두 수정을 포함한다.
 
 - ISSUE-454: 정본 ce-agent-kit `9b0b0305a553aec3faceeefd12bd6db6fd5a312d`(TASK-379)가 timeout 뒤 프로세스 그룹의 자손을 끝낸다. DVA 작성 시점 검사([[TASK-460]])와 설치본의 재귀 가드 관찰은 그대로다. 기록은 [[TASK-484]].
 - ISSUE-461: 정본 `1f3f9a74be0cbe9cbb9aa8de943331eb05bdac2e`(TASK-378)가 같은 소유자의 활성 실행이 하나일 때 bare `ce task run-finish`를 고른다. 없거나 여럿이면 거부한다. 기록은 [[TASK-484]].
 
-열린 todo: TASK-459는 체크된 기준 7개(기계 6 + `make test`·`make lint` 1)가 통과했고, 만료 토큰 종료 코드 실측과 라이브 `dva doctor` 두 사람 확인만 남았다. 그 두 사람 확인은 그대로다. [TASK-483](done/483-accept-decision-002-upstream-handoff.md)은 위 수락과 인계를 완료하고 독립 리뷰 PASS 후 `tasks/done/`으로 옮겼다. [TASK-484](done/484-record-ce-378-379-source-followup.md)는 별도 grok-4.7 세션의 독립 재리뷰 PASS 뒤 완료됐다.
+열린 todo: TASK-459는 체크된 기준 7개(기계 6 + `make test`·`make lint` 1)가 통과했고, 만료 토큰 종료 코드 실측과 라이브 `dva doctor` 두 사람 확인만 남았다. 그 두 사람 확인은 그대로다. [TASK-483](_archive/2026-10/483-accept-decision-002-upstream-handoff.md)은 위 수락과 인계를, [TASK-484](_archive/2026-10/484-record-ce-378-379-source-followup.md)는 정본 소스 후속을 독립 리뷰 PASS 뒤 완료했고 Batch 10에서 보관됐다.
 
 보드 현행화는 `tasks/`만이 아니라 `git worktree list`와 `ce task run-list`도 함께 확인한다.
 완료 카드는 현행화 태스크 끝에 `tasks/_archive/YYYY-MM/`로 보관한다(`done-finalize`는 카드를 삭제해 plan children을 깨뜨린다).
@@ -50,7 +52,8 @@ DECISION-002는 2026-10-03에 Accepted다. 정본 upstream만 택했고 interim 
 2026-09-27까지 이 완료 배치들은 _archive/2026-09/로 이동했다. 2026-09-28에는
 남은 TASK-436과 TASK-447도 독립 검토 기록을 확인한 뒤 _archive/done/에 보관했다.
 2026-10-02까지 TASK-449~481 30장이 다시 done에 모였고, 2026-10-03 [[TASK-482]]가
-전부 재검증해 `_archive/2026-10/`로 보관했다(아래 Batch 9).
+전부 재검증해 `_archive/2026-10/`로 보관했다(아래 Batch 9). 2026-10-05 [[TASK-485]]가 남은
+TASK-482~484를 재검증해 같은 곳으로 보관했다(아래 Batch 10).
 
 | 배치 | 범위 | 대상 수 | 상태 |
 |:---:|:---|:---:|:---:|
@@ -63,6 +66,7 @@ DECISION-002는 2026-10-03에 Accepted다. 정본 upstream만 택했고 interim 
 | Batch 7 | TASK-405 ~ 409 | 5 | 완료 (4 아카이브 + TASK-407은 기준 1 미충족으로 `todo/` 복귀) |
 | Batch 8 | TASK-370, TASK-407, TASK-410 ~ 419 | 12 | 완료 (10 아카이브 + TASK-407·411은 `blocked/` 복귀) |
 | Batch 9 | TASK-449 ~ 481 | 30 | 완료 (30 아카이브, todo 환류 0) |
+| Batch 10 | TASK-482 ~ 484 | 3 | 완료 (3 아카이브, todo 환류 0) |
 
 ### Batch 7 상세 (2026-09-22)
 
@@ -111,3 +115,14 @@ TASK-407이 방어선으로 지목한 DUP-ID 검사가 침묵하는 경로다. [
 | TASK-476 | 아카이브 | `make lint` 출력 링크 누락 → 재실행 결과(0 issues)를 Evidence에 기록 |
 | TASK-477~480 | 아카이브 | 존·status·decision 마커 바인딩 통과 |
 | TASK-481 | 아카이브 | doctor 터널 테스트 통과. 기존 docs/69와 번호가 겹친 초안을 `docs/70`으로 이동 |
+
+### Batch 10 상세 (2026-10-05)
+
+3장 전부 아카이브. 체크된 기계 바인딩 18개(482: 5, 483: 7, 484: 6) 재실행 exit 0.
+재검증은 세 카드의 작성·리뷰 세션과 다른 세션([[TASK-485]])이 했다.
+
+| 카드 | 판정 | 근거 |
+|:---|:---|:---|
+| TASK-482 | 아카이브 | 기준 1–5 exit 0. 영수증 `evidence/TASK-482`·`TASK-484`의 independent-review.json 모두 PASS |
+| TASK-483 | 아카이브 | 기준 1–7 exit 0. DECISION-002 `status: Accepted`. 영수증 outcome PASS, 작성·리뷰 세션 분리 |
+| TASK-484 | 아카이브 | 기준 1–6 exit 0. 핵심 주장인 ISSUE-454 상류 기준(정본 소스 `go test` 두 패키지)을 재실행해 ok. 설치본 `62db34ea`가 `9b0b0305`·`1f3f9a74`·`1270e1dc`를 조상으로 포함 |

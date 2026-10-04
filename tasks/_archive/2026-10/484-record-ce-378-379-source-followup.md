@@ -11,6 +11,7 @@ quality-review: pass
 quality-reviewed-at: 2026-10-03T14:49:14Z
 quality-review-evidence: "Separate grok-4.7 session 01a10227-0d9f-7bb0-b0c7-d370ef960dd5 PASS; tasks/done/evidence/TASK-484/independent-review.json"
 created: 2026-10-03
+archived-at: 2026-10-05
 ---
 
 ## Summary
@@ -69,7 +70,7 @@ created: 2026-10-03
 
 ## References
 
-- [보드 현재 상태](../README.md)
-- [업스트림 인계](../../docs/70-generated-artifact-upstream-report.md)
-- [DECISION-002](../../decisions/DECISION-002-generated-immutable-artifacts-size-kind.md)
-- [TASK-459](../todo/459-implement-remote-access-tunnel.md)
+- [보드 현재 상태](../../README.md)
+- [업스트림 인계](../../../docs/70-generated-artifact-upstream-report.md)
+- [DECISION-002](../../../decisions/DECISION-002-generated-immutable-artifacts-size-kind.md)
+- [TASK-459](../../todo/459-implement-remote-access-tunnel.md)

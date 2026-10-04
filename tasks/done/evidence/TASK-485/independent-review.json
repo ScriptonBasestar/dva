@@ -1,0 +1,33 @@
+{
+  "task": "TASK-485",
+  "verdict": "PASS",
+  "reviewedAt": "2026-10-04T23:57:08Z",
+  "reviewer": "separate Claude Code subagent (claude-opus-5-5), not the implementer; read-only",
+  "implementer": "main Claude Code session (claude-opus-5-5)",
+  "attempts": [
+    {
+      "verdict": "FAIL",
+      "finding": "Installed ce revision misreported as 3656558b in tasks/README.md:14,21,128 and the TASK-485 card :19,:41; go version -m reports vcs.revision=62db34ea9291c0cab9cc03222136e8a32fcaed16 (3656558b is its ancestor, so the conclusion held).",
+      "passed": "Archive edits are only archived-at + link-depth rewrites (482: 2, 483: 6, 484: 4); 12 archived-card links and README links resolve; required README phrases present, forbidden ones absent; 9b0b0305, 1f3f9a74, 1270e1dc are ancestors of 62db34ea; receipts TASK-482/483/484 PASS.",
+      "exitCodes": {
+        "TASK-482 bindings 1-5": 0,
+        "TASK-483 bindings 1-7": 0,
+        "TASK-484 bindings 1-6": 0,
+        "TASK-485 bindings 1-4": 0,
+        "make doc-check": 0,
+        "ce task validate --all": "1 (only TASK-485 missing quality-review fields before this receipt)",
+        "git diff --cached --check": 0
+      }
+    },
+    {
+      "verdict": "PASS",
+      "finding": "All five occurrences now read 62db34ea; no 3656558b remains; staged diff stats unchanged apart from the hash swap.",
+      "exitCodes": {
+        "TASK-485 bindings 1-4": 0,
+        "make doc-check": 0,
+        "git diff --cached --check": 0
+      }
+    }
+  ],
+  "limits": "Reviewer did not re-run the ISSUE-454 upstream go test; it ran in the implementer session. ce task gate and make test not run by the reviewer."
+}
