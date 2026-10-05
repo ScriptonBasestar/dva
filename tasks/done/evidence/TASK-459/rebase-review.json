@@ -1,0 +1,52 @@
+{
+  "card": "TASK-459",
+  "scope": "rebase delta",
+  "verdict": "PASS",
+  "finding": "The rebase of 2bb86df6 onto 7789e6d7 (HEAD 1544d43f) renames only the empty-stdout bug card to TASK-495, keeps every upstream TASK-492 reference on the queue-acceptance card, and preserves tasks/README.md except the stale open ISSUE-488 bullet and the sentences that said TASK-459 was still open or that the token command had not run. The dated measurement sentence that the selected queue was one human TASK-459 card stays inside the 2026-10-05 TASK-491 paragraph that cites live-acceptance-review.json; the current open set is stated later as TASK-495 only. The staged criterion-4 repair greps that not-run sentence in 7789e6d7:tasks/README.md, where it occurs once, and 7789e6d7 is the commit that added the TASK-492 card. git diff --cached changes only that last clause and one Attempts note. The note's ISSUE-019 commit-pin citation does not match any binding in this repository; the binding itself is not vacuous.",
+  "reviewedAt": "2026-10-05T14:32:06Z",
+  "reviewerModel": "grok-4.7",
+  "authorRuntime": "claude-opus-5-5",
+  "authorSession": "763c7ed0-7ec6-4307-88a2-290930834174",
+  "checks": {
+    "head": "1544d43fd4ed101ddef90d5bd7199a15c7c94910",
+    "rebaseBase": "7789e6d7c4f95b00009677bc4ab70ce66e66f0bd",
+    "reviewedCommit": "2bb86df616e06242cfa5bdd5023ff250f94516e7",
+    "validateAllExit": 0,
+    "validateSummary": "551 valid, 0 invalid (total: 551)",
+    "docCheckExit": 0,
+    "docCheckBrokenLinks": 0,
+    "docCheckDuplicateCardIDs": 0,
+    "docCheckFilenameNumbersDuplicate": 0,
+    "docCheckBareToolBindings": 0,
+    "lintExit": 2,
+    "lintRecipe": "make: *** [lint] Error 1",
+    "lintGolangci": "0 issues.",
+    "gateExit": 0,
+    "gateVerdict": "READY — task_board_ready",
+    "bindings": {
+      "TASK-492-criterion4": 0,
+      "TASK-495": [1, 1, 1]
+    },
+    "criterion4": {
+      "clausesIdenticalExceptLast": true,
+      "phraseCountIn7789e6d7Readme": 1,
+      "phraseInHeadReadme": false,
+      "cardAddedIn7789e6d7": true,
+      "cardPresentInParentE4177fe1": false,
+      "shortHashUnique": true
+    },
+    "task495IdCount": 1,
+    "task492IdCount": 1,
+    "leftoverBugPath492Treat": "tasks/done/evidence/TASK-459/independent-review.json openTodo only"
+  },
+  "findings": [
+    "tasks/done/492-apply-approved-readonly-queue-acceptance.md:62"
+  ],
+  "scopeLimitations": [
+    "Reviewed only the rebase delta and the staged TASK-492 criterion-4 repair. The prior PASS of 2bb86df6 was not re-opened. cloudflared was not run.",
+    "tasks/README.md:24 still says the selected queue was one human TASK-459 card. That sentence is the 2026-10-05 TASK-491 measurement cited by tasks/done/evidence/TASK-492/live-acceptance-review.json. Line 35 states the current open todo is TASK-495 and that TASK-459 is done. Leaving the dated sentence is acceptable.",
+    "The Attempts note cites an ISSUE-019 commit-pin precedent. ISSUE-019 is the P3-priority issue; its bindings are a human check and a current-tree grep, and no other verify binding in this repository pins a blob with git show. The citation is wrong. The repaired clause still matches one real sentence in the commit that added the card, and the other three clauses are unchanged, so the binding is not vacuous. This does not meet the FAIL bar given for this review.",
+    "Old receipts tasks/done/evidence/TASK-459/independent-review.json and independent-review-attempt-1.json still say TASK-492 for the bug card, including openTodo 492-treat-empty-access-token-stdout-as-unauthenticated.md. tasks/done/459-implement-remote-access-tunnel.md:49 explains that. No live link still points at todo/492-treat-empty.",
+    "mise exec -- make lint exited 2. golangci-lint printed 0 issues, then gopls hints in internal/lifecycle/compose_error_test.go:56, compose_missing_image_test.go:239, compose_missing_image_test.go:332, and docker_daemon_test.go:219. The rebase commit and the staged diff contain no Go files. The same four hints were recorded on the prior review."
+  ]
+}

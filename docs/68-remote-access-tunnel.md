@@ -117,4 +117,17 @@ Cloudflare Access가 소유하고, DVA는 **인증 상태를 확인하고 로그
 
 - 확인함 (cloudflared 2026.9.3): 캐시된 토큰이 있으면 `access token --app` 종료 코드는 0,
   없으면 1이다.
-- 미확인: 토큰이 **만료**됐을 때의 종료 코드. TASK-459에서 실측한 뒤 §3.1 1단계를 확정한다.
+- 확인함 (cloudflared 2026.9.3, 2026-10-05 [ISSUE-488](../tasks/_archive/issue/488-measure-expired-tunnel-token-and-live-doctor.md)):
+  토큰이 **만료**되면 `access token --app` 종료 코드는 **0**이다. stdout은 비고 stderr에
+  "Unable to find token…"만 나오며, cloudflared가 JWT를 담은 `<host>-<hash>-token` 파일을
+  **지운다**(`-token.url` 파일은 남는다). 정본 소스
+  `token.GetAppTokenIfExists`가 만료 시 파일을 지우고 `"", nil`을 돌려주며, `generateToken`이
+  빈 토큰에 대해 그 `nil`을 그대로 반환한다. 실측 대상: exp가 지난 토큰(`exp` 클레임만
+  비교). 같은 호스트를 두 번째 물으면 파일이 없으므로 1이다.
+- 확인함: 만료 토큰 옆에 오래된 `.lock` 파일이 남은 호스트는 종료 코드 1이고 파일을 남겼다.
+- 결과: §3.1 1단계의 "종료 코드만 본다"는 만료 토큰을 인증됨으로 오판한다. 첫 호출은
+  0을 받아 로그인을 건너뛴다. 판정은 종료 코드 0 **그리고** stdout이 비지 않음이어야 한다.
+  stdout은 바이트 수만 세고 내용은 버린다. 수정은 [TASK-495](../tasks/todo/495-treat-empty-access-token-stdout-as-unauthenticated.md)다.
+- 확인함: 실제 tunnel 설정에서 `dva doctor`는 cloudflared 설치, interactive 인증 상태,
+  service-token 환경변수 존재를 값 없이 보고한다. 기본 exit 0(내장 검사는 advisory),
+  `--strict` exit 1. 기록은 ISSUE-488이다.

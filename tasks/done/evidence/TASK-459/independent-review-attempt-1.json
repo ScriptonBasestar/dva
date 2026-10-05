@@ -1,0 +1,74 @@
+{
+  "card": "TASK-459",
+  "verdict": "FAIL",
+  "finding": "The checked human criteria rest on a 2026-10-05 measurement that says cloudflared deleted the chosen host's expired token file and that dva doctor then failed because the file was gone. That token file is still in ~/.cloudflared (420 bytes, mtime 2026-09-29T14:54:53Z), and the polypia token file the issue says disappeared is also still there (402 bytes, mtime 2026-10-02T15:49:41Z). Contents were not read. TASK-459 still says those two criteria stay unchecked and that human confirmation is pending, while the new notes sit under Dependency. Moving the card also makes the sealed TASK-485 link binding exit 1.",
+  "reviewedAt": "2026-10-05T14:01:10Z",
+  "reviewerSession": "01a10c4e-a24e-71d2-8a4d-8f457c67f194",
+  "reviewerModel": "grok-4.7",
+  "authorSession": "763c7ed0-7ec6-4307-88a2-290930834174",
+  "authorRuntime": "claude-opus-5-5",
+  "cardZoneAtReview": "tasks/done",
+  "checks": {
+    "validateAllExit": 1,
+    "validateSummary": "547 valid, 1 invalid (total: 548)",
+    "validateInvalid": "tasks/done/459-implement-remote-access-tunnel.md: done cards require quality-review: pass|conditional|waived",
+    "docCheckExit": 0,
+    "lintExit": 2,
+    "gateExit": 1,
+    "gateVerdict": "NOT READY — task_validate_failed (validate)",
+    "bindings": {
+      "TASK-492": [1, 1, 1, 0],
+      "TASK-459": [0, 0, 0, 0, 0, "human", "human", 0, "human"],
+      "ISSUE-488": ["human", "human"],
+      "TASK-486": [0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    "readmeBindings": {
+      "TASK-485-batch-row": 0,
+      "TASK-486-policy-tags": 0,
+      "TASK-489-ceiling-phrases": 0
+    },
+    "task485LinkBindingExit": 1,
+    "task486CheckboxMatches": 1,
+    "section31StdoutPhraseExit": 1,
+    "namedTestsAbsent": {
+      "TestTunnelAuthExpiredTokenEmptyStdout": 1,
+      "TestDoctorTunnelAuthEmptyStdout": 1
+    },
+    "exitCodeOnly": {
+      "runCloudflaredDiscard": "internal/lifecycle/tunnel.go:158",
+      "checkTunnelAuthState": "internal/cli/doctor_tunnel.go:65",
+      "docs31Step1": "docs/68-remote-access-tunnel.md:63"
+    },
+    "tokenCache": {
+      "readContents": false,
+      "subdirs": 0,
+      "chosenHostTokenBytes": 420,
+      "chosenHostTokenMtime": "2026-09-29T14:54:53Z",
+      "polypiaTokenBytes": 402,
+      "polypiaTokenMtime": "2026-10-02T15:49:41Z",
+      "lockHostFilesRemain": true
+    }
+  },
+  "findings": [
+    "docs/68-remote-access-tunnel.md:122 — says the expired-token call deletes the token file. The chosen host's token file is still in ~/.cloudflared, mtime 2026-09-29T14:54:53Z, before the claimed run.",
+    "tasks/_archive/issue/488-measure-expired-tunnel-token-and-live-doctor.md:106 — same deletion claim for the chosen host. The file was not deleted.",
+    "tasks/_archive/issue/488-measure-expired-tunnel-token-and-live-doctor.md:109 — says the polypia file disappeared. A token-named file for that host remains, mtime 2026-10-02T15:49:41Z.",
+    "tasks/_archive/issue/488-measure-expired-tunnel-token-and-live-doctor.md:112 — states that the measurement deleted two expired token files. One of those rows had an unverified exp, and both corresponding files are still present.",
+    "tasks/_archive/issue/488-measure-expired-tunnel-token-and-live-doctor.md:119 — explains the doctor [FAIL] as the result of the file already having been deleted. That explanation does not match the surviving cache, so the live-doctor criterion is not supported.",
+    "tasks/README.md:32 — repeats the contradicted deletion as current board fact.",
+    "tasks/done/459-implement-remote-access-tunnel.md:31 — present tense says the two human criteria stay unchecked, directly under the [x] lines at 26-27. The link on this line was edited and the sentence was left.",
+    "tasks/done/459-implement-remote-access-tunnel.md:39 — Evidence still says human confirmation is waiting. Line 40 says the two checks remain human confirmation. The 2026-10-05 notes were appended under Dependency at line 46.",
+    "tasks/_archive/issue/488-measure-expired-tunnel-token-and-live-doctor.md:86 — the execution log still says both resolution criteria remain unchecked and lines 88-90 tell the next executor to run the token steps.",
+    "tasks/README.md:9 — the done census names TASK-485, TASK-486, and TASK-489. Line 34 says TASK-459 is done. Both cannot be the current board.",
+    "tasks/done/485-reverify-and-archive-done-cards-482-484.md:29 — os.path.exists binding exits 1. Archived links tasks/_archive/2026-10/483-accept-decision-002-upstream-handoff.md:77 and tasks/_archive/2026-10/484-record-ce-378-379-source-followup.md:76 still point at ../../todo/459-implement-remote-access-tunnel.md. doc-check resolves that id and stays green; this binding does not."
+  ],
+  "scopeLimitations": [
+    "cloudflared was not run. The recorded exit codes were not reproduced. Token and JWT contents were not read.",
+    "No local cloudflare/cloudflared Go source was found (no token.go under the module cache, home source trees, or Homebrew cellar). docs/68 §7 and ISSUE-488 claims about token.GetAppTokenIfExists and generateToken are unverified.",
+    "make lint exit 2 is gopls hints in internal/lifecycle/compose_error_test.go:56, compose_missing_image_test.go:239, compose_missing_image_test.go:332, and docker_daemon_test.go:219. Those files are not in the staged diff; the same errors.As lines are at HEAD.",
+    "The sb-byd token and .lock files remaining matches the card's 'file kept' row. Their mtimes are 2026-09-02, so presence does not show that an exit-1 command ran on 2026-10-05.",
+    "TASK-492's code claim is true: runCloudflaredDiscard and checkTunnelAuthState discard stdout and treat a zero exit as authenticated. Its empirical premise (expired token exits 0 and the file is deleted) was not re-measured, and the deletion clause is false of the current cache. Bindings 1-3 exit 1 and name tests that do not exist. The relaxed TASK-486 checkbox binding matches exactly one criterion line and still requires both verify phrases, so it is not vacuous.",
+    "ISSUE-488 frontmatter matches the other 36 archived issues: status done, resolution fixed, resolution-summary, ISO resolved-at. The human-grade fields are the ones the TASK-486 binding requires. No quality-review fields were added. The single validate error is the expected missing quality-review on TASK-459.",
+    "Pinned README grep phrases used by TASK-485, TASK-486, and TASK-489 are still present. Their bindings exited 0."
+  ]
+}

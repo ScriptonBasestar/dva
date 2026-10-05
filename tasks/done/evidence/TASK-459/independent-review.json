@@ -1,0 +1,107 @@
+{
+  "card": "TASK-459",
+  "verdict": "PASS",
+  "finding": "The cache matches deletion of the JWT `<host>-<hash>-token` files for the k8s and polypia hosts. Both still have only the sibling `-token.url` file (420 and 402 bytes, mtimes before 2026-10-05). sb-byd still has the 1014-byte `-token`, the 402-byte `-token.url`, and the `.lock`, which matches the exit-1 kept-file row. TASK-459's two human criteria are supported by that cache, by docs/68 §7, and by doctor strings that match the exit-code-only probes. The relaxed TASK-486 binding still requires the token criterion line and both verify phrases. TASK-492 bindings 1–3 exit 1 and name tests that are absent. The one validate error is the expected missing quality-review on TASK-459.",
+  "reviewedAt": "2026-10-05T14:16:50Z",
+  "reviewerSession": "01a10c62-36d4-7252-868c-7d73c8321b90",
+  "reviewerModel": "grok-4.7",
+  "authorRuntime": "claude-opus-5-5",
+  "authorSession": "763c7ed0-7ec6-4307-88a2-290930834174",
+  "cardZoneAtReview": "tasks/done",
+  "checks": {
+    "validateAllExit": 1,
+    "validateSummary": "547 valid, 1 invalid (total: 548)",
+    "validateInvalid": "tasks/done/459-implement-remote-access-tunnel.md: done cards require quality-review: pass|conditional|waived; move an unreviewed legacy card to review/",
+    "docCheckExit": 0,
+    "docCheckBrokenLinks": 0,
+    "docCheckDuplicateCardIDs": 0,
+    "lintExit": 2,
+    "lintRecipe": "make: *** [lint] Error 1",
+    "lintGolangci": "0 issues.",
+    "authorLintClaim": "mise exec -- make lint exits 0 (0 issues)",
+    "gateExit": 1,
+    "gateVerdict": "NOT READY — task_validate_failed (validate)",
+    "bindings": {
+      "TASK-492": [1, 1, 1, 0],
+      "TASK-459": [0, 0, 0, 0, 0, "human", "human", 0, "human"],
+      "ISSUE-488": ["human", "human"],
+      "TASK-486": [0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    "readmeBindings": {
+      "TASK-485-batch-row": 0,
+      "TASK-486-policy-tags": 0,
+      "TASK-486-decision-readme": 0,
+      "TASK-489-accepted-row": 0,
+      "TASK-489-ceiling-phrases": 0
+    },
+    "task485LinkBindingExit": 0,
+    "task486CheckboxMatches": 1,
+    "section31StdoutPhraseExit": 1,
+    "namedTestsAbsent": {
+      "TestTunnelAuthExpiredTokenEmptyStdout": 1,
+      "TestDoctorTunnelAuthEmptyStdout": 1
+    },
+    "exitCodeOnly": {
+      "runCloudflaredDiscard": "internal/lifecycle/tunnel.go:160",
+      "authenticateSkipsLoginOnNil": "internal/lifecycle/tunnel.go:137",
+      "checkTunnelAuthState": "internal/cli/doctor_tunnel.go:68",
+      "docs31Step1": "docs/68-remote-access-tunnel.md:63"
+    },
+    "tokenCache": {
+      "readContents": false,
+      "fileCount": 8,
+      "k8sTokenPresent": false,
+      "k8sTokenUrlBytes": 420,
+      "k8sTokenUrlMtime": "2026-09-29T14:54:53Z",
+      "polypiaTokenPresent": false,
+      "polypiaTokenUrlBytes": 402,
+      "polypiaTokenUrlMtime": "2026-10-02T15:49:41Z",
+      "sbBydTokenBytes": 1014,
+      "sbBydTokenMtime": "2026-09-02T04:11:55Z",
+      "sbBydTokenUrlBytes": 402,
+      "sbBydTokenUrlMtime": "2026-09-02T04:11:53Z",
+      "sbBydLockBytes": 41,
+      "sbBydLockMtime": "2026-09-02T04:11:53Z",
+      "jwksBytes": 956,
+      "jwksMtime": "2026-10-05T13:30:05Z"
+    },
+    "lintEnvironment": {
+      "command": "mise exec -- make lint",
+      "go": "go1.26.5 darwin/arm64",
+      "golangciLint": "2.12.2",
+      "mise": "2026.9.15",
+      "miseWhichGopls": "/Users/archmagece/.local/share/mise/installs/go-golang-org-x-tools-gopls/0.22.0/bin/gopls",
+      "miseWhichGoplsVersion": "v0.22.0",
+      "miseExecGoplsVersion": "v0.23.0",
+      "pathGopls": "/Users/archmagece/go/bin/gopls v0.23.0",
+      "hintFiles": [
+        "internal/lifecycle/compose_error_test.go:56",
+        "internal/lifecycle/compose_missing_image_test.go:239",
+        "internal/lifecycle/compose_missing_image_test.go:332",
+        "internal/lifecycle/docker_daemon_test.go:219"
+      ]
+    },
+    "openTodo": ["492-treat-empty-access-token-stdout-as-unauthenticated.md"],
+    "doneCards": [
+      "459-implement-remote-access-tunnel.md",
+      "485-reverify-and-archive-done-cards-482-484.md",
+      "486-record-session-followup-contract.md",
+      "489-apply-approved-changelog-ceiling.md"
+    ],
+    "archivedIssueFrontmatterPeers": 37,
+    "head": "e4177fe1888407cd8412ebc66d21f1dcfb343dbf"
+  },
+  "findings": [],
+  "scopeLimitations": [
+    "cloudflared was not run. Recorded exit codes, empty stdout, and the stderr phrase \"Unable to find token…\" were not reproduced. The issue's subshell discards stderr, so that phrase is not in the measurement table. Token and JWT contents were not read, so the exp timestamps were not rechecked.",
+    "No local cloudflare/cloudflared Go source was found. Homebrew Cellar cloudflared/2026.9.3 has the binary and zero .go files. The module cache has circl only. docs/68 §7 and ISSUE-488 claims about token.GetAppTokenIfExists and generateToken are unverified.",
+    "mise exec -- make lint exited 2 here. golangci-lint printed \"0 issues.\" and then gopls hints in four test files that are not in the staged diff (git diff --cached and worktree diff for those files are empty). mise which gopls is the 0.22.0 pin and that binary reports v0.22.0, while mise exec -- gopls version reports v0.23.0, the same string as ~/go/bin/gopls. The author reports the same make command exits 0. The pinned 0.22.0 binary's check was not re-run.",
+    "scripton-tonk-01-ssh also has a -token.url (420 bytes, 2026-08-12) and a .lock (41 bytes, 2026-08-20) and no -token. It is not in the measurement table. Its lock mtime is August, so the absence is not evidence about the 2026-10-05 run.",
+    "sb-byd mtimes stay on 2026-09-02, which fits a command that left the files in place and does not by itself show that an exit-1 command ran on 2026-10-05. The only same-day cache write seen is polypia.cloudflareaccess.com-jwks at 2026-10-05T13:30:05Z, eight minutes before resolved-at.",
+    "ISSUE-488 Expected vs Actual (lines 41-42) and Reproduction (line 34) still speak in the opening tense, including \"기준은 미충족이다\" and \"이 카드에 없다\". The execution log now says the criteria were unchecked at that earlier point and that the next-step note was completed by the measurement section. The hostname is named in the measurement table. Those opening lines are not the outcome.",
+    "TASK-486 Steps and Stop conditions still describe the pre-measurement state (TASK-459 unchecked, do not move it). That is the sealed card's own work record. Its criterion binding was relaxed and exits 0. It matches exactly one checkbox line and still requires both verify phrases.",
+    "tasks/_archive/2026-10/481 still links to ../../todo/459. doc-check reports broken_links 0 and suppresses 302 archive stale paths (ISSUE-036). The TASK-485 link binding covers only 482-484 and exits 0.",
+    "needs-human, execution-mode, and human-grade appear on ISSUE-488 and on no other archived issue. The shared archive fields match all 37: status done, resolution fixed, resolution-summary, and ISO resolved-at (30 of 37 use the Z form). Those three extra fields are what the TASK-486 human-flag binding requires. No quality-review fields were added.",
+    "The live doctor command was not re-run. The recorded [FAIL] strings match checkTunnelAuthState and checkTunnelServiceTokenEnv, and the default exit 0 / --strict exit 1 match doctorExitError for built-in checks."
+  ]
+}

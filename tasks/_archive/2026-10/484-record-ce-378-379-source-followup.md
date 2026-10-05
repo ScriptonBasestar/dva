@@ -73,4 +73,4 @@ archived-at: 2026-10-05
 - [보드 현재 상태](../../README.md)
 - [업스트림 인계](../../../docs/70-generated-artifact-upstream-report.md)
 - [DECISION-002](../../../decisions/DECISION-002-generated-immutable-artifacts-size-kind.md)
-- [TASK-459](../../todo/459-implement-remote-access-tunnel.md)
+- [TASK-459](../../done/459-implement-remote-access-tunnel.md)
