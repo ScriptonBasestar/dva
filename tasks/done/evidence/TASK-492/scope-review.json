@@ -1,0 +1,98 @@
+{
+  "verdict": "PASS",
+  "attempt": 2,
+  "sessionId": "01a10c09-c969-7890-a71b-7c623b0cd598",
+  "reviewedAt": "2026-10-05T12:38:06Z",
+  "reviewer": "Grok 4.7",
+  "reviewMode": "independent-read-only-retry",
+  "priorReceipt": "tasks/done/evidence/TASK-492/scope-review-attempt-1.json",
+  "priorReceiptRewritten": false,
+  "remainingFailure": null,
+  "mutations": {
+    "implementationEdits": false,
+    "qualityReviewFieldSet": false,
+    "cardsMoved": false,
+    "commitPushIntegrate": false
+  },
+  "reviewedScope": {
+    "deltaOnly": true,
+    "productSourceReviewed": false,
+    "broadCIRun": false,
+    "liveQueueReexecuted": false,
+    "clearedFromAttempt1": "ISSUE-453 no longer uses inline tasks/blocked/007-human-release-decision.md. Line 126 names the external devbox blocked card by filename 007-human-release-decision.md.",
+    "task492Delta": "allowed-paths now include the actual DVA metadata paths for ISSUE-453, ISSUE-490, TASK-493, and their evidence or future done/archive names. Step 7 records producer versus unpublished release separation. It does not check live criteria.",
+    "readmeDelta": "tasks/README.md:31 names TASK-493 as in progress beside TASK-459 and TASK-492. ISSUE-488 no-input sentence remains. ISSUE-004/006 text still says the live board query is exit 1.",
+    "notClaimed": [
+      "ISSUE-004 closure",
+      "ISSUE-006 closure",
+      "ISSUE-453 public pin approval",
+      "ISSUE-490 closure",
+      "selected PATH queue or verdict success",
+      "TASK-493 product PASS"
+    ]
+  },
+  "commands": [
+    {
+      "id": "task492-c1",
+      "exitCode": 0
+    },
+    {
+      "id": "task492-c2",
+      "exitCode": 0
+    },
+    {
+      "id": "task492-c3",
+      "exitCode": 0
+    },
+    {
+      "id": "task492-c4-plus-readme-task493-link",
+      "exitCode": 0,
+      "note": "Card criterion 4 plus grep of todo/493-support-native-decision-queue-kind.md in tasks/README.md"
+    },
+    {
+      "id": "make-doc-check",
+      "command": "make doc-check",
+      "exitCode": 0,
+      "result": "broken_links: 0; doc-check: OK"
+    },
+    {
+      "id": "ce-task-validate-all",
+      "command": "ce task validate --all",
+      "exitCode": 0,
+      "summary": "549 valid, 0 invalid (total: 549)"
+    },
+    {
+      "id": "ce-task-gate",
+      "command": "ce task gate",
+      "exitCode": 0,
+      "result": "READY — task_board_ready. validate, lint, preflight, and bindings passed."
+    }
+  ],
+  "priorFindings": [
+    {
+      "id": "doc-check-broken-inline-task-path",
+      "status": "cleared",
+      "evidence": "make doc-check exit 0 and ce task gate exit 0 on this tree."
+    },
+    {
+      "id": "readme-omitted-task493",
+      "status": "cleared",
+      "evidence": "tasks/README.md:31 links tasks/todo/493-support-native-decision-queue-kind.md."
+    },
+    {
+      "id": "issue004-006-remain-open",
+      "status": "unchanged-not-a-failure",
+      "evidence": "Attempt 1 recorded selected PATH queue and verdict exit 1. This retry did not rerun them. README and the unchecked live criteria still say the board query is exit 1."
+    },
+    {
+      "id": "task486-missing-observed-date",
+      "status": "unchanged-warning",
+      "evidence": "ce task validate still warns that amended TASK-486 criterion 4 has no observed date. The card stayed valid, and the gate is READY."
+    },
+    {
+      "id": "task493-product-success",
+      "status": "not-reviewed-and-not-claimed",
+      "evidence": "Untracked tasks/done/evidence/TASK-493/independent-review.json and linux-amd64-runtime.json were not used as product or live-closure evidence."
+    }
+  ]
+}

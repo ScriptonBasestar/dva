@@ -1,0 +1,39 @@
+{
+  "kind": "internal-synthetic-runtime-proof",
+  "platform": "linux/amd64",
+  "host": "linux/arm64 Colima",
+  "execution": "amd64 emulation; not native amd64 hardware",
+  "sourceTree": "a0ee91bd7169bc228262b829f08ff1fcf00fe910",
+  "buildCommand": "GOWORK=off GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -buildvcs=false -mod=readonly -o build/native-decision-followup/linux-amd64/taskchain-task-manager ./cmd/taskchain-task-manager",
+  "toolchain": "go version go1.27.1 darwin/arm64",
+  "artifactSHA256": "b133a107a66f3b86b105f8423d1c69b6fd8ba6aeb22b90218be9df6a66437d50",
+  "queueExit": 0,
+  "assertionExit": 0,
+  "queue": {
+    "outputVersion": 1,
+    "runnable": [
+      {
+        "path": "decision/proposed.md",
+        "card": {
+          "id": "TASK-1",
+          "title": "Synthetic decision",
+          "status": "Proposed",
+          "priority": "",
+          "dependsOn": null
+        },
+        "needsHuman": true,
+        "executionMode": "decision",
+        "allowedPaths": []
+      }
+    ],
+    "runnableCount": 1,
+    "agentRunnable": [],
+    "agentRunnableCount": 0
+  },
+  "published": false,
+  "mutationAuthorized": false,
+  "containerReclaimed": true,
+  "network": "none",
+  "fixture": "synthetic; tmpfs board lock only",
+  "initialPullFailure": "installed Docker credentials rejected; temporary empty DOCKER_CONFIG and observed Colima endpoint resolved public image pull; installed credentials untouched"
+}

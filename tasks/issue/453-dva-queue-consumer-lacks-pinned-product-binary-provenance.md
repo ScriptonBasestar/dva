@@ -112,6 +112,41 @@ status rather than expect the child's exact exit code.
 
 ## 읽기 전용 안내
 
-네트워크와 인증을 실행하지 않는다. 비밀과 JWT를 출력하지 않는다. 승인 전에는
+이 카드의 공개 승인·인증은 자동 실행하지 않는다. 비밀과 JWT를 출력하지 않는다. 승인 전에는
 호스트에서 큐 생산 바이너리를 교체하지 않는다. `exec-tier`는 두지 않는다.
 CE exec-tier는 cheap, standard, strong만 받는다.
+
+## 현재 입력과 사람 조치 (2026-10-05 재확인)
+
+생산자 경로는 이제 확인됐다. 사용자가 명시한 task-manager-devbox의
+`.gz-git.yaml`이 `./taskchain-task-manager`,
+`github.com/Gizzahub/taskchain-task-manager`, source `master`를 선언한다.
+TASK-493이 native decision 호환을 수정한다. 경로 미확인은 현재 blocker가 아니다.
+
+아직 없는 것은 공개 승인이다. devbox의 blocked 카드 `007-human-release-decision.md`
+및 `docs/20-intent-loop/W07c2a-release-decision.md`가 approve/defer/decline을
+사람에게 요청한다. 승인 문서 `W07c2a-release-decision.json`, 공개 tag·서명은
+확인되지 않았다. 기존 후보 `65a1c3b`는 고정 내부 후보이며 새 수정의 공개 승인으로
+간주할 수 없다. release owner가 tag/channel/platforms/source/tree/hash와 승인
+identity를 묶어 결정한 뒤에만 DVA pin 활성화·실제 CE 양성/음성 검사를 진행한다.
+
+읽기 전용 검증은 작업에서 빌드한 명시 바이너리를 일시적으로 선택해 실행할 수 있다.
+이는 전역 설치 교체, 공개 승인, CE writer 전환이 아니다. Linux amd64 검증은
+arm64 Colima의 에뮬레이션 증거로 표기하며 native amd64 호스트 증거로 바꾸지 않는다.
+
+### 준비 완료된 입력과 권장 순서
+
+TASK-493의 수정 source는 master `dd3ec0a0848586bcbdecaf598bde2b6d38b979c4`,
+tree `a0ee91bd7169bc228262b829f08ff1fcf00fe910`이다. 독립 리뷰·전체 검사·source
+push·task 회수까지 완료됐다. 새 내부 matrix는 확인된 제품 checkout의
+`build/native-decision-dd3ec0a/internal-candidate/`에 보존했다. clean checkout
+재빌드는 3개 SHA-256 모두 같았다. DVA의 TASK-493 evidence가 provenance를 소유한다.
+
+권장: release owner는 native decision 수정이 포함된 이 새 source/artifact를
+기존 카드 007의 approve/defer/decline 대상으로 검토한다. 이전 고정 후보 65a1c3b를
+승인했다고 새 수정이 승인되는 것은 아니다. 플랫폼 증거는 darwin/arm64 및
+linux/arm64 native 합성 검증, linux/amd64는 Colima 에뮬레이션이다. 이를 실제
+amd64 하드웨어나 CE start 양성/음성 호스트 승인으로 간주하지 않는다.
+승인 필드가 정해지면 게시·서명 절차, 승인 artifact 기본 설치(ISSUE-490), pin 활성화,
+실제 CE 호출 횟수 검증 순으로 진행한다. 현재 DVA pin JSON과 mutationAuthorized는
+변경하지 않았고 이 카드의 세 기준은 미체크다.

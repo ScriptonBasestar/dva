@@ -1,0 +1,20 @@
+integrate check: dev/codex/mbp/fix/native-decision-queue  (target=origin/master, default=origin/master, integration=master)
+
+  PASS  freshness — based on origin/master tip
+  PASS  merge-tree — no conflict with origin/master
+  WARN  cross-merge origin/dev/claude/mst/chore/023-reject-unknown-store-verb — cross conflict
+  WARN  cross-merge origin/dev/claude/mst/feat/028-port-validation-gate-fixtures — cross conflict
+  WARN  cross-merge origin/dev/codex/mbp/feat/card-codec — cross conflict
+  WARN  cross-merge origin/dev/codex/mst/feat/workspace-context — cross conflict
+  WARN  cross-merge origin/dev/grok/mbp/feat/plan-parent-census — cross conflict
+  PASS  working-tree — clean
+  PASS  push — pushed
+  WARN  readiness contract — legacy head-owned gate
+  PASS  make check — ok
+  PASS  make lint — ok
+  INFO  readiness provenance — mode=legacy-make source=dd3ec0a0848586bcbdecaf598bde2b6d38b979c4 target=054380f43a78365ecb8dd2e54c3dc02be78df57f
+
+READY to integrate into origin/master — 6 warning(s)
+
+INTEGRATED dev/codex/mbp/fix/native-decision-queue (dd3ec0a0848586bcbdecaf598bde2b6d38b979c4) -> origin/master
+RECLAIM skipped: reclaim nothing: no declaration

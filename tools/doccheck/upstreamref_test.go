@@ -57,6 +57,23 @@ func TestUpstreamRefAcceptsReportedCard(t *testing.T) {
 	}
 }
 
+// A board whose active issues are all local-owned is valid. Positive detection of an
+// upstream-owned card (reported, missing ref, empty ref, split) stays in the fixtures
+// above and below; this corpus must not depend on a live upstream workload.
+func TestUpstreamRefLocalOnlyIssueCorpusIsValid(t *testing.T) {
+	res := cardFixture(t, archiveCard{
+		path: "tasks/issue/033-local.md",
+		body: "---\nid: ISSUE-033\nstatus: todo\nownership: local\n---\n\n## 소유권 — 이 저장소다\n",
+	})
+	if res.UpstreamOwned != 0 || res.UpstreamUnrefed != 0 || res.OwnershipUnclassified != 0 || res.OwnershipMismatched != 0 {
+		t.Fatalf("owned/unrefed/unclassified/mismatched = %d/%d/%d/%d, want 0/0/0/0",
+			res.UpstreamOwned, res.UpstreamUnrefed, res.OwnershipUnclassified, res.OwnershipMismatched)
+	}
+	if !res.OK {
+		t.Fatalf("local-only issue corpus must pass the gate, errors: %v", res.Errors)
+	}
+}
+
 func TestUpstreamRefExemptsSelfOwnedCard(t *testing.T) {
 	res := cardFixture(t, archiveCard{
 		path: "tasks/issue/033-x.md",
@@ -226,8 +243,13 @@ func repoRoot(t *testing.T) string {
 // condition, because a stage that never names its exit is how ISSUE-023's advisory became
 // unread — and it worked: on 2026-09-15 TASK-399 filed the upstream issues, the count reached
 // 0, and this test failed with the edit to make. The guard below is what replaced it, in the
-// terms that failure named: the count is now asserted to stay at 0, and check.go fails the
-// gate on any regression rather than counting one.
+// terms that failure named: unrefed, unclassified, and mismatched stay at 0, and check.go
+// fails the gate on any regression rather than counting one.
+//
+// Positive coverage of an upstream-owned card does not come from a mandatory live workload.
+// A valid board may have no active upstream-owned issue (Owned==0). Reported, missing-ref,
+// empty-ref, and split detection stay in the synthetic fixtures. This sweep still requires
+// the real tasks/issue/ inventory to be seen and read.
 //
 // It also still owns the "corpus absent is red" axis that Check cannot hold: Check's vacuity
 // guard needs Seen>0, so a sweep that misses tasks/issue/ entirely exits 0 there. Here it does
@@ -251,10 +273,6 @@ func TestUpstreamRefsSweepsTheRealCorpus(t *testing.T) {
 	if c.Unrefed != 0 {
 		t.Fatalf("unrefed = %d on the real board; every upstream-owned card must name where it was "+
 			"reported (%s) — %v", c.Unrefed, upstreamRefField, c.Msgs)
-	}
-	if c.Owned == 0 {
-		t.Fatalf("owned = 0 across %d issue card(s) — the unrefed assertion above is vacuous when "+
-			"nothing is classified upstream-owned, so this board must keep at least one", c.Read)
 	}
 	t.Logf("swept %d issue card(s) from %d file(s) under %s: %d owned, %d unrefed", c.Read, c.Seen, issueZonePrefix, c.Owned, c.Unrefed)
 }

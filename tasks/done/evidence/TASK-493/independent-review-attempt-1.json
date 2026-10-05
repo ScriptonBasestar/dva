@@ -1,0 +1,74 @@
+{
+  "verdict": "FAIL",
+  "sessionId": "5be11a1a-4952-45ef-8f2d-570b9280c1c4",
+  "reviewer": "Grok 4.7",
+  "baseline": "origin/master 054380f43a78365ecb8dd2e54c3dc02be78df57f",
+  "worktree": "codex__mbp__fix__native-decision-queue",
+  "scope": "Uncommitted working tree against baseline. No implementation edit, commit, push, or make check.",
+  "conditional": "Independent verdict is FAIL, so it is not a conditional PASS on root make check exit 0. Whole-check result is not claimed.",
+  "actualReviewedFiles": [
+    "README.md",
+    "internal/boardpolicy/policy.go",
+    "internal/boardpolicy/policy_test.go",
+    "internal/boardpolicy/zone_reservation_test.go",
+    "internal/card/zone_opacity_test.go",
+    "internal/cardpath/policy.go",
+    "internal/outputvocab/outputvocab.go",
+    "internal/outputvocab/outputvocab_test.go",
+    "internal/outputvocab/ast_exhaustiveness_test.go",
+    "internal/taskstore/policy_test.go",
+    "internal/taskstore/policy.go",
+    "internal/taskstore/queue_routing.go",
+    "internal/taskstore/store.go",
+    "internal/taskstore/native_decision_queue_test.go",
+    "internal/taskstore/transitions.go",
+    "internal/taskstore/claims.go",
+    "internal/taskstore/completion_index.go",
+    "internal/taskstore/module_path.go",
+    "internal/taskstore/module_scan.go",
+    "internal/taskflow/vocab.go",
+    "internal/taskflow/lint.go",
+    "internal/taskflow/newcard.go",
+    "internal/card/codec.go"
+  ],
+  "executedChecks": [
+    {
+      "command": "make lint",
+      "exitCode": null,
+      "result": "not-run"
+    },
+    {
+      "command": "go test -race targeted native decision, outputvocab, boardpolicy, and card tests",
+      "exitCode": null,
+      "result": "not-run"
+    },
+    {
+      "command": "make check",
+      "exitCode": null,
+      "result": "not-run; root already running whole check; duplicate not launched; result not claimed"
+    }
+  ],
+  "findings": [
+    {
+      "id": "readme-nested-proposed-oversell",
+      "severity": "fail",
+      "summary": "README does not state exact root-card routing, so nested Proposed reads as human-runnable.",
+      "evidence": "README says tasks/decision/ cards whose status is exactly Proposed, with execution-mode decision, needs-human true, and no allowed-paths, enter human runnable. It only adds that a name such as todo under decision is not a status and that the kind adds no create, transition, or claim eligibility. Queue admits a card only when entryZone is exactly decision. For a non-module path, entryZone is filepath.Dir, so decision/todo/TASK-3.md stays Proposed and is not queued. The README never says only a direct child of tasks/decision/ is routed."
+    },
+    {
+      "id": "module-decision-zone-queued",
+      "severity": "fail",
+      "summary": "Resolved zone decision is queued, including an activated module decision directory, which is not a root native card.",
+      "evidence": "nativeDecisionProposed compares entryZone to decision. entryZone returns classifyModulePath zone for a declared module, and IsKind now accepts decision, so moduleZoneAllowed scans <module>/decision/. A Proposed card at backend/decision/TASK.md with the required flags becomes human runnable. Before this change that directory was an unsupported module zone. Tests cover tasks/decision/todo nesting only, not a module decision zone."
+    }
+  ],
+  "checkedNonFailures": [
+    "Default transition edges and validateTransitionForPolicy still require a workflow or parked zone. decision is a kind, not a workflow status, so default transition and claim-resume eligibility do not include it.",
+    "taskflow.IsKindDir remains plan, issue, and backlog. No writer cutover and no new taskflow create or move kind.",
+    "Accepted and other non-Proposed decision cards are not queue candidates. Completion still requires the done workflow zone, so an Accepted decision does not satisfy a dependency.",
+    "Root unknown directories and root symlinks still fail closed in validateRootLayout.",
+    "Malformed root Proposed routes fail the whole queue through validateNativeDecisionRoute before candidates are returned.",
+    "KnownDirs, zone-opacity, and vocab updates are exact list insertions. DeepEqual and AllZones exhaustiveness were not relaxed. QueueExecutionMode decision already existed. No outputVersion field was added. Proposed is not a stdout status.",
+    "Public diff does not contain private workstation paths, boards, or receipts."
+  ]
+}

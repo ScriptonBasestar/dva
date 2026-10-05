@@ -1,0 +1,66 @@
+{
+  "sourceTree": "a0ee91bd7169bc228262b829f08ff1fcf00fe910",
+  "sourceCommit": "dd3ec0a0848586bcbdecaf598bde2b6d38b979c4",
+  "fixture": "synthetic only",
+  "published": false,
+  "mutationAuthorized": false,
+  "platforms": [
+    {
+      "platform": "darwin/arm64",
+      "execution": "native host",
+      "exit": 0,
+      "assertionExit": 0,
+      "queue": {
+        "outputVersion": 1,
+        "runnable": [
+          {
+            "path": "decision/proposed.md",
+            "card": {
+              "id": "TASK-1",
+              "title": "Synthetic decision",
+              "status": "Proposed",
+              "priority": "",
+              "dependsOn": null
+            },
+            "needsHuman": true,
+            "executionMode": "decision",
+            "allowedPaths": []
+          }
+        ],
+        "runnableCount": 1,
+        "agentRunnable": [],
+        "agentRunnableCount": 0
+      },
+      "artifactSHA256": "c01ce7aad3638ddc87acda2c9bd52e6d72a52f2a40d932d7e238f246f91e939e"
+    },
+    {
+      "platform": "linux/arm64",
+      "execution": "native arm64 Colima daemon",
+      "exit": 0,
+      "assertionExit": 0,
+      "queue": {
+        "outputVersion": 1,
+        "runnable": [
+          {
+            "path": "decision/proposed.md",
+            "card": {
+              "id": "TASK-1",
+              "title": "Synthetic decision",
+              "status": "Proposed",
+              "priority": "",
+              "dependsOn": null
+            },
+            "needsHuman": true,
+            "executionMode": "decision",
+            "allowedPaths": []
+          }
+        ],
+        "runnableCount": 1,
+        "agentRunnable": [],
+        "agentRunnableCount": 0
+      },
+      "artifactSHA256": "e92244f308a20dc2524f0bcfa8f1757a5b46d9b1e2132ff54ce1cd0bbdb3bb1c"
+    }
+  ],
+  "containerReclaimed": true
+}

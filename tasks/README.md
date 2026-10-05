@@ -6,7 +6,7 @@ v0.3.0 공개와 postflight는 완료됐고 PLAN-010(8/8)과 PLAN-011(19/19)은
 `tasks/_archive/plan/`에 보관됐다. 열린 계획은 없다. 과거 판정은 보관된 카드와 Git 이력이 소유한다.
 2026-10-03 [[TASK-482]]가 done 카드 30장(TASK-449~481)을 재검증해 전부 `tasks/_archive/2026-10/`로 보관했다.
 2026-10-05 [[TASK-485]]가 TASK-482·483·484를 재검증해 `tasks/_archive/2026-10/`로 보관했다(아래 Batch 10).
-`tasks/done/`에는 TASK-485, 운영 계약을 완료한 TASK-486, 승인 ceiling을 반영한 TASK-489, durable review evidence가 남는다 —
+`tasks/done/`에는 TASK-485, 운영 계약을 완료한 TASK-486, 승인 ceiling을 반영한 TASK-489, 수락된 범위 적용 TASK-492, 제품 source 보정 TASK-493, durable review evidence가 남는다 —
 TASK-485는 다음 정리 주기에 독립 재검증을 받는다.
 DECISION-002는 2026-10-03에 Accepted다. 정본 upstream만 택했고 interim B는 쓰지 않는다.
 인계는 [생성물 크기 규칙 보고](../docs/70-generated-artifact-upstream-report.md)다.
@@ -18,19 +18,20 @@ DECISION-002는 2026-10-03에 Accepted다. 정본 upstream만 택했고 interim 
 
 열린 이슈:
 
-- ISSUE-004/006: W13/W14의 queue·verdict·start 기록은 남아 있다. 사람 terminal·rollback은 아직이다. 조회 호환성은 ISSUE-490, 실제 start 승인은 ISSUE-453 의존이다. 기존 기준의 범위 현행화 제안은 TASK-491이다. fixture를 사람 검증으로 적지 않는다.
-- ISSUE-453: 공개된 승인 source/artifact/build/hash/platform이 있기 전의 pin이다. boolean 하나로는 승인되지 않는다. 먼저 ISSUE-490의 조회 호환성과 생산자 경로를 확인한다.
-- ISSUE-490: 현재 PATH TaskChain은 CE 내장 `tasks/decision/`을 거부해 실제 queue/verdict가 exit 1이다. 이전 0/0 증거는 역사 기록이다.
+- ISSUE-453: 공개된 승인 source/artifact/build/hash/platform이 있기 전의 pin이다. boolean 하나로는 승인되지 않는다. 생산자 경로는 확인됐고 TASK-493이 native decision을 수정했다. 공개 승인 뒤 기본 설치·pin 채택과 실제 CE 호스트 검사를 진행한다.
+- ISSUE-490: 기본 PATH TaskChain은 아직 CE 내장 `tasks/decision/`을 거부해 exit 1이다. TASK-493 수정 바이너리를 명시 선택한 읽기 전용 queue/verdict는 exit 0이다. 기본 설치본 채택은 ISSUE-453의 공개 승인에 의존하므로 열린 상태다. 이전 0/0은 역사 기록이다.
 - ISSUE-488: TASK-459의 만료 토큰과 라이브 doctor. 입력과 인가는 사람이 준비한다. 대상이 주어지면 Steps의 읽기 전용 확인을 실행할 수 있다. 현재 설정 doctor는 exit 0이지만 tunnel 선언이 없어 인증 검증은 미충족이다.
+
+2026-10-05 TASK-491 옵션 1의 읽기 전용 범위로 ISSUE-004·006을 해결해 `_archive/issue/`에 보관했다. clean dd3ec0a 바이너리를 명시 선택한 실제 큐는 사람 TASK-459 한 장, agent 후보 0, verdict `human_required`다. 독립 Grok 4.7 PASS는 `tasks/done/evidence/TASK-492/live-acceptance-review.json`이다. 공개 pin 승인은 ISSUE-453과 별개다. 해당 독립 검증 당시 TASK-493은 source 통합 중인 doing이었다. 현재는 통합 완료됐으며 아래 최종 검증이 준비 집합을 다시 확인한다. 사람 terminal과 run-all은 이 범위가 아니다.
 
 정본 소스로 닫아 `_archive/issue/`에 둔 이슈. 설치본은 자동으로 바뀌지 않는다 — 2026-10-05 설치본 `62db34ea`는 두 수정을 포함한다.
 
 - ISSUE-454: 정본 ce-agent-kit `9b0b0305a553aec3faceeefd12bd6db6fd5a312d`(TASK-379)가 timeout 뒤 프로세스 그룹의 자손을 끝낸다. DVA 작성 시점 검사([[TASK-460]])와 설치본의 재귀 가드 관찰은 그대로다. 기록은 [[TASK-484]].
 - ISSUE-461: 정본 `1f3f9a74be0cbe9cbb9aa8de943331eb05bdac2e`(TASK-378)가 같은 소유자의 활성 실행이 하나일 때 bare `ce task run-finish`를 고른다. 없거나 여럿이면 거부한다. 기록은 [[TASK-484]].
 
-열린 todo는 사람 검증이 남은 [TASK-459](todo/459-implement-remote-access-tunnel.md)뿐이다. [TASK-489](done/489-apply-approved-changelog-ceiling.md)는 실제 ceiling 트리거 반영과 후속 분석을 독립 Grok 4.7 재리뷰 PASS 후 완료했다. TASK-459의 사람 검증 두 조건은 미체크다. [ISSUE-488](issue/488-measure-expired-tunnel-token-and-live-doctor.md)은 코디네이터가 2026-10-05 발견·doctor 기록을 독립 갱신했다. 대상 입력이 없어 만료 토큰 명령은 실행하지 않았다. [TASK-486](done/486-record-session-followup-contract.md)은 독립 Grok 4.7 리뷰 PASS 후 완료됐고, 기준 2·5·6 바인딩은 TASK-489가 사실 정정한다. 독립 재검증 PASS 영수증은 `tasks/done/evidence/TASK-489/independent-review-attempt-2.json`이다. [TASK-487](decision/487-changelog-half-ceiling-trigger.md)은 2026-10-05 사용자가 옵션 2(실제 ceiling)를 골라 Accepted다. 측정은 87296 bytes와 물리 줄 1000 아래라 v0.2.x 아카이브는 하지 않는다.
+열린 todo는 사람 검증이 남은 [TASK-459](todo/459-implement-remote-access-tunnel.md)다. 제품 native decision 호환 보정 [TASK-493](done/493-support-native-decision-queue-kind.md)은 독립 리뷰·전체 검사 후 제품 master에 `dd3ec0a`로 통합·push했고 task worktree와 local/remote 브랜치를 회수했다. [TASK-492](done/492-apply-approved-readonly-queue-acceptance.md)는 수락된 범위·문서 적용을 독립 Grok 4.7 재리뷰 PASS 후 완료했다. 004·006은 명시 읽기 전용 검증과 독립 PASS로 해결했다. TASK-493 source 통합도 완료됐다. [TASK-489](done/489-apply-approved-changelog-ceiling.md)는 실제 ceiling 트리거 반영과 후속 분석을 독립 Grok 4.7 재리뷰 PASS 후 완료했다. TASK-459의 사람 검증 두 조건은 미체크다. [ISSUE-488](issue/488-measure-expired-tunnel-token-and-live-doctor.md)은 코디네이터가 2026-10-05 발견·doctor 기록을 독립 갱신했다. 대상 입력이 없어 만료 토큰 명령은 실행하지 않았다. [TASK-486](done/486-record-session-followup-contract.md)은 독립 Grok 4.7 리뷰 PASS 후 완료됐고, 기준 2·5·6 바인딩은 TASK-489가 사실 정정한다. 독립 재검증 PASS 영수증은 `tasks/done/evidence/TASK-489/independent-review-attempt-2.json`이다. [TASK-487](decision/487-changelog-half-ceiling-trigger.md)은 2026-10-05 사용자가 옵션 2(실제 ceiling)를 골라 Accepted다. 측정은 87296 bytes와 물리 줄 1000 아래라 v0.2.x 아카이브는 하지 않는다.
 
-미결 선택은 [TASK-491](decision/491-queue-acceptance-scope-and-historical-evidence.md)이다. 004·006을 읽기 전용 분류·종료 판정으로 한정하고 terminal/rollback을 별도 범위로 둘지 결정한다. 공개 pin 승인은 이 선택에 포함하지 않는다.
+[TASK-491](decision/491-queue-acceptance-scope-and-historical-evidence.md)은 2026-10-05 사용자가 옵션 1을 수락해 Accepted다. 004·006의 현재 범위는 읽기 전용 분류와 종료 판정이다. terminal/rollback과 공개 pin 승인은 이 수락에 포함되지 않는다.
 
 ## 자율 실행 계약
 
@@ -162,3 +163,33 @@ TASK-407이 방어선으로 지목한 DUP-ID 검사가 침묵하는 경로다. [
 | TASK-482 | 아카이브 | 기준 1–5 exit 0. 영수증 `evidence/TASK-482`·`TASK-484`의 independent-review.json 모두 PASS |
 | TASK-483 | 아카이브 | 기준 1–7 exit 0. DECISION-002 `status: Accepted`. 영수증 outcome PASS, 작성·리뷰 세션 분리 |
 | TASK-484 | 아카이브 | 기준 1–6 exit 0. 핵심 주장인 ISSUE-454 상류 기준(정본 소스 `go test` 두 패키지)을 재실행해 ok. 설치본 `62db34ea`가 `9b0b0305`·`1f3f9a74`·`1270e1dc`를 조상으로 포함 |
+
+## 읽기 전용 선택과 최종 증거
+
+기본 설치본은 아직 ISSUE-490의 legacy 바이너리다. 설치·pin 전환을 승인한 것은
+아니다. 내부 검증 바이너리는 확인된 제품 checkout에서 명시적으로 선택한다.
+완료 기준은 변수가 없으면 아래 검증된 사용자 workspace 경로를 기본값으로 쓴다. 다른 장비에서는 확인한 checkout 경로로 변수만 바꾸고 존재 가드를 지킨다.
+
+```bash
+export TASKCHAIN_PRODUCT_REPO="$HOME/mydevbox/task-manager-devbox/taskchain-task-manager"
+test -d "$TASKCHAIN_PRODUCT_REPO" && test -x "$TASKCHAIN_PRODUCT_REPO/build/taskchain-task-manager"
+PATH="$TASKCHAIN_PRODUCT_REPO/build:$PATH" dva task-queue
+PATH="$TASKCHAIN_PRODUCT_REPO/build:$PATH" dva task-queue-verdict
+```
+
+위 기본 경로는 사용자가 명시한 devbox와 그 workspace 선언으로 확인한 경로다.
+폴더 이름이나 catalog alias로 생산자를 추정한 경로가 아니다. 제품 payload 검사는
+그 저장소의 make check/make lint가 소유하고, 이 보드 판정은 ce task gate가 소유한다.
+새 내부 산출물의 출처·3개 플랫폼 hash·clean checkout 재빌드 증거는
+`tasks/done/evidence/TASK-493/internal-candidate-provenance.json`이다.
+이 산출물은 미공개·미서명·미승인이고 기존 고정 후보를 덮어쓰지 않았다.
+공개 승인 결정은 기존 devbox blocked 카드 007이 소유하므로 중복 결정 카드를
+만들지 않는다. TASK-491은 이미 Accepted다.
+
+source 통합·회수 후 최종 조회도 exit 0이다. 준비 큐는 TASK-459 한 장, agent 후보 0,
+verdict는 human_required다. 카드 Markdown bytes는 두 읽기 전용 호출 전후 같았다.
+증거는 `tasks/done/evidence/TASK-492/live-readonly-final.json`이다.
+
+CI가 발견한 후속 [TASK-494](done/494-allow-local-only-issue-corpus.md)는 실제 보드에
+상류 소유 이슈가 반드시 있어야 한다는 테스트 가정을 보정했다. 합성 fixture로
+양성·음성 분류와 정상 local-only 보드를 검증했고 독립 Grok 4.7 PASS를 받았다.

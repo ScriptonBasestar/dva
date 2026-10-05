@@ -1,0 +1,63 @@
+{
+  "queueExit": 0,
+  "verdictExit": 0,
+  "assertionExit": 0,
+  "queue": {
+    "outputVersion": 1,
+    "runnable": [
+      {
+        "path": "todo/459-implement-remote-access-tunnel.md",
+        "card": {
+          "id": "TASK-459",
+          "title": "Implement cloudflared tunnel prerequisite for remote entries",
+          "status": "pending",
+          "priority": "P2",
+          "dependsOn": null
+        },
+        "needsHuman": true,
+        "executionMode": "external",
+        "allowedPaths": []
+      }
+    ],
+    "runnableCount": 1,
+    "agentRunnable": [],
+    "agentRunnableCount": 0
+  },
+  "verdict": {
+    "verdictVersion": 1,
+    "state": "human_required",
+    "runnableCount": 1,
+    "agentRunnableCount": 0,
+    "runnable": [
+      {
+        "path": "todo/459-implement-remote-access-tunnel.md",
+        "card": {
+          "id": "TASK-459",
+          "title": "Implement cloudflared tunnel prerequisite for remote entries",
+          "status": "pending",
+          "priority": "P2",
+          "dependsOn": null
+        },
+        "needsHuman": true,
+        "executionMode": "external",
+        "allowedPaths": []
+      }
+    ],
+    "agentRunnable": [],
+    "candidate": null
+  },
+  "selector": "scoped PATH to explicit TASK-493 build; global PATH unchanged",
+  "selectedBinarySHA256": "d3e5ab9a29504baf3133d63d926666ab218c01e4f395a0677814a67c808863fb",
+  "sourceCommit": "dd3ec0a0848586bcbdecaf598bde2b6d38b979c4",
+  "sourceTree": "a0ee91bd7169bc228262b829f08ff1fcf00fe910",
+  "buildInfo": "/Users/archmagece/worktrees/task-manager/taskchain-task-manager/codex__mbp__fix__native-decision-queue/build/taskchain-task-manager: go1.27.1\n\tpath\tgithub.com/Gizzahub/taskchain-task-manager/cmd/taskchain-task-manager\n\tmod\tgithub.com/Gizzahub/taskchain-task-manager\tv0.0.0-20261004054429-054380f43a78+dirty\t\n\tdep\tgopkg.in/yaml.v3\tv3.0.1\th1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=\n\tbuild\t-buildmode=exe\n\tbuild\t-compiler=gc\n\tbuild\tDefaultGODEBUG=tracebacklabels=0,x509sslcertoverrideplatform=0\n\tbuild\tCGO_ENABLED=1\n\tbuild\tCGO_CFLAGS=\n\tbuild\tCGO_CPPFLAGS=\n\tbuild\tCGO_CXXFLAGS=\n\tbuild\tCGO_LDFLAGS=\n\tbuild\tGOARCH=arm64\n\tbuild\tGOOS=darwin\n\tbuild\tGOARM64=v8.0\n\tbuild\tvcs=git\n\tbuild\tvcs.revision=054380f43a78365ecb8dd2e54c3dc02be78df57f\n\tbuild\tvcs.time=2026-10-04T05:44:29Z\n\tbuild\tvcs.modified=true\n",
+  "productIntegration": "in progress; TASK-493 doing is not a runnable candidate, not completed",
+  "ceMutationCalls": 0,
+  "mutationAuthorized": false,
+  "defaultPATHStillLegacy": true,
+  "acceptedDecisionsExcluded": [
+    "TASK-487",
+    "TASK-491"
+  ],
+  "note": "Historical intermediate artifact built before commit; source tree matched reviewed tree, buildInfo retained base revision+dirty. Superseded by clean committed-source artifact proof."
+}

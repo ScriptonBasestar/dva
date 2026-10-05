@@ -1,0 +1,39 @@
+{
+  "verdict": "PASS",
+  "sessionId": "01a10c09-c969-7890-a71b-7c623b0cd598",
+  "implementationSession": "01a10c45-469f-7732-a710-81cb9971ad0e",
+  "reviewedAt": "2026-10-05T13:37:27Z",
+  "reviewer": "Grok 4.7",
+  "sourceFile": "tools/doccheck/upstreamref_test.go",
+  "sourceFileSHA256": "fc2d14f4cfb864fc7f4ddf74d6444ac1e511e51fa717badd7e2adaff733585bb",
+  "scope": "Removed only the live Owned==0 fatal in TestUpstreamRefsSweepsTheRealCorpus. Seen/Read, Unclassified, Mismatched, and Unrefed checks remain. Existing upstream positive, negative, and split fixtures remain. Added TestUpstreamRefLocalOnlyIssueCorpusIsValid, which requires owned, unrefed, unclassified, and mismatched counts of zero and OK true. No production doccheck file is in the diff.",
+  "commands": [
+    {
+      "id": "targeted-race",
+      "command": "go test -count=1 -race -run '^TestUpstreamRef' ./tools/doccheck/",
+      "exitCode": 0,
+      "result": "ok github.com/ScriptonBasestar/dva/tools/doccheck 1.185s"
+    },
+    {
+      "id": "make-doc-check",
+      "exitCode": 0,
+      "result": "broken_links 0; doc-check OK"
+    },
+    {
+      "id": "ce-task-validate-all",
+      "exitCode": 0,
+      "summary": "550 valid, 0 invalid"
+    },
+    {
+      "id": "ce-task-gate",
+      "exitCode": 0,
+      "result": "READY — task_board_ready"
+    }
+  ],
+  "mutations": {
+    "implementationEdited": false,
+    "cardEdited": false,
+    "qualityReviewSet": false,
+    "movedOrCommitted": false
+  }
+}

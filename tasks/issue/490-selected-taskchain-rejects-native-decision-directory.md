@@ -24,10 +24,10 @@ created: 2026-10-05
 
 이 카드는 DVA의 실제 조회 실패와 소비자 채택·상류 인계 준비를 추적한다.
 원인인 보드 디렉터리 해석은 큐 생산자 TaskChain 소유다. DVA는 실패를 전달한다.
-상류 저장소 확인 전에는 보고했다고 주장하거나 upstream-ref를 만들지 않는다.
-생산자 canonical 저장소가 workbook에 없어서 상류 변경 경로 확인이 먼저다.
+발견 당시 생산자 canonical 저장소가 workbook에 없었다. 아래 현재 보정으로
+명시된 devbox workspace를 확인했으며 TASK-493이 제품 구현을 맡는다.
 `taskchain` alias는 별개의 `flow-taskchain-devbox`를 가리키므로 사용하지 않는다.
-정확한 경로가 확인되면 구현·회귀 검사·독립 리뷰는 에이전트가 처리할 수 있다.
+구현·회귀 검사·독립 리뷰는 자동 처리한다. 기본 PATH 설치본 채택은 공개 승인에 의존한다.
 
 ## Reproduction
 
@@ -47,14 +47,14 @@ Go build info는 `go1.27.1`, source `f53c793889ec9f5ca2a191e0aa0d52174cf2c959`,
 
 ## Steps
 
-1. Workbook catalog에 미등록인 실제 TaskChain 생산자 저장소 경로와 owner를 확인한다.
+1. 확인된 devbox workspace의 제품 저장소에서 TASK-493을 구현·검증·독립 리뷰한다. 경로 확인은 완료됐다.
 2. 그 저장소의 queue directory inventory 및 decision 상태 분류를 수정한다.
    위치는 실제 소스를 확인한 뒤 상류 구현 카드에 명시한다. DVA에 두 번째 parser를 만들지 않는다.
 3. native decision Proposed/Accepted, human-only 및 implementation 카드의 양성·음성
    회귀 검사를 실행한다. DVA 실제 보드 조회와 verdict를 다시 실행한다.
 4. 공개 artifact/pin은 [ISSUE-453](453-dva-queue-consumer-lacks-pinned-product-binary-provenance.md)의
-   provenance·승인을 거친다. [ISSUE-004](004-controller-scope-admission-cannot-represent-external-or-human-only-cards.md)·
-   [ISSUE-006](006-preflight-reports-needs-human-cards-as-runnable.md)의 실제 증거는 별도로 남긴다.
+   provenance·승인을 거친다. [ISSUE-004](../_archive/issue/004-controller-scope-admission-cannot-represent-external-or-human-only-cards.md)·
+   [ISSUE-006](../_archive/issue/006-preflight-reports-needs-human-cards-as-runnable.md)의 실제 증거는 별도로 남긴다.
 
 ## Stop conditions
 
@@ -64,6 +64,22 @@ Go build info는 `go1.27.1`, source `f53c793889ec9f5ca2a191e0aa0d52174cf2c959`,
 
 ## Resolution Criteria
 
-- [ ] 실제 DVA 보드 queue가 성공한다 | verify: `dva task-queue >/dev/null`
-- [ ] 같은 보드 verdict가 성공한다 | verify: `dva task-queue-verdict >/dev/null`
-- [ ] 생산자 독립 리뷰와 decision/human 분류 회귀 증거가 있다 | verify: human — canonical producer path and reviewed upstream evidence
+- [ ] 기본 PATH 선택으로 실제 DVA 보드 queue가 성공한다 | verify: `dva task-queue >/dev/null`
+- [ ] 기본 PATH 선택으로 같은 보드 verdict가 성공한다 | verify: `dva task-queue-verdict >/dev/null`
+- [x] 생산자 독립 리뷰와 decision/human 분류 회귀 증거가 있다 | verify: `python3 -c 'import json,pathlib; d=json.loads(pathlib.Path("tasks/done/evidence/TASK-493/payload-checks.json").read_text()); assert d["makeCheckExit"]==0 and d["reviewVerdict"]=="PASS" and d["sourceCommit"] and d["integrated"]'`
+
+## 현재 보정 (2026-10-05)
+
+위 경로 미확인은 발견 시점 기록이다. 사용자가 명시한 devbox의 workspace 선언으로
+생산자를 확인했다. TASK-493이 별도 제품 저장소에서 수정·전체 검사·독립 리뷰를
+담당한다. DVA는 새 parser를 만들지 않는다. 수락된 TASK-491 범위의 실제 읽기 전용
+검증에는 이 작업의 명시 바이너리를 일시 선택할 수 있다. 기본 PATH 설치본 변경과
+writer 채택은 ISSUE-453의 공개 승인 이후이며 아직 수행하지 않는다.
+
+현재 자동 구현과 기본 PATH 채택을 구분한다. 새 제품 바이너리의 명시 선택은 읽기
+전용 검증에만 사용한다. `dva task-queue`의 기본 선택은 아직 기존 설치본이다.
+따라서 이 이슈의 앞 두 기준은 기본 PATH를 바꾸기 전까지 미체크다. release owner가
+ISSUE-453의 승인 artifact를 결정하면 설치 담당자가 승인된 바이너리를 채택하고
+같은 두 명령을 재실행한다. 채택 시 승인되지 않은 CE start를 실행하지 않는다.
+
+- 2026-10-05 TASK-493 제품 source master에 dd3ec0a 통합·push·회수 완료. 독립 리뷰와 전체 native 검사 exit0로 세 번째 기준을 충족했다. 기본 PATH 바이너리는 교체하지 않았으므로 앞 두 기준과 이 이슈는 계속 열린 상태다.

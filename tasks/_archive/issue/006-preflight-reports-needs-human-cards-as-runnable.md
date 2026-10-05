@@ -2,18 +2,23 @@
 id: ISSUE-006
 title: "Preflight reports needs-human cards as runnable"
 type: bug
-status: todo
+status: done
+quality-review: pass
+quality-reviewed-at: 2026-10-05
+quality-review-evidence: "Independent Grok 4.7; tasks/done/evidence/TASK-492/live-acceptance-review.json; accepted TASK-491 read-only scope only"
 priority: P2
 effort: S
-needs-human: true
-execution-mode: external
-human-grade: human
 severity: medium
 discovered-in: "2026-09-13 task:run-all loop termination"
 discovered-at: 2026-09-13
-ownership: upstream
+ownership: local
+exec-tier: standard
+allowed-paths: [tasks/issue/006-preflight-reports-needs-human-cards-as-runnable.md, tasks/done/evidence/ISSUE-006]
 created: 2026-09-13
 upstream-ref: "task-manager-devbox task/list.md W14"
+resolution: fixed
+resolved-at: 2026-10-05T13:01:09Z
+resolution-summary: "Resolved as fixed by TASK-492."
 ---
 
 ## Summary
@@ -82,7 +87,13 @@ needs, and lets an agent loop terminate on the verdict.
 declared rather than inferred; the `verify: human —` prefix is corroborating
 evidence and a reasonable source for a warning when the two disagree.
 
-## 소유권 — 상류다 (2026-09-15 명시)
+## 소유권 — 이 저장소다
+
+2026-10-05 TASK-491 옵션 1 이후 남은 일은 이 저장소의 읽기 전용 채택 확인과 증거다.
+`allowed-paths`는 이 카드와 `tasks/done/evidence/ISSUE-006`뿐이다. 생산자 구현은 ISSUE-490이다.
+`upstream-ref`는 2026-09-15 보고의 역사 포인터다. 새 상류 보고가 아니다.
+
+## 과거 소유권 기록 (2026-09-15)
 
 preflight는 `ce-agent-kit` 소유다 — Summary가 "Owner is external"로 적는다.
 기준 전부가 상류가 needs-human 카드를 runnable과 구분해 내는 동작을 요구한다.
@@ -111,14 +122,26 @@ lifecycle 규칙은 ce-agent-kit에서만 작성"이라고 적는 별개 개념�
 
 ## Resolution Criteria
 
-- [ ] Preflight distinguishes agent-runnable cards from human-only cards in its verdict and its per-card records | verify: human — upstream tests cover a queue that is entirely human-only
-- [ ] A DVA preflight run reports agent-runnable 0 for the current four cards | verify: human — fresh output from this repository is linked here
-- [ ] An automated loop can terminate on the verdict alone | verify: human — the run-all skill's exit condition reads the new field, not the card bodies
+- [x] 기존 회귀가 agent와 human 집합을 나누고 `human_required`와 `empty`를 종료 상태로 둔다. 사람 카드가 agent 집합에 들어가면 거부한다 | verify: `go test -count=1 -run '^(TestClassifyStates|TestParseQueueRejectsInvalidInvariants)$' ./internal/taskqueue/` (observed: 2026-10-05 — exit 0) (regression-guard)
+- [x] 명시된 제품 checkout의 바이너리로 현재 보드를 읽어 사람 필드·집합·Accepted 제외를 확인한다. 기본 PATH 설치를 바꾸지 않는다 | verify: `taskchain_reader_repo="${TASKCHAIN_PRODUCT_REPO:-$HOME/mydevbox/task-manager-devbox/taskchain-task-manager}"; test -d "$taskchain_reader_repo" && test -x "$taskchain_reader_repo/build/taskchain-task-manager" && PATH="$taskchain_reader_repo/build:$PATH" dva task-queue | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["runnableCount"]==len(d["runnable"]) and d["agentRunnableCount"]==0 and d["agentRunnable"]==[]; assert all(x["needsHuman"] is True and x["executionMode"] in ("external","decision") and x["allowedPaths"]==[] for x in d["runnable"]); assert not {x["card"]["id"] for x in d["runnable"]}.intersection({"TASK-487","TASK-491"})'` (observed: 2026-10-05 — exit 0)
+- [x] 같은 명시 바이너리의 읽기 전용 verdict가 human_required/empty이며 agent 후보가 없다. CE start·terminal 검사는 아니다 | verify: `taskchain_reader_repo="${TASKCHAIN_PRODUCT_REPO:-$HOME/mydevbox/task-manager-devbox/taskchain-task-manager}"; test -d "$taskchain_reader_repo" && test -x "$taskchain_reader_repo/build/taskchain-task-manager" && PATH="$taskchain_reader_repo/build:$PATH" dva task-queue-verdict | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["state"] in ("human_required","empty") and d["agentRunnableCount"]==0 and d["candidate"] is None'` (observed: 2026-10-05 — exit 0)
+
+
+
+## Historical acceptance
+
+2026-10-05 TASK-491 옵션 1이 수락됐다. 아래는 발견 당시 문장이다. 활성 확인 명령이 아니다. 당시의 네 카드와 run-all은 현재 보드 사실이 아니다. 합성 fixture와 과거 0/0 기록은 이 이슈를 닫지 않는다.
+
+- [ ] Preflight distinguishes agent-runnable cards from human-only cards in its verdict and its per-card records
+- [ ] A DVA preflight run reports agent-runnable 0 for the current four cards
+- [ ] An automated loop can terminate on the verdict alone
+
+과거 확인 문장: upstream tests cover a queue that is entirely human-only. fresh output from this repository is linked here. the run-all skill's exit condition reads the new field, not the card bodies.
 
 ## 후속 (2026-09-24)
 
 판정은 여전히 `needs-human`을 보지 않는다. 작업은
-[TASK-423](../_archive/2026-09/423-separate-needs-human-from-agent-runnable.md)가 소유한다.
+[TASK-423](../2026-09/423-separate-needs-human-from-agent-runnable.md)가 소유한다.
 
 ## 소유권 재측정 (2026-09-27)
 
@@ -193,13 +216,32 @@ DVA 보드에는 사람 전용 runnable 카드가 없다. `human_required`에서
 
 W14의 큐 분류, verdict, start는 이미 구현됐다. 남은 일은 사람 terminal과
 rollback이다. 그 증거는
-[ISSUE-453](453-dva-queue-consumer-lacks-pinned-product-binary-provenance.md)의
+[ISSUE-453](../../issue/453-dva-queue-consumer-lacks-pinned-product-binary-provenance.md)의
 공개 산출물 승인과 같은 의존이다. 합성 fixture는 실제 사람 호스트 검증이
 아니다. 위 Resolution Criteria는 체크하지 않는다. 이 절은 2026-10-05 보드
 상태이며 새 호스트 테스트가 아니다.
 
 ## 읽기 전용 안내
 
-네트워크와 인증을 실행하지 않는다. 비밀과 JWT를 출력하지 않는다. 사람 실측만
-Resolution Criteria를 닫는다. `exec-tier`는 두지 않는다. CE exec-tier는
-cheap, standard, strong만 받는다.
+네트워크와 인증을 실행하지 않는다. 비밀과 JWT를 출력하지 않는다. 현재 기준의
+읽기 전용 확인에는 사람 허가가 필요 없다. `allowed-paths`는 이 카드와
+`tasks/done/evidence/ISSUE-006`뿐이다. 생산자 구현은 ISSUE-490이다. 생산자가
+준비되면 그 확인은 에이전트가 실행한다. 공개 pin 승인은 ISSUE-453이다.
+`exec-tier: standard`. CE exec-tier는 cheap, standard, strong만 받는다.
+
+## 현재 검증 경로 (TASK-491 수락 후)
+
+TASKCHAIN_PRODUCT_REPO는 TASK-493이 통합된 제품 checkout을 명시한다. 그 저장소의
+make build 출력 build/taskchain-task-manager를 서브프로세스 PATH 앞에 한 번만 둔다.
+전역 설치나 pin은 바꾸지 않는다. 기본 PATH 설치본의 native decision 실패는
+ISSUE-490에 남고, 공개 artifact/pin 승인은 ISSUE-453이다. 명시 읽기 전용 조회와
+승인이 필요한 writer 채택을 같은 조건으로 묶지 않는다.
+
+## 현재 해결 (2026-10-05)
+
+독립 Grok 4.7이 clean source dd3ec0a 바이너리의 실제 DVA 읽기 전용 queue와
+verdict를 재실행해 PASS했다. 사람 TASK-459 한 장, agent 후보 0, human_required,
+Accepted 487·491 제외와 scope 회귀가 모두 종료 코드 0이다. 수락된 TASK-491
+범위로 해결한다. source 통합 중인 TASK-493은 doing이며 완료로 취급하지 않는다.
+기본 설치본 교체(ISSUE-490), 공개 pin 승인(ISSUE-453), CE start/terminal 검증은
+이 해결에 포함되지 않는다. 역사적 기준·보고는 위 기록 그대로 보존한다.

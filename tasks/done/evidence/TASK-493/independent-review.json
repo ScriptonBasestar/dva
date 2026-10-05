@@ -1,0 +1,41 @@
+{
+  "verdict": "PASS",
+  "attempt": 2,
+  "sessionId": "5be11a1a-4952-45ef-8f2d-570b9280c1c4",
+  "reviewer": "Grok 4.7",
+  "baseline": "origin/master 054380f43a78365ecb8dd2e54c3dc02be78df57f",
+  "reviewedSourceTree": "a0ee91bd7169bc228262b829f08ff1fcf00fe910",
+  "worktree": "codex__mbp__fix__native-decision-queue",
+  "scope": "Retry delta against attempt 1: root-parent admission, README direct-child wording, module regression. Index tree matches verified-source-tree. Worktree matches index. No source edit, commit, or integration.",
+  "conditional": "PASS does not claim root make check. Integration still requires that running make check to exit 0.",
+  "attempt1FindingsClosed": [
+    "readme-nested-proposed-oversell",
+    "module-decision-zone-queued"
+  ],
+  "executedChecks": [
+    {
+      "command": "make lint",
+      "exitCode": 0
+    },
+    {
+      "command": "GOWORK=off go test -mod=readonly -race -count=1 -timeout 15m ./internal/taskstore/ -run 'TestQueueIncludesOnlyProposedNativeDecisions|TestQueueAcceptsEmptyDecisionDirectoryAndReadme|TestNativeDecisionNestedTodoCategoryStaysOpaque|TestNativeDecisionActivatedModuleStaysInventory|TestQueueRejectsProposedDecisionRoute|TestQueueStillRejectsUnknownRootAndSymlink'",
+      "exitCode": 0
+    },
+    {
+      "command": "GOWORK=off go test -mod=readonly -race -count=1 -timeout 15m ./internal/outputvocab/",
+      "exitCode": 0
+    },
+    {
+      "command": "make check",
+      "exitCode": null,
+      "result": "not-run; duplicate whole check not launched; result not claimed"
+    }
+  ],
+  "findings": [],
+  "deltaNotes": [
+    "nativeDecisionProposed(entry Entry) admits only filepath.Dir(entry.Path)==decision and status Proposed. It no longer uses entryZone, so a declared module path is not admitted.",
+    "README states queue cards are direct children of tasks/decision, and that nested category cards and activated-module decision cards stay inventory and are absent from queue and ready.",
+    "TestNativeDecisionActivatedModuleStaysInventory activates moduleAdoptionRaw (module backend), lists backend/decision/TASK-50.md as Proposed, and requires Queue and Ready to be empty.",
+    "Prior non-failures still hold for this delta: malformed root Proposed still fails the whole queue; Accepted still does not satisfy done; default transition and claim eligibility are untouched; outputVersion fields are unchanged."
+  ]
+}

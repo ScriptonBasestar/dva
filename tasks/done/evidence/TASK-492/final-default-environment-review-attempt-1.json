@@ -1,0 +1,40 @@
+{
+  "verdict": "FAIL",
+  "sessionId": "01a10c09-c969-7890-a71b-7c623b0cd598",
+  "reviewedAt": "2026-10-05T13:22:36Z",
+  "reviewer": "Grok 4.7",
+  "finalReviewPreserved": "tasks/done/evidence/TASK-492/final-review.json",
+  "finalReviewVerdict": "PASS",
+  "remainingFailure": "Archived ISSUE-004 and ISSUE-006 live bindings test the default checkout, then set PATH to \"$TASKCHAIN_PRODUCT_REPO/build\" with no default. An ordinary unset shell therefore does not select $HOME/mydevbox/task-manager-devbox/taskchain-task-manager/build.",
+  "commands": [
+    {
+      "id": "task493-c1-unset-nonlogin",
+      "command": "env -u TASKCHAIN_PRODUCT_REPO bash -c criterion 1 default expansion",
+      "exitCode": 0,
+      "observedVariable": "<unset>"
+    },
+    {
+      "id": "task493-c2-unset-nonlogin",
+      "command": "env -u TASKCHAIN_PRODUCT_REPO bash -c criterion 2 default expansion",
+      "exitCode": 0
+    },
+    {
+      "id": "ce-task-gate-unset",
+      "command": "env -u TASKCHAIN_PRODUCT_REPO ce task gate",
+      "exitCode": 0,
+      "result": "READY — task_board_ready; bindings pass"
+    }
+  ],
+  "checks": {
+    "task493Default": "Criteria 1 and 2 use ${TASKCHAIN_PRODUCT_REPO:-$HOME/mydevbox/task-manager-devbox/taskchain-task-manager}. Summary says the unset default is the user-supplied workspace checkout, not a catalog guess.",
+    "sourceStop": "Stop line forbids artifact publication, signing, global install, and DVA mutation pin activation. It permits source commit/push as Steps 7.",
+    "evidencePointers": {
+      "task493": "independent-review.json, final-review.json, and this file",
+      "task486": "scope-review.json, live-acceptance-review.json, TASK-489 historical receipt, final-review.json, and this file",
+      "task492": "scope-review.json, live-acceptance-review.json, final-review.json, and this file",
+      "issue004": "live-acceptance-review.json only; final receipts are not appended",
+      "issue006": "live-acceptance-review.json only; final receipts are not appended",
+      "namedFilesExist": true
+    }
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "kind": "internal-verification-candidate",
+  "repository": "github.com/Gizzahub/taskchain-task-manager",
+  "source": {
+    "commit": "dd3ec0a0848586bcbdecaf598bde2b6d38b979c4",
+    "tree": "a0ee91bd7169bc228262b829f08ff1fcf00fe910"
+  },
+  "toolchain": "go version go1.26.5 darwin/arm64",
+  "published": false,
+  "signed": false,
+  "mutationAuthorized": false,
+  "approved": false,
+  "artifacts": [
+    {
+      "name": "taskchain-task-manager-darwin-arm64",
+      "platform": "darwin/arm64",
+      "cgoEnabled": "1",
+      "buildCommand": "GOWORK=off GOOS=darwin GOARCH=arm64 GOARM64=v8.0 CGO_ENABLED=1 go build -trimpath -buildvcs=false -mod=readonly -o build/native-decision-followup/internal-candidate/taskchain-task-manager-darwin-arm64 ./cmd/taskchain-task-manager",
+      "sha256": "c01ce7aad3638ddc87acda2c9bd52e6d72a52f2a40d932d7e238f246f91e939e",
+      "bytes": 8451634,
+      "buildExit": 0,
+      "rebuildVerified": true,
+      "rebuildExit": 0,
+      "rebuildLocation": "clean configured-source checkout after integration",
+      "verificationBuildCommand": "GOWORK=off GOOS=darwin GOARCH=arm64 GOARM64=v8.0 CGO_ENABLED=1 go build -trimpath -buildvcs=false -mod=readonly -o build/native-decision-dd3ec0a/reproduced/taskchain-task-manager-darwin-arm64 ./cmd/taskchain-task-manager"
+    },
+    {
+      "name": "taskchain-task-manager-linux-amd64",
+      "platform": "linux/amd64",
+      "cgoEnabled": "0",
+      "buildCommand": "GOWORK=off GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -buildvcs=false -mod=readonly -o build/native-decision-followup/internal-candidate/taskchain-task-manager-linux-amd64 ./cmd/taskchain-task-manager",
+      "sha256": "b133a107a66f3b86b105f8423d1c69b6fd8ba6aeb22b90218be9df6a66437d50",
+      "bytes": 9117632,
+      "buildExit": 0,
+      "rebuildVerified": true,
+      "rebuildExit": 0,
+      "rebuildLocation": "clean configured-source checkout after integration",
+      "verificationBuildCommand": "GOWORK=off GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -buildvcs=false -mod=readonly -o build/native-decision-dd3ec0a/reproduced/taskchain-task-manager-linux-amd64 ./cmd/taskchain-task-manager"
+    },
+    {
+      "name": "taskchain-task-manager-linux-arm64",
+      "platform": "linux/arm64",
+      "cgoEnabled": "0",
+      "buildCommand": "GOWORK=off GOOS=linux GOARCH=arm64 GOARM64=v8.0 CGO_ENABLED=0 go build -trimpath -buildvcs=false -mod=readonly -o build/native-decision-followup/internal-candidate/taskchain-task-manager-linux-arm64 ./cmd/taskchain-task-manager",
+      "sha256": "e92244f308a20dc2524f0bcfa8f1757a5b46d9b1e2132ff54ce1cd0bbdb3bb1c",
+      "bytes": 8409724,
+      "buildExit": 0,
+      "rebuildVerified": true,
+      "rebuildExit": 0,
+      "rebuildLocation": "clean configured-source checkout after integration",
+      "verificationBuildCommand": "GOWORK=off GOOS=linux GOARCH=arm64 GOARM64=v8.0 CGO_ENABLED=0 go build -trimpath -buildvcs=false -mod=readonly -o build/native-decision-dd3ec0a/reproduced/taskchain-task-manager-linux-arm64 ./cmd/taskchain-task-manager"
+    }
+  ],
+  "artifactDirectory": "build/native-decision-dd3ec0a/internal-candidate",
+  "reproducedDirectory": "build/native-decision-dd3ec0a/reproduced"
+}

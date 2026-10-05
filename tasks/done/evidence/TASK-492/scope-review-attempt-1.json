@@ -1,0 +1,165 @@
+{
+  "verdict": "FAIL",
+  "reviewedAt": "2026-10-05T12:33:42Z",
+  "reviewer": "Grok 4.7",
+  "reviewMode": "independent-read-only",
+  "mutations": {
+    "implementationEdits": false,
+    "qualityReviewFieldSet": false,
+    "cardsMoved": false,
+    "commitPushIntegrate": false,
+    "historicalReceiptsRewritten": false,
+    "otherWorktreeEditsReverted": false
+  },
+  "reviewedScope": {
+    "branch": "dev/codex/mbp/docs/queue-acceptance-followup",
+    "productSourceReviewed": false,
+    "broadCIRun": false,
+    "acceptedOption1": "TASK-491 option 1 authorizes read-only classification and verdict wording. It does not approve a public pin, a global install, a public release, or a writer mutation.",
+    "trackedDiff": [
+      "tasks/README.md",
+      "tasks/decision/491-queue-acceptance-scope-and-historical-evidence.md",
+      "tasks/decision/README.md",
+      "tasks/done/486-record-session-followup-contract.md",
+      "tasks/issue/004-controller-scope-admission-cannot-represent-external-or-human-only-cards.md",
+      "tasks/issue/006-preflight-reports-needs-human-cards-as-runnable.md",
+      "tasks/issue/453-dva-queue-consumer-lacks-pinned-product-binary-provenance.md",
+      "tasks/issue/490-selected-taskchain-rejects-native-decision-directory.md"
+    ],
+    "untrackedAtReview": [
+      "tasks/todo/492-apply-approved-readonly-queue-acceptance.md",
+      "tasks/todo/493-support-native-decision-queue-kind.md",
+      "tasks/done/evidence/TASK-493/independent-review-attempt-1.json"
+    ],
+    "task492AllowedPathsExclude": [
+      "tasks/issue/453-dva-queue-consumer-lacks-pinned-product-binary-provenance.md",
+      "tasks/issue/490-selected-taskchain-rejects-native-decision-directory.md",
+      "tasks/todo/493-support-native-decision-queue-kind.md"
+    ]
+  },
+  "commands": [
+    {
+      "id": "task492-c1",
+      "command": "TASK-492 criterion 1 grep: status Accepted, option 1 sentence, decision index row and log max 491/next 492",
+      "exitCode": 0
+    },
+    {
+      "id": "task492-c2",
+      "command": "TASK-492 criterion 2 grep: current test names, ownership heading, historical heading, no '| verify: human' on ISSUE-004/006",
+      "exitCode": 0
+    },
+    {
+      "id": "task492-c3",
+      "command": "TASK-492 criterion 3 grep: no human flags on ISSUE-004/006, exec-tier standard, pin sentence in tasks/README.md",
+      "exitCode": 0
+    },
+    {
+      "id": "task492-c4",
+      "command": "TASK-492 criterion 4 grep: TASK-492 card, decision stderr sentence, README link, ISSUE-488 sentence preserved",
+      "exitCode": 0
+    },
+    {
+      "id": "task492-c5-make-doc-check",
+      "command": "make doc-check",
+      "exitCode": 2,
+      "toolExitStatus": 1,
+      "result": "1 broken link"
+    },
+    {
+      "id": "ce-task-validate-all",
+      "command": "ce task validate --all",
+      "exitCode": 0,
+      "summary": "549 valid, 0 invalid (total: 549)"
+    },
+    {
+      "id": "ce-task-gate",
+      "command": "ce task gate",
+      "exitCode": 1,
+      "result": "NOT READY — task_binding_failed (bindings). validate, lint, and preflight passed inside the gate. The reported binding failure is tasks/done/485-reverify-and-archive-done-cards-482-484.md:31 running make doc-check."
+    },
+    {
+      "id": "task486-c1-c3-c5-c8",
+      "command": "TASK-486 completion criteria 1, 2, 3, 5, 6, 7, 8",
+      "exitCode": 0
+    },
+    {
+      "id": "task486-c4",
+      "command": "TASK-486 amended criterion 4 python frontmatter classification",
+      "exitCode": 0
+    },
+    {
+      "id": "issue004-go-test",
+      "command": "go test -count=1 -run '^(TestClassifyStates|TestParseQueueRejectsInvalidInvariants|TestSafeAllowedPath)$' ./internal/taskqueue/",
+      "exitCode": 0,
+      "result": "ok github.com/ScriptonBasestar/dva/internal/taskqueue 0.398s"
+    },
+    {
+      "id": "issue006-go-test",
+      "command": "go test -count=1 -run '^(TestClassifyStates|TestParseQueueRejectsInvalidInvariants)$' ./internal/taskqueue/",
+      "exitCode": 0,
+      "result": "ok github.com/ScriptonBasestar/dva/internal/taskqueue 0.103s"
+    },
+    {
+      "id": "selected-path-dva-task-queue",
+      "command": "dva task-queue >/dev/null",
+      "exitCode": 1,
+      "binary": "/Users/archmagece/go/bin/dva",
+      "version": "0.3.0 commit 6d651c5bad0a22c5a98a392f83128cca9bbaa08a",
+      "stderr": "queue: unsupported task directory at board root: decision"
+    },
+    {
+      "id": "selected-path-dva-task-queue-verdict",
+      "command": "dva task-queue-verdict >/dev/null",
+      "exitCode": 1,
+      "stderr": "task-queue-verdict: task queue failed: exit status 1: queue: unsupported task directory at board root: decision"
+    }
+  ],
+  "findings": [
+    {
+      "id": "doc-check-broken-inline-task-path",
+      "severity": "fail",
+      "summary": "Current tree doc-check fails on one inline task path added in the ISSUE-453 coordinator section.",
+      "evidence": "tasks/issue/453-dva-queue-consumer-lacks-pinned-product-binary-provenance.md:126 contains inline code tasks/blocked/007-human-release-decision.md. doc-check reports that path does not resolve to any tasks/ file. This file is outside TASK-492 allowed-paths. It is the only BROKEN line. make doc-check exit 2. ce task gate exit 1 because the TASK-485 regression binding reruns that same doc-check. TASK-492 criterion 5 is checked with an observed exit 0 that is not true of this tree."
+    },
+    {
+      "id": "issue004-006-remain-open",
+      "severity": "note",
+      "summary": "ISSUE-004 and ISSUE-006 stay open. Selected PATH queue and verdict still fail.",
+      "evidence": "Active live criteria remain unchecked. Historical acceptance sections contain zero verify bindings and no checked boxes. Fixture go tests exit 0 and are not live board proof. No issue closure is claimed."
+    },
+    {
+      "id": "task491-option1-applied-in-docs",
+      "severity": "note",
+      "summary": "TASK-491 is Accepted for option 1 only.",
+      "evidence": "status Accepted, body records explicit 2026-10-05 option 1 acceptance, and states that publishing and pin activation stay on ISSUE-453. Decision index row is accepted. Log max line remains ADR-0000 / log 491, next log 492. TASK-493 is a task card, not a decision log."
+    },
+    {
+      "id": "task486-unsealed-criterion4",
+      "severity": "note",
+      "summary": "TASK-486 criterion 4 matches the accepted classification. The card stays unsealed and its prior review metadata was not refreshed.",
+      "evidence": "No blocks and no quality-review-receipt, so docs/406 digest sealing does not apply. The tracked diff is the criterion 4 line. Steps, Attempts, and the existing quality-review pass fields are unchanged. Criteria 1-8 exit 0. Criterion 9 is make doc-check and fails with the ISSUE-453 link. ce task validate reports one non-invalid warning: the amended checked binding has a historical annotation and no observed date."
+    },
+    {
+      "id": "coordinator-453-490",
+      "severity": "note",
+      "summary": "ISSUE-453 and ISSUE-490 coordinator additions keep public approval and writer adoption unperformed.",
+      "evidence": "Resolution criteria on both cards remain unchecked. The additions name the devbox producer and TASK-493, allow a temporary explicit binary for read-only checks, and say global install replacement and writer adoption wait on ISSUE-453. They do not record live queue success."
+    },
+    {
+      "id": "task493-retry2-not-success",
+      "severity": "note",
+      "summary": "TASK-493 metadata is present and is not live or review success.",
+      "evidence": "type bug. ce task validate accepts the card. Both completion criteria are unchecked. payload-checks.json is absent. independent-review-attempt-1.json verdict is FAIL from session 5be11a1a-4952-45ef-8f2d-570b9280c1c4. The Attempts text describes retry 2 and says the cancelled full check is not PASS evidence. tasks/README.md open-todo sentence names TASK-459 and TASK-492 and does not name TASK-493."
+    }
+  ],
+  "nonClaims": [
+    "ISSUE-004 is not closed.",
+    "ISSUE-006 is not closed.",
+    "ISSUE-453 is not approved or closed.",
+    "ISSUE-490 is not closed.",
+    "Selected PATH dva task-queue and dva task-queue-verdict did not succeed.",
+    "TASK-493 product work is not PASS and is not integrated.",
+    "ce task gate preflight READY is not a live queue success. The gate result is NOT READY.",
+    "This file is not a quality-review receipt and does not authorize moving TASK-492."
+  ]
+}

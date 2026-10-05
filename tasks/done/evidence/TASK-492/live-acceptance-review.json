@@ -1,0 +1,138 @@
+{
+  "verdict": "PASS",
+  "sessionId": "01a10c09-c969-7890-a71b-7c623b0cd598",
+  "reviewedAt": "2026-10-05T12:58:21Z",
+  "reviewer": "Grok 4.7",
+  "reviewMode": "independent-live-readonly-acceptance",
+  "mutations": {
+    "sourceEdited": false,
+    "cardsEdited": false,
+    "qualityReviewFieldSet": false,
+    "cardsMoved": false,
+    "commitPushIntegrate": false,
+    "globalInstallChanged": false
+  },
+  "reviewedScope": {
+    "authority": "TASK-491 option 1 and TASK-492 scope-review attempt 2 PASS",
+    "productRepo": "/Users/archmagece/worktrees/task-manager/taskchain-task-manager/codex__mbp__fix__native-decision-queue",
+    "selector": "PATH prefixed with $TASKCHAIN_PRODUCT_REPO/build for the explicit binary only; installed dva remains /Users/archmagece/go/bin/dva",
+    "selectedBinary": "/Users/archmagece/worktrees/task-manager/taskchain-task-manager/codex__mbp__fix__native-decision-queue/build/taskchain-task-manager",
+    "selectedBinarySHA256": "5163c87e4bf32568c43e6b0cd5a9a1ac448835819e3c368629362433a3635414",
+    "buildInfoMatchesPending": true,
+    "sourceCommit": "dd3ec0a0848586bcbdecaf598bde2b6d38b979c4",
+    "vcsModified": false,
+    "dirtyArtifactPreserved": {
+      "file": "tasks/done/evidence/TASK-492/live-readonly-precommit-artifact.json",
+      "sha256": "d3e5ab9a29504baf3133d63d926666ab218c01e4f395a0677814a67c808863fb",
+      "vcsRevision": "054380f43a78365ecb8dd2e54c3dc02be78df57f",
+      "vcsModified": true,
+      "usedForThisVerdict": false
+    },
+    "readySet": ["TASK-459"],
+    "humanRequiredMeans": "verdict state names the ready set only; it does not mean the whole board or the execution loop is complete",
+    "notClaimed": [
+      "TASK-493 integration complete",
+      "overall loop complete",
+      "ISSUE-490 closed",
+      "ISSUE-453 pin authorized",
+      "default installed PATH upgraded"
+    ]
+  },
+  "commands": [
+    {
+      "id": "issue004-006-scoped-queue",
+      "exitCode": 0,
+      "result": "runnableCount 1 equals runnable length; agentRunnableCount 0; every runnable item needsHuman true, executionMode external, allowedPaths []; TASK-487 and TASK-491 absent"
+    },
+    {
+      "id": "issue004-006-scoped-verdict",
+      "exitCode": 0,
+      "result": "state human_required; agentRunnableCount 0; candidate null; ready id TASK-459"
+    },
+    {
+      "id": "issue004-go-test",
+      "exitCode": 0
+    },
+    {
+      "id": "issue006-go-test",
+      "exitCode": 0
+    },
+    {
+      "id": "task492-c1",
+      "exitCode": 0
+    },
+    {
+      "id": "task492-c2",
+      "exitCode": 0
+    },
+    {
+      "id": "task492-c3",
+      "exitCode": 0
+    },
+    {
+      "id": "task492-c4",
+      "exitCode": 0
+    },
+    {
+      "id": "task486-c4",
+      "exitCode": 0
+    },
+    {
+      "id": "make-doc-check",
+      "exitCode": 0,
+      "result": "broken_links 0; doc-check OK"
+    },
+    {
+      "id": "ce-task-validate-all",
+      "exitCode": 0,
+      "summary": "549 valid, 0 invalid"
+    },
+    {
+      "id": "ce-task-gate",
+      "exitCode": 0,
+      "result": "READY — task_board_ready"
+    },
+    {
+      "id": "default-path-queue",
+      "exitCode": 1,
+      "stderr": "queue: unsupported task directory at board root: decision"
+    },
+    {
+      "id": "default-path-verdict",
+      "exitCode": 1,
+      "stderr": "task-queue-verdict: task queue failed: exit status 1: queue: unsupported task directory at board root: decision"
+    }
+  ],
+  "findings": [
+    {
+      "id": "narrow-live-criteria-pass",
+      "severity": "pass",
+      "summary": "ISSUE-004 and ISSUE-006 active read-only criteria succeed on the clean committed-source binary.",
+      "evidence": "Existence guards and JSON assertions exit 0. Regression go tests exit 0. Historical acceptance lines stay unchecked and were not treated as active verify bindings."
+    },
+    {
+      "id": "issue490-remains-open",
+      "severity": "note",
+      "summary": "ISSUE-490 stays open because the default installed producer is still the legacy binary.",
+      "evidence": "status todo. Default PATH queue and verdict exit 1. payload-checks.json has makeCheckExit 0, reviewVerdict PASS, sourceCommit dd3ec0a, integrated false. Its third criterion requires integrated and was not treated as passed."
+    },
+    {
+      "id": "issue453-unauthorized",
+      "severity": "note",
+      "summary": "Public pin approval remains unauthorized.",
+      "evidence": "ISSUE-453 still has needs-human true and execution-mode external. Its three resolution criteria remain unchecked. This run made no CE mutation and did not change the global install."
+    },
+    {
+      "id": "task493-still-doing",
+      "severity": "note",
+      "summary": "TASK-493 is doing and is not in the ready set.",
+      "evidence": "tasks/doing/493-support-native-decision-queue-kind.md status doing. Scoped queue runnable ids are only TASK-459. Integration completion is not claimed."
+    }
+  ],
+  "resolutionJudgment": {
+    "issue004": "may be resolved under the accepted narrow read-only scope, independent of ISSUE-453 pin approval",
+    "issue006": "may be resolved under the accepted narrow read-only scope, independent of ISSUE-453 pin approval",
+    "performedHere": false,
+    "reason": "Active criteria for classification, strict scope regression, explicit-binary queue fields, and human_required/empty verdict all exited 0. Default PATH success and public pin approval are outside that scope and remain unmet."
+  }
+}
