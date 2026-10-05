@@ -16,6 +16,7 @@
 | [DECISION-003](DECISION-003-json-schemas-ref-split-vs-rules.md) | JSON 스키마 4종 | accepted | $ref 분할(로더 교체 수반) vs 규칙 kind |
 | [DECISION-004](DECISION-004-whole-file-config-overages.md) | 온전해야 하는 config 파일 2건 | accepted | ci.yml·full-stack.yml의 작은 초과를 exempt+ceiling으로 처리할 것인가 |
 
-수락된 DECISION-001의 마커와 ceiling은 그대로다. 절반 트리거가 이미 참인 미결은
-decisions/ 시리즈의 다음 번호가 아니다.
-[TASK-487](../tasks/decision/487-changelog-half-ceiling-trigger.md)이 그 선택이다.
+DECISION-001의 ceiling은 그대로다. [TASK-487](../tasks/decision/487-changelog-half-ceiling-trigger.md)은
+2026-10-05 사용자가 실제 ceiling 트리거를 선택해 Accepted다.
+[TASK-489](../tasks/todo/489-apply-approved-changelog-ceiling.md)가 마커 문장을 반영한다.
+별도 DECISION-005는 만들지 않는다.
