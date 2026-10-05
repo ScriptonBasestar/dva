@@ -38,6 +38,7 @@ func TestCardIdentityZonesCoverLiveAndArchivedCards(t *testing.T) {
 		"tasks/done/001-x.md",
 		"tasks/issue/001-x.md",
 		"tasks/backlog/001-x.md",
+		"tasks/decision/001-x.md",
 		"tasks/archive/001-x.md",
 		"tasks/_archive/001-x.md",
 	} {

@@ -33,8 +33,18 @@ created: 2026-10-02
 
 ## Decision
 
-(제안 — 인간 확정 대기) **옵션 B**: DECISION-002의 upstream 보고에
-스키마 kind를 함께 포함한다.
+2026-10-02에 수락된 역사적 결정이다. **옵션 B**가 채택됐다. 스키마 kind를
+upstream 규칙에 둔다. 로더를 `NewReferenceLoader`로 바꾸는 공사는 이 결정이 아니다.
+
+`json_schema`는 정본 ce-agent-kit `1270e1dc47bc7f3a2421de2074b92f619e4298a7`에
+구현되어 있다. 예산 정본은 [ADR-0070](https://gitlab.polypia.net/archmagece/ce-agent-kit/-/blob/1270e1dc47bc7f3a2421de2074b92f619e4298a7/decisions/adr/0070-artifact-size-kinds.md)이다.
+이 세션은 그 소스 검사를 다시 실행하지 않았다. 저장된 증거는
+[adoption.json](../tasks/done/evidence/TASK-484/adoption.json)과
+[docs/70](../docs/70-generated-artifact-upstream-report.md)이다.
+
+`internal/config/schema.json`은 1882줄이다. 저장된 채택 측정은 이 파일에
+expectedExit 1, errorLimit 1000이다. 1000줄 오류를 넘는 상태는 알려진
+기준선이다. 로더 리팩터의 이유가 아니다.
 
 ## Rationale
 
@@ -45,8 +55,6 @@ A의 실질 비용은 스키마 파일 분할이 아니라 로더 교체 공사�
 
 ## Consequences
 
-- 확정 시(B): DECISION-002 보고에 스키마 kind 포함 — 별도 절차 없음.
-- 스키마가 1,000 lines를 넘는 날: 같은 문론 재발 — 그때 A(로더 교체
-  포함)를 평가한다.
-- A를 나중에 할 경우: internal/config/validate.go 로더 교체 + 상대 $ref
-  실측 테스트가 전제된다.
+- kind는 정본 구현에 있다. 이 결정이 로더를 바꾸지 않는다.
+- schema.json 1882줄과 error 1000은 알려진 기준선으로 남는다.
+- 옵션 A는 나중 평가다. 이 문서가 그 공사를 열지 않는다.

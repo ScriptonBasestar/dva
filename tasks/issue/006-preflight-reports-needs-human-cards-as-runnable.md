@@ -5,7 +5,9 @@ type: bug
 status: todo
 priority: P2
 effort: S
-exec-tier: standard
+needs-human: true
+execution-mode: external
+human-grade: human
 severity: medium
 discovered-in: "2026-09-13 task:run-all loop termination"
 discovered-at: 2026-09-13
@@ -186,3 +188,18 @@ DVA 보드에는 사람 전용 runnable 카드가 없다. `human_required`에서
 호출하지 않는 것은 합성 integration fixture가 확인했다. 자동 루프의
 종료 판정과 사람 전용 카드 terminal은 아직 실제 host에서 확인되지 않아
 이 이슈는 열린다.
+
+## 2026-10-05 보드 메모
+
+W14의 큐 분류, verdict, start는 이미 구현됐다. 남은 일은 사람 terminal과
+rollback이다. 그 증거는
+[ISSUE-453](453-dva-queue-consumer-lacks-pinned-product-binary-provenance.md)의
+공개 산출물 승인과 같은 의존이다. 합성 fixture는 실제 사람 호스트 검증이
+아니다. 위 Resolution Criteria는 체크하지 않는다. 이 절은 2026-10-05 보드
+상태이며 새 호스트 테스트가 아니다.
+
+## 읽기 전용 안내
+
+네트워크와 인증을 실행하지 않는다. 비밀과 JWT를 출력하지 않는다. 사람 실측만
+Resolution Criteria를 닫는다. `exec-tier`는 두지 않는다. CE exec-tier는
+cheap, standard, strong만 받는다.

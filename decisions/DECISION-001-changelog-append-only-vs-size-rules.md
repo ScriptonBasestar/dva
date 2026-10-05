@@ -31,10 +31,19 @@ CHANGELOG에는 CE 규칙만 적용된다. 면제 메커니즘은 존재한다
 
 ## Decision
 
-(제안 — 인간 확정 대기) **옵션 A**: 파일 최상단에
-`<!-- size-limit: exempt, ceiling: 87296 bytes, 1000 lines --...-->`
-마커를 선언한다. ceiling은 현재치(67KB/710 lines)에 ~30% 여유를 더한 값.
-ceiling 절반에 도달하는 릴리스에서 옵션 B(아카이브)를 실행하는 2단계.
+2026-10-02에 수락된 역사적 결정이다. **옵션 A**가 채택됐다. CHANGELOG.md
+최상단 마커와 ceiling `87296 bytes, 1000 lines`가 그 승인이다. ceiling은
+당시 약 67KB/710 lines에 약 30% 여유를 더한 값이다.
+
+2단계로 적힌 ceiling 절반 아카이브는 현재 측정과 충돌한다. 2026-10-05
+CHANGELOG.md는 67110 bytes, 744 lines다. 승인된 ceiling의 절반은 43648
+bytes, 500 lines이고, 67110은 43648보다 크다. 마커 주석의 44KB도 이미
+넘었다. 마커 문장과 승인된 ceiling은 바꾸지 않는다.
+
+미결 선택은 [TASK-487](../tasks/decision/487-changelog-half-ceiling-trigger.md)이다.
+선택지는 절반 트리거를 유지하고 지금 아카이브하기, 트리거를 실제 ceiling으로
+바꾸기, 릴리스 경계로 아카이브하기다. 권고는 실제 ceiling이다. 30% 성장
+여유가 승인된 상한의 이유이기 때문이다. 이 문서는 그 선택을 확정하지 않는다.
 
 ## Rationale
 
@@ -43,9 +52,11 @@ A가 유일하게 "철학을 지키면서 성장을 수렴"시킨다. USAGE.md(T
 상한이며, 닿는 순간 분할 근거가 생긴다. B는 지금 비용을 치르고 경로를
 깨는 반면, 그 필요성은 ceiling이 닿기 전까지는 입증되지 않는다.
 
+절반 트리거는 그 30% 여유보다 앞에서 이미 참이다. 트리거를 어디로 둘지는
+TASK-487의 미결이고, 이 파일의 수락된 ceiling을 여기서 다시 쓰지 않는다.
+
 ## Consequences
 
-- 확정 시: 마커 1줄 추가(별도 TASK 아님 — 마커+사유 자체가 기록).
-- ceiling 절반 도달 시: 릴리스 아카이브 TASK 생성(v0.2.x 이하 이동).
-- `tools/changelogcheck`는 Unreleased 섹션만 보므로 영향 없음(마커 추가로
-  확인).
+- 마커는 이미 있다. 이 결정이 마커나 ceiling `87296 bytes, 1000 lines`를 다시 쓰지 않는다.
+- 절반 트리거는 TASK-487이 연 미결이다. 아카이브 실행은 사람이 선택한 뒤의 별도 구현 작업이다.
+- `tools/changelogcheck`는 Unreleased 섹션만 본다.

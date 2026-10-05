@@ -1,0 +1,70 @@
+{
+  "card": "TASK-486",
+  "verdict": "PASS",
+  "finding": "The operating contract, Accepted DECISION-001/003/004 wording, human classifications, Proposed TASK-487, and ISSUE-488 safe steps match the worktree. CHANGELOG ceiling marker is unchanged. tasks/decision is an identity zone in doccheck, not a second status grader. strict-status stays true and ce-tasks.yaml declares no zones.",
+  "reviewedAt": "2026-10-05T04:56:50Z",
+  "reviewerSession": "8f02c45d-2945-401f-abfb-564c5afca72a",
+  "reviewerModel": "grok-4.7",
+  "authorSession": "01a10a49-c120-7672-9b93-f63abdf41866",
+  "authorRuntime": "Grokfast",
+  "executorTier": "standard",
+  "cardZoneAtReview": "tasks/todo",
+  "checks": {
+    "criteriaExit": [0, 0, 0, 0, 0, 0, 0, 0],
+    "baselineHeadExit": [1, 1, 1, 1, 1, 0, 0, 0],
+    "baselineHead": "23047d07cb608144c3305580b71201003ee59dc9",
+    "docCheckExit": 0,
+    "docCheckUndeclared": 0,
+    "docCheckDuplicateCardIDs": 0,
+    "docCheckOwnershipMismatched": 0,
+    "identityTestExit": 0,
+    "identityTest": "go test -count=1 -run 'TestCardIdentityZonesCoverLiveAndArchivedCards|TestUndeclaredBoardDirectoryFailsTheGate' ./tools/doccheck",
+    "validateAllExit": 0,
+    "validateSummary": "544 valid, 0 invalid (total: 544)",
+    "gateExit": 0,
+    "gateVerdict": "READY — task_board_ready",
+    "changelogDiffExit": 0,
+    "ceTasksDiffExit": 0,
+    "strictStatus": true,
+    "zonesDeclared": false,
+    "zoneStatusDeclared": false,
+    "decisionZoneSkip": false,
+    "changelog": {
+      "bytes": 67110,
+      "lines": 744,
+      "ceilingBytes": 87296,
+      "ceilingLines": 1000,
+      "halfBytes": 43648,
+      "halfLines": 500
+    },
+    "markers": {
+      "ciYmlLines": 217,
+      "ciYmlCeiling": 280,
+      "fullStackLines": 244,
+      "fullStackCeiling": 320,
+      "schemaJsonLines": 1882,
+      "schemaExpectedExit": 1,
+      "schemaErrorLimit": 1000
+    },
+    "installedCe": {
+      "version": "0.8.4",
+      "commit": "62db34ea9291c0cab9cc03222136e8a32fcaed16",
+      "dirty": false
+    },
+    "integrationBranch": "master",
+    "currentMasterPhrase": "absent",
+    "issue488UncheckedCriteria": 2,
+    "issue488CheckedCriteria": 0,
+    "tokenStdoutDiscard": ">/dev/null 2>/dev/null",
+    "validateWarning": "TASK-486 criterion 5 checked binding has no observed date; still valid"
+  },
+  "scopeLimitations": [
+    "Card stayed in tasks/todo. Reviewer did not move it, commit, push, integrate, or write quality-review fields.",
+    "Full CI was not run. Coordinator runs CI after final metadata and commit.",
+    "No network, authentication, tunnel token, or live doctor command was executed. TASK-459 human criteria stay unchecked. ISSUE-488 actual input was not provided and its criteria stay unchecked. No external approval was fabricated.",
+    "CE source was not re-explored. Native decision-kind behavior was taken from the host statement that lint_decision_directory_test.go accepts native decision cards and rejects a declared zone. Installed ce version was read locally. Ancestry of 62db34ea over 1270e1dc and 3656558b was not re-walked.",
+    "ce task gate preflight still lists TASK-459 and TASK-487 as runnable and reports two no-exec-tier advisories that fall back to standard. That is the open ISSUE-006 behavior and the reason exec-tier is omitted. The operating contract excludes those cards from the automatic set.",
+    "23047d07 is the start baseline and the current HEAD before integration. The contract does not claim master remains that hash after integration.",
+    "tasks/decision coverage is the existing doccheck identity table. Status remains CE strict-status. plan stays the only skipped zone."
+  ]
+}

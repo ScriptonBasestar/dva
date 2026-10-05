@@ -6,24 +6,56 @@ v0.3.0 공개와 postflight는 완료됐고 PLAN-010(8/8)과 PLAN-011(19/19)은
 `tasks/_archive/plan/`에 보관됐다. 열린 계획은 없다. 과거 판정은 보관된 카드와 Git 이력이 소유한다.
 2026-10-03 [[TASK-482]]가 done 카드 30장(TASK-449~481)을 재검증해 전부 `tasks/_archive/2026-10/`로 보관했다.
 2026-10-05 [[TASK-485]]가 TASK-482·483·484를 재검증해 `tasks/_archive/2026-10/`로 보관했다(아래 Batch 10).
-`tasks/done/`에는 자기 자신을 닫는 TASK-485와 durable review evidence만 남는다 —
+`tasks/done/`에는 TASK-485, 운영 계약과 사람 대기 분리를 완료한 TASK-486, durable review evidence가 남는다 —
 TASK-485는 다음 정리 주기에 독립 재검증을 받는다.
 DECISION-002는 2026-10-03에 Accepted다. 정본 upstream만 택했고 interim B는 쓰지 않는다.
 인계는 [생성물 크기 규칙 보고](../docs/70-generated-artifact-upstream-report.md)다.
-정본 구현은 ce-agent-kit `1270e1dc47bc7f3a2421de2074b92f619e4298a7`이다. 설치본은 자동으로 바뀌지 않는다 —
-2026-10-05 실측으로 설치된 `ce`(`vcs.revision=62db34ea`)는 이 커밋과 아래 두 수정을 모두 조상으로 포함한다.
+정본 구현은 ce-agent-kit `1270e1dc47bc7f3a2421de2074b92f619e4298a7`이다. 설치본은 자동으로 바뀌지 않는다.
+2026-10-05 `ce version`은 0.8.4, commit `62db34ea9291c0cab9cc03222136e8a32fcaed16`, dirty false다.
+이 커밋은 `1270e1dc47bc7f3a2421de2074b92f619e4298a7`와 `3656558b2bbd604224edf9c7de69454e96c379a8`의 자손이다.
+플러그인 캐시 core 0.6.38은 이미 있다. 재설치하지 않았다. TASK-484가 저장한 소스 검사는 다시 실행하지 않았다.
+이 작업의 시작 기준선(START)은 `23047d07`이다. 통합 뒤의 master를 이 해시로 단정하지 않는다. [[TASK-485]]가 TASK-482·483·484를 보관한 커밋이다.
 
 열린 이슈:
 
-- ISSUE-004/006 (upstream-waiting): taskchain-task-manager W13/W14 제품 구현은 완료됐고 DVA 실행 소비자 채택과 사람 전용 terminal 실측을 기다린다.
-- ISSUE-453 (blocked, 사람 승인): W07c2a 배포 artifact 승인과 pin 활성화, 양성·음성 host 실측을 기다린다.
+- ISSUE-004/006: W13/W14의 queue·verdict·start 기록은 남아 있다. 사람 terminal·rollback은 아직이다. 공유 의존은 ISSUE-453이다. fixture를 사람 검증으로 적지 않는다.
+- ISSUE-453: 공개된 승인 source/artifact/build/hash/platform이 있기 전의 pin이다. boolean 하나로는 승인되지 않는다.
+- ISSUE-488: TASK-459의 만료 토큰과 라이브 doctor. 입력과 인가는 사람이 준비한다. 대상이 주어지면 Steps의 읽기 전용 확인을 실행할 수 있다. 이 작성은 그 명령을 실행하지 않았다.
 
 정본 소스로 닫아 `_archive/issue/`에 둔 이슈. 설치본은 자동으로 바뀌지 않는다 — 2026-10-05 설치본 `62db34ea`는 두 수정을 포함한다.
 
 - ISSUE-454: 정본 ce-agent-kit `9b0b0305a553aec3faceeefd12bd6db6fd5a312d`(TASK-379)가 timeout 뒤 프로세스 그룹의 자손을 끝낸다. DVA 작성 시점 검사([[TASK-460]])와 설치본의 재귀 가드 관찰은 그대로다. 기록은 [[TASK-484]].
 - ISSUE-461: 정본 `1f3f9a74be0cbe9cbb9aa8de943331eb05bdac2e`(TASK-378)가 같은 소유자의 활성 실행이 하나일 때 bare `ce task run-finish`를 고른다. 없거나 여럿이면 거부한다. 기록은 [[TASK-484]].
 
-열린 todo: TASK-459는 체크된 기준 7개(기계 6 + `make test`·`make lint` 1)가 통과했고, 만료 토큰 종료 코드 실측과 라이브 `dva doctor` 두 사람 확인만 남았다. 그 두 사람 확인은 그대로다. [TASK-483](_archive/2026-10/483-accept-decision-002-upstream-handoff.md)은 위 수락과 인계를, [TASK-484](_archive/2026-10/484-record-ce-378-379-source-followup.md)는 정본 소스 후속을 독립 리뷰 PASS 뒤 완료했고 Batch 10에서 보관됐다.
+열린 todo는 TASK-459뿐이며 사람 검증 두 조건은 미체크다. [ISSUE-488](issue/488-measure-expired-tunnel-token-and-live-doctor.md)에 입력과 확인 절차를 기록했다. [TASK-486](done/486-record-session-followup-contract.md)은 독립 Grok 4.7 리뷰 PASS 후 완료됐다. 미결 선택은 [TASK-487](decision/487-changelog-half-ceiling-trigger.md)이다.
+
+## 자율 실행 계약
+
+이 절이 운영 계약이다. 제품 루프 코드는 만들지 않는다.
+
+- policy:model-grok-4.7 — 기본, strong, 독립 리뷰는 Grok 4.7이다. 호출은 grok(기본) 또는 grok --model grok-4.7 이다.
+- policy:build-fast-cheap-standard — build-fast는 cheap와 standard만 실행한다. 호출은 grok --model grok-4.7-build-fast 이다.
+- policy:runnable-all-default — 기본은 실행 가능한 카드를 모두 처리한다.
+- policy:max-n — 상한이 있으면 max N이다.
+- policy:dependency-order — 의존 순서대로 진행한다.
+- policy:parallel-ownership-isolated — 독립 병렬은 소유 파일이 겹치지 않을 때만 한다.
+- policy:one-repo-explicit-files — 카드 하나는 저장소 하나, 명시 파일, 결정적 Steps다.
+- policy:human-excluded — needs-human, execution-mode external, tasks/decision의 미결은 자동 실행 집합에서 뺀다. 사람이 대상과 인가 맥락을 준 뒤 그 카드 Steps의 읽기 전용 확인은 실행할 수 있다.
+- policy:human-grade-encoding — 사람 작업의 표기는 human-grade: human 이다. CE exec-tier 스키마는 cheap, standard, strong만 받으므로 exec-tier는 비운다. exec-tier: human 은 쓰지 않는다.
+- policy:no-self-review — 작성 세션이 자기 카드를 통과시키지 않는다.
+- policy:review-separate-session — 독립 리뷰는 같은 Grok 4.7의 다른 세션이다. 호출은 grok(기본) 또는 grok --model grok-4.7 이다.
+- policy:fail-max-3 — FAIL이면 Attempts에 다른 접근을 적는다. 최대 3회.
+- policy:blocked-push-only-continue — 3회 FAIL이면 이슈 제목 needs stronger review, blocked, 그 카드의 브랜치 push만 하고 다음 카드로 간다.
+- policy:commit-immediate-push — 작업 커밋 직후 구현 세션이 그 브랜치를 Git으로 push한다.
+- policy:source-branch-master — DVA의 설정된 소스 브랜치는 master다. develop이라고 가정하지 않는다.
+- policy:run-finish-configured-branch — devbox/source의 PASS 통합은 설정된 브랜치로 ce task run-finish 다. ce가 처리한다.
+- policy:branch-integrate-configured-source — subrepo는 저장소가 선언한 branch-integrate로 설정된 소스에 통합한다.
+- policy:stop-own-card-conflict — 그 카드의 통합 충돌이나 관련 실패면 그 카드만 blocked로 두고 다음으로 간다.
+- policy:preexisting-nonworsening — 기존 실패는 실패 자체와 악화되지 않은 증거를 함께 남긴다. 그 기록만으로 멈추지 않는다.
+- policy:no-intercard-questions — 카드 사이에 질문하지 않는다.
+- policy:integrate-after-review-pass — 자동 통합은 독립 리뷰 PASS 다음에만 한다. 작성자 PASS는 통합이 아니다. PASS 자동 통합은 설정된 소스 push와 worktree·브랜치 cleanup을 포함한다. ce가 처리한다.
+- policy:final-report — 끝에 통합 해시, blocked 이유, 이슈 ID, 사람 항목, 의존 항목을 보고한다.
+- policy:no-second-board-grader — 두 번째 보드 채점기를 만들지 않는다. 판정은 선언된 ce task gate 다.
 
 보드 현행화는 `tasks/`만이 아니라 `git worktree list`와 `ce task run-list`도 함께 확인한다.
 완료 카드는 현행화 태스크 끝에 `tasks/_archive/YYYY-MM/`로 보관한다(`done-finalize`는 카드를 삭제해 plan children을 깨뜨린다).
@@ -36,6 +68,7 @@ DECISION-002는 2026-10-03에 Accepted다. 정본 upstream만 택했고 interim 
 - `tasks/done/`: 구현 및 마감 리뷰가 완료되어 아카이빙을 대기 중인 카드
 - `tasks/plan/`: 다중 태스크 묶음을 관리하는 상위 계획 카드
 - `tasks/issue/`: 발견된 버그, 구조 결함, 상류 의존성 이슈 카드
+- `tasks/decision/`: 미결 결정 카드와 인덱스. 수락된 정본은 `decisions/`다. CE의 내장 decision kind 디렉터리이며 별도 zones 선언 없이 검증한다.
 - `tasks/review/`: 리뷰 대기 중인 카드
 - `tasks/backlog/`: 아직 착수 순번이 오지 않은 카드
 - `tasks/_archive/YYYY-MM/`: 모든 완료 기준 및 실측 검증을 통과하여 보관된 아카이브 카드.

@@ -4,7 +4,9 @@ title: "DVA queue consumer lacks pinned product binary provenance"
 type: bug
 priority: P1
 effort: M
-exec-tier: strong
+needs-human: true
+execution-mode: external
+human-grade: human
 status: todo
 severity: medium
 discovered-in: "DVA queue consumer lacks pinned product binary provenance"
@@ -89,3 +91,27 @@ reviewed artifact, activates the pin, and records positive and negative
 host-level CE call counts. The compiled DVA root normalizes a failed child CE
 exit to 1; W07c2a host checks must assert nonzero failure and inspect CE
 status rather than expect the child's exact exit code.
+
+## 공개 승인 필드 (2026-10-05)
+
+사람이 공개 산출물을 승인할 때 기록할 필드는 다음이다. 하나라도 빠지면 핀을
+켜지 않는다.
+
+- source commit/tree
+- artifact identity
+- build toolchain
+- build command
+- platform
+- artifact SHA-256
+- platform/human approval
+
+`mutationAuthorized`를 포함해 불리언 하나만 뒤집어서 승인할 수 없다. 실제
+양성·음성 호스트 테스트는 그 승인이 있은 뒤에만 한다. injected-pin 테스트와
+합성 fixture는 실제 사람 호스트 검증이 아니다. 위 Resolution Criteria는
+체크하지 않는다.
+
+## 읽기 전용 안내
+
+네트워크와 인증을 실행하지 않는다. 비밀과 JWT를 출력하지 않는다. 승인 전에는
+호스트에서 큐 생산 바이너리를 교체하지 않는다. `exec-tier`는 두지 않는다.
+CE exec-tier는 cheap, standard, strong만 받는다.

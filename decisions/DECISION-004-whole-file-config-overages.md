@@ -24,23 +24,23 @@ created: 2026-10-02
 
 ## Decision
 
-(제안 — 인간 확정 대기) **둘 다 exempt 마커 + ceiling** —
-`size-limit: exempt, ceiling: ...` 마커를 파일 상단에 두고, 사유에 위 Context를
-한 줄씩 기록한다. DECISION-001이 채택하는 것과 동일 차량. ceiling은 현재치
-약 30% 여유(각각 280 / 320).
+2026-10-02에 수락됐고 마커는 이미 적용됐다. **둘 다 exempt 마커 + ceiling**이다.
+`.github/workflows/ci.yml`의 ceiling은 280 lines, `examples/full-stack.yml`의
+ceiling은 320 lines다. reusable-workflow로 CI를 나누지 않았다.
+full-stack.yml을 modules 예시로 다시 쓰지 않았다.
 
-대안: ci.yml만 reusable-workflow 실분할(리스크 감수 시). full-stack.yml을
-modules 예시로 재작성(예시 성격 변경을 감수하는 경우).
+2026-10-05 줄 수는 ci.yml 217, full-stack.yml 244다. 둘 다 각 ceiling 아래다.
 
 ## Rationale
 
 16~43라인 초과를 없애는 공사(CI 재구성·예시 재설계)가 상한 위반 그 자체보다
 비용이 크다. exempt+ceiling은 사유를 코드에 남기고 성장 상한을 두는 저장소의
 기존 메커니즘이다(TASK-356 선례). 다만 이것은 "예시가 계속 자라도 된다"는
-허가가 아니라 ceiling까지다.
+허가가 아니라 ceiling까지다. 그 ceiling 280/320은 이미 파일에 있고, 이 문서가
+CI를 나누는 작업을 열지 않는다.
 
 ## Consequences
 
-- 확정 시: 마커 2줄 추가로 High 2건 해소. 별도 TASK 없음.
-- ci.yml이 ceiling을 넘는 날: reusable-workflow 분할을 그때 평가.
-- full-stack.yml이 ceiling을 넘는 날: 예시 자체를 재검토(무한 수용 아님).
+- 마커 두 줄은 이미 있다. 별도 분할 TASK는 없다.
+- ci.yml이 280을 넘는 날에 reusable-workflow 분할을 평가한다.
+- full-stack.yml이 320을 넘는 날에 예시 자체를 재검토한다.

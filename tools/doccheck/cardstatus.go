@@ -22,7 +22,7 @@ type cardZone struct {
 var cardZones = buildCardZones()
 
 func buildCardZones() []cardZone {
-	zones := make([]cardZone, 0, len(archivePrefixes)+8)
+	zones := make([]cardZone, 0, len(archivePrefixes)+9)
 	for _, prefix := range archivePrefixes {
 		zones = append(zones, cardZone{prefix: prefix})
 	}
@@ -34,6 +34,7 @@ func buildCardZones() []cardZone {
 		cardZone{prefix: "tasks/doing/"},
 		cardZone{prefix: "tasks/blocked/"},
 		cardZone{prefix: "tasks/backlog/"},
+		cardZone{prefix: "tasks/decision/"},
 		cardZone{prefix: "tasks/plan/", skip: true},
 	)
 }

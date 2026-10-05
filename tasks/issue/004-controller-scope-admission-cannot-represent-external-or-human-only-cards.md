@@ -5,7 +5,9 @@ type: bug
 status: todo
 priority: P1
 effort: S
-exec-tier: standard
+needs-human: true
+execution-mode: external
+human-grade: human
 severity: medium
 discovered-in: "2026-09-10 direct queue-run preflight"
 discovered-at: 2026-09-10
@@ -160,3 +162,18 @@ pre-integration refusal 뒤 재시도를 실제 host에서 확인한다. 이 증
 옛 ISSUE-001 또는 외부·결정 카드의 실제 사람 disposition/terminal
 전이가 아니므로 위 Resolution Criteria는 그대로 미충족이다. 해당 카드와
 인간 증거가 있는 실제 경로가 준비될 때까지 이 이슈는 열린다.
+
+## 2026-10-05 보드 메모
+
+W13의 큐 분류, verdict, start는 이미 구현됐다. 남은 일은 사람 terminal과
+rollback이다. 그 증거는
+[ISSUE-453](453-dva-queue-consumer-lacks-pinned-product-binary-provenance.md)의
+공개 산출물 승인과 같은 의존이다. 합성 fixture와 injected-pin 테스트는 실제
+사람 호스트 검증이 아니다. 위 Resolution Criteria는 체크하지 않는다. 이 절은
+2026-10-05 보드 상태이며 새 호스트 테스트가 아니다.
+
+## 읽기 전용 안내
+
+네트워크와 인증을 실행하지 않는다. 비밀과 JWT를 출력하지 않는다. 사람 실측만
+Resolution Criteria를 닫는다. `exec-tier`는 두지 않는다. CE exec-tier는
+cheap, standard, strong만 받는다.
