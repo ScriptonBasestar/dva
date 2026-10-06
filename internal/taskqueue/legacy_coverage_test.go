@@ -234,22 +234,23 @@ func TestPinNoPlatformOrMalformedManifest(t *testing.T) {
 }
 
 func TestPinCandidateCannotBeActivatedByBooleanAlone(t *testing.T) {
-	pins := embeddedPins
-	if pins.loadErr != nil {
-		t.Fatal(pins.loadErr)
+	candidate := artifactPin{
+		GOOS: runtime.GOOS, GOARCH: runtime.GOARCH,
+		SourceCommit:       "9e8fac7235a28cbab085a871e1475b38c5150417",
+		SourceTree:         "766f5cbd9e3f6053e8a643ec2d01637aff06631f",
+		GoVersion:          "go1.27.0",
+		CGOEnabled:         "1",
+		GOARM64:            "v8.0",
+		BuildCommand:       "GOWORK=off go build -trimpath -buildvcs=false -mod=readonly -o build/taskchain-task-manager-candidate ./cmd/taskchain-task-manager",
+		SHA256:             "9bc844af42714d0fa112acf0f05fac860d449026324f254db819d78685343fac",
+		Status:             "verified-not-published",
+		Distribution:       "internal-local-only",
+		MutationAuthorized: false,
 	}
-	pins.Artifacts = append([]artifactPin(nil), pins.Artifacts...)
-	for i := range pins.Artifacts {
-		if pins.Artifacts[i].GOOS == runtime.GOOS && pins.Artifacts[i].GOARCH == runtime.GOARCH {
-			pins.Artifacts[i].MutationAuthorized = true
-			if _, err := pins.activeForPlatform(); err == nil || !strings.Contains(err.Error(), "lacks approved release/build provenance") {
-				t.Fatalf("candidate activated=%v", err)
-			}
-			return
-		}
-	}
-	if _, err := pins.activeForPlatform(); err == nil {
-		t.Fatal("unlisted platform accepted")
+	candidate.MutationAuthorized = true
+	pins := artifactPins{SchemaVersion: 1, Artifacts: []artifactPin{candidate}}
+	if _, err := pins.activeForPlatform(); err == nil || !strings.Contains(err.Error(), "lacks approved release/build provenance") {
+		t.Fatalf("candidate activated=%v", err)
 	}
 }
 

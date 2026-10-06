@@ -8,13 +8,15 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
 
 // TestTaskQueueStartInteractionFromUnrelatedDirectory exercises the checked-in
-// start bridge at its DVA boundary. With the staged production pins, an
-// unapproved platform must fail before either child stub can run.
+// start bridge at its DVA boundary. A fake TaskChain binary must fail before
+// either child stub can run: hash mismatch on the authorized darwin/arm64 pin,
+// and no authorized pin on every other platform.
 func TestTaskQueueStartInteractionFromUnrelatedDirectory(t *testing.T) {
 	root, err := filepath.EvalSymlinks(repoRoot())
 	if err != nil {
@@ -48,7 +50,7 @@ exit "$TASK_QUEUE_START_CE_EXIT"
 	}
 	configPath := filepath.Join(root, "dva.yml")
 	validTask := taskQueueStartJSON("TASK-2")
-	t.Run("no approved platform pin", func(t *testing.T) {
+	t.Run("fake binary cannot run queue or CE", func(t *testing.T) {
 		for _, path := range []string{queueArgv, ceCalls} {
 			if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
 				t.Fatal(err)
@@ -76,14 +78,18 @@ exit "$TASK_QUEUE_START_CE_EXIT"
 		if code == 0 || stdout != "" {
 			t.Fatalf("exit=%d stdout=%q, want nonzero exit and no child output", code, stdout)
 		}
-		if !strings.Contains(stderr, "no authorized TaskChain binary pin") {
-			t.Fatalf("stderr=%q, want compiled pin rejection", stderr)
+		want := "no authorized TaskChain binary pin"
+		if runtime.GOOS == "darwin" && runtime.GOARCH == "arm64" {
+			want = "SHA-256 mismatch"
+		}
+		if !strings.Contains(stderr, want) {
+			t.Fatalf("stderr=%q, want %s", stderr, want)
 		}
 		if _, err := os.Stat(queueArgv); !errors.Is(err, os.ErrNotExist) {
-			t.Fatalf("TaskChain queue was invoked without an approved pin: %v", err)
+			t.Fatalf("TaskChain queue was invoked for a fake binary: %v", err)
 		}
 		if _, err := os.Stat(ceCalls); !errors.Is(err, os.ErrNotExist) {
-			t.Fatalf("CE was invoked without an approved pin: %v", err)
+			t.Fatalf("CE was invoked for a fake binary: %v", err)
 		}
 		if _, err := os.Stat(goCalls); !errors.Is(err, os.ErrNotExist) {
 			t.Fatalf("PATH Go was invoked before the compiled pin check: %v", err)

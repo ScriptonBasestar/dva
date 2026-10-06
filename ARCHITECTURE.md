@@ -80,8 +80,8 @@ Config Loader → Schema/Semantic Validation → effective config
 CLI가 `dva.yml`의 설정 디렉터리를 절대 경로로 넘기면 queue와 CE 자식 프로세스
 모두 그 디렉터리에서 실행한다. `Start`는 승인 manifest를 먼저 검사하고,
 승인된 첫 `PATH` 바이너리의 열린 파일을 해시 스냅샷으로 고정해 queue를
-검증한 뒤 단일 후보일 때만 CE를 호출한다. 현재 manifest는 미승인이라
-queue와 CE 모두 호출하지 않는다. 실제 artifact 승인은 별도 릴리스 단계다.
+검증한 뒤 단일 후보일 때만 CE를 호출한다. darwin/arm64 manifest는 승인된 공개·서명 산출물을 가리키며, 다른 플랫폼은
+승인 pin이 없어 CE 시작을 거부한다. 공개 승인과 검증 증거는 TASK-496이 소유한다.
 
 ### Remote artifact jobs and secret transfer
 

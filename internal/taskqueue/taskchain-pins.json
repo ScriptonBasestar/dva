@@ -4,16 +4,16 @@
     {
       "goos": "darwin",
       "goarch": "arm64",
-      "sourceCommit": "9e8fac7235a28cbab085a871e1475b38c5150417",
-      "sourceTree": "766f5cbd9e3f6053e8a643ec2d01637aff06631f",
-      "goVersion": "go1.27.0",
+      "sourceCommit": "dd3ec0a0848586bcbdecaf598bde2b6d38b979c4",
+      "sourceTree": "a0ee91bd7169bc228262b829f08ff1fcf00fe910",
+      "goVersion": "go1.27.1",
       "cgoEnabled": "1",
       "goarm64": "v8.0",
-      "buildCommand": "GOWORK=off go build -trimpath -buildvcs=false -mod=readonly -o build/taskchain-task-manager-candidate ./cmd/taskchain-task-manager",
-      "sha256": "9bc844af42714d0fa112acf0f05fac860d449026324f254db819d78685343fac",
-      "status": "verified-not-published",
-      "distribution": "internal-local-only",
-      "mutationAuthorized": false
+      "buildCommand": "GOWORK=off GOOS=darwin GOARCH=arm64 GOARM64=v8.0 CGO_ENABLED=1 go build -trimpath -buildvcs=false -mod=readonly -o build/public-v0.1.0/taskchain-task-manager-darwin-arm64 ./cmd/taskchain-task-manager",
+      "sha256": "c01ce7aad3638ddc87acda2c9bd52e6d72a52f2a40d932d7e238f246f91e939e",
+      "status": "published-approved",
+      "distribution": "published",
+      "mutationAuthorized": true
     }
   ]
 }

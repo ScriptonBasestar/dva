@@ -80,15 +80,25 @@ func TestStartAuthorizedPinUsesRepositoryRootAndExactArguments(t *testing.T) {
 }
 
 func TestStartProductionPinDoesNotRunQueue(t *testing.T) {
-	bin, called := t.TempDir(), filepath.Join(t.TempDir(), "called")
+	bin := t.TempDir()
+	queueCalled, ceCalled := filepath.Join(t.TempDir(), "queue-called"), filepath.Join(t.TempDir(), "ce-called")
 	writeExecutable(t, filepath.Join(bin, "taskchain-task-manager"), "#!/bin/sh\ntouch \"$QUEUE_CALLED\"\n")
+	writeExecutable(t, filepath.Join(bin, "ce"), "#!/bin/sh\ntouch \"$CE_CALLED\"\n")
 	t.Setenv("PATH", bin+string(os.PathListSeparator)+os.Getenv("PATH"))
-	t.Setenv("QUEUE_CALLED", called)
-	if err := Start(context.Background(), t.TempDir(), "feat", &bytes.Buffer{}); err == nil || !strings.Contains(err.Error(), "no authorized TaskChain binary pin") {
+	t.Setenv("QUEUE_CALLED", queueCalled)
+	t.Setenv("CE_CALLED", ceCalled)
+	err := Start(context.Background(), t.TempDir(), "feat", &bytes.Buffer{})
+	want := "no authorized TaskChain binary pin"
+	if runtime.GOOS == "darwin" && runtime.GOARCH == "arm64" {
+		want = "SHA-256 mismatch"
+	}
+	if err == nil || !strings.Contains(err.Error(), want) {
 		t.Fatalf("Start error=%v", err)
 	}
-	if _, err := os.Stat(called); !os.IsNotExist(err) {
-		t.Fatalf("queue ran: %v", err)
+	for _, marker := range []string{queueCalled, ceCalled} {
+		if _, statErr := os.Stat(marker); !os.IsNotExist(statErr) {
+			t.Fatalf("unexpected subprocess marker %s: %v", marker, statErr)
+		}
 	}
 }
 

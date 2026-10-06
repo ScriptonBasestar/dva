@@ -1,0 +1,39 @@
+{
+  "published": true,
+  "signatureValid": true,
+  "sourceCommit": "dd3ec0a0848586bcbdecaf598bde2b6d38b979c4",
+  "sourceTree": "a0ee91bd7169bc228262b829f08ff1fcf00fe910",
+  "sha256": "c01ce7aad3638ddc87acda2c9bd52e6d72a52f2a40d932d7e238f246f91e939e",
+  "bytes": 8451634,
+  "platforms": [
+    "darwin/arm64"
+  ],
+  "releaseId": 404690282,
+  "url": "https://github.com/Gizzahub/taskchain-task-manager/releases/tag/v0.1.0",
+  "verifiedAssets": [
+    {
+      "name": "taskchain-task-manager-darwin-arm64",
+      "exitCode": 0,
+      "sha256": "c01ce7aad3638ddc87acda2c9bd52e6d72a52f2a40d932d7e238f246f91e939e"
+    },
+    {
+      "name": "SHA256SUMS",
+      "exitCode": 0,
+      "sha256": "917478663ba63ed971660230f3cbb653e3c201184aab06421074877bb133cbe0"
+    },
+    {
+      "name": "provenance.json",
+      "exitCode": 0,
+      "sha256": "c83c45b95a67bf9d002b5bb945c4b0c1f7bc60d10c82dff0f150d7a9beb2d19c"
+    }
+  ],
+  "predicateType": "https://github.com/Gizzahub/taskchain-task-manager/verified-release/v1",
+  "certificateIdentity": "https://github.com/Gizzahub/taskchain-task-manager/.github/workflows/release-v0.1.0.yml@refs/heads/master",
+  "oidcIssuer": "https://token.actions.githubusercontent.com",
+  "installed": false,
+  "pinActivated": false,
+  "platform": "darwin/arm64",
+  "workflowRun": 37472525561,
+  "workflowConclusion": "success",
+  "signerCommit": "8dade71e99a6831c56baa5bbbe2b7f313f7efaeb"
+}
