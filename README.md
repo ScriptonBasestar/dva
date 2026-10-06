@@ -239,9 +239,9 @@ TaskChain v0.1.0 darwin/arm64 pin을 둡니다. 선택된 실행 파일의 SHA-2
 플랫폼이거나 해시가 다르면 둘 다 호출하기 전에 실패합니다. `feat` 자리는
 명시적인 CE 브랜치 유형(`feat`, `fix`, `refactor`, `docs`, `test`, `chore`,
 `perf`)입니다. pin과 검증 경계의 정본은
-[ARCHITECTURE.md](ARCHITECTURE.md#taskchain-queue-boundary)입니다. 전역에
-설치된 DVA는 바뀌지 않았고, 호스트 증명은 검토된 이 소스를 컴파일한
-바이너리로 확인했습니다. 읽기 전용 `task-queue-verdict` 도구의
+[ARCHITECTURE.md](ARCHITECTURE.md#taskchain-queue-boundary)입니다. 호스트 증명 당시
+전역 DVA는 기존 설치본이었으며 검토된 소스 빌드로 확인했습니다. 이후
+[로컬 설치 적용](tasks/_archive/done/499-install-verified-master-dva-locally.md)으로 기본 DVA에도 반영했습니다. 읽기 전용 `task-queue-verdict` 도구의
 `--start-type` 경로는 CE 시작에 사용할 수 없습니다.
 컴파일된 DVA 명령은 CE 자식 명령의 실패 종료 코드를 DVA의 일반 오류 코드 1로
 정규화하므로, 운영 검사는 정확한 숫자 대신 실패 여부와 CE 상태를 확인합니다.

@@ -16,7 +16,7 @@ DECISION-002는 2026-10-03에 Accepted다. 정본 upstream만 택했고 interim 
 플러그인 캐시 core 0.6.38은 이미 있다. 재설치하지 않았다. TASK-484가 저장한 소스 검사는 다시 실행하지 않았다.
 이 작업의 시작 기준선(START)은 `23047d07`이다. 통합 뒤의 master를 이 해시로 단정하지 않는다. [[TASK-485]]가 TASK-482·483·484를 보관한 커밋이다.
 
-열린 구현 카드와 미해결 이슈는 없다. TASK-498은 빈 active issue 코퍼스를 허용하는 테스트 보정을 독립 리뷰·전체 CI 후 master 7003a26e에 통합·push·reclaim했다. TASK-496의 실제 이슈 0개 보드에서도 회귀 테스트와 전체 문서·태스크 게이트가 통과했다. TASK-495는 빈 토큰 출력 판정을 수정하고 독립 Grok 리뷰·전체 CI 후 master 71b00be9에 통합·push·reclaim, 실제 CE DONE이다. TASK-496은 공개 TaskChain v0.1.0 darwin/arm64 자산·custom verified-release attestation·기본 PATH 해시·compiled pin 및 실제 CE start 1회, 해시 불일치 음성 queue/CE 0회, TASK-495 finish DONE을 검증했다. README의 이전 설명 때문에 최종 리뷰 attempt 1은 FAIL이었고, 사용자가 해당 문단만 승인해 보정한 뒤 attempt 2는 PASS다. 독립 세션이 TASK-496을 done으로 옮겼고 ISSUE-453/490/497은 fixed로 `_archive/issue/`에 보관했다. 증거는 `tasks/done/evidence/TASK-496/`다. 전역 DVA 설치본은 교체하지 않았으며 현재 소스의 pin 활성화와 구분한다.
+미해결 이슈는 없다. 사용자가 승인한 로컬 설치 TASK-499는 설치 검증과 독립 Grok 4.7 완료 리뷰 PASS를 마치고 일회성 완료 기록으로 보관했다. 실행 대기 카드는 없다. TASK-498은 빈 active issue 코퍼스를 허용하는 테스트 보정을 독립 리뷰·전체 CI 후 master 7003a26e에 통합·push·reclaim했다. TASK-496의 실제 이슈 0개 보드에서도 회귀 테스트와 전체 문서·태스크 게이트가 통과했다. TASK-495는 빈 토큰 출력 판정을 수정하고 독립 Grok 리뷰·전체 CI 후 master 71b00be9에 통합·push·reclaim, 실제 CE DONE이다. TASK-496은 공개 TaskChain v0.1.0 darwin/arm64 자산·custom verified-release attestation·기본 PATH 해시·compiled pin 및 실제 CE start 1회, 해시 불일치 음성 queue/CE 0회, TASK-495 finish DONE을 검증했다. README의 이전 설명 때문에 최종 리뷰 attempt 1은 FAIL이었고, 사용자가 해당 문단만 승인해 보정한 뒤 attempt 2는 PASS다. 독립 세션이 TASK-496을 done으로 옮겼고 ISSUE-453/490/497은 fixed로 `_archive/issue/`에 보관했다. 증거는 `tasks/done/evidence/TASK-496/`다. TASK-496 호스트 증명 당시 전역 DVA는 교체하지 않았다. 이후 TASK-499에서 사용자가 승인한 master 2d08fcde 로컬 빌드를 기본 PATH 두 설치 경로에 적용했다. 과거 설치 범위 기록은 그대로다.
 
 2026-10-05 TASK-491 옵션 1의 읽기 전용 범위로 ISSUE-004·006을 해결해 `_archive/issue/`에 보관했다. clean dd3ec0a 바이너리를 명시 선택한 실제 큐는 사람 TASK-459 한 장, agent 후보 0, verdict `human_required`다. 독립 Grok 4.7 PASS는 `tasks/done/evidence/TASK-492/live-acceptance-review.json`이다. 공개 pin 승인은 ISSUE-453과 별개다. 해당 독립 검증 당시 TASK-493은 source 통합 중인 doing이었다. 현재는 통합 완료됐으며 아래 최종 검증이 준비 집합을 다시 확인한다. 사람 terminal과 run-all은 이 범위가 아니다.
 
@@ -219,3 +219,10 @@ TASK-496 최종 독립 Grok 4.7 리뷰 01a111a0-d66d-7041-a9c4-1bf1d1b764fd atte
 빈 active issue 코퍼스의 최종 검증은 TASK-496 `final-empty-board-gates.json`이다.
 TASK-498은 생산 판정을 변경하지 않았으며, 실제 inventory와 읽은 이슈 수를 정확히
 대조하고 기존 소유권·상류 보고 누락 실패 fixture를 유지한다.
+
+## 로컬 DVA 적용 (TASK-499)
+
+기본 DVA는 버전 0.3.0, commit 2d08fcde 로컬 빌드다. 공식 dva install의
+원자적 교체와 기본 PATH 버전·해시, 읽기 전용 queue/verdict를 검증했다.
+이것은 새 공개 릴리스가 아니며 TASK-496의 역사적 host 실행 증거를 다시 만들지 않았다.
+백업과 설치 증거는 tasks/done/evidence/TASK-499에 있다.

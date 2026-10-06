@@ -1,0 +1,21 @@
+{
+  "destinations": [
+    {
+      "path": "/Users/archmagece/go/bin/dva",
+      "sha256": "9bfe1988146c5f2904cefdd6628aa85855ddc0909a91aaa928697e0b5fabe4e2",
+      "size": 12220306,
+      "originalMode": "0o755",
+      "backup": "/Users/archmagece/mywork/scripton/dva/tmp/task499/backup/go-dva",
+      "version": "dva version 0.3.0\ncommit: 6d651c5bad0a22c5a98a392f83128cca9bbaa08a\nbuild date: 2026-10-01T07:49:16Z\n"
+    },
+    {
+      "path": "/Users/archmagece/.local/bin/dva",
+      "sha256": "9bfe1988146c5f2904cefdd6628aa85855ddc0909a91aaa928697e0b5fabe4e2",
+      "size": 12220306,
+      "originalMode": "0o755",
+      "backup": "/Users/archmagece/mywork/scripton/dva/tmp/task499/backup/local-dva",
+      "version": "dva version 0.3.0\ncommit: 6d651c5bad0a22c5a98a392f83128cca9bbaa08a\nbuild date: 2026-10-01T07:49:16Z\n"
+    }
+  ],
+  "sourceCommit": "2d08fcdeedda55cef2d10887609a1818b3ee2565"
+}

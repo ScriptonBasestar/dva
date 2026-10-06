@@ -1,0 +1,7 @@
+{
+  "command": "env -u KUBECONFIG dva ci commit",
+  "profile": "commit",
+  "exitCode": 0,
+  "summary": "CI 7e70ff981fee9c9864d0b6c01704b139: succeeded (2m12.183362166s)",
+  "scope": "Installed new DVA supervises unchanged product source plus installation records/docs before done transition"
+}
