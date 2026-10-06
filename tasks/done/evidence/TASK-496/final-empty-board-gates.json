@@ -1,0 +1,11 @@
+{
+  "testUpstreamRefsRealCorpusExit": 0,
+  "actualActiveIssueCount": 0,
+  "docCheckExit": 0,
+  "taskValidateAllExit": 0,
+  "taskGateExit": 0,
+  "prerequisiteTask": "TASK-498",
+  "prerequisiteIntegratedCommit": "7003a26e",
+  "sourceBase": "7003a26e",
+  "actualTask498Finish": "DONE"
+}

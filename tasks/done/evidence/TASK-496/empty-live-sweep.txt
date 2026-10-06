@@ -1,0 +1,5 @@
+=== RUN   TestUpstreamRefsSweepsTheRealCorpus
+    upstreamref_test.go:373: eligible regular markdown tasks/issue entries 0; seen/read 0/0 under tasks/issue/; owned 0, unrefed 0, unreasoned 0, errors 0
+--- PASS: TestUpstreamRefsSweepsTheRealCorpus (0.04s)
+PASS
+ok  	github.com/ScriptonBasestar/dva/tools/doccheck	1.330s

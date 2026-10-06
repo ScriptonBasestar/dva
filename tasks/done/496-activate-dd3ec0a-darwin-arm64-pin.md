@@ -115,3 +115,12 @@ Final board gate exposed TASK-494 real-corpus Seen/Read > 0 workload quota when 
 issues were archived. TASK-498 corrects the test-only assumption in a separate worktree,
 preserving production ownership checks and live inventory reachability. Final review PASS
 is preserved; integration waits for that source correction and a passing empty-board gate.
+
+## Empty-board integration prerequisite resolved
+
+TASK-498 is integrated/pushed/reclaimed at master 7003a26e with separate strong
+implementation and independent Grok 4.7 PASS. This task branch rebased without conflict.
+The real empty issue corpus now logs eligible 0 and seen/read 0/0; targeted race test,
+make doc-check, ce task validate --all and ce task gate all exit 0. Evidence:
+tasks/done/evidence/TASK-496/final-empty-board-gates.json and task498-run-finish.json.
+The historical failed gate receipt remains unchanged as the discovery record.
