@@ -66,9 +66,9 @@ func main() {
 	os.Exit(1)
 }
 
-var reMakeRun = regexp.MustCompile(`^\s*run:\s*make\s+(\S+)`)
+var reMakeRun = regexp.MustCompile(`^\s*run:\s*(?:sh scripts/without-dva\.sh\s+)?make\s+(\S+)`)
 var reRunBlock = regexp.MustCompile(`^(\s*)run:\s*[|>][-+]?\s*(?:#.*)?$`)
-var reMakeCmd = regexp.MustCompile(`^\s*make\s+(\S+)`)
+var reMakeCmd = regexp.MustCompile(`^\s*(?:sh scripts/without-dva\.sh\s+)?make\s+(\S+)`)
 var reCIHelp = regexp.MustCompile(`^##\s+([^:]+):.*\(CI\)\s*$`)
 
 func makeTargetsFromCI(path string) (map[string]bool, error) {

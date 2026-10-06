@@ -391,3 +391,8 @@ ci:
 ## ci-full: Supervise the full CI profile via `dva ci full` (docs/53-ci-profiles.md)
 ci-full:
 	$(DVA) ci full
+
+.PHONY: recovery-check
+## recovery-check: Verify native build and core gates with an unusable installed DVA
+recovery-check:
+	sh scripts/without-dva.sh $(MAKE) --no-print-directory --no-keep-going -j1 build test lint doc-check

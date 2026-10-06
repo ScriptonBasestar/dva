@@ -85,3 +85,18 @@ func assertTargets(t *testing.T, got map[string]bool, want ...string) {
 		}
 	}
 }
+
+func TestCIMakeTargetsNativeRecoveryWrapper(t *testing.T) {
+	got, err := ciMakeTargets(strings.NewReader(`
+        run: sh scripts/without-dva.sh make build
+        run: |
+          sh scripts/without-dva.sh make test
+          # sh scripts/without-dva.sh make hidden
+          echo sh scripts/without-dva.sh make hidden
+        run: sh scripts/unrelated.sh make ignored
+`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertTargets(t, got, "build", "test")
+}

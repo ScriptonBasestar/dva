@@ -30,13 +30,13 @@ jobs:
           go-version-file: go.mod
 
       - name: Documentation
-        run: make doc-check
+        run: sh scripts/without-dva.sh make doc-check
 
       - name: Build
-        run: make build
+        run: sh scripts/without-dva.sh make build
 
       - name: Skill Installer Dogfood
-        run: make test-skill-dogfood
+        run: sh scripts/without-dva.sh make test-skill-dogfood
 
       # GOMAXPROCS=1 leaves a core for the runner heartbeat on 2-core hosts.
       # A full-core -race compile starved that heartbeat and GitHub aborted
@@ -45,15 +45,15 @@ jobs:
         timeout-minutes: 25
         env:
           GOMAXPROCS: "1"
-        run: make test
+        run: sh scripts/without-dva.sh make test
 
       - name: Integration Test
         env:
           GOMAXPROCS: "1"
-        run: make test-integration
+        run: sh scripts/without-dva.sh make test-integration
 
       - name: Vet
-        run: go vet ./...
+        run: sh scripts/without-dva.sh go vet ./...
 
   commit-subjects:
     runs-on: ubuntu-latest
@@ -87,7 +87,7 @@ jobs:
       # golangci-lint's default set does not check formatting, so a green Lint
       # job said nothing about gofmt and nine files had drifted. TASK-078.
       - name: Format
-        run: make fmt-check
+        run: sh scripts/without-dva.sh make fmt-check
 
       # Pin golangci-lint to the version in .mise.toml. It must be built with
       # Go >= the go.mod directive, so keep these in sync when bumping Go.
@@ -197,7 +197,7 @@ jobs:
           sops --version 2>&1 | head -1
 
       - name: Integration Test
-        run: make test-integration
+        run: sh scripts/without-dva.sh make test-integration
 
   goreleaser-snapshot:
     runs-on: ubuntu-latest

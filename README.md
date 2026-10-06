@@ -215,6 +215,9 @@ user/project discovery path에 복사합니다. runtime별 경로, per-skill cla
 
 ## Development
 
+설치된 DVA가 고장 나도 `make recovery-check`로 빌드와 핵심 검사를 직접 실행할
+수 있습니다. [DVA 자체 개발의 복구 경로](docs/53-ci-profiles.md#dva-자체-개발의-복구-경로)를 참고하세요.
+
 이 저장소의 `dva task-queue`는 `PATH`의 `taskchain-task-manager`를 호출해
 `tasks/` 보드의 사람용 `runnable`과 에이전트용 `agentRunnable`을 읽기 전용으로
 보여줍니다. 하위 디렉터리에서 호출해도 저장소의 `tasks/`를 사용합니다.
