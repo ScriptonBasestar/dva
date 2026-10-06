@@ -1,0 +1,8 @@
+{
+  "command": "env -u KUBECONFIG dva ci commit",
+  "profile": "commit",
+  "exitCode": 0,
+  "summary": "CI 86694121893b0dd207493b28ebedb1fa: succeeded (2m14.420692167s)",
+  "issuePopulation": 2,
+  "emptyActiveIssueCases": "absent/empty/archived-only synthetic Check fixtures; actual empty board will be verified after TASK-496 rebase"
+}

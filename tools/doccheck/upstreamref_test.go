@@ -57,6 +57,79 @@ func TestUpstreamRefAcceptsReportedCard(t *testing.T) {
 	}
 }
 
+// Zero active issues is a valid board. TASK-496 archived the last open issues and a sweep
+// that required Seen/Read above zero went red on a legitimate empty corpus. Each case below
+// is a disposable tree: one nonissue markdown file keeps Check from being vacuous, and
+// tasks/issue/ is absent, present and empty, or absent because the only issue card is
+// archived. Check must pass with the ownership and report-trail counters still at zero.
+// The live board is not written, and no fake issue is kept to make the corpus nonempty.
+func TestUpstreamRefEmptyIssueCorpusIsValid(t *testing.T) {
+	const nonissuePath = "docs/a.md"
+	const nonissueBody = "# A\n\nSee [self](a.md).\n"
+	// Archived upstream card with no upstream-ref:. Under tasks/issue/ this would be unrefed.
+	// In the archive it must stay outside the active meter.
+	archived := archiveCard{
+		path: "tasks/_archive/issue/030-archived.md",
+		body: "---\nid: ISSUE-030\nstatus: done\nownership: upstream\n---\n\n## 소유권 — 상류다\n",
+	}
+	for _, tc := range []struct {
+		name     string
+		cards    []archiveCard
+		issueDir bool
+	}{
+		{name: "absent"},
+		{name: "empty", issueDir: true},
+		{name: "archived-only", cards: []archiveCard{archived}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			root := t.TempDir()
+			writeFile(t, root, nonissuePath, nonissueBody)
+			paths := []string{nonissuePath}
+			for _, c := range tc.cards {
+				writeFile(t, root, c.path, c.body)
+				paths = append(paths, c.path)
+			}
+			issueDir := filepath.Join(root, filepath.FromSlash("tasks/issue"))
+			if tc.issueDir {
+				if err := os.MkdirAll(issueDir, 0o755); err != nil {
+					t.Fatal(err)
+				}
+			}
+			res := Check(CheckInput{Root: root, Inventory: mustInventory(t, root, paths...)})
+			if !res.OK {
+				t.Fatalf("%s: empty active issue corpus must pass Check, errors: %v", tc.name, res.Errors)
+			}
+			if res.IssueCardsSeen != 0 || res.IssueCardsRead != 0 ||
+				res.OwnershipUnclassified != 0 || res.OwnershipMismatched != 0 ||
+				res.OwnershipUnreasoned != 0 || res.UpstreamOwned != 0 || res.UpstreamUnrefed != 0 ||
+				len(res.UpstreamDetail) != 0 {
+				t.Fatalf("%s: seen/read/unclassified/mismatched/unreasoned/owned/unrefed = %d/%d/%d/%d/%d/%d/%d, detail %v, want all zero",
+					tc.name,
+					res.IssueCardsSeen, res.IssueCardsRead,
+					res.OwnershipUnclassified, res.OwnershipMismatched, res.OwnershipUnreasoned,
+					res.UpstreamOwned, res.UpstreamUnrefed, res.UpstreamDetail)
+			}
+			info, err := os.Stat(issueDir)
+			if tc.issueDir {
+				if err != nil || !info.IsDir() {
+					t.Fatalf("empty fixture must have a tasks/issue directory: %v", err)
+				}
+				entries, readErr := os.ReadDir(issueDir)
+				if readErr != nil {
+					t.Fatal(readErr)
+				}
+				if len(entries) != 0 {
+					t.Fatalf("empty tasks/issue must contain no entries, got %d", len(entries))
+				}
+				return
+			}
+			if err == nil || !os.IsNotExist(err) {
+				t.Fatalf("%s fixture must leave tasks/issue absent, stat err=%v", tc.name, err)
+			}
+		})
+	}
+}
+
 // A board whose active issues are all local-owned is valid. Positive detection of an
 // upstream-owned card (reported, missing ref, empty ref, split) stays in the fixtures
 // above and below; this corpus must not depend on a live upstream workload.
@@ -243,26 +316,46 @@ func repoRoot(t *testing.T) string {
 // condition, because a stage that never names its exit is how ISSUE-023's advisory became
 // unread — and it worked: on 2026-09-15 TASK-399 filed the upstream issues, the count reached
 // 0, and this test failed with the edit to make. The guard below is what replaced it, in the
-// terms that failure named: unrefed, unclassified, and mismatched stay at 0, and check.go
-// fails the gate on any regression rather than counting one.
+// terms that failure named: unrefed, unclassified, mismatched, and unreasoned stay at 0,
+// and check.go fails the gate on any regression rather than counting one.
 //
-// Positive coverage of an upstream-owned card does not come from a mandatory live workload.
-// A valid board may have no active upstream-owned issue (Owned==0). Reported, missing-ref,
-// empty-ref, and split detection stay in the synthetic fixtures. This sweep still requires
-// the real tasks/issue/ inventory to be seen and read.
+// A valid board may have zero active issues. Seen and Read must equal the eligible count
+// from this inventory — non-symlink markdown under tasks/issue/ — and zero is a passing
+// count. Reported, missing-ref, empty-ref, and split detection stay in the synthetic
+// fixtures, so this binding does not keep a live issue on the board to stay green.
 //
-// It also still owns the "corpus absent is red" axis that Check cannot hold: Check's vacuity
-// guard needs Seen>0, so a sweep that misses tasks/issue/ entirely exits 0 there. Here it does
-// not.
+// Check still accepts a fixture with no tasks/issue/ at all, because that tree is
+// legitimate there. What keeps an absent task inventory from passing here is the tracked
+// tasks/README.md sentinel: LoadInventory on this repository includes it, and a sweep
+// that never reaches the task tree does not. Seen/Read disagreeing with the eligible
+// count is the same failure when a listed card is skipped or cannot be read.
 func TestUpstreamRefsSweepsTheRealCorpus(t *testing.T) {
 	root := repoRoot(t)
 	inv, err := LoadInventory(root)
 	if err != nil {
 		t.Fatalf("inventory: %v", err)
 	}
+	sentinel := false
+	eligible := 0
+	for _, e := range inv {
+		if e.Path == "tasks/README.md" && !isSymlinkMode(e.Mode) {
+			sentinel = true
+		}
+		if isSymlinkMode(e.Mode) || !strings.HasPrefix(e.Path, issueZonePrefix) || !isMarkdownPath(e.Path) {
+			continue
+		}
+		eligible++
+	}
+	if !sentinel {
+		t.Fatal("inventory missing tracked tasks/README.md sentinel — an absent task inventory must not pass")
+	}
 	c := checkUpstreamRefs(root, inv)
-	if c.Seen == 0 || c.Read == 0 {
-		t.Fatalf("seen/read = %d/%d — the sweep must reach the real tasks/issue/ zone", c.Seen, c.Read)
+	if c.Seen != eligible || c.Read != eligible {
+		t.Fatalf("seen/read = %d/%d, want %d/%d — Seen and Read must equal the eligible regular markdown tasks/issue/ entries, including zero",
+			c.Seen, c.Read, eligible, eligible)
+	}
+	if len(c.Errs) != 0 {
+		t.Fatalf("read errors = %v, want none", c.Errs)
 	}
 	if c.Unclassified != 0 {
 		t.Fatalf("unclassified = %d on the real board; every issue card must carry ownership: — %v", c.Unclassified, c.Msgs)
@@ -274,5 +367,9 @@ func TestUpstreamRefsSweepsTheRealCorpus(t *testing.T) {
 		t.Fatalf("unrefed = %d on the real board; every upstream-owned card must name where it was "+
 			"reported (%s) — %v", c.Unrefed, upstreamRefField, c.Msgs)
 	}
-	t.Logf("swept %d issue card(s) from %d file(s) under %s: %d owned, %d unrefed", c.Read, c.Seen, issueZonePrefix, c.Owned, c.Unrefed)
+	if c.Unreasoned != 0 {
+		t.Fatalf("unreasoned = %d on the real board; every classified issue card must state why — %v", c.Unreasoned, c.Msgs)
+	}
+	t.Logf("eligible regular markdown tasks/issue entries %d; seen/read %d/%d under %s; owned %d, unrefed %d, unreasoned %d, errors %d",
+		eligible, c.Seen, c.Read, issueZonePrefix, c.Owned, c.Unrefed, c.Unreasoned, len(c.Errs))
 }
