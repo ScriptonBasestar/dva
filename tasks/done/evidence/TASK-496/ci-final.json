@@ -1,0 +1,8 @@
+{
+  "profile": "commit",
+  "command": "env -u KUBECONFIG dva ci commit",
+  "exitCode": 0,
+  "summary": "CI 3c7590af04cab89216087b2028677772: succeeded (1m39.462227791s)",
+  "sourceBase": "71b00be9304c6ebad1fd17728f497791ba0ab8cd",
+  "scope": "Frozen source/pin/tests before final evidence/metadata; final board/doc gates run after completion transition."
+}

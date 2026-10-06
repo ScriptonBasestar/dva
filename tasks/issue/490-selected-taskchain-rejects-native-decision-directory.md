@@ -64,8 +64,8 @@ Go build info는 `go1.27.1`, source `f53c793889ec9f5ca2a191e0aa0d52174cf2c959`,
 
 ## Resolution Criteria
 
-- [ ] 기본 PATH 선택으로 실제 DVA 보드 queue가 성공한다 | verify: `dva task-queue >/dev/null`
-- [ ] 기본 PATH 선택으로 같은 보드 verdict가 성공한다 | verify: `dva task-queue-verdict >/dev/null`
+- [x] 기본 PATH 선택으로 실제 DVA 보드 queue가 성공한다 | verify: `dva task-queue >/dev/null`
+- [x] 기본 PATH 선택으로 같은 보드 verdict가 성공한다 | verify: `dva task-queue-verdict >/dev/null`
 - [x] 생산자 독립 리뷰와 decision/human 분류 회귀 증거가 있다 | verify: `python3 -c 'import json,pathlib; d=json.loads(pathlib.Path("tasks/done/evidence/TASK-493/payload-checks.json").read_text()); assert d["makeCheckExit"]==0 and d["reviewVerdict"]=="PASS" and d["sourceCommit"] and d["integrated"]'`
 
 ## 현재 보정 (2026-10-05)
@@ -117,3 +117,7 @@ DVA pin 활성화·실제 CE host start는 하지 않았다. 서명 증거가 �
 권한 조치와 재개 명령은 task-manager-devbox의 ISSUE-057이 추적한다.
 증거는 `tasks/done/evidence/TASK-496/approval/publication-blocked.json`이다.
 승인은 유지되며, 권한 준비 후 같은 source/hash/channel로 이어간다.
+
+## 2026-10-06 해결 증거 / 현재 상태
+
+승인·공개·서명 검증된 darwin/arm64 TaskChain v0.1.0을 기본 PATH에 설치했다. SHA-256은 c01ce7aad3638ddc87acda2c9bd52e6d72a52f2a40d932d7e238f246f91e939e이며 installation.json과 published-release-verification.json은 TASK-496 evidence에 있다. 기본 `dva task-queue`와 `dva task-queue-verdict`를 재실행해 exit 0이다. TASK-495는 실제 CE run에서 구현·독립 리뷰·검증·통합·회수까지 완료했다(71b00be9). 최종 TASK-496 독립 리뷰 후 이 이슈를 fixed로 보관한다. 앞선 PATH 미교체·403 문단은 당시 이력이다.

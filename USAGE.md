@@ -84,7 +84,7 @@ Linux에서도 같은 절차로 해당 archive를 선택하고 `sha256sum -c`를
 | `dva config env edit/unseal` | `env_file` 엔트리의 sops 암호화 소스를 편집/복호화 |
 | `dva config env seal/show` | `env_bridge:` 게이트 활성화 시에만: 평문을 암호화/터미널에 표시 |
 | `dva run CMD [ARGS]` | `dva.yml`에 정의된 interaction 커맨드 실행 |
-| `dva task-queue-start <type>` | TaskChain 릴리스 승인 전에는 큐·CE 호출 없이 실패하는 내장 시작 경계 |
+| `dva task-queue-start <type>` | darwin/arm64 published-approved v0.1.0 TaskChain pin 하나. 승인 실행 파일 SHA를 확인한 스냅샷을 실행한 뒤에만 CE를 시작. 미지원 플랫폼·해시 불일치는 큐·CE 전에 실패 |
 | `dva ls` | 실행 가능한 이름과 interaction 목록 표시 |
 | `dva manifest` | 자동화용 구조화 command manifest 출력 |
 | `dva show` | 선언된 워크스페이스 설정 요약 표시 |
@@ -1698,11 +1698,14 @@ skill agent-deny
 ci secret job task-queue-start
 ```
 
-`task-queue-start`는 이제 내장 커맨드입니다. 같은 이름의 기존
+`task-queue-start`는 내장 커맨드입니다. 같은 이름의 기존
 `interaction.task-queue-start` 선언은 `dva validate`에서 충돌로 거부되므로
-다른 이름으로 옮겨야 합니다. 현재 내장 커맨드는 승인된 TaskChain 릴리스가
-없어 큐와 CE를 호출하지 않습니다. 승인 전 준비된 검증 경로는 DVA 설정
-파일이 있는 저장소의 `tasks/` 보드만 읽고, 해당 저장소에서 CE를 실행합니다.
+다른 이름으로 옮겨야 합니다. 이 소스는 darwin/arm64용 published-approved
+TaskChain v0.1.0 pin 하나만 둡니다. 승인된 실행 파일의 SHA-256이 같을 때만
+그 스냅샷을 실행해, DVA 설정 파일이 있는 저장소의 `tasks/` 보드를 읽은 뒤
+같은 저장소에서 CE를 시작합니다. 미지원 플랫폼이거나 해시가 다르면 큐와
+CE를 호출하기 전에 실패합니다. 전역에 설치된 DVA v0.3.0은 교체되지
+않았고, 호스트 증명은 검토된 이 소스를 컴파일한 바이너리로 확인했습니다.
 `task-queue-verdict`의 Go 도구는 읽기 전용이며 CE 시작 경로가 아닙니다.
 
 **훅 가능 6개** — 예약어 중 `before`/`replace`/`after` 훅을 받는 것:

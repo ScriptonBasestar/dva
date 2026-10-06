@@ -1,0 +1,9 @@
+{
+  "docCheckExit": 0,
+  "taskValidateAllExit": 0,
+  "taskGateExit": 0,
+  "sourceCiExit": 0,
+  "state": "blocked",
+  "blocker": "ISSUE-497 protected root README explicit permission pending",
+  "integrated": false
+}

@@ -8,5 +8,6 @@
   "GOARM64": "v8.0",
   "publicSignatureVerifiedBeforeInstall": true,
   "backup": "build/task496-host/previous-taskchain-task-manager",
-  "backupCurrentLocation": "tmp/task496-host/previous-taskchain-task-manager"
+  "backupCurrentLocation": "/Users/archmagece/mywork/scripton/dva/tmp/task496/backup/previous-taskchain-task-manager",
+  "backupRetention": "Local ignored primary checkout tmp, outside reclaimed task worktree; mode 0700"
 }

@@ -1,0 +1,7 @@
+{
+  "sessionId": "01a111a0-d66d-7041-a9c4-1bf1d1b764fd",
+  "model": "grok-4.7",
+  "text": "USAGE.md 수정과 ISSUE-497만 좁혀서 다시 봅니다. TASK-496 완료 판정은 유지하고, 보호된 README가 그대로인지만 확인합니다.**Source-doc correction: PASS.** TASK-496의 최종 판정은 FAIL이며, 카드는 `tasks/blocked/`에 있고 done으로 옮기지 않습니다.\n\n`USAGE.md`의 `task-queue-start` 설명은 현재 소스와 맞습니다. pin은 `darwin/arm64` `published-approved` v0.1.0 한 건이고, 승인 SHA-256과 같은 스냅샷을 실행한 뒤에만 그 저장소의 `tasks/`를 읽고 CE를 시작합니다. 미지원 플랫폼과 해시 불일치는 그 전에 실패합니다. 전역 설치본 `/Users/archmagece/go/bin/dva version`은 `0.3.0`, commit `6d651c5bad0a22c5a98a392f83128cca9bbaa08a`, build `2026-10-01T07:49:16Z`입니다. 호스트 증명과 이 전역 바이너리를 구분한 문장은 그 사실과 같습니다.\n\n보호된 `README.md`는 master와 같습니다. `git diff --exit-code master -- README.md`는 0입니다. 233–241행은 여전히 승인된 릴리스가 없고 `mutationAuthorized: false`라고 적습니다.\n\nISSUE-497은 그 사람 의존을 기록합니다. `needs-human: true`, `execution-mode: external`, `human-grade: human`, `status: todo`이고, 해결 기준 두 개는 미체크입니다. 권한 요청에 대한 무응답은 허가가 아니며, 명시적 허가 없이 README를 고치지 말라고 되어 있습니다. `tasks/done/evidence/TASK-496/final-review.json`은 없고, 기록된 attempt 1은 session `01a111a0-d66d-7041-a9c4-1bf1d1b764fd`, verdict `FAIL`입니다.\n\n`make doc-check`는 돌리지 않았습니다. USAGE 변경에는 링크나 앵커가 없고, ISSUE-497에도 상대 링크가 없습니다. 파일과 Git은 바꾸지 않았습니다.",
+  "verdict": "PASS",
+  "scope": "USAGE source-doc correction and human blocker only; TASK-496 final FAIL remains."
+}
