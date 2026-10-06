@@ -1,0 +1,307 @@
+{
+  "schemaVersion": 1,
+  "status": "DONE",
+  "activeCount": 0,
+  "task": "task-495",
+  "allowedActions": null,
+  "reason": "integration and recovery completed",
+  "nextAction": "no action required",
+  "finishReady": false,
+  "execution": {
+    "task": "task-495",
+    "type": "fix",
+    "source": "master",
+    "owner": {
+      "actor": "codex",
+      "host": "mbp",
+      "kind": "agent"
+    },
+    "branch": "dev/codex/mbp/fix/task-495",
+    "worktree": "/Users/archmagece/worktrees/misc/dva/codex__mbp__fix__task-495",
+    "startedAt": "2026-10-06T14:02:39.646216Z",
+    "updatedAt": "2026-10-06T14:02:39.646216Z"
+  },
+  "receipt": {
+    "task": "task-495",
+    "operation": "finish",
+    "status": "DONE",
+    "owner": {
+      "actor": "codex",
+      "host": "mbp",
+      "kind": "agent"
+    },
+    "branch": "dev/codex/mbp/fix/task-495",
+    "worktree": "/Users/archmagece/worktrees/misc/dva/codex__mbp__fix__task-495",
+    "reason": "integration and recovery completed",
+    "createdAt": "2026-10-06T14:29:21.671489Z",
+    "sourceHead": "71b00be9304c6ebad1fd17728f497791ba0ab8cd",
+    "sourceHeadBefore": "4189ff915d56d47aace912dd006374a82bd9b58f",
+    "baseHead": "4189ff915d56d47aace912dd006374a82bd9b58f",
+    "taskHead": "71b00be9304c6ebad1fd17728f497791ba0ab8cd",
+    "sourcePushed": true,
+    "worktreeRemoved": true,
+    "localBranchRemoved": true,
+    "remoteBranchRemoved": true,
+    "tool_version": "v0.8.4-529-gbe3ab29d",
+    "tool_revision": "be3ab29de880db1b629b98cc21453b119f6af87e",
+    "diagnostics": [
+      {
+        "command": "git",
+        "executable": "/usr/bin/git",
+        "args": [
+          "status",
+          "--porcelain"
+        ],
+        "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__fix__task-495",
+        "exitCode": 0
+      },
+      {
+        "command": "git",
+        "executable": "/usr/bin/git",
+        "args": [
+          "rev-parse",
+          "--abbrev-ref",
+          "--symbolic-full-name",
+          "@{u}"
+        ],
+        "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__fix__task-495",
+        "exitCode": 0,
+        "stdout": "origin/dev/codex/mbp/fix/task-495\n"
+      },
+      {
+        "command": "git",
+        "executable": "/usr/bin/git",
+        "args": [
+          "rev-list",
+          "--left-right",
+          "--count",
+          "@{u}...HEAD"
+        ],
+        "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__fix__task-495",
+        "exitCode": 0,
+        "stdout": "0\t0\n"
+      },
+      {
+        "command": "git",
+        "executable": "/usr/bin/git",
+        "args": [
+          "rev-parse",
+          "HEAD"
+        ],
+        "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__fix__task-495",
+        "exitCode": 0,
+        "stdout": "71b00be9304c6ebad1fd17728f497791ba0ab8cd\n"
+      },
+      {
+        "command": "git",
+        "executable": "/usr/bin/git",
+        "args": [
+          "rev-parse",
+          "--verify",
+          "refs/remotes/origin/master"
+        ],
+        "cwd": "/Users/archmagece/mywork/scripton/dva",
+        "exitCode": 0,
+        "stdout": "4189ff915d56d47aace912dd006374a82bd9b58f\n"
+      },
+      {
+        "command": "git",
+        "executable": "/usr/bin/git",
+        "args": [
+          "merge-base",
+          "refs/remotes/origin/master",
+          "HEAD"
+        ],
+        "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__fix__task-495",
+        "exitCode": 0,
+        "stdout": "4189ff915d56d47aace912dd006374a82bd9b58f\n"
+      },
+      {
+        "command": "gz-git",
+        "executable": "/Users/archmagece/go/bin/gz-git",
+        "args": [
+          "integrate",
+          "check",
+          "--target",
+          "origin/master"
+        ],
+        "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__fix__task-495",
+        "exitCode": 0,
+        "stdout": "integrate check: dev/codex/mbp/fix/task-495  (target=origin/master, default=origin/master, integration=master)\n\n  PASS  freshness — based on origin/master tip\n  PASS  merge-tree — no conflict with origin/master\n  PASS  cross-merge origin/dev/codex/mbp/feat/task-496 — no conflict\n  PASS  working-tree — clean\n  PASS  push — pushed\n  PASS  readiness contract — ce task gate: { \"status\": \"ready\", \"summary\": \"task_board_ready\", \"tool_version\": \"v0.8.4-529-gbe3ab29d\", \"tool_revision\": \"be3ab29de880db1b629b98cc21453b119f6af87e\", \"steps\": [ { \"step\": \"validate\", \"status\": \"pass\" }, { \"step\": \"lint\", \"status\": \"pass\" }, { \"step\": \"preflight\", \"status\": \"pass\" }, { \"step\": \"bindings\", \"status\": \"pass\" } ] }\n  INFO  readiness provenance — mode=contract-v1 source=71b00be9304c6ebad1fd17728f497791ba0ab8cd target=4189ff915d56d47aace912dd006374a82bd9b58f ManifestPath=.gz-git.yaml ContractDigest=2625e7953b59fc7cd7236a9c3e001f35fc3653453f9bbefacdc1ecff47ad5f99 ManifestOID=296a68c7cfbb454d8af1b4d8c3641c7e82afd182 RunnerPath=.gz-git/readiness/check RunnerOID=34804846dea859411c0a4ceb7233030733b867fe ReadinessTreeOID=094370fee7792f9fd08405331a9d02c1c509461a Status=ready Duration=18.753s\n\nREADY to integrate into origin/master — 0 warning(s)\n"
+      },
+      {
+        "command": "gz-git",
+        "executable": "/Users/archmagece/go/bin/gz-git",
+        "args": [
+          "integrate",
+          "run",
+          "--target",
+          "origin/master"
+        ],
+        "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__fix__task-495",
+        "exitCode": 0,
+        "stdout": "integrate check: dev/codex/mbp/fix/task-495  (target=origin/master, default=origin/master, integration=master)\n\n  PASS  freshness — based on origin/master tip\n  PASS  merge-tree — no conflict with origin/master\n  PASS  cross-merge origin/dev/codex/mbp/feat/task-496 — no conflict\n  PASS  working-tree — clean\n  PASS  push — pushed\n  PASS  readiness contract — ce task gate: { \"status\": \"ready\", \"summary\": \"task_board_ready\", \"tool_version\": \"v0.8.4-529-gbe3ab29d\", \"tool_revision\": \"be3ab29de880db1b629b98cc21453b119f6af87e\", \"steps\": [ { \"step\": \"validate\", \"status\": \"pass\" }, { \"step\": \"lint\", \"status\": \"pass\" }, { \"step\": \"preflight\", \"status\": \"pass\" }, { \"step\": \"bindings\", \"status\": \"pass\" } ] }\n  INFO  readiness provenance — mode=contract-v1 source=71b00be9304c6ebad1fd17728f497791ba0ab8cd target=4189ff915d56d47aace912dd006374a82bd9b58f ManifestPath=.gz-git.yaml ContractDigest=2625e7953b59fc7cd7236a9c3e001f35fc3653453f9bbefacdc1ecff47ad5f99 ManifestOID=296a68c7cfbb454d8af1b4d8c3641c7e82afd182 RunnerPath=.gz-git/readiness/check RunnerOID=34804846dea859411c0a4ceb7233030733b867fe ReadinessTreeOID=094370fee7792f9fd08405331a9d02c1c509461a Status=ready Duration=18.456s\n\nREADY to integrate into origin/master — 0 warning(s)\n\nINTEGRATED dev/codex/mbp/fix/task-495 (71b00be9304c6ebad1fd17728f497791ba0ab8cd) -\u003e origin/master\nRECLAIMED dev/codex/mbp/fix/task-495 — worktree(/Users/archmagece/worktrees/misc/dva/codex__mbp__fix__task-495) local-branch remote-branch\n"
+      },
+      {
+        "command": "git",
+        "executable": "/usr/bin/git",
+        "args": [
+          "rev-parse",
+          "--verify",
+          "refs/remotes/origin/master"
+        ],
+        "cwd": "/Users/archmagece/mywork/scripton/dva",
+        "exitCode": 0,
+        "stdout": "71b00be9304c6ebad1fd17728f497791ba0ab8cd\n"
+      },
+      {
+        "command": "git",
+        "executable": "/usr/bin/git",
+        "args": [
+          "show-ref",
+          "--verify",
+          "--quiet",
+          "refs/heads/master"
+        ],
+        "cwd": "/Users/archmagece/mywork/scripton/dva",
+        "exitCode": 0
+      },
+      {
+        "command": "git",
+        "executable": "/usr/bin/git",
+        "args": [
+          "rev-list",
+          "--count",
+          "refs/remotes/origin/master..refs/heads/master"
+        ],
+        "cwd": "/Users/archmagece/mywork/scripton/dva",
+        "exitCode": 0,
+        "stdout": "0\n"
+      },
+      {
+        "command": "git",
+        "executable": "/usr/bin/git",
+        "args": [
+          "show-ref",
+          "--verify",
+          "--quiet",
+          "refs/heads/dev/codex/mbp/fix/task-495"
+        ],
+        "cwd": "/Users/archmagece/mywork/scripton/dva",
+        "exitCode": 1
+      },
+      {
+        "command": "git",
+        "executable": "/usr/bin/git",
+        "args": [
+          "ls-remote",
+          "--exit-code",
+          "--heads",
+          "origin",
+          "dev/codex/mbp/fix/task-495"
+        ],
+        "cwd": "/Users/archmagece/mywork/scripton/dva",
+        "exitCode": 2
+      }
+    ]
+  },
+  "diagnostics": [
+    {
+      "command": "git",
+      "executable": "/usr/bin/git",
+      "args": [
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__fix__task-495",
+      "exitCode": 0
+    },
+    {
+      "command": "git",
+      "executable": "/usr/bin/git",
+      "args": [
+        "rev-parse",
+        "--abbrev-ref",
+        "--symbolic-full-name",
+        "@{u}"
+      ],
+      "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__fix__task-495",
+      "exitCode": 0,
+      "stdout": "origin/dev/codex/mbp/fix/task-495\n"
+    },
+    {
+      "command": "git",
+      "executable": "/usr/bin/git",
+      "args": [
+        "rev-list",
+        "--left-right",
+        "--count",
+        "@{u}...HEAD"
+      ],
+      "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__fix__task-495",
+      "exitCode": 0,
+      "stdout": "0\t0\n"
+    },
+    {
+      "command": "git",
+      "executable": "/usr/bin/git",
+      "args": [
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__fix__task-495",
+      "exitCode": 0,
+      "stdout": "71b00be9304c6ebad1fd17728f497791ba0ab8cd\n"
+    },
+    {
+      "command": "git",
+      "executable": "/usr/bin/git",
+      "args": [
+        "rev-parse",
+        "--verify",
+        "refs/remotes/origin/master"
+      ],
+      "cwd": "/Users/archmagece/mywork/scripton/dva",
+      "exitCode": 0,
+      "stdout": "4189ff915d56d47aace912dd006374a82bd9b58f\n"
+    },
+    {
+      "command": "git",
+      "executable": "/usr/bin/git",
+      "args": [
+        "merge-base",
+        "refs/remotes/origin/master",
+        "HEAD"
+      ],
+      "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__fix__task-495",
+      "exitCode": 0,
+      "stdout": "4189ff915d56d47aace912dd006374a82bd9b58f\n"
+    },
+    {
+      "command": "gz-git",
+      "executable": "/Users/archmagece/go/bin/gz-git",
+      "args": [
+        "integrate",
+        "check",
+        "--target",
+        "origin/master"
+      ],
+      "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__fix__task-495",
+      "exitCode": 0,
+      "stdout": "integrate check: dev/codex/mbp/fix/task-495  (target=origin/master, default=origin/master, integration=master)\n\n  PASS  freshness — based on origin/master tip\n  PASS  merge-tree — no conflict with origin/master\n  PASS  cross-merge origin/dev/codex/mbp/feat/task-496 — no conflict\n  PASS  working-tree — clean\n  PASS  push — pushed\n  PASS  readiness contract — ce task gate: { \"status\": \"ready\", \"summary\": \"task_board_ready\", \"tool_version\": \"v0.8.4-529-gbe3ab29d\", \"tool_revision\": \"be3ab29de880db1b629b98cc21453b119f6af87e\", \"steps\": [ { \"step\": \"validate\", \"status\": \"pass\" }, { \"step\": \"lint\", \"status\": \"pass\" }, { \"step\": \"preflight\", \"status\": \"pass\" }, { \"step\": \"bindings\", \"status\": \"pass\" } ] }\n  INFO  readiness provenance — mode=contract-v1 source=71b00be9304c6ebad1fd17728f497791ba0ab8cd target=4189ff915d56d47aace912dd006374a82bd9b58f ManifestPath=.gz-git.yaml ContractDigest=2625e7953b59fc7cd7236a9c3e001f35fc3653453f9bbefacdc1ecff47ad5f99 ManifestOID=296a68c7cfbb454d8af1b4d8c3641c7e82afd182 RunnerPath=.gz-git/readiness/check RunnerOID=34804846dea859411c0a4ceb7233030733b867fe ReadinessTreeOID=094370fee7792f9fd08405331a9d02c1c509461a Status=ready Duration=18.753s\n\nREADY to integrate into origin/master — 0 warning(s)\n"
+    },
+    {
+      "command": "gz-git",
+      "executable": "/Users/archmagece/go/bin/gz-git",
+      "args": [
+        "integrate",
+        "run",
+        "--target",
+        "origin/master"
+      ],
+      "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__fix__task-495",
+      "exitCode": 0,
+      "stdout": "integrate check: dev/codex/mbp/fix/task-495  (target=origin/master, default=origin/master, integration=master)\n\n  PASS  freshness — based on origin/master tip\n  PASS  merge-tree — no conflict with origin/master\n  PASS  cross-merge origin/dev/codex/mbp/feat/task-496 — no conflict\n  PASS  working-tree — clean\n  PASS  push — pushed\n  PASS  readiness contract — ce task gate: { \"status\": \"ready\", \"summary\": \"task_board_ready\", \"tool_version\": \"v0.8.4-529-gbe3ab29d\", \"tool_revision\": \"be3ab29de880db1b629b98cc21453b119f6af87e\", \"steps\": [ { \"step\": \"validate\", \"status\": \"pass\" }, { \"step\": \"lint\", \"status\": \"pass\" }, { \"step\": \"preflight\", \"status\": \"pass\" }, { \"step\": \"bindings\", \"status\": \"pass\" } ] }\n  INFO  readiness provenance — mode=contract-v1 source=71b00be9304c6ebad1fd17728f497791ba0ab8cd target=4189ff915d56d47aace912dd006374a82bd9b58f ManifestPath=.gz-git.yaml ContractDigest=2625e7953b59fc7cd7236a9c3e001f35fc3653453f9bbefacdc1ecff47ad5f99 ManifestOID=296a68c7cfbb454d8af1b4d8c3641c7e82afd182 RunnerPath=.gz-git/readiness/check RunnerOID=34804846dea859411c0a4ceb7233030733b867fe ReadinessTreeOID=094370fee7792f9fd08405331a9d02c1c509461a Status=ready Duration=18.456s\n\nREADY to integrate into origin/master — 0 warning(s)\n\nINTEGRATED dev/codex/mbp/fix/task-495 (71b00be9304c6ebad1fd17728f497791ba0ab8cd) -\u003e origin/master\nRECLAIMED dev/codex/mbp/fix/task-495 — worktree(/Users/archmagece/worktrees/misc/dva/codex__mbp__fix__task-495) local-branch remote-branch\n"
+    }
+  ]
+}

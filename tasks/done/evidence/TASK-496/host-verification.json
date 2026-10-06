@@ -1,0 +1,16 @@
+{
+  "sha256": "c01ce7aad3638ddc87acda2c9bd52e6d72a52f2a40d932d7e238f246f91e939e",
+  "dvaBinary": "/Users/archmagece/worktrees/misc/dva/codex__mbp__feat__task-496/bin/dva",
+  "dvaSha256": "73aa1dadf0d98e6e5b23f0d69ae7730e404329fcdfc0e396d3baa856832cc7ec",
+  "realCe": "/Users/archmagece/go/bin/ce",
+  "realCeSha256": "84bfdd5109dac4a42d5f2fdc6bcd103f7617e17e961462c27b618f56b5602687",
+  "negativeExitCode": 1,
+  "positiveExitCode": 0,
+  "positiveCeCalls": 1,
+  "negativeCeCalls": 0,
+  "negativeQueueCalls": 0,
+  "startStatus": "ACTIVE",
+  "finishStatus": "DONE",
+  "scope": "compiled reviewed DVA entry with published default-PATH TaskChain; actual CE lifecycle, no injected approved pin",
+  "task495IntegratedCommit": "71b00be9304c6ebad1fd17728f497791ba0ab8cd"
+}

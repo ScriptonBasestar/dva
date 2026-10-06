@@ -19,11 +19,10 @@ ISSUE-453의 공개 활성화 카드다. 2026-10-06 현재 Codex 대화에서 �
 `a0ee91bd7169bc228262b829f08ff1fcf00fe910`의 darwin/arm64 산출물
 `c01ce7aad3638ddc87acda2c9bd52e6d72a52f2a40d932d7e238f246f91e939e` (8451634 bytes)를
 celee v0.1.0 GitHub Releases 대상으로 승인했다. source는 이미 독립 리뷰·통합됐다.
-공개 서명은 아직 없다. 저장소 소유 workflow의 GitHub OIDC Sigstore custom
+공개 서명은 2026-10-06 workflow run 37472525561로 검증됐다. 저장소 소유 workflow의 GitHub OIDC Sigstore custom
 verified-release attestation이며, CI가 그 바이너리를 빌드했다는 주장이 아니다.
 공개 asset source는 `dd3ec0a`이고 helper workflow commit은 그와 다른 커밋이다.
-Linux 지원과 CE writer 전면 전환은 이 카드가 아니다. 서명 증거가 생기기 전에는
-external이며 구현을 시작하지 않는다.
+Linux 지원과 CE writer 전면 전환은 이 카드가 아니다. 서명·기본 PATH 설치·pin 소스 리뷰는 완료됐다. TASK-495의 실제 구현 및 CE finish 증거를 기다리며 generic 자동 큐에서는 external로 유지한다.
 
 ## External dependency
 
@@ -58,7 +57,7 @@ external이며 구현을 시작하지 않는다.
 
 ## Notes
 
-준비 증거는 완료 기준이 아니다. `tasks/done/evidence/TASK-496/approval/preparation.json`은 2026-10-06 source/channel 승인이다. `tasks/done/evidence/TASK-493/internal-candidate-provenance.json`은 그 시점의 내부 후보이고 네 승인 플래그는 영구히 false다. `published-release-verification.json`과 `host-verification.json`은 아직 없으며 이 세션이 만들지 않는다.
+준비 증거는 완료 기준이 아니다. `tasks/done/evidence/TASK-496/approval/preparation.json`은 2026-10-06 source/channel 승인이다. `tasks/done/evidence/TASK-493/internal-candidate-provenance.json`은 그 시점의 내부 후보이고 네 승인 플래그는 영구히 false다. `published-release-verification.json`은 공개 자산 및 attestation 검증을 기록한다. `host-verification.json`은 실제 CE start와 음성 차단을 기록하며, finish 증거는 TASK-495 구현·통합 후 채운다.
 
 ## Attempts
 
@@ -71,3 +70,7 @@ external이며 구현을 시작하지 않는다.
 ## External blocker
 
 GitHub draft release creation returned HTTP 403. The approved tag exists and signer helper is integrated, but no signed public release exists. This card is blocked on task-manager-devbox ISSUE-057. The manifest, selected executable, and CE host are unchanged. Evidence: tasks/done/evidence/TASK-496/approval/publication-blocked.json. TASK-495 remains the sole automatic candidate reserved for the actual positive host verification once the approved artifact is available; this publication authorization did not complete its source fix.
+
+## 2026-10-06 재개 현황
+
+이전 External blocker는 해결됐다. 승인된 v0.1.0 공개 자산과 custom verified-release attestation을 재다운로드·검증했고 기본 PATH 실행 파일 SHA는 승인 값이다. pin 소스 독립 Grok 리뷰(01a11179-3012-7143-b0e1-5c74fa502d60)는 PASS다. 실제 compiled DVA가 CE run-start task-495를 정확히 한 번 호출해 ACTIVE 작업트리를 만들었다. 해시 불일치 음성 검사는 queue와 CE 호출 모두 0이다. TASK-495 수정·독립 리뷰·통합과 실제 run-finish DONE은 아직 남았다. 단순 start probe를 제품 수정 완료로 간주하지 않는다.

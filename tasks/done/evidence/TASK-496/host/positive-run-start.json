@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "status": "ACTIVE",
+  "activeCount": 0,
+  "task": "task-495",
+  "allowedActions": [
+    "run-status"
+  ],
+  "reason": "task execution started",
+  "nextAction": "work in the task worktree; use run-status to evaluate finish readiness; run-finish runs from the primary checkout, after the repository lint passes and the branch is current with the source tip",
+  "finishReady": false,
+  "execution": {
+    "task": "task-495",
+    "type": "fix",
+    "source": "master",
+    "owner": {
+      "actor": "codex",
+      "host": "mbp",
+      "kind": "agent"
+    },
+    "branch": "dev/codex/mbp/fix/task-495",
+    "worktree": "/Users/archmagece/worktrees/misc/dva/codex__mbp__fix__task-495",
+    "startedAt": "2026-10-06T14:02:39.646216Z",
+    "updatedAt": "2026-10-06T14:02:39.646216Z"
+  },
+  "diagnostics": [
+    {
+      "command": "wt",
+      "executable": "/Users/archmagece/.local/share/mise/installs/cargo-worktrunk/0.80/bin/wt",
+      "args": [
+        "--config-set",
+        "worktree-path = \"/Users/archmagece/worktrees/misc/dva/codex__mbp__fix__task-495\"",
+        "switch",
+        "--create",
+        "--base",
+        "4189ff915d56d47aace912dd006374a82bd9b58f",
+        "--no-cd",
+        "--format=json",
+        "dev/codex/mbp/fix/task-495"
+      ],
+      "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__feat__task-496",
+      "exitCode": 0,
+      "stdout": "{\"action\":\"created\",\"branch\":\"dev/codex/mbp/fix/task-495\",\"path\":\"/Users/archmagece/worktrees/misc/dva/codex__mbp__fix__task-495\",\"created_branch\":true,\"base_branch\":\"4189ff915d56d47aace912dd006374a82bd9b58f\"}\n",
+      "stderr": "\u2713 Created branch dev/codex/mbp/fix/task-495 from 4189ff915d56d47aace912dd006374a82bd9b58f and worktree @ ~/worktrees/misc/dva/codex__mbp__fix__task-495\n"
+    },
+    {
+      "command": "wt",
+      "executable": "/Users/archmagece/.local/share/mise/installs/cargo-worktrunk/0.80/bin/wt",
+      "args": [
+        "--config-set",
+        "list.json-schema = 2",
+        "list",
+        "--format=json"
+      ],
+      "cwd": "/Users/archmagece/worktrees/misc/dva/codex__mbp__feat__task-496",
+      "exitCode": 0,
+      "stdout": "{\n  \"schema\": 2,\n  \"repo\": {\n    \"default_branch\": \"master\",\n    \"forge\": {\n      \"url\": \"https://github.com/ScriptonBasestar/dva\",\n      \"provider\": \"github\",\n      \"host\": \"github.com\",\n      \"owner\": \"ScriptonBasestar\",\n      \"name\": \"dva\",\n      \"remote\": \"origin\"\n    }\n  },\n  \"collected\": {\n    \"ci\": false,\n    \"summary\": false\n  },\n  \"items\": [\n    {\n      \"branch\": \"dev/codex/mbp/feat/task-496\",\n      \"head\": {\n        \"sha\": \"48143898a15d526adc9821fec27b0ea3f04fe37d\",\n        \"short_sha\": \"48143898\",\n        \"subject\": \"feat(taskqueue): pin the verified public darwin arm64 TaskChain artifact\",\n        \"committed_at\": \"2026-10-06T14:01:27Z\"\n      },\n      \"worktree\": {\n        \"path\": \"/Users/archmagece/worktrees/misc/dva/codex__mbp__feat__task-496\",\n        \"main\": false,\n        \"current\": true,\n        \"previous\": true,\n        \"detached\": false,\n        \"branch_mismatch\": true,\n        \"duplicate_branch\": false,\n        \"changes\": {\n          \"staged\": false,\n          \"modified\": false,\n          \"untracked\": true,\n          \"renamed\": false,\n          \"deleted\": false,\n          \"conflicted\": false,\n          \"diff\": {\n            \"added\": 5,\n            \"deleted\": 0\n          }\n        }\n      },\n      \"default_branch\": {\n        \"ahead\": 1,\n        \"behind\": 0,\n        \"diff\": {\n          \"added\": 137,\n          \"deleted\": 37\n        },\n        \"orphan\": false,\n        \"merge_conflicts\": false\n      },\n      \"upstream\": {\n        \"remote\": \"origin\",\n        \"branch\": \"dev/codex/mbp/feat/task-496\",\n        \"ahead\": 0,\n        \"behind\": 0\n      },\n      \"display\": {\n        \"state\": \"ahead\",\n        \"symbols\": \"?\u2191|\u2691\",\n        \"statusline\": \"dev/codex/mbp/feat/task-496  \\u001b[36m?\\u001b[39m\\u001b[33m\\u001b[2m\u2691\\u001b[39m\\u001b[22m\\u001b[2m\u2191\\u001b[22m\\u001b[2m|\\u001b[22m  @\\u001b[32m+5\\u001b[0m  \\u001b[32m\u21911\\u001b[0m  ^\\u001b[32m+137\\u001b[0m \\u001b[31m-37\\u001b[0m\"\n      }\n    },\n    {\n      \"branch\": \"master\",\n      \"head\": {\n        \"sha\": \"4189ff915d56d47aace912dd006374a82bd9b58f\",\n        \"short_sha\": \"4189ff91\",\n        \"subject\": \"docs(tasks): record release permission blocker without activating pin\",\n        \"committed_at\": \"2026-10-06T01:50:31Z\"\n      },\n      \"worktree\": {\n        \"path\": \"/Users/archmagece/mywork/scripton/dva\",\n        \"main\": true,\n        \"current\": false,\n        \"previous\": false,\n        \"detached\": false,\n        \"branch_mismatch\": false,\n        \"duplicate_branch\": false,\n        \"changes\": {\n          \"staged\": false,\n          \"modified\": false,\n          \"untracked\": false,\n          \"renamed\": false,\n          \"deleted\": false,\n          \"conflicted\": false,\n          \"diff\": {\n            \"added\": 0,\n            \"deleted\": 0\n          }\n        }\n      },\n      \"upstream\": {\n        \"remote\": \"origin\",\n        \"branch\": \"master\",\n        \"ahead\": 0,\n        \"behind\": 0\n      },\n      \"display\": {\n        \"state\": \"is_main\",\n        \"symbols\": \"^|\",\n        \"statusline\": \"master  \\u001b[2m^\\u001b[22m\\u001b[2m|\\u001b[22m\"\n      }\n    },\n    {\n      \"branch\": \"dev/codex/mbp/fix/task-495\",\n      \"head\": {\n        \"sha\": \"4189ff915d56d47aace912dd006374a82bd9b58f\",\n        \"short_sha\": \"4189ff91\",\n        \"subject\": \"docs(tasks): record release permission blocker without activating pin\",\n        \"committed_at\": \"2026-10-06T01:50:31Z\"\n      },\n      \"worktree\": {\n        \"path\": \"/Users/archmagece/worktrees/misc/dva/codex__mbp__fix__task-495\",\n        \"main\": false,\n        \"current\": false,\n        \"previous\": false,\n        \"detached\": false,\n        \"branch_mismatch\": true,\n        \"duplicate_branch\": false,\n        \"changes\": {\n          \"staged\": false,\n          \"modified\": false,\n          \"untracked\": false,\n          \"renamed\": false,\n          \"deleted\": false,\n          \"conflicted\": false,\n          \"diff\": {\n            \"added\": 0,\n            \"deleted\": 0\n          }\n        }\n      },\n      \"default_branch\": {\n        \"ahead\": 0,\n        \"behind\": 0,\n        \"diff\": {\n          \"added\": 0,\n          \"deleted\": 0\n        },\n        \"orphan\": false,\n        \"integration\": {\n          \"reason\": \"same_commit\"\n        },\n        \"merge_conflicts\": false\n      },\n      \"display\": {\n        \"state\": \"empty\",\n        \"symbols\": \"_\u2691\",\n        \"statusline\": \"dev/codex/mbp/fix/task-495  \\u001b[33m\\u001b[2m\u2691\\u001b[39m\\u001b[22m\\u001b[2m_\\u001b[22m\"\n      }\n    }\n  ]\n}\n"
+    }
+  ]
+}
