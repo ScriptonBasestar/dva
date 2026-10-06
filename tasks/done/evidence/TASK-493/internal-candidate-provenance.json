@@ -5,7 +5,23 @@
     "commit": "dd3ec0a0848586bcbdecaf598bde2b6d38b979c4",
     "tree": "a0ee91bd7169bc228262b829f08ff1fcf00fe910"
   },
-  "toolchain": "go version go1.26.5 darwin/arm64",
+  "observedBootstrapToolchain": "go version go1.26.5 darwin/arm64",
+  "compilerToolchain": "gc go1.27.1",
+  "goVersion": "go1.27.1",
+  "toolchainCorrection": {
+    "date": "2026-10-06",
+    "reason": "The previous toolchain value is the bootstrap go executable from `go version` on the build host. `go version -m` on every primary producer artifact shows compiler gc and go1.27.1.",
+    "verificationCommand": "go version -m",
+    "verificationHostGo": "go version go1.26.5 darwin/arm64",
+    "artifactDirectory": "/Users/archmagece/mydevbox/task-manager-devbox/taskchain-task-manager/build/native-decision-dd3ec0a/internal-candidate",
+    "binaries": [
+      {"name": "taskchain-task-manager-darwin-arm64", "goVersion": "go1.27.1", "compiler": "gc", "CGO_ENABLED": "1", "GOOS": "darwin", "GOARCH": "arm64", "GOARM64": "v8.0"},
+      {"name": "taskchain-task-manager-linux-amd64", "goVersion": "go1.27.1", "compiler": "gc", "CGO_ENABLED": "0", "GOOS": "linux", "GOARCH": "amd64", "GOAMD64": "v1"},
+      {"name": "taskchain-task-manager-linux-arm64", "goVersion": "go1.27.1", "compiler": "gc", "CGO_ENABLED": "0", "GOOS": "linux", "GOARCH": "arm64", "GOARM64": "v8.0"}
+    ],
+    "hashComparison": "2026-10-06 sha256 and byte counts match the artifacts in this file. internal/taskqueue/taskchain-pins.json was not modified.",
+    "evidenceClass": "not-a-sealed-review-receipt"
+  },
   "published": false,
   "signed": false,
   "mutationAuthorized": false,

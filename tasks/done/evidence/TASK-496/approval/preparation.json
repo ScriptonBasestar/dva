@@ -1,0 +1,45 @@
+{
+  "kind": "release-target-approval",
+  "evidenceClass": "preparatory-approval",
+  "notASealedReviewReceipt": true,
+  "date": "2026-10-06",
+  "approvalSource": "current Codex conversation",
+  "channel": "celee v0.1.0 GitHub Releases",
+  "repository": "github.com/Gizzahub/taskchain-task-manager",
+  "source": {
+    "commit": "dd3ec0a0848586bcbdecaf598bde2b6d38b979c4",
+    "tree": "a0ee91bd7169bc228262b829f08ff1fcf00fe910",
+    "independentlyReviewed": true,
+    "integrated": true
+  },
+  "artifact": {
+    "name": "taskchain-task-manager-darwin-arm64",
+    "platform": "darwin/arm64",
+    "sha256": "c01ce7aad3638ddc87acda2c9bd52e6d72a52f2a40d932d7e238f246f91e939e",
+    "bytes": 8451634,
+    "goVersion": "go1.27.1",
+    "compilerToolchain": "gc go1.27.1",
+    "path": "build/native-decision-dd3ec0a/internal-candidate/taskchain-task-manager-darwin-arm64"
+  },
+  "publicSignature": {
+    "status": "pending",
+    "mechanism": "repository-owned workflow GitHub OIDC Sigstore custom verified-release attestation",
+    "claimsCIBuiltArtifact": false,
+    "assetSourceCommit": "dd3ec0a0848586bcbdecaf598bde2b6d38b979c4",
+    "helperWorkflowCommit": "distinct-from-asset-source"
+  },
+  "scope": {
+    "linux": false,
+    "fullCEWriterCutover": false
+  },
+  "provenanceFlagsUnchanged": {
+    "approved": false,
+    "published": false,
+    "signed": false,
+    "mutationAuthorized": false
+  },
+  "pinActivated": false,
+  "binariesInstalled": false,
+  "published": false,
+  "externalDependency": "taskchain-verified-release-attestation"
+}

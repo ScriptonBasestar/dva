@@ -1,0 +1,45 @@
+{
+  "sessionId": "01a10eb0-7ad3-7b42-8f31-13760387fd11",
+  "verdict": "FAIL",
+  "scope": "preparation-diff-only",
+  "implementerSession": "01a10e9b-2779-71e3-ae0d-ab3d4979debc",
+  "reviewer": "grok-4.7",
+  "preparationComplete": false,
+  "sourceActivation": "needs-delta-independent-review",
+  "findings": [
+    {
+      "file": "tasks/todo/496-activate-dd3ec0a-darwin-arm64-pin.md",
+      "line": 55,
+      "check": "verify-binds-real-manifest",
+      "fix": "Keep the missing published-release-verification.json assert, and also load internal/taskqueue/taskchain-pins.json plus sha256/bytes and go version -m of build/public-v0.1.0/taskchain-task-manager-darwin-arm64. Do not accept signature, source, tree, go1.27.1, or published-approved from the receipt embeddedPin copy alone."
+    },
+    {
+      "file": "tasks/todo/496-activate-dd3ec0a-darwin-arm64-pin.md",
+      "line": 56,
+      "check": "verify-binds-host-ce",
+      "fix": "Keep the missing host-verification.json assert, and bind the same sha256 to an observed installed-ce count of 1, ACTIVE reclaim, and mismatch queue/ce counts of 0. A self-written receipt field is not that evidence."
+    }
+  ],
+  "held": [
+    "User-approved source dd3ec0a0848586bcbdecaf598bde2b6d38b979c4, tree a0ee91bd7169bc228262b829f08ff1fcf00fe910, darwin/arm64 sha256 c01ce7aad3638ddc87acda2c9bd52e6d72a52f2a40d932d7e238f246f91e939e, 8451634 bytes, macOS-only celee v0.1.0 GitHub Releases.",
+    "TASK-493 card and original review receipt are outside the diff. Provenance approved/published/signed/mutationAuthorized stay false. No new pass receipt.",
+    "Internal-candidate and public-v0.1.0 darwin binaries match that hash and bytes. Linux hashes and bytes match the provenance file. go version -m reports compiler gc and go1.27.1 on all four. Host go version is go1.26.5 and is recorded only as observedBootstrapToolchain.",
+    "internal/taskqueue/taskchain-pins.json is unmodified: source 9e8fac7235a28cbab085a871e1475b38c5150417, go1.27.0, status verified-not-published, mutationAuthorized false.",
+    "TASK-495 allowed-paths are the five product files. No tasks/ board path. Status todo. Criteria unchecked.",
+    "prepared-queue.json, public-queue.json, and scoped-queue.json are byte-identical: runnableCount 2, agentRunnableCount 1, TASK-495 implementation, TASK-496 external.",
+    "TASK-496 status todo, execution-mode external, both verify commands exit 1 because the future receipts are absent. preparation.json is preparatory-approval, pinActivated false, published false.",
+    "No token-like material in the new card or preparation.json.",
+    "Observed existing logs only: tmp/release-session/validate.log 552 valid; gate.log READY task_board_ready; doc-check.log ends ciparity OK. Not re-run."
+  ],
+  "executedChecks": [
+    "git diff and git status of the preparation paths",
+    "shasum -a 256 and stat on the three internal-candidate binaries and build/public-v0.1.0/taskchain-task-manager-darwin-arm64",
+    "go version -m on those four binaries",
+    "go version on the host",
+    "read internal/taskqueue/taskchain-pins.json",
+    "ran both TASK-496 verify commands; both exit 1 FileNotFoundError",
+    "confirmed published-release-verification.json and host-verification.json are absent",
+    "compared prepared/public/scoped queue JSON hashes and counts",
+    "read tails of tmp/release-session validate.log, gate.log, and doc-check.log"
+  ]
+}

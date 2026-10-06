@@ -5,6 +5,9 @@ type: bug
 priority: P2
 effort: S
 exec-tier: standard
+execution-mode: implementation
+needs-human: false
+allowed-paths: [internal/lifecycle/tunnel.go, internal/lifecycle/tunnel_test.go, internal/cli/doctor_tunnel.go, internal/cli/doctor_tunnel_test.go, docs/68-remote-access-tunnel.md]
 status: todo
 created: 2026-10-05
 ---
@@ -21,6 +24,21 @@ cloudflared 2026.9.3의 `access token --app`은 만료 토큰에 **exit 0**과 �
 
 인증됨은 종료 코드 0 **그리고** stdout 바이트 수 > 0이다. stdout은 바이트 수만 세고 내용은
 버리며 로그·오류 메시지에 넣지 않는다.
+
+## Steps
+
+1. `internal/lifecycle/tunnel.go:160` `runCloudflaredDiscard` — exit 0이고 stdout 바이트 수가 0이면 미인증이다. TTY가 없으면 로그인 명령을 안내하고 실패한다.
+2. `internal/lifecycle/tunnel_test.go:179` `TestTunnelAuthInteractiveNoTTY`는 유지한다. 빈 stdout 회귀 `TestTunnelAuthExpiredTokenEmptyStdout`를 이 파일에 추가한다.
+3. `internal/cli/doctor_tunnel.go:68` `checkTunnelAuthState` — 같은 조건에서 Access token 행은 `[FAIL]`이다. stdout 내용은 출력하지 않는다.
+4. `internal/cli/doctor_tunnel_test.go:150` `TestDoctorTunnelInteractiveAuthFailure`는 유지한다. `TestDoctorTunnelAuthEmptyStdout`를 이 파일에 추가한다.
+5. `docs/68-remote-access-tunnel.md:61` §3.1 1단계가 종료 코드와 비어 있지 않은 stdout을 함께 요구하게 한다.
+
+## Stop conditions
+
+- 토큰 바이트를 로그, 오류, 테스트 출력에 남기지 않는다.
+- exit 0만으로 인증됨을 판정하지 않는다. `.lock`이 남은 exit 1 경로는 그대로 둔다.
+- 이 카드의 Completion Criteria 문구를 구현 없이 체크하지 않는다. quality-review는 리뷰 전에 두지 않는다.
+- 터널 인증 밖의 파일은 고치지 않는다.
 
 ## Completion Criteria
 

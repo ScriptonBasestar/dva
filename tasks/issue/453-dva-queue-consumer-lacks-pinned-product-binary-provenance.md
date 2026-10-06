@@ -150,3 +150,23 @@ amd64 하드웨어나 CE start 양성/음성 호스트 승인으로 간주하지
 승인 필드가 정해지면 게시·서명 절차, 승인 artifact 기본 설치(ISSUE-490), pin 활성화,
 실제 CE 호출 횟수 검증 순으로 진행한다. 현재 DVA pin JSON과 mutationAuthorized는
 변경하지 않았고 이 카드의 세 기준은 미체크다.
+
+## 준비 진행 (2026-10-06)
+
+사용자는 현재 Codex 대화에서 교체 후보 source `dd3ec0a0848586bcbdecaf598bde2b6d38b979c4`,
+tree `a0ee91bd7169bc228262b829f08ff1fcf00fe910`, darwin/arm64 SHA-256
+`c01ce7aad3638ddc87acda2c9bd52e6d72a52f2a40d932d7e238f246f91e939e`, 8451634 bytes를
+celee v0.1.0 GitHub Releases 대상으로 승인했다. 이 승인은
+`tasks/done/evidence/TASK-496/approval/preparation.json`에만 기록했다.
+`internal-candidate-provenance.json`의 `approved`/`published`/`signed`/`mutationAuthorized`는
+false 그대로다. 옛 `toolchain` 문자열은 bootstrap `go version go1.26.5 darwin/arm64`라
+`observedBootstrapToolchain`으로 남겼다. `go version -m`은 후보 세 바이너리 모두
+compiler `gc`, `go1.27.1`이다. SHA와 byte 수는 manifest와 같았고
+`internal/taskqueue/taskchain-pins.json`은 바꾸지 않았다.
+
+공개 서명은 대기 중이다. 저장소 소유 workflow의 GitHub OIDC Sigstore custom
+verified-release attestation이며, CI가 artifact를 빌드했다는 뜻이 아니다. 공개 asset
+source는 `dd3ec0a`이고 helper workflow commit은 별도다. Linux와 CE writer 전면 전환은
+없다. [TASK-496](../todo/496-activate-dd3ec0a-darwin-arm64-pin.md)은 그 서명 증거가
+생기기 전까지 external이며 pin 활성화·설치·게시·CE start를 하지 않는다. 이 이슈의
+세 기준은 계속 미체크다.

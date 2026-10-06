@@ -83,3 +83,27 @@ ISSUE-453의 승인 artifact를 결정하면 설치 담당자가 승인된 바�
 같은 두 명령을 재실행한다. 채택 시 승인되지 않은 CE start를 실행하지 않는다.
 
 - 2026-10-05 TASK-493 제품 source master에 dd3ec0a 통합·push·회수 완료. 독립 리뷰와 전체 native 검사 exit0로 세 번째 기준을 충족했다. 기본 PATH 바이너리는 교체하지 않았으므로 앞 두 기준과 이 이슈는 계속 열린 상태다.
+
+## 준비 진행 (2026-10-06)
+
+ISSUE-453의 darwin/arm64 교체 후보가 celee v0.1.0 GitHub Releases 대상으로 승인됐다.
+기본 PATH는 아직 교체하지 않았고 pin도 켜지 않았다. 앞 두 기준은 미체크다. 활성화 카드는
+[TASK-496](../todo/496-activate-dd3ec0a-darwin-arm64-pin.md)이며 공개 서명 전에는 external이다.
+Linux 채택과 CE writer 전면 전환은 하지 않는다.
+
+같은 보드 조회에서 유일한 구현 후보 [TASK-495](../todo/495-treat-empty-access-token-stdout-as-unauthenticated.md)가
+`implementation requires allowed-paths`로 제품 queue 입장에 실패했다. `allowed-paths`가 없었다.
+2026-10-06에 `execution-mode: implementation`, `needs-human: false`, 그리고
+`internal/lifecycle/tunnel.go`, `internal/lifecycle/tunnel_test.go`,
+`internal/cli/doctor_tunnel.go`, `internal/cli/doctor_tunnel_test.go`,
+`docs/68-remote-access-tunnel.md`, 이 카드와 `tasks/done/evidence/TASK-495`를 allowed-paths에
+넣었다. exec-tier는 standard이고 status는 todo다. 코드는 구현하지 않았고 Completion Criteria
+문구는 유지했다. 이 정정은 입장 차단을 없애는 메타데이터이며 이 이슈의 PATH 기준을 충족하지 않는다.
+
+승인된 darwin manager `queue --dir tasks`는 `invalid allowed-path`로
+`tasks/todo/495-treat-empty-access-token-stdout-as-unauthenticated.md`를 거부했다.
+경로는 설정된 tasks 보드 안이라 구현 범위로 인정되지 않는다. 카드와 evidence는
+엔진이 소유한다. TASK-495 `allowed-paths`에서 `tasks/...`를 모두 제거했다.
+남은 값은 `internal/lifecycle/tunnel.go`, `internal/lifecycle/tunnel_test.go`,
+`internal/cli/doctor_tunnel.go`, `internal/cli/doctor_tunnel_test.go`,
+`docs/68-remote-access-tunnel.md` 다섯 파일이다. 다른 frontmatter는 바꾸지 않았다.

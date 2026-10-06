@@ -1,0 +1,38 @@
+{
+  "verdict": "PASS",
+  "scope": "preparation-diff-only-retry2",
+  "implementerSession": "01a10e9b-2779-71e3-ae0d-ab3d4979debc",
+  "reviewerSession": "01a10ebe-4c84-7022-a2d3-016138cabfe7",
+  "preparationComplete": false,
+  "sourceActivation": "needs-later-delta-review",
+  "publicReleaseComplete": false,
+  "hostLifecycleComplete": false,
+  "pinActivated": false,
+  "findings": [],
+  "checks": [
+    "Read tasks/done/evidence/TASK-496/review-preparation-attempt-1.json",
+    "Read tasks/todo/496-activate-dd3ec0a-darwin-arm64-pin.md completion criteria at lines 56-57",
+    "Line 56 loads internal/taskqueue/taskchain-pins.json, requires one darwin/arm64 artifact with published-approved, distribution published, mutationAuthorized true, source/tree/sha256 equal to the published receipt and the constants, goVersion go1.27.1, and the recorded build command",
+    "Line 56 hashes PATH taskchain-task-manager, requires 8451634 bytes and sha256 c01ce7aad3638ddc87acda2c9bd52e6d72a52f2a40d932d7e238f246f91e939e, and requires go version -m head go1.27.1 plus CGO_ENABLED=1 and GOARM64=v8.0",
+    "Line 56 calls gh attestation verify on that executable with --bundle tasks/done/evidence/TASK-496/published/bundle.json, --repo Gizzahub/taskchain-task-manager, --predicate-type https://github.com/Gizzahub/taskchain-task-manager/verified-release/v1, --cert-identity https://github.com/Gizzahub/taskchain-task-manager/.github/workflows/release-v0.1.0.yml@refs/heads/master, --cert-oidc-issuer https://token.actions.githubusercontent.com",
+    "Line 57 requires exactly one positive jsonl row with args [task, run-start, task-495, --type, fix, --json], both negative jsonl files empty, run-start status ACTIVE for task-495, and run-finish status DONE",
+    "Line 57 reads reclaim flags from top-level receipt: sourcePushed, worktreeRemoved, localBranchRemoved, remoteBranchRemoved",
+    "Compared that shape with /Users/archmagece/mywork/scripton/dva/tmp/queue-followup-complete-7789e6d7/run-finish.json: top-level keys include status and receipt; those four flags are inside receipt",
+    "Line 57 ends with ce task run-status task-495 --json and requires status DONE and task task-495; that call is after the evidence reads",
+    "Confirmed absent: published-release-verification.json, published/bundle.json, host-verification.json, host/positive-ce-calls.jsonl, host/negative-ce-calls.jsonl, host/negative-queue-calls.jsonl, host/positive-run-start.json, host/positive-run-finish.json. Both criteria raise FileNotFoundError before gh or ce",
+    "internal/taskqueue/taskchain-pins.json still source 9e8fac7235a28cbab085a871e1475b38c5150417, go1.27.0, status verified-not-published, mutationAuthorized false",
+    "TASK-493 provenance approved, published, signed, and mutationAuthorized are false. TASK-493 card is not in git status",
+    "preparation.json pinActivated false and published false",
+    "Did not call ce, gh, install, publish, or edit"
+  ],
+  "limitations": [
+    "Did not execute either verify command, go version -m, sha256 inventory, or the gate logs. Absence of the future files is what shows the criteria fail closed.",
+    "Did not re-count prepared, public, or scoped queues and did not re-read the TASK-495 diff. Neither is in the criteria lines under review.",
+    "Did not check that the gh cert-identity path exists in a workflow file.",
+    "Did not compare positive-run-start.json execution.task with a sample start receipt. Only the finish receipt schema was checked.",
+    "Positive count is the number of rows with that exact argv, not len(positive-ce-calls.jsonl)."
+  ],
+  "reviewer": "grok-4.7",
+  "sessionId": "01a10ebe-4c84-7022-a2d3-016138cabfe7",
+  "implementationSessionId": "01a10e9b-2779-71e3-ae0d-ab3d4979debc"
+}
