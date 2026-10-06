@@ -230,15 +230,16 @@ user/project discovery path에 복사합니다. runtime별 경로, per-skill cla
 실패합니다. 이 읽기 전용 판정도 바이너리 출처를 검증하지 않습니다. 작업 수행과
 종료·복구는 W07b 후속입니다.
 
-`dva task-queue-start feat`는 컴파일된 DVA 명령입니다. 현재 승인된
-TaskChain 릴리스가 없어 큐와 CE를 호출하기 전에 실패합니다. `feat` 자리는
+`dva task-queue-start feat`는 컴파일된 DVA 명령입니다. 이 소스는 승인된 공개
+TaskChain v0.1.0 darwin/arm64 pin을 둡니다. 선택된 실행 파일의 SHA-256이
+그 pin과 같을 때만 해시 스냅샷을 검증한 뒤 큐와 CE를 호출합니다. 미지원
+플랫폼이거나 해시가 다르면 둘 다 호출하기 전에 실패합니다. `feat` 자리는
 명시적인 CE 브랜치 유형(`feat`, `fix`, `refactor`, `docs`, `test`, `chore`,
-`perf`)입니다. 후보 해시는 `internal/taskqueue/taskchain-pins.json`에
-기록됐지만 공개·검토·전환 절차가 끝나지 않아 `mutationAuthorized: false`입니다.
-해시 검증과 스냅샷 실행은 컴파일된 명령에 연결됐습니다. 승인된 릴리스가
-생기면 W07c2a에서 manifest를 검토·활성화하고 실제 바이너리로 양성 통합
-검사를 해야 CE 시작을 활성화할 수 있습니다. 읽기 전용 `task-queue-verdict`
-도구의 `--start-type` 경로는 CE 시작에 사용할 수 없습니다.
+`perf`)입니다. pin과 검증 경계의 정본은
+[ARCHITECTURE.md](ARCHITECTURE.md#taskchain-queue-boundary)입니다. 전역에
+설치된 DVA는 바뀌지 않았고, 호스트 증명은 검토된 이 소스를 컴파일한
+바이너리로 확인했습니다. 읽기 전용 `task-queue-verdict` 도구의
+`--start-type` 경로는 CE 시작에 사용할 수 없습니다.
 컴파일된 DVA 명령은 CE 자식 명령의 실패 종료 코드를 DVA의 일반 오류 코드 1로
 정규화하므로, 운영 검사는 정확한 숫자 대신 실패 여부와 CE 상태를 확인합니다.
 

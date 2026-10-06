@@ -7,12 +7,15 @@ effort: M
 needs-human: true
 execution-mode: external
 human-grade: human
-status: todo
+status: done
 severity: medium
 discovered-in: "DVA queue consumer lacks pinned product binary provenance"
 discovered-at: 2026-09-29
 ownership: local
 created: 2026-09-29
+resolution: fixed
+resolved-at: 2026-10-06T15:12:37Z
+resolution-summary: "Resolved as fixed by TASK-496."
 ---
 
 ## Summary
@@ -167,7 +170,7 @@ compiler `gc`, `go1.27.1`이다. SHA와 byte 수는 manifest와 같았고
 공개 서명은 대기 중이다. 저장소 소유 workflow의 GitHub OIDC Sigstore custom
 verified-release attestation이며, CI가 artifact를 빌드했다는 뜻이 아니다. 공개 asset
 source는 `dd3ec0a`이고 helper workflow commit은 별도다. Linux와 CE writer 전면 전환은
-없다. [TASK-496](../blocked/496-activate-dd3ec0a-darwin-arm64-pin.md)은 그 서명 증거가
+없다. [TASK-496](../../done/496-activate-dd3ec0a-darwin-arm64-pin.md)은 그 서명 증거가
 생기기 전까지 external이며 pin 활성화·설치·게시·CE start를 하지 않는다. 이 이슈의
 세 기준은 계속 미체크다.
 

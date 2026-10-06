@@ -1,0 +1,9 @@
+{
+  "docCheckExit": 0,
+  "taskValidateAllExit": 0,
+  "taskGateExit": 1,
+  "failedBindingCard": "TASK-494",
+  "failure": "TestUpstreamRefsSweepsTheRealCorpus: seen/read 0/0 after all issues archived",
+  "automaticCorrectionCard": "TASK-498",
+  "integrationDeferred": true
+}

@@ -1,6 +1,6 @@
 # DVA Task Management Board
 
-## 현재 상태 (2026-10-06)
+## 현재 상태 (2026-10-07)
 
 v0.3.0 공개와 postflight는 완료됐고 PLAN-010(8/8)과 PLAN-011(19/19)은
 `tasks/_archive/plan/`에 보관됐다. 열린 계획은 없다. 과거 판정은 보관된 카드와 Git 이력이 소유한다.
@@ -16,7 +16,7 @@ DECISION-002는 2026-10-03에 Accepted다. 정본 upstream만 택했고 interim 
 플러그인 캐시 core 0.6.38은 이미 있다. 재설치하지 않았다. TASK-484가 저장한 소스 검사는 다시 실행하지 않았다.
 이 작업의 시작 기준선(START)은 `23047d07`이다. 통합 뒤의 master를 이 해시로 단정하지 않는다. [[TASK-485]]가 TASK-482·483·484를 보관한 커밋이다.
 
-현재 ISSUE-453/490의 해결 기준을 충족했다. 승인된 TaskChain v0.1.0 darwin/arm64 공개 자산의 실제 SHA와 GitHub custom verified-release attestation을 검증했고 기본 PATH 설치본을 교체했다. pin 소스 리뷰 PASS 후 compiled DVA가 실제 CE start를 한 번 호출했다. 해시 불일치 음성 검사에서는 queue/CE 호출이 모두 0이었다. TASK-495는 독립 Grok 리뷰·전체 CI 후 master 71b00be9에 통합·push·reclaim, 실제 CE DONE이다. TASK-496의 최종 리뷰는 README/USAGE 설명 불일치로 FAIL이며 보호된 루트 README 수정 승인이 ISSUE-497의 blocker다. 자동 보정 가능한 USAGE는 수정했고 증거는 `tasks/done/evidence/TASK-496/`다. 전역 DVA 설치본은 교체하지 않았고 Linux pin과 CE writer 전면 전환은 승인하지 않았다.
+미해결 이슈는 없다. 최종 빈 보드 게이트 회귀를 보정하는 TASK-498이 별도 작업트리에서 진행 중이다. TASK-496 통합은 이 검사 보정 뒤 완료한다. TASK-495는 빈 토큰 출력 판정을 수정하고 독립 Grok 리뷰·전체 CI 후 master 71b00be9에 통합·push·reclaim, 실제 CE DONE이다. TASK-496은 공개 TaskChain v0.1.0 darwin/arm64 자산·custom verified-release attestation·기본 PATH 해시·compiled pin 및 실제 CE start 1회, 해시 불일치 음성 queue/CE 0회, TASK-495 finish DONE을 검증했다. README의 이전 설명 때문에 최종 리뷰 attempt 1은 FAIL이었고, 사용자가 해당 문단만 승인해 보정한 뒤 attempt 2는 PASS다. 독립 세션이 TASK-496을 done으로 옮겼고 ISSUE-453/490/497은 fixed로 `_archive/issue/`에 보관했다. 증거는 `tasks/done/evidence/TASK-496/`다. 전역 DVA 설치본은 교체하지 않았으며 현재 소스의 pin 활성화와 구분한다.
 
 2026-10-05 TASK-491 옵션 1의 읽기 전용 범위로 ISSUE-004·006을 해결해 `_archive/issue/`에 보관했다. clean dd3ec0a 바이너리를 명시 선택한 실제 큐는 사람 TASK-459 한 장, agent 후보 0, verdict `human_required`다. 독립 Grok 4.7 PASS는 `tasks/done/evidence/TASK-492/live-acceptance-review.json`이다. 공개 pin 승인은 ISSUE-453과 별개다. 해당 독립 검증 당시 TASK-493은 source 통합 중인 doing이었다. 현재는 통합 완료됐으며 아래 최종 검증이 준비 집합을 다시 확인한다. 사람 terminal과 run-all은 이 범위가 아니다.
 
@@ -29,7 +29,7 @@ DECISION-002는 2026-10-03에 Accepted다. 정본 upstream만 택했고 interim 
 
 - [ISSUE-488](_archive/issue/488-measure-expired-tunnel-token-and-live-doctor.md): 사람이 고른 대상(`scripton-tonk-01-k8s.scripton.net`)으로 개발자 Mac에서 실측했다. 만료 토큰에서 `cloudflared access token --app`은 exit 0, 빈 stdout이고 JWT `-token` 파일을 지운다. 기록은 docs/68 §7이다. 종료 코드 단독 판정 결함은 [TASK-495](done/495-treat-empty-access-token-stdout-as-unauthenticated.md)다.
 
-[TASK-495](done/495-treat-empty-access-token-stdout-as-unauthenticated.md)는 종료 코드 0과 stdout 바이트 수 > 0을 함께 요구하며 토큰 내용은 버린다. 독립 Grok 4.7 PASS와 CI 증거는 `tasks/done/evidence/TASK-495/`다. [TASK-496](blocked/496-activate-dd3ec0a-darwin-arm64-pin.md)은 공개 서명·설치·pin·실제 CE start/finish 검증을 완료했고 최종 리뷰 FAIL의 보호 문서 보정을 ISSUE-497에서 추적한다. [TASK-459](done/459-implement-remote-access-tunnel.md)는 2026-10-05 ISSUE-488 실측으로 사람 기준 두 개를 채워 done이 됐다. 제품 native decision 호환 보정 [TASK-493](done/493-support-native-decision-queue-kind.md)은 독립 리뷰·전체 검사 후 제품 master에 `dd3ec0a`로 통합·push했고 task worktree와 local/remote 브랜치를 회수했다. [TASK-492](done/492-apply-approved-readonly-queue-acceptance.md)는 수락된 범위·문서 적용을 독립 Grok 4.7 재리뷰 PASS 후 완료했다. 004·006은 명시 읽기 전용 검증과 독립 PASS로 해결했다. TASK-493 source 통합도 완료됐다. [TASK-489](done/489-apply-approved-changelog-ceiling.md)는 실제 ceiling 트리거 반영과 후속 분석을 독립 Grok 4.7 재리뷰 PASS 후 완료했다. [TASK-486](done/486-record-session-followup-contract.md)은 독립 Grok 4.7 리뷰 PASS 후 완료됐고, 기준 2·5·6 바인딩은 TASK-489가 사실 정정한다. 독립 재검증 PASS 영수증은 `tasks/done/evidence/TASK-489/independent-review-attempt-2.json`이다. [TASK-487](decision/487-changelog-half-ceiling-trigger.md)은 2026-10-05 사용자가 옵션 2(실제 ceiling)를 골라 Accepted다. 측정은 87296 bytes와 물리 줄 1000 아래라 v0.2.x 아카이브는 하지 않는다.
+[TASK-495](done/495-treat-empty-access-token-stdout-as-unauthenticated.md)는 종료 코드 0과 stdout 바이트 수 > 0을 함께 요구하며 토큰 내용은 버린다. 독립 Grok 4.7 PASS와 CI 증거는 `tasks/done/evidence/TASK-495/`다. [TASK-496](done/496-activate-dd3ec0a-darwin-arm64-pin.md)은 공개 서명·설치·pin·실제 CE start/finish 검증을 완료했고 보호 문서 보정과 최종 독립 리뷰 PASS를 완료했다. ISSUE-497은 fixed로 보관했다. [TASK-459](done/459-implement-remote-access-tunnel.md)는 2026-10-05 ISSUE-488 실측으로 사람 기준 두 개를 채워 done이 됐다. 제품 native decision 호환 보정 [TASK-493](done/493-support-native-decision-queue-kind.md)은 독립 리뷰·전체 검사 후 제품 master에 `dd3ec0a`로 통합·push했고 task worktree와 local/remote 브랜치를 회수했다. [TASK-492](done/492-apply-approved-readonly-queue-acceptance.md)는 수락된 범위·문서 적용을 독립 Grok 4.7 재리뷰 PASS 후 완료했다. 004·006은 명시 읽기 전용 검증과 독립 PASS로 해결했다. TASK-493 source 통합도 완료됐다. [TASK-489](done/489-apply-approved-changelog-ceiling.md)는 실제 ceiling 트리거 반영과 후속 분석을 독립 Grok 4.7 재리뷰 PASS 후 완료했다. [TASK-486](done/486-record-session-followup-contract.md)은 독립 Grok 4.7 리뷰 PASS 후 완료됐고, 기준 2·5·6 바인딩은 TASK-489가 사실 정정한다. 독립 재검증 PASS 영수증은 `tasks/done/evidence/TASK-489/independent-review-attempt-2.json`이다. [TASK-487](decision/487-changelog-half-ceiling-trigger.md)은 2026-10-05 사용자가 옵션 2(실제 ceiling)를 골라 Accepted다. 측정은 87296 bytes와 물리 줄 1000 아래라 v0.2.x 아카이브는 하지 않는다.
 
 [TASK-491](decision/491-queue-acceptance-scope-and-historical-evidence.md)은 2026-10-05 사용자가 옵션 1을 수락해 Accepted다. 004·006의 현재 범위는 읽기 전용 분류와 종료 판정이다. terminal/rollback과 공개 pin 승인은 이 수락에 포함되지 않는다.
 
@@ -211,3 +211,7 @@ ISSUE-057이 추적한다. TASK-496은 blocked이며 ISSUE-453/490은 미완료�
 ## 2026-10-06 공개 및 호스트 검증
 
 v0.1.0 signer run 37472525561은 성공했고 공개 릴리스는 https://github.com/Gizzahub/taskchain-task-manager/releases/tag/v0.1.0 이다. public artifact source는 dd3ec0a이고 signer workflow source는 8dade71이다. 이것은 custom verified-release attestation이며 CI 빌드 주장이 아니다. 초기 HTTP 403과 draft 조회 HTTP 404는 해결됐고 private devbox TASK-056/059도 통합·회수됐다. 기존 내부 후보의 historical 승인 플래그와 TASK-493 봉인은 그대로다.
+
+## 2026-10-07 최종 완료 검증
+
+TASK-496 최종 독립 Grok 4.7 리뷰 01a111a0-d66d-7041-a9c4-1bf1d1b764fd attempt 2 PASS. CI 706974f34106187b71a04e5b38a82499 commit succeeded (1m12.992619041s); 검증 프로세스에서만 KUBECONFIG를 제외했다. 이슈 해결 기준 여덟 개 exit 0. historical TASK-493 봉인과 내부 후보 승인 플래그는 그대로다. 기본 PATH TaskChain만 승인 산출물로 교체했으며 Linux pin, CE writer 전면 전환, 전역 DVA 설치는 이 완료 범위에 포함하지 않는다.

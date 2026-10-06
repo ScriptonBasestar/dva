@@ -7,12 +7,15 @@ effort: S
 needs-human: true
 execution-mode: external
 human-grade: human
-status: todo
+status: done
 severity: medium
 ownership: local
 created: 2026-10-06
 discovered-at: 2026-10-06
 discovered-in: "TASK-496 final independent done-review"
+resolution: fixed
+resolved-at: 2026-10-06T15:12:37Z
+resolution-summary: "Resolved as fixed by TASK-496."
 ---
 
 ## Summary
@@ -74,3 +77,10 @@ README edit needs a human override; no upstream product change or credential is 
 TASK-496 `final-review-attempt-1.json`: independent grok-4.7 session
 01a111a0-d66d-7041-a9c4-1bf1d1b764fd. TASK-495 is integrated in master
 71b00be9304c6ebad1fd17728f497791ba0ab8cd; do not reopen or start it again.
+
+## Scoped authorization (2026-10-07)
+
+After the session explained the root README protection and recommended permission
+for lines 233–241 only, the user instructed: 이어서 직접 처리해줘. This authorizes
+that scoped correction; it does not alter the installed personal protection policy.
+The agent proceeds with the paragraph correction and independent final review.

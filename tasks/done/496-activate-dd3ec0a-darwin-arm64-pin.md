@@ -7,7 +7,9 @@ effort: M
 needs-human: true
 execution-mode: external
 human-grade: human
-status: blocked
+status: done
+quality-review: pass
+quality-review-evidence: tasks/done/evidence/TASK-496/final-review.json
 created: 2026-10-06
 external-dependency: taskchain-verified-release-attestation
 ---
@@ -67,7 +69,7 @@ Linux 지원과 CE writer 전면 전환은 이 카드가 아니다. 서명·기�
 
 | 2 | Independent grok-4.7 01a10ebe-4c84-7022-a2d3-016138cabfe7; tasks/done/evidence/TASK-496/review-preparation-attempt-2.json | PASS for preparation criteria only; no publication, activation or host completion. |
 
-## External blocker
+## Historical external blocker (resolved)
 
 GitHub draft release creation returned HTTP 403. The approved tag exists and signer helper is integrated, but no signed public release exists. This card is blocked on task-manager-devbox ISSUE-057. The manifest, selected executable, and CE host are unchanged. Evidence: tasks/done/evidence/TASK-496/approval/publication-blocked.json. TASK-495 remains the sole automatic candidate reserved for the actual positive host verification once the approved artifact is available; this publication authorization did not complete its source fix.
 
@@ -85,6 +87,31 @@ GitHub draft release creation returned HTTP 403. The approved tag exists and sig
 | --- | --- | --- |
 | 1 | tasks/done/evidence/TASK-496/final-review-attempt-1.json; independent Grok 4.7 01a111a0-d66d-7041-a9c4-1bf1d1b764fd | FAIL: README/USAGE still describe inactive pin; source, public attestation, actual host criteria and targeted tests PASS. USAGE correction proceeds; protected root README requires explicit permission. No card completion/integration. |
 
-## Current blocker after final review
+## Historical blocker after final review attempt 1
 
 ISSUE-497 tracks the protected root README correction. Explicit permission was requested because the installed personal doc-protection policy marks root README ai=deny. USAGE correction proceeds; final done-review must become PASS before done transition or integration. All source, attestation, host criteria, CI and board/doc gates passed before this review finding.
+
+## 2026-10-07 scoped correction
+
+The user authorized direct completion after the precise root README correction
+recommendation. ISSUE-497 permission is satisfied for that paragraph only. USAGE
+correction already has independent PASS. The root README correction now proceeds,
+followed by final independent review attempt 2 and current mechanical gates.
+The historical attempt-1 FAIL and approval records are preserved.
+
+## Final completion review attempt 2
+
+| Attempt | Evidence | Result |
+| --- | --- | --- |
+| 2 | tasks/done/evidence/TASK-496/final-review-attempt-2.json; independent Grok 4.7 01a111a0-d66d-7041-a9c4-1bf1d1b764fd | PASS: authorized scoped README correction matches USAGE and approved pin. Both exact completion bindings and ISSUE-497 README predicate exit 0; historical seals unchanged. |
+
+CI 706974f34106187b71a04e5b38a82499 commit succeeded (1m12.992619041s).
+Final quality-review PASS is stored before the independent reviewer session performs
+the done transition. ISSUE-453/490/497 can close against these verified results.
+
+## Integration prerequisite found after done transition
+
+Final board gate exposed TASK-494 real-corpus Seen/Read > 0 workload quota when all
+issues were archived. TASK-498 corrects the test-only assumption in a separate worktree,
+preserving production ownership checks and live inventory reachability. Final review PASS
+is preserved; integration waits for that source correction and a passing empty-board gate.

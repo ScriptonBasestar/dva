@@ -4,7 +4,7 @@ title: "Selected TaskChain queue rejects the native decision directory"
 type: bug
 priority: P1
 effort: S
-status: todo
+status: done
 severity: high
 ownership: local
 needs-human: true
@@ -13,6 +13,9 @@ human-grade: human
 discovered-in: "ISSUE-453/004/006 live read-only recheck"
 discovered-at: 2026-10-05
 created: 2026-10-05
+resolution: fixed
+resolved-at: 2026-10-06T15:12:37Z
+resolution-summary: "Resolved as fixed by TASK-496."
 ---
 
 ## Summary
@@ -53,8 +56,8 @@ Go build info는 `go1.27.1`, source `f53c793889ec9f5ca2a191e0aa0d52174cf2c959`,
 3. native decision Proposed/Accepted, human-only 및 implementation 카드의 양성·음성
    회귀 검사를 실행한다. DVA 실제 보드 조회와 verdict를 다시 실행한다.
 4. 공개 artifact/pin은 [ISSUE-453](453-dva-queue-consumer-lacks-pinned-product-binary-provenance.md)의
-   provenance·승인을 거친다. [ISSUE-004](../_archive/issue/004-controller-scope-admission-cannot-represent-external-or-human-only-cards.md)·
-   [ISSUE-006](../_archive/issue/006-preflight-reports-needs-human-cards-as-runnable.md)의 실제 증거는 별도로 남긴다.
+   provenance·승인을 거친다. [ISSUE-004](004-controller-scope-admission-cannot-represent-external-or-human-only-cards.md)·
+   [ISSUE-006](006-preflight-reports-needs-human-cards-as-runnable.md)의 실제 증거는 별도로 남긴다.
 
 ## Stop conditions
 
@@ -88,10 +91,10 @@ ISSUE-453의 승인 artifact를 결정하면 설치 담당자가 승인된 바�
 
 ISSUE-453의 darwin/arm64 교체 후보가 celee v0.1.0 GitHub Releases 대상으로 승인됐다.
 기본 PATH는 아직 교체하지 않았고 pin도 켜지 않았다. 앞 두 기준은 미체크다. 활성화 카드는
-[TASK-496](../blocked/496-activate-dd3ec0a-darwin-arm64-pin.md)이며 공개 서명 전에는 external이다.
+[TASK-496](../../done/496-activate-dd3ec0a-darwin-arm64-pin.md)이며 공개 서명 전에는 external이다.
 Linux 채택과 CE writer 전면 전환은 하지 않는다.
 
-같은 보드 조회에서 유일한 구현 후보 [TASK-495](../todo/495-treat-empty-access-token-stdout-as-unauthenticated.md)가
+같은 보드 조회에서 유일한 구현 후보 [TASK-495](../../todo/495-treat-empty-access-token-stdout-as-unauthenticated.md)가
 `implementation requires allowed-paths`로 제품 queue 입장에 실패했다. `allowed-paths`가 없었다.
 2026-10-06에 `execution-mode: implementation`, `needs-human: false`, 그리고
 `internal/lifecycle/tunnel.go`, `internal/lifecycle/tunnel_test.go`,

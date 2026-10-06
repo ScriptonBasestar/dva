@@ -1,0 +1,6 @@
+{
+  "sessionId": "01a111a0-d66d-7041-a9c4-1bf1d1b764fd",
+  "model": "grok-4.7",
+  "exitCode": 0,
+  "text": "승인된 done 전이만 수행합니다. `ce task move`로 카드를 `done`에 두고, 도착한 frontmatter의 `status`를 확인한 뒤 종료 코드를 보고합니다.`ce task move tasks/blocked/496-activate-dd3ec0a-darwin-arm64-pin.md done`의 종료 코드는 0입니다. 카드는 `tasks/done/496-activate-dd3ec0a-darwin-arm64-pin.md`에 있고 frontmatter는 `status: done`, `quality-review: pass`, `quality-review-evidence: tasks/done/evidence/TASK-496/final-review.json`입니다. 본문에 `**Status**` 칸은 없어 그 동기화는 없었습니다.\n\nCE가 카드 링크 3곳을 자동으로 다시 가리켰습니다. `tasks/README.md:32`, `tasks/issue/453-dva-queue-consumer-lacks-pinned-product-binary-provenance.md:170`, `tasks/issue/490-selected-taskchain-rejects-native-decision-directory.md:91`입니다. TASK-493 경로의 `git diff --exit-code`는 0입니다. 커밋, 통합, CE start, 소스·문서·영수증 수정은 하지 않았습니다."
+}
