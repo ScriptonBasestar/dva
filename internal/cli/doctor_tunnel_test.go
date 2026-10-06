@@ -9,28 +9,32 @@ import (
 	"github.com/ScriptonBasestar/dva/internal/config"
 )
 
-// doctorFakeJWT is what every shim invocation prints. Doctor rows must decide
-// from the exit code and must not copy this string into a finding or fix hint.
-const doctorFakeJWT = "fake.jwt.token"
+// doctorSyntheticStdout is the nonempty stdout a successful or nonzero
+// access-token shim writes. It is not a credential. Doctor rows must not
+// copy it into a finding or fix hint.
+const doctorSyntheticStdout = "synthetic-stdout-sentinel"
 
 // cloudflaredDoctorShim replaces PATH with a directory whose cloudflared
-// prints doctorFakeJWT and exits tokenExit only for `access token` — the
-// arguments checkTunnelAuthState passes (`cloudflared access token --app`).
-// A shim that compared $1 to "token" never saw that argv: $1 is "access", so
-// the supplied exit was ignored and the fallback `exit 0` made every auth
-// probe look healthy. Any other argv still exits 0. The returned log receives
-// one line per invocation so a passing row can show it took the exit-0 branch.
-func cloudflaredDoctorShim(t *testing.T, tokenExit string) string {
+// exits tokenExit only for `access token` — the arguments checkTunnelAuthState
+// passes (`cloudflared access token --app`). stdoutKind selects that probe's
+// stdout: "synthetic" (doctorSyntheticStdout plus a newline), "blank" (one
+// space, so trimming would look empty), or "empty" (zero bytes). A shim that
+// compared $1 to "token" never saw that argv: $1 is "access", so the supplied
+// exit was ignored and the fallback `exit 0` made every auth probe look
+// healthy. Any other argv still exits 0. The returned log receives one line
+// per invocation so a passing row can show it took the access-token branch.
+func cloudflaredDoctorShim(t *testing.T, tokenExit, stdoutKind string) string {
 	t.Helper()
 	if !tokenExitDigits(tokenExit) {
 		t.Fatalf("token exit must be an unsigned integer, got %q", tokenExit)
 	}
+	stdoutLine := accessTokenStdoutLine(t, stdoutKind)
 	dir := t.TempDir()
 	logPath := filepath.Join(dir, "argv.log")
 	script := "#!/bin/sh\n" +
-		"echo " + doctorFakeJWT + "\n" +
 		"printf '%s\\n' \"$*\" >> " + shellSingleQuote(logPath) + "\n" +
 		"if [ \"$1\" = \"access\" ] && [ \"$2\" = \"token\" ]; then\n" +
+		stdoutLine +
 		"  exit " + tokenExit + "\n" +
 		"fi\n" +
 		"exit 0\n"
@@ -39,6 +43,23 @@ func cloudflaredDoctorShim(t *testing.T, tokenExit string) string {
 	}
 	t.Setenv("PATH", dir)
 	return logPath
+}
+
+// accessTokenStdoutLine is the shell that writes the probe stdout. An empty
+// kind writes zero bytes; printf is used so a blank payload stays one space.
+func accessTokenStdoutLine(t *testing.T, kind string) string {
+	t.Helper()
+	switch kind {
+	case "synthetic":
+		return "  printf '%s\\n' " + shellSingleQuote(doctorSyntheticStdout) + "\n"
+	case "blank":
+		return "  printf ' '\n"
+	case "empty":
+		return ""
+	default:
+		t.Fatalf("stdout kind must be synthetic, blank, or empty, got %q", kind)
+		return ""
+	}
 }
 
 func tokenExitDigits(s string) bool {
@@ -91,10 +112,10 @@ func TestDoctorTunnelInstalledCheck(t *testing.T) {
 		t.Fatalf("finding = %q, want a not-found finding", results[0].Finding)
 	}
 
-	// Installed, and `cloudflared access token` exits 0: both rows pass.
-	// The argv log shows the probe was `access token`, so the pass is that
-	// exit and not the shim's fallback for any other command.
-	logPath := cloudflaredDoctorShim(t, "0")
+	// Installed, and `cloudflared access token` exits 0 with nonempty stdout:
+	// both rows pass. The argv log shows the probe was `access token`, so the
+	// pass is that result and not the shim's fallback for any other command.
+	logPath := cloudflaredDoctorShim(t, "0", "synthetic")
 	results = runTunnelDoctorChecks(c)
 	if len(results) != 2 {
 		t.Fatalf("installed: got %d rows, want 2 (installed + auth)", len(results))
@@ -104,6 +125,16 @@ func TestDoctorTunnelInstalledCheck(t *testing.T) {
 	}
 	if !results[1].Passed || results[1].Name != "cloudflared access token for stack.remote-k8s" {
 		t.Fatalf("auth row on token exit 0: %+v", results[1])
+	}
+	assertAccessTokenProbe(t, logPath, "app.example.com")
+	assertNoDoctorJWT(t, results)
+
+	// One space is a nonzero byte count. Trimming would mark the same probe
+	// unauthenticated. The payload is not a credential and is not printed.
+	logPath = cloudflaredDoctorShim(t, "0", "blank")
+	results = runTunnelDoctorChecks(c)
+	if len(results) != 2 || !results[1].Passed || results[1].Name != "cloudflared access token for stack.remote-k8s" {
+		t.Fatalf("auth row on whitespace stdout: %+v", results)
 	}
 	assertAccessTokenProbe(t, logPath, "app.example.com")
 	assertNoDoctorJWT(t, results)
@@ -120,7 +151,7 @@ func TestDoctorTunnelServiceTokenEnvCheck(t *testing.T) {
 
 	// The shim makes the installed row deterministic regardless of the host
 	// (helm_test.go convention): PATH is replaced, not prepended.
-	_ = cloudflaredDoctorShim(t, "0")
+	_ = cloudflaredDoctorShim(t, "0", "synthetic")
 
 	// Neither variable set: one failing row naming the missing variable.
 	results := runTunnelDoctorChecks(c)
@@ -141,7 +172,7 @@ func TestDoctorTunnelServiceTokenEnvCheck(t *testing.T) {
 	}
 	for _, r := range results {
 		if strings.Contains(r.Finding, "id-value") || strings.Contains(r.FixHint, "secret-value") ||
-			strings.Contains(r.Finding, doctorFakeJWT) || strings.Contains(r.FixHint, doctorFakeJWT) {
+			strings.Contains(r.Finding, doctorSyntheticStdout) || strings.Contains(r.FixHint, doctorSyntheticStdout) {
 			t.Fatalf("value leaked into doctor output: %+v", r)
 		}
 	}
@@ -153,7 +184,7 @@ func TestDoctorTunnelInteractiveAuthFailure(t *testing.T) {
 		Hostname: "app.example.com",
 		Local:    "127.0.0.1:16443",
 	})
-	logPath := cloudflaredDoctorShim(t, "1")
+	logPath := cloudflaredDoctorShim(t, "1", "synthetic")
 	results := runTunnelDoctorChecks(c)
 	if len(results) != 2 {
 		t.Fatalf("auth failure: got %d rows, want 2", len(results))
@@ -176,13 +207,50 @@ func TestDoctorTunnelInteractiveAuthFailure(t *testing.T) {
 	assertAccessTokenProbe(t, logPath, "app.example.com")
 }
 
+func TestDoctorTunnelAuthEmptyStdout(t *testing.T) {
+	c := tunnelDoctorConfig(&config.TunnelConfig{
+		Provider: "cloudflared",
+		Hostname: "app.example.com",
+		Local:    "127.0.0.1:16443",
+	})
+	logPath := cloudflaredDoctorShim(t, "0", "empty")
+	results := runTunnelDoctorChecks(c)
+	if len(results) != 2 {
+		t.Fatalf("empty stdout: got %d rows, want 2", len(results))
+	}
+	if !results[0].Passed {
+		t.Fatalf("installed row failed while cloudflared was on PATH: %+v", results[0])
+	}
+	auth := results[1]
+	if auth.Passed || auth.Name != "cloudflared access token for stack.remote-k8s" {
+		t.Fatalf("auth row passed on exit 0 with empty stdout: %+v", auth)
+	}
+	if !strings.Contains(auth.Finding, "no usable Access token for app.example.com") {
+		t.Fatalf("finding = %q", auth.Finding)
+	}
+	const wantHint = "Run: cloudflared access login --quiet https://app.example.com"
+	if auth.FixHint != wantHint {
+		t.Fatalf("fix hint = %q, want %q", auth.FixHint, wantHint)
+	}
+	// Passed false is the [FAIL] row. The printed line is the finding, which
+	// must not carry stdout bytes. This probe wrote zero of them.
+	if got := "[FAIL] " + auth.failureLine(); !strings.Contains(got, "[FAIL] no usable Access token for app.example.com") {
+		t.Fatalf("failure line = %q", got)
+	}
+	if strings.Contains(auth.failureLine(), doctorSyntheticStdout) {
+		t.Fatalf("stdout bytes leaked into the failure line: %q", auth.failureLine())
+	}
+	assertNoDoctorJWT(t, results)
+	assertAccessTokenProbe(t, logPath, "app.example.com")
+}
+
 // TestDoctorTunnelConfigEndToEnd loads a dva.yml through config.Load and runs
 // runDoctorChecks, the same aggregation `dva doctor` uses. The cloudflared on
-// PATH is the local shim (exit 0). The test does not log in, open a tunnel, or
-// read a credential. A doctor run against a live tunnel config, and the
-// expired-token exit code, stay human checks.
+// PATH is the local shim (exit 0, synthetic nonempty stdout). The test does
+// not log in, open a tunnel, or read a credential. A doctor run against a
+// live tunnel config stays a human check.
 func TestDoctorTunnelConfigEndToEnd(t *testing.T) {
-	logPath := cloudflaredDoctorShim(t, "0")
+	logPath := cloudflaredDoctorShim(t, "0", "synthetic")
 	dir := t.TempDir()
 	const body = `stack:
   remote-interactive:
@@ -271,7 +339,7 @@ func TestDoctorTunnelConfigEndToEnd(t *testing.T) {
 	for _, r := range results {
 		if strings.Contains(r.Finding, idValue) || strings.Contains(r.FixHint, idValue) ||
 			strings.Contains(r.Finding, secretValue) || strings.Contains(r.FixHint, secretValue) ||
-			strings.Contains(r.Finding, doctorFakeJWT) || strings.Contains(r.FixHint, doctorFakeJWT) {
+			strings.Contains(r.Finding, doctorSyntheticStdout) || strings.Contains(r.FixHint, doctorSyntheticStdout) {
 			t.Fatalf("value leaked into doctor output: %+v", r)
 		}
 	}
@@ -287,8 +355,8 @@ func TestDoctorTunnelConfigEndToEnd(t *testing.T) {
 func assertNoDoctorJWT(t *testing.T, results []DoctorResult) {
 	t.Helper()
 	for _, r := range results {
-		if strings.Contains(r.Finding, doctorFakeJWT) || strings.Contains(r.FixHint, doctorFakeJWT) {
-			t.Fatalf("JWT leaked into doctor output: %+v", r)
+		if strings.Contains(r.Finding, doctorSyntheticStdout) || strings.Contains(r.FixHint, doctorSyntheticStdout) {
+			t.Fatalf("stdout bytes leaked into doctor output: %+v", r)
 		}
 	}
 }

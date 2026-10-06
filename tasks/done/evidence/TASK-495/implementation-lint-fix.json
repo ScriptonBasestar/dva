@@ -1,0 +1,5 @@
+{
+  "sessionId": "01a11189-f0e5-7851-9470-6c8c227345d3",
+  "text": "`tunnelTTYOverride`의 `want`가 항상 `false`라서 unparam이 걸렸습니다. 호출부를 확인한 뒤 no-TTY 전용 헬퍼로 바꾸겠습니다.`tunnelTTYOverride`의 `want` 인자를 없애고, no-TTY만 고정하는 `tunnelNoTTY`로 바꿨습니다. 호출 네 곳과 주석을 맞췄고, lint 억제는 넣지 않았습니다.\n\n변경 파일은 `internal/lifecycle/tunnel_test.go`뿐입니다.\n\n- `go test -count=1 -run '^TestTunnel' ./internal/lifecycle/` → **0**\n- `golangci-lint run ./...` (v2.12.2) → **0**, 이슈 0건\n\nGit, 카드, evidence는 건드리지 않았습니다.",
+  "model": "grok-4.7-build-fast"
+}

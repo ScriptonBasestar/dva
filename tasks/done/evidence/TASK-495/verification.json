@@ -1,0 +1,8 @@
+{
+  "profile": "commit",
+  "command": "env -u KUBECONFIG dva ci commit",
+  "exitCode": 0,
+  "summary": "CI 71a564a017122af5c13a87fa6bcd3131: succeeded (2m26.520830834s)",
+  "priorFailure": "CI 0d3aac184cbaf09a83679ae8763754f2 unparam; fixed no-TTY helper without suppression",
+  "reviewInterruption": "Initial independent review interrupted before verdict to fix lint; not a review FAIL"
+}

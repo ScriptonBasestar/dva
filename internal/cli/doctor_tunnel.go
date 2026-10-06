@@ -62,15 +62,18 @@ func checkTunnelCloudflaredInstalled(entryName string) DoctorResult {
 	return r
 }
 
-// checkTunnelAuthState probes the cached Access token for one hostname. The
-// probe's stdout carries the JWT, so every byte is discarded — only the exit
-// code decides.
+// checkTunnelAuthState probes the cached Access token for one hostname.
+// Stdout carries the JWT. The probe counts those bytes and retains none of
+// them — the count is not whitespace-trimmed, and neither the bytes nor the
+// count are printed. Authenticated means the process succeeded and the count
+// is greater than zero.
 func checkTunnelAuthState(entryName, hostname string) DoctorResult {
 	r := DoctorResult{Name: fmt.Sprintf("cloudflared access token for stack.%s", entryName)}
 	cmd := exec.Command("cloudflared", "access", "token", "--app", "https://"+hostname)
-	cmd.Stdout = io.Discard
+	var stdout stdoutByteCounter
+	cmd.Stdout = &stdout
 	cmd.Stderr = io.Discard
-	if err := cmd.Run(); err != nil {
+	if err := cmd.Run(); err != nil || stdout.n == 0 {
 		r.Passed = false
 		r.Finding = fmt.Sprintf("no usable Access token for %s", hostname)
 		r.FixHint = fmt.Sprintf("Run: cloudflared access login --quiet https://%s", hostname)
@@ -78,6 +81,14 @@ func checkTunnelAuthState(entryName, hostname string) DoctorResult {
 	}
 	r.Passed = true
 	return r
+}
+
+// stdoutByteCounter counts bytes written to it and keeps none of the contents.
+type stdoutByteCounter struct{ n int64 }
+
+func (c *stdoutByteCounter) Write(p []byte) (int, error) {
+	c.n += int64(len(p))
+	return len(p), nil
 }
 
 // checkTunnelServiceTokenEnv verifies both named variables are set and

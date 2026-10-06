@@ -8,7 +8,9 @@ exec-tier: standard
 execution-mode: implementation
 needs-human: false
 allowed-paths: [internal/lifecycle/tunnel.go, internal/lifecycle/tunnel_test.go, internal/cli/doctor_tunnel.go, internal/cli/doctor_tunnel_test.go, docs/68-remote-access-tunnel.md]
-status: todo
+status: done
+quality-review: pass
+quality-review-evidence: tasks/done/evidence/TASK-495/independent-review.json
 created: 2026-10-05
 ---
 
@@ -42,12 +44,16 @@ cloudflared 2026.9.3의 `access token --app`은 만료 토큰에 **exit 0**과 �
 
 ## Completion Criteria
 
-- [ ] 가짜 `cloudflared`가 exit 0과 빈 stdout을 내면 interactive 준비 판정이 미인증으로 처리하고 TTY 없이는 로그인 명령을 안내하며 실패한다 | verify: `go test -count=1 -v -run '^TestTunnelAuth' ./internal/lifecycle/ 2>&1 | /usr/bin/grep -q '^--- PASS: TestTunnelAuthExpiredTokenEmptyStdout '`
-- [ ] 같은 조건에서 `dva doctor`의 Access token 행이 `[FAIL]`이고, 출력에 가짜 토큰 바이트가 없다 | verify: `go test -count=1 -v -run '^TestDoctorTunnel' ./internal/cli/ 2>&1 | /usr/bin/grep -q '^--- PASS: TestDoctorTunnelAuthEmptyStdout '`
-- [ ] docs/68 §3.1 1단계가 종료 코드와 비어 있지 않은 stdout을 함께 요구한다 | verify: `awk '/^### 3.1/{p=1} /^### 3.2/{p=0} p' docs/68-remote-access-tunnel.md | /usr/bin/grep -q 'stdout이 비어 있지 않'`
-- [ ] 문서 게이트가 통과한다 | verify: `make doc-check` (regression-guard)
+- [x] 가짜 `cloudflared`가 exit 0과 빈 stdout을 내면 interactive 준비 판정이 미인증으로 처리하고 TTY 없이는 로그인 명령을 안내하며 실패한다 | verify: `go test -count=1 -v -run '^TestTunnelAuth' ./internal/lifecycle/ 2>&1 | /usr/bin/grep -q '^--- PASS: TestTunnelAuthExpiredTokenEmptyStdout '`
+- [x] 같은 조건에서 `dva doctor`의 Access token 행이 `[FAIL]`이고, 출력에 가짜 토큰 바이트가 없다 | verify: `go test -count=1 -v -run '^TestDoctorTunnel' ./internal/cli/ 2>&1 | /usr/bin/grep -q '^--- PASS: TestDoctorTunnelAuthEmptyStdout '`
+- [x] docs/68 §3.1 1단계가 종료 코드와 비어 있지 않은 stdout을 함께 요구한다 | verify: `awk '/^### 3.1/{p=1} /^### 3.2/{p=0} p' docs/68-remote-access-tunnel.md | /usr/bin/grep -q 'stdout이 비어 있지 않'`
+- [x] 문서 게이트가 통과한다 | verify: `make doc-check` (regression-guard)
 
 ## Notes
 
 - 기존 `TestTunnelAuthInteractiveNoTTY`, `TestDoctorTunnelInteractiveAuthFailure`는 비영 종료만 다룬다. 둘 다 유지한다.
 - `.lock`이 남은 만료 토큰은 exit 1이라 이미 미인증으로 처리된다.
+
+## Verification
+
+Implementation: Grok build-fast 01a11189-f0e5-7851-9470-6c8c227345d3. Independent Grok 4.7 01a11195-2a13-7fd1-bdbf-b2a7ff77c761 PASS. CI 71a564a017122af5c13a87fa6bcd3131 commit succeeded (2m26.520830834s), process-local KUBECONFIG unset to avoid known host kube configuration interference. Exact regression bindings and doc-check exit 0. Initial lint failure was corrected by replacing the always-false configurable helper with tunnelNoTTY; no suppression. Initial review interrupted before verdict for this fix; no completed FAIL.

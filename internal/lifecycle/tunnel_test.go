@@ -15,20 +15,21 @@ import (
 
 // The tunnel tests drive acquire through a fake `cloudflared` shim. Docs/68
 // behaviours under test: interactive auth fails closed without a TTY and never
-// leaks the token output (§3), readiness requires both auth and a live local
+// leaks stdout bytes (§3), readiness requires both auth and a live local
 // listener (§4), service-token credentials travel only in the child env (§3),
 // and the manager owns — dedupes and tears down — only the processes it
-// started itself (§5).
+// started itself (§5). Auth is a successful process and a stdout byte count
+// above zero. The count is not whitespace-trimmed, and the bytes are not stored.
 
-// tunnelTTYOverride pins tunnelTTYAvailable to want for the duration of the
-// test and restores the real detector afterwards. The override is required for
+// tunnelNoTTY pins tunnelTTYAvailable to false for the duration of the test
+// and restores the real detector afterwards. The override is required for
 // determinism: `go test` run in an interactive terminal has a char-device
 // stdin, which would otherwise take the real detector down the TTY path.
-func tunnelTTYOverride(t *testing.T, want bool) {
+func tunnelNoTTY(t *testing.T) {
 	t.Helper()
 
 	orig := tunnelTTYAvailable
-	tunnelTTYAvailable = func() bool { return want }
+	tunnelTTYAvailable = func() bool { return false }
 	t.Cleanup(func() { tunnelTTYAvailable = orig })
 }
 
@@ -54,6 +55,11 @@ func tunnelFreeLocal(t *testing.T) string {
 // `cloudflared access <sub> ...`) and honours:
 //
 //	TOKEN_EXIT        exit code for `access token` (default 0)
+//	TOKEN_STDOUT      stdout of `access token`: synthetic (default, a nonempty
+//	                  sentinel that is not a credential), blank (one space),
+//	                  or empty (zero bytes). Successful auth fixtures need a
+//	                  count above zero. Tests assert the sentinel does not
+//	                  reappear in errors.
 //	LISTEN            when 1, the tcp subcommand binds 127.0.0.1:$TUNNEL_SHIM_PORT
 //	TUNNEL_SHIM_PORT  port the LISTEN listener binds (default 16443)
 //
@@ -80,7 +86,20 @@ mkdir -p "$log_dir"
 echo "$2 $(date +%s%N)" >> "$log_dir/calls.log"
 case "$2" in
   token)
-    echo fake.jwt.token
+    case "${TOKEN_STDOUT:-synthetic}" in
+      empty)
+        ;;
+      blank)
+        printf ' '
+        ;;
+      synthetic)
+        printf '%s\n' 'synthetic-stdout'
+        ;;
+      *)
+        echo "unknown TOKEN_STDOUT" >&2
+        exit 2
+        ;;
+    esac
     exit "${TOKEN_EXIT:-0}"
     ;;
   login)
@@ -180,7 +199,8 @@ func TestTunnelAuthInteractiveNoTTY(t *testing.T) {
 	local := tunnelFreeLocal(t)
 	logDir := tunnelShim(t, local)
 	t.Setenv("TOKEN_EXIT", "1")
-	tunnelTTYOverride(t, false)
+	t.Setenv("TOKEN_STDOUT", "synthetic")
+	tunnelNoTTY(t)
 
 	m := newTunnelManager(tunnelDiscardLogger())
 	err := m.acquire(
@@ -193,10 +213,45 @@ func TestTunnelAuthInteractiveNoTTY(t *testing.T) {
 	if !strings.Contains(err.Error(), "cloudflared access login --quiet https://app.example.com") {
 		t.Fatalf("error must carry the exact login command hint, got: %v", err)
 	}
-	// The shim printed a JWT on stdout; runCloudflaredDiscard throws that
-	// stream away, so no failure path may quote it back.
-	if strings.Contains(err.Error(), "fake.jwt.token") {
-		t.Fatalf("error must not leak the cloudflared token output, got: %v", err)
+	// Nonzero exit is unauthenticated even when stdout is nonempty. The shim
+	// writes a synthetic payload; runCloudflaredDiscard counts those bytes
+	// and discards them, so no failure path may quote the payload back.
+	if strings.Contains(err.Error(), "synthetic-stdout") {
+		t.Fatalf("error must not include stdout bytes, got: %v", err)
+	}
+	// Without a TTY the foreground login must never run, and a failed auth
+	// must never reach the tunnel process.
+	if n := countSubcommand(t, logDir, "token"); n != 1 {
+		t.Fatalf("expected exactly one token probe, got %d", n)
+	}
+	if n := countSubcommand(t, logDir, "login"); n != 0 {
+		t.Fatalf("login must not run without a TTY, ran %d times", n)
+	}
+	if n := countSubcommand(t, logDir, "tcp"); n != 0 {
+		t.Fatalf("tcp must not run when auth fails, ran %d times", n)
+	}
+}
+
+func TestTunnelAuthExpiredTokenEmptyStdout(t *testing.T) {
+	local := tunnelFreeLocal(t)
+	logDir := tunnelShim(t, local)
+	t.Setenv("TOKEN_EXIT", "0")
+	t.Setenv("TOKEN_STDOUT", "empty")
+	tunnelNoTTY(t)
+
+	m := newTunnelManager(tunnelDiscardLogger())
+	err := m.acquire(
+		tunnelEntry(config.TunnelAuthInteractive, local),
+		config.NewEnvironment(map[string]string{}, "/tmp", "/tmp"))
+
+	if err == nil {
+		t.Fatal("exit 0 with empty stdout must be unauthenticated")
+	}
+	if !strings.Contains(err.Error(), "cloudflared access login --quiet https://app.example.com") {
+		t.Fatalf("error must carry the exact login command hint, got: %v", err)
+	}
+	if strings.Contains(err.Error(), "synthetic-stdout") {
+		t.Fatalf("error must not include stdout bytes, got: %v", err)
 	}
 	// Without a TTY the foreground login must never run, and a failed auth
 	// must never reach the tunnel process.
@@ -218,7 +273,7 @@ func TestTunnelReadyRequiresAuthAndTCP(t *testing.T) {
 		local := tunnelFreeLocal(t)
 		logDir := tunnelShim(t, local)
 		t.Setenv("TOKEN_EXIT", "1")
-		tunnelTTYOverride(t, false)
+		tunnelNoTTY(t)
 
 		ln, err := net.Listen("tcp", local)
 		if err != nil {
@@ -245,6 +300,7 @@ func TestTunnelReadyRequiresAuthAndTCP(t *testing.T) {
 		local := tunnelFreeLocal(t)
 		logDir := tunnelShim(t, local)
 		t.Setenv("TOKEN_EXIT", "0")
+		t.Setenv("TOKEN_STDOUT", "synthetic")
 		// LISTEN unset: the shim accepts `tcp` but never binds the port.
 
 		entry := tunnelEntry(config.TunnelAuthInteractive, local)
@@ -271,6 +327,9 @@ func TestTunnelReadyRequiresAuthAndTCP(t *testing.T) {
 		local := tunnelFreeLocal(t)
 		tunnelShim(t, local)
 		t.Setenv("TOKEN_EXIT", "0")
+		// One space is a nonzero count. Trimming would treat it as empty and
+		// fail auth before the listener is consulted.
+		t.Setenv("TOKEN_STDOUT", "blank")
 		t.Setenv("LISTEN", "1")
 
 		m := newTunnelManager(tunnelDiscardLogger())
@@ -290,7 +349,7 @@ func TestTunnelAuthServiceToken(t *testing.T) {
 		t.Setenv("LISTEN", "1")
 		t.Setenv("TID", "id-value")
 		t.Setenv("TSECRET", "secret-value")
-		tunnelTTYOverride(t, false)
+		tunnelNoTTY(t)
 
 		m := newTunnelManager(tunnelDiscardLogger())
 		defer m.Close()
@@ -365,6 +424,7 @@ func TestTunnelLifecycleOwnership(t *testing.T) {
 		local := tunnelFreeLocal(t)
 		logDir := tunnelShim(t, local)
 		t.Setenv("TOKEN_EXIT", "0")
+		t.Setenv("TOKEN_STDOUT", "synthetic")
 		t.Setenv("LISTEN", "1")
 
 		entry := tunnelEntry(config.TunnelAuthInteractive, local)
@@ -385,6 +445,7 @@ func TestTunnelLifecycleOwnership(t *testing.T) {
 		local := tunnelFreeLocal(t)
 		tunnelShim(t, local)
 		t.Setenv("TOKEN_EXIT", "0")
+		t.Setenv("TOKEN_STDOUT", "synthetic")
 		t.Setenv("LISTEN", "1")
 
 		m := newTunnelManager(tunnelDiscardLogger())
@@ -409,6 +470,7 @@ func TestTunnelLifecycleOwnership(t *testing.T) {
 		local := tunnelFreeLocal(t)
 		logDir := tunnelShim(t, local)
 		t.Setenv("TOKEN_EXIT", "0")
+		t.Setenv("TOKEN_STDOUT", "synthetic")
 
 		ln, err := net.Listen("tcp", local)
 		if err != nil {

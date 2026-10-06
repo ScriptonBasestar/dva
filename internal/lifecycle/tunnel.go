@@ -133,7 +133,8 @@ func (m *tunnelManager) authenticate(t *config.TunnelConfig) error {
 		return nil
 	}
 
-	// interactive: exit code 0 means a usable token is cached.
+	// interactive: a usable token exits 0 and writes at least one stdout byte.
+	// An expired cloudflared token exits 0 and writes nothing (docs/68 §7).
 	if err := runCloudflaredDiscard(t.Hostname); err == nil {
 		return nil
 	}
@@ -155,13 +156,30 @@ func (m *tunnelManager) authenticate(t *config.TunnelConfig) error {
 	return nil
 }
 
-// runCloudflaredDiscard runs `cloudflared access token --app` and throws away
-// everything but the exit code: stdout carries the JWT.
+// runCloudflaredDiscard runs `cloudflared access token --app`. Stdout carries
+// the JWT, so the writer counts bytes and retains none of them: the token is
+// never stored or logged, and whitespace is not trimmed. Authenticated means
+// the process succeeded and the count is greater than zero.
 func runCloudflaredDiscard(hostname string) error {
 	cmd := exec.Command("cloudflared", "access", "token", "--app", "https://"+hostname)
-	cmd.Stdout = io.Discard
+	var stdout stdoutByteCounter
+	cmd.Stdout = &stdout
 	cmd.Stderr = io.Discard
-	return cmd.Run()
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+	if stdout.n == 0 {
+		return fmt.Errorf("cloudflared access token exited 0 with empty stdout")
+	}
+	return nil
+}
+
+// stdoutByteCounter counts bytes written to it and keeps none of the contents.
+type stdoutByteCounter struct{ n int64 }
+
+func (c *stdoutByteCounter) Write(p []byte) (int, error) {
+	c.n += int64(len(p))
+	return len(p), nil
 }
 
 // runCloudflaredLogin runs `cloudflared access login` in the foreground with

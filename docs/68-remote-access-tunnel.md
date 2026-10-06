@@ -60,9 +60,9 @@ Cloudflare Access가 소유하고, DVA는 **인증 상태를 확인하고 로그
 
 ### 3.1 `interactive` (기본값, 개발자 PC)
 
-1. `cloudflared access token --app=https://<hostname>` — 종료 코드만 본다.
-   stdout에 JWT가 나오므로 **출력은 버리고 로그에 남기지 않는다**.
-2. 종료 코드가 0이 아니면:
+1. `cloudflared access token --app=https://<hostname>` — 종료 코드가 0이고 stdout이 비어 있지 않아야 인증된 것이다.
+   stdout은 바이트 수만 세고 내용은 버린다. 공백을 잘라 내지 않으며, 로그와 오류 메시지에 넣지 않는다.
+2. 그 조건을 만족하지 않으면:
    - TTY가 있으면 `cloudflared access login --quiet https://<hostname>`을 전경에서 실행한다.
      `--quiet`가 없으면 로그인 직후 JWT가 터미널에 출력된다.
      브라우저가 열리고 이메일 OTP 입력이 끝날 때까지 기다린다.
@@ -85,7 +85,7 @@ Cloudflare Access가 소유하고, DVA는 **인증 상태를 확인하고 로그
 
 | 조건 | interactive | service-token |
 |---|---|---|
-| 인증 | `access token` 종료 코드 0 | 두 환경변수가 비어 있지 않음 |
+| 인증 | `access token` 종료 코드 0이고 stdout이 비어 있지 않음 | 두 환경변수가 비어 있지 않음 |
 | 연결 | `local`에 TCP 연결 성공 (`ready_timeout` 안에) | 동일 |
 
 `ready_timeout`을 넘기면 cloudflared stderr의 마지막 줄을 원인으로 보여 주고 실패한다.
@@ -125,9 +125,10 @@ Cloudflare Access가 소유하고, DVA는 **인증 상태를 확인하고 로그
   빈 토큰에 대해 그 `nil`을 그대로 반환한다. 실측 대상: exp가 지난 토큰(`exp` 클레임만
   비교). 같은 호스트를 두 번째 물으면 파일이 없으므로 1이다.
 - 확인함: 만료 토큰 옆에 오래된 `.lock` 파일이 남은 호스트는 종료 코드 1이고 파일을 남겼다.
-- 결과: §3.1 1단계의 "종료 코드만 본다"는 만료 토큰을 인증됨으로 오판한다. 첫 호출은
-  0을 받아 로그인을 건너뛴다. 판정은 종료 코드 0 **그리고** stdout이 비지 않음이어야 한다.
-  stdout은 바이트 수만 세고 내용은 버린다. 수정은 [TASK-495](../tasks/todo/495-treat-empty-access-token-stdout-as-unauthenticated.md)다.
+- 결과: 종료 코드만 보면 만료 토큰을 인증됨으로 오판한다. 첫 호출은 종료 코드 0과
+  stdout 0바이트를 돌려주므로, 그 조합으로 로그인을 건너뛰면 안 된다. §3.1 판정은
+  종료 코드 0이고 stdout이 비어 있지 않음이다. stdout은 바이트 수만 세고 내용은 버린다.
+  공백은 잘라 내지 않는다.
 - 확인함: 실제 tunnel 설정에서 `dva doctor`는 cloudflared 설치, interactive 인증 상태,
   service-token 환경변수 존재를 값 없이 보고한다. 기본 exit 0(내장 검사는 advisory),
   `--strict` exit 1. 기록은 ISSUE-488이다.
