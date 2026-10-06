@@ -1,0 +1,18 @@
+{
+  "verdict": "PASS",
+  "findings": [],
+  "checks": {
+    "indexStatus": "blocked",
+    "indexExternalBlocker": true,
+    "indexBlockerNames": "HTTP 403, task-manager-devbox ISSUE-057, tasks/done/evidence/TASK-496/approval/publication-blocked.json",
+    "cachedStat": "6 files, +127/-4: tasks/README.md, tasks/blocked/496-activate-dd3ec0a-darwin-arm64-pin.md, tasks/done/evidence/TASK-496/approval/blocked-state-review.json, tasks/done/evidence/TASK-496/approval/publication-blocked.json, ISSUE-453, ISSUE-490",
+    "priorIndexTodoDefect": "resolved"
+  },
+  "limitations": [
+    "One command only: indexed TASK-496 blob plus git diff --cached --stat. Worktree, pins, PATH binary, cards 493/495, and gate logs were not rechecked.",
+    "blocked-state-review.json is staged at 73 lines; its body was not opened.",
+    "Helper integration, tag push, and the live GitHub 403 were not re-queried."
+  ],
+  "reviewer": "grok-4.7",
+  "sessionId": "01a10ee0-b900-7a00-831e-dd26ae4baee5"
+}

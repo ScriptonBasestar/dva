@@ -1,0 +1,20 @@
+{
+  "status": "blocked",
+  "sourceCommit": "dd3ec0a0848586bcbdecaf598bde2b6d38b979c4",
+  "sourceTree": "a0ee91bd7169bc228262b829f08ff1fcf00fe910",
+  "helperCommit": "8b42ba3e159ef9d039b1fa826c116e71d7212ffb",
+  "helperIntegrated": true,
+  "tag": "v0.1.0",
+  "tagPushed": true,
+  "draftCreateHttpStatus": 403,
+  "error": "Resource not accessible by personal access token",
+  "published": false,
+  "signatureValid": false,
+  "installed": false,
+  "pinActivated": false,
+  "hostStarted": false,
+  "externalIssue": {
+    "repository": "task-manager-devbox",
+    "id": "ISSUE-057"
+  }
+}

@@ -33,7 +33,7 @@ DECISION-002는 2026-10-03에 Accepted다. 정본 upstream만 택했고 interim 
 - [ISSUE-488](_archive/issue/488-measure-expired-tunnel-token-and-live-doctor.md): 사람이 고른 대상(`scripton-tonk-01-k8s.scripton.net`)으로 개발자 Mac에서 실측했다. 만료 토큰에서 `cloudflared access token --app`은 exit 0, 빈 stdout이고 JWT `-token` 파일을 지운다. 기록은 docs/68 §7이다. 종료 코드 단독 판정 결함은 [TASK-495](todo/495-treat-empty-access-token-stdout-as-unauthenticated.md)다.
 
 열린 todo는 만료 토큰 판정 [TASK-495](todo/495-treat-empty-access-token-stdout-as-unauthenticated.md)와,
-공개 서명 전에는 external인 pin 활성화 [TASK-496](todo/496-activate-dd3ec0a-darwin-arm64-pin.md)다.
+공개 서명 전에는 external인 pin 활성화 [TASK-496](blocked/496-activate-dd3ec0a-darwin-arm64-pin.md)다.
 TASK-495는 `execution-mode: implementation`과 allowed-paths를 가진다. 코드는 아직 없다. [TASK-459](done/459-implement-remote-access-tunnel.md)는 2026-10-05 ISSUE-488 실측으로 사람 기준 두 개를 채워 done이 됐다. 제품 native decision 호환 보정 [TASK-493](done/493-support-native-decision-queue-kind.md)은 독립 리뷰·전체 검사 후 제품 master에 `dd3ec0a`로 통합·push했고 task worktree와 local/remote 브랜치를 회수했다. [TASK-492](done/492-apply-approved-readonly-queue-acceptance.md)는 수락된 범위·문서 적용을 독립 Grok 4.7 재리뷰 PASS 후 완료했다. 004·006은 명시 읽기 전용 검증과 독립 PASS로 해결했다. TASK-493 source 통합도 완료됐다. [TASK-489](done/489-apply-approved-changelog-ceiling.md)는 실제 ceiling 트리거 반영과 후속 분석을 독립 Grok 4.7 재리뷰 PASS 후 완료했다. [TASK-486](done/486-record-session-followup-contract.md)은 독립 Grok 4.7 리뷰 PASS 후 완료됐고, 기준 2·5·6 바인딩은 TASK-489가 사실 정정한다. 독립 재검증 PASS 영수증은 `tasks/done/evidence/TASK-489/independent-review-attempt-2.json`이다. [TASK-487](decision/487-changelog-half-ceiling-trigger.md)은 2026-10-05 사용자가 옵션 2(실제 ceiling)를 골라 Accepted다. 측정은 87296 bytes와 물리 줄 1000 아래라 v0.2.x 아카이브는 하지 않는다.
 
 [TASK-491](decision/491-queue-acceptance-scope-and-historical-evidence.md)은 2026-10-05 사용자가 옵션 1을 수락해 Accepted다. 004·006의 현재 범위는 읽기 전용 분류와 종료 판정이다. terminal/rollback과 공개 pin 승인은 이 수락에 포함되지 않는다.
@@ -206,3 +206,9 @@ verdict는 human_required다. 카드 Markdown bytes는 두 읽기 전용 호출 
 CI가 발견한 후속 [TASK-494](done/494-allow-local-only-issue-corpus.md)는 실제 보드에
 상류 소유 이슈가 반드시 있어야 한다는 테스트 가정을 보정했다. 합성 fixture로
 양성·음성 분류와 정상 local-only 보드를 검증했고 독립 Grok 4.7 PASS를 받았다.
+
+2026-10-06 공개 단계: 제품 signer helper 8b42ba3 통합·push·reclaim 및 DD v0.1.0
+tag push 후 draft 생성이 HTTP 403으로 거부됐다. 외부 권한 조치는 private devbox
+ISSUE-057이 추적한다. TASK-496은 blocked이며 ISSUE-453/490은 미완료다. 공개 서명
+검증 전에는 설치·pin·host start를 진행하지 않는다. TASK-495는 실제 positive 검증의
+자동 후보로 남아 있다.

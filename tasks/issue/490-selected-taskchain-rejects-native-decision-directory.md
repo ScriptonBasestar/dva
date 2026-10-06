@@ -88,7 +88,7 @@ ISSUE-453의 승인 artifact를 결정하면 설치 담당자가 승인된 바�
 
 ISSUE-453의 darwin/arm64 교체 후보가 celee v0.1.0 GitHub Releases 대상으로 승인됐다.
 기본 PATH는 아직 교체하지 않았고 pin도 켜지 않았다. 앞 두 기준은 미체크다. 활성화 카드는
-[TASK-496](../todo/496-activate-dd3ec0a-darwin-arm64-pin.md)이며 공개 서명 전에는 external이다.
+[TASK-496](../blocked/496-activate-dd3ec0a-darwin-arm64-pin.md)이며 공개 서명 전에는 external이다.
 Linux 채택과 CE writer 전면 전환은 하지 않는다.
 
 같은 보드 조회에서 유일한 구현 후보 [TASK-495](../todo/495-treat-empty-access-token-stdout-as-unauthenticated.md)가
@@ -107,3 +107,13 @@ Linux 채택과 CE writer 전면 전환은 하지 않는다.
 남은 값은 `internal/lifecycle/tunnel.go`, `internal/lifecycle/tunnel_test.go`,
 `internal/cli/doctor_tunnel.go`, `internal/cli/doctor_tunnel_test.go`,
 `docs/68-remote-access-tunnel.md` 다섯 파일이다. 다른 frontmatter는 바꾸지 않았다.
+
+## 2026-10-06 공개 단계 권한 차단
+
+제품 signer helper 8b42ba3은 전체 make check/make lint, 독립 Grok 리뷰, GitHub CI 후
+master에 통합·push·reclaim됐다. v0.1.0 tag는 승인된 DD source에 push됐다.
+현재 GitHub PAT의 draft release 생성 요청이 HTTP 403으로 거부되어 공개·서명·설치·
+DVA pin 활성화·실제 CE host start는 하지 않았다. 서명 증거가 없으므로 이 이슈는 미완료다.
+권한 조치와 재개 명령은 task-manager-devbox의 ISSUE-057이 추적한다.
+증거는 `tasks/done/evidence/TASK-496/approval/publication-blocked.json`이다.
+승인은 유지되며, 권한 준비 후 같은 source/hash/channel로 이어간다.

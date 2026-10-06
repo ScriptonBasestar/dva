@@ -7,7 +7,7 @@ effort: M
 needs-human: true
 execution-mode: external
 human-grade: human
-status: todo
+status: blocked
 created: 2026-10-06
 external-dependency: taskchain-verified-release-attestation
 ---
@@ -67,3 +67,7 @@ external이며 구현을 시작하지 않는다.
 | 1 | Independent grok-4.7 01a10eb0-7ad3-7b42-8f31-13760387fd11; tasks/done/evidence/TASK-496/review-preparation-attempt-1.json | FAIL: criteria trusted copied manifest and self-reported host fields; retry binds actual manifest, executable, raw CE outputs and counters. |
 
 | 2 | Independent grok-4.7 01a10ebe-4c84-7022-a2d3-016138cabfe7; tasks/done/evidence/TASK-496/review-preparation-attempt-2.json | PASS for preparation criteria only; no publication, activation or host completion. |
+
+## External blocker
+
+GitHub draft release creation returned HTTP 403. The approved tag exists and signer helper is integrated, but no signed public release exists. This card is blocked on task-manager-devbox ISSUE-057. The manifest, selected executable, and CE host are unchanged. Evidence: tasks/done/evidence/TASK-496/approval/publication-blocked.json. TASK-495 remains the sole automatic candidate reserved for the actual positive host verification once the approved artifact is available; this publication authorization did not complete its source fix.

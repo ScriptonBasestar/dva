@@ -1,0 +1,73 @@
+{
+  "verdict": "pass_with_findings",
+  "findings": [
+    {
+      "id": "docs-scope",
+      "severity": "info",
+      "observation": "Tracked diff is docs-only: README, ISSUE-453, ISSUE-490, and TASK-496 rename todo to blocked. Untracked file is tasks/done/evidence/TASK-496/approval/publication-blocked.json (582 bytes). internal/taskqueue/taskchain-pins.json is not in the diff."
+    },
+    {
+      "id": "index-still-todo",
+      "severity": "medium",
+      "observation": "The index holds a pure R100 rename. git show of the index blob still has status: todo and no External blocker section. The worktree file has status: blocked plus the blocker paragraph. Committing only the index would leave a blocked-path card whose frontmatter still says todo."
+    },
+    {
+      "id": "issues-remain-open",
+      "severity": "info",
+      "observation": "ISSUE-453 and ISSUE-490 frontmatter status remain todo. Their new 2026-10-06 sections say publication, signing, install, pin activation, and CE host start did not happen. README retargets TASK-496 to tasks/blocked and says both issues are unfinished. TASK-495 remains tasks/todo with status todo."
+    },
+    {
+      "id": "github-events-not-reverified",
+      "severity": "medium",
+      "observation": "publication-blocked.json records helperCommit 8b42ba3e159ef9d039b1fa826c116e71d7212ffb, helperIntegrated true, tag v0.1.0, tagPushed true, draftCreateHttpStatus 403, error 'Resource not accessible by personal access token', and published/signatureValid/installed/pinActivated/hostStarted all false, externalIssue task-manager-devbox ISSUE-057. This review did not re-query GitHub, the helper repository, or the tag. No PAT value is stored in that JSON."
+    },
+    {
+      "id": "pin-and-path-unchanged",
+      "severity": "info",
+      "observation": "On-disk internal/taskqueue/taskchain-pins.json still has one darwin/arm64 artifact: sourceCommit 9e8fac7235a28cbab085a871e1475b38c5150417, sha256 9bc844af42714d0fa112acf0f05fac860d449026324f254db819d78685343fac, status verified-not-published, mutationAuthorized false. That is not source dd3ec0a0848586bcbdecaf598bde2b6d38b979c4. command -v taskchain-task-manager is /Users/archmagece/go/bin/taskchain-task-manager and its SHA-256 is db6dd2d0d61373762d5623f45418913a1585650616b6cc811476c88e2a637a1b. tmp/release-session/pin-implementation.txt names a different approved digest c01ce7aa…; that digest was not treated as the installed or pinned binary."
+    },
+    {
+      "id": "493-495-receipts",
+      "severity": "info",
+      "observation": "git status is clean for tasks/done/493-support-native-decision-queue-kind.md, tasks/todo/495-treat-empty-access-token-stdout-as-unauthenticated.md, and tasks/done/evidence/TASK-493. No tasks/done/evidence/TASK-495 directory was present. TASK-496 is only under tasks/blocked, not tasks/done. Existing TASK-496 preparation and review-preparation JSON files are already tracked and were not in this diff."
+    },
+    {
+      "id": "gate-tails",
+      "severity": "info",
+      "observation": "tmp/release-session/move-blocked.log: moved to blocked and retargeted README, ISSUE-453, and ISSUE-490. validate-blocked.log tail: 552 valid, 0 invalid; ISSUE-490 has one warning that a machine binding has no observed date. gate-blocked.log tail: validate, lint, preflight, and bindings pass; READY task_board_ready; NOT DONE says no card was read past metadata; advisory count 3 for no-exec-tier. doc-blocked.log tail: doc-check OK, with pre-existing STALE notes for TASK-489 paths, plus cilabels, flowcheck, planprogress, yamlcheck, changelogcheck, and ciparity OK. No full test run and no global DVA CI status were taken."
+    }
+  ],
+  "checks": {
+    "docsOnlyDiff": true,
+    "task496WorktreeStatus": "blocked",
+    "task496IndexStatus": "todo",
+    "issue453Status": "todo",
+    "issue490Status": "todo",
+    "task493Status": "done",
+    "task495Status": "todo",
+    "task493And495AndSealedReceiptsDirty": false,
+    "pinsMutationAuthorized": false,
+    "pinsSha256": "9bc844af42714d0fa112acf0f05fac860d449026324f254db819d78685343fac",
+    "pinsSourceCommit": "9e8fac7235a28cbab085a871e1475b38c5150417",
+    "pathBinary": "/Users/archmagece/go/bin/taskchain-task-manager",
+    "pathSha256": "db6dd2d0d61373762d5623f45418913a1585650616b6cc811476c88e2a637a1b",
+    "publicationBlockedJsonPresent": true,
+    "publicationBlockedJsonTracked": false,
+    "recordedDraftHttpStatus": 403,
+    "recordedPublishedInstalledPinHost": false,
+    "recordedBlocker": "task-manager-devbox ISSUE-057",
+    "helperIntegrationIndependentlyReverified": false,
+    "validateSummary": "552 valid, 0 invalid",
+    "boardGateTail": "READY task_board_ready",
+    "docCheckTail": "OK"
+  },
+  "limitations": [
+    "No edits, no subagents, no CE start, no credential fallback, and no external mutations were performed.",
+    "Helper integration, tag push, and the live GitHub 403 were not rechecked; only the local JSON and docs assert them.",
+    "Public helper source was not compared with either the pin candidate or the PATH binary.",
+    "Gate evidence is the four tmp/release-session log tails only."
+  ],
+  "reviewer": "grok-4.7",
+  "sessionId": "01a10ee0-b900-7a00-831e-dd26ae4baee5",
+  "scope": "blocked-state-independent-audit"
+}
