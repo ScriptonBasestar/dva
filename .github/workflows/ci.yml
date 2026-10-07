@@ -41,10 +41,13 @@ jobs:
       # GOMAXPROCS=1 leaves a core for the runner heartbeat on 2-core hosts.
       # A full-core -race compile starved that heartbeat and GitHub aborted
       # the job at ~45m with no logs.
+      # Aggregate test output is buffered without -v. Retain test progress so
+      # the last active test is visible when the job-level deadline cancels a run.
       - name: Test
         timeout-minutes: 25
         env:
           GOMAXPROCS: "1"
+          GOTESTFLAGS: "-v"
         run: sh scripts/without-dva.sh make test
 
       - name: Integration Test

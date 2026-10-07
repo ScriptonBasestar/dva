@@ -53,11 +53,42 @@ func TestSecretPushRealSOPS(t *testing.T) {
 	t.Setenv("SOPS_AGE_KEY_FILE", f.keyFile)
 	t.Setenv("GH_ARGS", log)
 	t.Setenv("GH_STDIN_FIFO", fifo)
-	stateRoot, err := filepath.EvalSymlinks(t.TempDir())
+	// secretpush verifies every state-directory ancestor is private. Linux's
+	// shared /tmp is mode 1777, so t.TempDir cannot hold this fixture even
+	// though the leaf directory is private. Use the repository's designated
+	// temporary directory, whose checkout ancestors are not writable by others.
+	stateRoot := filepath.Join(repoRoot(), "tmp")
+	if err := os.MkdirAll(stateRoot, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	stateRoot, err = filepath.EvalSymlinks(stateRoot)
 	if err != nil {
 		t.Fatal(err)
 	}
-	state := filepath.Join(stateRoot, "state")
+	state, err := os.MkdirTemp(stateRoot, "dva-secret-push-state-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		entries, err := os.ReadDir(state)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		for _, entry := range entries {
+			if entry.IsDir() {
+				t.Errorf("unexpected state directory entry: %s", entry.Name())
+				return
+			}
+			if err := os.Remove(filepath.Join(state, entry.Name())); err != nil {
+				t.Error(err)
+				return
+			}
+		}
+		if err := os.Remove(state); err != nil {
+			t.Error(err)
+		}
+	})
 	report, err := secretpush.Push(context.Background(), secretpush.Options{Root: f.dir, Name: "real-sops", StateDir: state, Target: secretpush.Target{Source: "secrets.env.enc", Repository: "acme/widget", Keys: map[string]string{"PUSH_SENTINEL": "PUSH_DEST"}}})
 	if err != nil {
 		t.Fatal(err)

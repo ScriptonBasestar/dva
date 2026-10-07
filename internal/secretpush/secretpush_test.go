@@ -205,6 +205,38 @@ func TestPushRejectsSourceSymlinkAndAdversarialDecryptOutput(t *testing.T) {
 	}
 }
 
+func TestPushRejectsStateBelowWorldWritableDirectory(t *testing.T) {
+	root, _, log := fixture(t)
+	shared := filepath.Join(canonicalTemp(t), "shared")
+	if err := os.Mkdir(shared, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(shared, 0o777); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		entries, err := os.ReadDir(shared)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		if len(entries) != 0 {
+			t.Errorf("unexpected unsafe state entries: %v", entries)
+			return
+		}
+		if err := os.Remove(shared); err != nil {
+			t.Error(err)
+		}
+	})
+	state := filepath.Join(shared, "state")
+	if _, err := Push(context.Background(), options(root, state)); code(err) != "state_directory_failed" {
+		t.Fatalf("error = %v", err)
+	}
+	if entries, _ := os.ReadDir(log); len(entries) != 0 {
+		t.Fatalf("gh ran with unsafe state directory: %v", entries)
+	}
+}
+
 func fixture(t *testing.T) (root, state, log string) {
 	t.Helper()
 	root, state, log = t.TempDir(), filepath.Join(canonicalTemp(t), "state"), filepath.Join(t.TempDir(), "log")
@@ -226,10 +258,59 @@ func fixture(t *testing.T) (root, state, log string) {
 
 func canonicalTemp(t *testing.T) string {
 	t.Helper()
-	dir, err := filepath.EvalSymlinks(t.TempDir())
+	// secureMkdir validates every ancestor. Linux's /tmp is mode 1777, so
+	// t.TempDir is not a valid parent even for a private leaf directory.
+	dir, err := filepath.Abs(filepath.Join("..", "..", "tmp"))
 	if err != nil {
 		t.Fatal(err)
 	}
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	dir, err = filepath.EvalSymlinks(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir, err = os.MkdirTemp(dir, "dva-secret-push-state-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		entries, err := os.ReadDir(dir)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		for _, entry := range entries {
+			if entry.Name() != "state" || !entry.IsDir() {
+				t.Errorf("unexpected state fixture entry: %s", entry.Name())
+				return
+			}
+			state := filepath.Join(dir, entry.Name())
+			stateEntries, err := os.ReadDir(state)
+			if err != nil {
+				t.Error(err)
+				return
+			}
+			for _, stateEntry := range stateEntries {
+				if stateEntry.IsDir() {
+					t.Errorf("unexpected state directory entry: %s", stateEntry.Name())
+					return
+				}
+				if err := os.Remove(filepath.Join(state, stateEntry.Name())); err != nil {
+					t.Error(err)
+					return
+				}
+			}
+			if err := os.Remove(state); err != nil {
+				t.Error(err)
+				return
+			}
+		}
+		if err := os.Remove(dir); err != nil {
+			t.Error(err)
+		}
+	})
 	return dir
 }
 

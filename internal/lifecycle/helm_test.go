@@ -389,6 +389,12 @@ func TestHelmPlugin_Stop_ProbeFailureIsNotTreatedAsNotInstalled(t *testing.T) {
 // KUBECONFIG supplied that way, fail, and silently skip tearing down an installed
 // release. The shim's status only succeeds when it sees that KUBECONFIG.
 func TestHelmPlugin_Stop_ProbeUsesConfiguredEnv(t *testing.T) {
+	// MergeVars deliberately prefers the host environment. This test exercises
+	// a config-only value, so remove the host value and restore it at cleanup.
+	t.Setenv("KUBECONFIG", "")
+	if err := os.Unsetenv("KUBECONFIG"); err != nil {
+		t.Fatal(err)
+	}
 	marker := filepath.Join(t.TempDir(), "uninstall-ran")
 	helmShim(t, "  status) [ \"$KUBECONFIG\" = \"/from/dva/yml\" ] && exit 0 || exit 1 ;;\n"+
 		"  uninstall) : > "+marker+"; exit 0 ;;\n")
