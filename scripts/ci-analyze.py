@@ -167,6 +167,11 @@ def main():
         parser.error("invalid --branch")
     if args.timeout < 1 or args.interval < 30 or (args.run_id is not None and args.run_id < 1):
         parser.error("timeout/run-id must be positive; interval must be at least 30 seconds")
+
+    def interrupted(_signum, _frame):
+        raise KeyboardInterrupt
+
+    signal.signal(signal.SIGTERM, interrupted)
     os.umask(0o077)
     args.output = args.output.resolve()
     args.output.mkdir(mode=0o700, parents=True, exist_ok=True)

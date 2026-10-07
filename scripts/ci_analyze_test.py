@@ -2,10 +2,14 @@
 
 import argparse
 import importlib.util
+import fcntl
+import os
 from pathlib import Path
+import signal
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from unittest.mock import patch
 
@@ -109,6 +113,32 @@ class AnalystTests(unittest.TestCase):
     def test_command_timeout_fails_instead_of_passing(self):
         with self.assertRaises(subprocess.TimeoutExpired):
             analyst.command([sys.executable, "-c", "import time; time.sleep(30)"], timeout=0.05)
+
+    def test_watch_sigterm_exits_and_releases_lock(self):
+        bin_dir = self.args.output / "bin"
+        bin_dir.mkdir()
+        gh = bin_dir / "gh"
+        gh.write_text(f"#!{sys.executable}\nprint('{{\"sha\":\"a\",\"workflow_runs\":[]}}')\n")
+        gh.chmod(0o700)
+        output = self.args.output / "watch"
+        env = dict(os.environ, PATH=str(bin_dir) + os.pathsep + os.environ["PATH"])
+        process = subprocess.Popen([sys.executable, str(Path(analyst.__file__)), "--watch",
+                                    "--collect-only", "--output", str(output)], env=env,
+                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        try:
+            deadline = time.monotonic() + 3
+            while not (output / ".lock").exists() and time.monotonic() < deadline:
+                time.sleep(0.01)
+            self.assertTrue((output / ".lock").exists())
+            process.send_signal(signal.SIGTERM)
+            process.communicate(timeout=3)
+            self.assertEqual(process.returncode, 130)
+            with (output / ".lock").open("a") as lock:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        finally:
+            if process.poll() is None:
+                process.kill()
+                process.communicate()
 
 
 if __name__ == "__main__":

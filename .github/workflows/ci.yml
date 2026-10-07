@@ -56,7 +56,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p tmp/ci
-          sh scripts/without-dva.sh make test | tee tmp/ci/test.jsonl
+          sh scripts/without-dva.sh make test --silent | tee tmp/ci/test.jsonl
 
       - name: Preserve test progress
         if: always()
@@ -75,7 +75,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p tmp/ci
-          sh scripts/without-dva.sh make test-integration | tee tmp/ci/integration.jsonl
+          sh scripts/without-dva.sh make test-integration --silent | tee tmp/ci/integration.jsonl
 
       - name: Preserve integration progress
         if: always()
