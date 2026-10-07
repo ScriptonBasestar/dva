@@ -3,9 +3,10 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [master, 'dev/**']
   pull_request:
     branches: [master]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -38,22 +39,52 @@ jobs:
       - name: Skill Installer Dogfood
         run: sh scripts/without-dva.sh make test-skill-dogfood
 
+      - name: Local CI analyst tests
+        run: python3 -m unittest discover -s scripts -p ci_analyze_test.py
+
       # GOMAXPROCS=1 leaves a core for the runner heartbeat on 2-core hosts.
       # A full-core -race compile starved that heartbeat and GitHub aborted
       # the job at ~45m with no logs.
-      # Aggregate test output is buffered without -v. Retain test progress so
+      # JSON events retain test progress and timing so
       # the last active test is visible when the job-level deadline cancels a run.
       - name: Test
         timeout-minutes: 25
         env:
           GOMAXPROCS: "1"
-          GOTESTFLAGS: "-v"
-        run: sh scripts/without-dva.sh make test
+          GOTESTFLAGS: "-json"
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p tmp/ci
+          sh scripts/without-dva.sh make test | tee tmp/ci/test.jsonl
+
+      - name: Preserve test progress
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-progress-${{ github.run_id }}-${{ github.run_attempt }}
+          path: tmp/ci/test.jsonl
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Integration Test
         env:
           GOMAXPROCS: "1"
-        run: sh scripts/without-dva.sh make test-integration
+          GOTESTFLAGS: "-json"
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p tmp/ci
+          sh scripts/without-dva.sh make test-integration | tee tmp/ci/integration.jsonl
+
+      - name: Preserve integration progress
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-progress-${{ github.run_id }}-${{ github.run_attempt }}
+          path: tmp/ci/integration.jsonl
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Vet
         run: sh scripts/without-dva.sh go vet ./...
@@ -115,7 +146,9 @@ jobs:
       # a platform default to avoid passing silently. Mirrors the Makefile.
       - name: gopls check
         run: |
-          findings=$(gopls check -severity=hint $(find cmd internal tools -name '*.go')) || {
+          find cmd internal tools -name '*.go' > "$RUNNER_TEMP/gopls-files"
+          mapfile -t go_files < "$RUNNER_TEMP/gopls-files"
+          findings=$(gopls check -severity=hint "${go_files[@]}") || {
             echo "ERROR: gopls check could not run; see stderr above."
             exit 1
           }

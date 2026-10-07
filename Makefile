@@ -228,7 +228,7 @@ test-skill-dogfood: build
 
 ## test-integration: Run integration tests (requires build tag) (CI)
 test-integration:
-	go test -tags=integration -race ./internal/integration/...
+	go test -tags=integration -race -timeout 10m $(GOTESTFLAGS) ./internal/integration/...
 
 ## lint: Run linters (golangci-lint v2 + gopls check, both pinned in .mise.toml)
 lint: vet fmt-check
