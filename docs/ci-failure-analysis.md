@@ -77,6 +77,10 @@ Codex는 read-only sandbox에서 실행하며 사용자 설정·execpolicy 규�
 ## CI 증거 보존
 
 CI는 `master`와 `dev/**` push, `master` 대상 PR, 수동 실행을 지원한다.
+같은 ref의 새 실행은 이전 실행을 취소한다. 일반 테스트에는 GitHub의 step/job
+deadline과 별도로 GNU `timeout`의 10분 제한과 30초 강제 종료 유예를 적용한다.
+테스트 자체의 package별 5분 제한이 끝나도 하위 프로세스나 출력 pipe 때문에
+`go test`가 종료되지 않는 경우에 대비해, runner가 살아 있을 때 실패 기록을 보존한다.
 일반 테스트·통합 테스트의 JSON 진행 기록은 각각 `test-progress-*`,
 `integration-progress-*` artifact로 14일 보존한다. Bash `pipefail`로 `tee`가
 테스트 실패를 성공으로 바꾸지 못하게 한다. runner 자체가 통신을 잃으면 후속 artifact
@@ -101,3 +105,9 @@ python3 -m unittest discover -s scripts -p ci_analyze_test.py
 
 테스트는 GitHub·추론 호출 없이 stale/fork/success 배제, 중복 억제, API 로그인 거부,
 증거 누락, 입력 제한, 명령 timeout을 검증한다.
+
+2026-10-07 검증: Mac의 `make recovery-check`와 통합 검사가 통과했다.
+Go 1.26.5 Debian 12 Linux ARM64에서 단일 CPU의 전체 race/coverage 검사도
+34개 패키지가 통과했다. GitHub Ubuntu AMD64 환경의 통과를 대신하는 결과는 아니다.
+커밋 `43baa01e`의 Linux 통과 기록은 집계 오류였다. 당시 이미지에 `column`이 없어
+Make help 검사 하나가 실패했고, 해당 도구를 설치한 새 컨테이너에서 재검증했다.

@@ -28,7 +28,10 @@ def command(args, *, stdin=None, timeout=60, env=None, include_stderr=False):
         try:
             out, err = process.communicate(stdin, timeout=timeout)
         except (subprocess.TimeoutExpired, KeyboardInterrupt):
-            os.killpg(process.pid, signal.SIGTERM)
+            try:
+                os.killpg(process.pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass  # The child may finish between interruption and cleanup.
             try:
                 process.communicate(timeout=5)
             except subprocess.TimeoutExpired:
@@ -126,11 +129,12 @@ def analyze(args):
     codex_env = {key: value for key, value in os.environ.items()
                  if key not in {"OPENAI_API_KEY", "CODEX_API_KEY", "OPENAI_BASE_URL"}}
     login = command(["codex", "login", "status"], env=codex_env, include_stderr=True)
-    if "ChatGPT" not in login:
+    if "Logged in using ChatGPT" not in {line.strip() for line in login.splitlines()}:
         raise RuntimeError("ChatGPT subscription login required; run codex login locally")
     # These flags isolate inference from user-configured hooks, MCP servers,
     # plugins and workspace instructions. Authentication remains in CODEX_HOME.
     pending = destination / "report.pending.md"
+    pending.unlink(missing_ok=True)
     command([
         "codex", "exec", "--ignore-user-config", "--ignore-rules", "--sandbox", "read-only",
         "--skip-git-repo-check", "--ephemeral", "--disable", "shell_tool",

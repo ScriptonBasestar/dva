@@ -77,6 +77,25 @@ class AnalystTests(unittest.TestCase):
                 analyst.analyze(self.args)
         self.assertFalse((self.destination / "report.md").exists())
 
+    def test_api_login_mentioning_chatgpt_is_rejected(self):
+        with patch.object(analyst, "github", self.api), patch.object(analyst, "command", return_value="Logged in using an API key; ChatGPT login unavailable"):
+            with self.assertRaisesRegex(RuntimeError, "subscription login required"):
+                analyst.analyze(self.args)
+
+    def test_previous_pending_output_cannot_become_a_completed_report(self):
+        self.destination.mkdir()
+        (self.destination / "report.pending.md").write_text("old interrupted report")
+
+        def no_report(args, **kwargs):
+            if args[:3] == ["codex", "login", "status"]:
+                return "Logged in using ChatGPT"
+            return ""
+
+        with patch.object(analyst, "github", self.api), patch.object(analyst, "command", side_effect=no_report):
+            with self.assertRaisesRegex(RuntimeError, "non-empty report"):
+                analyst.analyze(self.args)
+        self.assertFalse((self.destination / "report.md").exists())
+
     def test_rerun_during_analysis_is_stale(self):
         calls = 0
 
@@ -114,6 +133,14 @@ class AnalystTests(unittest.TestCase):
         with self.assertRaises(subprocess.TimeoutExpired):
             analyst.command([sys.executable, "-c", "import time; time.sleep(30)"], timeout=0.05)
 
+    def test_interruption_preserved_when_child_already_exited(self):
+        with patch.object(analyst.subprocess, "Popen") as popen:
+            process = popen.return_value.__enter__.return_value
+            process.communicate.side_effect = [KeyboardInterrupt(), ("", "")]
+            with patch.object(analyst.os, "killpg", side_effect=ProcessLookupError):
+                with self.assertRaises(KeyboardInterrupt):
+                    analyst.command(["unused"])
+
     def test_watch_sigterm_exits_and_releases_lock(self):
         bin_dir = self.args.output / "bin"
         bin_dir.mkdir()
@@ -131,8 +158,8 @@ class AnalystTests(unittest.TestCase):
                 time.sleep(0.01)
             self.assertTrue((output / ".lock").exists())
             process.send_signal(signal.SIGTERM)
-            process.communicate(timeout=3)
-            self.assertEqual(process.returncode, 130)
+            _, stderr = process.communicate(timeout=3)
+            self.assertEqual(process.returncode, 130, stderr)
             with (output / ".lock").open("a") as lock:
                 fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         finally:
