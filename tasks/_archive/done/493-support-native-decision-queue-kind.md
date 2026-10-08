@@ -12,6 +12,9 @@ quality-review: pass
 quality-reviewed-at: 2026-10-05
 quality-review-evidence: "Independent Grok 4.7 session 5be11a1a-4952-45ef-8f2d-570b9280c1c4 retry 2 PASS; tasks/done/evidence/TASK-493/independent-review.json; source tree a0ee91bd7169bc228262b829f08ff1fcf00fe910; native integration gates exit0; tasks/done/evidence/TASK-492/final-review.json PASS; tasks/done/evidence/TASK-492/final-default-environment-review.json supplements ordinary-shell default guards"
 created: 2026-10-05
+archived-at: 2026-10-08
+verified-at: 2026-10-08
+verification-summary: "2026-10-08 re-verify: three mechanical bindings exit 0. The native decision regression file exists in the declared product checkout, and payload-checks records makeCheckExit 0, review PASS, integrated, sourcePushed, and cleanup."
 ---
 
 ## Summary
@@ -62,3 +65,7 @@ worktree 또는 통합 후 clean checkout을 가리킨다. 미설정 시 사용�
 - Product integration exit0: master/origin/master dd3ec0a; native make check/make lint PASS; source pushed. Automatic reclaim was skipped because no taskPattern; coordinator copied owned verification artifacts then reclaimed this worktree and both task branches with a remote DD lease. Other actor worktrees preserved. All three internal candidate binaries reproduced byte-for-byte from the clean integrated checkout; no publication/signature/install/pin activation.
 
 - Final default-environment gate found missing TASKCHAIN_PRODUCT_REPO on a checked external binding (exit1). Bound the optional override to the user-supplied, workspace-verified product checkout by default, retaining existence guards; did not infer a catalog fallback or skip the check. Same default is used for archived 004/006 live commands.
+
+## Verification (2026-10-08)
+
+기계 바인딩 세 개 exit 0. 선언된 제품 checkout의 native decision 회귀 파일과 payload-checks의 검사·리뷰·통합·push·회수 기록이 그대로다. 기준 문장은 바꾸지 않았다.
