@@ -357,7 +357,11 @@ func collectDocumentedTargetNames(path string, seen map[string]bool, targets *[]
 			// about the two that do — flow-pipechain's
 			// "log-search-bench perf-log-search:" (TASK-320).
 			for target := range strings.FieldsSeq(parts[0]) {
-				if strings.HasPrefix(target, ".") || strings.Contains(target, "$(") || strings.Contains(target, "%") {
+				// A `%` pattern rule is kept here even though it can never be suggested:
+				// it is a documented target the project really declares, so a
+				// `suggestion_ignore: [env-edit-%]` entry naming it hides something and
+				// is not stale. shouldIgnoreMakefileTarget drops it from the suggestions.
+				if strings.HasPrefix(target, ".") || strings.Contains(target, "$(") {
 					continue
 				}
 				*targets = append(*targets, target)
@@ -391,6 +395,12 @@ func shouldIgnoreMakefileTarget(name string) bool {
 		"docs": true, "docs-build": true, "docs-serve": true,
 	}
 	if ignoredTargets[name] {
+		return true
+	}
+
+	// A pattern rule names a family of targets, not one runnable target, so no
+	// interaction can be named after it.
+	if strings.Contains(name, "%") {
 		return true
 	}
 

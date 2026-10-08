@@ -328,6 +328,35 @@ suggestion_ignore:
 	}
 }
 
+// A `%` pattern rule is a target the Makefile really declares, so an ignore entry naming it
+// is not stale — the mydevbox audit found `env-edit-%` and friends reported as "remove it"
+// across dripter, flow-taskchain, cwrapper and flow-pipechain. It is still never suggested,
+// because no interaction can be named after a family of targets.
+func TestStaleSuggestionIgnoreCountsMakePatternRules(t *testing.T) {
+	c := loadSuppressionConfig(t, suppressionFixture(t, `version: "0.1.0"
+suggestion_ignore:
+  - "env-edit-%"
+  - "env-show-*"
+  - "vanished-%"
+`, map[string]string{
+		"Makefile": "env-edit-%: ## Edit one env\nenv-show-%: ## Show one env\nbench: ## Benchmarks\n",
+	}))
+
+	warnings, suppressed := detectConfigSuggestionWarningsWithSuppressions(c)
+	joined := strings.Join(suppressed.stale, "\n")
+	for _, kept := range []string{"env-edit-%", "env-show-*"} {
+		if strings.Contains(joined, `"`+kept+`"`) {
+			t.Errorf("%q names a declared pattern rule and is not stale: %q", kept, joined)
+		}
+	}
+	if !strings.Contains(joined, `suggestion_ignore[2] "vanished-%"`) {
+		t.Errorf("a pattern naming no target at all must still be reported: %q", joined)
+	}
+	if all := strings.Join(warnings, "\n"); strings.Contains(all, "%") {
+		t.Errorf("a pattern rule must never be suggested as an interaction: %q", all)
+	}
+}
+
 // A repository with neither a Makefile nor a package.json gives the stale check nothing to
 // judge against. Condemning every pattern there would read as "these entries are dead" when
 // the truth is "nothing was examined" — the drift side already refuses that verdict when its
