@@ -11,6 +11,9 @@ quality-review: pass
 quality-reviewed-at: 2026-10-04T23:57:08Z
 quality-review-evidence: "Separate claude-opus-5-5 reviewer subagent: attempt 1 FAIL (installed ce revision misreported), attempt 2 PASS after fix; tasks/done/evidence/TASK-485/independent-review.json"
 created: 2026-10-05
+archived-at: 2026-10-08
+verified-at: 2026-10-08
+verification-summary: "2026-10-08 re-verify: TASK-482, TASK-483, and TASK-484 stay in tasks/_archive/2026-10 with archived-at 2026-10-05 and are absent from tasks/done. Their relative links resolve. The Batch 10 row is present. make doc-check exit 0."
 ---
 
 ## Summary
@@ -45,3 +48,7 @@ created: 2026-10-05
   `git merge-base --is-ancestor`로 `9b0b0305`, `1f3f9a74`, `1270e1dc`가 모두 그 조상임을 확인.
 - 보관 형식은 TASK-482 선례(`f4bc52d6`): frontmatter `created:` 뒤 `archived-at:` 한 줄,
   카드 안 상대 링크를 새 깊이로 재계산(482: 2, 483: 6, 484: 4). 다른 변경 없음.
+
+## Verification (2026-10-08)
+
+기준 네 개 exit 0. TASK-482·483·484는 `tasks/_archive/2026-10/`에 `archived-at: 2026-10-05`로 있고 `tasks/done/`에는 없다. 상대 링크는 실존 경로다. Batch 10 행이 있다. `make doc-check` exit 0. 기준 문장은 바꾸지 않았다.
