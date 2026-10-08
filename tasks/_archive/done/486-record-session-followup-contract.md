@@ -11,6 +11,9 @@ quality-review: pass
 quality-reviewed-at: 2026-10-05
 quality-review-evidence: "Independent Grok 4.7 session 01a10c09-c969-7890-a71b-7c623b0cd598 PASS for TASK-491 classification correction; tasks/done/evidence/TASK-492/scope-review.json and live-acceptance-review.json; historical TASK-489 receipts preserved; tasks/done/evidence/TASK-492/final-review.json PASS; tasks/done/evidence/TASK-492/final-default-environment-review.json supplements ordinary-shell default guards"
 created: 2026-10-05
+archived-at: 2026-10-08
+verified-at: 2026-10-08
+verification-summary: "2026-10-08 re-verify: nine mechanical bindings exit 0, including Accepted decisions, the real changelog ceiling marker, strict-status, and make doc-check."
 ---
 
 ## Summary
@@ -73,4 +76,8 @@ TASK-459의 외부 분류다. 제품 루프 코드는 없다. 독립 리뷰 PASS
 - 현재 바인딩 1–8은 파서로 실행해 exit 0이다. `make doc-check`는 그 다음이다. 로그는 `tmp/session-followup/bindings-before-doc-check.txt`.
 - 그 전 `make doc-check`는 `tasks/decision/` undeclared 1과 ISSUE-488 소유권 불일치 1로 실패했다. `tools/doccheck/cardstatus.go`에 skip이 아닌 `tasks/decision/`을 넣었고, 제목을 `## 소유권 — 이 저장소다`로 고쳤다. 재실행은 exit 0, undeclared 0, ownership_mismatched 0. 로그는 `tmp/session-followup/doc-check.txt`.
 - Steps의 487 앵커는 줄 9가 `human-grade`라 줄 10으로 고쳤다. 그 다음 `ce task validate --all`은 4건이 실패했다. 487 frontmatter `todo`는 decision Status로 거부됐다. `tasks/decision/README.md`가 없었다. ISSUE-488에 severity·discovered·Reproduction·Expected vs Actual가 없었다. 486 바인딩이 `tasks/issue/`와 `tasks/todo/` 경로를 그대로 적었다. `zone-status.decision: todo`를 뺐다. frontmatter는 Proposed다. 색인을 추가했다. 바인딩은 basename `find`/`grep --include`와 `rglob`이다. 다시 실행한 기준 1–8은 exit 0이다. 로그는 `tmp/session-followup/bindings-validator-fix.txt`, `tmp/session-followup/doc-check-2.txt`. 최대 턴 중단은 발견 구간의 중단이지 리뷰 FAIL이 아니다.
-- 2026-10-05T04:56:50Z independent review PASS. Receipt: [independent-review.json](evidence/TASK-486/independent-review.json).
+- 2026-10-05T04:56:50Z independent review PASS. Receipt: [independent-review.json](../../done/evidence/TASK-486/independent-review.json).
+
+## Verification (2026-10-08)
+
+기계 바인딩 아홉 개 exit 0. TASK-487과 DECISION-001·003·004의 Accepted, CHANGELOG ceiling 마커, strict-status, `make doc-check`가 그대로다. 기준 문장은 바꾸지 않았다.
