@@ -266,6 +266,53 @@ func TestDetectConfigSuggestionWarnings_MultiTargetMakefileLine(t *testing.T) {
 	}
 }
 
+// TestMakeIncludePaths pins Make's include syntax: a trailing comment is not part of the
+// path, and one directive may name several files. cwrapper's
+// `include .make/env.mk  # secrets` hid every env-* target before this.
+func TestMakeIncludePaths(t *testing.T) {
+	dir := t.TempDir()
+	for _, name := range []string{"a.mk", "b.mk"} {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte("x: ## x\n"), 0644); err != nil {
+			t.Fatalf("write %s: %v", name, err)
+		}
+	}
+
+	got, ok := makeIncludePaths("include a.mk   # secrets — do not edit", dir)
+	if !ok || len(got) != 1 || got[0] != filepath.Join(dir, "a.mk") {
+		t.Errorf("trailing comment must be dropped, got %v (ok=%v)", got, ok)
+	}
+	got, _ = makeIncludePaths("-include a.mk b.mk", dir)
+	if len(got) != 2 || got[1] != filepath.Join(dir, "b.mk") {
+		t.Errorf("each space-separated file must be followed, got %v", got)
+	}
+	got, _ = makeIncludePaths("include *.mk", dir)
+	if len(got) != 2 {
+		t.Errorf("a glob must expand to every match, got %v", got)
+	}
+	if _, ok := makeIncludePaths("includes: ## a target, not a directive", dir); ok {
+		t.Error("a target named includes is not an include directive")
+	}
+}
+
+func TestDocumentedTargetsFollowCommentedInclude(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dir, ".make"), 0755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, ".make", "env.mk"), []byte("env-edit: ## Edit secrets\n"), 0644); err != nil {
+		t.Fatalf("write env.mk: %v", err)
+	}
+	makefile := "include .make/env.mk          # secrets (SOPS) — SSoT copy\nbench: ## Benchmarks\n"
+	if err := os.WriteFile(filepath.Join(dir, "Makefile"), []byte(makefile), 0644); err != nil {
+		t.Fatalf("write Makefile: %v", err)
+	}
+
+	got := strings.Join(allDocumentedMakefileTargetNamesInDir(dir), ",")
+	if got != "bench,env-edit" {
+		t.Errorf("targets from a commented include must be collected, got %q", got)
+	}
+}
+
 func TestImportedLeafNameDoesNotSuppressUnroutableTarget(t *testing.T) {
 	tmpDir := t.TempDir()
 	oldWd, _ := os.Getwd()

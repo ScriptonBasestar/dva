@@ -318,20 +318,8 @@ func collectDocumentedTargetNames(path string, seen map[string]bool, targets *[]
 	for line := range lines {
 		trimmed := strings.TrimSpace(line)
 
-		// Follow include/-include directives
-		if strings.HasPrefix(trimmed, "include ") || strings.HasPrefix(trimmed, "-include ") {
-			includePath := strings.TrimPrefix(trimmed, "-include ")
-			includePath = strings.TrimPrefix(includePath, "include ")
-			includePath = strings.TrimSpace(includePath)
-			if !filepath.IsAbs(includePath) {
-				includePath = filepath.Join(dir, includePath)
-			}
-			matches, globErr := filepath.Glob(includePath)
-			if globErr == nil && len(matches) > 0 {
-				for _, m := range matches {
-					collectDocumentedTargetNames(m, seen, targets)
-				}
-			} else {
+		if includes, ok := makeIncludePaths(trimmed, dir); ok {
+			for _, includePath := range includes {
 				collectDocumentedTargetNames(includePath, seen, targets)
 			}
 			continue
@@ -368,6 +356,42 @@ func collectDocumentedTargetNames(path string, seen map[string]bool, targets *[]
 			}
 		}
 	}
+}
+
+// makeIncludePaths resolves an include/-include directive line to the files it names,
+// relative to dir. ok is false when the line is not an include directive.
+//
+// Make strips a trailing `# comment` and accepts several space-separated files on one
+// line. Treating the rest of the line as a single path made
+// `include .make/env.mk  # secrets` name a file that does not exist, so every target in
+// it vanished — cwrapper's env-* targets were reported as a stale ignore that way.
+func makeIncludePaths(trimmed, dir string) ([]string, bool) {
+	var rest string
+	switch {
+	case strings.HasPrefix(trimmed, "-include "):
+		rest = strings.TrimPrefix(trimmed, "-include ")
+	case strings.HasPrefix(trimmed, "include "):
+		rest = strings.TrimPrefix(trimmed, "include ")
+	default:
+		return nil, false
+	}
+	if i := strings.Index(rest, "#"); i >= 0 {
+		rest = rest[:i]
+	}
+	var paths []string
+	for name := range strings.FieldsSeq(rest) {
+		if !filepath.IsAbs(name) {
+			name = filepath.Join(dir, name)
+		}
+		// An unmatched glob or an unexpanded $(VAR) is passed through as-is: the
+		// caller's read fails and the include contributes nothing, as before.
+		if matches, err := filepath.Glob(name); err == nil && len(matches) > 0 {
+			paths = append(paths, matches...)
+			continue
+		}
+		paths = append(paths, name)
+	}
+	return paths, true
 }
 
 // shouldIgnoreMakefileTarget returns true for Makefile targets that are meta/infra

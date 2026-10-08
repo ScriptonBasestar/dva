@@ -629,20 +629,8 @@ func collectMakefileTargets(path string, seen map[string]bool, targets *[]string
 	for _, line := range lines {
 		trimmed := strings.TrimSpace(line)
 
-		// Follow include/-include directives
-		if strings.HasPrefix(trimmed, "include ") || strings.HasPrefix(trimmed, "-include ") {
-			includePath := strings.TrimPrefix(trimmed, "-include ")
-			includePath = strings.TrimPrefix(includePath, "include ")
-			includePath = strings.TrimSpace(includePath)
-			if !filepath.IsAbs(includePath) {
-				includePath = filepath.Join(dir, includePath)
-			}
-			matches, globErr := filepath.Glob(includePath)
-			if globErr == nil && len(matches) > 0 {
-				for _, m := range matches {
-					collectMakefileTargets(m, seen, targets)
-				}
-			} else {
+		if includes, ok := makeIncludePaths(trimmed, dir); ok {
+			for _, includePath := range includes {
 				collectMakefileTargets(includePath, seen, targets)
 			}
 			continue
