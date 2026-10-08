@@ -19,25 +19,34 @@ wave-2(`sops_source` 선언)도 끝났다. 반영 커밋은 현황 문서의 wav
 | [careerarchive](careerarchive.md), [funbricks-notifire](funbricks-notifire.md), [netow](netow.md), [reviewrary](reviewrary.md) | `env_file`이 없다. 항목을 새로 만들면 `.env`가 로드되기 시작하므로 이쪽은 실제로 로딩이 바뀐다. reviewrary는 마이그레이션과 함께 한다. |
 | [scripton-dns-bridge](scripton-dns-bridge.md), [scripton-db-orchestrator](scripton-db-orchestrator.md) | validate exit 1. 아래 2번 작업과 묶는다. |
 | [hek](hek.md) | `env_file`은 `compose/.env`, 암호문은 루트 `.env.sops`다. 대상 경로를 먼저 정해야 한다. |
-| [matdosa](matdosa.md) | `files: [.env]` 축약형이다. 객체형 전환이 함께 필요하다. |
 | [scripton-nd-stack](scripton-nd-stack.md) | 후보가 `.env.sops`, `.env.docker.sops` 둘이다. |
 | [scripton-signalhub](scripton-signalhub.md) | `.sops.yaml`만 있고 `.env.sops`가 없다. |
 
 [airouter](airouter.md), [familybook](familybook.md), [flow-agent-mesh](flow-agent-mesh.md)는 감사 전에 이미 선언돼 있었다.
+[matdosa](matdosa.md)는 처음에 축약형 `files: [.env]`라는 이유로 남겼다. 축약형 항목도 `required: false`로 읽히므로(`internal/config/envfile.go`의 `normalizeEnvFileConfig`) 객체형으로 바꿔도 로드는 같다. 그래서 `6785c54`로 `master`에 반영했고, doctor fail은 1에서 0이다.
 
 ## 다음으로 할 가치가 있는 것
 
-1. DVA가 Make `%` 패턴 룰을 타깃으로 보게 고친다. `env-edit-*`, `env-show-*` 같은 ignore를 제품마다 지우면 실제 타깃 경고가 사라진다. 고칠 곳은 validator 한 곳이다. 예: [dripter](dripter.md), [flow-taskchain](flow-taskchain.md), [cwrapper](cwrapper.md), [flow-pipechain](flow-pipechain.md).
-2. 지금 스키마에서 `dva config validate`가 실패하는 설정. 각각 별도 작업이다.
-   - [scripton-dns-bridge](scripton-dns-bridge.md): `applications`, deprecated `modes`, `interaction.clean`. `plans`가 없다.
-   - [scripton-db-orchestrator](scripton-db-orchestrator.md): `interaction.ci`가 예약어라 exit 1이다. 이름을 바꾸면 `dva run ci` 호출이 바뀐다.
-3. validate는 통과하지만 구 스키마가 남은 곳. `dva config migrate`가 가리키고, 한 줄 수정이 아니다.
+처리한 것:
+
+- Make 타깃 수집 결함 두 가지를 DVA에서 고쳤다(`dev/claude/mbp/fix/make-pattern-rule-stale-ignore`).
+  - `%` 패턴 룰을 stale 판정 대상에 넣는다. 제안 후보에서는 계속 뺀다.
+  - 줄 끝에 주석이 붙은 `include`와 한 줄에 파일이 여럿인 `include`도 따라간다.
+  - 새 바이너리로 잰 stale ignore 경고: [dripter](dripter.md) 7→0, [flow-taskchain](flow-taskchain.md) 2→0, [flow-pipechain](flow-pipechain.md) 2→0, [cwrapper](cwrapper.md) 1→0.
+  - 대신 그동안 숨어 있던 실제 타깃 제안이 나타난다. cwrapper는 `check`, `validate-*` 등 16개(경고 1→16), [gizzahub](gizzahub.md)는 경고 14→48이다. 각 제품이 interaction으로 올릴지 ignore할지 정한다.
+  - wave-1에서 stale이라며 지운 ignore를 이 기준으로 다시 대조했다. cwrapper의 `prepare-clean` 하나가 실제로는 맞는 항목이었다. dripter, flow-pipechain, funbricks-elemhant, scripton-nd-stack, primeno1, flow-taskchain의 삭제분에는 다시 나타난 타깃이 없다.
+- [scripton-db-orchestrator](scripton-db-orchestrator.md)는 다른 세션이 `interaction.ci`를 `ci-check`로 바꿔 `master`(`132a43f8`)에 반영했다. 호출부가 없어 더 할 일은 없다.
+- 자식 `dva.yml` 연결은 `path:`만 더했다(`import:` 없음). [familybook](familybook.md) `df097f7`, [gizzahub](gizzahub.md) `bdfc18ed`가 `develop`에 있다.
+  - [careerarchive](careerarchive.md) `857523d`는 태스크 브랜치 `dev/claude/mbp/chore/dva-subprojects`에 push만 돼 있다. primary 체크아웃에 다른 작업의 미커밋 `docs/product/open-decisions.md`가 있는데, `ce task run-finish`가 primary를 리셋하므로 통합을 멈췄다. 그 변경이 정리되면 primary에서 `ce task run-finish dva-subprojects`를 실행한다.
+
+남은 것:
+
+1. [scripton-dns-bridge](scripton-dns-bridge.md): `applications`, deprecated `modes`, `interaction.clean`가 있고 `plans`가 없어 validate exit 1이다. 마이그레이션 작업이다.
+2. validate는 통과하지만 구 스키마가 남은 곳. `dva config migrate`가 가리키고, 한 줄 수정이 아니다.
    - [reviewrary](reviewrary.md): `stack.*.order`, `plans` 없음, warning 65.
    - [hek](hek.md): `modes`, `default_mode`, `stack.compose.order`.
-4. 자식 `dva.yml`이 이미 있는데 루트 `subprojects`에 없는 연결만 제품별로 넣는다.
-   - [familybook](familybook.md)의 `familybook-engine-fiber`
-   - [gizzahub](gizzahub.md)의 `grabber-social-web-py`, `grabber-social-web-go`
-   - [careerarchive](careerarchive.md)의 `prototype/dva.yml`
+3. 위 수집 수정으로 새로 보이는 제안 타깃을 제품별로 정리한다. cwrapper `prepare-clean` ignore 복원이 여기에 포함된다.
+4. 자식 체크아웃이 없는 새 워크트리에서는 `branch-integrate`가 `make check` 기준선을 재지 못한다. 이번에 `--allow-skipped-checks`를 쓴 이유는 모두 이것이었다. 담당은 gz-git/CE 통합 도구이므로 그쪽 이슈로 넘긴다.
 
 ## 지금은 손대지 않을 것
 

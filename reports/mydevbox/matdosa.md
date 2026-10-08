@@ -50,3 +50,7 @@
 ## wave-1
 
 아니오.
+
+## wave-2
+
+예. 축약형 `files: [.env]`를 객체형으로 바꾸고 `sops_source: .env.sops`를 더한 커밋 `6785c54`가 `master`에 있다. 축약형 항목도 `required: false`로 읽히므로 로드는 같다. `branch-integrate` readiness는 플래그 없이 통과했다. primary 체크아웃 재측정에서 doctor fail은 1에서 0이다.
