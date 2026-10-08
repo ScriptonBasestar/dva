@@ -112,6 +112,6 @@ make recovery-check
 전체 검사를 다시 실행한다. 절대 경로로 설치된 DVA를 호출하면 PATH 차단을
 우회하므로 native 검사에 그런 호출을 추가하지 않는다.
 
-GitHub CI 실패의 로컬 Codex 분석과 진행 기록 보존은
-[CI 실패 분석](ci-failure-analysis.md)을 따른다. 분석 보고서는 필수 gate 결과를
+GitHub CI 실패의 수동 조사와 진행 기록 보존은
+[CI 실패 분석](ci-failure-analysis.md)을 따른다. 조사 보고서는 필수 gate 결과를
 대체하지 않는다.

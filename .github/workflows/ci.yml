@@ -43,9 +43,6 @@ jobs:
       - name: Skill Installer Dogfood
         run: sh scripts/without-dva.sh make test-skill-dogfood
 
-      - name: Local CI analyst tests
-        run: python3 -m unittest discover -s scripts -p ci_analyze_test.py
-
       # GOMAXPROCS=1 leaves a core for the runner heartbeat on 2-core hosts.
       # A full-core -race compile starved that heartbeat and GitHub aborted
       # the job at ~45m with no logs.
