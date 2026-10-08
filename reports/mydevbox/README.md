@@ -68,4 +68,6 @@ wave-1 이후 통합:
 - cwrapper `f879625`와 dripter `40c5ef0`는 `develop`에, sigdock-pass `35337616`은 `master`에 반영하고 태스크 브랜치와 워크트리를 회수했다. 이미 push된 `dva-wave1`과 rebase HEAD가 달라 그 브랜치를 다시 쓰지 않고, 같은 커밋을 `dev/grok/mbp/chore/dva-wave1b`로 push한 뒤 통합했다. dripter는 integration gate가 없고, cwrapper `make check`는 변경 경로 밖 기존 진단이 1건에서 1건이라 `--allow-skipped-checks`를 썼다. sigdock-pass `make lint`는 통과했다. cwrapper는 `origin/dev/claude/mst/docs/findings-cards-glm`과 cross-merge 경고가 있었고, 그 브랜치는 그대로 두었다.
 - flow-taskchain은 툴체인 핀 `20975563`으로 `cargo:worktrunk` 0.80.0이 `develop`에 반영된 뒤 doctor가 ACTIVE다. `local-compose-dev-*` 삭제 `f18c6d35`를 `ce task run-finish`로 `develop`에 반영하고 회수했다. `env-edit-*`, `env-show-*`, `local-native-dev-*`는 남겼다.
 
+남은 작업 순위는 [follow-ups.md](follow-ups.md)에 있다.
+
 제품이 아닌 경로: `cwrapper-devbox-worktrees`(빈 디렉터리), `gizzahub`(체크아웃 없음), `gizzahub-web-svelte`(자식 체크아웃은 gizzahub-devbox 안), `gorisa-development-workflow-stabilization`(검증 출력), `mydevbox`(gzh-cli 작업 복사), `reports`(playwright 출력).
