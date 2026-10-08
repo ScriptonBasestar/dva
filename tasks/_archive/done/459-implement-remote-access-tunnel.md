@@ -12,11 +12,14 @@ quality-review: pass
 quality-reviewed-at: 2026-10-05
 quality-review-evidence: "Independent grok-4.7 session 01a10c62-36d4-7252-868c-7d73c8321b90 PASS for ISSUE-488 live measurement; tasks/done/evidence/TASK-459/independent-review.json; attempt-1 FAIL receipt preserved; rebase delta PASS session 01a10c72-d0d9-7551-93ff-c350df6474b0 tasks/done/evidence/TASK-459/rebase-review.json"
 created: 2026-09-30
+archived-at: 2026-10-08
+verified-at: 2026-10-08
+verification-summary: "2026-10-08 re-verify: five tunnel go tests and make doc-check exit 0. docs/68 section 7 and ISSUE-488 still record expired-token exit 0, token-file deletion, three doctor rows, zero marker values, and exit 0 or --strict 1. make test exit 0. make lint exit 0 after the unused errors.As results became errors.AsType."
 ---
 
 ## Summary
 
-[docs/68](../../docs/68-remote-access-tunnel.md)의 `tunnel:` 접근 전제조건을
+[docs/68](../../../docs/68-remote-access-tunnel.md)의 `tunnel:` 접근 전제조건을
 kubectl/helm 엔트리에 구현한다. interactive와 service-token 인증을 모두 지원한다.
 
 ## Completion Criteria
@@ -31,7 +34,7 @@ kubectl/helm 엔트리에 구현한다. interactive와 service-token 인증을 �
 - [x] 문서 게이트가 통과한다 | verify: `make doc-check` (regression-guard) (observed: 2026-10-02)
 - [x] 전체 테스트와 lint가 통과한다 | verify: human — `make test && make lint` output is linked in Evidence (exceeds the 30s binding budget)
 
-로컬 doctor 테스트(`TestDoctorTunnelInstalledCheck`, `TestDoctorTunnelInteractiveAuthFailure`, `TestDoctorTunnelServiceTokenEnvCheck`, `TestDoctorTunnelConfigEndToEnd`)는 가짜 `cloudflared`로 설치 여부, interactive 종료 코드, service-token 환경변수 존재와 비누출을 에이전트가 검증한다. 그 테스트는 실제 자격 증명·라이브 설정의 `dva doctor`와 만료 토큰 종료 코드 실측을 대신하지 않는다. 만료 토큰과 라이브 설정 두 기준은 2026-10-05 사람 실측으로 체크했다. 실측 기록은 [ISSUE-488](../_archive/issue/488-measure-expired-tunnel-token-and-live-doctor.md)이다.
+로컬 doctor 테스트(`TestDoctorTunnelInstalledCheck`, `TestDoctorTunnelInteractiveAuthFailure`, `TestDoctorTunnelServiceTokenEnvCheck`, `TestDoctorTunnelConfigEndToEnd`)는 가짜 `cloudflared`로 설치 여부, interactive 종료 코드, service-token 환경변수 존재와 비누출을 에이전트가 검증한다. 그 테스트는 실제 자격 증명·라이브 설정의 `dva doctor`와 만료 토큰 종료 코드 실측을 대신하지 않는다. 만료 토큰과 라이브 설정 두 기준은 2026-10-05 사람 실측으로 체크했다. 실측 기록은 [ISSUE-488](../issue/488-measure-expired-tunnel-token-and-live-doctor.md)이다.
 
 ## Evidence
 
@@ -42,11 +45,15 @@ kubectl/helm 엔트리에 구현한다. interactive와 service-token 인증을 �
 - 2026-10-02 당시 인간 확인 대기: 만료 토큰 종료 코드 실측(docs/68 §7), 실제 터널 설정에서 `dva doctor` 실행. 2026-10-05에 완료했다(아래).
 - 2026-10-03: 체크된 테스트 기준 다섯 개의 verify를 파이프 grep 없이, 위 줄의 직접 실행으로 바꿨다. 다섯 명령 모두 exit 0. 2026-10-02의 `make test` / `make lint` 기록은 바꾸지 않았다. 만료 토큰과 라이브 `dva doctor`는 당시 사람 확인으로 남았다. 가짜 `cloudflared` doctor 테스트는 그 사람 확인과 별개다.
 - 역사적 구현 범위는 frontmatter `allowed-paths`에 있었다: internal/config, internal/lifecycle, internal/cli, docs, examples, tasks, USAGE.md, ARCHITECTURE.md, CHANGELOG.md. 남은 작업은 외부 사람 실측이라 `needs-human: true`, `execution-mode: external`, `human-grade: human`으로 분류하고 `allowed-paths`와 `exec-tier`는 frontmatter에서 뺐다. 범위 목록은 여기에 남긴다. `exec-tier: human`은 쓰지 않는다. CE exec-tier는 cheap, standard, strong만 받는다.
-- 2026-10-05 [ISSUE-488](../_archive/issue/488-measure-expired-tunnel-token-and-live-doctor.md)에서 사람 기준 두 개를 개발자 Mac에서 실측했다. 대상은 사람이 골랐다(`scripton-tonk-01-k8s.scripton.net`).
-  - 만료 토큰(`exp` 2026-09-30)에서 `access token --app`은 exit 0, stdout 0바이트였고 cloudflared가 `-token` 파일을 지웠다(`-token.url`은 남음). 결과는 [docs/68](../../docs/68-remote-access-tunnel.md) §7에 있다.
-  - 이 결과로 §3.1과 `runCloudflaredDiscard`·`checkTunnelAuthState`의 종료 코드 단독 판정이 만료 토큰을 인증됨으로 본다는 결함이 드러났다. 이 카드의 기준(실측·기록, doctor 보고)과 별개의 결함이므로 [TASK-495](../todo/495-treat-empty-access-token-stdout-as-unauthenticated.md)에서 고친다.
+- 2026-10-05 [ISSUE-488](../issue/488-measure-expired-tunnel-token-and-live-doctor.md)에서 사람 기준 두 개를 개발자 Mac에서 실측했다. 대상은 사람이 골랐다(`scripton-tonk-01-k8s.scripton.net`).
+  - 만료 토큰(`exp` 2026-09-30)에서 `access token --app`은 exit 0, stdout 0바이트였고 cloudflared가 `-token` 파일을 지웠다(`-token.url`은 남음). 결과는 [docs/68](../../../docs/68-remote-access-tunnel.md) §7에 있다.
+  - 이 결과로 §3.1과 `runCloudflaredDiscard`·`checkTunnelAuthState`의 종료 코드 단독 판정이 만료 토큰을 인증됨으로 본다는 결함이 드러났다. 이 카드의 기준(실측·기록, doctor 보고)과 별개의 결함이므로 [TASK-495](../../done/495-treat-empty-access-token-stdout-as-unauthenticated.md)에서 고친다.
   - 실제 tunnel 설정의 `dva doctor`(소스 `e4177fe1`)는 설치 ×2 pass, interactive 인증 `[FAIL]` + 로그인 안내, service-token 변수 unset `[FAIL]`/설정 시 `[pass]`(표식 값 출력 0건)를 보고했다. 종료 코드는 기본 0, `--strict` 1이다.
   - 리뷰 영수증(`evidence/TASK-459/`)의 "TASK-492"는 통합 직전 번호다. upstream이 같은 번호를 먼저 써서 이 결함 카드는 TASK-495로 바뀌었다. 영수증은 원본 그대로 둔다.
+
+## Verification (2026-10-08)
+
+기준 다섯 개의 `go test`와 `make doc-check`는 exit 0이다. docs/68 §7과 ISSUE-488에 사람 실측(만료 토큰 exit 0, 파일 삭제, doctor 세 행, 표식 값 0건, 기본 exit 0 / `--strict` 1)이 그대로 있다. `make test`는 exit 0이다. `make lint`는 이 카드 밖의 미사용 `errors.As`를 gopls가 거부해 실패했고, 그 네 곳을 `errors.AsType`으로 바꾼 뒤 `sh scripts/ci-lint.sh`가 0 issues로 끝났다. 기준 문장은 바꾸지 않았다. 영수증은 `tasks/done/evidence/TASK-459/`에 둔다.
 
 ## Dependency
 
