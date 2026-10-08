@@ -12,6 +12,9 @@ quality-review: pass
 quality-review-evidence: tasks/done/evidence/TASK-496/final-review.json
 created: 2026-10-06
 external-dependency: taskchain-verified-release-attestation
+archived-at: 2026-10-08
+verified-at: 2026-10-08
+verification-summary: "2026-10-08 re-verify: both mechanical bindings exit 0. The published digest, selected PATH binary, and gh attestation match, and ce task run-status task-495 is DONE."
 ---
 
 ## Summary
@@ -124,3 +127,7 @@ The real empty issue corpus now logs eligible 0 and seen/read 0/0; targeted race
 make doc-check, ce task validate --all and ce task gate all exit 0. Evidence:
 tasks/done/evidence/TASK-496/final-empty-board-gates.json and task498-run-finish.json.
 The historical failed gate receipt remains unchanged as the discovery record.
+
+## Verification (2026-10-08)
+
+기계 바인딩 두 개 exit 0. 공개 digest, PATH에서 고른 바이너리, gh attestation이 같고 `ce task run-status task-495`는 DONE이다. 기준 문장은 바꾸지 않았다.
