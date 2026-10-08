@@ -12,6 +12,9 @@ status: done
 quality-review: pass
 quality-review-evidence: tasks/done/evidence/TASK-498/independent-review.json
 created: 2026-10-07
+archived-at: 2026-10-08
+verified-at: 2026-10-08
+verification-summary: "2026-10-08 re-verify: three mechanical bindings exit 0. TestUpstreamRefEmptyIssueCorpusIsValid and the broader TestUpstreamRef race tests pass, and the independent review receipt verdict is PASS."
 ---
 
 ## Summary
@@ -68,3 +71,7 @@ with process-local KUBECONFIG removed to avoid known host configuration influenc
 Only the allowed test file changed; existing negative fixtures and production are intact.
 Actual sweep in this task worktree has 2 active issues. TASK-496 performs final
 zero-active-issue live sweep after rebase, before its integration.
+
+## Verification (2026-10-08)
+
+기계 바인딩 세 개 exit 0. 빈 active issue 코퍼스 테스트와 `TestUpstreamRef` race, 독립 리뷰 영수증 PASS가 그대로다. 기준 문장은 바꾸지 않았다.

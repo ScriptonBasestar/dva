@@ -104,6 +104,7 @@ TASK-482~484를 재검증해 같은 곳으로 보관했다(아래 Batch 10).
 | Batch 8 | TASK-370, TASK-407, TASK-410 ~ 419 | 12 | 완료 (10 아카이브 + TASK-407·411은 `blocked/` 복귀) |
 | Batch 9 | TASK-449 ~ 481 | 30 | 완료 (30 아카이브, todo 환류 0) |
 | Batch 10 | TASK-482 ~ 484 | 3 | 완료 (3 아카이브, todo 환류 0) |
+| Batch 11 | TASK-459, 485, 486, 489, 492–496, 498 | 10 | 완료 (10 아카이브, todo 환류 0) |
 
 ### Batch 7 상세 (2026-09-22)
 
@@ -163,6 +164,26 @@ TASK-407이 방어선으로 지목한 DUP-ID 검사가 침묵하는 경로다. [
 | TASK-482 | 아카이브 | 기준 1–5 exit 0. 영수증 `evidence/TASK-482`·`TASK-484`의 independent-review.json 모두 PASS |
 | TASK-483 | 아카이브 | 기준 1–7 exit 0. DECISION-002 `status: Accepted`. 영수증 outcome PASS, 작성·리뷰 세션 분리 |
 | TASK-484 | 아카이브 | 기준 1–6 exit 0. 핵심 주장인 ISSUE-454 상류 기준(정본 소스 `go test` 두 패키지)을 재실행해 ok. 설치본 `62db34ea`가 `9b0b0305`·`1f3f9a74`·`1270e1dc`를 조상으로 포함 |
+
+### Batch 11 상세 (2026-10-08)
+
+10장 전부 아카이브. 체크된 기계 바인딩을 기준 문장 그대로 재실행해 exit 0.
+TASK-459의 사람 기준은 docs/68 §7과 ISSUE-488에 남은 실측으로 충족했다.
+`make test` exit 0. 당시 `make lint`는 미사용 `errors.As` 네 곳을 gopls가 거부했고,
+그 호출을 `errors.AsType`으로 바꾼 뒤 lint가 0 issues다. 환류 0.
+
+| 카드 | 판정 | 근거 |
+|:---|:---|:---|
+| TASK-459 | 아카이브 | 터널 테스트 5개·doc-check exit 0. 사람 실측은 docs/68 §7과 ISSUE-488에 남아 있다 |
+| TASK-485 | 아카이브 | 482–484 보관 상태·링크·Batch 10 행 exit 0 |
+| TASK-486 | 아카이브 | Accepted 결정, ceiling 마커, strict-status 바인딩 9개 exit 0 |
+| TASK-489 | 아카이브 | 옵션 2 Accepted와 CHANGELOG 상한 바인딩 9개 exit 0 |
+| TASK-492 | 아카이브 | 읽기 전용 004·006 기준과 TASK-491 Accepted 바인딩 5개 exit 0 |
+| TASK-493 | 아카이브 | 제품 native decision 회귀 파일과 payload-checks 통합 기록 exit 0 |
+| TASK-494 | 아카이브 | local-only 이슈 코퍼스 테스트와 리뷰 영수증 PASS |
+| TASK-495 | 아카이브 | 빈 stdout 인증·doctor 테스트와 docs/68 §3.1 exit 0 |
+| TASK-496 | 아카이브 | 공개 digest·PATH 바이너리·attestation·task-495 DONE exit 0 |
+| TASK-498 | 아카이브 | 빈 active issue 코퍼스 테스트와 리뷰 영수증 PASS |
 
 ## 2026-10-05 읽기 전용 선택과 당시 증거
 
