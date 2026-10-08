@@ -11,6 +11,9 @@ quality-review: pass
 quality-reviewed-at: 2026-10-05
 quality-review-evidence: "Independent Grok 4.7 session 01a10c09-c969-7890-a71b-7c623b0cd598; tasks/done/evidence/TASK-492/scope-review.json and live-acceptance-review.json PASS; prior FAIL preserved; tasks/done/evidence/TASK-492/final-review.json PASS; tasks/done/evidence/TASK-492/final-default-environment-review.json supplements ordinary-shell default guards"
 created: 2026-10-05
+archived-at: 2026-10-08
+verified-at: 2026-10-08
+verification-summary: "2026-10-08 re-verify: five mechanical bindings exit 0. TASK-491 is Accepted, and ISSUE-004 and ISSUE-006 keep the read-only criteria without human flags."
 ---
 
 ## Summary
@@ -72,3 +75,7 @@ created: 2026-10-05
 - Final ordinary-environment retry 2 independent PASS: archived 004/006 query/verdict bindings (4), TASK-493 guards (2), and ce task gate all exit0 with TASKCHAIN_PRODUCT_REPO unset in a non-login shell. Earlier FAIL and all previous review receipts preserved.
 
 - Commit CI fae87b9a568781782aedacc065bef1d6 failed a live-corpus upstream issue quota after legitimate 004/006 local ownership and archival. TASK-494 handles the test-only correction; no issue is falsely kept upstream to satisfy the old assertion.
+
+## Verification (2026-10-08)
+
+기계 바인딩 다섯 개 exit 0. TASK-491 Accepted와 ISSUE-004·006의 읽기 전용 기준, 사람 플래그 부재, `make doc-check`가 그대로다. 기준 문장은 바꾸지 않았다.

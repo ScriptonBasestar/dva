@@ -60,7 +60,7 @@ ISSUE-453의 읽기 전용 provenance 안내는 현재 문서 계약을 유지�
 
 - 2026-10-05 옵션 1 수락 뒤 ISSUE-004·006의 현재 기준은 기계 명령이다. 과거 기준은
   Historical acceptance에 활성 verify 없이 남긴다. 사람 terminal 플래그는 현재 기준이 아니다.
-- [TASK-492](../done/492-apply-approved-readonly-queue-acceptance.md)가 그 기준을 현행화한다.
+- [TASK-492](../_archive/done/492-apply-approved-readonly-queue-acceptance.md)가 그 기준을 현행화한다.
   ISSUE-490이 풀리기 전에는 실제 보드 출력과 종료 판정 증거를 성공으로 적지 않는다.
 - producer canonical 경로 확인과 공개 산출물 승인 입력은 여전히 필요하다.
 - 새 daemon/run-all 엔진이나 두 번째 보드 grader는 만들지 않는다.
