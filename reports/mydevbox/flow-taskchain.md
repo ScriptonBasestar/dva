@@ -60,4 +60,6 @@
 
 ## wave-1
 
-예로 골랐으나 적용하지 않았다. `ce task run-doctor`가 BLOCKED다. 설치된 `wt`는 0.74.0이고 런타임은 0.80 이상을 요구한다. 런타임을 우회해 브랜치를 만들지 않았다. `local-compose-dev-*` 삭제는 제안으로 남는다.
+처음에는 적용하지 않았다. `ce task run-doctor`가 BLOCKED였고, 체크아웃의 `wt`는 0.74.0이며 런타임은 0.80 이상을 요구했다.
+
+툴체인 핀 `20975563`이 `develop`에 반영되어 `cargo:worktrunk`가 0.80.0이 된 뒤 doctor는 ACTIVE다. `local-compose-dev-*`만 지운 커밋 `f18c6d35`를 `ce task run-finish`로 `develop`에 반영하고 태스크 브랜치와 워크트리를 회수했다. `env-edit-*`, `env-show-*`, `local-native-dev-*`는 남겼다. 적용 후 `dva config validate`는 exit 0이고, 남은 `ignore_stale`은 `env-edit-*`와 `env-show-*`다.

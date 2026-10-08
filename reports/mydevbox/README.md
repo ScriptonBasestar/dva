@@ -65,7 +65,7 @@ wave-1 이후 통합:
 
 - `develop`에 반영하고 태스크 브랜치를 회수했다. flow-pipechain `e93b2b4`, funbricks-elemhant `46a1a9f`, scripton-nd-stack `887a332b`. pipechain과 elemhant은 자식 체크아웃이 없는 워크트리라 `make check` 기준선을 재지 못해 `--allow-skipped-checks`로 그 비교를 경고로 내렸다. nd-stack은 `make check`와 `make lint`가 통과했다. nd-stack은 `origin/dev/claude/mst/chore/npm-tenant-isolation-gap-card`와 cross-merge 충돌 경고가 있었고, 그 브랜치는 그대로 두었다.
 - primeno1 `13abac8`은 `ce task run-finish`로 `master`에 반영하고 회수했다.
-- cwrapper, dripter, sigdock-pass는 현재 통합 브랜치 위로 rebase까지 됐다. 이미 push된 태스크 브랜치와 달라 `branch-integrate`가 `push — upstream differs`에서 멈췄다. 워크트리는 남겨 두었다. 상세는 각 리포트의 wave-1이다.
-- flow-taskchain은 `ce task run-doctor`가 BLOCKED라 적용하지 않았다. 설치된 `wt`는 0.74.0이고 런타임은 0.80 이상을 요구한다.
+- cwrapper `f879625`와 dripter `40c5ef0`는 `develop`에, sigdock-pass `35337616`은 `master`에 반영하고 태스크 브랜치와 워크트리를 회수했다. 이미 push된 `dva-wave1`과 rebase HEAD가 달라 그 브랜치를 다시 쓰지 않고, 같은 커밋을 `dev/grok/mbp/chore/dva-wave1b`로 push한 뒤 통합했다. dripter는 integration gate가 없고, cwrapper `make check`는 변경 경로 밖 기존 진단이 1건에서 1건이라 `--allow-skipped-checks`를 썼다. sigdock-pass `make lint`는 통과했다. cwrapper는 `origin/dev/claude/mst/docs/findings-cards-glm`과 cross-merge 경고가 있었고, 그 브랜치는 그대로 두었다.
+- flow-taskchain은 툴체인 핀 `20975563`으로 `cargo:worktrunk` 0.80.0이 `develop`에 반영된 뒤 doctor가 ACTIVE다. `local-compose-dev-*` 삭제 `f18c6d35`를 `ce task run-finish`로 `develop`에 반영하고 회수했다. `env-edit-*`, `env-show-*`, `local-native-dev-*`는 남겼다.
 
 제품이 아닌 경로: `cwrapper-devbox-worktrees`(빈 디렉터리), `gizzahub`(체크아웃 없음), `gizzahub-web-svelte`(자식 체크아웃은 gizzahub-devbox 안), `gorisa-development-workflow-stabilization`(검증 출력), `mydevbox`(gzh-cli 작업 복사), `reports`(playwright 출력).

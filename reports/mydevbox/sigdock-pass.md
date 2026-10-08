@@ -58,6 +58,6 @@
 
 ## wave-1
 
-예. 워크트리 `dev/grok/mbp/chore/dva-wave1` 커밋 `043ac033`에서 헤더가 이미 뺀 overlay만 `drift_ignore`에 적었다. stack과 plans는 그대로다. 적용 후 `dva config validate` exit 0, warning 0. 이 커밋은 `origin/dev/grok/mbp/chore/dva-wave1`에 있다.
+예. 워크트리 `dev/grok/mbp/chore/dva-wave1` 커밋 `043ac033`에서 헤더가 이미 뺀 overlay만 `drift_ignore`에 적었다. stack과 plans는 그대로다. 적용 후 `dva config validate` exit 0, warning 0.
 
-통합 시점의 `master`보다 13커밋 뒤였다. `origin/master` 위로 rebase 했고 충돌은 없었다. rebase 커밋은 `35337616`다. rebase 뒤 `make lint`는 통과했다. `branch-integrate`는 원격 태스크 브랜치와 로컬이 달라 `push — upstream differs`에서 멈췄다. 워크트리 `/Users/archmagece/worktrees/sigdock-pass/sigdock-pass-devbox/grok__mbp__chore__dva-wave1`를 남겨 두었다.
+통합 시점의 `master`보다 13커밋 뒤였다. `origin/master` 위로 rebase 했고 충돌은 없었다. rebase 커밋 `35337616`은 `origin/master`에 있다. rebase 뒤 `make lint`는 통과했다. 이미 push된 태스크 브랜치와 rebase HEAD가 달라 그 브랜치를 다시 쓰지 않고, 같은 커밋을 `dev/grok/mbp/chore/dva-wave1b`로 push한 뒤 통합했다. 워크트리와 두 태스크 브랜치는 회수했다.

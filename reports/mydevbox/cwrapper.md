@@ -52,6 +52,6 @@
 
 ## wave-1
 
-예. 워크트리 `dev/grok/mbp/chore/dva-wave1` 커밋 `977d1d0`에서 DVA config 25개를 삭제했다. `env-*`는 남겼다. 적용 후 `dva config validate` exit 0, warning 1 (`env-*`). 이 커밋은 `origin/dev/grok/mbp/chore/dva-wave1`에 있다.
+예. 워크트리 `dev/grok/mbp/chore/dva-wave1` 커밋 `977d1d0`에서 DVA config 25개를 삭제했다. `env-*`는 남겼다. 적용 후 `dva config validate` exit 0, warning 1 (`env-*`).
 
-통합 시점의 `develop`보다 236커밋 뒤였다. `origin/develop` 위로 rebase 했고 충돌은 없었다. rebase 커밋은 `f879625`다. `branch-integrate`는 원격 태스크 브랜치와 로컬이 달라 `push — upstream differs`에서 멈춘다. 워크트리 `/Users/archmagece/worktrees/cwrapper/cwrapper-devbox/grok__mbp__chore__dva-wave1`를 남겨 두었다. 진행 중이던 첫 통합은 그 뒤처짐을 확인한 뒤 중단했다.
+통합 시점의 `develop`보다 236커밋 뒤였다. `origin/develop` 위로 rebase 했고 충돌은 없었다. rebase 커밋 `f879625`는 `origin/develop`에 있다. 이미 push된 태스크 브랜치와 rebase HEAD가 달라 그 브랜치를 다시 쓰지 않고, 같은 커밋을 `dev/grok/mbp/chore/dva-wave1b`로 push한 뒤 통합했다. `make check`는 변경 경로 밖 기존 진단이 1건에서 1건이라 `--allow-skipped-checks`로 통합했다. 워크트리와 두 태스크 브랜치는 회수했다.
