@@ -37,7 +37,7 @@ CHANGELOG에는 CE 규칙만 적용된다. 면제 메커니즘은 존재한다
 
 2026-10-05에 사용자가 [TASK-487](../tasks/decision/487-changelog-half-ceiling-trigger.md) 옵션 2를 골랐다. 아카이브 트리거는 실제 ceiling이다. 릴리스 시점에 바이트가 87296 이상이거나 물리 줄이 1000 이상이면 v0.2.x 이하를 아카이브한다. 이 비교는 문서화된 릴리스 트리거다. CE 파서가 그 비교를 기계적으로 집행한다고 말하지 않는다. 승인된 상한은 마커의 ceiling `87296 bytes, 1000 lines`다.
 
-선택을 열 때의 측정은 67110 bytes, 744 lines였다. 절반은 43648 bytes, 500 lines이고, 그 측정은 절반을 넘고 ceiling은 넘지 않았다. 마커 문장을 실제 ceiling으로 바꾼 뒤 파일은 67170 bytes, 744 physical lines다. 두 상한 아래이므로 이번 변경은 아카이브하지 않는다. 적용 카드는 [TASK-489](../tasks/todo/489-apply-approved-changelog-ceiling.md)다.
+선택을 열 때의 측정은 67110 bytes, 744 lines였다. 절반은 43648 bytes, 500 lines이고, 그 측정은 절반을 넘고 ceiling은 넘지 않았다. 마커 문장을 실제 ceiling으로 바꾼 뒤 파일은 67170 bytes, 744 physical lines다. 두 상한 아래이므로 이번 변경은 아카이브하지 않는다. 적용 카드는 [TASK-489](../tasks/_archive/done/489-apply-approved-changelog-ceiling.md)다.
 
 ## Rationale
 

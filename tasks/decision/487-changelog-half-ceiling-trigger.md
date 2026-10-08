@@ -33,7 +33,7 @@ CHANGELOG.md 최상단 마커의 ceiling은 `87296 bytes, 1000 lines`다. 그 �
 아카이브한다. 이 비교는 문서화된 릴리스 트리거다. CE 파서가 그 비교를
 기계적으로 집행한다고 말하지 않는다. 지금 측정은 두 상한 아래라
 아카이브하지 않는다. 마커 문장 적용은
-[TASK-489](../todo/489-apply-approved-changelog-ceiling.md)다.
+[TASK-489](../_archive/done/489-apply-approved-changelog-ceiling.md)다.
 
 기록으로 남긴 선택지:
 

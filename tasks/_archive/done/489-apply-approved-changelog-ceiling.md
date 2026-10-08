@@ -11,6 +11,9 @@ quality-review: pass
 quality-reviewed-at: 2026-10-05
 quality-review-evidence: "Independent grok-4.7 session eaafc426-c64b-4074-96b9-7679057fc6d1 PASS; tasks/done/evidence/TASK-489/independent-review-attempt-2.json"
 created: 2026-10-05
+archived-at: 2026-10-08
+verified-at: 2026-10-08
+verification-summary: "2026-10-08 re-verify: nine mechanical bindings exit 0. TASK-487 and DECISION-001 are Accepted, the ceiling marker is present, and CHANGELOG stays under 87296 bytes and 1000 lines."
 ---
 
 ## Summary
@@ -73,4 +76,8 @@ created: 2026-10-05
 - 이유: 당시 Summary가 기준 9를 현재 실패로 적었다. 라이브 기준 9 `make doc-check`는 exit 0이었고 체크와 observed도 exit 0이었다. `ce task gate`는 READY였다. Attempts의 게이트 실패 문장은 ISSUE-490 로컬 ownership 수정 전 스냅샷이다. 영수증: `tasks/done/evidence/TASK-489/independent-review.json`. reviewerSessionId `d77d288d-995b-4840-b270-cf9715f9e8e1`, verdict FAIL. `approvalForCoordinatorMetadataFinalization`은 false다.
 - 바꾼 접근: 현재 Summary는 기준 1–6·8이 HEAD에서 실패하고 기준 7·9가 지금 통과하는 회귀 가드라고 적는다. 그 Summary는 역사적 Attempts와 분리한다. 수정 뒤 현재 게이트를 다시 실행한다.
 - 현재 게이트 재실행(2026-10-05, 이 Summary 수정 뒤): 기준 1–8 exit 0. 기준 9 `make doc-check` exit 0. `ce task validate --all`은 547 valid, 0 invalid. `ce task gate` exit 0, READY — task_board_ready. 작성자는 quality-review를 넣지 않았다.
-- Independent grok-4.7 attempt 2 PASS; receipt [independent-review-attempt-2.json](evidence/TASK-489/independent-review-attempt-2.json). Coordinator finalized done metadata as approved by that receipt.
+- Independent grok-4.7 attempt 2 PASS; receipt [independent-review-attempt-2.json](../../done/evidence/TASK-489/independent-review-attempt-2.json). Coordinator finalized done metadata as approved by that receipt.
+
+## Verification (2026-10-08)
+
+기계 바인딩 아홉 개 exit 0. 옵션 2와 Accepted, 실제 ceiling 마커, CHANGELOG가 87296바이트·1000줄 아래인 점이 그대로다. `make doc-check` exit 0. 기준 문장은 바꾸지 않았다.
