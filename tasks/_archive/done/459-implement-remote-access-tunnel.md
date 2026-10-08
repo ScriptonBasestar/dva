@@ -47,7 +47,7 @@ kubectl/helm 엔트리에 구현한다. interactive와 service-token 인증을 �
 - 역사적 구현 범위는 frontmatter `allowed-paths`에 있었다: internal/config, internal/lifecycle, internal/cli, docs, examples, tasks, USAGE.md, ARCHITECTURE.md, CHANGELOG.md. 남은 작업은 외부 사람 실측이라 `needs-human: true`, `execution-mode: external`, `human-grade: human`으로 분류하고 `allowed-paths`와 `exec-tier`는 frontmatter에서 뺐다. 범위 목록은 여기에 남긴다. `exec-tier: human`은 쓰지 않는다. CE exec-tier는 cheap, standard, strong만 받는다.
 - 2026-10-05 [ISSUE-488](../issue/488-measure-expired-tunnel-token-and-live-doctor.md)에서 사람 기준 두 개를 개발자 Mac에서 실측했다. 대상은 사람이 골랐다(`scripton-tonk-01-k8s.scripton.net`).
   - 만료 토큰(`exp` 2026-09-30)에서 `access token --app`은 exit 0, stdout 0바이트였고 cloudflared가 `-token` 파일을 지웠다(`-token.url`은 남음). 결과는 [docs/68](../../../docs/68-remote-access-tunnel.md) §7에 있다.
-  - 이 결과로 §3.1과 `runCloudflaredDiscard`·`checkTunnelAuthState`의 종료 코드 단독 판정이 만료 토큰을 인증됨으로 본다는 결함이 드러났다. 이 카드의 기준(실측·기록, doctor 보고)과 별개의 결함이므로 [TASK-495](../../done/495-treat-empty-access-token-stdout-as-unauthenticated.md)에서 고친다.
+  - 이 결과로 §3.1과 `runCloudflaredDiscard`·`checkTunnelAuthState`의 종료 코드 단독 판정이 만료 토큰을 인증됨으로 본다는 결함이 드러났다. 이 카드의 기준(실측·기록, doctor 보고)과 별개의 결함이므로 [TASK-495](495-treat-empty-access-token-stdout-as-unauthenticated.md)에서 고친다.
   - 실제 tunnel 설정의 `dva doctor`(소스 `e4177fe1`)는 설치 ×2 pass, interactive 인증 `[FAIL]` + 로그인 안내, service-token 변수 unset `[FAIL]`/설정 시 `[pass]`(표식 값 출력 0건)를 보고했다. 종료 코드는 기본 0, `--strict` 1이다.
   - 리뷰 영수증(`evidence/TASK-459/`)의 "TASK-492"는 통합 직전 번호다. upstream이 같은 번호를 먼저 써서 이 결함 카드는 TASK-495로 바뀌었다. 영수증은 원본 그대로 둔다.
 

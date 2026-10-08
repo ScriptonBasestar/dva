@@ -12,13 +12,16 @@ status: done
 quality-review: pass
 quality-review-evidence: tasks/done/evidence/TASK-495/independent-review.json
 created: 2026-10-05
+archived-at: 2026-10-08
+verified-at: 2026-10-08
+verification-summary: "2026-10-08 re-verify: four mechanical bindings exit 0. Empty-stdout tunnel auth and doctor tests pass, docs/68 section 3.1 still requires non-empty stdout, and make doc-check passes."
 ---
 
 ## Summary
 
-[ISSUE-488](../_archive/issue/488-measure-expired-tunnel-token-and-live-doctor.md) 실측에서
+[ISSUE-488](../issue/488-measure-expired-tunnel-token-and-live-doctor.md) 실측에서
 cloudflared 2026.9.3의 `access token --app`은 만료 토큰에 **exit 0**과 빈 stdout을 돌려주고
-토큰 파일을 지웠다. [docs/68](../../docs/68-remote-access-tunnel.md) §3.1 1단계와 두 구현은
+토큰 파일을 지웠다. [docs/68](../../../docs/68-remote-access-tunnel.md) §3.1 1단계와 두 구현은
 종료 코드만 본다. 그래서 만료 토큰을 인증됨으로 판정한다.
 
 - `internal/lifecycle/tunnel.go` `runCloudflaredDiscard` — interactive 준비 판정이 로그인을 건너뛴다.
@@ -57,3 +60,7 @@ cloudflared 2026.9.3의 `access token --app`은 만료 토큰에 **exit 0**과 �
 ## Verification
 
 Implementation: Grok build-fast 01a11189-f0e5-7851-9470-6c8c227345d3. Independent Grok 4.7 01a11195-2a13-7fd1-bdbf-b2a7ff77c761 PASS. CI 71a564a017122af5c13a87fa6bcd3131 commit succeeded (2m26.520830834s), process-local KUBECONFIG unset to avoid known host kube configuration interference. Exact regression bindings and doc-check exit 0. Initial lint failure was corrected by replacing the always-false configurable helper with tunnelNoTTY; no suppression. Initial review interrupted before verdict for this fix; no completed FAIL.
+
+## Verification (2026-10-08)
+
+기계 바인딩 네 개 exit 0. 빈 stdout 인증·doctor 테스트와 docs/68 §3.1의 비어 있지 않은 stdout 문장, `make doc-check`가 그대로다. 기준 문장은 바꾸지 않았다.
