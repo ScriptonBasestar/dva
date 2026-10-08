@@ -6,8 +6,9 @@ v0.3.0 공개·postflight와 PLAN-010(8/8)·PLAN-011(19/19)의 종결 기록은
 `tasks/_archive/plan/`에 있다. 종결에는 다른 제품으로의 이관도 포함되므로
 계획 진행률을 DVA 전체 기능 완성률로 사용하지 않는다.
 
-이 시점에 열린 계획·미해결 이슈·실행 대기 카드는 없고, `tasks/done/`의 깊이 1 카드도
-0장이다. `tasks/done/evidence/`는 과거 검증 증거를 보존한다. 현재 실행 세션은
+이 시점에 열린 계획·미해결 이슈·실행 대기 카드는 없다. 릴리스 범위 정합화
+[TASK-500](_archive/done/500-align-next-release-scope.md)은 대조와 독립 리뷰를 마쳤으며
+`tasks/done/`의 깊이 1 카드는 0장이다. `tasks/done/evidence/`는 과거 검증 증거를 보존한다. 현재 실행 세션은
 `ce task run-list`, 새 릴리스의 제품 인수 기준은 [ROADMAP.md](../ROADMAP.md)에서 확인한다.
 로드맵의 후속 항목은 실행 카드를 등록하기 전까지 이 보드의 대기 카드 수에 포함하지 않는다.
 

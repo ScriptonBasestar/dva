@@ -1,0 +1,209 @@
+{
+  "schemaVersion": 1,
+  "baselineTag": "v0.3.0",
+  "baselineSha": "629c34c1fe7359dc515a9090a8abbf6444beca71",
+  "inspectedHead": "fee1585f2faaf961c4d27a5d9b5bd226c296a920",
+  "paths": [
+    "internal/",
+    "cmd/"
+  ],
+  "targetVersion": "0.4.0",
+  "released": false,
+  "runtimeVersionChanged": false,
+  "commitCount": 31,
+  "commits": [
+    {
+      "sha": "03cd29aa6f2b1ea1db555af814cfe916cdba7086",
+      "subject": "feat(env): surface missing sops_source via doctor and hints",
+      "group": "sops-guidance",
+      "decision": "include"
+    },
+    {
+      "sha": "b742b52d966a757b371c832a32036d18a823da8a",
+      "subject": "fix(env): never suggest a declared path as its own sops_source",
+      "group": "sops-guidance",
+      "decision": "include"
+    },
+    {
+      "sha": "93dc14cee83ec2414c34374b3e78a1c4543da249",
+      "subject": "feat(init): declare sops_source for encrypted env files",
+      "group": "sops-init",
+      "decision": "include"
+    },
+    {
+      "sha": "7c9d7f04d14e59cb57941232cac715472e5ce706",
+      "subject": "fix(init): keep sops evidence out of scaffold selection",
+      "group": "sops-init",
+      "decision": "include"
+    },
+    {
+      "sha": "b42d0a915f8469f9f97494940371d625e4c82ef4",
+      "subject": "fix(cli): re-encrypt an existing env source in place",
+      "group": "env-reseal",
+      "decision": "include"
+    },
+    {
+      "sha": "f8110f47e61165422c06b0a309dab8fb58e0615f",
+      "subject": "chore(flows): embed reseal in the generated corpus",
+      "group": "generated-reseal",
+      "decision": "include"
+    },
+    {
+      "sha": "f19f62814d038ced05be09e9afa858b52a7b055d",
+      "subject": "feat(queue): expose read-only task-manager queue in DVA",
+      "group": "readonly-queue",
+      "decision": "include"
+    },
+    {
+      "sha": "88b9e57772c5142712fd42a2965b4ff9967adfb4",
+      "subject": "feat(queue): expose strict task queue verdict",
+      "group": "queue-verdict",
+      "decision": "include"
+    },
+    {
+      "sha": "cbcfc8886800bba56860221c90a4df69f16ab682",
+      "subject": "feat(queue): bridge sole candidate to CE runtime",
+      "group": "queue-start",
+      "decision": "include"
+    },
+    {
+      "sha": "6d4cf6dfe5ee34dd8dadf5d56fdb3ddd499e8088",
+      "subject": "feat(queue): stage fail-closed producer pin boundary",
+      "group": "queue-pin",
+      "decision": "include"
+    },
+    {
+      "sha": "0df89279d0abb7e9a32012a06b1845ab7b58ed7b",
+      "subject": "feat(queue): compile pinned TaskChain start boundary",
+      "group": "queue-start",
+      "decision": "include"
+    },
+    {
+      "sha": "20121cd79a15ba4fe09e4d3ddf259719f515c361",
+      "subject": "chore(generate): refresh reserved-command facts",
+      "group": "generated-reserved",
+      "decision": "include"
+    },
+    {
+      "sha": "b92bc928917d4071534e6518343b9a2aa2c038a0",
+      "subject": "feat(secrets): kubernetes secret target for dev clusters",
+      "group": "kubernetes-secret",
+      "decision": "include"
+    },
+    {
+      "sha": "1bfa9ba2c115f4362f298bfa1114b0f63344a0ec",
+      "subject": "fix(secrets): reject null values and harden kubernetes preflight",
+      "group": "kubernetes-secret-hardening",
+      "decision": "include"
+    },
+    {
+      "sha": "ee8912fa7c27646c940428c13444696020048427",
+      "subject": "feat(tunnel): cloudflared access prerequisite for remote entries",
+      "group": "tunnel",
+      "decision": "include"
+    },
+    {
+      "sha": "152711dd5c73184534403ded1a6af47263907e09",
+      "subject": "refactor(config): split config.go and config_test.go into seam files",
+      "group": "source-refactor",
+      "decision": "include"
+    },
+    {
+      "sha": "440d76986e3cf7d8c5c1a15ea9ffd6dd1e266bae",
+      "subject": "refactor(config): split validate_warnings into topic seams",
+      "group": "source-refactor",
+      "decision": "include"
+    },
+    {
+      "sha": "96692ac76d968e06b817464a8807b6abd0b62ab3",
+      "subject": "refactor(config): split migrate_section_order_test preservation cluster",
+      "group": "source-refactor",
+      "decision": "include"
+    },
+    {
+      "sha": "0cb9253aba1a12e6d5d5f5e48d1c75794e47b42c",
+      "subject": "refactor(config): split lifecycle.go and merge.go plugin clusters",
+      "group": "source-refactor",
+      "decision": "include"
+    },
+    {
+      "sha": "519bd70476144f22c4f5fe576f2964549c2661d5",
+      "subject": "refactor(cli): split over-limit command files into topic seams",
+      "group": "source-refactor",
+      "decision": "include"
+    },
+    {
+      "sha": "07f76402be609848d6d47db3c29ce95ce0733cce",
+      "subject": "refactor(lifecycle): split orchestrator.go and resolver.go clusters",
+      "group": "source-refactor",
+      "decision": "include"
+    },
+    {
+      "sha": "0c98585df2485fde9a119201b5bb2dfe78327a01",
+      "subject": "refactor(cirun): split cirun.go report and step clusters",
+      "group": "source-refactor",
+      "decision": "include"
+    },
+    {
+      "sha": "9cd7be7ab6d3f2f48db2df004abe0a1498199eae",
+      "subject": "refactor(ociverify): split verify.go registry and reference clusters",
+      "group": "source-refactor",
+      "decision": "include"
+    },
+    {
+      "sha": "7ede2c7c557cd5a52ec5537255657a4b99efef68",
+      "subject": "refactor(skillclaim): split claim.go lock and store clusters",
+      "group": "source-refactor",
+      "decision": "include"
+    },
+    {
+      "sha": "7c0d00d237430c0912c2536be6a3d7d1133c1810",
+      "subject": "refactor(config): split validate.go schema cluster",
+      "group": "source-refactor",
+      "decision": "include"
+    },
+    {
+      "sha": "648036842d6676fa4aca253a704c35010853fcef",
+      "subject": "refactor(skillinstall): split install cluster trio",
+      "group": "source-refactor",
+      "decision": "include"
+    },
+    {
+      "sha": "069dbe1ab493f8df26ee80d055d738553e0897c2",
+      "subject": "test(cli): verify tunnel doctor auth failures and prepare upstream draft",
+      "group": "tunnel-tests",
+      "decision": "include"
+    },
+    {
+      "sha": "71b00be9304c6ebad1fd17728f497791ba0ab8cd",
+      "subject": "fix(tunnel): reject successful empty access token probes",
+      "group": "tunnel-auth-fix",
+      "decision": "include"
+    },
+    {
+      "sha": "18210e27d5121ee8e2123ba8d4c7804e7174df77",
+      "subject": "feat(taskqueue): pin the verified public darwin arm64 TaskChain artifact",
+      "group": "published-taskchain-pin",
+      "decision": "include"
+    },
+    {
+      "sha": "16faa3290f2681da3897afc3ec2b3b9f42565c0d",
+      "subject": "fix(ci): isolate native test state across hosts",
+      "group": "native-test-isolation",
+      "decision": "include"
+    },
+    {
+      "sha": "144fab073f5298548775400093adb8a39fb822cd",
+      "subject": "fix(lifecycle): use errors.AsType for unused results",
+      "group": "errors-as-type",
+      "decision": "include"
+    }
+  ],
+  "optionalExtensions": "deferred; see ROADMAP.md",
+  "compatibilityNotes": [
+    "task-queue-start becomes reserved; rename conflicting interactions",
+    "new feature declarations require the future release; published 0.3.0 remains the installation baseline"
+  ],
+  "repositoryOnlyChanges": "tools/, workflows/, tasks/ changes remain maintenance; no new public board grader or release automation",
+  "validationStatus": "scope evidence only; release-candidate validation is pending"
+}

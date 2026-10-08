@@ -1,0 +1,42 @@
+{
+  "conclusion": "",
+  "headSha": "fee1585f2faaf961c4d27a5d9b5bd226c296a920",
+  "jobs": [
+    {
+      "name": "lint",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "test",
+      "status": "in_progress",
+      "conclusion": ""
+    },
+    {
+      "name": "goreleaser-snapshot",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "config-env-platform (macos-latest)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "commit-subjects",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "config-env-platform (ubuntu-latest)",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "status": "in_progress",
+  "url": "https://github.com/ScriptonBasestar/dva/actions/runs/37736893444",
+  "runId": 37736893444,
+  "observedAt": "2026-10-08T06:34:56.574170+00:00",
+  "releaseCandidateAccepted": false,
+  "followUp": "Confirm final hosted conclusion before ROADMAP stage 3 acceptance; pending is not success."
+}

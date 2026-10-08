@@ -7,11 +7,18 @@ All notable changes to DVA are documented here.
 
 ### Changed
 
+- **개발·검증 내부 정리**: config·CLI·lifecycle·CI·스킬 설치 등의 소스를 책임 단위로
+  분리하고, native 테스트의 호스트 상태 격리와 미사용 오류 검사 호출을 보완했습니다.
+  새 사용자 명령과 지원 범위는 아래 기능 항목과 USAGE.md의 지원표를 따릅니다.
+
 - **현재 상태 문서 정합화**: 공개 v0.3.0과 최신 소스의 기능을 사용법의 지원표로 구분하고,
   빠른 시작을 named plan으로 통일했습니다. 다음 릴리스의 인수 기준은 ROADMAP.md가
   소유하며, 보드의 종결률과 제품 완성도를 구분합니다. 런타임 동작 변경은 없습니다.
 
 ### Fixed
+
+- **Kubernetes Secret 전송 전 검증 보완**: null 값과 잘못된 Secret 이름을 전송 전에
+  거부하며, 명시한 kubeconfig·context만 사용하도록 preflight를 보강했습니다.
 
 - **TaskChain pin 상태 후속 기록 (TASK-496)**: 아래 TASK-455 항목의 pin 비활성 설명은
   도입 당시 상태입니다. 현재 소스는 공개 승인된 v0.1.0 darwin/arm64 pin을 활성화하며,
@@ -20,6 +27,14 @@ All notable changes to DVA are documented here.
   `access token --app`의 stdout이 비어 있으면 인증되지 않은 것으로 처리합니다.
 
 ### Added
+
+- **`dva config env reseal`**: `.sops.yaml`의 생성 규칙이 바뀌었을 때 선언된
+  `env_file`의 기존 `sops_source`를 같은 경로에 재암호화합니다. 평문 target은
+  읽거나 쓰지 않으며 실패하면 원래 암호화 source를 유지합니다.
+- **이 저장소의 TaskChain 읽기 전용 interaction**: `task-queue`가 사람용 runnable과
+  agentRunnable을, `task-queue-verdict`가 empty/human_required/candidate/selection_required
+  판정을 보고합니다. 이 저장소가 선언한 interaction이며 모든 프로젝트의 내장 명령이
+  아닙니다. 시작은 별도의 컴파일된 `task-queue-start`가 담당합니다.
 
 - **Cloudflare Access 터널 선언 (TASK-459)**: kubectl/helm 엔트리에 `tunnel:`을
   선언하면 docs/68의 접속 선행조건을 DVA가 관리합니다. 실행 동사가 엔트리 전에
@@ -51,6 +66,15 @@ All notable changes to DVA are documented here.
   `env_file: [{path, sops_source}]` 엔트리를 함께 써 넣습니다. `.sops.yaml`만 있고 실제
   후보 파일이 없으면 아무것도 추가하지 않습니다 — 존재하지 않는 파일을 `sops_source`로
   가리키지 않습니다.
+
+### Compatibility
+
+- `task-queue-start`가 새 내장 명령으로 예약됩니다. 기존 프로젝트가 같은 이름의
+  interaction을 선언했다면 이름을 바꿔야 합니다. 업그레이드 전 설정 검증과 manifest로
+  충돌을 확인하세요.
+- 새 선언은 기존 v0.3.0 바이너리에서 사용할 수 없습니다. 실제 지원 범위는
+  [사용법](USAGE.md#버전과-지원-범위), 다음 후보의 채택·검증 결정은
+  [로드맵](ROADMAP.md#v040-후보-범위)을 따릅니다.
 
 ## [0.3.0] - 2026-09-23
 

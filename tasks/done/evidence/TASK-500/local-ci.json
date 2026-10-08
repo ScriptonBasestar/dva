@@ -1,0 +1,59 @@
+{
+  "id": "b94464c13dae27b03c409201129ddced",
+  "root": "/Users/archmagece/worktrees/misc/dva/codex__mbp__docs__release-scope-alignment",
+  "profile": "commit",
+  "status": "succeeded",
+  "log_path": "/Users/archmagece/.local/state/dva/ci/logs/b94464c13dae27b03c409201129ddced.log",
+  "started_at": "2026-10-08T15:29:34.255754+09:00",
+  "finished_at": "2026-10-08T15:32:28.412405+09:00",
+  "duration": "2m54.154472875s",
+  "steps": [
+    {
+      "name": "format",
+      "status": "succeeded",
+      "started_at": "2026-10-08T15:29:34.354718+09:00",
+      "finished_at": "2026-10-08T15:29:34.664527+09:00",
+      "duration": 309805334
+    },
+    {
+      "name": "docs",
+      "status": "succeeded",
+      "started_at": "2026-10-08T15:29:34.664596+09:00",
+      "finished_at": "2026-10-08T15:29:37.171377+09:00",
+      "duration": 2506749500
+    },
+    {
+      "name": "vet",
+      "status": "succeeded",
+      "started_at": "2026-10-08T15:29:34.664587+09:00",
+      "finished_at": "2026-10-08T15:29:39.653774+09:00",
+      "duration": 4989125458
+    },
+    {
+      "name": "lint",
+      "status": "succeeded",
+      "started_at": "2026-10-08T15:29:39.653812+09:00",
+      "finished_at": "2026-10-08T15:30:43.198277+09:00",
+      "duration": 63543670542
+    },
+    {
+      "name": "test",
+      "status": "succeeded",
+      "started_at": "2026-10-08T15:30:43.198748+09:00",
+      "finished_at": "2026-10-08T15:32:27.255126+09:00",
+      "duration": 104055076500
+    },
+    {
+      "name": "build",
+      "status": "succeeded",
+      "started_at": "2026-10-08T15:32:27.255147+09:00",
+      "finished_at": "2026-10-08T15:32:28.323892+09:00",
+      "duration": 1068731625
+    }
+  ],
+  "attestation": {
+    "available": true,
+    "before": "cd611c941a0e881fa49740189796e30f91f696f6310b51c9b2647c3710f7d6a6",
+    "after": "cd611c941a0e881fa49740189796e30f91f696f6310b51c9b2647c3710f7d6a6"
+  }
+}
