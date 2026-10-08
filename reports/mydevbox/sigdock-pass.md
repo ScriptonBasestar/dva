@@ -61,3 +61,7 @@
 예. 워크트리 `dev/grok/mbp/chore/dva-wave1` 커밋 `043ac033`에서 헤더가 이미 뺀 overlay만 `drift_ignore`에 적었다. stack과 plans는 그대로다. 적용 후 `dva config validate` exit 0, warning 0.
 
 통합 시점의 `master`보다 13커밋 뒤였다. `origin/master` 위로 rebase 했고 충돌은 없었다. rebase 커밋 `35337616`은 `origin/master`에 있다. rebase 뒤 `make lint`는 통과했다. 이미 push된 태스크 브랜치와 rebase HEAD가 달라 그 브랜치를 다시 쓰지 않고, 같은 커밋을 `dev/grok/mbp/chore/dva-wave1b`로 push한 뒤 통합했다. 워크트리와 두 태스크 브랜치는 회수했다.
+
+## wave-2
+
+예. `env_file`의 `.env` 항목에 `sops_source: .env.sops`를 더한 커밋 `649a189e`가 `master`에 있다. `branch-integrate`의 `make lint`를 통과했다. 이 리포트가 sops를 "비밀 로딩 변경"으로 보류한 근거는 틀렸다. `sops_source`는 로드 경로가 읽지 않는 선언 메타데이터다([follow-ups](follow-ups.md#sops_source-선언-wave-2)). primary 체크아웃 재측정에서 doctor fail은 3에서 2다. 남은 fail은 `Compose config resolves`, `.sb/dva/ is ignored in .gitignore`다.

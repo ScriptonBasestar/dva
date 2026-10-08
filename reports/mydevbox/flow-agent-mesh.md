@@ -59,3 +59,7 @@
 ## wave-1
 
 아니오. 활성 자식 연결은 새 자식 파일이 필요하고, sops 선언은 비밀을 건드린다.
+
+## wave-2
+
+해당 없음. `sops_source: .env.sops`는 감사 전 커밋 `29a0fc2`부터 선언돼 있었다. 위 doctor 발견의 `Encrypted env source declared`는 같은 dva 0.3.0으로 primary 체크아웃에서 다시 재면 나오지 않는다. 감사 기록의 원인은 확인하지 못했다. 남은 fail은 `.env file exists`다.

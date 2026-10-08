@@ -55,3 +55,7 @@
 ## wave-1
 
 아니오. `familybook-engine-fiber` subproject 추가는 새 연결이라 이번 wave-1이 아니다. 제안 표에 남긴다. KMP 경로는 선언하지 않는다.
+
+## wave-2
+
+해당 없음. `sops_source: .env.sops`는 감사 전 커밋 `3f6980f`부터 선언돼 있었다. 위 doctor 발견의 `Encrypted env source declared`는 같은 dva 0.3.0으로 primary 체크아웃에서 다시 재면 나오지 않는다. 감사 기록의 원인은 확인하지 못했다. 남은 fail은 `KMP checkout`다.

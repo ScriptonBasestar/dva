@@ -58,3 +58,7 @@
 ## wave-1
 
 아니오.
+
+## wave-2
+
+예. `env_file`의 `.env` 항목에 `sops_source: .env.sops`를 더한 커밋 `9d2cd77`가 `develop`에 있다. `make check` 기준 트리에 파일:줄 진단이 없어 비교가 불가능했고, 브랜치 진단은 0건이라 `--allow-skipped-checks`로 통합했다. 이 리포트가 sops를 "비밀 로딩 변경"으로 보류한 근거는 틀렸다. `sops_source`는 로드 경로가 읽지 않는 선언 메타데이터다([follow-ups](follow-ups.md#sops_source-선언-wave-2)). primary 체크아웃 재측정에서 doctor fail은 2에서 1이다. 남은 fail은 `Compose config resolves`다. master key가 없는 것은 복호화 문제라 선언과 무관하다.

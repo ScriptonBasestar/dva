@@ -50,3 +50,7 @@
 ## wave-1
 
 아니오.
+
+## wave-2
+
+예. `env_file`의 `.env` 항목에 `sops_source: .env.sops`를 더한 커밋 `ea712fd`가 `develop`에 있다. 선언된 gate가 없어 `--allow-skipped-checks`로 통합했다. 이 리포트가 sops를 "비밀 로딩 변경"으로 보류한 근거는 틀렸다. `sops_source`는 로드 경로가 읽지 않는 선언 메타데이터다([follow-ups](follow-ups.md#sops_source-선언-wave-2)). primary 체크아웃 재측정에서 doctor fail은 1에서 0이다. `Encrypted env source declared` 행은 없다.

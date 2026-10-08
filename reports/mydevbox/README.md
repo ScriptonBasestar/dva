@@ -68,6 +68,29 @@ wave-1 이후 통합:
 - cwrapper `f879625`와 dripter `40c5ef0`는 `develop`에, sigdock-pass `35337616`은 `master`에 반영하고 태스크 브랜치와 워크트리를 회수했다. 이미 push된 `dva-wave1`과 rebase HEAD가 달라 그 브랜치를 다시 쓰지 않고, 같은 커밋을 `dev/grok/mbp/chore/dva-wave1b`로 push한 뒤 통합했다. dripter는 integration gate가 없고, cwrapper `make check`는 변경 경로 밖 기존 진단이 1건에서 1건이라 `--allow-skipped-checks`를 썼다. sigdock-pass `make lint`는 통과했다. cwrapper는 `origin/dev/claude/mst/docs/findings-cards-glm`과 cross-merge 경고가 있었고, 그 브랜치는 그대로 두었다.
 - flow-taskchain은 툴체인 핀 `20975563`으로 `cargo:worktrunk` 0.80.0이 `develop`에 반영된 뒤 doctor가 ACTIVE다. `local-compose-dev-*` 삭제 `f18c6d35`를 `ce task run-finish`로 `develop`에 반영하고 회수했다. `env-edit-*`, `env-show-*`, `local-native-dev-*`는 남겼다.
 
+wave-2 이후 통합:
+
+`env_file`의 기존 `.env` 항목에 `sops_source: .env.sops` 한 줄만 더했다. 선언 메타데이터라 `up`/`run`의 로드는 바뀌지 않는다. 근거와 남긴 제품은 [follow-ups.md](follow-ups.md#sops_source-선언-wave-2)에 있다. 아래 doctor fail은 통합 뒤 primary 체크아웃에서 다시 잰 값이며, 위 표의 doctor fail 열은 감사 당시 값 그대로 둔다.
+
+| 제품 | 소스 | 커밋 | 통합 | doctor fail |
+| --- | --- | --- | --- | --- |
+| [cwrapper](cwrapper.md) | develop | `2864b84` | `branch-integrate`, `make check` 기존 진단 1→1, 플래그 없음 | 1 → 0 |
+| [dripter](dripter.md) | develop | `956ba08` | `branch-integrate`, gate 없음 → `--allow-skipped-checks` | 1 → 0 |
+| [flow-knowchain](flow-knowchain.md) | develop | `9d2cd77` | `branch-integrate`, 기준선 측정 불가 → `--allow-skipped-checks` | 2 → 1 |
+| [flow-observechain](flow-observechain.md) | develop | `ea712fd` | `branch-integrate`, gate 없음 → `--allow-skipped-checks` | 1 → 0 |
+| [flow-pipechain](flow-pipechain.md) | develop | `7f03ac4` | `branch-integrate`, 기준선 측정 불가 → `--allow-skipped-checks` | 1 → 0 |
+| [flow-taskchain](flow-taskchain.md) | develop | `ae4f7bb7` | `ce task run-finish` | 1 → 0 |
+| [funbricks-elemhant](funbricks-elemhant.md) | develop | `fcf39388` | `branch-integrate`, 기준선 측정 불가 → `--allow-skipped-checks` | 4 → 3 |
+| [funbricks-postkit](funbricks-postkit.md) | develop | `f538f584` | `branch-integrate`, `make check` 통과 | 1 → 0 |
+| [gizzahub](gizzahub.md) | develop | `425f9134` | `branch-integrate`, readiness 통과 | 1 → 0 |
+| [gorisa](gorisa.md) | master | `e0c5d52` | `ce task run-finish` | 1 → 0 |
+| [scripton-gitrump](scripton-gitrump.md) | master | `6d3888d` | `branch-integrate`, readiness 통과 | 2 → 1 |
+| [server-farm](server-farm.md) | master | `630c697` | `branch-integrate`, 기준선 측정 불가 → `--allow-skipped-checks` | 1 → 0 |
+| [sigdock-idp](sigdock-idp.md) | master | `e033a130` | `ce task run-finish` | 1 → 0 |
+| [sigdock-pass](sigdock-pass.md) | master | `649a189e` | `branch-integrate`, `make lint` 통과 | 3 → 2 |
+
+모든 태스크 브랜치와 워크트리는 회수했다. "기준선 측정 불가"는 새 워크트리에 gitignore된 자식 체크아웃이 없어 기준 트리와 비교할 수 없었다는 뜻이고, 브랜치 진단은 0건이었다. sigdock-idp `e033a130`의 `Model:` footer는 실제 런타임과 다르게 적혔고 master 이력은 다시 쓰지 않았다. [familybook](familybook.md)과 [flow-agent-mesh](flow-agent-mesh.md)는 감사 전부터 선언돼 있었고, 재측정에서 sops 행이 나오지 않는다.
+
 남은 작업 순위는 [follow-ups.md](follow-ups.md)에 있다.
 
 제품이 아닌 경로: `cwrapper-devbox-worktrees`(빈 디렉터리), `gizzahub`(체크아웃 없음), `gizzahub-web-svelte`(자식 체크아웃은 gizzahub-devbox 안), `gorisa-development-workflow-stabilization`(검증 출력), `mydevbox`(gzh-cli 작업 복사), `reports`(playwright 출력).

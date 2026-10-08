@@ -60,3 +60,7 @@
 예. 워크트리 `dev/grok/mbp/chore/dva-wave1` 커밋 `e93b2b4`에서 `dev-keycloak-export-realm`, `dev-keycloak-only`, `log-search-bench perf-log-search`만 삭제했다. `env-edit-*`와 `env-show-*`는 남겼다. 적용 후 `dva config validate` exit 0, warning 4. 남은 `ignore_stale` 2건은 그 패턴 룰이다.
 
 `branch-integrate`가 이 커밋을 `develop`에 fast-forward 했고 태스크 브랜치를 회수했다. primary `develop`은 `e93b2b4`다. `make check`와 `make lint`는 자식 체크아웃이 없는 워크트리와 깨끗한 기준 트리가 달라 기준선을 재지 못했다. 브랜치 진단은 0건이라 `--allow-skipped-checks`로 그 비교만 경고로 내렸다.
+
+## wave-2
+
+예. `env_file`의 `.env` 항목에 `sops_source: .env.sops`를 더한 커밋 `7f03ac4`가 `develop`에 있다. `make check`와 `make lint`는 기준선을 재지 못해 `--allow-skipped-checks`로 통합했다. `.env.sops.bak.*`는 선언하지 않았다. 이 리포트가 sops를 "비밀 로딩 변경"으로 보류한 근거는 틀렸다. `sops_source`는 로드 경로가 읽지 않는 선언 메타데이터다([follow-ups](follow-ups.md#sops_source-선언-wave-2)). primary 체크아웃 재측정에서 doctor fail은 1에서 0이다. `Encrypted env source declared` 행은 없다.

@@ -63,3 +63,7 @@
 처음에는 적용하지 않았다. `ce task run-doctor`가 BLOCKED였고, 체크아웃의 `wt`는 0.74.0이며 런타임은 0.80 이상을 요구했다.
 
 툴체인 핀 `20975563`이 `develop`에 반영되어 `cargo:worktrunk`가 0.80.0이 된 뒤 doctor는 ACTIVE다. `local-compose-dev-*`만 지운 커밋 `f18c6d35`를 `ce task run-finish`로 `develop`에 반영하고 태스크 브랜치와 워크트리를 회수했다. `env-edit-*`, `env-show-*`, `local-native-dev-*`는 남겼다. 적용 후 `dva config validate`는 exit 0이고, 남은 `ignore_stale`은 `env-edit-*`와 `env-show-*`다.
+
+## wave-2
+
+예. `env_file`의 `.env` 항목에 `sops_source: .env.sops`를 더한 커밋 `ae4f7bb7`가 `develop`에 있다. `ce task run-finish`로 통합했다. 이 리포트가 sops를 "비밀 로딩 변경"으로 보류한 근거는 틀렸다. `sops_source`는 로드 경로가 읽지 않는 선언 메타데이터다([follow-ups](follow-ups.md#sops_source-선언-wave-2)). primary 체크아웃 재측정에서 doctor fail은 1에서 0이다. `Encrypted env source declared` 행은 없다.

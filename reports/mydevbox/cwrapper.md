@@ -55,3 +55,7 @@
 예. 워크트리 `dev/grok/mbp/chore/dva-wave1` 커밋 `977d1d0`에서 DVA config 25개를 삭제했다. `env-*`는 남겼다. 적용 후 `dva config validate` exit 0, warning 1 (`env-*`).
 
 통합 시점의 `develop`보다 236커밋 뒤였다. `origin/develop` 위로 rebase 했고 충돌은 없었다. rebase 커밋 `f879625`는 `origin/develop`에 있다. 이미 push된 태스크 브랜치와 rebase HEAD가 달라 그 브랜치를 다시 쓰지 않고, 같은 커밋을 `dev/grok/mbp/chore/dva-wave1b`로 push한 뒤 통합했다. `make check`는 변경 경로 밖 기존 진단이 1건에서 1건이라 `--allow-skipped-checks`로 통합했다. 워크트리와 두 태스크 브랜치는 회수했다.
+
+## wave-2
+
+예. `env_file`의 `.env` 항목에 `sops_source: .env.sops`를 더한 커밋 `2864b84`가 `develop`에 있다. 첫 통합은 readiness READY 뒤 `develop`이 `f879625`에서 `0380a84`로 움직여 push 전에 멈췄다. 태스크 브랜치를 `0380a84` 위로 rebase하고 `--allow-skipped-checks` 없이 다시 통합했다. `make check`의 변경 경로 밖 기존 진단은 1건에서 1건이다. 위 제안 표가 sops를 "비밀 입력 의미 변경"으로 보류한 근거는 틀렸다. `sops_source`는 로드 경로가 읽지 않는 선언 메타데이터다([follow-ups](follow-ups.md#sops_source-선언-wave-2)). primary 체크아웃 재측정에서 doctor fail은 1에서 0이다. `Encrypted env source declared` 행은 없다. 워크트리와 태스크 브랜치는 회수했다.

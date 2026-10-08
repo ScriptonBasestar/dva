@@ -54,3 +54,7 @@
 예. 워크트리 `dev/grok/mbp/chore/dva-wave1` 커밋 `c2938ec`에서 `_infra`만 삭제했다. `%` 패턴 7개는 남겼다. 적용 후 `dva config validate` exit 0, warning 7. 자식 체크아웃은 부모 git에 없어서, 검증 때만 기본 체크아웃으로 임시 링크를 두고 커밋 전에 지웠다.
 
 통합 시점의 `develop`보다 27커밋 뒤였다. `origin/develop` 위로 rebase 했고 충돌은 없었다. rebase 커밋 `40c5ef0`은 `origin/develop`에 있다. integration gate가 없어 `--allow-skipped-checks`로 통합했다. 워크트리와 태스크 브랜치는 회수했다.
+
+## wave-2
+
+예. `env_file`의 `.env` 항목에 `sops_source: .env.sops`를 더한 커밋 `956ba08`가 `develop`에 있다. 선언된 gate가 없어 `--allow-skipped-checks`로 통합했다. 이 리포트가 sops를 "비밀 로딩 변경"으로 보류한 근거는 틀렸다. `sops_source`는 로드 경로가 읽지 않는 선언 메타데이터다([follow-ups](follow-ups.md#sops_source-선언-wave-2)). primary 체크아웃 재측정에서 doctor fail은 1에서 0이다. `Encrypted env source declared` 행은 없다.

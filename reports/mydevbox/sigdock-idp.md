@@ -58,3 +58,7 @@
 ## wave-1
 
 아니오. 위 항목은 plan 의미, 비밀 참조, 또는 subproject 배선이다.
+
+## wave-2
+
+예. `env_file`의 `.env` 항목에 `sops_source: .env.sops`를 더한 커밋 `e033a130`가 `master`에 있다. `ce task run-finish`로 통합했다. 이 커밋의 `Model:` footer는 실제 작업 런타임(claude-sonnet-5-5)이 아니라 claude-opus-5-5로 잘못 적혔다. master 이력은 다시 쓰지 않았다. 이 리포트가 sops를 "비밀 로딩 변경"으로 보류한 근거는 틀렸다. `sops_source`는 로드 경로가 읽지 않는 선언 메타데이터다([follow-ups](follow-ups.md#sops_source-선언-wave-2)). primary 체크아웃 재측정에서 doctor fail은 1에서 0이다. `Encrypted env source declared` 행은 없다.
