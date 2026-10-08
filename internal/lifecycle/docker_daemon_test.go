@@ -215,8 +215,7 @@ func TestDockerDaemonError_Unwrap(t *testing.T) {
 		t.Errorf("errors.Is(e, cause) = false, want true")
 	}
 
-	var target *DockerDaemonError
-	if !errors.As(fmt.Errorf("wrapped: %w", e), &target) {
-		t.Errorf("errors.As did not recover *DockerDaemonError through a wrap")
+	if _, ok := errors.AsType[*DockerDaemonError](fmt.Errorf("wrapped: %w", e)); !ok {
+		t.Errorf("errors.AsType did not recover *DockerDaemonError through a wrap")
 	}
 }

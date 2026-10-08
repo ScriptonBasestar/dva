@@ -52,9 +52,8 @@ func TestComposeConfigError_Unwrap(t *testing.T) {
 		t.Errorf("errors.Is(e, cause) = false, want true")
 	}
 
-	var target *ComposeConfigError
-	if !errors.As(fmt.Errorf("wrapped: %w", e), &target) {
-		t.Errorf("errors.As did not recover *ComposeConfigError through a wrap")
+	if _, ok := errors.AsType[*ComposeConfigError](fmt.Errorf("wrapped: %w", e)); !ok {
+		t.Errorf("errors.AsType did not recover *ComposeConfigError through a wrap")
 	}
 }
 

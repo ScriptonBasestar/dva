@@ -235,8 +235,7 @@ func TestComposeUp_DaemonUnreachable_BeatsMissingImage(t *testing.T) {
 
 	_, err := p.Up(context.Background(), pctx)
 
-	var daemonErr *DockerDaemonError
-	if !errors.As(err, &daemonErr) {
+	if _, ok := errors.AsType[*DockerDaemonError](err); !ok {
 		t.Fatalf("Up() error = %v, want a *DockerDaemonError", err)
 	}
 	if _, ok := errors.AsType[*MissingLocalImageError](err); ok {
@@ -328,9 +327,8 @@ func TestMissingLocalImageError_Unwrap(t *testing.T) {
 		t.Errorf("errors.Is(e, cause) = false, want true")
 	}
 
-	var target *MissingLocalImageError
-	if !errors.As(fmt.Errorf("wrapped: %w", e), &target) {
-		t.Errorf("errors.As did not recover *MissingLocalImageError through a wrap")
+	if _, ok := errors.AsType[*MissingLocalImageError](fmt.Errorf("wrapped: %w", e)); !ok {
+		t.Errorf("errors.AsType did not recover *MissingLocalImageError through a wrap")
 	}
 }
 
