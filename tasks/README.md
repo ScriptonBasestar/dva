@@ -1,13 +1,23 @@
 # DVA Task Management Board
 
-## 현재 상태 (2026-10-07)
+## 현재 상태 (2026-10-08)
 
 v0.3.0 공개와 postflight는 완료됐고 PLAN-010(8/8)과 PLAN-011(19/19)은
 `tasks/_archive/plan/`에 보관됐다. 열린 계획은 없다. 과거 판정은 보관된 카드와 Git 이력이 소유한다.
 2026-10-03 [[TASK-482]]가 done 카드 30장(TASK-449~481)을 재검증해 전부 `tasks/_archive/2026-10/`로 보관했다.
 2026-10-05 [[TASK-485]]가 TASK-482·483·484를 재검증해 `tasks/_archive/2026-10/`로 보관했다(아래 Batch 10).
-`tasks/done/`에는 TASK-485, 운영 계약을 완료한 TASK-486, 승인 ceiling을 반영한 TASK-489, 수락된 범위 적용 TASK-492, 제품 source 보정 TASK-493, 2026-10-05 사람 실측으로 닫힌 TASK-459, durable review evidence가 남는다 —
-TASK-485는 다음 정리 주기에 독립 재검증을 받는다.
+2026-10-08 재검증이 남은 10장을 `tasks/_archive/done/`으로 보관했다(아래 Batch 11):
+[TASK-459](_archive/done/459-implement-remote-access-tunnel.md),
+[TASK-485](_archive/done/485-reverify-and-archive-done-cards-482-484.md),
+[TASK-486](_archive/done/486-record-session-followup-contract.md),
+[TASK-489](_archive/done/489-apply-approved-changelog-ceiling.md),
+[TASK-492](_archive/done/492-apply-approved-readonly-queue-acceptance.md),
+[TASK-493](_archive/done/493-support-native-decision-queue-kind.md),
+[TASK-494](_archive/done/494-allow-local-only-issue-corpus.md),
+[TASK-495](_archive/done/495-treat-empty-access-token-stdout-as-unauthenticated.md),
+[TASK-496](_archive/done/496-activate-dd3ec0a-darwin-arm64-pin.md),
+[TASK-498](_archive/done/498-allow-empty-active-issue-corpus-in-doccheck-tests.md).
+`tasks/done/`의 깊이 1 카드는 0장이고 `tasks/done/evidence/`만 남는다.
 DECISION-002는 2026-10-03에 Accepted다. 정본 upstream만 택했고 interim B는 쓰지 않는다.
 인계는 [생성물 크기 규칙 보고](../docs/70-generated-artifact-upstream-report.md)다.
 정본 구현은 ce-agent-kit `1270e1dc47bc7f3a2421de2074b92f619e4298a7`이다. 설치본은 자동으로 바뀌지 않는다.
@@ -90,7 +100,9 @@ DECISION-002는 2026-10-03에 Accepted다. 정본 upstream만 택했고 interim 
 남은 TASK-436과 TASK-447도 독립 검토 기록을 확인한 뒤 _archive/done/에 보관했다.
 2026-10-02까지 TASK-449~481 30장이 다시 done에 모였고, 2026-10-03 [[TASK-482]]가
 전부 재검증해 `_archive/2026-10/`로 보관했다(아래 Batch 9). 2026-10-05 [[TASK-485]]가 남은
-TASK-482~484를 재검증해 같은 곳으로 보관했다(아래 Batch 10).
+TASK-482~484를 재검증해 같은 곳으로 보관했다(아래 Batch 10). 2026-10-08 재검증이
+TASK-459·485·486·489·492–496·498 10장을 `_archive/done/`으로 보관했다(아래 Batch 11).
+그 뒤 `tasks/done/`의 깊이 1 카드는 0장이고 `evidence/`만 남는다.
 
 | 배치 | 범위 | 대상 수 | 상태 |
 |:---:|:---|:---:|:---:|
