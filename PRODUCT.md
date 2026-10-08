@@ -74,12 +74,18 @@ DVA coordinates existing developer tools; it does not replace them.
 
 ## Current Status
 
-| Item | Status |
-|------|--------|
-| **Maturity** | Active development — named plans are the only application lifecycle surface; the legacy `stack`/`app`/`infra`/`clean` CLI verbs were removed, while `stack:` and `infra:` remain declarative config sections ([docs/43](docs/43-command-surface-restructure.md)). `dva ssh` separately manages the workspace SSH helper container. |
-| **Primary interface** | `dva` CLI with project-owned `dva.yml` |
-| **Execution model** | Reusable declarations resolved into immutable named plans |
-| **Agent integration** | Machine-readable manifest plus optional Claude and agent-mesh workflows |
+2026-10-08 기준, 핵심 실행 모델은 구현되어 있고 v0.3.0 공개·postflight를 마쳤다.
+최신 소스에는 공개판 이후의 추가 기능이 있다. 설치 바이너리와 소스의 기능 차이는
+[버전과 지원 범위](USAGE.md#버전과-지원-범위)가 소유한다.
+
+성숙도는 **Active development**다. 기능 범주가 모두 존재하거나 작업 보드가 비었다는
+사실만으로 모든 플랫폼·백엔드의 지원 또는 다음 릴리스 완료를 뜻하지 않는다.
+현재 제품 인터페이스는 프로젝트 소유 `dva.yml`과 CLI이며, named plan을 기본 실행
+모델로 사용한다. 무인자 호출의 호환 경로는 [사용법](USAGE.md#무인자-lifecycle-선택)을 따른다.
+
+다음 릴리스는 [ROADMAP.md](ROADMAP.md)의 인수 기준을 충족해야 완료다. 새 기능을
+현재 지원으로 표시하려면 구현·회귀 검증과 지원 범위를 먼저 확정하고, 공개 여부는
+릴리스 증거로 구분한다. 선택적 플랫폼 확장은 채택 전까지 완료율의 분모에 넣지 않는다.
 
 ## Learn More
 

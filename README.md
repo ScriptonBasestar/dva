@@ -2,7 +2,12 @@
 
 개발 환경 오케스트레이터 — `dva.yml` 하나로 Docker Compose, Kubernetes, Helm, 로컬 프로세스 등을 통합 관리.
 
-**제품 특성**: DVA는 동작을 코드가 아니라 설정으로 정하는 개발환경 *구성* 도구입니다. 실행 방식은 `dva.yml`에서 자유롭게 선언하고, 어떤 조합을 띄울지는 **named plan**으로 고릅니다 — 기본 실행과 hot-reload 실행처럼 서로 다른 실행 방식은 각각 엔트리로 선언한 뒤 plan이 선택합니다. 무엇이 개발용이고 무엇이 배포용인지는 도구가 아니라 설정이 결정합니다.
+**제품 특성**: 재사용할 실행 대상은 `stack`, 실행할 조합은 **named plan**으로 선언합니다.
+DVA는 로컬 개발과 유지보수를 위한 도구입니다. 제품 경계는 [PRODUCT.md](PRODUCT.md#product-boundaries)를 따릅니다.
+
+아래 설치·빠른 시작은 공개 버전 **v0.3.0** 기준입니다. 최신 소스의 추가 기능은
+[버전과 지원 범위](USAGE.md#버전과-지원-범위), 다음 릴리스의 완료 기준은
+[ROADMAP.md](ROADMAP.md)를 확인하세요.
 
 ## Install
 
@@ -25,7 +30,7 @@ OS/architecture archive와 `checksums.txt`를 함께 내려받으세요. 자산 
 [USAGE.md의 설치](USAGE.md#설치)를 따릅니다. 최신판을 자동 추적하려는 경우에만 `@latest`를
 사용하세요.
 
-`make install`은 DVA 바이너리만 설치합니다. 내장된 `dva`, `dva-config` 스킬은
+`make install`은 DVA 바이너리만 설치합니다. 내장된 `dva`, `dva-ci`, `dva-config` 스킬은
 AI 없이 별도 설치합니다:
 
 ```bash
@@ -43,10 +48,11 @@ dva skill backup list --runtime codex     # 보존된 takeover backup ID 조회
 
 `dva init`(= `dva config init`)이 프로젝트 루트에 `dva.yml`을 자동 감지로 스캐폴딩합니다.
 `dva init -t node`처럼 템플릿(minimal, rails, node, python, go)을 지정할 수 있습니다.
-생성 결과는 다음과 같은 형태입니다:
+기존 `docker-compose.yml`의 `app` 서비스(Ruby/RSpec 앱)를 사용하는 최소 named plan 예시입니다.
+`init`의 실제 출력은 감지된 프로젝트 선언에 따라 달라집니다:
 
 ```yaml
-version: "0.1.44"
+version: "0.3.0"
 
 stack:
   compose:
@@ -55,6 +61,12 @@ stack:
       compose:
         files:
           - docker-compose.yml
+
+plans:
+  local-dev:
+    entries:
+      - name: compose
+default_plan: local-dev
 
 interaction:
   shell:
@@ -71,8 +83,9 @@ interaction:
 dva ls              # 사용 가능한 커맨드 목록
 dva shell           # = dva run shell → docker compose run app /bin/bash
 dva test            # = dva run test → docker compose run app bundle exec rspec
-dva up              # 이 예시는 plans가 없어 stack 전체 시작 (compose up -d --wait 등)
-dva down            # 이 예시는 plans가 없어 stack 전체 teardown
+dva up local-dev    # 선언한 plan 시작
+dva status local-dev # plan 상태 확인
+dva down local-dev  # 같은 plan 종료
 dva validate        # dva.yml 스키마 검증
 dva manifest        # LLM용 전체 커맨드 매니페스트 출력
 ```
@@ -202,13 +215,14 @@ flowgen(self-contained agent-mesh flow), skillgen(플랫폼별 스킬 아티팩�
 프로젝트에 설치하는 명령이 아닙니다. checkout 산출물 상세는
 [skills target 표](skills/README.md#targets)를 참조하세요.
 
-설치된 바이너리의 `dva skill install`은 내장 `dva`·`dva-config` 스킬을 선택한 runtime의
+설치된 바이너리의 `dva skill install`은 내장 `dva`·`dva-ci`·`dva-config` 스킬을 선택한 runtime의
 user/project discovery path에 복사합니다. runtime별 경로, per-skill claim과 충돌 거부,
 `--takeover` 백업·복원 규칙은 [AI 스킬 설치](USAGE.md#ai-스킬-설치)를 참조하세요.
 
 ## Documentation
 
 - [PRODUCT.md](PRODUCT.md) — 제품 가치, 대상 사용자, 현재 범위
+- [ROADMAP.md](ROADMAP.md) — 다음 릴리스 목표와 인수 기준
 - [SOUL.md](SOUL.md) — 변하지 않는 설계 철학
 - [ARCHITECTURE.md](ARCHITECTURE.md) — 시스템 경계와 데이터 흐름
 - [USAGE.md](USAGE.md) — 명령과 설정 레퍼런스
@@ -218,33 +232,11 @@ user/project discovery path에 복사합니다. runtime별 경로, per-skill cla
 설치된 DVA가 고장 나도 `make recovery-check`로 빌드와 핵심 검사를 직접 실행할
 수 있습니다. [DVA 자체 개발의 복구 경로](docs/53-ci-profiles.md#dva-자체-개발의-복구-경로)를 참고하세요.
 
-이 저장소의 `dva task-queue`는 `PATH`의 `taskchain-task-manager`를 호출해
-`tasks/` 보드의 사람용 `runnable`과 에이전트용 `agentRunnable`을 읽기 전용으로
-보여줍니다. 하위 디렉터리에서 호출해도 저장소의 `tasks/`를 사용합니다.
-이 interaction은 카드를 선택하거나 claim·전이하지 않으며, 자동 실행 루프의
-종료 판정을 구현하지 않습니다. `PATH`에서 선택된 바이너리의 출처는 검증하지
-않으므로, 이 결과만으로 CE 시작을 승인할 수 없습니다.
-
-`dva task-queue-verdict`는 같은 큐를 검증해 `empty`, `human_required`,
-`candidate`, `selection_required` 중 하나의 버전 있는 JSON 판정을 냅니다.
-`candidate`는 한 건의 **실행 후보**를 뜻하며 선택·claim·완료가 아닙니다.
-사람용 `runnable` 목록은 항상 함께 보존합니다. 이 저장소의 Go toolchain과
-`PATH`의 task-manager 바이너리가 필요하며, 입력/호출 오류는 성공 JSON 없이
-실패합니다. 이 읽기 전용 판정도 바이너리 출처를 검증하지 않습니다. 작업 수행과
-종료·복구는 W07b 후속입니다.
-
-`dva task-queue-start feat`는 컴파일된 DVA 명령입니다. 이 소스는 승인된 공개
-TaskChain v0.1.0 darwin/arm64 pin을 둡니다. 선택된 실행 파일의 SHA-256이
-그 pin과 같을 때만 해시 스냅샷을 검증한 뒤 큐와 CE를 호출합니다. 미지원
-플랫폼이거나 해시가 다르면 둘 다 호출하기 전에 실패합니다. `feat` 자리는
-명시적인 CE 브랜치 유형(`feat`, `fix`, `refactor`, `docs`, `test`, `chore`,
-`perf`)입니다. pin과 검증 경계의 정본은
-[ARCHITECTURE.md](ARCHITECTURE.md#taskchain-queue-boundary)입니다. 호스트 증명 당시
-전역 DVA는 기존 설치본이었으며 검토된 소스 빌드로 확인했습니다. 이후
-[로컬 설치 적용](tasks/_archive/done/499-install-verified-master-dva-locally.md)으로 기본 DVA에도 반영했습니다. 읽기 전용 `task-queue-verdict` 도구의
-`--start-type` 경로는 CE 시작에 사용할 수 없습니다.
-컴파일된 DVA 명령은 CE 자식 명령의 실패 종료 코드를 DVA의 일반 오류 코드 1로
-정규화하므로, 운영 검사는 정확한 숫자 대신 실패 여부와 CE 상태를 확인합니다.
+이 저장소의 `task-queue`·`task-queue-verdict` interaction은 TaskChain의 큐를 읽고,
+컴파일된 `task-queue-start`는 승인 바이너리 검증 후 CE 시작을 요청합니다.
+[TaskChain 실행 경계](ARCHITECTURE.md#taskchain-queue-boundary)와
+[버전·플랫폼 지원표](USAGE.md#버전과-지원-범위)를 따릅니다.
+현재 작업과 과거 검증 증거의 진입점은 [작업 보드](tasks/README.md)입니다.
 
 ```bash
 make build      # Build → ./bin/dva

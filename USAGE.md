@@ -8,6 +8,31 @@
 커밋·전체 검증은 `dva ci commit` / `dva ci full`을 사용합니다. 선언과 시간 예산,
 root·공유 자원별 중복 실행 방지, 상태 조회는 [CI 프로필](docs/53-ci-profiles.md)을 참조하세요.
 
+## 버전과 지원 범위
+
+2026-10-08 기준 공개 설치 버전은 **v0.3.0**이다. 이 문서는 현재 소스의 사용법도
+포함하므로 아래에서 `미공개`인 기능은 v0.3.0 설치만으로 사용할 수 없다.
+로컬 빌드는 같은 버전 문자열을 사용할 수 있으므로 `dva version`의 commit도 확인한다.
+`dva manifest -f json`으로 설치본의 명령과 프로젝트 선언을 조회한다.
+
+| 기능 | 제공 시점 | 현재 지원·제한 |
+|---|---|---|
+| named plan, 설정 합성, interaction/provision, subproject, 스킬 설치 | v0.3.0에 포함 | 외부 runner 도구 설치가 필요. 스킬 설치와 런타임 deny 지원은 별개 |
+| 로컬 background process | v0.3.0에 포함 | Windows 미지원. 다른 OS의 프로세스 그룹 계약을 사용 |
+| `dva ci` | v0.3.0에 포함 | macOS/Linux/BSD에서 감독 실행. Windows는 실행 전 거부. [CI 계약](docs/53-ci-profiles.md) |
+| `config env edit/unseal/seal/show` | v0.3.0에 포함 | Linux/macOS. 쓰기·평문 표시 게이트는 [env bridge](#암호화된-소스-브리지-dva-config-env) 참조 |
+| `config env reseal`, init의 SOPS 소스 감지·doctor 안내 | 미공개 | 기존 암호화 소스 갱신과 선언 안내 보완 |
+| GitHub Secret 전송·artifact job·OCI 검증 | v0.3.0에 포함 | Linux/macOS. github.com의 저장소 수준 Secret과 공개 OCI 대상. [상세 계약](docs/62-remote-artifact-jobs.md) |
+| Kubernetes Secret 전송·`secret status` | 미공개 | Linux/macOS, 명시적 dev 대상·kubeconfig·context. [상세 계약](docs/69-kubernetes-secret-target.md) |
+| 원격 접근 `tunnel:` | 미공개 | cloudflared, kubectl/helm 엔트리. Windows 미지원. [상세 계약](docs/68-remote-access-tunnel.md) |
+| `task-queue-start` | 미공개 | 승인된 TaskChain pin은 macOS ARM64만. 다른 플랫폼·해시 불일치는 queue/CE 호출 전 거부 |
+| `agent-deny` | v0.3.0에 포함 | Claude Code만 구현. 다른 런타임의 현황·제약은 [deny 지원표](docs/agent-deny-rules.md#runtime-coverage) 참조 |
+| Skaffold 상태 조회 | v0.3.0에 포함 | 시작·종료 adapter는 있으나 `status`는 실제 클러스터 조회 없이 `unknown` 반환 |
+
+설치 archive가 있다는 사실은 모든 기능이 그 OS에서 동작한다는 뜻이 아니다.
+개별 backend의 외부 도구·인증 요구사항도 함께 충족해야 한다. 과거 공개 내역은
+[CHANGELOG.md](CHANGELOG.md), 다음 릴리스의 채택 범위는 [ROADMAP.md](ROADMAP.md)가 소유한다.
+
 ## 설치
 
 재현 가능한 기본 설치는 공개 버전을 고정한 Go module 설치입니다.
@@ -98,6 +123,26 @@ Linux에서도 같은 절차로 해당 archive를 선택하고 `sha256sum -c`를
 
 `dva run`은 생략 가능합니다. `dva shell`은 `dva run shell`과 동일합니다.
 `namespace:command` 문법도 지원합니다 (예: `dva engine:test`).
+
+### TaskChain 큐와 CE 시작
+
+이 저장소의 `dva task-queue`와 `dva task-queue-verdict`는 프로젝트 interaction이다.
+Go toolchain과 `PATH`의 `taskchain-task-manager`를 사용하며, 하위 디렉터리에서
+호출해도 설정 루트의 `tasks/`를 조회한다. 일반 프로젝트의 내장 명령으로 가정하지 않는다.
+
+`task-queue`는 사람용 `runnable`과 에이전트용 `agentRunnable`을 보여준다.
+`task-queue-verdict`는 `empty`, `human_required`, `candidate`, `selection_required`의
+버전 있는 JSON 판정을 제공한다. `candidate`는 실행 후보이며 claim이나 완료가 아니다.
+두 interaction은 바이너리 출처를 검증하지 않으므로 그 결과만으로 CE 시작을 승인하지 않는다.
+읽기 전용 verdict 도구의 `--start-type`으로 CE를 시작할 수 없다.
+
+컴파일된 내장 명령 `dva task-queue-start <type>`은 승인 바이너리의 해시 스냅샷을
+검증하고 단일 후보일 때 CE 시작을 요청한다. `<type>`은 `feat`, `fix`, `refactor`,
+`docs`, `test`, `chore`, `perf` 중 하나를 명시한다. 지원 버전·플랫폼은
+[지원표](#버전과-지원-범위), 실행 소유권은
+[아키텍처](ARCHITECTURE.md#taskchain-queue-boundary)를 따른다.
+CE 자식의 실패 종료 코드는 DVA의 오류 코드 1로 정규화되므로 실패 여부와 CE 상태를
+함께 확인한다. 이 명령은 작업 구현·완료·복구를 대신하는 자동 실행 루프가 아니다.
 
 ### AI 스킬 설치
 

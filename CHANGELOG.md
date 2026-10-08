@@ -5,6 +5,20 @@ All notable changes to DVA are documented here.
 
 ## [Unreleased]
 
+### Changed
+
+- **현재 상태 문서 정합화**: 공개 v0.3.0과 최신 소스의 기능을 사용법의 지원표로 구분하고,
+  빠른 시작을 named plan으로 통일했습니다. 다음 릴리스의 인수 기준은 ROADMAP.md가
+  소유하며, 보드의 종결률과 제품 완성도를 구분합니다. 런타임 동작 변경은 없습니다.
+
+### Fixed
+
+- **TaskChain pin 상태 후속 기록 (TASK-496)**: 아래 TASK-455 항목의 pin 비활성 설명은
+  도입 당시 상태입니다. 현재 소스는 공개 승인된 v0.1.0 darwin/arm64 pin을 활성화하며,
+  다른 플랫폼이나 실행 파일 해시 불일치는 queue·CE 호출 전에 거부합니다.
+- **만료 Access 토큰 판정 (TASK-495)**: 성공 종료만으로 인증됨으로 판정하지 않고,
+  `access token --app`의 stdout이 비어 있으면 인증되지 않은 것으로 처리합니다.
+
 ### Added
 
 - **Cloudflare Access 터널 선언 (TASK-459)**: kubectl/helm 엔트리에 `tunnel:`을

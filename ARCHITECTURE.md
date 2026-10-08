@@ -1,6 +1,7 @@
 # ARCHITECTURE.md: DVA 설계 구조
 
-이 문서는 DVA의 구현 경계, 설정 해석 과정, 실행 책임을 정의한다.
+이 문서는 현재 소스의 구현 경계, 설정 해석 과정, 실행 책임을 정의한다.
+공개 버전과 플랫폼별 제공 범위는 [사용법의 지원표](USAGE.md#버전과-지원-범위)를 따른다.
 
 ## 전체 구조
 
@@ -38,7 +39,9 @@ Config Loader → Schema/Semantic Validation → effective config
 
 - `cmd/dva/`는 최소 진입점만 제공한다.
 - `internal/cli/`는 Cobra 명령, 동적 interaction 라우팅, 출력 형식을 담당한다.
-- CLI는 설정을 직접 해석하거나 backend 명령을 조립하지 않는다.
+- plan 해석과 수명 주기 실행은 configuration/lifecycle 계층에 위임한다.
+- interaction은 runner를 선택하고, provision·passthrough 등 명령별 adapter는
+  owning config를 선택해 외부 명령을 호출한다.
 
 ### Configuration
 
@@ -173,7 +176,7 @@ dva up/down/stop/status <name>
     → immutable ExecutionPlan
     → dependency waves
     → runner execution
-    → structured status and errors
+    → backend별 status와 errors
 ```
 
 Parent가 import한 `project/plan`도 이름만 parent namespace에 노출될 뿐 실행 소유권은
@@ -202,11 +205,11 @@ environment/site/vars/env_file)로 실행되며, root가 개입하는 유일한 
 lifecycle과 동일한 `Orchestrator`를 child마다 하나씩 재사용하므로, 단독 호출과 composition 안에서
 호출된 동작이 동일하다.
 
-*Before(composition 없이)*: `dva up api/deploy && dva up web/deploy`처럼 import된 이름을 순서대로
+*Before(composition 없이)*: `dva up api/dev && dva up web/dev`처럼 import된 이름을 순서대로
 직접 호출.
-*After*: root가 `release: {composes: [{plan: api/deploy, order: 0}, {plan: web/deploy, order: 1,
-depends_on: ["api/deploy"]}]}`를 선언하면 `dva up release` 한 번으로 같은 순서를 실행하고 실패 시
-자동 LIFO rollback을 얻는다 — 기존 `dva up api/deploy` 단독 호출은 `release`의 존재와 무관하게
+*After*: root가 `workspace: {composes: [{plan: api/dev, order: 0}, {plan: web/dev, order: 1,
+depends_on: ["api/dev"]}]}`를 선언하면 `dva up workspace` 한 번으로 같은 순서를 실행하고 실패 시
+자동 LIFO rollback을 얻는다 — 기존 `dva up api/dev` 단독 호출은 `workspace`의 존재와 무관하게
 계속 동일하게 동작한다.
 
 ### Interaction

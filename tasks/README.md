@@ -2,46 +2,23 @@
 
 ## 현재 상태 (2026-10-08)
 
-v0.3.0 공개와 postflight는 완료됐고 PLAN-010(8/8)과 PLAN-011(19/19)은
-`tasks/_archive/plan/`에 보관됐다. 열린 계획은 없다. 과거 판정은 보관된 카드와 Git 이력이 소유한다.
-2026-10-03 [[TASK-482]]가 done 카드 30장(TASK-449~481)을 재검증해 전부 `tasks/_archive/2026-10/`로 보관했다.
-2026-10-05 [[TASK-485]]가 TASK-482·483·484를 재검증해 `tasks/_archive/2026-10/`로 보관했다(아래 Batch 10).
-2026-10-08 재검증이 남은 10장을 `tasks/_archive/done/`으로 보관했다(아래 Batch 11):
-[TASK-459](_archive/done/459-implement-remote-access-tunnel.md),
-[TASK-485](_archive/done/485-reverify-and-archive-done-cards-482-484.md),
-[TASK-486](_archive/done/486-record-session-followup-contract.md),
-[TASK-489](_archive/done/489-apply-approved-changelog-ceiling.md),
-[TASK-492](_archive/done/492-apply-approved-readonly-queue-acceptance.md),
-[TASK-493](_archive/done/493-support-native-decision-queue-kind.md),
-[TASK-494](_archive/done/494-allow-local-only-issue-corpus.md),
-[TASK-495](_archive/done/495-treat-empty-access-token-stdout-as-unauthenticated.md),
-[TASK-496](_archive/done/496-activate-dd3ec0a-darwin-arm64-pin.md),
-[TASK-498](_archive/done/498-allow-empty-active-issue-corpus-in-doccheck-tests.md).
-`tasks/done/`의 깊이 1 카드는 0장이고 `tasks/done/evidence/`만 남는다.
-DECISION-002는 2026-10-03에 Accepted다. 정본 upstream만 택했고 interim B는 쓰지 않는다.
-인계는 [생성물 크기 규칙 보고](../docs/70-generated-artifact-upstream-report.md)다.
-정본 구현은 ce-agent-kit `1270e1dc47bc7f3a2421de2074b92f619e4298a7`이다. 설치본은 자동으로 바뀌지 않는다.
-2026-10-05 `ce version`은 0.8.4, commit `62db34ea9291c0cab9cc03222136e8a32fcaed16`, dirty false다.
-이 커밋은 `1270e1dc47bc7f3a2421de2074b92f619e4298a7`와 `3656558b2bbd604224edf9c7de69454e96c379a8`의 자손이다.
-플러그인 캐시 core 0.6.38은 이미 있다. 재설치하지 않았다. TASK-484가 저장한 소스 검사는 다시 실행하지 않았다.
-이 작업의 시작 기준선(START)은 `23047d07`이다. 통합 뒤의 master를 이 해시로 단정하지 않는다. [[TASK-485]]가 TASK-482·483·484를 보관한 커밋이다.
+v0.3.0 공개·postflight와 PLAN-010(8/8)·PLAN-011(19/19)의 종결 기록은
+`tasks/_archive/plan/`에 있다. 종결에는 다른 제품으로의 이관도 포함되므로
+계획 진행률을 DVA 전체 기능 완성률로 사용하지 않는다.
 
-미해결 이슈는 없다. 사용자가 승인한 로컬 설치 TASK-499는 설치 검증과 독립 Grok 4.7 완료 리뷰 PASS를 마치고 일회성 완료 기록으로 보관했다. 실행 대기 카드는 없다. TASK-498은 빈 active issue 코퍼스를 허용하는 테스트 보정을 독립 리뷰·전체 CI 후 master 7003a26e에 통합·push·reclaim했다. TASK-496의 실제 이슈 0개 보드에서도 회귀 테스트와 전체 문서·태스크 게이트가 통과했다. TASK-495는 빈 토큰 출력 판정을 수정하고 독립 Grok 리뷰·전체 CI 후 master 71b00be9에 통합·push·reclaim, 실제 CE DONE이다. TASK-496은 공개 TaskChain v0.1.0 darwin/arm64 자산·custom verified-release attestation·기본 PATH 해시·compiled pin 및 실제 CE start 1회, 해시 불일치 음성 queue/CE 0회, TASK-495 finish DONE을 검증했다. README의 이전 설명 때문에 최종 리뷰 attempt 1은 FAIL이었고, 사용자가 해당 문단만 승인해 보정한 뒤 attempt 2는 PASS다. 독립 세션이 TASK-496을 done으로 옮겼고 ISSUE-453/490/497은 fixed로 `_archive/issue/`에 보관했다. 증거는 `tasks/done/evidence/TASK-496/`다. TASK-496 호스트 증명 당시 전역 DVA는 교체하지 않았다. 이후 TASK-499에서 사용자가 승인한 master 2d08fcde 로컬 빌드를 기본 PATH 두 설치 경로에 적용했다. 과거 설치 범위 기록은 그대로다.
+이 시점에 열린 계획·미해결 이슈·실행 대기 카드는 없고, `tasks/done/`의 깊이 1 카드도
+0장이다. `tasks/done/evidence/`는 과거 검증 증거를 보존한다. 현재 실행 세션은
+`ce task run-list`, 새 릴리스의 제품 인수 기준은 [ROADMAP.md](../ROADMAP.md)에서 확인한다.
+로드맵의 후속 항목은 실행 카드를 등록하기 전까지 이 보드의 대기 카드 수에 포함하지 않는다.
 
-2026-10-05 TASK-491 옵션 1의 읽기 전용 범위로 ISSUE-004·006을 해결해 `_archive/issue/`에 보관했다. clean dd3ec0a 바이너리를 명시 선택한 실제 큐는 사람 TASK-459 한 장, agent 후보 0, verdict `human_required`다. 독립 Grok 4.7 PASS는 `tasks/done/evidence/TASK-492/live-acceptance-review.json`이다. 공개 pin 승인은 ISSUE-453과 별개다. 해당 독립 검증 당시 TASK-493은 source 통합 중인 doing이었다. 현재는 통합 완료됐으며 아래 최종 검증이 준비 집합을 다시 확인한다. 사람 terminal과 run-all은 이 범위가 아니다.
+- 최근 재검증: [Batch 11](#batch-11-상세-2026-10-08).
+- TaskChain 승인 pin과 host 검증: [TASK-496](_archive/done/496-activate-dd3ec0a-darwin-arm64-pin.md).
+- 기본 PATH DVA의 로컬 빌드 적용: [TASK-499](_archive/done/499-install-verified-master-dva-locally.md).
+- 현행 지원 범위: [USAGE.md](../USAGE.md#버전과-지원-범위).
+- 수락된 결정: [decision/](decision/README.md). 봉인된 카드·영수증은 해당 경로에 보존한다.
 
-정본 소스로 닫아 `_archive/issue/`에 둔 이슈. 설치본은 자동으로 바뀌지 않는다 — 2026-10-05 설치본 `62db34ea`는 두 수정을 포함한다.
-
-- ISSUE-454: 정본 ce-agent-kit `9b0b0305a553aec3faceeefd12bd6db6fd5a312d`(TASK-379)가 timeout 뒤 프로세스 그룹의 자손을 끝낸다. DVA 작성 시점 검사([[TASK-460]])와 설치본의 재귀 가드 관찰은 그대로다. 기록은 [[TASK-484]].
-- ISSUE-461: 정본 `1f3f9a74be0cbe9cbb9aa8de943331eb05bdac2e`(TASK-378)가 같은 소유자의 활성 실행이 하나일 때 bare `ce task run-finish`를 고른다. 없거나 여럿이면 거부한다. 기록은 [[TASK-484]].
-
-2026-10-05 이 저장소 안에서 닫은 이슈:
-
-- [ISSUE-488](_archive/issue/488-measure-expired-tunnel-token-and-live-doctor.md): 사람이 고른 대상(`scripton-tonk-01-k8s.scripton.net`)으로 개발자 Mac에서 실측했다. 만료 토큰에서 `cloudflared access token --app`은 exit 0, 빈 stdout이고 JWT `-token` 파일을 지운다. 기록은 docs/68 §7이다. 종료 코드 단독 판정 결함은 [TASK-495](_archive/done/495-treat-empty-access-token-stdout-as-unauthenticated.md)다.
-
-[TASK-495](_archive/done/495-treat-empty-access-token-stdout-as-unauthenticated.md)는 종료 코드 0과 stdout 바이트 수 > 0을 함께 요구하며 토큰 내용은 버린다. 독립 Grok 4.7 PASS와 CI 증거는 `tasks/done/evidence/TASK-495/`다. [TASK-496](_archive/done/496-activate-dd3ec0a-darwin-arm64-pin.md)은 공개 서명·설치·pin·실제 CE start/finish 검증을 완료했고 보호 문서 보정과 최종 독립 리뷰 PASS를 완료했다. ISSUE-497은 fixed로 보관했다. [TASK-459](_archive/done/459-implement-remote-access-tunnel.md)는 2026-10-05 ISSUE-488 실측으로 사람 기준 두 개를 채워 done이 됐다. 제품 native decision 호환 보정 [TASK-493](_archive/done/493-support-native-decision-queue-kind.md)은 독립 리뷰·전체 검사 후 제품 master에 `dd3ec0a`로 통합·push했고 task worktree와 local/remote 브랜치를 회수했다. [TASK-492](_archive/done/492-apply-approved-readonly-queue-acceptance.md)는 수락된 범위·문서 적용을 독립 Grok 4.7 재리뷰 PASS 후 완료했다. 004·006은 명시 읽기 전용 검증과 독립 PASS로 해결했다. TASK-493 source 통합도 완료됐다. [TASK-489](_archive/done/489-apply-approved-changelog-ceiling.md)는 실제 ceiling 트리거 반영과 후속 분석을 독립 Grok 4.7 재리뷰 PASS 후 완료했다. [TASK-486](_archive/done/486-record-session-followup-contract.md)은 독립 Grok 4.7 리뷰 PASS 후 완료됐고, 기준 2·5·6 바인딩은 TASK-489가 사실 정정한다. 독립 재검증 PASS 영수증은 `tasks/done/evidence/TASK-489/independent-review-attempt-2.json`이다. [TASK-487](decision/487-changelog-half-ceiling-trigger.md)은 2026-10-05 사용자가 옵션 2(실제 ceiling)를 골라 Accepted다. 측정은 87296 bytes와 물리 줄 1000 아래라 v0.2.x 아카이브는 하지 않는다.
-
-[TASK-491](decision/491-queue-acceptance-scope-and-historical-evidence.md)은 2026-10-05 사용자가 옵션 1을 수락해 Accepted다. 004·006의 현재 범위는 읽기 전용 분류와 종료 판정이다. terminal/rollback과 공개 pin 승인은 이 수락에 포함되지 않는다.
+아래 날짜별 결과는 당시 입력·설치본을 대상으로 한 역사 기록이며, 현재 호스트나
+새 릴리스의 검증 결과를 대신하지 않는다.
 
 ## 자율 실행 계약
 
