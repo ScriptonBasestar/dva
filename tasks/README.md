@@ -198,7 +198,7 @@ source 통합·회수 후 최종 조회도 exit 0이다. 준비 큐는 TASK-459 
 verdict는 human_required다. 카드 Markdown bytes는 두 읽기 전용 호출 전후 같았다.
 증거는 `tasks/done/evidence/TASK-492/live-readonly-final.json`이다.
 
-CI가 발견한 후속 [TASK-494](done/494-allow-local-only-issue-corpus.md)는 실제 보드에
+CI가 발견한 후속 [TASK-494](_archive/done/494-allow-local-only-issue-corpus.md)는 실제 보드에
 상류 소유 이슈가 반드시 있어야 한다는 테스트 가정을 보정했다. 합성 fixture로
 양성·음성 분류와 정상 local-only 보드를 검증했고 독립 Grok 4.7 PASS를 받았다.
 

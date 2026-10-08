@@ -11,6 +11,9 @@ quality-review: pass
 quality-reviewed-at: 2026-10-05
 quality-review-evidence: "Independent Grok 4.7 session 01a10c09-c969-7890-a71b-7c623b0cd598; tasks/done/evidence/TASK-494/independent-review.json; reviewed source SHA256 fc2d14f4cfb864fc7f4ddf74d6444ac1e511e51fa717badd7e2adaff733585bb"
 created: 2026-10-05
+archived-at: 2026-10-08
+verified-at: 2026-10-08
+verification-summary: "2026-10-08 re-verify: three mechanical bindings exit 0. TestUpstreamRefLocalOnlyIssueCorpusIsValid and the broader TestUpstreamRef race tests pass, and the independent review receipt verdict is PASS."
 ---
 
 ## Summary
@@ -43,3 +46,7 @@ DVA CI fae87b9a568781782aedacc065bef1d6 failed after correct 004/006 local owner
 - 2026-10-05: removed the live Owned>0 requirement; added TestUpstreamRefLocalOnlyIssueCorpusIsValid. Production checkUpstreamRefs untouched. Targeted `go test -count=1 -race -run '^TestUpstreamRef' ./tools/doccheck` recorded in the session; no self-review, commit, or CI.
 
 - Independent Grok 4.7 PASS: source checksum bound; all targeted race fixtures/real sweep, make doc-check, validate (550/0) and gate exit0. Coordinator runs final declared commit CI before source integration.
+
+## Verification (2026-10-08)
+
+기계 바인딩 세 개 exit 0. local-only 이슈 코퍼스 테스트와 `TestUpstreamRef` race, 독립 리뷰 영수증 PASS가 그대로다. 기준 문장은 바꾸지 않았다.
