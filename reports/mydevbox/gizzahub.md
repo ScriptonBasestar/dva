@@ -58,3 +58,7 @@
 ## wave-2
 
 예. `env_file`의 `.env` 항목에 `sops_source: .env.sops`를 더한 커밋 `425f9134`가 `develop`에 있다. `branch-integrate` readiness 13개를 통과했다. `origin/dev/grok/mbp/issue-holds`와의 cross-merge 경고는 그 브랜치를 두고 넘겼다. 이 리포트가 sops를 "비밀 로딩 변경"으로 보류한 근거는 틀렸다. `sops_source`는 로드 경로가 읽지 않는 선언 메타데이터다([follow-ups](follow-ups.md#sops_source-선언-wave-2)). primary 체크아웃 재측정에서 doctor fail은 1에서 0이다. `Encrypted env source declared` 행은 없다.
+
+## Make 수집 수정 이후
+
+DVA가 줄 끝 주석이 붙은 `include`를 따라가게 고친 뒤(`dc35fa93`), 제안 경고가 14에서 48로 늘었다. `775c47d6`(`develop`)로 `prepare-clean`(이 저장소에는 원래 없던 항목)과 CI·비밀 관리·워크스페이스 계열 타깃을 묶음 glob으로 ignore했다. 제안 경고는 48에서 10, stale은 0이다. 남은 10개는 개발자가 직접 부르는 타깃이라 그대로 두었다([follow-ups](follow-ups.md#다음으로-할-가치가-있는-것)).

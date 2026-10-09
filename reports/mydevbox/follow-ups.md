@@ -39,14 +39,18 @@ wave-2(`sops_source` 선언)도 끝났다. 반영 커밋은 현황 문서의 wav
 - [scripton-dns-bridge](scripton-dns-bridge.md)는 `applications`와 `modes`를 `stack`과 `plans`로 옮기고 `interaction.clean`을 같은 명령의 일반 interaction으로 바꿔 `develop`(`5f4a0d47`)에 반영했다. `branch-integrate`의 `make check`와 `make lint`가 통과했고 태스크 브랜치는 회수했다. dev plan은 worker health도 기다린다. `provision: default`는 `dva provision default`로 남는다. `%` ignore 두 줄은 지우지 않았다.
 - 자식 `dva.yml` 연결은 `path:`만 더했다(`import:` 없음). [familybook](familybook.md) `df097f7`, [gizzahub](gizzahub.md) `bdfc18ed`가 `develop`에 있다.
   - [careerarchive](careerarchive.md) `857523d`는 태스크 브랜치 `dev/claude/mbp/chore/dva-subprojects`에 push만 돼 있다. primary 체크아웃에 다른 작업의 미커밋 `docs/product/open-decisions.md`가 있는데, `ce task run-finish`가 primary를 리셋하므로 통합을 멈췄다. 그 변경이 정리되면 primary에서 `ce task run-finish dva-subprojects`를 실행한다.
+- 수집 수정으로 새로 보인 제안 타깃은 interaction으로 올리지 않았다. CI 내부, 검증, 비밀 관리 계열이라 묶음 glob으로 ignore했다. wave-1에서 잘못 지운 cwrapper의 `prepare-clean`도 되살렸다. gizzahub에는 새로 넣었다.
+  - [cwrapper](cwrapper.md) `d627519`(`develop`): `prepare-clean`, `validate*`, `check`. 제안 경고 16→0, stale 0.
+  - [gizzahub](gizzahub.md) `775c47d6`(`develop`): `prepare-clean`, `prepare-*`, `env-*`, `ws-*`, `task-103*`, `test-*-contract`, `validate-*`. 제안 경고 48→10, stale 0. 새 glob과 이름이 겹치는 interaction은 없다. `task-*` 대신 `task-103*`를 쓴 것은 `task-list`, `task-next`, `task-validate` interaction을 피하기 위해서다.
+  - gizzahub에 남긴 10개는 개발자가 직접 부를 수 있는 타깃이다: `fmt`, `lint`, `vet`, `lint-artifacts`, `quality-check`, `hooks-install`, `clear-projects`, `integration-readiness`, `release-verification-check`, `test-web-idempotency-bindings`. interaction으로 올릴지는 제품 소유자가 정한다.
+  - 두 커밋 모두 `branch-integrate`로 통합했다. 플래그는 쓰지 않았다. cwrapper는 readiness를 통과했지만 그 사이 `develop`이 `5370a20`으로 움직여 한 번 멈췄다. rebase한 뒤 다시 통합했다. 워크트리와 태스크 브랜치는 회수했다.
 
 남은 것:
 
 1. validate는 통과하지만 구 스키마가 남은 곳. `dva config migrate`가 가리키고, 한 줄 수정이 아니다.
    - [reviewrary](reviewrary.md): `stack.*.order`, `plans` 없음, warning 65.
    - [hek](hek.md): `modes`, `default_mode`, `stack.compose.order`.
-2. 위 수집 수정으로 새로 보이는 제안 타깃을 제품별로 정리한다. cwrapper `prepare-clean` ignore 복원이 여기에 포함된다.
-3. 자식 체크아웃이 없는 새 워크트리에서는 `branch-integrate`가 `make check` 기준선을 재지 못한다. 이번에 `--allow-skipped-checks`를 쓴 이유는 모두 이것이었다. 담당은 gz-git/CE 통합 도구이므로 그쪽 이슈로 넘긴다.
+2. 깨끗한 워크트리에서 `make check` 기준선을 재지 못한 곳은 wave-2에서 [flow-knowchain](flow-knowchain.md), [flow-pipechain](flow-pipechain.md), [funbricks-elemhant](funbricks-elemhant.md), [server-farm](server-farm.md) 네 곳이다. 이 넷은 `--allow-skipped-checks`로 통합했다. [dripter](dripter.md), [flow-observechain](flow-observechain.md)는 이유가 달랐다. 선언된 gate가 없었다. 나머지 여덟 곳은 플래그 없이 통합했다. 이 문제를 gz-git에 넘기지 않는다. gz-git은 이 경우를 설계대로 처리한다. 기준선 쪽이 file:line 진단 없이 실패하면 그 이유를 출력하고, 두 실행의 준비 상태가 다르면 그 차이도 출력한다(`gzh-cli-gitforge` `pkg/integrate/check_baseline_state.go` `unmeasurableReason`). 이 경우를 경고로 낮추는 것이 `--allow-skipped-checks`의 정의된 용도다. 고칠 곳은 깨끗한 트리에서 진단 없이 실패하는 각 제품의 `make check`다. 해당 제품의 작업이고, 그 저장소를 다시 다룰 때 함께 본다.
 
 ## 지금은 손대지 않을 것
 

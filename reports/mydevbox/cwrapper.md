@@ -63,3 +63,5 @@
 ## Make 수집 수정 이후
 
 DVA가 줄 끝 주석이 붙은 `include`를 따라가게 고친 뒤(`dc35fa93`), `.make/validate.mk` 등에 있던 실제 타깃 16개가 제안으로 나타난다(경고 1→16, stale 1→0). 그중 `prepare-clean`은 wave-1이 stale로 보고 지운 ignore 항목이다. 이 버그 때문에 stale로 보였던 것이라 복원 대상이다. 나머지는 interaction으로 올릴지 ignore할지 제품에서 정한다.
+
+`d627519`(`develop`)로 처리했다. `prepare-clean`을 되살리고, `validate*`와 `check`를 ignore에 더했다. 제안 경고는 16에서 0, stale은 0이다([follow-ups](follow-ups.md#다음으로-할-가치가-있는-것)).
