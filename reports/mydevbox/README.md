@@ -91,6 +91,12 @@ wave-2 이후 통합:
 
 모든 태스크 브랜치와 워크트리는 회수했다. "기준선 측정 불가"는 새 워크트리에 gitignore된 자식 체크아웃이 없어 기준 트리와 비교할 수 없었다는 뜻이고, 브랜치 진단은 0건이었다. sigdock-idp `e033a130`의 `Model:` footer는 실제 런타임과 다르게 적혔고 master 이력은 다시 쓰지 않았다. [familybook](familybook.md)과 [flow-agent-mesh](flow-agent-mesh.md)는 감사 전부터 선언돼 있었고, 재측정에서 sops 행이 나오지 않는다.
 
+후속 반영:
+
+- DVA `master` `56cc792c`는 문서화된 Make `%` 패턴 룰을 `suggestion_ignore` stale 판정에만 넣는다. 제안 후보는 그대로다. include 추적은 `dc35fa93`다. 설치본 0.3.0(`a0deef70`)은 둘보다 앞이라, 그 바이너리로 재면 `%` ignore가 아직 stale로 남는다.
+- [scripton-db-orchestrator](scripton-db-orchestrator.md) `master` `132a43f8`는 `interaction.ci`를 `ci-check`로 바꿨다. `command: make ci`는 그대로다.
+- [scripton-dns-bridge](scripton-dns-bridge.md) `develop` `5f4a0d47`는 `applications`와 `modes`를 `stack`과 `plans`로 옮기고 `interaction.clean`을 일반 interaction으로 바꿨다. `branch-integrate`의 `make check`와 `make lint`가 통과했고 태스크 브랜치는 회수했다.
+
 남은 작업 순위는 [follow-ups.md](follow-ups.md)에 있다.
 
 제품이 아닌 경로: `cwrapper-devbox-worktrees`(빈 디렉터리), `gizzahub`(체크아웃 없음), `gizzahub-web-svelte`(자식 체크아웃은 gizzahub-devbox 안), `gorisa-development-workflow-stabilization`(검증 출력), `mydevbox`(gzh-cli 작업 복사), `reports`(playwright 출력).

@@ -11,7 +11,7 @@
 
 - 판정: **partial**
 - 모드: **Preserve**
-- `plans`/`stack` 의도가 있고 `modes`/`applications`는 없다. validate는 `interaction.ci` 예약어 때문에 exit 1이다. 설정 전체가 폐기 대상은 아니다.
+- `plans`/`stack` 의도가 있고 `modes`/`applications`는 없다. 감사 당시 validate는 `interaction.ci` 예약어 때문에 exit 1이었다. 반영은 아래 후속이다.
 
 ## 자식 인벤토리
 
@@ -29,7 +29,7 @@
 
 ## 기준선
 
-- `dva config validate --json`: exit 1. warning 2 (`ignore_stale`). error 1.
+- `dva config validate --json`: exit 1. warning 2 (`ignore_stale`). error 1. 감사 당시 값이다.
 - `dva doctor --json`: exit 0. JSON fail 1. stderr는 `interaction.ci` 예약어 경고를 반복한다.
 
 | 항목 | owner |
@@ -51,7 +51,7 @@ error 원인: `'ci'`는 `dva ci` 빌트인이라 이 interaction은 `dva run ci`
 
 | 옛 표면 | DVA 이름 | alias/보류 | 이유 |
 | --- | --- | --- | --- |
-| `interaction.ci` / `dva run ci` | 예약어가 아닌 이름 | 보류 | 호출 이름이 바뀜. 별칭 없이 적용하지 않음 |
+| `interaction.ci` / `dva run ci` | `ci-check` | 적용 `132a43f8` | 호출부가 없어 이름만 바꿨다. `command: make ci`는 그대로다 |
 | `k8s-secret-*-%` | 기존 ignore 유지 | 보류 | DVA tool |
 | `db-orchestrator-rs` | 없음 | 보류 | 루트 실행 표면 없음 |
 | legacy operator Makefile | 없음 | 보류 | read-only 아카이브 |
@@ -59,3 +59,7 @@ error 원인: `'ci'`는 `dva ci` 빌트인이라 이 interaction은 `dva run ci`
 ## wave-1
 
 아니오. 적용하지 않았다.
+
+## 후속
+
+예. `interaction.ci`를 `ci-check`로 바꾼 커밋 `132a43f8`이 `master`에 있다. `command: make ci`와 tags는 그대로다. 저장소 안에 `dva ci` 호출은 없다. 설치본 `dva` 0.3.0(`a0deef70`)으로 primary에서 `dva config validate`는 exit 0이다. `k8s-secret-apply-*`와 `k8s-secret-edit-*` ignore는 그대로 두었고, 그 설치본은 `%` 패턴 룰 수정(`56cc792c`)보다 앞이라 이 둘을 아직 stale로 본다. `sops_source`는 선언하지 않았다.

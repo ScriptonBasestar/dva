@@ -11,7 +11,7 @@
 
 - 판정: **partial**
 - 모드: **Migrate**
-- 루트 `dva.yml`이 있다. validator JSON이 `modes` deprecated와 `applications` 스키마 거부를 보고한다. `plans`는 없다. validate exit 1이라 현재 스키마로는 쓸 수 없지만, 이름 있는 mode 의도가 남아 Rewrite가 아니다.
+- 루트 `dva.yml`이 있다. 감사 당시 validator JSON이 `modes` deprecated와 `applications` 스키마 거부를 보고했다. `plans`는 없었다. 이름 있는 mode 의도가 남아 Rewrite가 아니다. 반영은 아래 후속이다.
 
 ## 자식 인벤토리
 
@@ -25,7 +25,7 @@
 
 ## 기준선
 
-- `dva config validate --json`: exit 1. warning 25 (`semantic` 3, `config_suggestion` 20, `ignore_stale` 2). error 6.
+- `dva config validate --json`: exit 1. warning 25 (`semantic` 3, `config_suggestion` 20, `ignore_stale` 2). error 6. 감사 당시 값이다.
 - `dva doctor --json`: exit 0. JSON fail 2. exit 0은 건강이 아니다.
 
 | 항목 | owner |
@@ -51,11 +51,19 @@ error 원인: `(root)`와 mode 네 곳의 `applications` 추가 속성, 그리�
 
 | 옛 표면 | DVA 이름 | alias/보류 | 이유 |
 | --- | --- | --- | --- |
-| `modes.*` | `plans` + environments/sites | 보류 | Migrate. 동작 보존 번역이 필요. 미적용 |
-| `applications.api` / `worker` | `stack` native 엔트리 | 보류 | 스키마가 거부. 러너 선택이 계획 의미 |
-| `interaction.clean` | `down` 훅 또는 `clean` command | 보류 | 티어다운 의미가 바뀜 |
+| `modes.*` | `plans` + `environments.native-local` | 적용 `5f4a0d47` | 서비스·profile·순서를 plan entry로 옮겼다 |
+| `applications.api` / `worker` | `stack` native 엔트리 | 적용 `5f4a0d47` | `cargo run`과 health를 stack에 두었다. Docker 형태는 compose profile `rust`다 |
+| `interaction.clean` | 일반 interaction `clean` | 적용 `5f4a0d47` | 같은 한 줄 명령. `dva clean`으로 도달한다 |
 | `k8s-secret-*-%` | 기존 ignore 유지 | 보류 | DVA tool. 설정으로 경고를 지우지 않음 |
 
 ## wave-1
 
 아니오. 모드가 Preserve가 아니다. 적용하지 않았다.
+
+## 후속
+
+예. `applications`, `modes`, `default_mode`, stack `order`를 없애고 plan 일곱 개로 바꾼 커밋 `5f4a0d47`이 `develop`에 있다. `branch-integrate`의 `make check`와 `make lint`가 통과했고 태스크 브랜치와 워크트리는 회수했다.
+
+plan은 infra(`postgres`, `redis`), hybrid와 dev(native `cargo run`, dev는 `--profile dev`), full-stack(`--profile rust`), full-stack-monitoring(`rust`, `monitoring`), kafka, nameserver다. `dva up <plan> --dry-run` 7개는 exit 0이었고 전후 `docker ps`는 같았다. 설치본으로 `dva config validate`는 exit 0, error 0이다. 남은 경고는 제안 20건과 `%` ignore 2건이다. 설치본이 `56cc792c`보다 앞이라 그 2건은 아직 stale로 나온다.
+
+dev plan은 stack entry의 health를 쓰므로 worker도 기다린다. 이전 mode는 api만 기다렸다. `provision: default`는 plan 필드가 없어 `dva provision default`로 남는다. `sops_source`와 `.sb/dva/` gitignore는 건드리지 않았다.
