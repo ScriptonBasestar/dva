@@ -52,10 +52,12 @@ tmp/
 docs/plans/
 .last_built_commit
 
-# reports/ stays local work product. The mydevbox audit is the tracked exception.
+# reports/ stays local work product. The mydevbox audits are the tracked exceptions.
 reports/*
 !reports/mydevbox/
 !reports/mydevbox/**
+!reports/mydevbox2/
+!reports/mydevbox2/**
 
 # Task batch state (transient)
 tasks/.batch-state.yaml
