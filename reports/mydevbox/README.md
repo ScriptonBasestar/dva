@@ -88,6 +88,8 @@ wave-2 이후 통합:
 | [server-farm](server-farm.md) | master | `630c697` | `branch-integrate`, 기준선 측정 불가 → `--allow-skipped-checks` | 1 → 0 |
 | [sigdock-idp](sigdock-idp.md) | master | `e033a130` | `ce task run-finish` | 1 → 0 |
 | [sigdock-pass](sigdock-pass.md) | master | `649a189e` | `branch-integrate`, `make lint` 통과 | 3 → 2 |
+| [scripton-dns-bridge](scripton-dns-bridge.md) | develop | `39f702b4` | `branch-integrate`, `make check`·`make lint` 통과, 플래그 없음 | 2 → 1 |
+| [scripton-db-orchestrator](scripton-db-orchestrator.md) | master | `cf99ff0b` | `branch-integrate`, readiness 통과, 플래그 없음 | 1 → 0 |
 
 모든 태스크 브랜치와 워크트리는 회수했다. "기준선 측정 불가"는 새 워크트리에 gitignore된 자식 체크아웃이 없어 기준 트리와 비교할 수 없었다는 뜻이고, 브랜치 진단은 0건이었다. sigdock-idp `e033a130`의 `Model:` footer는 실제 런타임과 다르게 적혔고 master 이력은 다시 쓰지 않았다. [familybook](familybook.md)과 [flow-agent-mesh](flow-agent-mesh.md)는 감사 전부터 선언돼 있었고, 재측정에서 sops 행이 나오지 않는다.
 

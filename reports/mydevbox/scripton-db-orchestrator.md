@@ -63,3 +63,5 @@ error 원인: `'ci'`는 `dva ci` 빌트인이라 이 interaction은 `dva run ci`
 ## 후속
 
 예. `interaction.ci`를 `ci-check`로 바꾼 커밋 `132a43f8`이 `master`에 있다. `command: make ci`와 tags는 그대로다. 저장소 안에 `dva ci` 호출은 없다. 설치본 `dva` 0.3.0(`a0deef70`)으로 primary에서 `dva config validate`는 exit 0이다. `k8s-secret-apply-*`와 `k8s-secret-edit-*` ignore는 그대로 두었고, 그 설치본은 `%` 패턴 룰 수정(`56cc792c`)보다 앞이라 이 둘을 아직 stale로 본다. `sops_source`는 선언하지 않았다.
+
+`.env` 항목에 `sops_source: .env.sops`를 더한 커밋 `cf99ff0b`가 `master`에 있다. doctor fail은 1에서 0이다.

@@ -59,3 +59,7 @@
 ## wave-1
 
 아니오. `subprojects.prototype` 추가는 새 서브프로젝트 연결이라 이번 wave-1이 아니다. 제안 표에만 남긴다.
+
+## 후속
+
+`subprojects.prototype.path`(import 없음)를 `3b5d366`으로 `master`에 반영했다. 위 제안 표의 `prototype` 보류 항목이다. 통합 과정은 [follow-ups](follow-ups.md#다음으로-할-가치가-있는-것)에 있다.

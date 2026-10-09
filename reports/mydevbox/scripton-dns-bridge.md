@@ -67,3 +67,5 @@ error 원인: `(root)`와 mode 네 곳의 `applications` 추가 속성, 그리�
 plan은 infra(`postgres`, `redis`), hybrid와 dev(native `cargo run`, dev는 `--profile dev`), full-stack(`--profile rust`), full-stack-monitoring(`rust`, `monitoring`), kafka, nameserver다. `dva up <plan> --dry-run` 7개는 exit 0이었고 전후 `docker ps`는 같았다. 설치본으로 `dva config validate`는 exit 0, error 0이다. 남은 경고는 제안 20건과 `%` ignore 2건이다. 설치본이 `56cc792c`보다 앞이라 그 2건은 아직 stale로 나온다.
 
 dev plan은 stack entry의 health를 쓰므로 worker도 기다린다. 이전 mode는 api만 기다렸다. `provision: default`는 plan 필드가 없어 `dva provision default`로 남는다. `sops_source`와 `.sb/dva/` gitignore는 건드리지 않았다.
+
+`.env` 항목에 `sops_source: .env.sops`를 더한 커밋 `39f702b4`가 `develop`에 있다. doctor fail은 2에서 1이다. 남은 fail은 `.sb/dva/ is ignored in .gitignore`이고, 이 변경과 무관하다.
