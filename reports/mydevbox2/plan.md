@@ -48,14 +48,16 @@ B.2 위반(자식 `dva.yml` 없이 루트가 선언만 한 것)을 자식 쪽에
 | 제품 | 자식 저장소 | 할 일 |
 | --- | --- | --- |
 | flow-knowchain | `flow-knowchain-ai`, `-backend`, `-frontend`, `-admin` | 자식 저장소에 New 모드 `dva.yml` |
-| scripton-db-orchestrator | `db-orchestrator-rs` | 같음 |
 | scripton-gitrump | `gitrump-ce` | 같음 |
 
 자식 `dva.yml`은 실행 표면이 있는 것만 담는다(B.7). Make 타깃을 `command: make …`로 감싸지 않고
 구현을 옮긴다(A.2). 장시간 프로세스는 `native` stack 엔트리로 둔다. 루트 `import`는 루트 `dva ls`에
 보여야 하는 이름이 정해질 때까지 더하지 않는다(B.3). 루트의 "Declaration only" 주석은 갱신한다.
 
-자식 여섯 곳은 서로 독립이라 구현을 worker 에이전트에 나누고(동시 3개), 리뷰와 통합은 메인에서 한다.
+`scripton-db-orchestrator`의 `db-orchestrator-rs`는 조사 단계 오탐이라 대상에서 뺐다(원격에 `dva.yml`이 이미 있다,
+[findings.md F-10](findings.md#f-10-gz-gityaml-자식-미연결-b--구조) 정정).
+
+자식 다섯 곳은 서로 독립이라 구현을 worker 에이전트에 나누고(동시 3개), 리뷰와 통합은 메인에서 한다.
 
 ## 제안으로 남기는 것
 

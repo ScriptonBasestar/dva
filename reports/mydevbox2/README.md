@@ -8,7 +8,7 @@ DVA 적용 규칙 정본에 다시 대조한 결과다. 서비스는 띄우지 �
 | --- | --- | --- |
 | 1. 조사 | 이 문서, [findings.md](findings.md) | 완료 |
 | 2. 개선 방향 | [plan.md](plan.md) | 완료 |
-| 3. 개선 작업과 검증 | [results.md](results.md) | — |
+| 3. 개선 작업과 검증 | [results.md](results.md) | 완료 (6개 저장소 통합 보류) |
 
 ## 기준
 

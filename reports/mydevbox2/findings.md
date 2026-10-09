@@ -140,7 +140,7 @@ gate가 부르는 쪽이 alias가 되므로 gate 동작까지 함께 확인해�
 | flow-taskchain | `flow-taskchain-cli` (보드 TASK-169) | — |
 | gzh-cli | 자식 12곳, 루트 `dva.yml`도 없음 (보드 TASK-288) | — |
 | hek | `hek-engine-fiber`, `hek-web-next` (보드 TASK-003) | — |
-| scripton-db-orchestrator | — | `db-orchestrator-rs` |
+| scripton-db-orchestrator | — | — (정정: `db-orchestrator-rs`는 오탐, 아래 참고) |
 | scripton-gitrump | `gitrump-cli` | `gitrump-ce` |
 | sigdock-idp | `sigdock-idp-sdk-py` | — |
 | sigdock-pass | `sigdock-pass-server`, `-ts`, `-vscode`, `-client`, `-extension` | — |
@@ -148,7 +148,11 @@ gate가 부르는 쪽이 alias가 되므로 gate 동작까지 함께 확인해�
 
 B.2는 자식 `dva.yml`이 없는 subproject 선언을 금한다. airouter 루트 주석처럼 "import 없는 선언은
 초기화되지 않은 자식을 가리켜도 된다"는 관례가 있지만, 그것은 자식이 아직 클론되지 않은 워크트리의
-경우이고 여기 다섯 곳은 자식이 있는데 `dva.yml`이 없다.
+경우이고 위 표의 자식은 체크아웃이 있는데 `dva.yml`이 없다.
+
+정정(3단계): `db-orchestrator-rs`는 B.2 위반이 아니다. 원격 master에는 이미 유효한 `dva.yml`(114줄)이 있다.
+로컬 `~/mydevbox/scripton-db-orchestrator-devbox/db-orchestrator-rs/`는 `.git`이 없는 잔여 디렉터리
+(`.ce`, `crates`, `target` 등 5.4G)라 측정이 그 파일을 못 봤다. 남은 B.2 위반은 다섯 곳이다.
 
 ## F-11 같은 compose project name을 부모와 자식이 다르게 소유 (R28) — 동작
 
