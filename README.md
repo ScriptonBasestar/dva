@@ -191,7 +191,7 @@ dva down local-dev --purge
 
 ### 기타 설정
 
-- **Modes** (`--mode/-M`): 런타임 전략 선택 — compose profiles + 서비스 필터 + 환경변수 + stack 엔트리 필터 (dev 전용 도구이며 stg/prd 환경 개념은 없습니다)
+- **Modes** (`--mode/-M`, legacy): 런타임 전략 프리셋 — compose profiles + 서비스 필터 + 환경변수 + stack 엔트리 필터. `dva config validate`가 `plans` + `environments` + `sites` 이관을 권고합니다 (`environments`의 `stg`/`prd`는 변수 세트 라벨일 뿐 운영 권한이 아닙니다 — [PRODUCT.md](PRODUCT.md))
 - **Environments** (`--env/-E`): 환경변수 프리셋 + stack 엔트리 필터
 - **Tags** (`--tags/-T`): 태그 기반 서비스/엔트리 그룹 필터링 (`--tag` 별칭 지원)
 - **Health Checks**: 비-compose 서비스 상태 확인 및 자동 시작
@@ -238,6 +238,9 @@ user/project discovery path에 복사합니다. runtime별 경로, per-skill cla
 [버전·플랫폼 지원표](USAGE.md#버전과-지원-범위)를 따릅니다.
 현재 작업과 과거 검증 증거의 진입점은 [작업 보드](tasks/README.md)입니다.
 
+원격 산출물의 시크릿 전송, GitHub Actions 실행 추적과 OCI digest 검증은
+[원격 산출물 작업](docs/62-remote-artifact-jobs.md)을 참고하세요.
+
 ```bash
 make build      # Build → ./bin/dva
 make test       # Run tests
@@ -249,6 +252,3 @@ make clean      # Clean build artifacts
 ## License
 
 MIT
-
-원격 산출물의 시크릿 전송, GitHub Actions 실행 추적과 OCI digest 검증은
-[원격 산출물 작업](docs/62-remote-artifact-jobs.md)을 참고하세요.
