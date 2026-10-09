@@ -21,6 +21,8 @@ wave-2(`sops_source` 선언)도 끝났다. 반영 커밋은 현황 문서의 wav
 | [scripton-nd-stack](scripton-nd-stack.md) | 후보가 `.env.sops`, `.env.docker.sops` 둘이다. |
 | [scripton-signalhub](scripton-signalhub.md) | `.sops.yaml`만 있고 `.env.sops`가 없다. |
 
+이 결정들은 각 제품 보드에 카드로 올렸다([제품 보드에 올린 카드](#제품-보드에-올린-카드)).
+
 [airouter](airouter.md), [familybook](familybook.md), [flow-agent-mesh](flow-agent-mesh.md)는 감사 전에 이미 선언돼 있었다.
 [matdosa](matdosa.md)는 처음에 축약형 `files: [.env]`라는 이유로 남겼다. 축약형 항목도 `required: false`로 읽히므로(`internal/config/envfile.go`의 `normalizeEnvFileConfig`) 객체형으로 바꿔도 로드는 같다. 그래서 `6785c54`로 `master`에 반영했고, doctor fail은 1에서 0이다.
 [scripton-dns-bridge](scripton-dns-bridge.md)와 [scripton-db-orchestrator](scripton-db-orchestrator.md)는 처음에 validate exit 1이라는 이유로 남겼다. 두 저장소의 마이그레이션 뒤에는 둘 다 validate를 통과해, 같은 한 줄을 더했다. dns-bridge는 `39f702b4`(`develop`), db-orchestrator는 `cf99ff0b`(`master`)다. 둘 다 `branch-integrate`로 플래그 없이 통합했다. doctor의 `Encrypted env source declared` 행은 둘 다 없어졌다.
@@ -50,11 +52,39 @@ wave-2(`sops_source` 선언)도 끝났다. 반영 커밋은 현황 문서의 wav
 1. validate는 통과하지만 구 스키마가 남은 곳. `dva config migrate`가 가리키고, 한 줄 수정이 아니다.
    - [reviewrary](reviewrary.md): `stack.*.order`, `plans` 없음, warning 65.
    - [hek](hek.md): `modes`, `default_mode`, `stack.compose.order`.
-2. 깨끗한 워크트리에서 `make check` 기준선을 재지 못한 곳은 wave-2에서 [flow-knowchain](flow-knowchain.md), [flow-pipechain](flow-pipechain.md), [funbricks-elemhant](funbricks-elemhant.md), [server-farm](server-farm.md) 네 곳이다. 이 넷은 `--allow-skipped-checks`로 통합했다. [dripter](dripter.md), [flow-observechain](flow-observechain.md)는 이유가 달랐다. 선언된 gate가 없었다. 나머지 여덟 곳은 플래그 없이 통합했다. 이 문제를 gz-git에 넘기지 않는다. gz-git은 이 경우를 설계대로 처리한다. 기준선 쪽이 file:line 진단 없이 실패하면 그 이유를 출력하고, 두 실행의 준비 상태가 다르면 그 차이도 출력한다(`gzh-cli-gitforge` `pkg/integrate/check_baseline_state.go` `unmeasurableReason`). 이 경우를 경고로 낮추는 것이 `--allow-skipped-checks`의 정의된 용도다. 고칠 곳은 깨끗한 트리에서 진단 없이 실패하는 각 제품의 `make check`다. 해당 제품의 작업이고, 그 저장소를 다시 다룰 때 함께 본다.
+2. 깨끗한 워크트리에서 `make check` 기준선을 재지 못한 곳은 wave-2에서 [flow-knowchain](flow-knowchain.md), [flow-pipechain](flow-pipechain.md), [funbricks-elemhant](funbricks-elemhant.md), [server-farm](server-farm.md) 네 곳이다. 이 넷은 `--allow-skipped-checks`로 통합했다. [dripter](dripter.md), [flow-observechain](flow-observechain.md)는 이유가 달랐다. 선언된 gate가 없었다. 나머지 여덟 곳은 플래그 없이 통합했다. 이 문제를 gz-git에 넘기지 않는다. gz-git은 이 경우를 설계대로 처리한다. 기준선 쪽이 file:line 진단 없이 실패하면 그 이유를 출력하고, 두 실행의 준비 상태가 다르면 그 차이도 출력한다(`gzh-cli-gitforge` `pkg/integrate/check_baseline_state.go` `unmeasurableReason`). 이 경우를 경고로 낮추는 것이 `--allow-skipped-checks`의 정의된 용도다. 고칠 곳은 진단 없이 실패하는 각 제품의 `make check`다. 카드를 올리며 다시 재 보니 원인은 넷이 서로 달랐다. 새 워크트리에만 해당하는 곳은 elemhant와 server-farm이다. 둘 다 gitignore된 자식 checkout이 없어서 실패한다. knowchain(done 카드의 `quality-review` 누락)과 pipechain(`gen-secrets`의 생성기 4개가 `secret-generator-check`에 걸림)은 primary에서도 실패한다. 각 제품의 issue 카드가 추적한다.
+
+## 제품 보드에 올린 카드
+
+2026-10-09에 위 남은 결정을 각 제품 저장소의 태스크 보드에 올렸다. 카드는 사실과 완료 조건만 담는다. 실제 수정은 각 제품에서 한다. 결함은 `issue`, 할 일은 `todo`에 두었다. 저장소 관례가 다르면 그 관례를 따랐다(nd-stack은 `backlog`, server-farm은 `plan/02-backlog.md`). [scripton-signalhub](scripton-signalhub.md)에는 보드가 없었다. `ce task new`로 첫 카드를 만들면서 `tasks/todo/`가 생겼다.
+
+| 제품 | 카드 | 내용 | 소스 브랜치 반영 |
+| --- | --- | --- | --- |
+| [scripton-dns-bridge](scripton-dns-bridge.md) | issue TASK-023 (P0) | 토큰에 tenant 클레임이 없으면 tenant 검사를 건너뛴다(`tenant_binding.rs`, `tenant_guard.rs`). JWKS 모드에서 audience 검증이 선택 사항이다 | `09546a5f` (`develop`) |
+| [scripton-dns-bridge](scripton-dns-bridge.md) | todo TASK-024 | doctor `.sb/dva/ is ignored in .gitignore` | `09546a5f` (`develop`) |
+| [flow-knowchain](flow-knowchain.md) | issue ISSUE-017 | `make check` 기준선 측정 불가 | `6796e79a` (`develop`) |
+| [flow-pipechain](flow-pipechain.md) | issue ISSUE-20261009-001 | 같음 | `9671ed91` (`develop`) |
+| [funbricks-elemhant](funbricks-elemhant.md) | issue ISSUE-015 | 같음 | `299b7107` (`develop`) |
+| [server-farm](server-farm.md) | `tasks/plan/02-backlog.md` 항목 | 같음 | `3bdd970e` (`master`) |
+| [reviewrary](reviewrary.md) | todo TASK-001 | 구 스키마 마이그레이션, `env_file`·`sops_source` 결정 | `4efe954` (`develop`) |
+| [hek](hek.md) | todo TASK-001~003 | 마이그레이션, sops 대상 경로, 자식 `dva.yml`과 `subprojects` | `5436a2c` (`master`) |
+| [careerarchive](careerarchive.md) | todo TASK-129 | `env_file`·`sops_source` 결정 | `d211f91` (`master`) |
+| [funbricks-notifire](funbricks-notifire.md) | todo TASK-132 | 같음 | `90ad7cd` (`develop`) |
+| [netow](netow.md) | todo TASK-46 | 같음. 루트 `dva.yml`이 아직 없다 | `8cc69eb` (`master`) |
+| [scripton-nd-stack](scripton-nd-stack.md) | backlog NDG-OPS-62 | `.env.sops`, `.env.docker.sops` 중 원본 선택 | `9b17a18c` (`develop`) |
+| [scripton-signalhub](scripton-signalhub.md) | todo TASK-014 | `.env.sops` 생성 또는 `.sops.yaml` 규칙 제거 | `56d8d03b` (`develop`) |
+| [gizzahub](gizzahub.md) | todo TASK-1960 | 남은 Make 제안 10개 처리 | `1834a87a` (`develop`) |
+| [gzh-cli](gzh-cli.md) | todo TASK-288 | 자식 12곳 `dva.yml`과 루트 `subprojects` | `f6fc6532` (`master`) |
+| [flow-taskchain](flow-taskchain.md) | todo TASK-169 | `cli` 자식 `dva.yml`과 루트 연결 | `83ec3fbb` (`develop`) |
+| [flow-task-automator](flow-task-automator.md) | todo TASK-001 | 자식 `dva.yml`과 루트 연결 | `01efbf04` (`develop`) |
+
+netow에서는 기존 카드 43이 `status: external-credential-pending`로 `todo/`에 있었다. 이 때문에 `ce task gate`가 막혀 있었다. 사용자 승인을 받아 이 카드를 `blocked/`로 옮겼다(`c0b8a3a`). 사유는 `blocked-reason`에 남겼다. 이 카드를 가리키는 링크도 새 위치로 고쳤다(`bea73a8`, `55f723b`).
+
+`--allow-skipped-checks`를 쓴 곳은 여섯이다. knowchain, pipechain, elemhant, server-farm은 위 2번 이유로 썼다. 이 넷은 카드가 해결될 때까지 다음 통합에도 이 플래그가 필요하다. reviewrary와 signalhub는 선언된 `check`/`lint` 타깃이 없어서 썼다.
 
 ## 지금은 손대지 않을 것
 
-- 자식 `dva.yml`이 없는 곳에 루트 링크를 달기. 자식 저장소에 `dva.yml`을 먼저 만들고(New 모드), 그다음 루트 `subprojects`에 넣는다. DVA 저장소가 아니라 각 제품 저장소 작업이다. 쉬운 순서: [flow-task-automator](flow-task-automator.md)(workspace 하나, 루트가 이미 `make -C`로 감쌈) → [hek](hek.md)의 engine/web(남은 것 1번의 hek 마이그레이션과 함께) → [flow-taskchain](flow-taskchain.md)의 cli → [gzh-cli](gzh-cli.md)(자식 12곳, 루트 파일도 없음).
+- 자식 `dva.yml`이 없는 곳에 루트 링크를 달기. 자식 저장소에 `dva.yml`을 먼저 만들고(New 모드), 그다음 루트 `subprojects`에 넣는다. DVA 저장소가 아니라 각 제품 저장소 작업이다. 쉬운 순서: [flow-task-automator](flow-task-automator.md)(workspace 하나, 루트가 이미 `make -C`로 감쌈) → [hek](hek.md)의 engine/web(남은 것 1번의 hek 마이그레이션과 함께) → [flow-taskchain](flow-taskchain.md)의 cli → [gzh-cli](gzh-cli.md)(자식 12곳, 루트 파일도 없음). 네 곳 모두 제품 보드 카드로 올렸다.
 - `dva.yml`이 없는 19개 제품에 빈 스캐폴드를 깔기. 빈 파일은 doctor 소음만 늘린다. `absent`는 할 일이 아니라 두 갈래로 읽는다.
   - 붙일 가치가 있는 후보(compose나 DB 실행 표면): [lottomaster](lottomaster.md), [mansero](mansero.md), [sigdock-audit](sigdock-audit.md), [scripton-suphyul-router](scripton-suphyul-router.md), [merchant-platform](merchant-platform.md), [netow](netow.md). 제품 소유자가 원할 때 `am run dva-discover`로 시작한다.
   - 해당 없음(make 이상을 더하지 못함): [ci-toolchain](ci-toolchain.md), [serialdb](serialdb.md), [sigdock-gateway](sigdock-gateway.md), [policy-gate](policy-gate.md), [flow-station](flow-station.md), [uxdesigner](uxdesigner.md), [sb-linux](sb-linux.md), [scripton-dashboard](scripton-dashboard.md), [scripton-deskapps-ssh-client](scripton-deskapps-ssh-client.md). 실행 표면이 아직 없음: [scripton-code](scripton-code.md)(TODO 본문), [sigdock-pki](sigdock-pki.md)(클론 없음), [spot-share](spot-share.md). [gzh-cli](gzh-cli.md)는 위 자식 링크 항목이다.

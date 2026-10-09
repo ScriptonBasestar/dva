@@ -51,3 +51,11 @@
 ## wave-1
 
 아니오. validate를 통과한 설정에, 루트 `dva.yml` 한 번의 기계적 수정으로 끝낼 계획·비밀·Compose 불변 항목이 없다.
+
+## 후속
+
+2026-10-09 설치본(`1aa8cd62`)으로 다시 재면 validate는 exit 0, warning 38이다. 기준선의 0에서 늘어난 이유는 `dva.yml`이 바뀌어서가 아니다. 저장소의 Makefile과 `dva.yml`에는 2026-10-06 이후 커밋이 없다. 늘어난 경고는 두 종류다.
+- Make 타깃 수집이 고쳐지면서(`56cc792c`, `dc35fa93`) Makefile 제안이 34개 새로 보인다.
+- 루트 interaction 4개가 자식 subproject의 같은 이름 키를 가린다는 경고다. `backend:test`, `backend:test-migrate`, `frontend:test`, `frontend:test-e2e-mock`이고, `dva <name>`은 subproject가 아니라 루트 키를 실행한다.
+
+`env_file`·`sops_source` 결정은 `tasks/todo/` TASK-132로 올렸다(`90ad7cd`, `develop`). 저장소에는 이미 gitignore된 `.env`가 있어서, 선언하면 곧바로 로드되기 시작한다([follow-ups](follow-ups.md#제품-보드에-올린-카드)).

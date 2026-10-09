@@ -60,3 +60,9 @@
 ## wave-1
 
 아니오.
+
+## 후속
+
+2026-10-09 설치본(`1aa8cd62`)으로 다시 재면 validate는 exit 0, warning 45다. 기준선의 7에서 늘어난 이유는 `dva.yml`이 바뀌어서가 아니다. hek 저장소의 Makefile과 `dva.yml`에는 2026-10-06 이후 커밋이 없다. Make 타깃 수집이 고쳐지면서(`56cc792c`, `dc35fa93`) Makefile 제안이 40개 새로 보인다. 나머지 5개는 기준선의 `modes`, `stack.*.order`, plans 없음, `compose.test.yml` drift, package.json 제안 1개다(기준선에서는 3개).
+
+남은 작업은 hek 보드의 `tasks/todo/` TASK-001~003으로 올렸다(`5436a2c`, `master`). 각각 마이그레이션, sops 대상 경로, 자식 `dva.yml` 연결이다([follow-ups](follow-ups.md#제품-보드에-올린-카드)).
