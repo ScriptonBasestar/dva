@@ -7,7 +7,7 @@
 
 ## 1. TASK-250 대조 검증 (2026-09-04)
 
-TASK-250(`tasks/done/250-implement-capability-driven-init.md`, `status: done`, commit `4cc0fdc`)의
+TASK-250(`tasks/_archive/2026-09/250-implement-capability-driven-init.md`, `status: done`, commit `4cc0fdc`)의
 구현과 그 자체 Decision Record를 TASK-249의 완료기준 1·2·3·5·6·7·8·9·10 각각에 대조해 실제 코드
 (`internal/cli/init_scaffold.go`, `internal/cli/init.go`, `internal/cli/init_test.go`,
 `internal/integration/init_generated_config_test.go`)까지 직접 확인한 뒤 충족 여부를 판정했다.

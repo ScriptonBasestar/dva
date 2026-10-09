@@ -65,7 +65,7 @@ wave-2(`sops_source` 선언)도 끝났다. 반영 커밋은 현황 문서의 wav
 | [flow-knowchain](flow-knowchain.md) | issue ISSUE-017 | `make check` 기준선 측정 불가 | `6796e79a` (`develop`) |
 | [flow-pipechain](flow-pipechain.md) | issue ISSUE-20261009-001 | 같음 | `9671ed91` (`develop`) |
 | [funbricks-elemhant](funbricks-elemhant.md) | issue ISSUE-015 | 같음 | `299b7107` (`develop`) |
-| [server-farm](server-farm.md) | `tasks/plan/02-backlog.md` 항목 | 같음 | `3bdd970e` (`master`) |
+| [server-farm](server-farm.md) | server-farm `plan/02-backlog.md` 항목 | 같음 | `3bdd970e` (`master`) |
 | [reviewrary](reviewrary.md) | todo TASK-001 | 구 스키마 마이그레이션, `env_file`·`sops_source` 결정 | `4efe954` (`develop`) |
 | [hek](hek.md) | todo TASK-001~003 | 마이그레이션, sops 대상 경로, 자식 `dva.yml`과 `subprojects` | `5436a2c` (`master`) |
 | [careerarchive](careerarchive.md) | todo TASK-129 | `env_file`·`sops_source` 결정 | `d211f91` (`master`) |

@@ -25,7 +25,7 @@ ISSUE-004·006의 과거 카드·자동 루프 기준을 현재 소비자 계약
   기준 2는 더 이상 없는 “현재 네 카드”, 기준 3은 구현되지 않은 run-all loop를 가리킨다.
 - `internal/taskqueue/taskqueue.go:57`의 Verdict는 읽기 전용이다. `:84`의 Start만
   승인 pin을 요구한다. 사람 terminal/rollback은 이 소비자의 구현 기능이 아니다.
-- 현재 실제 조회는 [ISSUE-490](../issue/490-selected-taskchain-rejects-native-decision-directory.md)의
+- 현재 실제 조회는 [ISSUE-490](../_archive/issue/490-selected-taskchain-rejects-native-decision-directory.md)의
   native decision 디렉터리 호환성 실패로 막힌다. 공개 승인과 다른 차단 원인이다.
 - `tasks/decision/487-changelog-half-ceiling-trigger.md`의 실제 사용자 승인과 Accepted
   전이는 현행 결정 카드 증거로 사용할 후보다. 합성 카드 전이를 실제 사용자 승인으로 쓰지 않는다.

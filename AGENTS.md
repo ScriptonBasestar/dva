@@ -23,6 +23,7 @@ DVA는 개발 환경 오케스트레이터입니다. 핵심 방향은 `stack:`�
 | 제품 판단 | `SOUL.md` → `PRODUCT.md` |
 | 아키텍처·구현 | `SOUL.md` → `PRODUCT.md` → `ARCHITECTURE.md` |
 | 사용법 | `README.md` → `USAGE.md` |
+| 릴리스·작업 계획 | `PRODUCT.md` → `ROADMAP.md` → `tasks/README.md` |
 | 코드 작업 | `AGENTS.md` → `ARCHITECTURE.md` → 해당 소스 |
 
 각 사실은 하나의 canonical document만 소유합니다.
@@ -31,11 +32,13 @@ DVA는 개발 환경 오케스트레이터입니다. 핵심 방향은 `stack:`�
 - `PRODUCT.md`: What/Who, 사용자 가치, 제품 경계와 현재 상태
 - `ARCHITECTURE.md`: How, 컴포넌트 책임, 의존 방향, 데이터 흐름
 - `README.md`/`USAGE.md`: 설치, 시작, 사용자 레퍼런스
+- `ROADMAP.md`: 다음 릴리스 목표와 인수 기준 (미공개 변경 목록은 `CHANGELOG.md`)
 - `AGENTS.md`/`CLAUDE.md`: 에이전트 명령, 금지사항, repository navigation
+- `tasks/README.md`: 작업 보드, 실행 카드와 검증 증거의 진입점
 
 다른 문서에는 한두 문장 요약과 상대 링크만 둡니다. 같은 목록, 표, 다이어그램을
-복사하지 않습니다. 미래 후보는 roadmap이 생기기 전까지 현재 지원 기능처럼 서술하지
-않습니다.
+복사하지 않습니다. 미래 후보는 `ROADMAP.md`가 채택해 실행 카드로 전환하기 전까지
+현재 지원 기능처럼 서술하지 않습니다.
 
 ## Task completion review
 
@@ -72,7 +75,7 @@ internal/config/               → dva.yml loading, env interpolation, schema va
   lifecycle.go                 → LifecycleEntry, plugin config types (Compose, Kubectl, Helm, ...)
   lifecycle_helpers.go         → SortedStack(), PrimaryComposeEntry(), ComposeEntries(), etc.
   merge.go                     → Field-level deep merge (modules/override 적용)
-  validate_warnings.go         → 19 semantic warning checks + canonical order (non-fatal)
+  validate_warnings.go         → semantic warning checks + canonical order (non-fatal; `ValidateWarnings()` is the list)
   reserved.go                  → Reserved/restricted field definitions
 internal/lifecycle/            → Execution plan resolution + runtime orchestration
   orchestrator.go              → Resolved entry execution and teardown
@@ -187,7 +190,7 @@ DVA 자체의 복구·독립성 검증에서는 native 도구 직접 실행을 �
 ```bash
 make build      # → ./bin/dva
 make test       # go test -race -cover ./...
-make doc-check  # 3 gates: markdown links/size, CI labels, flow decision paths
+make doc-check  # 7 gates: doccheck, cilabels, flowcheck, planprogress, yamlcheck, changelogcheck, ciparity (Makefile `doc-check` target is canonical)
 ```
 
 공개 릴리스 운영 순서는 [수동 공개 릴리스 런북](docs/52-manual-release-runbook.md)을 따릅니다.
@@ -278,8 +281,8 @@ ships a `PostToolUse` hook (`ce-validate-filesize.sh` → `ce validate filesize`
 a commit message or a review as "the limit" without saying whose it is (TASK-211), and
 do not cite the cache path without a date — it is versioned and moves.
 
-"Advisory" describes its status here, not its track record: `tasks/archive/187` and
-`tasks/archive/193` each split a Go file specifically to stay under 500, neither citing
+"Advisory" describes its status here, not its track record: `tasks/_archive/2026-09/187-…` and
+`tasks/_archive/2026-09/193-…` each split a Go file specifically to stay under 500, neither citing
 a repository rule because there is none to cite. Splitting a file for that reason is a
 legitimate choice; making it as though the repository required it is not.
 
@@ -350,12 +353,8 @@ corpus and ordering are reproducible in an ordinary shell. A card can therefore 
 objects: both report the board READY — but `make doc-check` catches the conflict as
 `DUP-ID  <path>: zone tasks/<zone> permits id: N, found "M"`.
 
-When archiving a task no longer breaks inbound links: `make doc-check` stays green across
-a move without a repoint pass (TASK-143). The checker resolves a
-`tasks/<state>/NNN-…` markdown link — and the same path written inside inline code
-(where `verify:` bindings live, invisible to the link scan) — to whichever state directory
-actually holds `NNN-…`. One match resolves the reference; zero is a genuine broken link;
-more than one is an ambiguity the gate refuses to guess.
+Archiving a card does not break inbound links either; see "Task links survive state
+transitions (TASK-143)" under the documentation gate above.
 
 <!-- skills:auto:start -->
 ## AI Skills

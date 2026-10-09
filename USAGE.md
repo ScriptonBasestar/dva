@@ -554,7 +554,7 @@ force-recreate가 될 수 있습니다. 이것은 완전한 무인자 호출이 
 
 | Flag | Description |
 |---|---|
-| `--mode`, `-M MODE` | `modes` 섹션의 named mode 적용 |
+| `--mode`, `-M MODE` | `modes` 섹션의 named mode 적용 (legacy — `dva validate`가 plans 이관을 권고) |
 | `--env`, `-E ENV` | `environments` 섹션의 named environment 적용 |
 | `--tag`, `--tags`, `-T TAG[,TAG]` | 해당 태그를 가진 lifecycle 엔트리만 포함 |
 | `--exclude-tag`, `--exclude-tags TAG[,TAG]` | 해당 태그를 가진 lifecycle 엔트리 제외 |
@@ -863,7 +863,7 @@ drift_ignore:
 - `drift_ignore`는 **등록되지 않은 파일** 규칙에만 적용됩니다. 등록됐는데 디스크에 없는 파일과
   compose에 없는 서비스를 참조하는 interaction은 `dva up`이 실패하는 상태라 어떤 ignore도
   적용되지 않습니다. 패턴은 dva.yml 기준 상대 경로와 대조하며 디렉터리 구분자를 넘지 않습니다.
-- 시맨틱 경고 28종에는 억제 수단이 없습니다. 경고가 틀렸다면 규칙을 고칩니다.
+- 시맨틱 경고(`ValidateWarnings`)에는 억제 수단이 없습니다. 경고가 틀렸다면 규칙을 고칩니다.
 - `--suggest-ignore`는 현재 남은 suggestion을 `suggestion_ignore:` 블록으로 출력만 합니다.
   dva.yml을 대신 고치지 않습니다 — 무엇을 가리는지 읽고 붙여 넣는 절차가 요점입니다.
 
@@ -942,11 +942,11 @@ interaction:
 | `environments` | 환경 프리셋 (`dev/stg/prd`) |
 | `sites` | 실행 host 프리셋 (`local/remote/cloud`) |
 | `checks` | `dva doctor` 환경 사전조건 체크 |
-| `default_mode` | `--mode` 미지정 시 적용할 기본 `modes` 엔트리 |
+| `default_mode` | `--mode` 미지정 시 적용할 기본 `modes` 엔트리 (legacy `modes`와 함께만 의미가 있음) |
 | `suggestion_ignore` | config suggestion 경고에서 제외할 Makefile/package.json 타겟 glob 패턴 |
 | `suggestions` | suggestion 소스 종류별 on/off (`makefile`, `package_json`) |
 | `drift_ignore` | 등록되지 않은 compose 파일 drift 경고에서 제외할 파일 glob 패턴 |
-| `modes` | 런타임 전략 프리셋 (`--mode`로 선택) |
+| `modes` | 런타임 전략 프리셋 (`--mode`로 선택, legacy — `plans`+`environments`+`sites` 이관 권고) |
 | `health_checks` | 비-compose 서비스 헬스체크 |
 | `interaction` | 커맨드 정의 (command, command list, script, script_file, steps, subcommands 등) — 예약어/훅 규칙은 아래 [interaction](#interaction-예약어와-훅) 참조 |
 | `provision` | 프로비저닝 프로필 및 스텝 정의 |

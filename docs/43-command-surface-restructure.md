@@ -5,7 +5,7 @@ CLI 명령어 표면을 선언/실행 분리 모델에 맞춰 정리하는 설�
 CLI는 [41-execution-plans-and-cli.md](41-execution-plans-and-cli.md), 마이그레이션 원칙은
 [42-migration-and-compatibility.md](42-migration-and-compatibility.md)를 본다.
 
-이 문서는 40-42 시리의 개념 설계를 **현재 코드에 적용하는 재구성 결정**을 소유한다.
+이 문서는 40-42 시리즈의 개념 설계를 **현재 코드에 적용하는 재구성 결정**을 소유한다.
 철학 판단은 [SOUL.md](../SOUL.md), 제품 범위는 [PRODUCT.md](../PRODUCT.md), 구현 경계는
 [ARCHITECTURE.md](../ARCHITECTURE.md)가 각각 소유하며 여기서는 반복하지 않는다.
 

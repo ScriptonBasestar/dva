@@ -1,7 +1,7 @@
 # 65. `ce task gate` 연결 지점 — 비용이 붙은 두 선택지
 
 > 상태: **결정됨 — B(`branch.readiness`)** (2026-09-13). 근거와 실측은 결정을 소유하는
-> `tasks/todo/354-make-the-board-pass-ce-task-validate-and-gate-it.md` §결정 기록 8번에
+> `tasks/_archive/2026-09/354-make-the-board-pass-ce-task-validate-and-gate-it.md` §결정 기록 8번에
 > 있다. 이 문서는 그 결정이 딛고 선 비용 비교로 남는다.
 
 ## 1. 기준선 — 아무 데도 붙이지 않는다
@@ -141,7 +141,7 @@ B는 gz-git 쪽 `branch.readiness`를 말한다.
 exit 1이고(`summary: task_validate_failed`), 원인은 receipt 없는 done blocker다. 건수는
 보드를 정리할 때마다 움직이므로 여기에 박지 않는다 — 현재 값은 `ce task validate --all`이
 낸다. 이것은
-`tasks/issue/001-task-runtime-cannot-review-legacy-done-cards-without-verification-evidence.md`가 P0로 소유한
+`tasks/_archive/issue/001-task-runtime-cannot-review-legacy-done-cards-without-verification-evidence.md`가 P0로 소유한
 외부 blocker다. 순서는 ISSUE-001 → 이 문서의 결정 → TASK-354다.
 
 ## 4. 확인하지 못한 것

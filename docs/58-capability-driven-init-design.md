@@ -38,7 +38,7 @@ Capability evidence는 plan의 존재를 정당화할 수 있지만, 그것만�
 ## 4. TASK-233과의 충돌 분석과 해소
 
 결정 전에 알려야 했던 사실 하나: 완료기준 4(세 label을 생성 기본값에서 배제)는
-`tasks/_archive/233-capability-driven-plan-presets.md`의 이미 닫힌 Decision(`status: done`,
+`tasks/_archive/2026-09/233-capability-driven-plan-presets.md`의 이미 닫힌 Decision(`status: done`,
 `verification-status: verified`)과 표면적으로 충돌한다.
 
 > Use `local-infra` as the preferred generated default only when all selected providers are
@@ -97,7 +97,7 @@ TASK-233은 `tasks/_archive/`에 있다. 완료기준 4를 채택하면서 233�
 ### 완료기준 4 — 233과의 공존
 
 `local-infra`·`local-dev`·`full-stack`을 Go init 생성기의 생성 기본값에서 배제하는 것은 이 결정으로
-확정된다. `tasks/_archive/233-capability-driven-plan-presets.md`의 Decision("Use `local-infra` as
+확정된다. `tasks/_archive/2026-09/233-capability-driven-plan-presets.md`의 Decision("Use `local-infra` as
 the preferred generated default...")은 `am` 프리셋 코퍼스 표면에 대한 것이므로 무효화되지 않고
 그대로 유효하다. 두 카드는 서로 다른 생성기(Go init 바이너리 vs. `am` flow 기반 preset)를
 가리키므로 같은 이름이 한쪽에서 배제되고 다른 쪽에서 허용되는 것은 모순이 아니다.

@@ -68,7 +68,9 @@ Flow 파일: `agent-mesh-flows/` 디렉토리. Library reference: `agent-mesh-fl
 - **Stack**: `dva.yml`의 `stack:` 섹션 — `LifecycleEntry` **선언 저장소** (실행 표면 아님)
 - **Plan**: `plans:` 섹션 — 실행 가능한 이름. lifecycle 동사는 전부 `dva <verb> <plan>` 형태
 - **Plugin**: lifecycle 백엔드 타입 (`compose`, `helm`, `kubectl`, `process`, `script` 등 3-tier)
-- **Mode** (`--mode`): 런타임 전략 선택 (dev-only 도구, stg/prd 환경 없음)
+- **Mode** (`--mode`, legacy): `modes:` 런타임 전략 프리셋. `dva config validate`가
+  `plans` + `environments` + `sites` 이관을 권고한다. `environments`의 `stg`/`prd`는 변수 세트
+  라벨일 뿐 운영 권한이 아니다 (경계는 `PRODUCT.md`)
 - **Interaction**: `dva run <name>` 으로 실행되는 사용자 정의 커맨드
 
 앱 프로세스는 `native` 러너를 쓰는 stack 엔트리입니다 — `applications:` 섹션과
