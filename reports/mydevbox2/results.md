@@ -5,7 +5,7 @@
 ## 요약
 
 - 대상 28개 저장소(제품 루트 23 + 자식 5)에 변경을 커밋했다. 그중 22개는 소스 브랜치에 통합하고 워크트리를 회수했다.
-- 6개 저장소는 통합하지 못했다. 이 작업과 무관한 기존 gate 실패 때문이다. 각 브랜치는 push된 채 보존했다([통합 보류](#통합-보류)).
+- 6개 저장소는 처음에 기존 gate 실패로 통합하지 못했다. 후속 처리에서 3곳(airouter, careerarchive, gitrump-ce)을 통합했고, 3곳(sigdock-idp, sigdock-pass, flow-pipechain)은 제품 보드 결정이 필요해 브랜치를 push된 채 보존했다([통합 보류](#통합-보류)).
 - W1·W2 대상 경고(`config_drift`, `compose_name`)는 측정 부산물 1건을 빼고 0이 됐다.
   `validate` exit와 plan dry-run 성공 수는 모든 제품에서 그대로다.
 - doctor 실패는 `.sb/dva/` 무시 항목을 넣은 다섯 곳에서 하나씩 줄었다. signalhub는 compose alignment 실패도 함께 없어져 4개에서 2개로 줄었다.
@@ -112,10 +112,24 @@
 
 CE 보드 5곳은 master에서도 `ce task gate`가 같은 이유로 NOT READY다.
 
+### 후속 처리 (2026-10-10)
+
+사용자 승인을 받아 보류 6곳을 다시 처리했다. 각 브랜치는 소스 tip으로 rebase한 뒤 gate를 다시 돌렸다.
+
+| 저장소 | 결과 | 내용 |
+| --- | --- | --- |
+| airouter | 통합 `7e20c4d` | 깨진 링크를 `tasks/_archive/issue/036`으로 고쳤다. TASK-097/099/115의 `verify: ce task gate`를 `ce task validate --all && ce task lint`로 바꿨다(gate 안에서 gate를 부르면 거부된다). 자식 checkout 네 곳을 `task-bindings.external-roots`로 선언했다(워크트리에서 `cd airouter-cli`가 실패했다). |
+| careerarchive | 통합 | upstream 커밋으로 board가 READY가 됐다. rebase 후 그대로 통합했다. |
+| gitrump-ce | 통합 `f8fa864` | upstream `cea83cf`가 clippy를 고쳤다. readiness `gates_ready`. |
+| sigdock-idp | 보류 `98199a1c` | `binding-timeout: 10m`을 선언했다. `make check`는 370초 걸려 통과한다. 그다음 실패는 TASK-024의 체크된 binding이 `SIGDOCK_TEST_POSTGRES_URL`(실제 PostgreSQL)을 요구하는 것이다. gate 한 번에 66분이 걸린다. |
+| sigdock-pass | 보류 `2a424d16` | 145장이 backlog/blocked/issue/manual/decisions 하우스 형식이라 공용 검증기와 맞지 않는다. 보드 이관 방식은 제품 소유자의 결정이다. |
+| flow-pipechain | 보류 `b55f8e0` | 저장소 게이트 `check-task-card-closure.sh`는 `completed:`를 요구하고 공용 검증기는 그것을 금지한다(60건). done 55장에는 quality-review가 없다. 리뷰 기록을 지어낼 수 없으므로 이관 방식을 정해야 한다. |
+
 ## 보드 카드
 
 scripton-dns-bridge TASK-024(`.sb/dva/` 무시)의 완료 조건 두 개는 develop tip `f05b25ec`에서 모두 통과한다.
-카드를 done으로 옮기는 일(리뷰 필드, receipt)은 제품 보드 절차라 하지 않았다.
+후속 처리에서 카드를 done으로 옮겼다(develop `5d32dba7`, Resolution 절 추가, `make docs-check` 통과). 이 보드의 done 카드는
+레거시 Overview 형식이라 quality-review 필드를 쓰지 않는다.
 
 - `! dva doctor 2>&1 | grep -F '[FAIL] .sb/dva/'`: 통과
 - `test -z "$(git ls-files .sb/dva)"`: 통과
@@ -143,5 +157,7 @@ scripton-dns-bridge TASK-024(`.sb/dva/` 무시)의 완료 조건 두 개는 deve
 ## 기록만 한 것
 
 - 파일 크기 훅 경고: elemhant `dva.yml` 374줄, gitrump 403줄, knowchain 554줄. 원래부터 200줄 한도를 넘는다. 분할은 이번 범위가 아니다.
-- `~/mydevbox/scripton-db-orchestrator-devbox/db-orchestrator-rs/`는 `.git`이 없는 5.4G 잔여 디렉터리다. 삭제하지 않았다.
-  다시 clone할지는 사용자 결정이다.
+- `~/mydevbox/scripton-db-orchestrator-devbox/db-orchestrator-rs/`는 `.git`이 없는 5.4G 잔여 디렉터리였다. 소스는 없고
+  `target`/`target-linux` 빌드 캐시, `.ce` 로그, 무시 대상 로컬 파일 두 개(`corp-ca.crt`, `Dockerfile.worker.local`)뿐이었다.
+  후속 처리에서 `db-orchestrator-rs.residue-20261010/`으로 이름을 바꿔 보존하고 원격에서 다시 clone했다(master `1629a24`).
+  로컬 파일 두 개는 새 clone에 복사했고 `dva validate --strict`가 통과한다. 잔여본 삭제는 사용자 결정이다.
