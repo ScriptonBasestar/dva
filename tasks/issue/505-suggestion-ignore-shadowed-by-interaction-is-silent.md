@@ -23,7 +23,8 @@ have flagged the target as unwrapped. Consumers who keep long ignore lists canno
 
 ## Reproduction
 
-DVA `/Users/archmagece/go/bin/dva` (installed), source `395be8c5`.
+Installed DVA `/Users/archmagece/go/bin/dva` reports commit `1aa8cd62`; source read at
+`395be8c5`. Both validate files are unchanged between the two.
 
 1. In an empty directory create a Makefile with documented targets `foo: ## x` and
    `bar: ## y`, and a `dva.yml` with `suggestion_ignore: ["foo", "bar", "gone"]` and one
@@ -62,7 +63,10 @@ filter, so a pattern that matches only covered names counts as matching somethin
 
 ## Notes
 
-The fix should keep glob semantics: a pattern such as `docker-*` that matches one covered
-and one uncovered target still hides something and is not redundant. Only patterns whose
-matches are all covered qualify. Consumer-side cleanup in gizzahub-devbox is separate and
+The fix should keep glob semantics. With documented targets `alpha-one` and `alpha-two`,
+`suggestion_ignore: ["alpha-*"]` and an interaction `alpha-one`, the pattern still hides
+`alpha-two` (`--show-ignored` lists it) and is not redundant. With interactions for both,
+the pattern is silent exactly like `foo` above. Only patterns whose matches are all
+covered qualify. Do not use a `docker-*` Makefile example: `shouldIgnoreMakefileTarget`
+(`validate_sources.go:445–448`) drops that prefix before the ignore list is consulted. Consumer-side cleanup in gizzahub-devbox is separate and
 does not depend on this fix.
