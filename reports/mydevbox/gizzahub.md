@@ -62,3 +62,7 @@
 ## Make 수집 수정 이후
 
 DVA가 줄 끝 주석이 붙은 `include`를 따라가게 고친 뒤(`dc35fa93`), 제안 경고가 14에서 48로 늘었다. `775c47d6`(`develop`)로 `prepare-clean`(이 저장소에는 원래 없던 항목)과 CI·비밀 관리·워크스페이스 계열 타깃을 묶음 glob으로 ignore했다. 제안 경고는 48에서 10, stale은 0이다. 남은 10개는 개발자가 직접 부르는 타깃이라 그대로 두었다([follow-ups](follow-ups.md#다음으로-할-가치가-있는-것)).
+
+## 남은 제안 10개 정리 이후
+
+gizzahub `8c646a7d`(`develop`)가 남은 10개 중 `fmt`, `lint`, `vet`, `quality-check`를 interaction으로 올리고 나머지 6개를 ignore했다. 제안 경고와 stale은 0이다. 독립 리뷰가 그 범위 밖에서 기존 ignore 두 개(`sigdock-age-assurance-preflight`, `sigdock-provision-client-key`)가 같은 이름의 interaction과 겹친다고 짚었다. 이 둘은 아무것도 숨기지 않는데 `--show-ignored`와 stale 어디에도 나오지 않는다. DVA 쪽 결함은 [ISSUE-505](../../tasks/issue/505-suggestion-ignore-shadowed-by-interaction-is-silent.md)다. gizzahub의 두 항목 삭제는 그 수정과 별개다.
