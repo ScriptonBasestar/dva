@@ -5,9 +5,11 @@ type: bug
 priority: P2
 effort: XS
 exec-tier: standard
-status: doing
+status: done
 created: 2026-10-14
 quality-review: pass
+quality-review-evidence: tasks/done/evidence/TASK-506/independent-review.json
+archived-at: 2026-10-14
 ---
 
 ## Summary
@@ -31,6 +33,9 @@ commit-msg는 첫 물리적 줄만 검사하지만 history gate는 Git subject�
 - generated merge/revert 예외가 새 separator 검사보다 먼저 적용되도록 보완했다.
   최종 owner package 전체 테스트 PASS(0.423s), strong 독립 actual diff 리뷰 PASS다.
 - history scanner·72자 ceiling·baseline·역사 예외 목록은 변경하지 않았다.
+- 코드 commit 562cd8c2 push 후 history 검사에서 기존 4건만 남았다(exit 1,
+  968 commits/4 violations). 새로운 source 변경이 baseline을 악화시키지 않았다.
+  전체 full CI를 PASS로 표시하지 않으며 ISSUE-512/결정 513은 미해결이다.
 
 ## Completion Criteria
 

@@ -21,6 +21,12 @@ full CI의 source 검사는 통과했지만 commit-subjects가 공개된 기존 
 checker가 첫 물리적 줄만 검사하도록 바꾸거나 baseline을 이동하는 것은 해결이 아니다.
 TASK-505의 변경 전 HEAD 1bd93f69에서 이미 존재한 실패이며 source 개선의 회귀가 아니다.
 
+## 소유권 — 이 저장소다
+
+DVA가 commit hook·history checker·기준 이력 정책을 소유하며 해당 네 object도
+DVA의 공개 source 이력에 있다. Git은 문단 subject를 정상적으로 해석하므로 Git이나
+호스트 설정 결함이 아니다. 이미 공개된 object의 처리 정책만 사람이 결정한다.
+
 ## Reproduction
 
 1. `dva ci full` run 8823daddabdf3f986b6b4b7304ffd01c에서 마지막 commit-subjects만 실패했다(2m33.087s).
@@ -51,4 +57,4 @@ TASK-505의 변경 전 HEAD 1bd93f69에서 이미 존재한 실패이며 source 
 - full run 8823daddabdf3f986b6b4b7304ffd01c의 format/docs/vet/lint/test/build/integration/skill-dogfood는 PASS; commit-subjects만 FAIL이다.
 - 이 run의 working HEAD 1bd93f69, 동일한 before/after attestation은 작업 commit 이전의 이력 실패임을 확인한다.
 - tools/commitcheck/main.go의 history scanner는 Git `%s`를 검사한다. 기존 TASK-278의 exact-SHA 역사 처리 정책은 `tasks/_archive/2026-09/278-gate-commit-subjects-before-they-land.md`에 있다.
-- [TASK-505](../review/505-ci-running-step-checkpoints.md), [TASK-506](../doing/506-commit-hook-paragraph-parity.md).
+- [TASK-505](../_archive/2026-10/505-ci-running-step-checkpoints.md), [TASK-506](../_archive/2026-10/506-commit-hook-paragraph-parity.md).

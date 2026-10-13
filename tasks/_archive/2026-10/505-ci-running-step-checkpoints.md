@@ -5,9 +5,11 @@ type: bug
 priority: P1
 effort: S
 exec-tier: standard
-status: review
+status: done
 created: 2026-10-14
 quality-review: pass
+quality-review-evidence: tasks/done/evidence/TASK-505/independent-review.json
+archived-at: 2026-10-14
 ---
 
 ## Summary
@@ -75,3 +77,6 @@ started_at은 scheduler의 배정 시각이며 final receipt에서도 동일하�
 - 이 실행의 HEAD는 작업 커밋 전인 1bd93f69이며 before/after attestation이 같다.
   따라서 이 4건은 변경 전 이력의 실패다. 신규 task commit 후 같은 검사에서
   기존 4건만 남는지 확인하고, 관련 issue/policy 소유 기록과 함께 전달한다.
+- 코드 commit 562cd8c2 push 후 history 검사 exit 1이며 동일 4개 SHA만 남았다
+  (968 commits 검사, 4 violations). baseline_nonworsening=true를 확인했다.
+  이는 history gate PASS가 아니다. 기존 실패는 ISSUE-512/결정 513에 보존한다.

@@ -1,0 +1,12 @@
+{
+  "task": "TASK-505",
+  "verdict": "pass",
+  "capability_grade": "strong",
+  "reviewer_agent": "/root/social_origin_review",
+  "reviewed_source_commit": "562cd8c2",
+  "scope": "cirun atomic step checkpoints, dispatch timestamp stability, worker budget allowlist, cancellation and worker join",
+  "source_checks": "full run 8823daddabdf3f986b6b4b7304ffd01c: eight source stages passed",
+  "limitation": "full profile failed on four pre-existing published commit subjects; post-task scan confirmed the same four only",
+  "history_gate_exit": 1,
+  "baseline_nonworsening": true
+}

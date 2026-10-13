@@ -1,0 +1,14 @@
+{
+  "task": "TASK-506",
+  "verdict": "pass",
+  "capability_grade": "strong",
+  "reviewer_agent": "/root/social_origin_review",
+  "reviewed_source_commit": "562cd8c2",
+  "scope": "commit-msg paragraph separator parity, ordinary message regression, generated merge and revert compatibility",
+  "scoped_check": "go test ./tools/commitcheck -count=1",
+  "scoped_check_result": "pass",
+  "scoped_check_seconds": 0.423,
+  "limitation": "published history remains unchanged and fails on the same four pre-existing subjects",
+  "history_gate_exit": 1,
+  "baseline_nonworsening": true
+}
