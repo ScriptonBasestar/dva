@@ -136,7 +136,11 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 			return report, marshalErr
 		}
 		env := append(append([]string(nil), opts.Env...), parentRunEnv+"="+string(parentInfo))
-		report.Steps, retErr = execute(ctx, root, opts.Profile, env, writer)
+		checkpoint := func(steps []StepReport) error {
+			report.Steps = append([]StepReport(nil), steps...)
+			return writeReport(state, report)
+		}
+		report.Steps, retErr = execute(ctx, root, opts.Profile, env, writer, checkpoint)
 	}
 	after, attestErr := fingerprint(ctx, root)
 	retErr = errors.Join(retErr, attestErr)

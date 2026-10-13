@@ -27,6 +27,11 @@ All notable changes to DVA are documented here.
 
 ### Fixed
 
+- **실행 중 CI 단계 증거 보존**: step 배정·완료 때 receipt를 atomic checkpoint로
+  기록해 supervisor 강제 종료 뒤에도 마지막 단계와 배정 시각을 확인할 수 있습니다.
+  허용된 숫자 worker 설정만 선택적 `worker_budget`으로 기록합니다. 미완료 stale
+  상태를 성공으로 바꾸거나 종료 시각을 추정하지 않습니다.
+
 - **Kubernetes Secret 전송 전 검증 보완**: null 값과 잘못된 Secret 이름을 전송 전에
   거부하며, 명시한 kubeconfig·context만 사용하도록 preflight를 보강했습니다.
 
