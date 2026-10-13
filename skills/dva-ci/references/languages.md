@@ -17,6 +17,7 @@ namespace; installed names follow the owning runtime's namespace conversion.
 
 If a skill is unavailable, read the project's declared acceptance contract and
 report the missing guidance. Do not invent a profile or omit required checks.
-Other stacks retain their project-owned methods; this routing table changes no
-language support. Translate selected commands into DVA steps only after their
+Other stacks retain their project-owned methods. For JVM profiles, coordinate
+build workers, test forks, and heap budgets independently under the workflow
+deadline. This routing table changes no language support. Translate selected commands into DVA steps only after their
 preparation and coverage are established.
