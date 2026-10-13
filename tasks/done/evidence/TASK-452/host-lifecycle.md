@@ -1,7 +1,7 @@
 # W07b2b — CE host lifecycle evidence
 
 이 문서는 제거 전 TaskChain 연동의 역사적 검증 기록이다. 현재 제품 범위는
-[제품 경계](../PRODUCT.md#product-boundaries)를 따른다.
+[제품 경계](../../../../PRODUCT.md#product-boundaries)를 따른다.
 
 2026-09-28 실제 host 검증. DVA는 TaskChain queue/verdict를 읽고 CE가
 Git/worktree와 보드 상태를 쓴다. 당시 `dva task-queue-start`는 보드가

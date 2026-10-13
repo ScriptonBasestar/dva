@@ -1,6 +1,7 @@
 # DVA — Dev Virtual Auto
 
-개발 환경 오케스트레이터. `dva.yml` 하나로 Docker Compose, Kubernetes, Helm, 로컬 프로세스를 통합 관리.
+개발 환경 구성을 일관되게 선언하고, 암호화된 설정과 함께 가상환경부터 네이티브까지
+실행·테스트하는 도구. 기능 채택 기준은 `SOUL.md`, 제품 범위는 `PRODUCT.md`가 소유한다.
 
 ## Documentation
 

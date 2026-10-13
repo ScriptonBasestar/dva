@@ -7,11 +7,9 @@ All notable changes to DVA are documented here.
 
 ### Changed
 
-- **TaskChain 전용 연동 제거**: 개발 환경 오케스트레이션의 제품 경계를 벗어난
-  `task-queue-start` 내장 명령, 큐 판정·바이너리 pin 코드와 이 저장소의
-  `task-queue`·`task-queue-verdict` interaction을 제거했습니다. 이 이름은 더 이상
-  예약하지 않습니다. 아래 TASK-455·496과 interaction 도입 항목은 제거 전 역사이며
-  다음 릴리스의 지원 기능이 아닙니다. 작업 선택과 CE 세션 시작은 외부 도구가 소유합니다.
+- **제품 목적과 에이전트 문맥 정리**: 일관된 개발 환경 구성, 암호화된 환경 입력,
+  가상환경·네이티브 실행과 테스트를 기능 채택 기준으로 명시했습니다. 제품 설명과
+  설정 생성 안내를 같은 목적으로 정렬하고 저장소 운영 정보와 분리했습니다.
 
 - **검증 스킬 책임 분리**: `dva-ci`는 프로필·시간 제한·잠금·로그·receipt 계약에
   집중하고, 검사 선택과 기술별 방법은 quality의 verification 스킬로 연결합니다.
@@ -23,16 +21,13 @@ All notable changes to DVA are documented here.
 
 - **현재 상태 문서 정합화**: 공개 v0.3.0과 최신 소스의 기능을 사용법의 지원표로 구분하고,
   빠른 시작을 named plan으로 통일했습니다. 다음 릴리스의 인수 기준은 ROADMAP.md가
-  소유하며, 보드의 종결률과 제품 완성도를 구분합니다. 런타임 동작 변경은 없습니다.
+  소유합니다. 런타임 동작 변경은 없습니다.
 
 ### Fixed
 
 - **Kubernetes Secret 전송 전 검증 보완**: null 값과 잘못된 Secret 이름을 전송 전에
   거부하며, 명시한 kubeconfig·context만 사용하도록 preflight를 보강했습니다.
 
-- **TaskChain pin 상태 후속 기록 (TASK-496)**: 아래 TASK-455 항목의 pin 비활성 설명은
-  도입 당시 상태입니다. 현재 소스는 공개 승인된 v0.1.0 darwin/arm64 pin을 활성화하며,
-  다른 플랫폼이나 실행 파일 해시 불일치는 queue·CE 호출 전에 거부합니다.
 - **만료 Access 토큰 판정 (TASK-495)**: 성공 종료만으로 인증됨으로 판정하지 않고,
   `access token --app`의 stdout이 비어 있으면 인증되지 않은 것으로 처리합니다.
 
@@ -41,10 +36,6 @@ All notable changes to DVA are documented here.
 - **`dva config env reseal`**: `.sops.yaml`의 생성 규칙이 바뀌었을 때 선언된
   `env_file`의 기존 `sops_source`를 같은 경로에 재암호화합니다. 평문 target은
   읽거나 쓰지 않으며 실패하면 원래 암호화 source를 유지합니다.
-- **이 저장소의 TaskChain 읽기 전용 interaction**: `task-queue`가 사람용 runnable과
-  agentRunnable을, `task-queue-verdict`가 empty/human_required/candidate/selection_required
-  판정을 보고합니다. 이 저장소가 선언한 interaction이며 모든 프로젝트의 내장 명령이
-  아닙니다. 시작은 별도의 컴파일된 `task-queue-start`가 담당합니다.
 
 - **Cloudflare Access 터널 선언 (TASK-459)**: kubectl/helm 엔트리에 `tunnel:`을
   선언하면 docs/68의 접속 선행조건을 DVA가 관리합니다. 실행 동사가 엔트리 전에
@@ -62,9 +53,7 @@ All notable changes to DVA are documented here.
   보존되므로 DVA는 매핑 키만, chart는 `existingSecret` 참조로 소유를 나눕니다. 새
   `dva secret status <target>`은 kubernetes 대상의 존재 여부와 키 이름 대조를 값 없이
   보고합니다.
-- **컴파일된 TaskChain 시작 경계 (TASK-455)**: `task-queue-start`가 큐 검증과
-  바이너리 해시 스냅샷을 DVA 내부 코드로 실행합니다. 공개 승인 전 pin은 여전히
-  비활성이라 CE 시작은 거부하며, 읽기 전용 verdict 도구에서는 시작할 수 없습니다.
+
 - **`sops_source` 누락을 알려주는 경로**: 설정 루트에 sops 흔적(`.sops.yaml`, `*.enc`,
   `*.sops.*`, `secrets.sources.*.sops`)이 있는데 어떤 `env_file` 엔트리도 `sops_source`를
   선언하지 않으면 `dva doctor`가 advisory 행과 붙여넣을 수 있는 선언 예시를 보여줍니다.
@@ -79,8 +68,6 @@ All notable changes to DVA are documented here.
 
 ### Compatibility
 
-- 미공개 소스에 도입됐던 `task-queue-start` 예약은 제거됐습니다. 프로젝트에서
-  이 이름으로 interaction을 선언할 수 있습니다.
 - 새 선언은 기존 v0.3.0 바이너리에서 사용할 수 없습니다. 실제 지원 범위는
   [사용법](USAGE.md#버전과-지원-범위), 다음 후보의 채택·검증 결정은
   [로드맵](ROADMAP.md#v040-후보-범위)을 따릅니다.

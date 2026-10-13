@@ -4,8 +4,10 @@
 
 ## What is DVA?
 
-DVA is a Docker Compose / Kubernetes CLI wrapper. Instead of memorizing long `docker compose exec ...` commands,
-you run short aliases defined in `dva.yml`.
+DVA keeps development environment configuration consistent, including encrypted environment
+inputs, and uses it to run and test applications across virtual and native environments.
+Project-owned stack declarations, named plans, and development commands share that configuration.
+Staging and production application deployment are outside its product scope.
 
 ## Rules
 

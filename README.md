@@ -1,9 +1,10 @@
 # DVA (Dev Virtual Auto)
 
-개발 환경 오케스트레이터 — `dva.yml` 하나로 Docker Compose, Kubernetes, Helm, 로컬 프로세스 등을 통합 관리.
+`dva.yml`로 개발 환경을 일관되게 구성하고, 암호화된 설정과 함께 가상환경부터
+네이티브까지 실행하고 테스트합니다.
 
 **제품 특성**: 재사용할 실행 대상은 `stack`, 실행할 조합은 **named plan**으로 선언합니다.
-DVA는 로컬 개발과 유지보수를 위한 도구입니다. 제품 경계는 [PRODUCT.md](PRODUCT.md#product-boundaries)를 따릅니다.
+구성과 실행 방식이 달라져도 공통 환경 입력과 의존 관계를 유지합니다. 제품 경계는 [PRODUCT.md](PRODUCT.md#product-boundaries)를 따릅니다.
 
 아래 설치·빠른 시작은 공개 버전 **v0.3.0** 기준입니다. 최신 소스의 추가 기능은
 [버전과 지원 범위](USAGE.md#버전과-지원-범위), 다음 릴리스의 완료 기준은
@@ -232,7 +233,6 @@ user/project discovery path에 복사합니다. runtime별 경로, per-skill cla
 설치된 DVA가 고장 나도 `make recovery-check`로 빌드와 핵심 검사를 직접 실행할
 수 있습니다. [DVA 자체 개발의 복구 경로](docs/53-ci-profiles.md#dva-자체-개발의-복구-경로)를 참고하세요.
 
-현재 작업과 과거 검증 증거의 진입점은 [작업 보드](tasks/README.md)입니다.
 
 원격 산출물의 시크릿 전송, GitHub Actions 실행 추적과 OCI digest 검증은
 [원격 산출물 작업](docs/62-remote-artifact-jobs.md)을 참고하세요.

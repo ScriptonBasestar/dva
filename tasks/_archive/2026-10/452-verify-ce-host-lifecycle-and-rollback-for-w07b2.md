@@ -28,3 +28,8 @@ pre-integration refusal 뒤 커밋·push 재시도, 별도 리뷰와 카드 전�
 - [x] Real CE same-owner start returns one worktree and clean unpushed discard records ABORTED with branch cleanup | verify: human — inspect CE run-status and worktree inventory
 - [x] A refused finish preserves ACTIVE worktree state, then correction and retry integrate and reclaim | verify: human — inspect task-manager-devbox CE receipts and source/branch state
 - [x] Independent review verifies the host evidence and ISSUE-004/006 stay open for human terminal evidence | verify: human — independent factual and done-review PASS; issue criteria remain unchecked
+
+## 증거 위치 정리 (2026-10-13)
+
+위 도입 당시 문서는 제품 설명과 분리해 [과거 호스트 검증 증거](../../done/evidence/TASK-452/host-lifecycle.md)로
+옮겼다. 검증 결과와 과거 리뷰 기록은 변경하지 않았다.

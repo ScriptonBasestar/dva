@@ -1,7 +1,8 @@
 # DVA 사용 가이드
 <!-- size-limit: exempt, ceiling: 143360 bytes, 1600 lines -- 이 저장소의 canonical 사용법 문서는 한 파일이라는 것이 의도된 설계다 (TASK-356). 쪼개면 CLAUDE.md/AGENTS.md가 SOUL/PRODUCT/ARCHITECTURE로 나눠 놓은 소유권 경계에 "사용법"이라는 네 번째 축을 새로 만들어야 하고, tools/doccheck의 검사와 여러 카드의 verify 바인딩이 이 경로를 직접 가리킨다. ceiling은 현재치(122KB/1326 prose lines)에 증설 여지를 더한 실제 상한이며, 여기에 닿으면 그때는 분할 근거가 생긴 것이다. -->
 
-> DVA CLI 전체 커맨드 레퍼런스 및 설정 가이드.
+> 일관된 개발 환경 구성과 암호화된 입력으로 가상환경·네이티브 실행과 테스트를
+> 연결하는 DVA CLI 레퍼런스. 제품 범위는 [PRODUCT.md](PRODUCT.md#product-boundaries)를 따른다.
 > 현재 권장 모델은 `stack`을 선언 저장소로 두고, 실제 실행은 `plans`의 이름을 대상으로 수행하는 구조입니다.
 > 빠른 시작은 [README.md](README.md), 설계 배경은 [docs/40-declarative-stack-and-plans.md](docs/40-declarative-stack-and-plans.md) 참조.
 

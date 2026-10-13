@@ -16,7 +16,11 @@ x-targets:
 
 # DVA (Dev Virtual Auto) CLI
 
-DVA is a development workspace orchestrator that unifies Docker Compose, Kubernetes, Helm, and local processes through a single `dva.yml` configuration. All CLI tasks for building, testing, running, and managing development infrastructure go through DVA.
+DVA keeps development environment configuration consistent, including encrypted environment
+inputs, and uses that configuration to run and test applications across virtual and native
+environments. Use project-declared DVA workflows for preparation, execution, and verification.
+Configuration generation stays within this purpose; staging and production application deployment
+is outside its scope.
 
 ## Rules (Mandatory)
 

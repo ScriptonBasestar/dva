@@ -1,100 +1,79 @@
 # DVA (Dev Virtual Auto)
 
-> One declarative interface for local development environments
+> 일관된 개발 환경 구성으로 가상환경부터 네이티브까지 실행하고 테스트한다.
 
 ## What is DVA?
 
-DVA is a local-first development environment orchestrator. It combines reusable stack
-declarations with named execution plans so developers can operate containers, clusters, and local
-processes through one project-owned interface.
+DVA는 프로젝트의 의존 서비스, 실행 방식, 환경 변수와 암호화된 설정을 일관되게
+구성하고, 그 구성을 바탕으로 개발 환경을 준비·실행·테스트하는 로컬 우선 도구다.
+컨테이너·개발용 클러스터·호스트 프로세스를 프로젝트가 선언한 계획으로 조합한다.
+기능 채택의 판단 기준은 [SOUL.md](SOUL.md)가 소유한다.
 
 ## Why?
 
-Development environments become difficult to reproduce when commands are scattered across shell
-history, Compose files, cluster tooling, Make targets, and personal setup notes.
-
-- **Fragmented execution**: Each backend exposes different commands and lifecycle semantics.
-- **Implicit knowledge**: Developers must remember file combinations, service subsets, and order.
-- **Configuration drift**: Local, staging, remote, and team setups duplicate similar definitions.
-- **Agent guesswork**: Coding agents cannot safely operate workflows they cannot discover.
-
-DVA makes execution intent explicit, resolves it into a validated plan, and delegates each action
-to the tool that owns the underlying resource.
+실행 위치마다 다른 설정과 명령을 관리하면 개발자가 같은 프로젝트를 서로 다른
+조건으로 실행하게 된다. 의존 서비스, 환경 입력과 테스트 경로를 한곳에서 선언하면
+사람과 에이전트가 같은 개발 환경을 발견하고 재현할 수 있다.
 
 ## Who is it for?
 
-| User Type | Core Need |
-|-----------|-----------|
-| **Application developers** | Start and inspect a complete project without memorizing backend commands |
-| **Devbox and monorepo teams** | Share root orchestration while preserving subproject ownership |
-| **Infrastructure-heavy projects** | Coordinate local processes, containers, and cluster tools |
-| **AI coding agent users** | Discover valid project commands and effective configuration before execution |
+| 사용자 | 필요한 가치 |
+|---|---|
+| 애플리케이션 개발자 | 같은 구성으로 컨테이너 또는 네이티브 실행과 테스트 |
+| Devbox·모노레포 팀 | 공유 의존 서비스와 하위 프로젝트의 실행 구성을 일관되게 조합 |
+| 개발 인프라가 복잡한 프로젝트 | 서비스·프로세스의 의존 관계, 준비·시작·종료 순서 관리 |
+| 코딩 에이전트 사용자 | 선언된 개발 환경과 검증 명령을 조회하고 같은 경로로 실행 |
 
 ## Key Capabilities
 
-- **Declarative stack catalog**: Define reusable logical execution targets and their runners
-- **Named execution plans**: Select targets, runner, service subset, order, and dependencies
-- **Environment composition**: Apply environment, site, variables, modules, and local overrides
-- **Project commands**: Expose one-shot interactions and one-time provisioning procedures
-- **Validation and diagnostics**: Validate schema and semantics, inspect effective configuration,
-  and diagnose prerequisites
-- **Machine-readable discovery**: Publish commands and resolved configuration for coding agents
-- **Subproject composition**: Import active child projects without taking ownership of their native commands
-- **Portable skill installation**: Install bundled AI skills into runtime directories
-  (`dva skill install|status|uninstall|backup`) with per-skill ownership claims, collision
-  rejection for unowned files, and recoverable takeover backups behind explicit runtime selection
+- **개발 환경 선언**: 재사용 가능한 실행 대상과 runner를 `stack`에 선언한다.
+- **실행 계획**: `plans`로 대상·runner·서비스 범위·순서·의존 관계를 선택한다.
+- **환경 구성의 합성**: 공통 설정에 환경·실행 위치·모듈·로컬 차이를 적용한다.
+- **암호화된 환경 입력**: 암호화 원본과 환경 입력을 연결하고 개발 실행에 필요한
+  비밀값을 공유 선언의 평문과 분리한다.
+- **가상환경과 네이티브 실행·테스트**: 프로젝트가 제공하는 실행 경로를 조합하고
+  준비 절차, 단발성 검사와 CI 검증을 같은 인터페이스로 호출한다.
+- **검증과 진단**: 설정·전제 조건을 확인하고 최종 구성과 실행 결과를 조회한다.
+- **하위 프로젝트 조합**: 실행 소유권을 유지하면서 활성 프로젝트를 가져온다.
 
 ## Product Boundaries
 
-DVA targets local development and maintenance work, including explicit invocation and
-observation of repository-owned artifact build, publication, and verification jobs. It is not
-a production operations or application deployment tool.
+제품 범위는 개발 환경 구성과 이를 사용하는 실행·테스트에 직접 필요한 기능이다.
+새 기능은 어떤 개발 환경과 입력을 사용하며 어떤 실행·검증 문제를 해결하는지
+설명한 뒤 [기능 채택 기준](SOUL.md#기능을-채택하는-기준)에 따라 판단한다.
 
-- Local virtual environments are the default execution target. Declare a remote target
-  only for a resource that cannot run locally, such as a shared database or a managed
-  service.
-- Remote access carries development or maintenance intent. Repository-owned artifact jobs
-  retain their build and publication logic; DVA owns explicit invocation, tracking, and result
-  verification. Artifact promotion, application deployment, rollout, rollback, incident
-  response, and production operations remain outside its model.
-- `environments` names such as `stg` and `prd` label which variable set a plan resolves.
-  They are not permission to operate that environment from DVA.
-- Custom configuration can reach past this boundary. Generated configuration —
-  `dva init` scaffolds, skills, and agent flows — stays inside it.
+- 로컬의 가상환경과 네이티브 프로세스가 기본 실행 대상이다. 로컬에서 제공할 수 없는
+  공유 데이터베이스나 관리형 서비스가 필요한 경우에만 원격 자원을 선언한다.
+- 암호화는 개발 환경 입력을 안전하게 공유하고 사용하는 범위에 포함한다.
+  비밀값을 설정 필드·로그·생성 문서에 평문으로 넣지 않는다.
+- `stg`·`prd` 환경 이름은 변수 집합을 구분한다. 스테이징·프로덕션 애플리케이션
+  배포, 산출물 승격, rollout·rollback과 운영 대응은 제품 범위 밖이다.
+- Compose·Kubernetes·Helm·언어별 실행 및 테스트 도구는 자신의 리소스와 검사
+  내용을 소유한다. DVA는 공통 설정 해석, 순서, 수명 주기와 결과 전달을 담당한다.
+- `provision`은 준비 절차, `interaction`은 단발성 개발 명령, `plans`는 반복 가능한
+  실행 조합을 담당한다. 같은 서비스의 수명 주기를 여러 경로에서 중복 소유하지 않는다.
+- 임의의 외부 명령을 호출할 수 있다는 사실은 제품 범위를 확장하는 근거가 아니다.
+  생성되는 설정·스킬·에이전트 안내도 같은 개발 환경 목적을 따른다.
 
-DVA coordinates existing developer tools; it does not replace them.
-Task board interpretation, runnable task selection, and agent task/worktree session
-management belong to external task tools; DVA has no built-in TaskChain or CE task lifecycle.
-
-- Compose, Kubernetes, Helm, and process tools retain ownership of their native resources.
-- DVA does not hide destructive lifecycle operations behind implicit automation.
-- Provisioning is for one-time preparation; repeatable startup belongs to execution plans.
-- Project secrets remain outside shared declarative configuration. Named secret transfers
-  declare encrypted sources, selected keys, and destinations; plaintext values are never
-  configuration fields. See [remote artifact jobs](docs/62-remote-artifact-jobs.md).
-- AI-assisted improvement is optional and must preserve the same validation and ownership rules.
+스킬 설치와 AI 기반 설정 개선은 선언된 개발 환경을 발견하고 사용하는 보조 기능이다.
+원격 산출물 명령의 현재 계약은 [원격 산출물 작업](docs/62-remote-artifact-jobs.md),
+암호화된 환경 입력은 [사용법](USAGE.md)을 따른다.
+이들 기능도 스테이징·프로덕션 애플리케이션 배포를 제품 목표로 추가하지 않는다.
 
 ## Current Status
 
-2026-10-08 기준, 핵심 실행 모델은 구현되어 있고 v0.3.0 공개·postflight를 마쳤다.
-최신 소스에는 공개판 이후의 추가 기능이 있다. 설치 바이너리와 소스의 기능 차이는
-[버전과 지원 범위](USAGE.md#버전과-지원-범위)가 소유한다.
+핵심 실행 모델은 구현되어 있으며 v0.3.0 공개 이후 소스에 추가 변경이 있다.
+공개판·최신 소스·플랫폼별 지원 차이는 [버전과 지원 범위](USAGE.md#버전과-지원-범위)가
+소유한다. 성숙도는 **Active development**다.
 
-성숙도는 **Active development**다. 기능 범주가 모두 존재하거나 작업 보드가 비었다는
-사실만으로 모든 플랫폼·백엔드의 지원 또는 다음 릴리스 완료를 뜻하지 않는다.
-현재 제품 인터페이스는 프로젝트 소유 `dva.yml`과 CLI이며, named plan을 기본 실행
-모델로 사용한다. 무인자 호출의 호환 경로는 [사용법](USAGE.md#무인자-lifecycle-선택)을 따른다.
-
-다음 릴리스는 [ROADMAP.md](ROADMAP.md)의 인수 기준을 충족해야 완료다. 새 기능을
-현재 지원으로 표시하려면 구현·회귀 검증과 지원 범위를 먼저 확정하고, 공개 여부는
-릴리스 증거로 구분한다. 선택적 플랫폼 확장은 채택 전까지 완료율의 분모에 넣지 않는다.
+현재 제품 인터페이스는 프로젝트 소유 `dva.yml`과 CLI이며 named plan을 기본 실행
+모델로 사용한다. 새 기능의 지원 표시는 구현, 회귀 검증과 플랫폼 범위의 증거를
+필요로 한다. 다음 공개 버전의 인수 기준은 [ROADMAP.md](ROADMAP.md)를 따른다.
 
 ## Learn More
 
-- [README.md](README.md) — Installation and quick start
-- [USAGE.md](USAGE.md) — Command and configuration reference
-- [SOUL.md](SOUL.md) — Durable design principles
-- [ARCHITECTURE.md](ARCHITECTURE.md) — System boundaries and data flow
-- [Configuration Merge Semantics](docs/30-config-merge-semantics.md) — Composition rules
-- [Execution Plan Resolution](docs/31-execution-plan-resolution.md) — Plan resolution contract
-- [Declarative Stack and Plans](docs/40-declarative-stack-and-plans.md) — Execution model design
+- [SOUL.md](SOUL.md) — 목적과 기능 채택 기준
+- [ARCHITECTURE.md](ARCHITECTURE.md) — 구현 경계와 데이터 흐름
+- [README.md](README.md) — 설치와 빠른 시작
+- [USAGE.md](USAGE.md) — 명령과 설정 레퍼런스
+- [ROADMAP.md](ROADMAP.md) — 다음 릴리스 목표와 인수 기준

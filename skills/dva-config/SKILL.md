@@ -10,7 +10,9 @@ user-invocable: false
 
 # DVA Config Authoring & Diagnosis
 
-Configure DVA from current local evidence. Preserve working project structure, classify each finding
+Configure a consistent development environment, including encrypted inputs and the project's
+virtual and native execution/test paths, from current local evidence. Preserve working project
+structure, classify each finding
 by owner, and validate from static schema to authorized runtime checks. For new or rewritten
 configuration, prefer `stack` declarations selected by named `plans`; treat `modes` and
 `applications` as legacy migration inputs.

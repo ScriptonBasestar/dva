@@ -105,11 +105,15 @@
     before migration; do not silently delete working commands.
 40. **Rewrite migration** — In rewrite mode, remove legacy applications/modes
     only after equivalent stack runners and plans exist.
-41. **Local-first scope** — Generated configuration serves local development and
-    maintenance. Default every execution target to a local virtual environment, and
-    declare a remote target only for a resource that cannot run locally (a shared
-    database, a managed service). Never generate release, rollout, or incident-response
-    workflows: DVA is not a production operations tool. Environment names follow
+41. **Development environment purpose** — Generated configuration must reproduce
+    a consistent development environment, including encrypted environment inputs,
+    and support the project's verified virtual and native execution/test paths.
+    For each addition, identify the development environment need, its declared
+    inputs and execution targets, and how its result is verified. A convenient
+    external command alone does not establish this need. Default to local execution;
+    declare a remote target only for a required resource unavailable locally.
+    Never generate staging or production application deployment, promotion,
+    rollout, rollback, or incident-response workflows. Environment names follow
     `naming-presets.md` § Environment Presets.
 42. **Capability closure and safe default** — Every selected service must have one
     verified provider for each required capability. Never invent a provider or select
