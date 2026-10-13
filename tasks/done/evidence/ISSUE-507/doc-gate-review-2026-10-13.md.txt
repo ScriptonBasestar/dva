@@ -1,0 +1,16 @@
+독립 문서 게이트 복구 리뷰
+
+Reviewer: Grok 4.7 (project-mandated model)
+Reasoning: medium
+Date: 2026-10-13
+Owner: codex/mbp, dva-doc-gate-repair
+Command: grok --model grok-4.7 --reasoning-effort medium --no-subagents --disable-web-search --permission-mode plan --tools '' --max-turns 1 --prompt-file tmp/verification-doc-gate-review.md
+Review mode: tool-free, read-only; complete four-file diff and unmodified F-10 heading supplied. Tests were supplied execution evidence, not reviewer executions.
+
+**PASS.** 차단 사항은 없다.
+
+범위 안의 수정은 네 파일의 문서뿐이다. `plan.md`와 `results.md`의 F-10 앵커 두 곳이 같은 `#f-10-gz-gityaml-자식-미연결-b-구조`로 바뀌었고, 이 값은 수정되지 않은 제목 `## F-10 `.gz-git.yaml` 자식 미연결 (B) — 구조`에 대한 정본 doccheck 앵커로 제시된 결과와 일치한다. ISSUE-506에는 `ownership: local`과 저장소 소유 근거만 추가되었고, `DB_HOST` 의존 테스트나 그 수정 절차는 그대로다. 체커, Makefile, Go 테스트, `findings.md` 제목은 이 diff에 없다.
+
+ISSUE-507은 등록 당시의 세 결함을 과거 사실로 남기고, 문서 정정과 환경 의존 테스트를 분리하며, 독립 `done-review` 전까지 `todo`로 둔다. 이는 검토 통과 후 소유자 CLI가 카드를 done으로 옮기지 않고 제자리에서 fixed로 닫는다는 절차와 맞다.
+
+판정은 제시된 실행 결과에만 근거한다. `make doc-check`는 exit 0(도구 7개, `broken_links` 0, ownership unclassified/mismatched/unreasoned 모두 0)이고, `go test ./tools/doccheck/ -count=1`도 exit 0이다. 이 검토는 읽기 전용이라 그 명령을 다시 실행하지 않았다.

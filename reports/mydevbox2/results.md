@@ -66,7 +66,7 @@
 - gitrump-ce에는 stack과 provision을 두지 않았다. 데몬이 루트 compose 서비스와 `../config/example.yaml`에 의존하므로 루트의 `gitrumpd` 엔트리가 유일한 소유자다.
 - knowchain 자식의 native 엔트리는 루트의 같은 이름 엔트리와 겹친다. 자식 쪽 엔트리는 자식 저장소만 열었을 때 쓰는 것이다. `import`는 stack을 가져오지 않으므로 루트 plan의 소유자는 바뀌지 않는다.
 - 루트 `import`는 더하지 않았다(B.3). knowchain 루트의 "Declaration only" 주석은 `dva run --project <name>` 안내로 바꿨다.
-- `db-orchestrator-rs`는 조사 단계 오탐이라 뺐다([findings.md F-10](findings.md#f-10-gz-gityaml-자식-미연결-b--구조) 정정).
+- `db-orchestrator-rs`는 조사 단계 오탐이라 뺐다([findings.md F-10](findings.md#f-10-gz-gityaml-자식-미연결-b-구조) 정정).
 
 ## 통합
 

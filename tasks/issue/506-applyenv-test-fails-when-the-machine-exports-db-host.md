@@ -6,6 +6,7 @@ priority: P3
 effort: S
 status: todo
 severity: low
+ownership: local
 discovered-in: "ISSUE-505 gate run (triaging the only failure in go test ./internal/cli/)"
 discovered-at: 2026-10-13
 created: 2026-10-13
@@ -65,3 +66,8 @@ fix: an empty-but-present variable still satisfies `os.LookupEnv` and shadows
 `t.Setenv` followed by `os.Unsetenv`, which keeps the restore), for every key
 the fixture's profile declares. Any other test that asserts merged var values
 without isolation has the same shape and should be swept in the same pass.
+
+## 소유권 — 이 저장소다
+
+문제의 테스트와 환경 병합 구현, 그리고 이 카드를 검사하는 문서 게이트는 모두 DVA
+저장소가 소유한다. 따라서 외부 보고 경로 없이 `ownership: local`로 분류한다.

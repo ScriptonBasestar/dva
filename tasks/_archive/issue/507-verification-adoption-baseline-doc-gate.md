@@ -3,20 +3,25 @@ id: ISSUE-507
 title: "Record baseline documentation gate failures during verification skill adoption"
 type: bug
 priority: P3
-status: todo
+status: done
 severity: medium
 ownership: local
 discovered-in: "Record baseline documentation gate failures during verification skill adoption"
 discovered-at: 2026-10-13
 created: 2026-10-13
+resolution: fixed
+resolved-at: 2026-10-13T12:20:27Z
+resolution-summary: "Resolved as fixed."
+quality-review: pass
+quality-review-evidence: tasks/done/evidence/ISSUE-507/doc-gate-review-2026-10-13.md.txt
 ---
 
 ## Summary
 
 검증 스킬 적용 중 `make doc-check`가 기존 문서 링크 2건과 ISSUE-506의
 ownership 누락으로 실패했다. 기준 커밋 `9c40d6ef992b3cba8507402ce00ff8680e9cf9af`의
-primary checkout과 이번 스킬 작업트리에서 같은 세 결함을 확인했다.
-이번 변경은 해당 문서나 ISSUE-506을 수정하지 않는다.
+primary checkout과 이번 스킬 작업트리에서 같은 세 결함을 확인했다. 이슈 등록 당시
+범위 밖으로 남긴 문서 정정은 별도 후속 작업에서 처리했다.
 
 ## 소유권 — 이 저장소다
 
@@ -41,5 +46,13 @@ doccheck 내부 종료 코드는 1이었다. 확인한 진단:
 ## Expected vs Actual
 
 - Expected: 기존 보고서 링크와 이슈 소유권 메타데이터가 문서 게이트를 통과한다.
-- Actual: 위 세 진단으로 전체 문서 게이트가 실패한다. 스킬 변경의 회귀 검증과
-  통합은 baseline 비교를 요구하며, 이 카드 등록만으로 해결 범위를 넓히지 않는다.
+- Actual: 등록 당시 위 세 진단으로 전체 문서 게이트가 실패했다. 스킬 변경의 회귀
+  검증과 통합은 baseline 비교를 요구하며, 이 카드 등록만으로 해결 범위를 넓히지
+  않았다.
+
+## Follow-up
+
+링크 anchor 두 곳과 ISSUE-506의 소유권 메타데이터를 후속 문서 정정에서 고쳤다.
+`make doc-check`와 `go test ./tools/doccheck/ -count=1`이 종료 코드 0이며,
+Grok 4.7의 독립 읽기 전용 리뷰도 PASS다. 이슈 정본 절차인 `ce task resolve ... fixed`로
+해결을 기록한 뒤 `ce task archive`로 보관한다. ISSUE-506의 환경 의존 테스트 문제는 별도로 남는다.
