@@ -2,10 +2,12 @@ package cirun
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -34,6 +36,45 @@ func TestRustWorkerEnvironment(t *testing.T) {
 				if !strings.Contains(env, "\n"+key+"="+test.want+"\n") {
 					t.Fatalf("missing %s=%s in %s", key, test.want, env)
 				}
+			}
+		})
+	}
+}
+
+func TestStepWorkerBudgetRecordsOnlyEffectiveNumericLimits(t *testing.T) {
+	for _, test := range []struct {
+		name   string
+		base   []string
+		step   map[string]string
+		want   *WorkerBudget
+		secret string
+	}{
+		{name: "defaults", want: &WorkerBudget{DVAJobs: 1, CargoBuildJobs: 1, RustTestThreads: 1}},
+		{name: "inherited", base: []string{"CARGO_BUILD_JOBS=2", "RUST_TEST_THREADS=3"}, want: &WorkerBudget{DVAJobs: 1, CargoBuildJobs: 2, RustTestThreads: 3}},
+		{name: "step override", base: []string{"CARGO_BUILD_JOBS=2", "RUST_TEST_THREADS=3"}, step: map[string]string{"CARGO_BUILD_JOBS": "4", "RUST_TEST_THREADS": "5"}, want: &WorkerBudget{DVAJobs: 1, CargoBuildJobs: 4, RustTestThreads: 5}},
+		{name: "invalid omits budget and arbitrary value", step: map[string]string{"CARGO_BUILD_JOBS": "not-a-number", "UNRELATED_SECRET": "do-not-record"}, secret: "do-not-record"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			root, state := t.TempDir(), t.TempDir()
+			report, err := Run(context.Background(), Options{
+				Root: root, ProfileName: "budget", StateDir: state, lockDirectory: state, Env: test.base,
+				Profile: profile(config.CIStep{Name: "budget", Run: "exit 0", Environment: test.step}),
+			})
+			if err != nil || len(report.Steps) != 1 {
+				t.Fatalf("report=%#v err=%v", report, err)
+			}
+			if got := report.Steps[0].WorkerBudget; !reflect.DeepEqual(got, test.want) {
+				t.Fatalf("worker budget=%#v want=%#v", got, test.want)
+			}
+			encoded, err := json.Marshal(report)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if test.want == nil && strings.Contains(string(encoded), "worker_budget") {
+				t.Fatalf("invalid budget was serialized: %s", encoded)
+			}
+			if test.secret != "" && strings.Contains(string(encoded), test.secret) {
+				t.Fatalf("arbitrary environment value leaked: %s", encoded)
 			}
 		})
 	}
@@ -170,6 +211,102 @@ func TestStatusShowsLiveReceiptThenCompletedReport(t *testing.T) {
 	reports, err := Status(state)
 	if err != nil || reports[0].Status != "succeeded" {
 		t.Fatalf("reports=%#v err=%v", reports, err)
+	}
+}
+
+func TestRunCheckpointsStartedStepBeforeCompletion(t *testing.T) {
+	root, state := t.TempDir(), t.TempDir()
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+	writer := &scopedReadyWriter{ready: make(chan struct{})}
+	done := make(chan struct {
+		report Report
+		err    error
+	}, 1)
+	go func() {
+		report, err := Run(ctx, Options{
+			Root: root, ProfileName: "checkpoint", StateDir: state, lockDirectory: state, Output: writer,
+			Profile: profile(config.CIStep{
+				Name:        "wait",
+				Run:         scopedWorkloadCommand(),
+				Environment: map[string]string{"DVA_CIRUN_SCOPED_HELPER": "workload"},
+			}),
+		})
+		done <- struct {
+			report Report
+			err    error
+		}{report, err}
+	}()
+	select {
+	case <-writer.ready:
+	case <-time.After(5 * time.Second):
+		t.Fatal("step did not reach its ready point")
+	}
+	reports, err := Status(state)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(reports) != 1 || reports[0].Status != "running" || len(reports[0].Steps) != 1 || reports[0].Steps[0].Status != "running" || reports[0].Steps[0].StartedAt.IsZero() || !reports[0].Steps[0].FinishedAt.IsZero() {
+		t.Fatalf("running receipt %#v", reports)
+	}
+	startedAt := reports[0].Steps[0].StartedAt
+	cancel()
+	var result struct {
+		report Report
+		err    error
+	}
+	select {
+	case result = <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("canceled checkpoint run did not finish")
+	}
+	if result.err == nil || result.report.Status != "canceled" {
+		t.Fatalf("result=%#v", result)
+	}
+	reports, err = Status(state)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(reports) != 1 || reports[0].Status != "canceled" || len(reports[0].Steps) != 1 || reports[0].Steps[0].Status != "canceled" || reports[0].Steps[0].FinishedAt.IsZero() {
+		t.Fatalf("completed receipt %#v", reports)
+	}
+	if !reports[0].Steps[0].StartedAt.Equal(startedAt) {
+		t.Fatalf("started_at changed: running=%s completed=%s", startedAt, reports[0].Steps[0].StartedAt)
+	}
+}
+
+func TestCheckpointFailureCancelsAndJoinsRunningSteps(t *testing.T) {
+	root := canonicalScopedRoot(t, t.TempDir())
+	writer := &scopedReadyWriter{ready: make(chan struct{})}
+	sentinel := errors.New("checkpoint failed")
+	started := time.Now()
+	reports, err := execute(context.Background(), root, config.CIProfile{
+		MaxParallel: 2,
+		Steps: []config.CIStep{
+			{Name: "complete", Run: "exit 0"},
+			{Name: "block", Run: scopedWorkloadCommand(), Environment: map[string]string{"DVA_CIRUN_SCOPED_HELPER": "workload"}},
+		},
+	}, nil, writer, func(steps []StepReport) error {
+		for _, step := range steps {
+			if step.Name == "complete" && step.Status == "succeeded" {
+				select {
+				case <-writer.ready:
+					return sentinel
+				case <-time.After(5 * time.Second):
+					return errors.New("blocking sibling did not reach its ready point")
+				}
+			}
+		}
+		return nil
+	})
+	if !errors.Is(err, sentinel) {
+		t.Fatalf("error=%v, want checkpoint sentinel", err)
+	}
+	if elapsed := time.Since(started); elapsed > 5*time.Second {
+		t.Fatalf("checkpoint failure did not join sibling promptly: %s", elapsed)
+	}
+	if len(reports) != 2 || reports[0].Status != "succeeded" || reports[1].Status != "canceled" || reports[1].FinishedAt.IsZero() {
+		t.Fatalf("reports=%#v", reports)
 	}
 }
 

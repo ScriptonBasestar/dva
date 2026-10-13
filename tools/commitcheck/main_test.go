@@ -240,8 +240,12 @@ func TestMessageFileModeRejectsWhatTheHistorySweepWouldHaveCaught(t *testing.T) 
 		{"over the limit", "docs(tasks): " + strings.Repeat("x", maxSubject) + "\n", 1},
 		{"unknown type", "wibble(cli): do a thing\n", 1},
 		{"comments and blanks skipped", "\n# please enter the commit message\nfix(cli): repair the parser\n", 0},
+		{"title only", "fix(cli): repair the parser\n", 0},
+		{"body after blank separator", "fix(cli): repair the parser\n\nExplain the parser change.\n", 0},
 		{"generated merge subject", "Merge branch 'x' into master\n", 0},
 		{"generated revert subject", "Revert \"fix(cli): repair the parser\"\n", 0},
+		{"generated merge subject with body", "Merge branch 'x' into master\nGenerated details.\n", 0},
+		{"generated revert subject with body", "Revert \"fix(cli): repair the parser\"\nGenerated details.\n", 0},
 		{"empty message is git's business", "\n# only comments\n", 0},
 	}
 	for _, tc := range cases {
@@ -254,6 +258,16 @@ func TestMessageFileModeRejectsWhatTheHistorySweepWouldHaveCaught(t *testing.T) 
 				t.Errorf("checkMessageFile = %d, want %d", got, tc.want)
 			}
 		})
+	}
+}
+
+func TestCheckMessageFileRejectsUnseparatedBody(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "COMMIT_EDITMSG")
+	if err := os.WriteFile(path, []byte("fix(cli): repair the parser\nExplain the parser change.\n"), 0o600); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	if got := checkMessageFile(path); got != 1 {
+		t.Errorf("checkMessageFile = %d, want 1 for an unseparated body", got)
 	}
 }
 

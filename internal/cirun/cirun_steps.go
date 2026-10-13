@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -46,7 +47,7 @@ func (w *lockedWriter) Write(p []byte) (int, error) {
 	return n, err
 }
 
-func execute(ctx context.Context, root string, p config.CIProfile, inherited []string, out io.Writer) ([]StepReport, error) {
+func execute(ctx context.Context, root string, p config.CIProfile, inherited []string, out io.Writer, checkpoint func([]StepReport) error) ([]StepReport, error) {
 	n := len(p.Steps)
 	reports := make([]StepReport, n)
 	byName := map[string]int{}
@@ -93,10 +94,20 @@ func execute(ctx context.Context, root string, p config.CIProfile, inherited []s
 	complete := 0
 	failed := false
 	var stepErr error
-	start := func(i int) {
-		running++
+	start := func(i int) error {
 		reports[i].Status = "running"
-		go func() { r, e := runStep(ctx, root, p.Steps[i], inherited, out); done <- result{i, r, e} }()
+		reports[i].StartedAt = time.Now()
+		reports[i].WorkerBudget = workerBudget(ciEnv(inherited, p.Steps[i].Environment))
+		if err := checkpoint(reports); err != nil {
+			reports[i].Status = "pending"
+			reports[i].StartedAt = time.Time{}
+			reports[i].WorkerBudget = nil
+			return fmt.Errorf("checkpoint started step %q: %w", p.Steps[i].Name, err)
+		}
+		running++
+		startedAt := reports[i].StartedAt
+		go func() { r, e := runStep(ctx, root, p.Steps[i], inherited, out, startedAt); done <- result{i, r, e} }()
+		return nil
 	}
 	for complete < n {
 		if ctx.Err() != nil {
@@ -113,7 +124,12 @@ func execute(ctx context.Context, root string, p config.CIProfile, inherited []s
 			if next < 0 {
 				break
 			}
-			start(next)
+			if err := start(next); err != nil {
+				stepErr = errors.Join(stepErr, err)
+				failed = true
+				cancel()
+				break
+			}
 		}
 		if running == 0 {
 			if !failed {
@@ -131,8 +147,13 @@ func execute(ctx context.Context, root string, p config.CIProfile, inherited []s
 		running--
 		complete++
 		reports[r.i] = r.r
-		if r.err != nil && stepErr == nil {
-			stepErr = fmt.Errorf("CI step %q: %w", p.Steps[r.i].Name, r.err)
+		if err := checkpoint(reports); err != nil {
+			stepErr = errors.Join(stepErr, fmt.Errorf("checkpoint completed step %q: %w", p.Steps[r.i].Name, err))
+			failed = true
+			cancel()
+		}
+		if r.err != nil {
+			stepErr = errors.Join(stepErr, fmt.Errorf("CI step %q: %w", p.Steps[r.i].Name, r.err))
 		}
 		if r.err != nil && !failed {
 			failed = true
@@ -156,10 +177,10 @@ func execute(ctx context.Context, root string, p config.CIProfile, inherited []s
 	return reports, nil
 }
 
-func runStep(ctx context.Context, root string, step config.CIStep, inherited []string, out io.Writer) (r StepReport, ret error) {
+func runStep(ctx context.Context, root string, step config.CIStep, inherited []string, out io.Writer, startedAt time.Time) (r StepReport, ret error) {
 	r.Name = step.Name
 	r.Status = "running"
-	r.StartedAt = time.Now()
+	r.StartedAt = startedAt
 	defer func() {
 		r.FinishedAt = time.Now()
 		r.Duration = r.FinishedAt.Sub(r.StartedAt)
@@ -218,6 +239,7 @@ func runStep(ctx context.Context, root string, step config.CIStep, inherited []s
 	if err := startProcess(cmd); err != nil {
 		return r, err
 	}
+	r.WorkerBudget = workerBudget(cmd.Env)
 	pid := cmd.Process.Pid
 	waited := make(chan error, 1)
 	go func() { waited <- cmd.Wait() }()
@@ -228,6 +250,32 @@ func runStep(ctx context.Context, root string, step config.CIStep, inherited []s
 	case <-stepCtx.Done():
 		terminateProcessGroup(pid, waited)
 		return r, stepCtx.Err()
+	}
+}
+
+func workerBudget(env []string) *WorkerBudget {
+	values := map[string]int{}
+	for _, entry := range env {
+		key, value, ok := strings.Cut(entry, "=")
+		if !ok {
+			continue
+		}
+		switch key {
+		case "DVA_CI_JOBS", "CARGO_BUILD_JOBS", "RUST_TEST_THREADS":
+			n, err := strconv.Atoi(value)
+			if err != nil || n < 1 {
+				return nil
+			}
+			values[key] = n
+		}
+	}
+	if len(values) != 3 {
+		return nil
+	}
+	return &WorkerBudget{
+		DVAJobs:         values["DVA_CI_JOBS"],
+		CargoBuildJobs:  values["CARGO_BUILD_JOBS"],
+		RustTestThreads: values["RUST_TEST_THREADS"],
 	}
 }
 

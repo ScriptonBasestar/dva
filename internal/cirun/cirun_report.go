@@ -44,12 +44,21 @@ type Options struct {
 }
 
 type StepReport struct {
-	Name       string        `json:"name"`
-	Status     string        `json:"status"`
-	Error      string        `json:"error,omitempty"`
-	StartedAt  time.Time     `json:"started_at"`
-	FinishedAt time.Time     `json:"finished_at"`
-	Duration   time.Duration `json:"duration"`
+	Name         string        `json:"name"`
+	Status       string        `json:"status"`
+	Error        string        `json:"error,omitempty"`
+	StartedAt    time.Time     `json:"started_at"`
+	FinishedAt   time.Time     `json:"finished_at"`
+	Duration     time.Duration `json:"duration"`
+	WorkerBudget *WorkerBudget `json:"worker_budget,omitempty"`
+}
+
+// WorkerBudget records the numeric worker limits actually supplied to a CI step.
+// It intentionally excludes all other environment values.
+type WorkerBudget struct {
+	DVAJobs         int `json:"dva_ci_jobs"`
+	CargoBuildJobs  int `json:"cargo_build_jobs"`
+	RustTestThreads int `json:"rust_test_threads"`
 }
 
 type Attestation struct {

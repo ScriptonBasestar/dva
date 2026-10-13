@@ -74,6 +74,19 @@ canonical root를 전달하며, 실제 parent root 락과 ID가 살아 있으면
 Git 저장소가 아니면 Git attestation이 없다고 표시한다. HEAD만 같은 과거 결과를
 자동 재사용하지 않는다. 로그는 비밀값이 포함될 수 있어 자동 게시하지 않는다.
 
+실행 중 step의 dispatch와 완료 때 기존 receipt를 atomic checkpoint로 저장한다.
+started_at은 scheduler가 step을 배정한 시각이며 최종 receipt에서도 같은 값을 유지한다.
+프로세스 spawn 성공 시각을 증명하는 값은 아니다. 감독 프로세스가 강제 종료돼도
+마지막 저장된 단계와 배정 시각을 확인할 수 있다.
+살아 있는 lock이 없으면 status는 미완료 running receipt를 stale로 표시하며,
+checkpoint가 전체 검사 완료나 성공을 뜻하지 않는다. 종료 시각과 사라진 출력을
+추정해서 채우지 않으며 새 heartbeat 프로세스는 만들지 않는다.
+
+step의 선택적 `worker_budget`은 자식 환경에 전달하는 `DVA_CI_JOBS`,
+`CARGO_BUILD_JOBS`, `RUST_TEST_THREADS`를 각각 숫자로 기록한다. 세 값이 모두 양의
+정수일 때만 필드를 남기며 그 밖의 값은 기록하지 않는다. 이 값은 도구에 전달한
+설정이며 실제 CPU 사용량이나 도구가 실행한 worker 개수를 측정한 값은 아니다.
+
 스킬은 선택·진단·언어별 조합을 안내하고, 실제 시간·락·취소는 런타임이 강제한다.
 조직 전체 채택 정책은 포트폴리오, 구체적 검사 목록과 제외 사유는 각 저장소가 소유한다.
 
