@@ -87,7 +87,6 @@ func init() {
 	rootCmd.AddGroup(coreGroup, projectGroup, lifecycleGroup, integrationGroup, advancedGroup)
 
 	runCmd.GroupID = "core"
-	taskQueueStartCmd.GroupID = "core"
 	lsCmd.GroupID = "core"
 	versionCmd.GroupID = "core"
 	manifestCmd.GroupID = "core"
@@ -116,7 +115,6 @@ func init() {
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(lsCmd)
 	rootCmd.AddCommand(runCmd)
-	rootCmd.AddCommand(taskQueueStartCmd)
 	rootCmd.AddCommand(composeCmd)
 	rootCmd.AddCommand(upCmd)
 	rootCmd.AddCommand(downCmd)

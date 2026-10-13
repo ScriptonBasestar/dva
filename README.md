@@ -232,10 +232,6 @@ user/project discovery path에 복사합니다. runtime별 경로, per-skill cla
 설치된 DVA가 고장 나도 `make recovery-check`로 빌드와 핵심 검사를 직접 실행할
 수 있습니다. [DVA 자체 개발의 복구 경로](docs/53-ci-profiles.md#dva-자체-개발의-복구-경로)를 참고하세요.
 
-이 저장소의 `task-queue`·`task-queue-verdict` interaction은 TaskChain의 큐를 읽고,
-컴파일된 `task-queue-start`는 승인 바이너리 검증 후 CE 시작을 요청합니다.
-[TaskChain 실행 경계](ARCHITECTURE.md#taskchain-queue-boundary)와
-[버전·플랫폼 지원표](USAGE.md#버전과-지원-범위)를 따릅니다.
 현재 작업과 과거 검증 증거의 진입점은 [작업 보드](tasks/README.md)입니다.
 
 원격 산출물의 시크릿 전송, GitHub Actions 실행 추적과 OCI digest 검증은

@@ -37,7 +37,7 @@ before retrying. Start mode is bound to this repository's `tasks` board.
 
 ## Evidence (2026-09-28)
 
-`go test ./tools/taskqueueverdict -count=1`, the targeted tagged DVA
+과거 검증 명령 1 (아래 제거 후 기록 참조), the targeted tagged DVA
 integration test, `go vet ./tools/taskqueueverdict`, `dva config validate`,
 `make doc-check`, and `ce task gate` passed. Full DVA CI run
 `85309aa644a6d1103d85de07477c8ef8` succeeded. Independent code review
@@ -50,3 +50,15 @@ The synthetic fixture proves TASK/ISSUE identity mapping, exact CE argv/cwd,
 single invocation, and observable BLOCKED JSON with nonzero exit. It does
 not prove real CE finish/discard or terminal card transitions, which remain
 W07b2b. ISSUE-004/006 remain open.
+
+## 기능 제거 후 기록 (2026-10-13)
+
+TaskChain 전용 연동을 DVA 제품 경계에서 제거했다. 위의 검증 결과는 도입 당시
+기록이며 현행 실행 바인딩이 아니다. 원래 명령과 과거 리뷰 영수증은 보존한다.
+제품 판단은 [제품 경계](../../../PRODUCT.md#product-boundaries)를 따른다.
+
+과거 검증 명령 1:
+
+```sh
+go test ./tools/taskqueueverdict -count=1
+```

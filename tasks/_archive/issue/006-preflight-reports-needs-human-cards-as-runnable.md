@@ -122,9 +122,9 @@ lifecycle 규칙은 ce-agent-kit에서만 작성"이라고 적는 별개 개념�
 
 ## Resolution Criteria
 
-- [x] 기존 회귀가 agent와 human 집합을 나누고 `human_required`와 `empty`를 종료 상태로 둔다. 사람 카드가 agent 집합에 들어가면 거부한다 | verify: `go test -count=1 -run '^(TestClassifyStates|TestParseQueueRejectsInvalidInvariants)$' ./internal/taskqueue/` (observed: 2026-10-05 — exit 0) (regression-guard)
-- [x] 명시된 제품 checkout의 바이너리로 현재 보드를 읽어 사람 필드·집합·Accepted 제외를 확인한다. 기본 PATH 설치를 바꾸지 않는다 | verify: `taskchain_reader_repo="${TASKCHAIN_PRODUCT_REPO:-$HOME/mydevbox/task-manager-devbox/taskchain-task-manager}"; test -d "$taskchain_reader_repo" && test -x "$taskchain_reader_repo/build/taskchain-task-manager" && PATH="$taskchain_reader_repo/build:$PATH" dva task-queue | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["runnableCount"]==len(d["runnable"]) and d["agentRunnableCount"]==0 and d["agentRunnable"]==[]; assert all(x["needsHuman"] is True and x["executionMode"] in ("external","decision") and x["allowedPaths"]==[] for x in d["runnable"]); assert not {x["card"]["id"] for x in d["runnable"]}.intersection({"TASK-487","TASK-491"})'` (observed: 2026-10-05 — exit 0)
-- [x] 같은 명시 바이너리의 읽기 전용 verdict가 human_required/empty이며 agent 후보가 없다. CE start·terminal 검사는 아니다 | verify: `taskchain_reader_repo="${TASKCHAIN_PRODUCT_REPO:-$HOME/mydevbox/task-manager-devbox/taskchain-task-manager}"; test -d "$taskchain_reader_repo" && test -x "$taskchain_reader_repo/build/taskchain-task-manager" && PATH="$taskchain_reader_repo/build:$PATH" dva task-queue-verdict | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["state"] in ("human_required","empty") and d["agentRunnableCount"]==0 and d["candidate"] is None'` (observed: 2026-10-05 — exit 0)
+- [x] 기존 회귀가 agent와 human 집합을 나누고 `human_required`와 `empty`를 종료 상태로 둔다. 사람 카드가 agent 집합에 들어가면 거부한다 | verify: human — 과거 검증 명령 1 (아래 제거 후 기록 참조) (observed: 2026-10-05 — exit 0) (regression-guard)
+- [x] 명시된 제품 checkout의 바이너리로 현재 보드를 읽어 사람 필드·집합·Accepted 제외를 확인한다. 기본 PATH 설치를 바꾸지 않는다 | verify: human — 과거 검증 명령 2 (아래 제거 후 기록 참조) (observed: 2026-10-05 — exit 0)
+- [x] 같은 명시 바이너리의 읽기 전용 verdict가 human_required/empty이며 agent 후보가 없다. CE start·terminal 검사는 아니다 | verify: human — 과거 검증 명령 3 (아래 제거 후 기록 참조) (observed: 2026-10-05 — exit 0)
 
 
 
@@ -245,3 +245,27 @@ Accepted 487·491 제외와 scope 회귀가 모두 종료 코드 0이다. 수락
 범위로 해결한다. source 통합 중인 TASK-493은 doing이며 완료로 취급하지 않는다.
 기본 설치본 교체(ISSUE-490), 공개 pin 승인(ISSUE-453), CE start/terminal 검증은
 이 해결에 포함되지 않는다. 역사적 기준·보고는 위 기록 그대로 보존한다.
+
+## 기능 제거 후 기록 (2026-10-13)
+
+TaskChain 전용 연동을 DVA 제품 경계에서 제거했다. 위의 검증 결과는 도입 당시
+기록이며 현행 실행 바인딩이 아니다. 원래 명령과 과거 리뷰 영수증은 보존한다.
+제품 판단은 [제품 경계](../../../PRODUCT.md#product-boundaries)를 따른다.
+
+과거 검증 명령 1:
+
+```sh
+go test -count=1 -run '^(TestClassifyStates|TestParseQueueRejectsInvalidInvariants)$' ./internal/taskqueue/
+```
+
+과거 검증 명령 2:
+
+```sh
+taskchain_reader_repo="${TASKCHAIN_PRODUCT_REPO:-$HOME/mydevbox/task-manager-devbox/taskchain-task-manager}"; test -d "$taskchain_reader_repo" && test -x "$taskchain_reader_repo/build/taskchain-task-manager" && PATH="$taskchain_reader_repo/build:$PATH" dva task-queue | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["runnableCount"]==len(d["runnable"]) and d["agentRunnableCount"]==0 and d["agentRunnable"]==[]; assert all(x["needsHuman"] is True and x["executionMode"] in ("external","decision") and x["allowedPaths"]==[] for x in d["runnable"]); assert not {x["card"]["id"] for x in d["runnable"]}.intersection({"TASK-487","TASK-491"})'
+```
+
+과거 검증 명령 3:
+
+```sh
+taskchain_reader_repo="${TASKCHAIN_PRODUCT_REPO:-$HOME/mydevbox/task-manager-devbox/taskchain-task-manager}"; test -d "$taskchain_reader_repo" && test -x "$taskchain_reader_repo/build/taskchain-task-manager" && PATH="$taskchain_reader_repo/build:$PATH" dva task-queue-verdict | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["state"] in ("human_required","empty") and d["agentRunnableCount"]==0 and d["candidate"] is None'
+```

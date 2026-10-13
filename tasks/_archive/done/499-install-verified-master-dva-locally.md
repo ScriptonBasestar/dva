@@ -54,7 +54,7 @@ needed; TASK-499 uses the declared CE worktree lifecycle only.
 
 - [x] Both default install paths equal the verified local build; baseline commit/hash differ | verify: `python3 -c 'import hashlib,json,pathlib,shutil,subprocess; d=json.loads(pathlib.Path("tasks/done/evidence/TASK-499/installation.json").read_text()); assert d["sourceCommit"]=="2d08fcdeedda55cef2d10887609a1818b3ee2565" and d["installExitCode"]==0 and d["buildInputClean"]; assert subprocess.check_output(["git","rev-parse",d["sourceCommit"]+"^{tree}"],text=True).strip()==d["sourceTree"]; assert len(d["destinations"])==2 and shutil.which("dva")==d["selectedPath"]; assert all(hashlib.sha256(pathlib.Path(x["path"]).read_bytes()).hexdigest()==d["sha256"] and "commit: "+d["sourceCommit"] in subprocess.check_output([x["path"],"version"],text=True) for x in d["destinations"]); assert "commit: "+d["sourceCommit"] in subprocess.check_output(["dva","version"],text=True)'`
 - [x] Prior destinations are durably backed up and differ from the new executable | verify: `python3 -c 'import hashlib,json,pathlib; b=json.loads(pathlib.Path("tasks/done/evidence/TASK-499/before.json").read_text()); d=json.loads(pathlib.Path("tasks/done/evidence/TASK-499/installation.json").read_text()); assert len(b["destinations"])==2; assert all(hashlib.sha256(pathlib.Path(x["backup"]).read_bytes()).hexdigest()==x["sha256"] and x["sha256"]!=d["sha256"] for x in b["destinations"])'`
-- [x] Installed default DVA successfully queries the actual board | verify: `dva task-queue >/dev/null && dva task-queue-verdict >/dev/null`
+- [x] Installed default DVA successfully queries the actual board | verify: human — 과거 검증 명령 1 (아래 제거 후 기록 참조)
 - [x] Independent operational completion review is PASS | verify: `python3 -c 'import json,pathlib; d=json.loads(pathlib.Path("tasks/done/evidence/TASK-499/independent-review.json").read_text()); assert d["verdict"]=="PASS" and d["sessionId"]'`
 
 ## Attempts
@@ -76,3 +76,15 @@ interpret that later CI artifact as the file installed earlier.
 This one-time operational record is archived after independent completion review;
 its live installation predicates grade this adoption event, not every future upgrade.
 Backups and original historical TASK-496 receipts are preserved.
+
+## 기능 제거 후 기록 (2026-10-13)
+
+TaskChain 전용 연동을 DVA 제품 경계에서 제거했다. 위의 검증 결과는 도입 당시
+기록이며 현행 실행 바인딩이 아니다. 원래 명령과 과거 리뷰 영수증은 보존한다.
+제품 판단은 [제품 경계](../../../PRODUCT.md#product-boundaries)를 따른다.
+
+과거 검증 명령 1:
+
+```sh
+dva task-queue >/dev/null && dva task-queue-verdict >/dev/null
+```

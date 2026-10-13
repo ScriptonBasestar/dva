@@ -69,7 +69,7 @@ README edit needs a human override; no upstream product change or credential is 
 
 ## Resolution Criteria
 
-- [ ] README no longer asserts an inactive production pin | verify: `python3 -c 'from pathlib import Path; s=Path("README.md").read_text(); a=s.index("dva task-queue-start feat"); b=s.index("컴파일된 DVA 명령은 CE 자식",a); p=s[a:b]; assert "darwin/arm64" in p and "mutationAuthorized: false" not in p and "TaskChain 릴리스가 없어" not in p'`
+- [ ] README no longer asserts an inactive production pin | verify: human — 과거 검증 명령 1 (아래 제거 후 기록 참조)
 - [ ] TASK-496 final independent completion review is PASS | verify: `python3 -c 'import json,pathlib; r=json.loads(pathlib.Path("tasks/done/evidence/TASK-496/final-review.json").read_text()); assert r["verdict"]=="PASS" and r["sessionId"]'`
 
 ## Evidence
@@ -84,3 +84,15 @@ After the session explained the root README protection and recommended permissio
 for lines 233–241 only, the user instructed: 이어서 직접 처리해줘. This authorizes
 that scoped correction; it does not alter the installed personal protection policy.
 The agent proceeds with the paragraph correction and independent final review.
+
+## 기능 제거 후 기록 (2026-10-13)
+
+TaskChain 전용 연동을 DVA 제품 경계에서 제거했다. 위의 검증 결과는 도입 당시
+기록이며 현행 실행 바인딩이 아니다. 원래 명령과 과거 리뷰 영수증은 보존한다.
+제품 판단은 [제품 경계](../../../PRODUCT.md#product-boundaries)를 따른다.
+
+과거 검증 명령 1:
+
+```sh
+python3 -c 'from pathlib import Path; s=Path("README.md").read_text(); a=s.index("dva task-queue-start feat"); b=s.index("컴파일된 DVA 명령은 CE 자식",a); p=s[a:b]; assert "darwin/arm64" in p and "mutationAuthorized: false" not in p and "TaskChain 릴리스가 없어" not in p'
+```

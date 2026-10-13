@@ -27,7 +27,6 @@ root·공유 자원별 중복 실행 방지, 상태 조회는 [CI 프로필](doc
 | GitHub Secret 전송·artifact job·OCI 검증 | v0.3.0에 포함 | Linux/macOS. github.com의 저장소 수준 Secret과 공개 OCI 대상. [상세 계약](docs/62-remote-artifact-jobs.md) |
 | Kubernetes Secret 전송·`secret status` | 미공개 | Linux/macOS, 명시적 dev 대상·kubeconfig·context. [상세 계약](docs/69-kubernetes-secret-target.md) |
 | 원격 접근 `tunnel:` | 미공개 | cloudflared, kubectl/helm 엔트리. Windows 미지원. [상세 계약](docs/68-remote-access-tunnel.md) |
-| `task-queue-start` | 미공개 | 승인된 TaskChain pin은 macOS ARM64만. 다른 플랫폼·해시 불일치는 queue/CE 호출 전 거부 |
 | `agent-deny` | v0.3.0에 포함 | Claude Code만 구현. 다른 런타임의 현황·제약은 [deny 지원표](docs/agent-deny-rules.md#runtime-coverage) 참조 |
 | Skaffold 상태 조회 | v0.3.0에 포함 | 시작·종료 adapter는 있으나 `status`는 실제 클러스터 조회 없이 `unknown` 반환 |
 
@@ -111,7 +110,6 @@ Linux에서도 같은 절차로 해당 archive를 선택하고 `sha256sum -c`를
 | `dva config env edit/unseal` | `env_file` 엔트리의 sops 암호화 소스를 편집/복호화 |
 | `dva config env seal/show` | `env_bridge:` 게이트 활성화 시에만: 평문을 암호화/터미널에 표시 |
 | `dva run CMD [ARGS]` | `dva.yml`에 정의된 interaction 커맨드 실행 |
-| `dva task-queue-start <type>` | darwin/arm64 published-approved v0.1.0 TaskChain pin 하나. 승인 실행 파일 SHA를 확인한 스냅샷을 실행한 뒤에만 CE를 시작. 미지원 플랫폼·해시 불일치는 큐·CE 전에 실패 |
 | `dva ls` | 실행 가능한 이름과 interaction 목록 표시 |
 | `dva manifest` | 자동화용 구조화 command manifest 출력 |
 | `dva show` | 선언된 워크스페이스 설정 요약 표시 |
@@ -125,26 +123,6 @@ Linux에서도 같은 절차로 해당 archive를 선택하고 `sha256sum -c`를
 
 `dva run`은 생략 가능합니다. `dva shell`은 `dva run shell`과 동일합니다.
 `namespace:command` 문법도 지원합니다 (예: `dva engine:test`).
-
-### TaskChain 큐와 CE 시작
-
-이 저장소의 `dva task-queue`와 `dva task-queue-verdict`는 프로젝트 interaction이다.
-Go toolchain과 `PATH`의 `taskchain-task-manager`를 사용하며, 하위 디렉터리에서
-호출해도 설정 루트의 `tasks/`를 조회한다. 일반 프로젝트의 내장 명령으로 가정하지 않는다.
-
-`task-queue`는 사람용 `runnable`과 에이전트용 `agentRunnable`을 보여준다.
-`task-queue-verdict`는 `empty`, `human_required`, `candidate`, `selection_required`의
-버전 있는 JSON 판정을 제공한다. `candidate`는 실행 후보이며 claim이나 완료가 아니다.
-두 interaction은 바이너리 출처를 검증하지 않으므로 그 결과만으로 CE 시작을 승인하지 않는다.
-읽기 전용 verdict 도구의 `--start-type`으로 CE를 시작할 수 없다.
-
-컴파일된 내장 명령 `dva task-queue-start <type>`은 승인 바이너리의 해시 스냅샷을
-검증하고 단일 후보일 때 CE 시작을 요청한다. `<type>`은 `feat`, `fix`, `refactor`,
-`docs`, `test`, `chore`, `perf` 중 하나를 명시한다. 지원 버전·플랫폼은
-[지원표](#버전과-지원-범위), 실행 소유권은
-[아키텍처](ARCHITECTURE.md#taskchain-queue-boundary)를 따른다.
-CE 자식의 실패 종료 코드는 DVA의 오류 코드 1로 정규화되므로 실패 여부와 CE 상태를
-함께 확인한다. 이 명령은 작업 구현·완료·복구를 대신하는 자동 실행 루프가 아니다.
 
 ### AI 스킬 설치
 
@@ -1735,25 +1713,15 @@ health_checks:
 커맨드와 겹치면 `dva validate`가 exit 1로 실패하고, 설정을 읽을 때마다 경고가 출력됩니다.
 선언이 버려지는 것은 아니며 짧은 형식만 내장 커맨드에게 넘어갑니다 — 아래 규칙을 따릅니다.
 
-**예약어 30개** — 내장 커맨드 이름입니다:
+**예약어 29개** — 내장 커맨드 이름입니다:
 
 ```text
 help  version   ls       compose  up      stop    down   build
 run   provision validate manifest kubectl ktl     ssh    console
 completion init  status   config   logs    restart show   doctor
 skill agent-deny
-ci secret job task-queue-start
+ci secret job
 ```
-
-`task-queue-start`는 내장 커맨드입니다. 같은 이름의 기존
-`interaction.task-queue-start` 선언은 `dva validate`에서 충돌로 거부되므로
-다른 이름으로 옮겨야 합니다. 이 소스는 darwin/arm64용 published-approved
-TaskChain v0.1.0 pin 하나만 둡니다. 승인된 실행 파일의 SHA-256이 같을 때만
-그 스냅샷을 실행해, DVA 설정 파일이 있는 저장소의 `tasks/` 보드를 읽은 뒤
-같은 저장소에서 CE를 시작합니다. 미지원 플랫폼이거나 해시가 다르면 큐와
-CE를 호출하기 전에 실패합니다. 전역에 설치된 DVA v0.3.0은 교체되지
-않았고, 호스트 증명은 검토된 이 소스를 컴파일한 바이너리로 확인했습니다.
-`task-queue-verdict`의 Go 도구는 읽기 전용이며 CE 시작 경로가 아닙니다.
 
 **훅 가능 6개** — 예약어 중 `before`/`replace`/`after` 훅을 받는 것:
 

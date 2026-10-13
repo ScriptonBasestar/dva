@@ -63,6 +63,8 @@ a production operations or application deployment tool.
   `dva init` scaffolds, skills, and agent flows — stays inside it.
 
 DVA coordinates existing developer tools; it does not replace them.
+Task board interpretation, runnable task selection, and agent task/worktree session
+management belong to external task tools; DVA has no built-in TaskChain or CE task lifecycle.
 
 - Compose, Kubernetes, Helm, and process tools retain ownership of their native resources.
 - DVA does not hide destructive lifecycle operations behind implicit automation.

@@ -7,6 +7,12 @@ All notable changes to DVA are documented here.
 
 ### Changed
 
+- **TaskChain 전용 연동 제거**: 개발 환경 오케스트레이션의 제품 경계를 벗어난
+  `task-queue-start` 내장 명령, 큐 판정·바이너리 pin 코드와 이 저장소의
+  `task-queue`·`task-queue-verdict` interaction을 제거했습니다. 이 이름은 더 이상
+  예약하지 않습니다. 아래 TASK-455·496과 interaction 도입 항목은 제거 전 역사이며
+  다음 릴리스의 지원 기능이 아닙니다. 작업 선택과 CE 세션 시작은 외부 도구가 소유합니다.
+
 - **검증 스킬 책임 분리**: `dva-ci`는 프로필·시간 제한·잠금·로그·receipt 계약에
   집중하고, 검사 선택과 기술별 방법은 quality의 verification 스킬로 연결합니다.
   좁은 검사와 전체 게이트의 증거 범위 및 통합 전 중복 실행 방지 규칙을 명시했습니다.
@@ -73,9 +79,8 @@ All notable changes to DVA are documented here.
 
 ### Compatibility
 
-- `task-queue-start`가 새 내장 명령으로 예약됩니다. 기존 프로젝트가 같은 이름의
-  interaction을 선언했다면 이름을 바꿔야 합니다. 업그레이드 전 설정 검증과 manifest로
-  충돌을 확인하세요.
+- 미공개 소스에 도입됐던 `task-queue-start` 예약은 제거됐습니다. 프로젝트에서
+  이 이름으로 interaction을 선언할 수 있습니다.
 - 새 선언은 기존 v0.3.0 바이너리에서 사용할 수 없습니다. 실제 지원 범위는
   [사용법](USAGE.md#버전과-지원-범위), 다음 후보의 채택·검증 결정은
   [로드맵](ROADMAP.md#v040-후보-범위)을 따릅니다.

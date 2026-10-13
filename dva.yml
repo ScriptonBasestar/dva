@@ -21,20 +21,6 @@ checks:
     fix_hint: "Install gopls (https://pkg.go.dev/golang.org/x/tools/gopls) or run 'mise install'"
 
 interaction:
-  task-queue:
-    description: "Inspect TaskChain runnable work using an unverified PATH binary; read only"
-    command: "taskchain-task-manager queue --dir tasks --json"
-    runner: local
-    shell: false
-    workdir: "."
-
-  task-queue-verdict:
-    description: "Classify candidates from an unverified PATH binary; does not authorize CE start"
-    command: "go run ./tools/taskqueueverdict --dir tasks"
-    runner: local
-    shell: false
-    workdir: "."
-
   # 'build' is a reserved DVA command — override it with a replace hook.
   # 'clean' stopped being one (docs/43): teardown is now 'dva down <plan> --purge',
   # and a flag has no interaction key to hook. It is an ordinary command here.

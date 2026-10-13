@@ -23,9 +23,9 @@ archived-at: 2026-10-03
 
 ## Completion Criteria
 
-- [x] Compiled `task-queue-start` owns the only CE mutation path and a Go/PATH tool wrapper cannot start CE | verify: `go test ./internal/taskqueue ./tools/taskqueueverdict ./internal/cli`
-- [x] The production manifest rejects before queue, CE, or PATH Go invocation; an injected approved pin uses the hashed snapshot and binds queue and CE subprocesses to the DVA config root | verify: `go test ./internal/taskqueue && go test -tags=integration ./internal/integration -run TestTaskQueueStartInteractionFromUnrelatedDirectory`
-- [x] Read-only queue and verdict commands preserve their exact stdout contract and remain explicitly unpinned | verify: `go test -tags=integration ./internal/integration -run 'TestTaskQueue(Interaction|VerdictInteraction)FromUnrelatedDirectory'`
+- [x] Compiled `task-queue-start` owns the only CE mutation path and a Go/PATH tool wrapper cannot start CE | verify: human — 과거 검증 명령 1 (아래 제거 후 기록 참조)
+- [x] The production manifest rejects before queue, CE, or PATH Go invocation; an injected approved pin uses the hashed snapshot and binds queue and CE subprocesses to the DVA config root | verify: human — 과거 검증 명령 2 (아래 제거 후 기록 참조)
+- [x] Read-only queue and verdict commands preserve their exact stdout contract and remain explicitly unpinned | verify: human — 과거 검증 명령 3 (아래 제거 후 기록 참조)
 - [x] ISSUE-453 and documentation describe the remaining release approval and positive host checks accurately | verify: human — inspect issue and release boundary text
 
 ## Dependency
@@ -39,3 +39,27 @@ may run before W07c1. It does not authorize publication or close ISSUE-453.
 - `dva ci full`: `5ebc8dd34d4327b67fb62586e5a84134`, succeeded, 3m5.23s.
 - Targeted unit and integration tests, exact verdict golden, and `git diff --check`: PASS.
 - TASK-454 historical verify binding was retargeted to the moved pin tests; its criterion and review verdict remain unchanged.
+
+## 기능 제거 후 기록 (2026-10-13)
+
+TaskChain 전용 연동을 DVA 제품 경계에서 제거했다. 위의 검증 결과는 도입 당시
+기록이며 현행 실행 바인딩이 아니다. 원래 명령과 과거 리뷰 영수증은 보존한다.
+제품 판단은 [제품 경계](../../../PRODUCT.md#product-boundaries)를 따른다.
+
+과거 검증 명령 1:
+
+```sh
+go test ./internal/taskqueue ./tools/taskqueueverdict ./internal/cli
+```
+
+과거 검증 명령 2:
+
+```sh
+go test ./internal/taskqueue && go test -tags=integration ./internal/integration -run TestTaskQueueStartInteractionFromUnrelatedDirectory
+```
+
+과거 검증 명령 3:
+
+```sh
+go test -tags=integration ./internal/integration -run 'TestTaskQueue(Interaction|VerdictInteraction)FromUnrelatedDirectory'
+```

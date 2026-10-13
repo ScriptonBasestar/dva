@@ -25,9 +25,9 @@ W07b1의 읽기 전용 판단 경계다. 제품 queue의 사람용 전체 집합
 
 ## Completion Criteria
 
-- [x] A versioned verdict distinguishes empty, human_required, candidate, and selection_required without selecting or claiming | verify: human — `go test ./tools/taskqueueverdict` covers all four states and candidate/null output
+- [x] A versioned verdict distinguishes empty, human_required, candidate, and selection_required without selecting or claiming | verify: human — 과거 검증 명령 1 (아래 제거 후 기록 참조) covers all four states and candidate/null output
 - [x] Malformed or inconsistent upstream queue output fails closed with no success JSON | verify: human — parser negative cases and DVA interaction failure cases passed
-- [x] DVA interaction works from nested cwd and preserves the board while ISSUE-004/006 remain open | verify: human — `go test -tags=integration ./internal/integration -run '^TestTaskQueueVerdictInteractionFromUnrelatedDirectory$' -count=1` passed
+- [x] DVA interaction works from nested cwd and preserves the board while ISSUE-004/006 remain open | verify: human — 과거 검증 명령 2 (아래 제거 후 기록 참조) passed
 
 ## Evidence (2026-09-28)
 
@@ -46,3 +46,21 @@ validation, nested-cwd DVA interaction, unchanged board, and open
 ISSUE-004/006 boundary. Independent code review PASS after fixes. Targeted
 unit/integration tests and vet passed; `dva ci full` run
 `98a6ccf3bb5212415dc89cd8ea724325` succeeded; `ce task gate` was READY.
+
+## 기능 제거 후 기록 (2026-10-13)
+
+TaskChain 전용 연동을 DVA 제품 경계에서 제거했다. 위의 검증 결과는 도입 당시
+기록이며 현행 실행 바인딩이 아니다. 원래 명령과 과거 리뷰 영수증은 보존한다.
+제품 판단은 [제품 경계](../../../PRODUCT.md#product-boundaries)를 따른다.
+
+과거 검증 명령 1:
+
+```sh
+go test ./tools/taskqueueverdict
+```
+
+과거 검증 명령 2:
+
+```sh
+go test -tags=integration ./internal/integration -run '^TestTaskQueueVerdictInteractionFromUnrelatedDirectory$' -count=1
+```

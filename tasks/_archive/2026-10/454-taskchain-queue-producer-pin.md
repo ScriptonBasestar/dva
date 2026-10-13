@@ -25,9 +25,9 @@ TaskChain 후보의 출처 정보를 DVA에 기록하고, 승인된 바이너리
 
 ## Completion Criteria
 
-- [x] Production task-queue-start rejects when no approved platform pin exists before queue or CE invocation | verify: `go test -tags=integration ./internal/integration -run TestTaskQueueStartInteractionFromUnrelatedDirectory`
-- [x] An injected approved pin executes the exact hashed first PATH binary snapshot; mismatch and replacement fail closed | verify: `go test ./internal/taskqueue -run 'Test(Start|Pin)'`
-- [x] Read-only queue interactions keep their prior output contract | verify: `go test -tags=integration ./internal/integration -run 'TestTaskQueue(Interaction|VerdictInteraction)FromUnrelatedDirectory'`
+- [x] Production task-queue-start rejects when no approved platform pin exists before queue or CE invocation | verify: human — 과거 검증 명령 1 (아래 제거 후 기록 참조)
+- [x] An injected approved pin executes the exact hashed first PATH binary snapshot; mismatch and replacement fail closed | verify: human — 과거 검증 명령 2 (아래 제거 후 기록 참조)
+- [x] Read-only queue interactions keep their prior output contract | verify: human — 과거 검증 명령 3 (아래 제거 후 기록 참조)
 - [x] User documentation identifies the unverified read-only producer and staged start restriction | verify: human — inspect README and interaction descriptions
 
 ## Evidence
@@ -37,3 +37,27 @@ TaskChain 후보의 출처 정보를 DVA에 기록하고, 승인된 바이너리
 - `make doc-check`, `ce task gate`, targeted unit/integration tests: PASS.
 - ISSUE-453 remains open for published artifact approval and production activation.
 - TASK-455 moved the pin and its regression tests to `internal/taskqueue`; the criterion's verify binding now targets the moved tests. The approved-pin requirement and prior review finding did not change.
+
+## 기능 제거 후 기록 (2026-10-13)
+
+TaskChain 전용 연동을 DVA 제품 경계에서 제거했다. 위의 검증 결과는 도입 당시
+기록이며 현행 실행 바인딩이 아니다. 원래 명령과 과거 리뷰 영수증은 보존한다.
+제품 판단은 [제품 경계](../../../PRODUCT.md#product-boundaries)를 따른다.
+
+과거 검증 명령 1:
+
+```sh
+go test -tags=integration ./internal/integration -run TestTaskQueueStartInteractionFromUnrelatedDirectory
+```
+
+과거 검증 명령 2:
+
+```sh
+go test ./internal/taskqueue -run 'Test(Start|Pin)'
+```
+
+과거 검증 명령 3:
+
+```sh
+go test -tags=integration ./internal/integration -run 'TestTaskQueue(Interaction|VerdictInteraction)FromUnrelatedDirectory'
+```

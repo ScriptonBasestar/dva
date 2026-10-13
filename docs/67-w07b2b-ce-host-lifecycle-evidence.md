@@ -1,7 +1,10 @@
 # W07b2b — CE host lifecycle evidence
 
+이 문서는 제거 전 TaskChain 연동의 역사적 검증 기록이다. 현재 제품 범위는
+[제품 경계](../PRODUCT.md#product-boundaries)를 따른다.
+
 2026-09-28 실제 host 검증. DVA는 TaskChain queue/verdict를 읽고 CE가
-Git/worktree와 보드 상태를 쓴다. `dva task-queue-start`는 현재 보드가
+Git/worktree와 보드 상태를 쓴다. 당시 `dva task-queue-start`는 보드가
 0/0 `empty`여서 실제 CE start를 호출하지 않았다. 아래 CE 수명주기
 호출은 host 원어를 직접 실행한 증거이며, 브리지의 단일 후보 스텁 검증과
 합쳐도 과거 외부·사람 카드의 terminal 증거가 되지는 않는다.

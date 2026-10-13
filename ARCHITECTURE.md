@@ -75,17 +75,6 @@ Config Loader → Schema/Semantic Validation → effective config
 `locks` 키를 선언했을 때만 충돌한다. 계약과 실행 규약은
 [CI 프로필](docs/53-ci-profiles.md)을 따른다.
 
-### TaskChain queue boundary
-
-`internal/taskqueue/`는 TaskChain queue JSON의 검증·판정과 바이너리 pin 검증을
-소유한다. 읽기 전용 `tools/taskqueueverdict`는 `Verdict`만 호출한다. 반면 CE
-시작은 컴파일된 `internal/cli/task_queue_start.go`만 `Start`로 요청할 수 있다.
-CLI가 `dva.yml`의 설정 디렉터리를 절대 경로로 넘기면 queue와 CE 자식 프로세스
-모두 그 디렉터리에서 실행한다. `Start`는 승인 manifest를 먼저 검사하고,
-승인된 첫 `PATH` 바이너리의 열린 파일을 해시 스냅샷으로 고정해 queue를
-검증한 뒤 단일 후보일 때만 CE를 호출한다. darwin/arm64 manifest는 승인된 공개·서명 산출물을 가리키며, 다른 플랫폼은
-승인 pin이 없어 CE 시작을 거부한다. 공개 승인과 검증 증거는 TASK-496이 소유한다.
-
 ### Remote artifact jobs and secret transfer
 
 `internal/secretpush/`는 SOPS 복호화·명시 키 선택·전송과 값 없는 결과 기록을
@@ -123,7 +112,6 @@ CLI는 설정 타입을 runtime 입력으로 변환하고 명시적인 `--with-s
 | 병합과 interpolation 의미 | `internal/config/` 및 merge semantics 문서 |
 | 실행 계획 해석 | `internal/lifecycle/` 및 resolution 문서 |
 | 외부 명령 실행 | `internal/runner/`, `internal/exec/` |
-| TaskChain queue·pin·CE 시작 경계 | `internal/taskqueue/`와 embedded manifest |
 | 제품 철학과 범위 | `SOUL.md`, `PRODUCT.md` |
 | 에이전트 작업 규칙 | `AGENTS.md`, `CLAUDE.md` |
 
