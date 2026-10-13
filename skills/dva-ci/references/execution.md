@@ -3,7 +3,9 @@
 ## Budget and ownership
 
 - `commit`: recommended total <=5 minutes, hard maximum 10 minutes. A project
-  may tighten these values, not relax them. Setup and checks share the deadline.
+  may tighten these values, not relax them. Prepare dependencies explicitly
+  before entering the profile; missing preparation must fail, not trigger an
+  installation. Every operation inside the profile shares the deadline.
 - `full`: project-declared finite timeout, covering the complete required gate
   set. Release publishing and production operations remain outside CI.
 - Measure cold and warm runs separately. A slow cold run is still bounded;
@@ -57,6 +59,9 @@ This does not detect transient edits that are reverted between snapshots; use an
 isolated checkout and avoid editing it during verification. A run against
 a non-Git directory has no Git attestation. Historical results are not reusable
 solely because HEAD matches: dirty input, configuration and tool versions matter.
+Only reuse a complete gate when its executing tool validates the evidence for
+the current inputs. A DVA success receipt is historical evidence, not an
+automatic reuse authorization or a replacement for a consumer's native receipt.
 
 The runtime supervises process groups and cancels remaining work on failure or
 deadline before releasing its locks. A forcibly killed supervisor releases its

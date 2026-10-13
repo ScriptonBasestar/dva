@@ -8,7 +8,9 @@ allowed-tools: [Bash, Read, Grep, Glob]
 
 Use project-owned checks through the supervised `dva ci` runtime. Read
 [execution rules](references/execution.md) for budgets, contention, and results;
-read [language profiles](references/languages.md) when composing or tuning checks.
+Check selection and scope belong to `quality:verification-workflow` and the
+project's acceptance contract. Use [scope routing](references/languages.md)
+when a technical verification method is needed.
 
 ## Discover and execute
 
@@ -19,11 +21,14 @@ read [language profiles](references/languages.md) when composing or tuning check
    a run ID, inspect it with `dva ci logs <run-id>`. Independent roots and different
    declared resource locks may run concurrently. Do not launch a second
    invocation to evade `busy`.
-3. Default to `dva ci commit` for local commit verification. Use `dva ci full`
-   for the declared exhaustive validation. Neither command authorizes deployment.
+3. Select the project-declared `commit` or `full` profile for the required gate.
+   A project `dev-check` is a separate narrow edit-loop command. Do not run all
+   three sequentially or repeat the full gate before an integrator that runs it.
+   Neither profile authorizes deployment.
 4. `dva ci --dry-run <profile>` shows the resolved profile without running checks.
    `dva ci --project <child> <profile>` uses that child's config and environment.
-5. Report the run ID, profile, result, elapsed time, and unexecuted checks. A
+5. Report the run ID, profile, result, per-step and total elapsed time, and
+   unexecuted checks. Keep cold and warm observations separate. A
    timeout, busy result, cancellation, or changed input is not passing evidence.
 
 ## Configure or migrate

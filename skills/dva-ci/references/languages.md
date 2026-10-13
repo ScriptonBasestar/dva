@@ -1,26 +1,22 @@
-# Language profile composition
+# Scope routing
 
-Use these as starting points, not permission to weaken existing project gates.
-Profiles own ordered check sets; project manifests and lockfiles own versions.
+The project owns executable checks and required coverage. The quality skills
+own impact analysis and technical methods; DVA owns budgets, ordering, locks,
+process supervision, logs and receipts. Logical names below use the quality
+namespace; installed names follow the owning runtime's namespace conversion.
 
-| Stack | Commit candidates | Additional full checks | Resource control |
-| --- | --- | --- | --- |
-| Go | gofmt check, vet/lint, unit tests, required race checks | full race, integration, clean-tree, supported build combinations | Coordinate GOMAXPROCS, go `-p`, test `-parallel`; package timeout is not the workflow deadline |
-| Python | formatter check, lint, type checker, unit tests | database/API integration, packaging, supported Python matrix | Bound pytest-xdist workers; isolate worker fixtures and databases |
-| JS/TS | lint, typecheck, unit tests, required build | complete E2E/browser matrix, package checks | Explicit test worker counts; no watch mode; separate browser budget |
-| Rust | format check, clippy, unit tests | feature/target matrix, integration, release build | Bound Cargo jobs and test threads independently |
-| JVM | format/static checks, unit tests | integration, packaging, runtime matrix | Coordinate build workers with test forks and heap budgets |
+| Concern | Canonical skill |
+| --- | --- |
+| Choosing dev-check, commit or full; reporting exclusions | quality:verification-workflow |
+| Rust packages, targets, features and compile/link cost | quality:verification-rust |
+| Go package scope, race, builds and resource limits | quality:verification-go |
+| Python tests, types and packaging | quality:verification-python |
+| TypeScript workspace impact, types, tests and builds | quality:verification-typescript |
+| YAML, Ansible, Helm and live/decryption boundaries | quality:verification-iac |
+| Documents, citations, indexes, moves and deletions | quality:verification-docs |
 
-Keep test selection reproducible. File-only changes are not automatically
-independent: shared libraries, lockfiles, generators, schemas and configuration
-can affect the whole repository. If dependency-aware selection is unavailable,
-run the declared full unit scope or report that the commit budget needs work.
-
-Do not routinely clean incremental caches. Separate installation, preparation,
-validation, and publication. Cache hits are valid only when the native tool's
-input contract supports them. Repeated validation with different purposes (for
-example race detection and a clean-tree dependency check) is not interchangeable.
-
-Record step durations before tuning. First remove duplicate invocations across
-sessions, then fix the dependency graph, then adjust worker counts. Raising all
-tools to the machine CPU count at once multiplies contention.
+If a skill is unavailable, read the project's declared acceptance contract and
+report the missing guidance. Do not invent a profile or omit required checks.
+Other stacks retain their project-owned methods; this routing table changes no
+language support. Translate selected commands into DVA steps only after their
+preparation and coverage are established.

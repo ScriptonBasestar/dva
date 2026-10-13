@@ -7,6 +7,10 @@ All notable changes to DVA are documented here.
 
 ### Changed
 
+- **검증 스킬 책임 분리**: `dva-ci`는 프로필·시간 제한·잠금·로그·receipt 계약에
+  집중하고, 검사 선택과 기술별 방법은 quality의 verification 스킬로 연결합니다.
+  좁은 검사와 전체 게이트의 증거 범위 및 통합 전 중복 실행 방지 규칙을 명시했습니다.
+
 - **개발·검증 내부 정리**: config·CLI·lifecycle·CI·스킬 설치 등의 소스를 책임 단위로
   분리하고, native 테스트의 호스트 상태 격리와 미사용 오류 검사 호출을 보완했습니다.
   새 사용자 명령과 지원 범위는 아래 기능 항목과 USAGE.md의 지원표를 따릅니다.
