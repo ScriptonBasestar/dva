@@ -3,8 +3,12 @@ id: ISSUE-513
 title: "Global CI receipt runtime installation needs explicit authority"
 type: bug
 priority: P2
-status: todo
-needs-human: true
+status: done
+archived-at: 2026-10-14
+resolution: fixed
+resolved-at: 2026-10-14
+resolution-summary: "Approved candidate installed and verified at both global destinations; evidence preserved and experiment discarded."
+needs-human: false
 execution-mode: external
 human-grade: human
 ownership: local
@@ -34,7 +38,7 @@ DVA가 실행 파일과 `make install-binary` 계약을 소유한다. 소비 저
 
 ## Manual action guide
 
-[설치 안전 규칙](../../skills/dva/references/operation-safety.md)은 “Require explicit user authority before” 항목에 “installing or replacing a global DVA executable”를 포함한다. 포괄적인 개발·커밋 지시만으로 전역 교체 승인을 추정하지 않는다.
+[설치 안전 규칙](../../../skills/dva/references/operation-safety.md)은 “Require explicit user authority before” 항목에 “installing or replacing a global DVA executable”를 포함한다. 포괄적인 개발·커밋 지시만으로 전역 교체 승인을 추정하지 않는다.
 
 승인 대상은 검증된 후보를 `/Users/archmagece/.local/bin/dva`와 `/Users/archmagece/go/bin/dva`에 `make install-binary`로 교체하는 작업이다. 설정·스킬·모델 바인딩 변경은 포함하지 않는다. 승인 전에는 적용 명령을 실행하지 않는다. 승인 후 `INSTALL_SOURCE`에 아래 후보 절대 경로를 지정하고 설치 계약의 두 목적지를 확인한 뒤 실행하며, 두 설치본의 버전과 SHA256을 비교한다.
 
@@ -64,3 +68,12 @@ DVA가 실행 파일과 `make install-binary` 계약을 소유한다. 소비 저
 ## Resolution criteria
 
 명시 승인 기록, 두 목적지의 동일한 후보 버전·해시, 보존 실험 자원 회수 결과가 모두 있어야 완료한다. 설치 승인 전 반복 빌드·전체 CI는 필요하지 않다.
+
+## Delivery acceptance — 2026-10-14
+
+사용자가 직전 설치 권장안을 포함하여 진행을 승인했다. `make install-binary` exit 0,
+두 목적지 version 0.3.0 / commit `2a807f58fc2c0e38b1169f27f235e443ba6ba4ff`와
+위 SHA256 일치를 확인했다. 설정·스킬·모델 바인딩은 변경하지 않았다.
+manifest, smoke, adoption은 `tasks/done/evidence/ISSUE-513/`에 보존했다.
+보존 experiment는 CE run-discard로 회수 완료했다. 앞의 보존 경로와 설치 미실행 설명은
+승인 전 역사 기록이며 더 이상 사용 가능한 handoff 자원이 아니다.

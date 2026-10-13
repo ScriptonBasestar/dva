@@ -1,0 +1,41 @@
+{
+  "id": "b43a50e8db4f324842a6d61a6c4865b8",
+  "root": "/Users/archmagece/worktrees/misc/dva/exp__codex__mbp__chore__ci-receipt-runtime-build/tmp/ci-receipt-runtime-build/smoke",
+  "profile": "smoke",
+  "status": "succeeded",
+  "log_path": "/Users/archmagece/.local/state/dva/ci/logs/b43a50e8db4f324842a6d61a6c4865b8.log",
+  "started_at": "2026-10-14T02:10:47.903969+09:00",
+  "finished_at": "2026-10-14T02:10:48.082447+09:00",
+  "duration": "178.475458ms",
+  "steps": [
+    {
+      "name": "first",
+      "status": "succeeded",
+      "started_at": "2026-10-14T02:10:47.96045+09:00",
+      "finished_at": "2026-10-14T02:10:47.991553+09:00",
+      "duration": 31102500,
+      "worker_budget": {
+        "dva_ci_jobs": 1,
+        "cargo_build_jobs": 2,
+        "rust_test_threads": 3
+      }
+    },
+    {
+      "name": "second",
+      "status": "succeeded",
+      "started_at": "2026-10-14T02:10:47.991974+09:00",
+      "finished_at": "2026-10-14T02:10:48.022789+09:00",
+      "duration": 30814459,
+      "worker_budget": {
+        "dva_ci_jobs": 1,
+        "cargo_build_jobs": 1,
+        "rust_test_threads": 1
+      }
+    }
+  ],
+  "attestation": {
+    "available": true,
+    "before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "after": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

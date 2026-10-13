@@ -1,0 +1,15 @@
+{
+  "date": "2026-10-14",
+  "authority": "User approved preceding recommendation to apply verified DVA candidate",
+  "source_commit": "2a807f58fc2c0e38b1169f27f235e443ba6ba4ff",
+  "version": "0.3.0",
+  "sha256": "ed1403ece603733ea143cb70bdbc0947aa09460565df392303d555817d7b1c64",
+  "destinations": [
+    "/Users/archmagece/.local/bin/dva",
+    "/Users/archmagece/go/bin/dva"
+  ],
+  "installer": "make install-binary",
+  "installer_exit": 0,
+  "version_and_hash_match": true,
+  "settings_changed": false
+}

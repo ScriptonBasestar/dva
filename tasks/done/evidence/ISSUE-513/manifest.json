@@ -1,0 +1,20 @@
+{
+  "owner_task": "ci-receipt-runtime-build",
+  "source_commit": "2a807f58fc2c0e38b1169f27f235e443ba6ba4ff",
+  "version": "0.3.0",
+  "build_time_utc": "2026-10-13T17:08:08Z",
+  "binary": "/Users/archmagece/worktrees/misc/dva/exp__codex__mbp__chore__ci-receipt-runtime-build/bin/dva",
+  "sha256": "ed1403ece603733ea143cb70bdbc0947aa09460565df392303d555817d7b1c64",
+  "command": [
+    "go",
+    "build",
+    "-trimpath",
+    "-ldflags",
+    "-s -w -X github.com/ScriptonBasestar/dva/internal/config.Version=0.3.0 -X github.com/ScriptonBasestar/dva/internal/config.Commit=2a807f58fc2c0e38b1169f27f235e443ba6ba4ff -X github.com/ScriptonBasestar/dva/internal/config.BuildDate=2026-10-13T17:08:08Z",
+    "-o",
+    "bin/dva",
+    "./cmd/dva"
+  ],
+  "version_output": "dva version 0.3.0\ncommit: 2a807f58fc2c0e38b1169f27f235e443ba6ba4ff\nbuild date: 2026-10-13T17:08:08Z\n",
+  "retention": "operator handoff; retain until explicit installation or cancellation"
+}
