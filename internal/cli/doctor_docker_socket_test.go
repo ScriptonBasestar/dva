@@ -158,11 +158,9 @@ func TestDockerSocketAndDaemonAgreeWhenDaemonReachable(t *testing.T) {
 		t.Skip("docker info failed; cannot assert agreement on a live daemon")
 	}
 
-	// Force the default-path branch by clearing DOCKER_HOST for this process view.
-	t.Setenv("DOCKER_HOST", "")
-	// Even if the real env had a working unix socket elsewhere, empty DOCKER_HOST means
-	// we resolve the default; evaluateDockerSocket with daemonOK=true covers the case
-	// the default is missing. Also run the real checkDockerSocketPermissions.
+	// Keep the endpoint used by the reachability precondition. Clearing DOCKER_HOST
+	// here can select a different daemon and invalidate that precondition (ISSUE-510).
+	// The injected evaluateDockerSocket tests cover default-path fall-through.
 	if !checkDocker().Passed {
 		t.Fatal("precondition: checkDocker should pass when DockerDaemonReachable is true")
 	}

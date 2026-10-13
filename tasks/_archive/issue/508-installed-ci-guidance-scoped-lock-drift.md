@@ -5,12 +5,15 @@ type: bug
 priority: P2
 effort: S
 agent: "human"
-status: todo
+status: done
 ownership: local
 severity: medium
 discovered-in: "Reconcile installed DVA CI guidance with scoped admission locks"
 discovered-at: 2026-10-13
 created: 2026-10-13
+resolution: fixed
+resolved-at: 2026-10-13T16:18:36Z
+resolution-summary: "Resolved as fixed."
 ---
 
 ## Summary
@@ -36,3 +39,11 @@ created: 2026-10-13
 ## 소유권 — 이 저장소다
 
 소유권은 local이다. DVA가 소유한 설치 skill artifact가 현재 canonical DVA source와 불일치한다. 제품 결함이 아니라 설치본 drift의 등록이다.
+
+## 해결 증거 (2026-10-14)
+
+사용자가 승인한 공식 `make install`과 `dva skill install` rollout으로 commit
+`1d96c4a3`을 설치했다. 여섯 runtime 모두 `dva skill status`의 source와 installed
+bundle digest가 일치한다. Codex의 `dva-ci/references/execution.md`는 정본과
+`cmp` exit 0이며 owning config directory와 명시한 shared lock의 scoped admission을
+설명한다. 설치 설정이나 모델 선택은 변경하지 않았다. 추가 installer 수정은 필요 없다.

@@ -5,12 +5,15 @@ type: bug
 priority: P2
 effort: S
 exec-tier: standard
-status: todo
+status: done
 severity: medium
 ownership: local
 discovered-in: "Docker agreement test changes daemon endpoint after its precondition"
 discovered-at: 2026-10-14
 created: 2026-10-14
+resolution: fixed
+resolved-at: 2026-10-13T16:18:36Z
+resolution-summary: "Resolved as fixed."
 ---
 
 ## Summary
@@ -49,3 +52,16 @@ DOCKER_CONTEXT=colima go test ./internal/cli -run '^TestDockerSocketAndDaemonAgr
 
 - Expected: 동일한 daemon endpoint에서 접근 결과를 비교하거나, 전제 조건을 변경 후 확인한다.
 - Actual: 환경 변경 전에 통과한 probe를 변경 후에도 유효한 전제로 사용한다.
+
+## 해결 증거 (2026-10-14)
+
+실제 daemon 비교 테스트가 `DOCKER_HOST`를 바꾸지 않도록 수정했다.
+default socket 경로의 fall-through는 기존 `evaluateDockerSocket` 주입 테스트가
+계속 검증한다. 제품 코드와 Docker 설정은 변경하지 않았다.
+
+```bash
+go test ./internal/cli -run 'TestDockerSocketAndDaemonAgreeWhenDaemonReachable|TestEvaluateDockerSocket' -count=1
+```
+
+기존 실패를 재현한 호스트에서 `DOCKER_CONTEXT` override 없이 exit 0이다.
+완료 검증은 `dva ci commit`, `make doc-check`, `dva check-generate`와 독립 리뷰로 수행한다.
