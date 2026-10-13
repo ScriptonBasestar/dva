@@ -5,6 +5,7 @@ import (
 	"io"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/ScriptonBasestar/dva/internal/config"
@@ -37,6 +38,12 @@ type suppressedItem struct {
 type suppressionSummary struct {
 	items []suppressedItem
 	stale []string
+	// redundant holds ignore patterns that still match documented names but whose every
+	// match an interaction already covers (ISSUE-505): the entry hides nothing today,
+	// yet it names real targets, so it is not stale — and once the covering interaction
+	// is removed it starts silently hiding the suggestion that would have flagged the
+	// target as unwrapped.
+	redundant []string
 	// suggested holds the candidate names that survived every filter and produced a
 	// warning. --suggest-ignore renders exactly this list, so the block it prints can
 	// never name something the run did not actually warn about.
@@ -53,6 +60,7 @@ func (s *suppressionSummary) merge(other *suppressionSummary) {
 	}
 	s.items = append(s.items, other.items...)
 	s.stale = append(s.stale, other.stale...)
+	s.redundant = append(s.redundant, other.redundant...)
 	s.suggested = append(s.suggested, other.suggested...)
 }
 
@@ -126,6 +134,12 @@ func printStaleIgnoreWarnings(w io.Writer, warnings []string) {
 	}
 }
 
+func printRedundantIgnoreWarnings(w io.Writer, warnings []string) {
+	for _, warning := range warnings {
+		_, _ = fmt.Fprintf(w, "[warn] redundant ignore: %s\n", warning)
+	}
+}
+
 // matchIgnorePattern returns the first pattern that matches name, and whether one did.
 // Returning the pattern rather than a bool is what lets --show-ignored name the line
 // responsible; a bool would leave the operator grepping a twenty-entry list by hand.
@@ -158,6 +172,36 @@ func staleIgnoreWarnings(key string, patterns, universe []string, nothing string
 		if !matched {
 			warnings = append(warnings, fmt.Sprintf("%s[%d] %q matches no %s; remove it", key, i, pattern, nothing))
 		}
+	}
+	return warnings
+}
+
+// redundantIgnoreWarnings reports ignore patterns that still match documented names but
+// whose every match is already covered by an interaction — by name, by subcommand
+// coverage, or as a wrapped workflow target (ISSUE-505).
+//
+// Such a pattern hides nothing today: a covered name never reaches the ignore match in
+// the suggestion pass. It is not stale either — it names real targets — so the stale
+// check reports it nowhere, and the entry sits as a trap: remove the covering
+// interaction and the pattern starts silently hiding the suggestion that would have
+// flagged the target as unwrapped. matchedNames and uncoveredCounts are indexed by
+// pattern position, the way the suggestion pass recorded them; a pattern with no
+// recorded match is someone else's verdict — stale here when it matches nothing, the
+// built-in exclusions when those dropped every name — and is left alone.
+func redundantIgnoreWarnings(key string, patterns []string, matchedNames [][]string, uncoveredCounts []int) []string {
+	var warnings []string
+	for i, pattern := range patterns {
+		names := matchedNames[i]
+		if len(names) == 0 || uncoveredCounts[i] > 0 {
+			continue
+		}
+		quoted := make([]string, len(names))
+		for j, name := range names {
+			quoted[j] = strconv.Quote(name)
+		}
+		warnings = append(warnings, fmt.Sprintf(
+			"%s[%d] %q only matches targets already covered by an interaction (%s); remove the ignore entry, or it will silently hide the suggestion if the covering interaction is removed or renamed",
+			key, i, pattern, strings.Join(quoted, ", ")))
 	}
 	return warnings
 }

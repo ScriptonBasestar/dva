@@ -130,6 +130,11 @@ See USAGE.md's "config validate" section for the full list of semantic checks.`,
 		// for: it is a defect in dva.yml, not a detail about this run (docs/56 §6-5).
 		printStaleIgnoreWarnings(notice, suppressed.stale)
 		report.add("ignore_stale", suppressed.stale...)
+		// A pattern whose every match an interaction already covers hides nothing but is
+		// not stale — it names real targets (ISSUE-505). Same route, same weight: a
+		// warning, never an error.
+		printRedundantIgnoreWarnings(notice, suppressed.redundant)
+		report.add("ignore_redundant", suppressed.redundant...)
 
 		if showIgnored, _ := cmd.Flags().GetBool("show-ignored"); showIgnored {
 			printSuppressedItems(notice, suppressed)

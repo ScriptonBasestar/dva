@@ -98,8 +98,24 @@ func detectConfigSuggestionWarningsWithSuppressions(c *config.Config) ([]string,
 
 	wrapped := wrappedWorkflowTargets(c)
 
+	// ISSUE-505: what each ignore pattern matched during this pass, and how many of
+	// those matches no interaction covers. The coverage skips below run before the
+	// ignore match, so a covered name records no suppression of its own — the redundant
+	// check needs the record anyway, because a pattern whose every match is covered
+	// hides nothing while still naming real targets.
+	matchedNames := make([][]string, len(c.SuggestionIgnore))
+	uncoveredMatches := make([]int, len(c.SuggestionIgnore))
+
 	var warnings []string
 	for _, name := range names {
+		for i, pattern := range c.SuggestionIgnore {
+			if ok, _ := filepath.Match(pattern, name); ok {
+				matchedNames[i] = append(matchedNames[i], name)
+				if !commandSet[name] && !subcommandCoverage[name] && !wrapped[name] {
+					uncoveredMatches[i]++
+				}
+			}
+		}
 		if commandSet[name] {
 			continue
 		}
@@ -144,6 +160,12 @@ func detectConfigSuggestionWarningsWithSuppressions(c *config.Config) ([]string,
 		suppressed.stale = append(suppressed.stale,
 			staleIgnoreWarnings("suggestion_ignore", c.SuggestionIgnore, universe, "Makefile target or package.json script")...)
 	}
+	// A pattern that matched at least one documented name is never stale, so the check
+	// above reports an entry whose every match an interaction covers nowhere at all
+	// (ISSUE-505). The redundant check needs no empty-sample guard of its own: a warning
+	// requires a recorded match, and an empty sample records none.
+	suppressed.redundant = append(suppressed.redundant,
+		redundantIgnoreWarnings("suggestion_ignore", c.SuggestionIgnore, matchedNames, uncoveredMatches)...)
 
 	return warnings, suppressed
 }

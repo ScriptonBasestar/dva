@@ -374,6 +374,155 @@ suggestion_ignore:
 	}
 }
 
+// --- redundant ignore (ISSUE-505) --------------------------------------------------------
+
+// An entry whose targets an interaction already covers is neither stale nor shown as
+// ignored — it hides nothing today. It must still be reported, because it turns harmful
+// the moment the covering interaction is removed or renamed: the entry then silently
+// hides the suggestion that would have flagged the target as unwrapped.
+func TestRedundantSuggestionIgnoreWhenEveryMatchIsCovered(t *testing.T) {
+	configPath := suppressionFixture(t, `version: "0.1.0"
+suggestion_ignore:
+  - "foo"
+  - "bar"
+  - "gone"
+interaction:
+  foo:
+    runner: local
+    command: make foo
+`, map[string]string{
+		"Makefile": "foo: ## x\nbar: ## y\n",
+	})
+	c := loadSuppressionConfig(t, configPath)
+
+	warnings, suppressed := detectConfigSuggestionWarningsWithSuppressions(c)
+	joined := strings.Join(suppressed.stale, "\n")
+	if !strings.Contains(joined, `suggestion_ignore[2] "gone" matches no Makefile target or package.json script`) {
+		t.Errorf("the nothing-matching entry must stay stale: %q", joined)
+	}
+
+	joined = strings.Join(suppressed.redundant, "\n")
+	if !strings.Contains(joined, `suggestion_ignore[0] "foo" only matches targets already covered by an interaction ("foo")`) {
+		t.Errorf("the fully covered entry must be reported redundant: %q", joined)
+	}
+	if strings.Contains(joined, `suggestion_ignore[1]`) {
+		t.Errorf("bar still has an uncovered match, so its entry is doing real work: %q", joined)
+	}
+	if strings.Contains(joined, `"gone"`) {
+		t.Errorf("an entry matching no target at all is stale, not redundant: %q", joined)
+	}
+	// Nothing changed about what is suppressed: foo is covered before the ignore list is
+	// consulted, bar is still hidden by its entry.
+	if len(warnings) != 0 {
+		t.Errorf("neither foo (covered) nor bar (ignored) may warn: %v", warnings)
+	}
+	if got := suppressed.count(suppressedSuggestion); got != 1 {
+		t.Errorf("suppressed suggestion count = %d, want 1 (bar only; foo is covered, gone matches nothing)", got)
+	}
+	if lines := strings.Join(suppressed.showIgnoredLines(), "\n"); !strings.Contains(lines, `suggestion "bar" — suggestion_ignore: bar`) {
+		t.Errorf("--show-ignored attribution must be unchanged, got:\n%s", lines)
+	}
+}
+
+// The glob semantics stay: with an interaction for alpha-one only, "alpha-*" still hides
+// alpha-two, so the pattern is doing real work and must not be called redundant.
+func TestRedundantSuggestionIgnoreStandsDownWhileTheGlobStillHidesSomething(t *testing.T) {
+	configPath := suppressionFixture(t, `version: "0.1.0"
+suggestion_ignore:
+  - "alpha-*"
+interaction:
+  alpha-one:
+    runner: local
+    command: make alpha-one
+`, map[string]string{
+		"Makefile": "alpha-one: ## One\nalpha-two: ## Two\n",
+	})
+	c := loadSuppressionConfig(t, configPath)
+
+	_, suppressed := detectConfigSuggestionWarningsWithSuppressions(c)
+	if len(suppressed.redundant) != 0 {
+		t.Errorf("alpha-two is still uncovered, so the pattern hides something: %v", suppressed.redundant)
+	}
+	if lines := strings.Join(suppressed.showIgnoredLines(), "\n"); !strings.Contains(lines, `suggestion "alpha-two" — suggestion_ignore: alpha-*`) {
+		t.Errorf("the ignored info for alpha-two must be unchanged, got:\n%s", lines)
+	}
+}
+
+// With interactions for both targets, the glob's every match is covered and the warning
+// fires, listing the names it masks.
+func TestRedundantSuggestionIgnoreFiresWhenEveryGlobMatchIsCovered(t *testing.T) {
+	configPath := suppressionFixture(t, `version: "0.1.0"
+suggestion_ignore:
+  - "alpha-*"
+interaction:
+  alpha-one:
+    runner: local
+    command: make alpha-one
+  alpha-two:
+    runner: local
+    command: make alpha-two
+`, map[string]string{
+		"Makefile": "alpha-one: ## One\nalpha-two: ## Two\n",
+	})
+	c := loadSuppressionConfig(t, configPath)
+
+	_, suppressed := detectConfigSuggestionWarningsWithSuppressions(c)
+	if len(suppressed.redundant) != 1 {
+		t.Fatalf("redundant warnings = %v, want exactly one", suppressed.redundant)
+	}
+	if !strings.Contains(suppressed.redundant[0],
+		`suggestion_ignore[0] "alpha-*" only matches targets already covered by an interaction ("alpha-one", "alpha-two")`) {
+		t.Errorf("the warning must list the covered targets in order, got: %q", suppressed.redundant[0])
+	}
+}
+
+// A literal entry matching nothing keeps its stale verdict and gains no redundant one:
+// the two checks answer different questions about different patterns.
+func TestStaleOnlyForAnIgnoreEntryMatchingNothing(t *testing.T) {
+	configPath := suppressionFixture(t, `version: "0.1.0"
+suggestion_ignore:
+  - "vanished"
+`, map[string]string{
+		"Makefile": "bench: ## Benchmarks\n",
+	})
+	c := loadSuppressionConfig(t, configPath)
+
+	_, suppressed := detectConfigSuggestionWarningsWithSuppressions(c)
+	if len(suppressed.stale) != 1 || !strings.Contains(suppressed.stale[0], `suggestion_ignore[0] "vanished"`) {
+		t.Errorf("stale warnings = %v, want the vanished entry", suppressed.stale)
+	}
+	if len(suppressed.redundant) != 0 {
+		t.Errorf("an entry that matches no target at all is stale only, got: %v", suppressed.redundant)
+	}
+}
+
+// A redundant ignore is a defect in dva.yml the same way a stale one is, so it prints on
+// an ordinary run — ISSUE-505's repro prints foo nowhere today.
+func TestRedundantIgnoreWarningsAppearWithoutAnyFlag(t *testing.T) {
+	configPath := suppressionFixture(t, `version: "0.1.0"
+suggestion_ignore:
+  - "foo"
+  - "gone"
+interaction:
+  foo:
+    runner: local
+    command: make foo
+`, map[string]string{
+		"Makefile": "foo: ## x\n",
+	})
+
+	run := runValidateCommandForTest(t, configPath, "validate")
+	if run.err != "" {
+		t.Fatalf("validate failed: %s", run.err)
+	}
+	if !strings.Contains(run.stdout, `[warn] redundant ignore: suggestion_ignore[0] "foo" only matches targets already covered by an interaction ("foo")`) {
+		t.Errorf("redundant ignore warning missing from a plain run:\n%s", run.stdout)
+	}
+	if !strings.Contains(run.stdout, `[warn] stale ignore: suggestion_ignore[1] "gone" matches no Makefile target or package.json script`) {
+		t.Errorf("stale ignore warning missing from a plain run:\n%s", run.stdout)
+	}
+}
+
 // --- the summary line and the two flags --------------------------------------------------
 
 // The count is the whole reason the ignore surfaces above are allowed to exist (docs/56
