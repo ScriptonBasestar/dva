@@ -7,6 +7,11 @@ All notable changes to DVA are documented here.
 
 ### Changed
 
+- **CI Rust worker 기본값**: `ci.profiles.<name>.tool_jobs`를 지정하면 단계별 도구
+  worker를 고정하고, 생략하면 논리 CPU 4개 상한과 단계 병렬도에서 계산합니다.
+  기본 `RUST_TEST_THREADS=1`과 Go 실행 정책은 유지하며 기존 빌드는 `tool_jobs: 1`로
+  재현할 수 있습니다.
+
 - **제품 목적과 에이전트 문맥 정리**: 일관된 개발 환경 구성, 암호화된 환경 입력,
   가상환경·네이티브 실행과 테스트를 기능 채택 기준으로 명시했습니다. 제품 설명과
   설정 생성 안내를 같은 목적으로 정렬하고 저장소 운영 정보와 분리했습니다.

@@ -23,6 +23,7 @@ root·공유 자원별 중복 실행 방지, 상태 조회는 [CI 프로필](doc
 | named plan, 설정 합성, interaction/provision, subproject, 스킬 설치 | v0.3.0에 포함 | 외부 runner 도구 설치가 필요. 스킬 설치와 런타임 deny 지원은 별개 |
 | 로컬 background process | v0.3.0에 포함 | Windows 미지원. 다른 OS의 프로세스 그룹 계약을 사용 |
 | `dva ci` | v0.3.0에 포함 | macOS/Linux/BSD에서 감독 실행. Windows는 실행 전 거부. [CI 계약](docs/53-ci-profiles.md) |
+| CI `tool_jobs`, Rust 빌드 worker 기본값 개선 | 미공개 | 설정·기존 값 보존·`tool_jobs: 1` 재현은 [CI 계약](docs/53-ci-profiles.md) |
 | `config env edit/unseal/seal/show` | v0.3.0에 포함 | Linux/macOS. 쓰기·평문 표시 게이트는 [env bridge](#암호화된-소스-브리지-dva-config-env) 참조 |
 | `config env reseal`, init의 SOPS 소스 감지·doctor 안내 | 미공개 | 기존 암호화 소스 갱신과 선언 안내 보완 |
 | doctor command 실행 증거·timeout | 미공개 | config cwd, inherited 환경. Unix group 종료, Windows shell-only. [doctor](#doctor) |

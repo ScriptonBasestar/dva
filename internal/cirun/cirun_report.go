@@ -54,11 +54,15 @@ type StepReport struct {
 }
 
 // WorkerBudget records the numeric worker limits actually supplied to a CI step.
-// It intentionally excludes all other environment values.
+// Sources are fixed runtime labels; it intentionally excludes all other environment values.
 type WorkerBudget struct {
-	DVAJobs         int `json:"dva_ci_jobs"`
-	CargoBuildJobs  int `json:"cargo_build_jobs"`
-	RustTestThreads int `json:"rust_test_threads"`
+	ToolJobs              int    `json:"tool_jobs,omitempty"`
+	Source                string `json:"source,omitempty"`
+	DVAJobs               int    `json:"dva_ci_jobs"`
+	CargoBuildJobs        int    `json:"cargo_build_jobs"`
+	CargoBuildJobsSource  string `json:"cargo_build_jobs_source,omitempty"`
+	RustTestThreads       int    `json:"rust_test_threads"`
+	RustTestThreadsSource string `json:"rust_test_threads_source,omitempty"`
 }
 
 type Attestation struct {

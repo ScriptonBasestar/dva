@@ -6,6 +6,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	"github.com/ScriptonBasestar/dva/internal/cirun"
@@ -114,6 +115,56 @@ func TestCIChildOwnsProfileAndEnvironment(t *testing.T) {
 	}
 	if _, err := ciOwner(c, "missing"); err == nil {
 		t.Fatal("unknown child accepted")
+	}
+}
+
+func TestCIChildDryRunUsesOwningWorkerEnvironment(t *testing.T) {
+	dir := t.TempDir()
+	child := filepath.Join(dir, "child")
+	if err := os.Mkdir(child, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	for path, body := range map[string]string{
+		filepath.Join(dir, "dva.yml"):   "vars:\n  CARGO_BUILD_JOBS: parent\nenv_file: [missing.env]\nsubprojects:\n  child:\n    path: child\n",
+		filepath.Join(child, "dva.yml"): "vars:\n  CARGO_BUILD_JOBS: '7'\nci:\n  profiles:\n    commit:\n      tool_jobs: 3\n      steps:\n        - name: test\n          run: touch executed\n",
+	} {
+		if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	c, err := config.Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	withEnvPolicyGlobals(t, c, true)
+	oldProject := ciProject
+	t.Cleanup(func() { ciProject = oldProject })
+	ciProject, dryRun = "child", true
+	var runErr error
+	data := captureStdout(t, func() { runErr = ciCmd.RunE(ciCmd, nil) })
+	if runErr != nil {
+		t.Fatal(runErr)
+	}
+	var preview struct {
+		Workers []cirun.StepWorkers `json:"workers"`
+	}
+	if err := json.Unmarshal([]byte(data), &preview); err != nil {
+		t.Fatal(err)
+	}
+	owner, err := ciOwner(c, "child")
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, err := owner.ResolveCIProfile("commit")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := cirun.WorkerPlan(p, newOwnedConfigEnvironment(owner).env.EnvSlice())
+	if !reflect.DeepEqual(preview.Workers, want) || len(want) != 1 || want[0].WorkerBudget == nil || want[0].WorkerBudget.CargoBuildJobs != 7 || want[0].WorkerBudget.ToolJobs != 3 {
+		t.Fatalf("preview %s want %+v", data, want)
+	}
+	if _, err := os.Stat(filepath.Join(child, "executed")); !os.IsNotExist(err) {
+		t.Fatal("preview executed step")
 	}
 }
 

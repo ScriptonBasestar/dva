@@ -55,6 +55,18 @@ CI는 프로필을 소유한 설정 디렉터리를 자동으로 배타 잠근�
 않는다. `max_parallel`과 각 도구의 worker를 함께 제한해야 한다. 언어별 지침은
 [dva-ci 언어 참조](../skills/dva-ci/references/languages.md)를 따른다.
 
+`tool_jobs`는 단계마다 제공할 협력적 도구 worker 기본값이다. 생략하면 실행 시작 시
+`min(4, 논리 CPU 수)`를 `min(max_parallel, 단계 수)`로 나눈 정수 하한(최소 1)을
+사용한다. 이 값은 `DVA_CI_JOBS`와 기본 `CARGO_BUILD_JOBS`에 반영된다. Rust 변수는
+단계 환경 변수 → 상속 환경 변수 → 기본값 순으로 적용되며, `DVA_CI_JOBS`는
+런타임이 소유한다. 명시한 worker 값은 낮추지 않고 메모리를 자동 추정하지 않는다.
+이는 OS 자원 제한이 아니다. 기존 Rust 빌드 동작은 `tool_jobs: 1`로 재현할 수 있고,
+`RUST_TEST_THREADS` 기본값 1과 Go 정책은 유지된다.
+
+Dry-run의 `workers`와 실행 로그, 단계 receipt의 선택적 `worker_budget`은 같은 owning
+환경으로 해석한 예산·Rust worker 값·출처를 보여 준다. 전체 환경 변수를 추가로
+기록하지 않으며, worker 필드가 없는 기존 receipt도 읽을 수 있다.
+
 ## 결과와 소유권
 
 실행기는 부모 프로세스로 남아 자식 process group을 감독한다. 실패나 timeout 시

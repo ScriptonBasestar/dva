@@ -11,7 +11,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -82,6 +81,7 @@ func execute(ctx context.Context, root string, p config.CIProfile, inherited []s
 	if max > n {
 		max = n
 	}
+	workers, source := toolWorkerBudget(p, availableCPUs())
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	type result struct {
@@ -97,7 +97,7 @@ func execute(ctx context.Context, root string, p config.CIProfile, inherited []s
 	start := func(i int) error {
 		reports[i].Status = "running"
 		reports[i].StartedAt = time.Now()
-		reports[i].WorkerBudget = workerBudget(ciEnv(inherited, p.Steps[i].Environment))
+		reports[i].WorkerBudget = workerBudget(ciEnv(inherited, p.Steps[i].Environment, workers), p.Steps[i].Environment, inherited, workers, source)
 		if err := checkpoint(reports); err != nil {
 			reports[i].Status = "pending"
 			reports[i].StartedAt = time.Time{}
@@ -106,7 +106,10 @@ func execute(ctx context.Context, root string, p config.CIProfile, inherited []s
 		}
 		running++
 		startedAt := reports[i].StartedAt
-		go func() { r, e := runStep(ctx, root, p.Steps[i], inherited, out, startedAt); done <- result{i, r, e} }()
+		go func() {
+			r, e := runStep(ctx, root, p.Steps[i], inherited, workers, source, out, startedAt)
+			done <- result{i, r, e}
+		}()
 		return nil
 	}
 	for complete < n {
@@ -177,7 +180,7 @@ func execute(ctx context.Context, root string, p config.CIProfile, inherited []s
 	return reports, nil
 }
 
-func runStep(ctx context.Context, root string, step config.CIStep, inherited []string, out io.Writer, startedAt time.Time) (r StepReport, ret error) {
+func runStep(ctx context.Context, root string, step config.CIStep, inherited []string, workers int, source string, out io.Writer, startedAt time.Time) (r StepReport, ret error) {
 	r.Name = step.Name
 	r.Status = "running"
 	r.StartedAt = startedAt
@@ -229,7 +232,11 @@ func runStep(ctx context.Context, root string, step config.CIStep, inherited []s
 	}
 	cmd := exec.Command("/bin/sh", "-eu", "-c", step.Run)
 	cmd.Dir = workdir
-	cmd.Env = ciEnv(inherited, step.Environment)
+	cmd.Env = ciEnv(inherited, step.Environment, workers)
+	r.WorkerBudget = workerBudget(cmd.Env, step.Environment, inherited, workers, source)
+	if r.WorkerBudget != nil {
+		_, _ = fmt.Fprintf(out, "ci step %s tool_jobs=%d source=%s cargo_build_jobs=%d source=%s rust_test_threads=%d source=%s dva_ci_jobs=%d\n", step.Name, r.WorkerBudget.ToolJobs, r.WorkerBudget.Source, r.WorkerBudget.CargoBuildJobs, r.WorkerBudget.CargoBuildJobsSource, r.WorkerBudget.RustTestThreads, r.WorkerBudget.RustTestThreadsSource, r.WorkerBudget.DVAJobs)
+	}
 	cmd.Stdout = out
 	cmd.Stderr = out
 	cmd.Stdin = nil
@@ -239,7 +246,6 @@ func runStep(ctx context.Context, root string, step config.CIStep, inherited []s
 	if err := startProcess(cmd); err != nil {
 		return r, err
 	}
-	r.WorkerBudget = workerBudget(cmd.Env)
 	pid := cmd.Process.Pid
 	waited := make(chan error, 1)
 	go func() { waited <- cmd.Wait() }()
@@ -253,43 +259,24 @@ func runStep(ctx context.Context, root string, step config.CIStep, inherited []s
 	}
 }
 
-func workerBudget(env []string) *WorkerBudget {
-	values := map[string]int{}
-	for _, entry := range env {
-		key, value, ok := strings.Cut(entry, "=")
-		if !ok {
-			continue
-		}
-		switch key {
-		case "DVA_CI_JOBS", "CARGO_BUILD_JOBS", "RUST_TEST_THREADS":
-			n, err := strconv.Atoi(value)
-			if err != nil || n < 1 {
-				return nil
-			}
-			values[key] = n
-		}
-	}
-	if len(values) != 3 {
-		return nil
-	}
-	return &WorkerBudget{
-		DVAJobs:         values["DVA_CI_JOBS"],
-		CargoBuildJobs:  values["CARGO_BUILD_JOBS"],
-		RustTestThreads: values["RUST_TEST_THREADS"],
-	}
-}
-
-func ciEnv(base []string, add map[string]string) []string {
+func ciEnv(base []string, add map[string]string, workers int) []string {
 	m := map[string]string{}
 	for _, e := range base {
 		if i := strings.IndexByte(e, '='); i > 0 {
 			m[e[:i]] = e[i+1:]
 		}
 	}
-	m["DVA_CI_JOBS"] = "1" // each concurrently scheduled step gets one tool budget.
+	if workers < 1 {
+		workers = 1
+	}
+	m["DVA_CI_JOBS"] = fmt.Sprint(workers)
 	for _, key := range []string{"GOMAXPROCS", "CARGO_BUILD_JOBS", "RUST_TEST_THREADS"} {
 		if m[key] == "" {
-			m[key] = "1"
+			if key == "CARGO_BUILD_JOBS" {
+				m[key] = fmt.Sprint(workers)
+			} else {
+				m[key] = "1"
+			}
 		}
 	}
 	if !strings.Contains(" "+m["GOFLAGS"]+" ", " -p=") {

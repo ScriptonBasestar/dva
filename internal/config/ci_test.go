@@ -19,8 +19,57 @@ func TestResolveCIProfileCommitDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ResolveCIProfile(\"\") error: %v", err)
 	}
-	if profile.Timeout != "10m0s" || profile.WarnAfter != "5m0s" || profile.MaxParallel != 1 || profile.Locks == nil {
+	if profile.Timeout != "10m0s" || profile.WarnAfter != "5m0s" || profile.MaxParallel != 1 || profile.ToolJobs != nil || profile.Locks == nil {
 		t.Fatalf("commit defaults = timeout %q, warn_after %q, max_parallel %d, locks %#v", profile.Timeout, profile.WarnAfter, profile.MaxParallel, profile.Locks)
+	}
+}
+
+func TestLoadMergesCIProfileToolJobs(t *testing.T) {
+	root := `ci:
+  profiles:
+    full:
+      timeout: 5m
+      tool_jobs: 2
+      steps: [{name: unit, run: "true"}]`
+	module := `ci:
+  profiles:
+    full:
+      tool_jobs: 4`
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, FileName), []byte(root), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(dir, DotDirName), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, DotDirName, "x.yml"), []byte(module), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, FileName), []byte("modules: [x]\n"+root), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := cfg.CI.Profiles["full"].ToolJobs; got == nil || *got != 4 {
+		t.Fatalf("tool_jobs=%v, want 4", got)
+	}
+	for _, override := range []string{"description: local", "tool_jobs: 7"} {
+		if err := os.WriteFile(filepath.Join(dir, "dva.override.yml"), []byte("ci:\n  profiles:\n    full:\n      "+override+"\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		cfg, err := Load(dir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := 4
+		if override == "tool_jobs: 7" {
+			want = 7
+		}
+		if got := cfg.CI.Profiles["full"].ToolJobs; got == nil || *got != want {
+			t.Fatalf("override %s got %v want %d", override, got, want)
+		}
 	}
 }
 
@@ -114,6 +163,8 @@ func TestValidateRejectsInvalidDuplicateLocksAndReservedStepEnvironment(t *testi
 		{"invalid lock", "locks: [bad/key]", "lock \"bad/key\" must match"},
 		{"duplicate case sensitive lock", "locks: [database, database]", "duplicate lock \"database\""},
 		{"reserved environment", "", "environment must not set reserved DVA_CI_PARENT_RUN"},
+		{"zero tool jobs", "tool_jobs: 0", "tool_jobs"},
+		{"negative tool jobs", "tool_jobs: -1", "tool_jobs"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			stepEnvironment := ""

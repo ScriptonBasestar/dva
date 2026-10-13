@@ -75,3 +75,11 @@
 
 ### Final Validation
 - [ ] `dva config validate` exits with ERROR 0
+
+### CI Initial Setup
+- [ ] Inspect logical CPU and available memory, distinguish measurements from estimates, and record unknown memory with conservative initial `tool_jobs: 1`
+- [ ] Inspect CI step dependencies, existing worker settings, and command-level parallel flags
+- [ ] Start with one heavy stage and build workers capped by logical CPU count and four; use at most two below 8 GiB available memory and one below 4 GiB
+- [ ] Keep machine-specific `tool_jobs` in local `dva.override.yml` and preserve existing user settings without automatic overwrite
+- [ ] Keep `RUST_TEST_THREADS: 1` unless DB, ports, files, global state, and rate-limit sharing are proven isolated, then set step-level threads within the selected worker budget; preserve required test coverage when splitting collision suites
+- [ ] Record shared isolation conditions in shared config and existing docs and compare serial and selected values with separate cold and warm timings and failure counts

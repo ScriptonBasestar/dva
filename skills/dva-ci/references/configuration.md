@@ -9,6 +9,7 @@ ci:
       warn_after: 5m
       timeout: 10m
       max_parallel: 2
+      tool_jobs: 2
       locks: [acme.devbox.integration-db]
       steps:
         - name: vet
@@ -37,6 +38,7 @@ ci:
 | `timeout` | 준비와 검사를 포함한 전체 실행 제한 |
 | `warn_after` | 권장 시간 초과 경고 시점 |
 | `max_parallel` | 동시에 실행할 준비 완료 단계 수, 기본 1 |
+| `tool_jobs` | 각 단계의 기본 도구 worker 수. 생략하면 CPU 4개 상한과 단계 병렬도에서 계산하며 양의 정수만 허용 |
 | `locks` | 다른 root와 공유하는 명시적 자원 락 키 목록 |
 | `steps[].name` | 프로필 내 유일한 단계 이름 |
 | `steps[].run` | 종료하는 로컬 shell 명령 |
@@ -53,5 +55,6 @@ ci:
 디렉터리의 자동 락은 `locks`와 무관하게 항상 적용된다.
 
 프로필 map은 이름별 병합, scalar는 나중 값 우선, `steps`와 `locks` 목록은 지정 시
-교체한다.
+교체한다. `tool_jobs` 생략은 이전 값을 유지하고, 명시한 양의 정수는 이전 값을
+바꾼다. 장비별 값은 기존 사용자 설정을 보존하며 로컬 `dva.override.yml`에 둔다.
 `status`와 `logs`는 프로필 이름으로 사용할 수 없다.

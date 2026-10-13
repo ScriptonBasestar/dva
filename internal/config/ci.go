@@ -34,6 +34,7 @@ type CIProfile struct {
 	Timeout     string   `yaml:"timeout" json:"timeout"`
 	WarnAfter   string   `yaml:"warn_after" json:"warn_after"`
 	MaxParallel int      `yaml:"max_parallel" json:"max_parallel"`
+	ToolJobs    *int     `yaml:"tool_jobs,omitempty" json:"tool_jobs,omitempty"`
 	Locks       []string `yaml:"locks" json:"locks"`
 	Steps       []CIStep `yaml:"steps" json:"steps"`
 }
@@ -125,6 +126,9 @@ func validateCIProfile(name string, profile CIProfile) error {
 	}
 	if profile.MaxParallel < 1 || profile.MaxParallel > maxCIMaxParallel {
 		return fmt.Errorf("ci profile %q: max_parallel must be between 1 and %d", name, maxCIMaxParallel)
+	}
+	if profile.ToolJobs != nil && *profile.ToolJobs < 1 {
+		return fmt.Errorf("ci profile %q: tool_jobs must be a positive integer", name)
 	}
 	profileTimeout, err := parsePositiveCIDuration(name, "timeout", profile.Timeout)
 	if err != nil {
@@ -247,6 +251,9 @@ func mergeCIProfile(base, other CIProfile) CIProfile {
 	}
 	if other.MaxParallel != 0 {
 		base.MaxParallel = other.MaxParallel
+	}
+	if other.ToolJobs != nil {
+		base.ToolJobs = other.ToolJobs
 	}
 	if other.Locks != nil {
 		base.Locks = other.Locks

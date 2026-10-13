@@ -1,13 +1,13 @@
 package cirun
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -31,7 +31,7 @@ func TestRustWorkerEnvironment(t *testing.T) {
 		{name: "step override", base: []string{"CARGO_BUILD_JOBS=2", "RUST_TEST_THREADS=2"}, step: map[string]string{"CARGO_BUILD_JOBS": "3", "RUST_TEST_THREADS": "3"}, want: "3"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			env := "\n" + strings.Join(ciEnv(test.base, test.step), "\n") + "\n"
+			env := "\n" + strings.Join(ciEnv(test.base, test.step, 1), "\n") + "\n"
 			for _, key := range []string{"CARGO_BUILD_JOBS", "RUST_TEST_THREADS"} {
 				if !strings.Contains(env, "\n"+key+"="+test.want+"\n") {
 					t.Fatalf("missing %s=%s in %s", key, test.want, env)
@@ -49,21 +49,25 @@ func TestStepWorkerBudgetRecordsOnlyEffectiveNumericLimits(t *testing.T) {
 		want   *WorkerBudget
 		secret string
 	}{
-		{name: "defaults", want: &WorkerBudget{DVAJobs: 1, CargoBuildJobs: 1, RustTestThreads: 1}},
-		{name: "inherited", base: []string{"CARGO_BUILD_JOBS=2", "RUST_TEST_THREADS=3"}, want: &WorkerBudget{DVAJobs: 1, CargoBuildJobs: 2, RustTestThreads: 3}},
-		{name: "step override", base: []string{"CARGO_BUILD_JOBS=2", "RUST_TEST_THREADS=3"}, step: map[string]string{"CARGO_BUILD_JOBS": "4", "RUST_TEST_THREADS": "5"}, want: &WorkerBudget{DVAJobs: 1, CargoBuildJobs: 4, RustTestThreads: 5}},
+		{name: "defaults", want: &WorkerBudget{ToolJobs: 1, Source: "profile.tool_jobs", DVAJobs: 1, CargoBuildJobs: 1, CargoBuildJobsSource: "profile.tool_jobs", RustTestThreads: 1, RustTestThreadsSource: "default"}},
+		{name: "inherited", base: []string{"CARGO_BUILD_JOBS=2", "RUST_TEST_THREADS=3"}, want: &WorkerBudget{ToolJobs: 1, Source: "profile.tool_jobs", DVAJobs: 1, CargoBuildJobs: 2, CargoBuildJobsSource: "inherited.environment", RustTestThreads: 3, RustTestThreadsSource: "inherited.environment"}},
+		{name: "step override", base: []string{"CARGO_BUILD_JOBS=2", "RUST_TEST_THREADS=3"}, step: map[string]string{"CARGO_BUILD_JOBS": "4", "RUST_TEST_THREADS": "5"}, want: &WorkerBudget{ToolJobs: 1, Source: "profile.tool_jobs", DVAJobs: 1, CargoBuildJobs: 4, CargoBuildJobsSource: "step.environment", RustTestThreads: 5, RustTestThreadsSource: "step.environment"}},
 		{name: "invalid omits budget and arbitrary value", step: map[string]string{"CARGO_BUILD_JOBS": "not-a-number", "UNRELATED_SECRET": "do-not-record"}, secret: "do-not-record"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			root, state := t.TempDir(), t.TempDir()
+			jobs := 1
+			p := profile(config.CIStep{Name: "budget", Run: "exit 0", Environment: test.step})
+			p.ToolJobs = &jobs
+			var output bytes.Buffer
 			report, err := Run(context.Background(), Options{
 				Root: root, ProfileName: "budget", StateDir: state, lockDirectory: state, Env: test.base,
-				Profile: profile(config.CIStep{Name: "budget", Run: "exit 0", Environment: test.step}),
+				Profile: p, Output: &output,
 			})
 			if err != nil || len(report.Steps) != 1 {
 				t.Fatalf("report=%#v err=%v", report, err)
 			}
-			if got := report.Steps[0].WorkerBudget; !reflect.DeepEqual(got, test.want) {
+			if got := report.Steps[0].WorkerBudget; test.want != nil && (got == nil || got.DVAJobs != test.want.DVAJobs || got.CargoBuildJobs != test.want.CargoBuildJobs || got.RustTestThreads != test.want.RustTestThreads || got.CargoBuildJobsSource != test.want.CargoBuildJobsSource || got.RustTestThreadsSource != test.want.RustTestThreadsSource) {
 				t.Fatalf("worker budget=%#v want=%#v", got, test.want)
 			}
 			encoded, err := json.Marshal(report)
@@ -76,7 +80,25 @@ func TestStepWorkerBudgetRecordsOnlyEffectiveNumericLimits(t *testing.T) {
 			if test.secret != "" && strings.Contains(string(encoded), test.secret) {
 				t.Fatalf("arbitrary environment value leaked: %s", encoded)
 			}
+			if test.secret != "" && strings.Contains(output.String(), test.secret) {
+				t.Fatalf("arbitrary environment value leaked to log: %s", output.String())
+			}
 		})
+	}
+}
+
+func TestToolWorkerBudgetCPUAndParallelism(t *testing.T) {
+	for _, tc := range []struct{ cpu, parallel, steps, want int }{
+		{1, 1, 3, 1}, {2, 2, 3, 1}, {8, 1, 3, 4}, {8, 2, 3, 2},
+	} {
+		p := config.CIProfile{MaxParallel: tc.parallel}
+		for i := 0; i < tc.steps; i++ {
+			p.Steps = append(p.Steps, config.CIStep{Name: string(rune('a' + i)), Run: "true"})
+		}
+		got, _ := toolWorkerBudget(p, tc.cpu)
+		if got != tc.want {
+			t.Errorf("cpu=%d parallel=%d: got %d, want %d", tc.cpu, tc.parallel, got, tc.want)
+		}
 	}
 }
 
@@ -153,7 +175,7 @@ func TestRunSchedulesDependenciesAndStatusReadsReport(t *testing.T) {
 		t.Fatalf("status %#v", got)
 	}
 	log, err := ReadLog(state, r.ID)
-	if err != nil || string(log) != "firstsecond" {
+	if err != nil || !strings.Contains(string(log), "first") || !strings.Contains(string(log), "second") || !strings.Contains(string(log), "tool_jobs=") {
 		t.Fatalf("log=%q err=%v", log, err)
 	}
 	if _, err := ReadLog(state, "../bad"); err == nil {

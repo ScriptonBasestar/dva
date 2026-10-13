@@ -8,7 +8,7 @@ namespace; installed names follow the owning runtime's namespace conversion.
 | Concern | Canonical skill |
 | --- | --- |
 | Choosing dev-check, commit or full; reporting exclusions | quality:verification-workflow |
-| Rust packages, targets, features and compile/link cost | quality:verification-rust |
+| Rust packages, targets, features and compile/link cost; worker and test-thread isolation | quality:verification-rust |
 | Go package scope, race, builds and resource limits | quality:verification-go |
 | Python tests, types and packaging | quality:verification-python |
 | TypeScript workspace impact, types, tests and builds | quality:verification-typescript |

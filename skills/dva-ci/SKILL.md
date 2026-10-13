@@ -53,3 +53,17 @@ workflow; never patch installed skill copies directly.
 
 For project-owned build/quality tool preparation, follow the `dva-config` skill
 and its `../dva-config/references/project-local-tooling.md`; keep bootstrap and gate outcomes separate.
+
+### Initial CI setup
+
+Inspect logical CPU and available memory, step dependencies, existing worker settings,
+and command-level parallel flags before proposing a profile. Start with one heavy stage
+at a time and build workers capped by logical CPU count and four; use at most two below 8 GiB and one below 4 GiB.
+If memory is unknown, record that fact and use the conservative initial value 1. Record
+measurements separately from estimates. Put machine-specific `tool_jobs` in local
+`dva.override.yml`, preserve existing user settings, and never overwrite them
+automatically. Keep `RUST_TEST_THREADS=1` unless DB, ports, files, global state, and
+rate-limit sharing are proven isolated; then set step-level `RUST_TEST_THREADS` within
+the selected worker budget. Preserve all required test coverage when splitting
+collision suites, record shared isolation conditions in shared config and existing docs, and compare serial and selected
+values with separate cold and warm timings and failure counts.

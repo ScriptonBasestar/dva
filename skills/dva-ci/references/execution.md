@@ -46,8 +46,12 @@ require isolation or explicit dependency edges. Do not parallelize clean with
 build, or generated-file writers with checks of those files.
 
 Go and Rust receive conservative worker defaults: `GOMAXPROCS=1`, Go `-p=1`,
-`CARGO_BUILD_JOBS=1`, and `RUST_TEST_THREADS=1`. Explicit environment settings can
-tune these; `DVA_CI_JOBS` remains the default adapter hint of one. Build scripts
+and `RUST_TEST_THREADS=1`. If `tool_jobs` is omitted, DVA calculates
+`max(1, floor(min(4, logical CPUs) / min(max_parallel, step count)))` once at
+run start and supplies it to `DVA_CI_JOBS` and the default `CARGO_BUILD_JOBS`.
+Explicit step environment settings take precedence over inherited environment
+and the calculated default. `DVA_CI_JOBS` remains owned by DVA. Use
+`tool_jobs: 1` to reproduce the previous build behavior. Build scripts
 and custom test runners may ignore these variables and need their own limits.
 
 ## Evidence

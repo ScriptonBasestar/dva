@@ -38,12 +38,15 @@ var ciCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		if dryRun {
-			return output.PrintJSON(profile)
-		}
 		owned := newOwnedConfigEnvironment(c)
 		if err := envIncompleteError(owned.report); err != nil {
 			return err
+		}
+		if dryRun {
+			return output.PrintJSON(struct {
+				config.CIProfile
+				Workers []cirun.StepWorkers `json:"workers"`
+			}{profile, cirun.WorkerPlan(profile, owned.env.EnvSlice())})
 		}
 		ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
 		defer stop()
