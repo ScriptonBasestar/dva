@@ -8,12 +8,15 @@ effort: S
 needs-human: true
 execution-mode: external
 human-grade: human
-status: todo
+status: done
 ownership: local
 agent: human
 discovered-at: 2026-10-13
 discovered-in: "TASK-103 S2 current installed-DVA verification"
 created: 2026-10-13
+resolution: wontfix
+resolved-at: 2026-10-13T15:16:37Z
+resolution-summary: "Resolved as wontfix."
 ---
 
 ## Summary
@@ -63,3 +66,11 @@ S2를 측정할 승인되고 범위가 한정된 음성 픽스처 계약을 사�
 ISSUE-506은 소유권이 미분류이고, ISSUE-507은 기존 report-link 실패 두 건을 기록한다. 이 등록은 그 진단을 악화시키지 않아야 한다.
 
 완료 기준과 검증 명령은 이 이슈에 두지 않는다.
+
+## Retirement disposition (2026-10-14)
+
+DVA의 TaskChain 전용 태스크 오케스트레이션은 커밋 `9f8e30c1`과 `fb4972e23e1bd98ddbe371007bae9f6fbaeed163`에서 제거되었다. 따라서 제안된 해시 불일치 거부 테스트 입력 계약이 남을 DVA 기능 표면은 없다. 이 이슈는 기능 은퇴(feature-retired)이며 구현되지 않았다.
+
+S2 통과를 주장하지 않는다. TaskManager TASK-103은 갱신하지 않는다. 설치본, pin, CLI, PATH, 테스트는 바꾸지 않는다.
+
+앞으로 DVA taskqueue를 다시 들이려면 범위가 한정된 새 카드와 승인이 필요하다.
