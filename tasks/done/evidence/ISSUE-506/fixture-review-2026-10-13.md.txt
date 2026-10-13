@@ -1,0 +1,17 @@
+# ISSUE-506 independent review
+
+Reviewer: Grok 4.7; reasoning: medium; date: 2026-10-13; owner: codex/mbp.
+Separate tool-free session; reviewed the actual test-only diff and reported narrow
+checks. Full declared gate was pending at review time. No machine-sealed receipt
+is claimed by this human-readable evidence.
+
+Command:
+grok --model grok-4.7 --reasoning-effort medium --no-subagents --disable-web-search --permission-mode plan --tools '' --max-turns 1 --prompt-file tmp/issue506-independent-review.md
+
+Verbatim reviewer result:
+
+**PASS**. The diff has no blockers.
+
+The change is test-only. It seeds `RAILS_ENV` and `DB_HOST`, the fixture’s exact keys, with `t.Setenv` before `os.Unsetenv`. `t.Setenv` snapshots the caller’s original state, including an empty present value, and its cleanup restores that state: `os.Setenv` when the key was present, `os.Unsetenv` when it was absent. The explicit unset only clears the seeded value for the test body. Production precedence is untouched, so a present `os.LookupEnv` value, including an empty one, still beats the profile.
+
+This test does not call `t.Parallel`, and `t.Setenv` rejects parallel use. Cleanup runs when the test finishes, so the process environment is restored before later tests. The `os` import was already present. I did not run tests. The session’s reported checks and the pending full gate stay outside this verdict.

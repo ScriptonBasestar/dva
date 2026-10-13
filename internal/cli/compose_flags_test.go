@@ -236,6 +236,16 @@ func TestApplyEnv_NoEnvironmentsDefined(t *testing.T) {
 }
 
 func TestApplyEnv_MergesVars(t *testing.T) {
+	// MergeVars intentionally gives the process environment precedence. Seed each
+	// fixture key to prove the test removes that ambient input, then unset it so
+	// t.Setenv restores the caller's original value at cleanup.
+	for _, key := range []string{"RAILS_ENV", "DB_HOST"} {
+		t.Setenv(key, "ambient-"+key)
+		if err := os.Unsetenv(key); err != nil {
+			t.Fatalf("unset %s: %v", key, err)
+		}
+	}
+
 	e := config.NewEnvironment(nil, "/tmp", "/tmp")
 	c := &config.Config{
 		Environments: map[string]config.EnvironmentProfile{
