@@ -45,7 +45,7 @@ flag the new reserved task-queue-start name, and defer optional platform work.
 ## Completion Criteria
 
 - [x] The source audit accounts for every internal/cmd commit in the inspected range | verify: `python3 -c 'import json,subprocess; d=json.load(open("tasks/done/evidence/TASK-500/scope-audit.json")); actual=subprocess.check_output(["git","log","--format=%H","v0.3.0.."+d["inspectedHead"],"--","internal/","cmd/"],text=True).splitlines(); assert set(actual)=={c["sha"] for c in d["commits"]} and len(actual)==d["commitCount"]==31; assert all(c["decision"]=="include" for c in d["commits"])'`
-- [x] Unreleased documents the missing command and the new reserved name | verify: `/usr/bin/grep -q 'config env reseal' CHANGELOG.md && /usr/bin/grep -q 'task-queue-start.*새 내장 명령' CHANGELOG.md`
+- [x] Unreleased documents the missing command and the new reserved name | verify: human — 과거 검증 명령 1 (아래 제거 후 기록 참조)
 - [x] Target scope is recorded without changing runtime version or scaffold floor | verify: `python3 -c 'import pathlib; s=pathlib.Path("ROADMAP.md").read_text(); assert "v0.4.0" in s and "P3" in s; v=pathlib.Path("internal/config/version.go").read_text(); assert ("Version = "+chr(34)+"0.3.0"+chr(34)) in v and ("MinScaffoldVersion = "+chr(34)+"0.1.44"+chr(34)) in v'`
 - [x] Hosted baseline CI is observed honestly; pending remains a candidate-validation prerequisite | verify: `python3 -c 'import json; d=json.load(open("tasks/done/evidence/TASK-500/baseline-ci.json")); assert d["headSha"]=="fee1585f2faaf961c4d27a5d9b5bd226c296a920" ; assert d["observedAt"] and d["releaseCandidateAccepted"] is False; assert (d["status"]=="completed" and d["conclusion"]=="success" and all(j["conclusion"]=="success" for j in d["jobs"])) or (d["status"] in ("queued","in_progress") and d["conclusion"]=="" and d["followUp"])'`
 - [x] Independent review is PASS | verify: `python3 -c 'import json; d=json.load(open("tasks/done/evidence/TASK-500/independent-review.json")); assert d["verdict"]=="PASS" and d["sessionId"]'`
@@ -60,3 +60,15 @@ This card grades scope alignment only; public release needs stages 3 and 4.
 Independent scope review passed in session 01a11a34-ed76-7ae2-89c3-446fc7506d95;
 completion review PASS is stored in tasks/done/evidence/TASK-500/independent-review.json.
 All five acceptance bindings, make doc-check and ce task gate passed.
+
+## 기능 제거 후 기록 (2026-10-13)
+
+TaskChain 전용 연동을 DVA 제품 경계에서 제거했다. 위의 검증 결과는 도입 당시
+기록이며 현행 실행 바인딩이 아니다. 원래 명령과 과거 리뷰 영수증은 보존한다.
+제품 판단은 [제품 경계](../../../PRODUCT.md#product-boundaries)를 따른다.
+
+과거 검증 명령 1:
+
+```sh
+/usr/bin/grep -q 'config env reseal' CHANGELOG.md && /usr/bin/grep -q 'task-queue-start.*새 내장 명령' CHANGELOG.md
+```

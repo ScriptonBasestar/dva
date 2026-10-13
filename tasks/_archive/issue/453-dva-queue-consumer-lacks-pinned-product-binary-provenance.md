@@ -78,9 +78,9 @@ an input, not a substitute for the check.
 
 ## Resolution Criteria
 
-- [x] A reviewed manifest records TaskChain source commit/tree, build toolchain and platform, build command, and artifact SHA-256 | verify: `python3 -c 'import json,pathlib,hashlib,shutil; p=json.loads(pathlib.Path("internal/taskqueue/taskchain-pins.json").read_text())["artifacts"][0]; r=json.loads(pathlib.Path("tasks/done/evidence/TASK-496/published-release-verification.json").read_text()); assert r["signatureValid"] and p["sha256"]==r["sha256"] and p["sourceCommit"]==r["sourceCommit"] and p["sourceTree"]==r["sourceTree"] and p["goVersion"]=="go1.27.1" and p["buildCommand"]; assert hashlib.sha256(pathlib.Path(shutil.which("taskchain-task-manager")).read_bytes()).hexdigest()==p["sha256"]'`
+- [x] A reviewed manifest records TaskChain source commit/tree, build toolchain and platform, build command, and artifact SHA-256 | verify: human — 과거 검증 명령 1 (아래 제거 후 기록 참조)
 - [x] DVA verifies the exact selected binary against its pinned artifact identity before any CE runtime mutation | verify: `python3 -c 'import json,pathlib; r=pathlib.Path("tasks/done/evidence/TASK-496"); h=json.loads((r/"host-verification.json").read_text()); assert h["positiveCeCalls"]==1 and h["negativeCeCalls"]==0 and h["negativeQueueCalls"]==0 and h["positiveExitCode"]==0 and h["negativeExitCode"]!=0; f=json.loads((r/"host/positive-run-finish.json").read_text()); assert f["status"]=="DONE" and f["receipt"]["sourcePushed"] and f["receipt"]["worktreeRemoved"]'`
-- [x] A stale or alternate protocol-compatible binary fails closed, and read-only queue inspection remains explicit about provenance | verify: `python3 -c 'import pathlib,subprocess; r=pathlib.Path("tasks/done/evidence/TASK-496/host"); assert not (r/"negative-ce-calls.jsonl").read_text().strip() and not (r/"negative-queue-calls.jsonl").read_text().strip(); assert "SHA-256 mismatch" in (r/"negative-start.stderr").read_text(); subprocess.check_call(["dva","task-queue"],stdout=subprocess.DEVNULL); subprocess.check_call(["dva","task-queue-verdict"],stdout=subprocess.DEVNULL)'`
+- [x] A stale or alternate protocol-compatible binary fails closed, and read-only queue inspection remains explicit about provenance | verify: human — 과거 검증 명령 2 (아래 제거 후 기록 참조)
 
 ## Staged mitigation (TASK-454, 2026-09-29)
 
@@ -187,3 +187,21 @@ DVA pin 활성화·실제 CE host start는 하지 않았다. 서명 증거가 �
 ## 2026-10-06 해결 증거 / 현재 상태
 
 승인된 v0.1.0 darwin/arm64 공개 자산과 GitHub custom verified-release attestation을 검증했다. 기본 PATH의 실제 해시, compiled pin 및 raw CE 양성 1회·음성 queue/CE 0회, 실제 TASK-495 제품 수정·독립 리뷰·통합·DONE 영수증은 TASK-496 evidence가 소유한다. 역사적 internal 후보 승인 플래그와 TASK-493 봉인은 수정하지 않았다. 최종 TASK-496 독립 리뷰 후 fixed로 보관한다. 전역 DVA 교체와 Linux pin, writer 전면 전환은 하지 않았다. 앞선 미승인·403 문단은 당시 이력이다.
+
+## 기능 제거 후 기록 (2026-10-13)
+
+TaskChain 전용 연동을 DVA 제품 경계에서 제거했다. 위의 검증 결과는 도입 당시
+기록이며 현행 실행 바인딩이 아니다. 원래 명령과 과거 리뷰 영수증은 보존한다.
+제품 판단은 [제품 경계](../../../PRODUCT.md#product-boundaries)를 따른다.
+
+과거 검증 명령 1:
+
+```sh
+python3 -c 'import json,pathlib,hashlib,shutil; p=json.loads(pathlib.Path("internal/taskqueue/taskchain-pins.json").read_text())["artifacts"][0]; r=json.loads(pathlib.Path("tasks/done/evidence/TASK-496/published-release-verification.json").read_text()); assert r["signatureValid"] and p["sha256"]==r["sha256"] and p["sourceCommit"]==r["sourceCommit"] and p["sourceTree"]==r["sourceTree"] and p["goVersion"]=="go1.27.1" and p["buildCommand"]; assert hashlib.sha256(pathlib.Path(shutil.which("taskchain-task-manager")).read_bytes()).hexdigest()==p["sha256"]'
+```
+
+과거 검증 명령 2:
+
+```sh
+python3 -c 'import pathlib,subprocess; r=pathlib.Path("tasks/done/evidence/TASK-496/host"); assert not (r/"negative-ce-calls.jsonl").read_text().strip() and not (r/"negative-queue-calls.jsonl").read_text().strip(); assert "SHA-256 mismatch" in (r/"negative-start.stderr").read_text(); subprocess.check_call(["dva","task-queue"],stdout=subprocess.DEVNULL); subprocess.check_call(["dva","task-queue-verdict"],stdout=subprocess.DEVNULL)'
+```
