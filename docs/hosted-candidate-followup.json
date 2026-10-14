@@ -1,0 +1,160 @@
+{
+  "observed_at": "2026-10-14T11:41:09.467228+00:00",
+  "repository": "ScriptonBasestar/dva",
+  "authorization": "User requested following the ISSUE-515 recommendation; existing authentication only. No credential or permission changes.",
+  "before": {
+    "databaseId": 38533431297,
+    "headSha": "6c37f680d8dd36bbcbb38cf018d03c667054ffef",
+    "status": "completed",
+    "conclusion": "cancelled",
+    "attempt": 1,
+    "url": "https://github.com/ScriptonBasestar/dva/actions/runs/38533431297",
+    "jobs": [
+      {
+        "databaseId": 115750477728,
+        "name": "commit-subjects",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-10-14T08:12:02Z",
+        "completedAt": "2026-10-14T08:12:23Z"
+      },
+      {
+        "databaseId": 115750477903,
+        "name": "config-env-platform (macos-latest)",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-10-14T08:12:09Z",
+        "completedAt": "2026-10-14T08:13:49Z"
+      },
+      {
+        "databaseId": 115750477933,
+        "name": "lint",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-10-14T08:12:02Z",
+        "completedAt": "2026-10-14T08:12:48Z"
+      },
+      {
+        "databaseId": 115750477939,
+        "name": "test",
+        "status": "completed",
+        "conclusion": "cancelled",
+        "startedAt": "2026-10-14T08:12:02Z",
+        "completedAt": "2026-10-14T08:47:02Z"
+      },
+      {
+        "databaseId": 115750478032,
+        "name": "goreleaser-snapshot",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-10-14T08:12:02Z",
+        "completedAt": "2026-10-14T08:13:43Z"
+      },
+      {
+        "databaseId": 115750478048,
+        "name": "config-env-platform (ubuntu-latest)",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-10-14T08:12:03Z",
+        "completedAt": "2026-10-14T08:13:00Z"
+      }
+    ]
+  },
+  "rerun_requests": [
+    {
+      "command": [
+        "gh",
+        "run",
+        "rerun",
+        "38533431297",
+        "--repo",
+        "ScriptonBasestar/dva",
+        "--job",
+        "115750477939"
+      ],
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "job 115750477939 cannot be rerun\n"
+    },
+    {
+      "command": [
+        "gh",
+        "run",
+        "rerun",
+        "38533431297",
+        "--repo",
+        "ScriptonBasestar/dva",
+        "--failed"
+      ],
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "run 38533431297 cannot be rerun; Resource not accessible by personal access token\n"
+    }
+  ],
+  "after": {
+    "databaseId": 38533431297,
+    "headSha": "6c37f680d8dd36bbcbb38cf018d03c667054ffef",
+    "status": "completed",
+    "conclusion": "cancelled",
+    "attempt": 1,
+    "url": "https://github.com/ScriptonBasestar/dva/actions/runs/38533431297",
+    "jobs": [
+      {
+        "databaseId": 115750477728,
+        "name": "commit-subjects",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-10-14T08:12:02Z",
+        "completedAt": "2026-10-14T08:12:23Z"
+      },
+      {
+        "databaseId": 115750477903,
+        "name": "config-env-platform (macos-latest)",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-10-14T08:12:09Z",
+        "completedAt": "2026-10-14T08:13:49Z"
+      },
+      {
+        "databaseId": 115750477933,
+        "name": "lint",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-10-14T08:12:02Z",
+        "completedAt": "2026-10-14T08:12:48Z"
+      },
+      {
+        "databaseId": 115750477939,
+        "name": "test",
+        "status": "completed",
+        "conclusion": "cancelled",
+        "startedAt": "2026-10-14T08:12:02Z",
+        "completedAt": "2026-10-14T08:47:02Z"
+      },
+      {
+        "databaseId": 115750478032,
+        "name": "goreleaser-snapshot",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-10-14T08:12:02Z",
+        "completedAt": "2026-10-14T08:13:43Z"
+      },
+      {
+        "databaseId": 115750478048,
+        "name": "config-env-platform (ubuntu-latest)",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-10-14T08:12:03Z",
+        "completedAt": "2026-10-14T08:13:00Z"
+      }
+    ]
+  },
+  "new_attempt_observed": false,
+  "source_unchanged": true,
+  "result": "blocked: job rerun unsupported; failed-jobs rerun denied by current authentication",
+  "limits": [
+    "No successful rerun or hosted PASS observed.",
+    "Exact reason for previous test cancellation remains unproven.",
+    "No workflow, timeout, tests, credentials, permissions, publication, or runtime installation changed."
+  ]
+}

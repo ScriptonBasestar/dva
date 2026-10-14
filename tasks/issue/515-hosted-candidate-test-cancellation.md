@@ -50,6 +50,26 @@ DVA의 `.github/workflows/ci.yml`과 공개 전 후보 검증 판정을 이 저�
   필요한 검증을 재실행할 수 있다.
 - Actual: test 취소 후 원인과 최종 결과가 미확정이며 현재 인증으로 재실행하지 못했다.
 
+## 2026-10-14 재실행 후속 확인
+
+사용자 요청으로 기존 인증에서 가장 좁은 지원 경로부터 재확인했다.
+실행 `38533431297`의 API 조회로 test job database ID `115750477939`와
+source `6c37f680d8dd36bbcbb38cf018d03c667054ffef`를 대조했다.
+
+- 개별 job 재실행: exit 1, `job 115750477939 cannot be rerun`.
+- `--failed` 범위 재실행: exit 1, `Resource not accessible by personal access token`.
+- 요청 전후 attempt는 1, 상태는 completed/cancelled, source SHA도 동일하다.
+
+새 실행은 시작되지 않았다. `--failed`가 취소된 job을 포함하는지는 이번 거부만으로
+확인할 수 없다. 권한 거부 이후 전체 workflow 요청이나 인증 변경을
+추가 시도하지 않았다. 취소 원인은 여전히 미확정이며 이 카드는 열린 상태로 유지한다.
+[API·요청 증거](../../docs/hosted-candidate-followup.json)는 인증 토큰을 포함하지 않는다.
+
+실행 인계에 필요한 미확인 입력은 승인된 Actions 재실행 인증과 그 준비 경로다.
+현재 설정에서 같은 요청을 반복하거나 token 값을 수집하지 않는다. 인증이 준비되면
+작업 디렉터리와 기존 `gh`의 인증 선택을 확인한 뒤 지원되는 최소 재실행 범위에서
+attempt·source SHA·최종 결과를 다시 확인한다. 작업 worktree는 인계에 필요하지 않다.
+
 ## 후속 범위
 
 Actions write 권한을 가진 승인된 인증으로 기존 지원 경로를 사용하고, 요청 뒤 실제
