@@ -1,5 +1,7 @@
 # CI 프로필과 실행 규약
 
+Rust worker 개선판의 장비 적용 증거는 [로컬 설치 기록](local-rust-worker-installation.md)을 따른다.
+
 DVA는 `ci.profiles`에 선언한 검증을 감독한다. 서비스 수명 주기의 `plans`나
 준비 절차인 `provision`과 달리, CI는 종료하는 검사와 시간 예산을 소유한다.
 배포·릴리스 게시·운영 환경 변경은 이 명령의 책임이 아니다.

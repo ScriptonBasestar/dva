@@ -62,6 +62,11 @@ ce task run-status ci-running-receipt-checkpoint
 
 ## 후속 범위
 
+2026-10-14 Rust worker 설치 작업에서 재확인했다. 원격 SHA는 위 값과 같고 CE는
+여전히 ABORTED·로컬 전용 회수 상태다. 설치된 CE/gz-git help에도 특정 ref 하나를
+회수하는 명령은 없으며 bulk predicate만 제공한다. 기존 blocker가 반복된 것으로
+판정해 이 카드를 유지하고 원격 ref는 변경하지 않았다.
+
 소유 운영자가 단일 ref 회수를 지원하는 공식 경로를 정한 뒤, 실행 직전에 원격 SHA가
 위 값과 같고 전달 증거가 보존됐는지 확인한다. 회수 후 `git ls-remote`로 부재를
 확인한다. 다른 task ref, 진행 중 Rust worktree, source 이력은 변경하지 않는다.

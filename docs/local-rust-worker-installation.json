@@ -1,0 +1,214 @@
+{
+  "observed_at": "2026-10-14T10:18:50.730308+00:00",
+  "source_commit": "3bbe76c7cba95764a752dbdc3e3e2dbae4c5af5b",
+  "source_archive_sha256": "2fd49b0e9ecbe774ff77cd922e06126e8c5fc0b38c303e017e0038bb5cbdb510",
+  "archived_regular_files_verified": 1650,
+  "binary_version": "0.3.0",
+  "binary_build_date": "2026-10-14T10:15:11Z",
+  "binary_sha256": "2f0b4308ced90bf64869f3818cdb3f5b6312985a4673a4b688d218ee0645109a",
+  "previous_commit": "7c45ecb71a0da9e349638c429b097206f7e4bb9b",
+  "previous_sha256": "557f7bbec82039029c1e7f7fd8f1edc0a60cd63a8301c5efdfe1d0dce7afd598",
+  "destinations": [
+    "/Users/archmagece/go/bin/dva",
+    "/Users/archmagece/.local/bin/dva"
+  ],
+  "selected_path": "/Users/archmagece/go/bin/dva",
+  "backup_directory": "/Users/archmagece/.local/state/dva/runtime-backups/rust-worker-3bbe76c7-20261014T1015",
+  "installer": "make install-binary INSTALL_SOURCE=<verified pinned binary>",
+  "installer_exit_code": 0,
+  "unit_command": "go test -race ./internal/cirun ./internal/config ./tools/installcheck",
+  "unit_source_commit": "3bbe76c7cba95764a752dbdc3e3e2dbae4c5af5b",
+  "unit_exit_code": 0,
+  "fixture_scope": "Synthetic non-Git directories; no Rust compilation/performance or real-project isolation claim.",
+  "phases": {
+    "candidate": {
+      "binary": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__install-rust-worker-runtime/tmp/rust-worker-install/source/bin/dva",
+      "scenarios": [
+        {
+          "scenario": "computed",
+          "run_id": "9c533af7c1f63a44a2fc5394c9228620",
+          "worker_budget": {
+            "tool_jobs": 4,
+            "source": "computed(cpu/max_parallel)",
+            "dva_ci_jobs": 4,
+            "cargo_build_jobs": 4,
+            "cargo_build_jobs_source": "computed(cpu/max_parallel)",
+            "rust_test_threads": 1,
+            "rust_test_threads_source": "default"
+          },
+          "child_values": [
+            4,
+            1,
+            4
+          ],
+          "status": "succeeded"
+        },
+        {
+          "scenario": "inherited",
+          "run_id": "26553ac26597cf6f56e9068c1ecfd36d",
+          "worker_budget": {
+            "tool_jobs": 2,
+            "source": "profile.tool_jobs",
+            "dva_ci_jobs": 2,
+            "cargo_build_jobs": 9,
+            "cargo_build_jobs_source": "inherited.environment",
+            "rust_test_threads": 3,
+            "rust_test_threads_source": "inherited.environment"
+          },
+          "child_values": [
+            9,
+            3,
+            2
+          ],
+          "status": "succeeded"
+        },
+        {
+          "scenario": "step",
+          "run_id": "1f13e4552642cc5840dddcf29f9cde88",
+          "worker_budget": {
+            "tool_jobs": 2,
+            "source": "profile.tool_jobs",
+            "dva_ci_jobs": 2,
+            "cargo_build_jobs": 7,
+            "cargo_build_jobs_source": "step.environment",
+            "rust_test_threads": 2,
+            "rust_test_threads_source": "step.environment"
+          },
+          "child_values": [
+            7,
+            2,
+            2
+          ],
+          "status": "succeeded"
+        }
+      ],
+      "zero_tool_jobs_rejected": true
+    },
+    "installed-go": {
+      "binary": "/Users/archmagece/go/bin/dva",
+      "scenarios": [
+        {
+          "scenario": "computed",
+          "run_id": "37fd43743f6fd223a2c6d0aa621658bb",
+          "worker_budget": {
+            "tool_jobs": 4,
+            "source": "computed(cpu/max_parallel)",
+            "dva_ci_jobs": 4,
+            "cargo_build_jobs": 4,
+            "cargo_build_jobs_source": "computed(cpu/max_parallel)",
+            "rust_test_threads": 1,
+            "rust_test_threads_source": "default"
+          },
+          "child_values": [
+            4,
+            1,
+            4
+          ],
+          "status": "succeeded"
+        },
+        {
+          "scenario": "inherited",
+          "run_id": "85b347d37c42f9841d56e3a2015eb44c",
+          "worker_budget": {
+            "tool_jobs": 2,
+            "source": "profile.tool_jobs",
+            "dva_ci_jobs": 2,
+            "cargo_build_jobs": 9,
+            "cargo_build_jobs_source": "inherited.environment",
+            "rust_test_threads": 3,
+            "rust_test_threads_source": "inherited.environment"
+          },
+          "child_values": [
+            9,
+            3,
+            2
+          ],
+          "status": "succeeded"
+        },
+        {
+          "scenario": "step",
+          "run_id": "1dcf05439fb11776a171ef76eeb85de2",
+          "worker_budget": {
+            "tool_jobs": 2,
+            "source": "profile.tool_jobs",
+            "dva_ci_jobs": 2,
+            "cargo_build_jobs": 7,
+            "cargo_build_jobs_source": "step.environment",
+            "rust_test_threads": 2,
+            "rust_test_threads_source": "step.environment"
+          },
+          "child_values": [
+            7,
+            2,
+            2
+          ],
+          "status": "succeeded"
+        }
+      ],
+      "zero_tool_jobs_rejected": true
+    },
+    "installed-local": {
+      "binary": "/Users/archmagece/.local/bin/dva",
+      "scenarios": [
+        {
+          "scenario": "computed",
+          "run_id": "7029f0b57d76f4092bdb97331e0020e1",
+          "worker_budget": {
+            "tool_jobs": 4,
+            "source": "computed(cpu/max_parallel)",
+            "dva_ci_jobs": 4,
+            "cargo_build_jobs": 4,
+            "cargo_build_jobs_source": "computed(cpu/max_parallel)",
+            "rust_test_threads": 1,
+            "rust_test_threads_source": "default"
+          },
+          "child_values": [
+            4,
+            1,
+            4
+          ],
+          "status": "succeeded"
+        },
+        {
+          "scenario": "inherited",
+          "run_id": "b020840c61f99fa03dc7d44ef6f098d0",
+          "worker_budget": {
+            "tool_jobs": 2,
+            "source": "profile.tool_jobs",
+            "dva_ci_jobs": 2,
+            "cargo_build_jobs": 9,
+            "cargo_build_jobs_source": "inherited.environment",
+            "rust_test_threads": 3,
+            "rust_test_threads_source": "inherited.environment"
+          },
+          "child_values": [
+            9,
+            3,
+            2
+          ],
+          "status": "succeeded"
+        },
+        {
+          "scenario": "step",
+          "run_id": "ba4aa2fa6ddf95e287ae41ad02f7de19",
+          "worker_budget": {
+            "tool_jobs": 2,
+            "source": "profile.tool_jobs",
+            "dva_ci_jobs": 2,
+            "cargo_build_jobs": 7,
+            "cargo_build_jobs_source": "step.environment",
+            "rust_test_threads": 2,
+            "rust_test_threads_source": "step.environment"
+          },
+          "child_values": [
+            7,
+            2,
+            2
+          ],
+          "status": "succeeded"
+        }
+      ],
+      "zero_tool_jobs_rejected": true
+    }
+  }
+}
