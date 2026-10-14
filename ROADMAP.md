@@ -18,7 +18,7 @@
 |---|---|---|---|
 | 1 · P1 | 현재 상태 문서 정합화 | 공개판·소스 구분, 지원표, named plan 빠른 시작, 문서 게이트와 독립 리뷰 | 완료 — 도입 커밋의 검증 기록 참조 |
 | 2 · P1 | 릴리스 범위 확정 | 목표 버전·포함/이월·호환성 주의사항과 변경 내역 대조 | 완료 — 범위 대조·독립 리뷰 기록 보존 |
-| 3 · P1 | 후보 검증 | 동일 후보 소스에서 아래 검증 범위의 결과와 미실행 항목을 기록 | 대기 |
+| 3 · P1 | 후보 검증 | 동일 후보 소스에서 아래 검증 범위의 결과와 미실행 항목을 기록 | 부분 완료 — 로컬 full·snapshot PASS, hosted test 취소 |
 | 4 · P1 | 공개와 설치 확인 | 기존 런북의 preflight·공개·postflight 성공, 설치 문서 버전 갱신 | 대기 |
 
 단계 3부터는 검증 대상 소스, 선행 조건, 실행 명령과 필요한 실환경 검증을 기록한다.
@@ -63,6 +63,36 @@ tag·Release 생성, 설치와 외부 installer의 pin·selector 배포는 별�
 installer source가 전달됐다는 사실만으로 runtime 배포나 pin 갱신을 주장하지 않는다.
 
 ## 후보 검증 범위
+
+### 2026-10-14 확인된 후보 증거
+
+검증 대상은 `6c37f680d8dd36bbcbb38cf018d03c667054ffef`, tree는
+`33499757e7849031c2803f357e258ec162ef86fb`다. 릴리스 노트 SHA-256은
+`72c7d427a02a3dcc4a363a7486ec0dacccc659a19e0270a5575d2fb110e6d952`다.
+
+같은 commit의 격리된 review worktree에서 `dva ci full` receipt
+`1f7bb17f14a5a4a642d4a9e8f1f9ea40`은 9단계 모두 성공했다. 원시 receipt와 log는
+소유 gzh-cli-devbox의 `tmp/dva-project-tooling-evidence-20261014/release-candidate/`에
+보존한다. 비게시 `make release-check`도 같은 commit에서 종료 코드 0이며
+6개 archive와 checksum을 검증했다. source 전달·push·작업 자원 회수는 DONE이다.
+
+Hosted CI `38533431297`과 `38533156427`은 Linux/macOS 환경 검사·lint·commit 검사·
+GoReleaser snapshot은 성공했지만 `test`가 cancelled로 종료됐다. 이 결과는 전체
+hosted PASS가 아니며, 취소를 코드 실패로 단정하지 않는다. 필요한 hosted 테스트
+확인과 이번에 바뀐 외부 연동의 명시적 실사용 증거가 남는다. 태그·공개·설치·
+외부 installer pin 갱신은 실행하지 않았다.
+
+두 취소는 job deadline 부근에서 발생했으며, 선언된 30분 job 예산의 자동 취소와
+일치한다. 마지막 테스트 이름만으로 멈춘 하위 프로세스를 특정하지 않는다.
+개별 test job 재실행과 전체 workflow 재실행을 요청했지만 현재 인증에서 거절됐다.
+전체 요청의 오류는 `Resource not accessible by personal access token`이며, 기존
+run attempt는 1로 유지됐다. 이 상태를 재실행 성공으로 기록하지 않는다.
+원본 job 로그와 재실행 차단 증거는 같은 소유 devbox의
+`tmp/dva-project-tooling-evidence-20261014/hosted-followup/`에 보존한다.
+지원되는 재실행에 필요한 Actions write 권한은 별도 인증 준비 사항이며, 이번
+변경에서 token·인증 설정·job timeout·워크플로 구조를 바꾸지 않았다.
+hosted test 재확인과 인증 준비는 [ISSUE-515](tasks/issue/515-hosted-candidate-test-cancellation.md)가
+추적한다. 등록은 새 구현·게시·설치 범위를 승인하지 않는다.
 
 - 로컬: 선언된 `dva ci full`의 모든 단계 성공. run ID, 소스 입력, 실행 환경을 기록한다.
 - 호스팅 CI: 같은 후보의 Linux/macOS 검사와 GoReleaser snapshot 결과를 확인한다.
