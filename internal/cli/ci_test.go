@@ -119,6 +119,16 @@ func TestCIChildOwnsProfileAndEnvironment(t *testing.T) {
 }
 
 func TestCIChildDryRunUsesOwningWorkerEnvironment(t *testing.T) {
+	// A surrounding `dva ci` exports these worker values for its child steps. This
+	// fixture verifies the child config's own environment, so remove ambient
+	// worker values after registering cleanup instead of letting the parent run
+	// change the preview it is meant to inspect.
+	for _, key := range []string{"DVA_CI_JOBS", "CARGO_BUILD_JOBS", "RUST_TEST_THREADS"} {
+		t.Setenv(key, "ambient-"+key)
+		if err := os.Unsetenv(key); err != nil {
+			t.Fatalf("unset %s: %v", key, err)
+		}
+	}
 	dir := t.TempDir()
 	child := filepath.Join(dir, "child")
 	if err := os.Mkdir(child, 0o700); err != nil {

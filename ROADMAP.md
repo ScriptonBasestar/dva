@@ -8,8 +8,9 @@
 
 최신 소스의 구현을 지원 범위와 검증 증거가 명확한 공개 버전으로 전달한다.
 목표 버전은 **v0.4.0**, 공개일은 후보 검증 이후 정한다. 기존 공개 v0.3.0을 재발행하거나
-기존 태그를 이동하지 않는다. 미공개 변경 목록은 [CHANGELOG.md](CHANGELOG.md#unreleased)가
-정본이며, 이 문서의 작성이나 로컬 설치는 새 공개 릴리스가 아니다.
+기존 태그를 이동하지 않는다. 후보 변경 목록은 [CHANGELOG](CHANGELOG.md)의 0.4.0 섹션이,
+후보 고정 뒤 새 변경은 Unreleased가 소유한다. 이 문서의 작성이나 로컬 설치는 새 공개
+릴리스가 아니다.
 
 ## 단계와 완료 기준
 
@@ -25,14 +26,16 @@
 
 ## v0.4.0 후보 범위
 
-기능의 상세 목록은 [Unreleased](CHANGELOG.md#unreleased), OS·런타임 지원표는
+기능의 상세 목록은 [CHANGELOG](CHANGELOG.md)의 0.4.0 후보 섹션, OS·런타임 지원표는
 [USAGE.md](USAGE.md#버전과-지원-범위)를 따른다.
 
 - **포함**: 기준 소스에 구현된 사용자 기능·수정과 그에 필요한 생성물·내부 정리.
   대조 중 누락됐던 `config env reseal`과 검증 보완도 변경 내역에 반영한다.
 - **이월**: 아래 선택적 확장. 새 요구가 없다면 이번 후보의 필수 조건에 추가하지 않는다.
-- **버전 선택**: 새 CLI·설정 기능이 있어 patch보다 다음 minor인 v0.4.0을 목표로 삼는다.
-  저장소의 별도 SemVer 보증을 새로 선언하는 것은 아니며, 알려진 충돌은 위에 명시한다.
+- **버전 선택**: [TASK-500의 승인된 범위 결정](tasks/_archive/done/500-align-next-release-scope.md)이
+  다음 후보를 v0.4.0으로 정했다. 이 후보는 그 owner 결정을 실행하며, 이번 metadata
+  delivery가 새 호환성 판단을 추가하지 않는다. 저장소의 별도 SemVer 보증을 새로 선언하는
+  것은 아니며, source-only TaskChain 연동은 제품 경계 밖으로 남긴다.
   `Version`·설치 안내·정식 CHANGELOG 버전 섹션은 검증할 릴리스 후보 commit에서 함께
   갱신한다. 지금의 0.3.0 소스 빌드를 공개 v0.4.0으로 취급하지 않는다.
 
@@ -40,6 +43,24 @@
 고정하고 로컬·호스팅·산출물 검사 결과를 연결한다. 기존 실행 증거는 입력·도구·지원 조건을
 대조해 유효한 부분을 재사용하고, 외부 상태 변경은 새 증거를 만들 목적으로 반복하지 않는다.
 실환경 추가 확인은 이번에 바뀐 외부 연동에 한정하며 14개 backend 전체 재검증을 요구하지 않는다.
+
+## 후보 준비 기준선 (2026-10-14)
+
+후보 내용의 기준선은 `3bbe76c7cba95764a752dbdc3e3e2dbae4c5af5b`이다. 이 SHA는 공개
+`v0.3.0` tag의 `629c34c1fe7359dc515a9090a8abbf6444beca71` 이후 범위와
+`ci.profiles.<name>.tool_jobs` 변경을 포함한다. 이 문서 변경은 기준선 범위에 자동으로
+포함되지 않는다.
+
+이번 후보 metadata delivery는 기준선을 ancestor로 하는 clean commit에서 `Version` 0.4.0,
+날짜가 있는 CHANGELOG 0.4.0 섹션, 검토 가능한 `release-notes/v0.4.0.md`를 함께 고정한다.
+그 commit의 전체 SHA와 release-notes SHA-256을 단계 3 증거에 기록한다.
+`MinScaffoldVersion`은 후보 범위에서 판단하지 않아 유지한다.
+이 delivery에는 후보 내용을 바꾸지 않는 CI fixture 환경 격리도 포함한다.
+
+이 metadata는 공개·설치 완료를 뜻하지 않는다. 단계 3의 `dva ci full`, hosted CI와
+GoReleaser snapshot을 같은 candidate SHA에서 확인한 뒤에만 preflight를 준비한다.
+tag·Release 생성, 설치와 외부 installer의 pin·selector 배포는 별도 승인 단계이며,
+installer source가 전달됐다는 사실만으로 runtime 배포나 pin 갱신을 주장하지 않는다.
 
 ## 후보 검증 범위
 

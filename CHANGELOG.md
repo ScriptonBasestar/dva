@@ -5,6 +5,10 @@ All notable changes to DVA are documented here.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-14
+
+릴리스 후보 준비 기록이며 아직 tag·Release·설치를 수행하지 않았습니다.
+
 ### Changed
 
 - **CI Rust worker 기본값**: `ci.profiles.<name>.tool_jobs`를 지정하면 단계별 도구
@@ -27,6 +31,10 @@ All notable changes to DVA are documented here.
 - **현재 상태 문서 정합화**: 공개 v0.3.0과 최신 소스의 기능을 사용법의 지원표로 구분하고,
   빠른 시작을 named plan으로 통일했습니다. 다음 릴리스의 인수 기준은 ROADMAP.md가
   소유합니다. 런타임 동작 변경은 없습니다.
+
+- **구성 발견 진단 보완**: Make include의 trailing comment와 pattern rule도 discovery가
+  해석합니다. interaction에 이미 가려져 아무 효과가 없는 `suggestion_ignore`는
+  warning으로 보고하되 validation을 실패시키지 않습니다.
 
 ### Fixed
 

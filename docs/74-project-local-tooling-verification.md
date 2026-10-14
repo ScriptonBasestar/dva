@@ -55,6 +55,24 @@ CE pin·writer 전환은 수행하지 않는다.
 실제 완료 결과는 검증 이후 아래에 기록하며, 후보 테스트를 설치본 지원으로
 표현하지 않는다.
 
+## CI fixture 환경 격리 (2026-10-14)
+
+v0.4.0 후보 metadata를 검증하던 `dva ci full` receipt
+`7ae731543bfe3ba19f13e9f0ec2c1136`은 format/docs/vet/lint 뒤
+`TestCIChildDryRunUsesOwningWorkerEnvironment`에서 실패했다. 원시 결과는
+`dva ci logs 7ae731543bfe3ba19f13e9f0ec2c1136`으로 남아 있다.
+
+원인은 제품 runtime이 아니라 fixture였다. 상위 CI가 export한
+`CARGO_BUILD_JOBS=1`, `RUST_TEST_THREADS=1`, `DVA_CI_JOBS=1`을 테스트가 그대로
+상속하면서, child config의 `CARGO_BUILD_JOBS: '7'`을 검증하려던 preview가 부모 값을
+보고했다. clean primary에서 같은 세 값을 명시한 focused test도 같은 실패를 재현했다.
+
+테스트 시작 시 세 키를 cleanup 등록 뒤 unset해 fixture의 ambient input을 격리했다.
+production의 OS 환경 우선순위나 worker 상속 동작은 바꾸지 않았다. 같은 환경의 focused
+test와 수정 뒤 `dva ci full` receipt `95a6f00379d5fd13aa52853544d168f9`은 성공했다.
+후속 CI fixture는 검사 대상이 아닌 ambient worker 값을 명시적으로 격리하고, 상속 자체를
+검증할 때만 의도한 값을 fixture에 넣는다.
+
 ## 검증 결과
 
 - 프로젝트 mise가 선택한 Go 1.26.5, 설치 DVA 0.3.0(commit 2a807f58)에서 검증했다.
