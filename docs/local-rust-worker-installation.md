@@ -54,3 +54,19 @@ Git attestation 증거가 아니다. 실제 Rust 빌드 성능, cold/warm 차이
 설치 기록을 포함한 source에서 `make recovery-check`(빌드·전체 race 테스트·lint·문서),
 `make check-generate`, `make commit-check`, CE 보드 게이트가 모두 통과했다.
 `make check` 타깃은 없으므로 저장소가 선언한 복구 게이트를 사용했다.
+
+## 스킬 갱신 확인 (2026-10-14)
+
+바이너리 설치 뒤 여섯 runtime의 스킬이 이전 번들에 머물러 있어, 설치된
+`3bbe76c7` 바이너리의 공식 `dva skill install`로 user scope를 갱신했다.
+대상은 claude-code, codex, opencode, grok, antigravity, agent-mesh이며
+각각 `dva`, `dva-ci`, `dva-config`를 갱신했다. takeover는 사용하지 않았다.
+
+설치 명령 exit 0 후 `dva skill status`에서 여섯 대상 모두 `installed`와
+source/installed bundle digest 일치를 확인했다.
+
+- 파일 기반 다섯 runtime: `bff67abddd2a8b3ae26ab221d7b9890776a09a1ec914e255831d7a1ac99dffe4`
+- agent-mesh: `6ea95744142ed9eccb11ee8571857aa4912b76dc016367a45035dcba5cfe10fd`
+
+이 확인은 설치된 v0.3.0 worker 빌드의 스킬 전달 증거이며 v0.4.0 후보 설치나
+공개 완료를 주장하지 않는다. 바이너리와 runtime 설정·모델 바인딩은 변경하지 않았다.
