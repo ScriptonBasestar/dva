@@ -12,4 +12,4 @@
 | [TASK-502](502-docs-index-and-numbering.md) | docs/ index and numbering | proposed | docs/ 색인을 둘 것인가, 번호 규약을 정할 것인가 |
 | [TASK-503](503-usage-ceiling-metric.md) | USAGE.md ceiling metric | proposed | 상한의 측정 기준은 무엇이며 초과 시 분할할 것인가 |
 | [TASK-504](504-decision-record-locations.md) | Decision record locations | proposed | 미결·수락 결정을 어디에 두고 계수기 정본은 무엇인가 |
-| [TASK-513](513-published-commit-history-policy.md) | Published commit subject history handling | proposed | 공개된 4개 subject 위반을 literal SHA 역사 처리로 채택할 것인가, 현 정책을 유지할 것인가 |
+| [TASK-513](513-published-commit-history-policy.md) | Published commit subject history handling | accepted | 2026-10-14 사용자가 네 literal SHA와 실제 Git subject에 한정한 역사 처리를 수락했다. 신규 위반 검사는 유지한다 |

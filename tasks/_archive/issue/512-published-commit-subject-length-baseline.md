@@ -3,7 +3,7 @@ id: ISSUE-512
 title: "Published commit subjects exceed the enforced length ceiling"
 type: bug
 priority: P2
-status: todo
+status: done
 needs-human: true
 execution-mode: external
 human-grade: human
@@ -12,6 +12,9 @@ severity: medium
 discovered-in: "Published commit subjects exceed the enforced length ceiling"
 discovered-at: 2026-10-14
 created: 2026-10-14
+resolution: fixed
+resolved-at: 2026-10-14T05:32:01Z
+resolution-summary: "Resolved as fixed by TASK-513."
 ---
 
 ## Summary
@@ -47,7 +50,7 @@ DVA의 공개 source 이력에 있다. Git은 문단 subject를 정상적으로 
 
 ## Manual action guide
 
-1. [결정 513](../decision/513-published-commit-history-policy.md)에서 기존 4건의 처리 방식을 승인 주체·날짜와 함께 기록한다.
+1. [결정 513](../../decision/513-published-commit-history-policy.md)에서 기존 4건의 처리 방식을 승인 주체·날짜와 함께 기록한다.
 2. 승인 전에는 공유 이력 재작성, baseline 이동, waiver 추가, gate 생략을 하지 않는다. 기존 SHA와 실패 로그를 보존한다.
 3. 정책 적용은 별도 owner task에서 정해진 literal SHA에 한정하고, 신규 위반은 여전히 실패함을 확인한다.
 4. source 개선 전달 시 기존 실패와 신규 commit이 이를 악화시키지 않은 검사 결과를 구분한다. 전체 full CI를 PASS라고 보고하지 않는다.
@@ -57,4 +60,4 @@ DVA의 공개 source 이력에 있다. Git은 문단 subject를 정상적으로 
 - full run 8823daddabdf3f986b6b4b7304ffd01c의 format/docs/vet/lint/test/build/integration/skill-dogfood는 PASS; commit-subjects만 FAIL이다.
 - 이 run의 working HEAD 1bd93f69, 동일한 before/after attestation은 작업 commit 이전의 이력 실패임을 확인한다.
 - tools/commitcheck/main.go의 history scanner는 Git `%s`를 검사한다. 기존 TASK-278의 exact-SHA 역사 처리 정책은 `tasks/_archive/2026-09/278-gate-commit-subjects-before-they-land.md`에 있다.
-- [TASK-505](../_archive/2026-10/505-ci-running-step-checkpoints.md), [TASK-506](../_archive/2026-10/506-commit-hook-paragraph-parity.md).
+- [TASK-505](../2026-10/505-ci-running-step-checkpoints.md), [TASK-506](../2026-10/506-commit-hook-paragraph-parity.md).

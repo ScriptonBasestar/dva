@@ -113,6 +113,10 @@ func TestGrandfatheredCommitsAreTheExactHistoricalObjects(t *testing.T) {
 		{"a6666c1a48d9fa27411831f16da201bb9c5ba6a0", "docs: restore README quick-start role and align environments vocabulary"},
 		{"6e3f581447748b465808d73270900d356aaca5b8", "docs(tasks): widen TASK-273 to the manifest that advertises the dead flags"},
 		{"7ce7c1469fe9ad42248b9f52c19cd27e85a0bb6b", "docs(tasks): correct TASK-273 \u2014 the four options are path-conditional, not dead"},
+		{"9c40d6ef992b3cba8507402ce00ff8680e9cf9af", "docs(tasks): file ISSUE-506 applyenv test environment isolation - TestApplyEnv_MergesVars fails on any machine exporting DB_HOST because   MergeVars deliberately gives os.LookupEnv priority and the fixture never   isolates the process environment; file the test-fixture defect with the   baseline reproduction from the ISSUE-505 gate run."},
+		{"1c47851a21b53655d1ee437f63efe5f8c05cfd92", "docs(tasks): drop the pre-archive copy of ISSUE-505 - The archive commit added tasks/_archive/issue/505-... without staging   the deletion of tasks/issue/505-..., leaving the id declared twice and   failing the ce task gate's validate step."},
+		{"5333e5c284eb9449b8dc13a3114aa467def84614", "docs(tasks): archive fixed ISSUE-505 - Mark the suggestion_ignore shadowing issue resolved by c0179f06 and   move the card to tasks/_archive/issue/ as history."},
+		{"c0179f06b2d560dd807df71177e5b9982de43e19", "fix(cli): report suggestion_ignore entries shadowed by interactions - ISSUE-505: an ignore pattern whose every matched name an interaction   already covers (command set, subcommand coverage, wrapped command)   suppresses nothing today, yet the stale check never fires for it because   it still matches something. - Track per-pattern matches and which of them reach the suggestion pass   while the suggestion_ignore filter runs, then emit a warning-only   \"redundant ignore\" line naming the covered names and an ignore_redundant   row in the JSON report. - Patterns matching nothing stay with the stale check; patterns still   hiding an uncovered name stand down, so globs keep their legitimate use. - Cover the judgment rule with five tests, including the e2e printed line."},
 	}
 	if len(grandfatheredCommits) != len(want) {
 		t.Fatalf("grandfathered commit count = %d, want %d", len(grandfatheredCommits), len(want))
@@ -128,6 +132,25 @@ func TestGrandfatheredCommitsAreTheExactHistoricalObjects(t *testing.T) {
 		}
 		if got := strings.TrimSpace(out); got != tc.subject {
 			t.Errorf("historical exception %s subject = %q, want %q", tc.sha[:8], got, tc.subject)
+		}
+	}
+}
+
+func TestIssue512ExemptionsRequireTheirExactSHAAndSubject(t *testing.T) {
+	for _, tc := range []struct {
+		sha     string
+		subject string
+	}{
+		{"9c40d6ef992b3cba8507402ce00ff8680e9cf9af", "docs(tasks): file ISSUE-506 applyenv test environment isolation - TestApplyEnv_MergesVars fails on any machine exporting DB_HOST because   MergeVars deliberately gives os.LookupEnv priority and the fixture never   isolates the process environment; file the test-fixture defect with the   baseline reproduction from the ISSUE-505 gate run."},
+		{"1c47851a21b53655d1ee437f63efe5f8c05cfd92", "docs(tasks): drop the pre-archive copy of ISSUE-505 - The archive commit added tasks/_archive/issue/505-... without staging   the deletion of tasks/issue/505-..., leaving the id declared twice and   failing the ce task gate's validate step."},
+		{"5333e5c284eb9449b8dc13a3114aa467def84614", "docs(tasks): archive fixed ISSUE-505 - Mark the suggestion_ignore shadowing issue resolved by c0179f06 and   move the card to tasks/_archive/issue/ as history."},
+		{"c0179f06b2d560dd807df71177e5b9982de43e19", "fix(cli): report suggestion_ignore entries shadowed by interactions - ISSUE-505: an ignore pattern whose every matched name an interaction   already covers (command set, subcommand coverage, wrapped command)   suppresses nothing today, yet the stale check never fires for it because   it still matches something. - Track per-pattern matches and which of them reach the suggestion pass   while the suggestion_ignore filter runs, then emit a warning-only   \"redundant ignore\" line naming the covered names and an ignore_redundant   row in the JSON report. - Patterns matching nothing stay with the stale check; patterns still   hiding an uncovered name stand down, so globs keep their legitimate use. - Cover the judgment rule with five tests, including the e2e printed line."},
+	} {
+		if isGrandfatheredCommit("0000000000000000000000000000000000000000", tc.subject) {
+			t.Errorf("copied ISSUE-512 subject was waived: %s", tc.sha[:8])
+		}
+		if isGrandfatheredCommit(tc.sha, tc.subject+" changed") {
+			t.Errorf("changed ISSUE-512 subject was waived: %s", tc.sha[:8])
 		}
 	}
 }

@@ -7,7 +7,7 @@ effort: XS
 needs-human: true
 execution-mode: decision
 human-grade: human
-status: Proposed
+status: Accepted
 created: 2026-10-14
 ---
 
@@ -44,8 +44,19 @@ Preserve user work and trust다. 공개된 공유 이력의 재작성·정책 �
 
 ## Decision
 
-미결정. 승인 주체·날짜·literal SHA·이유를 기록하기 전에는 이력 정책을 변경하지 않는다.
-TASK-506의 hook 재발 방지와 TASK-505의 source 전달은 독립적으로 진행한다.
+2026-10-14에 사용자가 옵션 1을 수락했다. 공개된 다음 네 immutable object에만
+Git `%s`와 함께 exact-SHA 역사 처리를 적용한다. 이 수락은 baseline 이동, 72자
+상한 변경, 첫 물리 줄만 검사, 일반 waiver 확대를 승인하지 않는다.
+
+- `9c40d6ef992b3cba8507402ce00ff8680e9cf9af` — `docs(tasks): file ISSUE-506 applyenv test environment isolation - TestApplyEnv_MergesVars fails on any machine exporting DB_HOST because   MergeVars deliberately gives os.LookupEnv priority and the fixture never   isolates the process environment; file the test-fixture defect with the   baseline reproduction from the ISSUE-505 gate run.`
+- `1c47851a21b53655d1ee437f63efe5f8c05cfd92` — `docs(tasks): drop the pre-archive copy of ISSUE-505 - The archive commit added tasks/_archive/issue/505-... without staging   the deletion of tasks/issue/505-..., leaving the id declared twice and   failing the ce task gate's validate step.`
+- `5333e5c284eb9449b8dc13a3114aa467def84614` — `docs(tasks): archive fixed ISSUE-505 - Mark the suggestion_ignore shadowing issue resolved by c0179f06 and   move the card to tasks/_archive/issue/ as history.`
+- `c0179f06b2d560dd807df71177e5b9982de43e19` — `fix(cli): report suggestion_ignore entries shadowed by interactions - ISSUE-505: an ignore pattern whose every matched name an interaction   already covers (command set, subcommand coverage, wrapped command)   suppresses nothing today, yet the stale check never fires for it because   it still matches something. - Track per-pattern matches and which of them reach the suggestion pass   while the suggestion_ignore filter runs, then emit a warning-only "redundant ignore" line naming the covered names and an ignore_redundant   row in the JSON report. - Patterns matching nothing stay with the stale check; patterns still   hiding an uncovered name stand down, so globs keep their legitimate use. - Cover the judgment rule with five tests, including the e2e printed line.`
+
+이유는 네 커밋이 모두 제목·본문 사이 blank separator를 누락해 Git이 첫 문단 전체를
+subject로 해석한 공개 object이기 때문이다. 공유 이력을 재작성하지 않으면서 미래 위반은
+계속 실패시키기 위해 SHA와 실제 subject를 함께 고정한다. TASK-506의 hook 재발 방지는
+이 수락과 독립적으로 유지한다.
 
 ## Rationale
 
@@ -60,9 +71,9 @@ TASK-506의 hook 재발 방지와 TASK-505의 source 전달은 독립적으로 �
 
 ## Resolution Criteria
 
-- [ ] 승인 주체·날짜·대상 literal SHA·선택과 사유를 기록한다. | verify: human — exact historical handling or policy retention explicitly adopted
+- [x] 사용자가 2026-10-14에 옵션 1을 수락했고, 네 literal SHA·실제 Git `%s`·공개 이력 보존 이유를 기록했다. | verify: human — explicit option 1 acceptance on 2026-10-14; only the four listed SHA+subject pairs are adopted
 
 ## References
 
-- [ISSUE-512](../issue/512-published-commit-subject-length-baseline.md)
+- [ISSUE-512](../_archive/issue/512-published-commit-subject-length-baseline.md)
 - [기존 역사 처리 정책](../_archive/2026-09/278-gate-commit-subjects-before-they-land.md)
