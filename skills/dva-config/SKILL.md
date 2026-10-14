@@ -28,6 +28,9 @@ scaffolding Compose for missing local infra.
 Read **`references/schema-reference.md`** when authoring or reviewing the `dva.yml` field
 structure, section shapes, critical schema rules, or the canonical section/field ordering.
 
+Read **`references/project-local-tooling.md`** for missing build/quality tools,
+project-local preparation ownership, and bootstrap versus quality-gate results.
+
 For CLI execution (build/test/run/lifecycle), use the sibling `dva` skill; this skill owns
 configuration authoring, migration, and defect attribution.
 

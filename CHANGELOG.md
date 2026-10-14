@@ -25,6 +25,10 @@ All notable changes to DVA are documented here.
 
 ### Fixed
 
+- **doctor command 진단**: 설정 디렉터리에서 사용자 명령을 실행하고 자식 종료 코드와
+  timeout을 구분하는 증거를 제공합니다. 도구 준비와 품질 검사를 구분하는 기존 DVA
+  스킬 안내를 추가했으며, 도구 버전·설치 계약은 소유 프로젝트에 유지합니다.
+
 - **커밋 메시지 문단 검사 정합성**: 일반 메시지의 제목·본문 사이 빈 줄이 없으면
   commit-msg hook이 거부해, Git subject 이력 검사에서 뒤늦게 실패하는 재발을 막습니다.
   생성된 merge/revert 예외와 정상 메시지 동작은 유지하며 기존 공개 이력은 수정하지 않습니다.

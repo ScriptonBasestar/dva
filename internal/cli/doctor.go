@@ -35,13 +35,14 @@ import (
 // JSON when empty. A check whose Name is already finding-shaped — those emitted only on
 // failure, one per offending item — needs no Finding.
 type DoctorResult struct {
-	Name        string `json:"name"`
-	Finding     string `json:"finding,omitempty"`
-	Passed      bool   `json:"passed"`
-	FixHint     string `json:"fix_hint,omitempty"`
-	Fixable     bool   `json:"fixable,omitempty"`
-	Fixed       bool   `json:"fixed,omitempty"`
-	UserDefined bool   `json:"user_defined,omitempty"`
+	Name        string                 `json:"name"`
+	Finding     string                 `json:"finding,omitempty"`
+	Passed      bool                   `json:"passed"`
+	FixHint     string                 `json:"fix_hint,omitempty"`
+	Fixable     bool                   `json:"fixable,omitempty"`
+	Fixed       bool                   `json:"fixed,omitempty"`
+	UserDefined bool                   `json:"user_defined,omitempty"`
+	Command     *DoctorCommandEvidence `json:"command,omitempty"`
 	fixFunc     func() error
 }
 
@@ -268,10 +269,10 @@ func runSingleCheck(check config.DoctorCheck, configDir string) DoctorResult {
 		r.Finding = condStr(!r.Passed, fmt.Sprintf("no file at %s", check.Path))
 
 	case "command":
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		r.Passed = exec.CommandContext(ctx, "sh", "-c", check.Command).Run() == nil
-		r.Finding = condStr(!r.Passed, fmt.Sprintf("command exited non-zero: %s", check.Command))
+		r.Passed, r.Command = runDoctorCommand(check, configDir)
+		if !r.Passed {
+			r.Finding = doctorCommandFinding(check.Command, r.Command)
+		}
 
 	case "docker_socket":
 		// Full result, not only Passed: checkDockerSocketPermissions names the path it

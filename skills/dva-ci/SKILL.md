@@ -50,3 +50,6 @@ Validate with `dva config validate` and inspect the manifest after changes. Test
 new execution behavior in disposable fixtures before using expensive real gates.
 Change canonical `skills/` sources and regenerate/install through DVA's supported
 workflow; never patch installed skill copies directly.
+
+For project-owned build/quality tool preparation, follow the `dva-config` skill
+and its `../dva-config/references/project-local-tooling.md`; keep bootstrap and gate outcomes separate.

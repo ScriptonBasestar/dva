@@ -25,6 +25,7 @@ root·공유 자원별 중복 실행 방지, 상태 조회는 [CI 프로필](doc
 | `dva ci` | v0.3.0에 포함 | macOS/Linux/BSD에서 감독 실행. Windows는 실행 전 거부. [CI 계약](docs/53-ci-profiles.md) |
 | `config env edit/unseal/seal/show` | v0.3.0에 포함 | Linux/macOS. 쓰기·평문 표시 게이트는 [env bridge](#암호화된-소스-브리지-dva-config-env) 참조 |
 | `config env reseal`, init의 SOPS 소스 감지·doctor 안내 | 미공개 | 기존 암호화 소스 갱신과 선언 안내 보완 |
+| doctor command 실행 증거·timeout | 미공개 | config cwd, inherited 환경. Unix group 종료, Windows shell-only. [doctor](#doctor) |
 | GitHub Secret 전송·artifact job·OCI 검증 | v0.3.0에 포함 | Linux/macOS. github.com의 저장소 수준 Secret과 공개 OCI 대상. [상세 계약](docs/62-remote-artifact-jobs.md) |
 | Kubernetes Secret 전송·`secret status` | 미공개 | Linux/macOS, 명시적 dev 대상·kubeconfig·context. [상세 계약](docs/69-kubernetes-secret-target.md) |
 | 원격 접근 `tunnel:` | 미공개 | cloudflared, kubectl/helm 엔트리. Windows 미지원. [상세 계약](docs/68-remote-access-tunnel.md) |
@@ -755,6 +756,22 @@ dva doctor --strict       # 빌트인 체크 실패도 exit≠0 (기본은 advis
 빌트인 체크는 기본이 **advisory**입니다: 실패해도 전체 exit 0일 수 있고, 사용자 정의
 `checks:` 실패만 비-0을 만듭니다. CI에서 “doctor가 통과 = 전부 통과”가 필요하면
 `--strict`를 사용하세요 (`dva config validate --strict`와 같은 관례).
+
+최신 소스의 사용자 `type: command` 검사는 `dva.yml` 디렉터리에서 실행합니다.
+환경은 DVA 프로세스에서 상속하며, doctor가 mise를 활성화하거나 `env_file` 값을
+명령에 주입하지 않습니다. `timeout: "30s"`처럼 command 검사에 양의 Go duration을 지정할 수 있고
+생략 시 기존 10초 제한을 사용합니다. JSON의 command 실행 증거는 자식 종료 코드,
+timeout과 실행 시간을 구분합니다. `command.shell_argv`와 `command.cwd`는 실행
+경계를, `command.exit_code`는 실제 자식 종료 코드(0 포함)를 나타냅니다.
+`command.timed_out`와 `command.error_classification`은 timeout·signal·시작 오류를
+구분하며, timeout/시작 실패에는 실제 exit code가 없을 수 있습니다.
+`command.launch_error`는 셸 미발견과 프로세스 시작 실패를 구분하며 원문 OS 오류는
+출력하지 않습니다. stdout/stderr와 환경값은 자동 수집하지 않습니다.
+Unix 지원 플랫폼에서는 timeout 시 셸 process group을 종료합니다. Windows에서는
+기존 셸 프로세스 종료만 제공하며 자식 process tree 종료는 보장하지 않습니다.
+Windows command 검사에 background/장기 자식을 실행하는 용도로 사용하지 마세요.
+도구 준비 성공과 품질 검사 성공을 구분하는 운영 사례는
+[프로젝트 개발도구 검증 기록](docs/74-project-local-tooling-verification.md)을 따릅니다.
 
 빌트인 체크 항목:
 - Docker 소켓 권한 및 데몬 접근 가능 여부

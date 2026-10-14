@@ -1857,6 +1857,11 @@
             "description": "Shell command to run (for command type, exit 0 = pass)",
             "examples": ["docker info > /dev/null 2>&1"]
           },
+          "timeout": {
+            "type": "string",
+            "description": "Positive Go duration for a command check (default: 10s)",
+            "examples": ["30s"]
+          },
           "fix_hint": {
             "type": "string",
             "description": "Suggestion shown when the check fails",

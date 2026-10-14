@@ -63,6 +63,9 @@ func (c *Config) Validate() error {
 	if err := c.validateCIProfiles(); err != nil {
 		errs = append(errs, err)
 	}
+	if err := c.validateDoctorChecks(); err != nil {
+		errs = append(errs, err)
+	}
 
 	// Check for reserved command conflicts in interaction section
 	if conflicts := ValidateReservedCommands(c.Interaction); len(conflicts) > 0 {

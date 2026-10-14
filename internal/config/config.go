@@ -65,6 +65,7 @@ type DoctorCheck struct {
 	Type    string `yaml:"type"`     // file_exists, command, docker_socket
 	Path    string `yaml:"path"`     // for file_exists type
 	Command string `yaml:"command"`  // for command type
+	Timeout string `yaml:"timeout"`  // optional positive Go duration for command checks
 	FixHint string `yaml:"fix_hint"` // suggestion shown when check fails
 	Fix     string `yaml:"fix"`      // shell command to auto-fix (used by dva doctor --fix)
 }

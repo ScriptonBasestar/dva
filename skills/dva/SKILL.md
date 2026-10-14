@@ -22,6 +22,9 @@ environments. Use project-declared DVA workflows for preparation, execution, and
 Configuration generation stays within this purpose; staging and production application deployment
 is outside its scope.
 
+For project-owned build/quality tool preparation, follow the `dva-config` skill
+and its `../dva-config/references/project-local-tooling.md`; keep bootstrap and gate outcomes separate.
+
 ## Rules (Mandatory)
 
 - **Use DVA for declared workflows.** Raw tools are allowed for read-only

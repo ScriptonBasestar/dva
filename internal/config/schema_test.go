@@ -257,6 +257,36 @@ checks:
 	}
 }
 
+func TestValidateDoctorCommandTimeout(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		timeout string
+		wantErr bool
+	}{
+		{"positive duration", "30s", false},
+		{"malformed duration", "30seconds", true},
+		{"zero duration", "0s", true},
+		{"whitespace duration", "   ", true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg := loadConfigForSchemaTest(t, t.TempDir(), "version: \"0.1.44\"\nchecks:\n  - name: tool\n    type: command\n    command: \"true\"\n    timeout: \""+tc.timeout+"\"\n")
+			err := cfg.Validate()
+			if tc.wantErr && err == nil {
+				t.Fatalf("Validate() accepted timeout %q", tc.timeout)
+			}
+			if !tc.wantErr && err != nil {
+				t.Fatalf("Validate() error = %v, want accept %q", err, tc.timeout)
+			}
+		})
+	}
+	t.Run("timeout on non-command", func(t *testing.T) {
+		cfg := loadConfigForSchemaTest(t, t.TempDir(), "version: \"0.1.44\"\nchecks:\n  - name: file\n    type: file_exists\n    path: marker\n    timeout: \"30s\"\n")
+		if err := cfg.Validate(); err == nil || !strings.Contains(err.Error(), "only valid for command") {
+			t.Fatalf("Validate() error = %v, want timeout type rejection", err)
+		}
+	})
+}
+
 // TestValidateAcceptsInteractionExecutionForms pins every execution form
 // LocalRunner.Execute dispatches on (steps > script_file > script > command list >
 // command) as schema-legal. Three of them — script, script_file, steps — were

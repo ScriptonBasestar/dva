@@ -244,6 +244,7 @@ checks:                         # Environment checks for `dva doctor`
     type: docker_socket|file_exists|command
     path: "file/path"           # for file_exists
     command: "shell command"    # for command type
+    timeout: "30s"              # optional positive Go duration; command only, default 10s
     fix_hint: "How to fix"
 
 subprojects:                    # Subproject references
