@@ -18,14 +18,15 @@ ISSUE-518의 discovery 필수 CLI 명령 계약을 소유 flow에 최소 선언�
 
 - source `2397800c16508420ebfd9d08774a58365a6222a3`, installed AM `4ce8d153f254cc8734e8e661e5a76e68d097b0cc`.
 - 소비자 원문은 ISSUE-518 evidence에 보존돼 있다. source에서 check_dva만 추출한 model-free probe도 exit 1, 0.15초로 같은 명령 거부를 재현했다.
-- source flow/profile와 설치 DVA executable revision은 별개 입력이다. flow-only 수정에 바이너리 재설치를 요구하지 않는다.
+- source flow/profile와 설치 DVA executable revision은 별개 입력이다. flow-only 수정에 DVA 바이너리 재설치를 요구하지 않는다. AM은 별도 의존성이다. 설치 AM4ce8d153은 allowlist에서 상속 deny를 무시하므로 이 전달의 지원 실행기로 수용하지 않는다.
+- 지원 실행기는 AM TASK-999 timeout 수정 및 TASK-998 deny 우선순위 수정의 독립 strong 리뷰와 실제 native 전달을 통과한 committed source artifact다. 해당 revision·실행 경로·bytes hash·build-info와 실행기 실제 receipt를 고정하고 같은 실행 파일로 소비자 probe를 실행한다. default PATH/전역 설치는 바꾸지 않으며 설치 AM이 수정됐다고 주장하지 않는다. 현재798dc68 artifact는 native FAIL이므로 실제 소비자 수용에 사용할 수 없다.
 
 ## Steps
 
 1. `agent-mesh-flows/dva-improve-guided/00-analyze.yaml`의 필수 DVA probe에 필요한 shell_policy만 선언한다. 글로벌 mode/deny pattern을 상속하고 unrestricted/force-policy를 사용하지 않는다. 독립 strong 정책 분석으로 합성·차단 동작을 먼저 확인한다.
 2. 동일 source에서 check_dva step만 추출한 임시 model-free probe로 baseline 거부·candidate 성공을 대조한다. 실행 코드를 손으로 복제하지 않는다. source 정책을 사용한 금지 명령 거부도 별도 진단한다. fixture는 제품 source나 전체 discovery 수용 증거가 아니다.
 3. 정본 `make doc-check check-generate`를 3분, worker 상한 4로 실행한다. Go 구현은 바뀌지 않으므로 전체 Go suite를 반복하지 않는다. actual engine validate와 model-free probe 결과·고정 blob·CLI hash를 추적 evidence에 남긴다.
-4. task commit/push·고정 입력 verify 뒤 신규 독립 strong 리뷰를 받는다. 이 별도 작업은 최대 3회 후보이며 FAIL을 모두 보존한다. PASS와 실제 native gate 뒤 source 통합·push·회수한다. ISSUE-518은 원인 회귀 확인 뒤 종료한다. 소비자 모델/report 수용은 TASK-340이 별도 수행한다.
+4. AM 두 선행 작업의 실제 native 성공 뒤 지원 실행기 고정과 probe 증거를 갱신한다. task commit/push·고정 입력 verify 뒤 신규 독립 strong 리뷰를 받는다. 이 별도 작업은 최대 3회 후보이며 FAIL을 모두 보존한다. PASS와 실제 native gate 뒤 source 통합·push·회수한다. ISSUE-518은 원인 회귀 확인 뒤 종료한다. 소비자 모델/report 수용은 TASK-340이 별도 수행한다.
 
 ## Stop conditions
 
@@ -39,4 +40,5 @@ ISSUE-518의 discovery 필수 CLI 명령 계약을 소유 flow에 최소 선언�
 
 ## Attempts
 
-- 2026-10-16: new authorized owner work, implementation strong / Codex gpt-6. No quality review yet. Model-free probe is a scoped regression, not full discovery PASS. Full Go baseline not run.
+- 2026-10-16 attempt1: candidate98519715144476fcefcdc7d6933227ed4a5c2beb, 독립 strong 리뷰 FAIL. 선언된 설치 AM과 검사 artifact의 지원 계약이 불일치했다. 원문 tasks/done/evidence/TASK-515/review1-fail.txt. native 통합 없음. model-free probe는 scoped regression이며 full discovery PASS가 아니다. Full Go baseline 미실행. 최대3회 후보 제한과 기존 로그를 보존한다.
+- 다음 후보는 AM 소유 수정의 실제 native 성공을 기다린다. 앞선 저장 JSON과 completion binding은 아직 새 지원 실행기의 수용 증거가 아니며, 이 상태로 완료·통합하지 않는다.

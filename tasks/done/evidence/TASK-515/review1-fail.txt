@@ -1,0 +1,18 @@
+TASK-515 candidate98519715144476fcefcdc7d6933227ed4a5c2beb
+New independent /root/task515_source_review1; required strong.
+FAIL — blocking security/acceptance mismatch, high confidence.
+
+Four-line flow change is minimal and correctly extends allowlist under newer AM, but does not satisfy the card's declared installed-engine contract. Card baseline names installed4ce8d153 while regression selected non-installed798dc68 artifact, SHA25672c7aa5d...; installed binary SHA2568efb3bff... . Installed4ce merges global deny but does not enforce it in allowlist mode.
+
+Independent source-derived check_dva probes:
+baseline + selected798 + defaults: exit1
+candidate + selected798 + defaults: exit0
+candidate + selected798 + isolated global deny[dva]: exit1
+candidate + installed4ce + same deny: exit0, unsafe for that declared consumer.
+Both engines' structural run validate return valid:true; structural validation does not prove runtime deny semantics. Completion binding checks saved statuses and engine.valid but not the declared installed-engine requirement.
+
+Tradeoff: PASS would accept newer source artifact behavior while declared consumer executable remains unsafe. Future review can overturn after consumer executable includes fix or task explicitly changes engine requirement and validates it through consumer path.
+Other checks: clean direct child2397800c, full diff inspected, no schema/global/provider/DVA Go change, diff-check PASS. Docs/generated stored log inspected, no full Go/model or repeated docs gate after blocker. Review temp files removed, worktree clean.
+Reviewer self-reported runtime GPT-6; externally unverified.
+
+Parent recording note: transcribed findings, probes and limits; not a new verdict. Attempt1 remains FAIL. Separate owner AM native failure is also preserved; source artifact is not yet accepted delivery. A revised requirement must name the chosen explicit AM artifact and its successful owner receipt, without asserting default installed AM is fixed. No DVA binary reinstall claim applies to AM.
