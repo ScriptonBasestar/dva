@@ -1,0 +1,14 @@
+{
+  "source_base": "8bf32499c23ad50cff7ca60bea647e972af6b8f3",
+  "source_blob": "26cf87dd6687a75b3df273a3d7caf713a7d14fbc",
+  "profile_sha256": "e0c0ee67cbd1fa15b256432d1db3eba7ac4a8dd1e95f6e1d1be4ce73a0d92183",
+  "am_revision": "4ce8d153f254cc8734e8e661e5a76e68d097b0cc",
+  "engine": {
+    "file": "agent-mesh-flows/dva-improve-guided/00-analyze.yaml",
+    "valid": true,
+    "strict": false,
+    "schema_hint_present": true,
+    "schema_hint_fixed": false
+  },
+  "model_called": false
+}

@@ -1,0 +1,66 @@
+go run ./tools/doccheck
+markdown_candidates: 773
+markdown_checked:    768
+links_checked:       1274
+symlinks_skipped:    5
+broken_links:        0
+stale_link_paths:   316
+stale_link_paths_docs: 0
+stale_link_paths_archive: 315 (suppressed, ISSUE-036)
+oversized_docs:      0
+headroom_docs:       23
+test_funcs_found:    2060 (from 333 _test.go files)
+run_patterns:        273
+unmatched_run:       0
+escaped_pipe_bindings: 0
+abs_checkout_bindings: 0
+external_corpus_bindings: 0
+wrapped_tool_bindings: 536
+bare_tool_bindings: 0
+inverted_grep_bindings: 0
+bare_suite_bindings: 0
+existing_todo_test_bindings: 0
+gate_recursion_bindings: 0
+archive_cards:       565 (from 565 file(s) under tasks/_archive/)
+archive_missing:     0
+board_dirs_seen:     5 (undeclared: 0)
+issue_cards:         4 (read 4)
+ownership_unclassified: 0
+ownership_mismatched:   0
+ownership_unreasoned:   1
+upstream_owned:      0
+upstream_unref:      0
+card_ids:            577 (duplicate: 0)
+filename_numbers:    570 (duplicate: 0)
+  HEADROOM docs/30-config-merge-semantics.md: 349 lines, 9836 bytes (headroom: over 80% of 500 lines / 10240 bytes)
+  HEADROOM docs/31-execution-plan-resolution.md: 367 lines, 9296 bytes (headroom: over 80% of 500 lines / 10240 bytes)
+  HEADROOM docs/40-declarative-stack-and-plans.md: 271 lines, 8702 bytes (headroom: over 80% of 500 lines / 10240 bytes)
+  HEADROOM docs/42-migration-and-compatibility.md: 245 lines, 10233 bytes (headroom: over 80% of 500 lines / 10240 bytes)
+  HEADROOM docs/43-command-surface-restructure.md: 161 lines, 9081 bytes (headroom: over 80% of 500 lines / 10240 bytes)
+  HEADROOM docs/51-flowcheck-rules.md: 124 lines, 9592 bytes (headroom: over 80% of 500 lines / 10240 bytes)
+  HEADROOM docs/53-ci-profiles.md: 144 lines, 9625 bytes (headroom: over 80% of 500 lines / 10240 bytes)
+  HEADROOM docs/53-command-surface-agent-execution.md: 148 lines, 10220 bytes (headroom: over 80% of 500 lines / 10240 bytes)
+  HEADROOM docs/54-command-surface-renewal-agent-execution.md: 128 lines, 10231 bytes (headroom: over 80% of 500 lines / 10240 bytes)
+  HEADROOM docs/56-suppression-ergonomics-design.md: 168 lines, 9946 bytes (headroom: over 80% of 500 lines / 10240 bytes)
+  HEADROOM docs/58-capability-driven-init-design.md: 118 lines, 8354 bytes (headroom: over 80% of 500 lines / 10240 bytes)
+  HEADROOM docs/60-capability-driven-init-label-inventory.md: 87 lines, 9478 bytes (headroom: over 80% of 500 lines / 10240 bytes)
+  HEADROOM docs/62-remote-artifact-jobs.md: 155 lines, 10222 bytes (headroom: over 80% of 500 lines / 10240 bytes)
+  HEADROOM docs/65-ce-task-gate-attachment-options.md: 159 lines, 10036 bytes (headroom: over 80% of 500 lines / 10240 bytes)
+  HEADROOM docs/agent-deny-rules.md: 136 lines, 9434 bytes (headroom: over 80% of 500 lines / 10240 bytes)
+  HEADROOM docs/dogfood/PLAN.md: 130 lines, 9664 bytes (headroom: over 80% of 500 lines / 10240 bytes)
+  HEADROOM docs/dogfood/familybook.md: 118 lines, 8825 bytes (headroom: over 80% of 500 lines / 10240 bytes)
+  HEADROOM docs/dogfood/primeno1.md: 143 lines, 9619 bytes (headroom: over 80% of 500 lines / 10240 bytes)
+  HEADROOM docs/dogfood/scripton-db-orchestrator.md: 83 lines, 10124 bytes (headroom: over 80% of 500 lines / 10240 bytes)
+  HEADROOM docs/dogfood/scripton-dns-bridge.md: 64 lines, 8420 bytes (headroom: over 80% of 500 lines / 10240 bytes)
+  HEADROOM docs/dogfood/scripton-gitrump.md: 85 lines, 9737 bytes (headroom: over 80% of 500 lines / 10240 bytes)
+  HEADROOM workflows/dva-dogfood/ref-artifacts.md: 205 lines, 10233 bytes (headroom: over 80% of 500 lines / 10240 bytes)
+  HEADROOM workflows/dva-dogfood/ref-evaluation.md: 171 lines, 9469 bytes (headroom: over 80% of 500 lines / 10240 bytes)
+  STALE    reports/mydevbox/gizzahub.md:68: written task path "tasks/issue/505-suggestion-ignore-shadowed-by-interaction-is-silent.md" is absent; resolved by card id to "tasks/_archive/issue/505-suggestion-ignore-shadowed-by-interaction-is-silent.md"
+  UPSTREAM tasks/issue/517-dva-discovery-flow-rejects-report-writes-and-bare-profile-imports.md: ownership: local but the card has no ## 소유권 section stating why (TASK-398)
+  ERROR    1 issue card(s) classified with no ## 소유권 section stating why
+doc-check: FAIL
+exit status 1
+make: *** [doc-check] Error 1
+real 0.81
+user 0.62
+sys 0.24
