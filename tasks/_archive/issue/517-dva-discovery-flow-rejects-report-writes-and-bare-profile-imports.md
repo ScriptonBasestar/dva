@@ -6,11 +6,14 @@ priority: P2
 exec-tier: strong
 agent: "codex"
 ownership: local
-status: todo
+status: done
 severity: medium
 discovered-in: "DVA discovery flow rejects report writes and bare profile imports"
 discovered-at: 2026-10-16
 created: 2026-10-16
+resolution: fixed
+resolved-at: 2026-10-16T07:30:08Z
+resolution-summary: "Resolved as fixed by TASK-514."
 ---
 
 ## Summary
