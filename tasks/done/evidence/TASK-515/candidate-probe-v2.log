@@ -1,0 +1,11 @@
+WARNING: sonic/ast only supports (go1.17~1.26 and amd64 CPU) or (go1.20~1.26 and arm64 CPU), but your environment is not suitable and will fallback to encoding/json
+🔄 Starting workflow: ../candidate-probe.yaml
+
+── Step [check_dva] (1/1) ──
+  ⚙ [check_dva] context/dva_available → if ! command -v dva >/dev/null 2>&1; then ...
+  ⚙ [check_dva] context/dva_version → dva version --json 2>/dev/null | jq -r '.version // "unknown"' 2>/dev/null || echo 'unknown'
+  ⚙ [check_dva] context/docker_available → command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1 && echo 'yes' || echo 'no'
+✅ Done.
+real 0.39
+user 0.14
+sys 0.23
