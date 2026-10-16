@@ -1,0 +1,21 @@
+WARNING: sonic/ast only supports (go1.17~1.26 and amd64 CPU) or (go1.20~1.26 and arm64 CPU), but your environment is not suitable and will fallback to encoding/json
+🔄 Starting workflow: /Users/archmagece/mywork/scripton/dva/agent-mesh-flows/dva-discover.yaml
+
+── Step [analyze] (1/1) ──
+  🔗 [analyze] pipeline → dva-improve-guided/00-analyze
+  🔗 [analyze] Running pipeline: dva-improve-guided/00-analyze
+🔄 Starting workflow: dva-improve-guided/00-analyze
+  ⚙ [check_run_dir] context/run_dir_ok → RUN="$PWD" ...
+  📁 [report_marker] file/write → /Users/archmagece/myworktree/gzh-cli/gzh-cli/codex__mst__chore__task329-child-dva/tmp/improve-guided/.gitignore
+
+── Step [check_run_dir] (1/9) ──
+
+── Step [report_marker] (7/9) ──
+
+── Step [check_dva] (2/9) ──
+  ⚙ [check_dva] context/dva_available → if ! command -v dva >/dev/null 2>&1; then ...
+sub-pipeline 'dva-improve-guided/00-analyze' failed: pipeline[dva-improve-guided/00-analyze] step[check_dva]: blocked: shell policy: command "dva" not in allowlist: shell policy blocked
+  Hint: Blocked by shell policy. Use --force-policy to bypass, or add the command to the allowlist.
+real 0.14
+user 0.05
+sys 0.04
