@@ -1,0 +1,28 @@
+{
+  "source_base": "2397800c16508420ebfd9d08774a58365a6222a3",
+  "source_blob": "49f2b8d656ad87b3adb15ba7d669dec87ed2ef96",
+  "am_revision": "798dc68b41edfce08a497dfab08662b45f910f66",
+  "am_executable_blob": "fa9dd38d6f02d1b4fc0722cabb91d810190baa3e",
+  "am_executable": "/Users/archmagece/mydevbox/flow-agent-mesh-devbox/agent-mesh/build/acceptance/task998-798dc68/am",
+  "model_called": false,
+  "baseline": {
+    "exit_code": 1,
+    "elapsed_seconds": 0.15
+  },
+  "candidate": {
+    "exit_code": 0,
+    "elapsed_seconds": 0.49
+  },
+  "forbidden": {
+    "exit_code": 1,
+    "elapsed_seconds": 0.02,
+    "scope": "isolated HOME policy regression only"
+  },
+  "engine": {
+    "file": "/Users/archmagece/myworktree/misc/dva/codex__mst__fix__discovery-shell-contract/agent-mesh-flows/dva-improve-guided/00-analyze.yaml",
+    "valid": true,
+    "strict": false,
+    "schema_hint_present": true,
+    "schema_hint_fixed": false
+  }
+}

@@ -1,0 +1,10 @@
+WARNING: sonic/ast only supports (go1.17~1.26 and amd64 CPU) or (go1.20~1.26 and arm64 CPU), but your environment is not suitable and will fallback to encoding/json
+🔄 Starting workflow: ../baseline-probe.yaml
+
+── Step [check_dva] (1/1) ──
+  ⚙ [check_dva] context/dva_available → if ! command -v dva >/dev/null 2>&1; then ...
+pipeline[../baseline-probe.yaml] step[check_dva]: blocked: shell policy: command "dva" not in allowlist: shell policy blocked
+  Hint: Blocked by shell policy. Use --force-policy to bypass, or add the command to the allowlist.
+real 0.15
+user 0.04
+sys 0.05
