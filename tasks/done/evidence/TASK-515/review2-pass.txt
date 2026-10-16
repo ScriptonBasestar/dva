@@ -1,0 +1,27 @@
+Independent /root/task515_source_review2; required strong / declared ce-judge.
+PASS high confidence, no blocking finding.
+Entire base2397800c16508420ebfd9d08774a58365a6222a3..candidate9cfdc35ce47b0036499956d4587d038bb7255b51,3commits.
+Product change4lines in00-analyze.yaml: inherit:true, allow[dva], mode unspecified.
+No global/provider/Go/schema/unrestricted/force change. Clean, diffcheck PASS.
+
+Actual card completion binding rerun with bash-euo pipefail PASS.
+Source flow49f2b8d656ad87b3adb15ba7d669dec87ed2ef96,
+profilebb698aea770aeb2178b5aa3af2b549159a5b3c97,
+AM policy92eb37c/exec c807831 match.
+Actual artifact blobc403029 / SHA256c8946157, build-info revision2030d5f cleanfalse
+(vcs.modified=false). Relative vs absolute build-info first-line path difference
+explained and each compared to actual invocation.
+Live receipt schema2/complete/source_pushed/3removed, actual remote master2030d5f
+and task remote ref absence directly checked. Tracking refs stale before fetch,
+not confused with actual remote. Source-derived independent probes model-free
+baseline/candidate/globaldeny exit1/0/1. Installed AM4ce8 stays unchanged and same
+deny probe exits0, so installed runtime is explicitly unsupported for this contract.
+Owner actual engine validation used `am run validate ... --format json` valid:true;
+structural validation alone does not prove runtime deny semantics.
+docs/generate log inspected:7 doccheck families OK, real4.22; no duplicate generator,
+fullGo/model/discovery run. Review temporary files removed and worktree clean.
+
+This accepts fixed retained AM2030 artifact policy regression only, not installedAM
+or full discovery/report. Host-specific artifact/receipt paths depend on declared
+retention until dependent work completes or is explicitly cancelled.
+Observed review session model not externally authenticated; grade is requirement.

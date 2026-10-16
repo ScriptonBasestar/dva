@@ -6,11 +6,14 @@ priority: P2
 exec-tier: strong
 agent: "codex"
 ownership: local
-status: todo
+status: done
 severity: medium
 discovered-in: "DVA discovery lacks its required command allowlist declaration"
 discovered-at: 2026-10-16
 created: 2026-10-16
+resolution: fixed
+resolved-at: 2026-10-16T13:23:20Z
+resolution-summary: "Resolved as fixed by TASK-515."
 ---
 
 ## Summary
@@ -37,3 +40,7 @@ TASK-514 역할 수정 통합 뒤 소비자 TASK-340 discovery가 shell allowlis
 - AM `ResolveShellPolicy`는 flow allow를 global allow에 더하고 global deny/deny_patterns를 보존한다. DVA의 필요한 명령만 선언하는 방식을 독립 strong 리뷰로 검토할 수 있다. 이는 아직 채택하거나 구현하지 않은 후보이며 unrestricted/force-policy는 사용하지 않는다.
 - TASK-340의 현재 stop condition은 sandbox 변경을 금지하므로 소비자 전달은 차단한다. owner의 별도 명령 정책 수정·실제 회귀 수용 뒤에만 재개한다.
 - 이번 전달은 확인된 결함과 원문 등록만 한다. 제품 코드·정책·설치·모델 binding을 변경하지 않는다.
+
+## Owner resolution evidence
+
+TASK-515는 required DVA 명령만 flow에 선언했다. 지원 실행기는 AM2030d5f committed/native-delivered artifact로 한정하며 설치 AM4ce8은 지원한다고 주장하지 않는다. 실제 source-derived probe baseline/candidate/global-deny는1/0/1, engine valid:true, 신규 독립 strong 리뷰 PASS다. 근거 tasks/done/evidence/TASK-515/review2-pass.txt와 policy-regression-v2.json. 명령 선언 범위만 해결했으며 전체 discovery/model/report 수용은 TASK340이 별도 수행한다. TASK341 계획 리뷰 한도 소진으로 그 소비자 전달은 계속 차단한다.
