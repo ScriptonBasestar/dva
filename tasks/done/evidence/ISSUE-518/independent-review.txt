@@ -1,0 +1,10 @@
+2026-10-16 /root/dva_issue518_record_review — strong independent record-only review
+Source 7c38248d70bdf93aac9a48bd54bf7eee41e2a38d
+Candidate 27b5fdb6a293f4589adb02b5136956d001594536
+Concrete reviewer runtime model: unobserved.
+
+PASS — record-only candidate 27b5fdb6 accurately registers ISSUE-518. No blocking findings.
+
+The committed failure log is byte-for-byte identical to consumer original (SHA-256 ec5479e8…); check_dva policy rejection occurs before any LLM invocation, elapsed 0.14s. Installed AM revision independently confirmed with go version -m as 4ce8d153f254cc8734e8e661e5a76e68d097b0cc. DVA 0.3.0/fbb336fe and canonical profile hash agree. Source lacks shell_policy and AM compiled allowlist omits dva. TASK-340 prohibits arbitrary sandbox changes and requires successful report. make doc-check and diff --check pass; clean direct child candidate.
+
+Limits: record accuracy only, no approval of allowlist/global policy changes. ResolveShellPolicy structurally preserves global deny/deny_patterns; allowlist enforcement consults allow plus deny_patterns rather than separately deny. This structural observation is not a security endorsement. Transient copied profile/route removed; canonical profile, pinned input and successful import support record, no model route exercised. No model/full discovery/policy bypass/Go build/product implementation performed in review.
