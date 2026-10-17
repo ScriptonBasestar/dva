@@ -657,3 +657,36 @@ func loadConfigForSchemaTest(t *testing.T, dir, content string) *Config {
 	}
 	return cfg
 }
+
+func TestAllComposeFilesDeterministicOrder(t *testing.T) {
+	tmpDir := t.TempDir()
+	content := `version: "0.1.44"
+stack:
+  zeta:
+    default_runner: compose
+    order: 2
+    runners:
+      compose:
+        files: [docker-compose.yml, compose/zeta.yaml]
+  alpha:
+    default_runner: compose
+    order: 2
+    runners:
+      compose:
+        files: [compose/alpha.yaml]
+  first:
+    default_runner: compose
+    order: 1
+    runners:
+      compose:
+        files: [docker-compose.yml]
+`
+	cfg := loadConfigForSchemaTest(t, tmpDir, content)
+
+	want := []string{"docker-compose.yml", "compose/alpha.yaml", "docker-compose.yml", "compose/zeta.yaml"}
+	for i := 0; i < 50; i++ {
+		if got := cfg.AllComposeFiles(); !slices.Equal(got, want) {
+			t.Fatalf("AllComposeFiles() run %d = %v, want %v", i, got, want)
+		}
+	}
+}

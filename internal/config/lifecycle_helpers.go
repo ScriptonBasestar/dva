@@ -225,13 +225,12 @@ func (c *Config) AllEnvFiles() []string {
 	return paths
 }
 
-// AllComposeFiles aggregates compose files from all lifecycle entries.
+// AllComposeFiles aggregates compose files from all lifecycle entries in
+// deterministic order (entry order, then name), so map iteration never leaks.
 func (c *Config) AllComposeFiles() []string {
 	var files []string
-	for _, e := range c.Stack {
-		if cc := e.ComposeConfig(); cc != nil {
-			files = append(files, cc.Files...)
-		}
+	for _, e := range c.ComposeEntries() {
+		files = append(files, e.ComposeConfig().Files...)
 	}
 	return files
 }
