@@ -18,7 +18,7 @@ import (
 // nowhere. The kubernetes sink needs no git origin contract, so the fixture is
 // only a directory holding the encrypted source.
 func TestSecretKubernetesStatus(t *testing.T) {
-	sops, keygen := realTool(t, "sops"), realTool(t, "age-keygen")
+	sops, keygen := realSops(t), realTool(t, "age-keygen")
 	dir, err := filepath.EvalSymlinks(t.TempDir())
 	if err != nil {
 		t.Fatal(err)

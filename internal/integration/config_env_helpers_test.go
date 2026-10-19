@@ -8,7 +8,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -92,10 +94,66 @@ func realTool(t *testing.T, name string) string {
 			}
 		}
 	}
-	p, err := exec.LookPath(name)
+	p, err := lookPathOutsideShims(name)
 	if err != nil {
-		t.Skipf("%s is not installed; the pinned versions are in .mise.toml and in the "+
-			"config-env-platform CI job, and this test only means anything against them", name)
+		t.Skipf("%s is not installed outside a version-manager shim directory; see .mise.toml "+
+			"and the config-env-platform CI job for where each tool comes from", name)
+	}
+	return p
+}
+
+// lookPathOutsideShims is exec.LookPath minus mise's shim directory. When mise
+// has no configuration for name — sops is workstation-provided, not pinned in
+// .mise.toml — `mise which` fails and PATH would otherwise hand back the shim,
+// the cwd-dependent indirection realTool exists to avoid.
+func lookPathOutsideShims(name string) (string, error) {
+	for _, dir := range filepath.SplitList(os.Getenv("PATH")) {
+		if dir == "" || filepath.Base(dir) == "shims" && strings.Contains(dir, "mise") {
+			continue
+		}
+		p := filepath.Join(dir, name)
+		if fi, err := os.Stat(p); err == nil && fi.Mode().IsRegular() && fi.Mode()&0o111 != 0 {
+			return p, nil
+		}
+	}
+	return "", exec.ErrNotFound
+}
+
+// minSopsVersion is the oldest sops whose argv and exit codes DVA's env bridge
+// is proven against. It is a floor, not a pin: workstations use whatever sops
+// devenv installed, and the config-env-platform CI job runs this version and
+// the latest stable release so both ends of the supported range stay covered.
+var minSopsVersion = [3]int{3, 13, 1}
+
+var sopsVersionRE = regexp.MustCompile(`\bsops (\d+)\.(\d+)\.(\d+)`)
+
+// realSops is realTool for sops plus the floor. It logs which binary and version
+// a run exercised, so a pass is attributable, and fails rather than skips below
+// the floor: an older sops is a misconfigured environment, not a missing one.
+func realSops(t *testing.T) string {
+	t.Helper()
+	p := realTool(t, "sops")
+	out, err := exec.Command(p, "--version", "--disable-version-check").CombinedOutput()
+	if err != nil {
+		t.Fatalf("%s --version: %v: %s", p, err, out)
+	}
+	m := sopsVersionRE.FindStringSubmatch(string(out))
+	if m == nil {
+		t.Fatalf("%s --version: no version in output: %s", p, out)
+	}
+	var got [3]int
+	for i := range got {
+		got[i], _ = strconv.Atoi(m[i+1])
+	}
+	t.Logf("sops %d.%d.%d at %s", got[0], got[1], got[2], p)
+	for i := range got {
+		if got[i] != minSopsVersion[i] {
+			if got[i] < minSopsVersion[i] {
+				t.Fatalf("sops %d.%d.%d at %s is below the supported floor %d.%d.%d",
+					got[0], got[1], got[2], p, minSopsVersion[0], minSopsVersion[1], minSopsVersion[2])
+			}
+			break
+		}
 	}
 	return p
 }
@@ -140,7 +198,7 @@ const (
 // of one t.TempDir cannot leak into the repository.
 func newSopsFixture(t *testing.T, plaintext string) *sopsFixture {
 	t.Helper()
-	sops, keygen, git := realTool(t, "sops"), realTool(t, "age-keygen"), realTool(t, "git")
+	sops, keygen, git := realSops(t), realTool(t, "age-keygen"), realTool(t, "git")
 
 	dir := t.TempDir()
 	if resolved, err := filepath.EvalSymlinks(dir); err == nil {
@@ -190,7 +248,7 @@ func newSopsFixture(t *testing.T, plaintext string) *sopsFixture {
 // checkConfigVersion against the running dva's own compiled-in version.
 func newSopsFixtureWithEnvBridge(t *testing.T, plaintext, version string, allowSeal, allowShow bool) *sopsFixture {
 	t.Helper()
-	sops, keygen, git := realTool(t, "sops"), realTool(t, "age-keygen"), realTool(t, "git")
+	sops, keygen, git := realSops(t), realTool(t, "age-keygen"), realTool(t, "git")
 
 	dir := t.TempDir()
 	if resolved, err := filepath.EvalSymlinks(dir); err == nil {
@@ -242,7 +300,7 @@ func newSopsFixtureWithEnvBridge(t *testing.T, plaintext, version string, allowS
 // checkConfigVersion against the running dva's own compiled-in version.
 func newSealFixture(t *testing.T, plaintext, version string, allowSeal, allowShow bool) *sopsFixture {
 	t.Helper()
-	sops, keygen, git := realTool(t, "sops"), realTool(t, "age-keygen"), realTool(t, "git")
+	sops, keygen, git := realSops(t), realTool(t, "age-keygen"), realTool(t, "git")
 
 	dir := t.TempDir()
 	if resolved, err := filepath.EvalSymlinks(dir); err == nil {
