@@ -193,6 +193,33 @@ job 로그에는 1분 heartbeat(누적 이벤트 수·마지막 테스트), 명�
 스크립트 사본은 `tmp/hosted-followup-20261020/cigotest/ci-go-test.sh`다. 다음 판별 후보
 (runner 자원 관측, 패키지 분할 실행 등)는 다시 CI 변경이므로 별도 승인 대상이다.
 
+## 2026-10-20 정지 시작 커밋 — 0111e8b8
+
+정지는 10-07(38934c4b)이 아니라 09-08에 시작됐다. master CI 이력(`ci.yml`, 09-07..10-20)에서:
+
+- cfe25653(2026-09-08 08:19Z, run 34203911056)까지 연속 success. Test 단계 2분 8초.
+- 바로 다음 master push 0111e8b8 `feat(remote): add tracked artifact jobs and secret push`
+  (run 34250221955): test job이 35분 뒤 cancelled, 기록된 step 0개. 다른 job은 끝났다
+  (`config-env-platform (ubuntu-latest)` failure는 별개).
+- 이후 test job은 Documentation 단계 실패(약 20초, step 기록 있음)로 일찍 끝나거나,
+  Test 단계까지 가면 step이 in_progress인 채 job 제한으로 cancelled됐다. 09-08 이후
+  Test 단계가 완료된 master 실행은 없다. 이력 원본은 `tmp/hosted-followup-20261020/`의
+  `master-runs.txt`, `test-step-history.txt`다(앞 200건 기준).
+- 0111e8b8과 cfe25653 사이 커밋은 이것 하나다. 새로 들어온 테스트:
+  `internal/{jobrun,secretpush,ociverify,remotetarget}`, `internal/config/remote_test.go`,
+  `internal/cli/remote_test.go`, `internal/integration/{remote_job,secret_push}_test.go`.
+
+자원 고갈 가설은 로컬 근거가 없다: Linux 컨테이너(4 CPU, 7 GiB 제한, CI와 같은 env)에서
+전체 `make test`가 244초에 끝났고 cgroup peak 1,065 MiB, 최대 pids 30이었다
+(`repro2/res.log`). 컨테이너의 실패 3패키지(jobrun·secretpush·installcheck)는 위 새 테스트와
+겹치지만 컨테이너 환경 차이(상태 디렉터리 안전성 검사, 도구 부재) 때문으로 보이며 정지는 아니다.
+hosted runner에는 `gh`·`kubectl`·`sops` 계열 도구와 Actions 환경이 있어, 새 테스트가
+로컬과 다른 경로를 탈 수 있다(미검증).
+
+다음 판별(별도 승인 필요, 실험 브랜치 한정): `dev/**` 브랜치에서 Test 단계를 위 새 테스트
+패키지 묶음과 나머지로 나눠 각각 실행해 어느 쪽이 runner를 잃는지 본다. 검사 생략이나
+master 반영이 아니라 이분 탐색용 일회성 실행이며, 결과만 이 카드에 남긴다.
+
 ## 후속 범위
 
 Actions write 권한을 가진 승인된 인증으로 기존 지원 경로를 사용하고, 요청 뒤 실제
