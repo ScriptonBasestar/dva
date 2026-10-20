@@ -220,6 +220,46 @@ hosted runner에는 `gh`·`kubectl`·`sops` 계열 도구와 Actions 환경이 �
 패키지 묶음과 나머지로 나눠 각각 실행해 어느 쪽이 runner를 잃는지 본다. 검사 생략이나
 master 반영이 아니라 이분 탐색용 일회성 실행이며, 결과만 이 카드에 남긴다.
 
+## 2026-10-20 hosted 이분 탐색 (사용자 승인, 실험 브랜치)
+
+실험 브랜치 `exp/claude/mst/chore/issue-515`에서 `ci.yml`만 바꿔 3회 실행했다. 브랜치는
+통합하지 않고 증거로 보존했다(실행은 `ce task run-abort`로 닫음). 정지 판정은 앞 절과 같다:
+step 제한·`timeout 12m`이 어느 것도 걸리지 않고, step이 in_progress인 채 job이 30분에
+cancelled되며 job log가 남지 않는다(`log not found`).
+
+| 회차 | run | 커밋 | 변형 | 결과 |
+| --- | --- | --- | --- | --- |
+| 1 | 39444449630 | 23da19bb | 의심 패키지별 단독 job 7개(jobrun·secretpush·ociverify·remotetarget·config·cli·나머지) | 정지 0/7. `rest`만 TestLockRejectsAnotherProcess(기존 flaky)·TestUpstreamRefsSweepsTheRealCorpus 실패 |
+| 2 | 39445229921 | 164c5aa3 | 선행 단계 토글 후 `make test`: full·docs-only·test-only·build-only·build-dogfood | **build-dogfood만 정지**. test-only·build-only는 Test 약 4.5분에 일반 실패. full·docs-only는 master와 같이 Documentation에서 실패 |
+| 3 | 39451524530 | 6ad5a78f | build→dogfood 뒤 전체 테스트 2회(repeat-a/b), 뒤 테스트를 cli / 새 패키지(cli 제외) / 나머지로 분할 | **repeat-a 정지, repeat-b는 job 3분 48초(15:46:37–15:50:25Z)에 일반 실패**. 분할 3개 정지 0/3 |
+
+판단:
+
+- 정지는 결정적이지 않고 간헐적이다. 같은 build→dogfood→전체 테스트 조합이 3회 중 2회
+  정지했다. 2회차의 "dogfood가 선행 조건"이라는 읽기는 표본 1개에 기댄 것이라 확정이 아니다.
+  dogfood 없는 변형은 2회 모두 정지하지 않았지만 표본이 작다.
+- 패키지를 나눈 실행은 1·3회차 합계 10개 job에서 한 번도 정지하지 않았다. 정지는 한 프로세스
+  트리에서 전체 패키지를 이어 실행할 때만 관측됐다.
+- 정지하지 않은 전체 실행의 공통 실패는 `tools/doccheck` TestUpstreamRefsSweepsTheRealCorpus다.
+  정지와는 별개로 보인다.
+- 로컬 Linux 컨테이너에서 build→dogfood→`make test` 순서도 재현했지만 정지하지 않았다
+  (약 5분, cgroup peak 1,069 MiB, pids 최대 30, dogfood 전후 `git status --ignored` 동일;
+  `tmp/hosted-followup-20261020/repro3/`). dogfood는 fixture·실행 파일 복사본·dry-run HOME을
+  모두 `os.MkdirTemp`로 만들고 `defer`로 지운다(`tools/skilldogfood/main.go`,
+  `verify_steps.go`, `skillcopy.go`).
+- 미검증 가설: runner 자체가 신호를 받는 경우다. `internal/lifecycle/process_group_unix.go`와
+  `internal/cirun/os_unix.go`는 `syscall.Kill(-pid, ...)`로 프로세스 그룹에 신호를 보낸다.
+  pidfile 값이나 재사용된 pid가 runner와 같은 사용자의 그룹을 가리키면 step timeout 없이
+  runner를 잃는 현상과 맞는다. 간헐성(pid 재사용 타이밍)과도 맞지만 hosted 증거는 아직 없다.
+
+원본 로그: `tmp/hosted-followup-20261020/bisect/`(`run-39444449630.log`, `run-39451524530.log`,
+`job-118727293092.log`, `job-118727293214.log`). 정지한 job의 로그는 GitHub에도 남지 않았다.
+
+다음 판별 후보(별도 승인 필요): 정지가 간헐적이므로 변형마다 여러 표본이 필요하다. 그룹 신호
+가설은 hosted에서 `Kill(-pid)` 호출 직전 대상 pgid를 runner 그룹과 비교해 기록하는
+진단 실행이나, pid ≤ 1·자기 그룹을 거부하는 코드 수정 뒤 반복 실행으로 판별할 수 있다.
+후자는 원인 수정이라 이 카드의 조사 범위를 넘는다.
+
 ## 후속 범위
 
 Actions write 권한을 가진 승인된 인증으로 기존 지원 경로를 사용하고, 요청 뒤 실제
