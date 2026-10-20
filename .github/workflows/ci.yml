@@ -26,11 +26,11 @@ jobs:
       # that git-cat-file the pinned baseline and the grandfathered objects. A
       # shallow clone makes those tests fail on every push while commit-subjects
       # (which already fetches the full history) still passes.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
 
@@ -65,7 +65,7 @@ jobs:
 
       - name: Preserve test progress
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-progress-${{ github.run_id }}-${{ github.run_attempt }}
           path: tmp/ci/test.jsonl
@@ -84,7 +84,7 @@ jobs:
 
       - name: Preserve integration progress
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: integration-progress-${{ github.run_id }}-${{ github.run_attempt }}
           path: tmp/ci/integration.jsonl
@@ -103,11 +103,11 @@ jobs:
       # passed. commitcheck exits 2 in that case rather than pass, so a shallow checkout here
       # turns this job permanently red instead of silently useless — either way it stops
       # being a check. Do not remove this.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
 
@@ -117,9 +117,9 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
 
@@ -131,7 +131,7 @@ jobs:
       # Pin golangci-lint to the version in .mise.toml. It must be built with
       # Go >= the go.mod directive, so keep these in sync when bumping Go.
       - name: Lint
-        uses: golangci/golangci-lint-action@v8
+        uses: golangci/golangci-lint-action@v9
         with:
           version: v2.15.0
 
@@ -182,9 +182,9 @@ jobs:
         sops: ["3.13.1", "latest"]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
 
@@ -228,13 +228,13 @@ jobs:
   goreleaser-snapshot:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
 
-      - uses: goreleaser/goreleaser-action@v6
+      - uses: goreleaser/goreleaser-action@v7
         with:
           version: v2.12.7
           install-only: true
