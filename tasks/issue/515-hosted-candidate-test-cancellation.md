@@ -260,6 +260,52 @@ cancelled되며 job log가 남지 않는다(`log not found`).
 진단 실행이나, pid ≤ 1·자기 그룹을 거부하는 코드 수정 뒤 반복 실행으로 판별할 수 있다.
 후자는 원인 수정이라 이 카드의 조사 범위를 넘는다.
 
+## 2026-10-20 그룹 신호 진단 (사용자 승인, 실험 브랜치)
+
+실험 브랜치 `exp/claude/mst/test/issue-515`(base eaf757e4, run-abort로 보존)에 진단용
+`internal/issue515guard`를 넣었다. 이 코드는 `Kill(-pgid)` 호출마다 대상 pgid, 자기 pgid,
+조상 프로세스의 pgid를 `$ISSUE515_KILL_LOG`에 남긴다. pgid ≤ 1, 자기 그룹, 조상 그룹은
+거부하고 stack을 기록한다. 판정은 job이 약 30분에 로그 없이 cancelled면 "정지"로 했다.
+
+| 회차 | run | commit | 변형 | 정지 |
+|---|---|---|---|---|
+| 4 | 39457591910 | 93b39ebf | guard 전 지점 적용 | 0/4, 거부 0 |
+| 5 | 39458655653 | 5cf87c6a | guard 전 지점 적용, 프로세스 트리 기록 | 0/8, 거부 0 |
+| 6 | 39459642340 | 11e69502 | 같은 batch에서 guard 적용과 원본 대조 | guard 적용 0/6, 원본 5/6 |
+| 7 | 39464255573 | 97b76aa4 | 한 지점만 guard: lifecycle-prod·cirun·doctor·lifecycle-tests | lifecycle-tests 0/3, 나머지 7/9 |
+| 8 | 39468952208 | 9cf5bd97 | lifecycle-tests 분할: exec-cleanups·dryrun-cleanup·원본 | exec-cleanups 0/4, dryrun-cleanup 4/4, 원본 2/4 |
+
+판단:
+
+- 그룹 신호 가설은 기각한다. 4~8회차 동안 guard가 runner 그룹이나 조상 그룹을 겨냥한 호출을
+  거부한 적이 한 번도 없다. 5회차에서 hosted 프로세스 트리를 확인했다. step bash, Runner.Worker,
+  Runner.Listener, hosted-compute-agent가 같은 pgid에 있고, `timeout` 아래 make·go·test
+  binary는 별도 pgid다.
+- 정지와 함께 움직인 지점은 `internal/lifecycle/process_test.go`에 있는 테스트 cleanup 3곳이다.
+  `t.Cleanup(func() { _ = exec.Command("kill", "-9", "-"+strconv.Itoa(pid)).Run() })` 형태이고
+  TestProcessPlugin_DownWaitsForExitBeforeRemovingState,
+  TestProcessPlugin_DownCancellationRetainsStateForLiveProcess,
+  TestProcessPlugin_Restart_HungProcess에 있다. 이 3곳을 `syscall.Kill(-pid, SIGKILL)`로 바꾼 변형(6회차 전 지점, 7회차 lifecycle-tests, 8회차 exec-cleanups만)은
+  합계 13/13 job이 정지하지 않았다. 원본이거나 다른 지점만 바꾼 변형은
+  18/23 job이 정지했다.
+- 8회차 정지하지 않은 원본 job(original-a·c)의 `make test` 직후 프로세스 목록에는
+  `sh -c trap '' TERM; ... while true; do sleep 0.05; done` 루프 2개가 자기 pgid로 살아 있었다.
+  exec-cleanups 변형에서는 같은 루프가 남지 않았다. kill log에는 cleanup 3건이 기록됐고 결과는
+  ESRCH 1건, 성공 2건이었다. 즉 exec로 띄운 `kill -9 -<pid>`는 이 두 그룹을 죽이지 못했다.
+  `exec.Command(...).Run()`의 오류를 버리므로 실패 원인은 로그에 없다.
+- 미검증: exec로 띄운 kill이 실패하는 이유는 아직 모른다. hosted의 procps-ng 4.0.4
+  `kill -9 -N`이 kill(-N, SIGKILL)을 호출함은 별도로 확인했다(`killcheck/`). 남은 TERM 무시
+  루프가 runner를 잃게 하는 경로도 아직 모른다. 루프가 남아도 정지하지 않은 job이 있으므로
+  루프가 남는 것은 정지의 필요조건 후보일 뿐 충분조건은 아니다. ISSUE-522의 고아 `sleep` 관측과
+  관련이 있을 수 있다. 로컬 macOS에서 원본 테스트는 고아를 남기지 않았다.
+- 공통 일반 실패인 `tools/doccheck` TestUpstreamRefsSweepsTheRealCorpus는 정지와 무관하다.
+
+원본 로그: `tmp/hosted-followup-20261020/diagnose/`. 8회차는 `r8-job-<id>.log`로 저장했다.
+
+다음 후보(별도 승인 필요): 위 cleanup 3곳을 `syscall.Kill(-pid, syscall.SIGKILL)`로 바꾸고
+오류를 버리지 않는 원인 수정을 하고, hosted에서 반복 실행해 정지가 없는지 확인한다.
+이는 이 카드의 조사 범위를 넘는 코드 변경이다.
+
 ## 후속 범위
 
 Actions write 권한을 가진 승인된 인증으로 기존 지원 경로를 사용하고, 요청 뒤 실제
