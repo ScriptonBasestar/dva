@@ -7,6 +7,7 @@ effort: S
 exec-tier: standard
 status: todo
 ownership: split
+upstream-ref: "ce-agent-kit ISSUE-444 (tasks/issue/444-task-gate-bindings-root-scope.md)"
 severity: medium
 discovered-in: "singlepageweb-devbox TASK-270 (owner of the board-wide binding run)"
 discovered-at: 2026-10-20
@@ -55,7 +56,7 @@ ce-agent-kit ISSUE-444는 `ce task gate`가 external root 하나의 binding만 �
   대응 규칙(같은 이름, 또는 선언으로 매핑)은 결정할 항목이다. 대응되지 않는 이름은 실패로 끝낸다.
 - Actual: 사이트 범위 실행 진입점이 없고, 범위 없는 전체 실행만 가능하다.
 
-## 소유권 — 진입점은 이 저장소, 판정은 상류
+## 소유권 — 갈린다 (진입점은 DVA, 판정은 상류)
 
 - 진입점(profile·interaction·인자 전달)은 DVA가 소유한다.
 - 카드 선택과 판정은 ce-agent-kit `ce task gate`가 소유한다.
