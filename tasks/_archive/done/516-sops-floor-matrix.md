@@ -10,6 +10,9 @@ quality-reviewed-at: 2026-10-20
 quality-review-evidence: tasks/done/evidence/TASK-516/review2-pass.txt
 status: done
 created: 2026-10-20
+archived-at: 2026-10-20
+verified-at: 2026-10-20
+verification-summary: "2026-10-20 re-verify: the four .mise.toml and realSops bindings exit 0. The three ci.yml bindings for the literal 3.13.3 leg held through e3bf8905; TASK-520 superseded them by resolving latest at run time and moving the install into scripts/ci-install-sops-age.sh."
 ---
 
 ## Summary
