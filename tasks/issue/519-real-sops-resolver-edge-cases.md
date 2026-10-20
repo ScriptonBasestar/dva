@@ -20,11 +20,17 @@ TASK-516's independent review passed the change and named two minor edges in
 sops 3.13.1/3.13.3 builds or the default mise shim directory, so TASK-516 was
 integrated; this card keeps them from being forgotten.
 
+## 소유권 — 이 저장소다
+
+두 결함 모두 이 저장소의 `internal/integration/config_env_helpers_test.go` 테스트 헬퍼에 있다.
+sops 자체나 devenv의 워크스테이션 설치를 바꾸는 항목이 아니다.
+
 ## Reproduction
 
 1. `sopsVersionRE` (line 128) takes the first `major.minor.patch` and ignores a
-   suffix: `sops 3.13.1-rc1` passes the 3.13.1 floor, while the CI verify step
-   (`.github/workflows/ci.yml:251`) rejects the same string. A wrapper printing
+   suffix: `sops 3.13.1-rc1` passes the 3.13.1 floor, while the CI toolchain
+   verify step (`expected sops $SOPS_VERSION` in `.github/workflows/ci.yml`)
+   rejects the same string. A wrapper printing
    another `sops N.N.N` before the real line is also taken as the version.
 2. `lookPathOutsideShims` (line 111) skips empty PATH entries and mise `shims`
    directories, but returns a relative path for a relative entry such as `bin`;
