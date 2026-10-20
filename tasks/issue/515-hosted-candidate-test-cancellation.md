@@ -70,6 +70,36 @@ source `6c37f680d8dd36bbcbb38cf018d03c667054ffef`를 대조했다.
 작업 디렉터리와 기존 `gh`의 인증 선택을 확인한 뒤 지원되는 최소 재실행 범위에서
 attempt·source SHA·최종 결과를 다시 확인한다. 작업 worktree는 인계에 필요하지 않다.
 
+## 2026-10-20 attempt 2 — 정지 재현
+
+실행 `38533431297`의 재실행 요청이 수락돼 attempt 2가 같은 source
+`6c37f680d8dd36bbcbb38cf018d03c667054ffef`에서 돌았다. 결과는 다시 cancelled이고
+test 외 job은 모두 성공했다. 따라서 위 "재실행에서 정지가 재현될 때" 조건이 충족됐다.
+
+관측 사실:
+
+- 두 attempt 모두 Test 단계 시작 후 70~90초에 출력이 멈췄다
+  (attempt 1: 08:12:36 시작 → 08:13:45 마지막, attempt 2: 11:10:54 → 11:12:24 UTC).
+  마지막 JSON 이벤트는 둘 다 `internal/cli`의
+  `TestRunRefusesIncompleteOwnerEnvironmentBeforePreviewExecutionAndConfirmation/malformed/execution`
+  `run`이다. 다음 하위 테스트 `preview`의 `run` 이벤트는 없다.
+- attempt 2는 마지막 출력 후 약 33분 뒤(11:45:08) 취소됐다. 그 사이
+  `go test -timeout 5m`의 panic·goroutine dump도, `timeout 10m`의 종료 흔적도 없다.
+- `if: always()`인 `Preserve test progress`는 `pending`으로 남았고, 실행의 artifact는
+  0개다. 취소 뒤에도 Test 단계는 `in_progress`로 보고된다.
+- 같은 테스트는 로컬(darwin, HEAD `89caebc9`, stdin `/dev/null`)에서 단독 0.01s,
+  `internal/cli` 패키지 전체 25.8s로 통과한다. `6c37f680..89caebc9`에는
+  `internal/cli`·`internal/config` 변경이 없다.
+
+해석(가설): 테스트 프로세스 안의 정지라면 5분 Go deadline이 스택을 남겨야 하므로,
+관측은 test 바이너리 정지보다 runner와 control plane의 통신 상실에 더 부합한다.
+workflow 주석의 이전 heartbeat 기아 기록(-race, 2코어)과도 일치한다. 두 attempt가
+같은 지점에서 끊긴 이유는 설명되지 않았고 원인은 여전히 미확정이다.
+
+원본 로그는 primary checkout의 무시된
+`tmp/hosted-followup-20261020/`(`test-job-attempt1.log`, `test-job-attempt2.log`,
+`local-internal-cli-89caebc9.log`)에 보존한다.
+
 ## 후속 범위
 
 Actions write 권한을 가진 승인된 인증으로 기존 지원 경로를 사용하고, 요청 뒤 실제
