@@ -1,0 +1,56 @@
+TASK-516을 독립 리뷰로 봅니다. 카드, diff, 관련 구현을 읽고 게이트와 테스트만 실행하며 파일은 바꾸지 않습니다.VERDICT: PASS
+
+The commit `4078d99d` meets TASK-516. The floor check, the mise-shim skip, the four pinned downloads, and the seven card greps all hold. Two residual edges are minor.
+
+## Findings
+
+**minor** — `internal/integration/config_env_helpers_test.go:128`  
+`sopsVersionRE` keeps only the first `major.minor.patch` and ignores a prerelease or extra suffix. Output `sops 3.13.1-rc1` is treated as `3.13.1` and passes the floor. The CI case at `.github/workflows/ci.yml:251` rejects that same string (it requires end-of-string or a space). Official 3.13.1 and 3.13.3 with `--disable-version-check` print `sops 3.13.3` and are unaffected. A wrapper that prints another `sops N.N.N` before the real line is also taken as the version, because the match is not anchored to line 1. `PrintVersion` in both releases writes the real version first, so official extra lines stay correct.
+
+**minor** — `internal/integration/config_env_helpers_test.go:111`  
+The skip is `dir == ""` or (basename `shims` and the path contains `mise`). An empty PATH entry is skipped. A relative PATH entry such as `bin` is not. If `bin/sops` is executable, the function returns the relative path `bin/sops`. `toolPATH` then symlinks that relative target, which resolves against the temp directory rather than the directory that was searched. A non-mise directory named `shims` (for example `~/.asdf/shims`) is still searched, so a shim there can still be returned. The default mise directory `~/.local/share/mise/shims` is skipped.
+
+## Checks
+
+1. **Resolution and version.** On this machine `mise which sops` exits 1 (`sops is not a mise bin`). `TestSecretKubernetesStatus` logged `sops 3.13.3 at /opt/homebrew/bin/sops`. The mise shims directory is earlier on `PATH` than Homebrew. Numeric comparison accepts an equal or newer triple and fails an older one (`3.12.x`, `3.13.0`). Absent sops still skips: `realSops` calls `realTool`, and `t.Skipf` runs before the version command. Below the floor, or a `--version` that fails or has no parseable version, calls `t.Fatalf`. The skip-on-absent path was read, not executed by removing sops from `PATH`.
+
+2. **CI.** The job has an `os` axis and no separate `arch` axis. `os` × `sops` expands to four jobs. Each pair has a digest. All four match the official `sops-v3.13.1.checksums.txt` and `sops-v3.13.3.checksums.txt` contents: `620a9d7e…` (linux amd64 3.13.1), `a2c0dd37…` (darwin arm64 3.13.1), `e5bec334…` (linux amd64 3.13.3), `b97c0d43…` (darwin arm64 3.13.3). The URL is `https://github.com/getsops/sops/releases/download/v$sops_version/sops-v$sops_version.{linux.amd64,darwin.arm64}`. Those asset names are in the checksum files. The verify step requires the first line to be `sops <matrix version>` or that text plus a space and a suffix. GitHub's latest stable release is `v3.13.3` (2026-07-23), still current on 2026-10-20. The job id stays `config-env-platform`. The check display name gains the sops value. `master` has no branch protection, the rules API returned `[]`, and `ci.yml` has no `needs:` entry. Live `runner.arch` on a hosted runner was not observed. An unknown `os`/`arch` still exits 1 in the digest case.
+
+3. **Local absence.** Skip when the binary is missing, fail when it is present and below 3.13.1. That matches the card and the CI comment that a developer machine may skip and this job must not.
+
+4. **Card and tests.** All seven `verify:` greps match. `ce task gate --dir . --json` exited 0:
+
+```json
+{
+  "status": "ready",
+  "summary": "task_board_ready",
+  "tool_version": "v0.10.0-328-g6e206929",
+  "tool_revision": "6e206929050c5ff84f6d77706ca1efcae2b1c7b9",
+  "steps": [
+    {
+      "step": "validate",
+      "status": "pass",
+      "elapsed_ms": 764
+    },
+    {
+      "step": "lint",
+      "status": "pass",
+      "elapsed_ms": 120
+    },
+    {
+      "step": "preflight",
+      "status": "pass",
+      "elapsed_ms": 272
+    },
+    {
+      "step": "bindings",
+      "status": "pass",
+      "elapsed_ms": 1
+    }
+  ]
+}
+```
+
+`go test ./internal/integration/...` exited 1 with `matched no packages` because every file in that package is `//go:build integration`. It did not compile this change. `go test -tags=integration -count=1 -timeout 240s -run 'TestConfigEnvRealSOPS|TestSecretKubernetesStatus|TestConfigEnvGatedCommandsRealBinary' ./internal/integration/` passed in 9.9s. The worktree stayed clean.
+
+5. **Trailers.** The message ends with `Model: claude-opus-5-5`. The line before it is `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
