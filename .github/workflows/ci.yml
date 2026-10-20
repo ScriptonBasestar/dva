@@ -192,10 +192,11 @@ jobs:
         run: go test ./internal/cli ./internal/config -count=1
 
       # `latest` is verified through a sigstore signature on its checksum file
-      # (see the script), so only that leg needs cosign.
+      # (see the script), so only that leg needs cosign. cosign-installer has
+      # no moving v4 tag, so the verifier's installer is pinned by commit.
       - name: Install cosign
         if: matrix.sops == 'latest'
-        uses: sigstore/cosign-installer@v4
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
         with:
           cosign-release: v3.1.3
 
