@@ -151,6 +151,28 @@ hosted 취소 실행 7개의 job 로그(`gh run view --job <id> --log`)는 commi
 별도 카드로 등록한다. 원본은 같은 디렉터리의 `linux-repro-1.log`, `linux-full.jsonl`,
 `linux-full-ps.log`, `test-job-run*.log`와 재현 스크립트 `repro/`다.
 
+## 2026-10-20 판별 실험 — Test 단계 출력 분리 (사용자 승인)
+
+사용자가 2026-10-20 위 미확정 (1)/(2)를 가르는 CI 변경을 승인했다. 아래 "후속 범위"의
+"새 wrapper" 제외는 이 변경 하나에 한해 해제된다. timeout 연장·검사 생략은 여전히 범위 밖이다.
+
+변경: Test·Integration Test 단계가 `-json` 스트림을 `tee`로 job 로그에 쓰지 않고
+`scripts/ci-go-test.sh`를 거쳐 `tmp/ci/*.jsonl` 파일(기존 artifact 업로드 대상)에만 쓴다.
+job 로그에는 1분 heartbeat(누적 이벤트 수·마지막 테스트), 명령 종료 시각·exit,
+실패 테스트 출력, 그리고 명령의 환경 표식(`CI_GO_TEST_MARK`)을 물려받은 채 남은 프로세스만 남는다.
+
+판정 기준:
+
+- 통과 + 잔존 프로세스 없음: 로그 크기 경로가 원인이었다고 본다.
+- 통과 + 잔존 프로세스 있음: 출력이 파일로 가서 고아가 파이프를 붙잡는 경로도 함께
+  사라졌으므로 두 가설을 가르지 못한다. ISSUE-522 수정 뒤 재판정한다.
+- 여전히 정지: heartbeat의 마지막 시각·이벤트 수와 `end:` 줄의 유무로 test 자체 정지와
+  종료 뒤 정지를 구분한다.
+
+로컬 확인: macOS와 Linux(golang:1.26.5 컨테이너)에서 가짜 명령으로 heartbeat, exit 전달,
+실패 출력, `setsid sleep 999` 잔존 검출을 확인했다. 원본은
+`tmp/hosted-followup-20261020/cigotest/`다.
+
 ## 후속 범위
 
 Actions write 권한을 가진 승인된 인증으로 기존 지원 경로를 사용하고, 요청 뒤 실제

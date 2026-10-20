@@ -46,8 +46,10 @@ jobs:
       # GOMAXPROCS=1 leaves a core for the runner heartbeat on 2-core hosts.
       # A full-core -race compile starved that heartbeat and GitHub aborted
       # the job at ~45m with no logs.
-      # JSON events retain test progress and timing so
-      # the last active test is visible when the job-level deadline cancels a run.
+      # JSON events retain test progress and timing in the uploaded artifact.
+      # They stay out of the job log: while they were teed there, every stalled
+      # job's log ended at ~2MiB (ISSUE-515). ci-go-test.sh logs
+      # a heartbeat, the failures, and processes the tests left behind.
       - name: Test
         timeout-minutes: 25
         env:
@@ -55,13 +57,9 @@ jobs:
           GOTESTFLAGS: "-json"
         shell: bash
         run: |
-          set -euo pipefail
-          mkdir -p tmp/ci
-          run_test() {
+          bash scripts/ci-go-test.sh tmp/ci/test.jsonl \
+            timeout --kill-after=30s 10m \
             sh scripts/without-dva.sh make test --silent
-          }
-          export -f run_test
-          timeout --kill-after=30s 10m bash -c run_test | tee tmp/ci/test.jsonl
 
       - name: Preserve test progress
         if: always()
@@ -78,9 +76,8 @@ jobs:
           GOTESTFLAGS: "-json"
         shell: bash
         run: |
-          set -euo pipefail
-          mkdir -p tmp/ci
-          sh scripts/without-dva.sh make test-integration --silent | tee tmp/ci/integration.jsonl
+          bash scripts/ci-go-test.sh tmp/ci/integration.jsonl \
+            sh scripts/without-dva.sh make test-integration --silent
 
       - name: Preserve integration progress
         if: always()
