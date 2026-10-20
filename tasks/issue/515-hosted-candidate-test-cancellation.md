@@ -173,6 +173,26 @@ job 로그에는 1분 heartbeat(누적 이벤트 수·마지막 테스트), 명�
 실패 출력, `setsid sleep 999` 잔존 검출을 확인했다. 원본은
 `tmp/hosted-followup-20261020/cigotest/`다.
 
+### 결과 — 로그 크기 가설 기각, 변경은 되돌림
+
+실행 39430861306(작업 브랜치 `dev/claude/mst/chore/issue-515`, `0c818832`), test job
+118655264045. test 외 job 7개는 성공했다. Test 단계는 13:30:45Z에 시작해 완료 시각이 기록되지
+않았고, job은 `The job has exceeded the maximum execution time of 30m0s`로 cancelled됐다.
+
+- job 로그가 아예 없다(`gh api …/jobs/118655264045/logs` → 404 `BlobNotFound`,
+  `gh run view --log` → `log not found`). artifact도 0개다. heartbeat·`end:` 줄을 관측할 수 없다.
+- 단계의 `timeout-minutes: 25`도 안쪽 `timeout 10m`도 결과에 드러나지 않았고, 서버 쪽 job 제한(30m)만 작동했다.
+- 출력을 거의 내지 않았는데도 같은 정지가 났으므로 "로그 약 2MiB에서 정지" 가설은 기각한다.
+  이전 실행의 2MiB 끝점은 runner가 연락을 잃기 전까지 업로드된 양으로 본다(추정).
+- 단계 timeout이 작동하지 않고 로그가 업로드되지 않는 양상은 runner 자체가 응답을 잃는 쪽
+  (자원 고갈·runner 프로세스 종료)을 가리킨다. 위 GOMAXPROCS 주석의 이전 증상과 같다. 미확정이다.
+- 같은 job annotation: `The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026`.
+  정지는 10-07부터라 이 이전만으로 설명되지 않는다.
+
+판별에 기여하지 않았으므로 CI 변경은 되돌렸다(master에는 이 카드 기록만 남는다).
+스크립트 사본은 `tmp/hosted-followup-20261020/cigotest/ci-go-test.sh`다. 다음 판별 후보
+(runner 자원 관측, 패키지 분할 실행 등)는 다시 CI 변경이므로 별도 승인 대상이다.
+
 ## 후속 범위
 
 Actions write 권한을 가진 승인된 인증으로 기존 지원 경로를 사용하고, 요청 뒤 실제
