@@ -1,0 +1,79 @@
+TASK-520을 독립 리뷰합니다. 변경은 읽기만 하고, 카드·diff·설치 스크립트·워크플로를 증거로 대조하겠습니다.diff는 한 커밋입니다. 이제 최신 태그 검증, floor digest, 워크플로 게이트, TASK-516 아카이브 선례를 코드와 문서에서 대조합니다.공식 릴리스 digest는 floor와 일치합니다. cosign 액션 ref와 체크섬 파일 형식, 인증서 identity를 확인한 뒤 게이트를 돌리겠습니다.VERDICT: FAIL
+
+## Blocker
+
+**`sigstore/cosign-installer@v4` is not a ref.** `.github/workflows/ci.yml:198`. The installer tag list has `v4.0.0`, `v4.1.0`, `v4.1.1`, and `v4.1.2`, plus moving majors `v2` and `v3`. `GET /repos/sigstore/cosign-installer/git/ref/tags/v4` and `.../heads/v4` are both 404. GitHub Actions resolves `uses:` to that git ref and does not pick the newest `v4.*` tag.
+
+Failure: a `config-env-platform` cell with `matrix.sops == 'latest'` dies in "Install cosign" before `scripts/ci-install-sops-age.sh` runs. The floor cells skip that step (`ci.yml:197`) and can stay green. `fail-fast: false` still fails the job. The input name `cosign-release` and the value `v3.1.3` are valid (`ci.yml:200`; cosign release `v3.1.3` exists). getsops/sops itself pins `sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6` (`v4.1.2`).
+
+## What holds
+
+Supply chain, once cosign is actually on `PATH`:
+
+- `--certificate-identity` is exact SAN equality (`san == identity.Subject` in cosign `pkg/cosign/verify.go`). The regexp flag is a different option and is not used. The issuer flag is the strict issuer field, `https://token.actions.githubusercontent.com` (`scripts/ci-install-sops-age.sh:54-57`). The version is constrained to `x.y.z` (`:18`) before it is spliced into that URI.
+- An unsigned file, or a file signed for another tag or another workflow, fails `cosign verify-blob`. `set -euo pipefail` stops the script before `awk` and before the binary download. A wrong asset name fails too: `awk` uses `$2 == asset` (`:58`), then `^[0-9a-f]{64}$` (`:66-68`) rejects an empty or multi-line result.
+- `gh api` failure exits the shell. Both bash 5.3.20 and `/bin/bash` 3.2.57 exit on `tag=$(false)` under `set -euo pipefail` (exit 1, the next command does not run). A successful body that is not `x.y.z` hits the regex and exits 1 before any download. `releases/latest` currently returns `v3.13.3`.
+- The signer is getsops/sops `.goreleaser.yaml` `signs` (`cosign sign-blob --bundle`, artifact `checksum`), run from `.github/workflows/release.yml` on `tags: ['v*']` with `id-token: write`. The bundle name `sops-vX.checksums.sigstore.json` matches that signature template. Upstream's own instructions use a prefix regexp; this script requires the full workflow URI at that tag.
+
+Floor digests match the GitHub release asset `digest` on `v3.13.1`:
+
+- `sops-v3.13.1.linux.amd64` = `620a9d7e3352ababeca6908cea24a6e8b14ce89a448ddbd3f94f1ef3398f470a` (`scripts/ci-install-sops-age.sh:61`)
+- `sops-v3.13.1.darwin.arm64` = `a2c0dd37eb031068af6ef213b78cfa67b7f1afd76c2e5cc404257f42bbc8367d` (`:62`)
+
+An unpinned fixed version takes `*) sops_sha=` (`:63`) and exits 1 at the hex check before `curl`. Archive name templates are `sops-v{{ .Version }}.{{ .Os }}.{{ .Arch }}`, the same strings the script builds.
+
+Workflow:
+
+- `if: matrix.sops == 'latest'` is exact (`ci.yml:197`). Workflow `permissions` are `contents: read` (`ci.yml:11-12`). `GH_TOKEN` is set only on the install step (`:203-204`).
+- Cosign's `GITHUB_PATH` is visible to the next step. The script appends `GITHUB_PATH` and `SOPS_VERSION` to `GITHUB_ENV` at the end (`scripts/ci-install-sops-age.sh:81-82`). The verify step reads `$SOPS_VERSION` (`ci.yml:220`).
+- Job id `config-env-platform` is unchanged (`ci.yml:172`). `ci.yml` is 242 lines, under the DECISION-004 ceiling of 280.
+- Card greps for the axis, the API call, the identity string, the floor digest, the error string, and `$SOPS_VERSION` all match. `shellcheck` 0.11.0 on `scripts/ci-install-sops-age.sh` exits 0.
+
+TASK-516 archive is an honest record. `tasks/_archive/done/516-sops-floor-matrix.md:15` says the four `.mise.toml` / `realSops` bindings still exit 0 (they do) and that the three `ci.yml` bindings held through `e3bf8905` and were superseded. Those three are in `e3bf8905` at `ci.yml:181`, `:205`, and `:252`. It does not claim they still pass. Other `_archive/done/` cards (492, 494, 495) archive only while every binding still exits 0. This summary is the same re-verify field, with the superseded lines named instead of reported green.
+
+Commit `c534fd81` ends with `Task: TASK-520`, `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`, and `Model: claude-opus-5-5` as the last line.
+
+## UNVERIFIED
+
+- The `checksums.txt` body was not read (the release URL redirects off-host). Column layout is inferred from goreleaser's sha256 checksum file. A mismatch fails closed.
+- The published bundle's certificate SAN was not decoded, and `cosign verify-blob` was not re-run. A wrong identity fails closed.
+- Whether `gh api repos/getsops/sops/releases/latest` succeeds with this workflow's `github.token`. The local evidence used a scratch `HOME`. GitHub's REST troubleshooting says a `GITHUB_TOKEN` is for the workflow repository and that another repository needs a PAT or a GitHub App token.
+- Whether a ruleset still requires `config-env-platform (ubuntu-latest, 3.13.3)` and the macOS twin. The job id is unchanged. Those two check names become `(…, latest)`. No in-repo ruleset lists the old names.
+- The unpinned-version path was not executed. The branch is in the script, before `curl`.
+
+## First hosted run
+
+It will fail on the two `latest` cells until the action ref exists. After that ref is one that resolves, the run still has to show: `cosign verify-blob` prints a successful verification for the resolved tag on `ubuntu-latest` and `macos-latest`; `gh api` under `GH_TOKEN=${{ github.token }}` returns a `vX.Y.Z` tag; `sops --version` matches `SOPS_VERSION`; the floor cells still match the pinned digests. If branch protection names the old `3.13.3` checks, those rules need to follow the new matrix label.
+
+## `ce task gate --dir . --json`
+
+```json
+{
+  "status": "ready",
+  "summary": "task_board_ready",
+  "tool_version": "v0.10.0-328-g6e206929",
+  "tool_revision": "6e206929050c5ff84f6d77706ca1efcae2b1c7b9",
+  "steps": [
+    {
+      "step": "validate",
+      "status": "pass",
+      "elapsed_ms": 1007
+    },
+    {
+      "step": "lint",
+      "status": "pass",
+      "elapsed_ms": 164
+    },
+    {
+      "step": "preflight",
+      "status": "pass",
+      "elapsed_ms": 302
+    },
+    {
+      "step": "bindings",
+      "status": "pass",
+      "elapsed_ms": 5
+    }
+  ]
+}
+```
