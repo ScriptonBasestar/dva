@@ -5,7 +5,6 @@ import (
 	"errors"
 	"log/slog"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -175,7 +174,7 @@ func TestProcessPlugin_DownWaitsForExitBeforeRemovingState(t *testing.T) {
 	pidFile := filepath.Join(dir, config.DotDirName, config.PidsDirName, "delayed-exit.pid")
 	logFile := filepath.Join(dir, config.DotDirName, config.LogsDirName, "delayed-exit.log")
 	pid := readPIDFile(t, pidFile)
-	t.Cleanup(func() { _ = exec.Command("kill", "-9", "-"+strconv.Itoa(pid)).Run() })
+	killProcessGroupInCleanup(t, pid)
 	waitForFile(t, filepath.Join(dir, "ready"), "the TERM handler to be installed")
 
 	if err := p.Down(context.Background(), pctx); err != nil {
@@ -215,7 +214,7 @@ func TestProcessPlugin_DownCancellationRetainsStateForLiveProcess(t *testing.T) 
 	pidFile := filepath.Join(dir, config.DotDirName, config.PidsDirName, "ignores-term.pid")
 	logFile := filepath.Join(dir, config.DotDirName, config.LogsDirName, "ignores-term.log")
 	pid := readPIDFile(t, pidFile)
-	t.Cleanup(func() { _ = exec.Command("kill", "-9", "-"+strconv.Itoa(pid)).Run() })
+	killProcessGroupInCleanup(t, pid)
 	waitForFile(t, filepath.Join(dir, "ready"), "the TERM handler to be installed")
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -341,12 +340,10 @@ stack:
 
 	pidFile := filepath.Join(cfg.FileDir(), config.DotDirName, config.PidsDirName, "api.pid")
 	origPID := readPIDFile(t, pidFile)
+	killProcessGroupInCleanup(t, origPID)
 	if !IsProcessRunning(origPID) {
 		t.Fatalf("process not running after Up (pid %d)", origPID)
 	}
-	t.Cleanup(func() {
-		_ = exec.Command("kill", "-9", "-"+strconv.Itoa(origPID)).Run()
-	})
 
 	// Give the shell time to execute its `trap '' TERM` statement before signalling it.
 	// Without this, SIGTERM can race the shell's own startup and arrive before the trap is
@@ -372,6 +369,7 @@ stack:
 	// No replacement was started: the PID file still names the original, hung process.
 	newPID := readPIDFile(t, pidFile)
 	if newPID != origPID {
+		killProcessGroupInCleanup(t, newPID)
 		t.Fatalf("expected pid file to still record the original hung pid %d, got %d — a replacement was started despite the reported failure", origPID, newPID)
 	}
 }
