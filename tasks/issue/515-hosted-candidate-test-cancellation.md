@@ -108,6 +108,49 @@ runner 프로세스 자체를 잃게 만드는 동작을 일으킨다는 가설�
 `tmp/hosted-followup-20261020/`(`test-job-attempt1.log`, `test-job-attempt2.log`,
 `local-internal-cli-89caebc9.log`)에 보존한다.
 
+## 2026-10-20 조사 — 정지 지점은 테스트가 아니라 로그 크기에 묶여 있다
+
+Linux 재현(golang:1.26.5 linux/arm64 컨테이너, 비root, `GOMAXPROCS=1`,
+`GOTESTFLAGS=-json`, `CI=true`, CI와 같은 `timeout 10m sh scripts/without-dva.sh make test`):
+
+- `internal/cli` 단독(`-race -json`)은 19.2s에 통과했고 컨테이너도 정상 유지됐다.
+- 전체 `make test`도 정지 없이 끝났다(약 3분 20초). 실패한 `internal/jobrun`,
+  `internal/secretpush`, `tools/installcheck`는 컨테이너에 없는 외부 도구 탓으로 보이며
+  hosted 정지와는 무관하다(미검증).
+- 이 실행에서 `malformed/execution`의 `run` 이벤트는 출력 8,228번째 줄,
+  1,839,615바이트 지점이다. hosted Test 단계에서 출력이 멈춘 위치(시작 후 8,237~8,238줄,
+  약 1.84MB)와 같다.
+
+hosted 취소 실행 7개의 job 로그(`gh run view --job <id> --log`)는 commit과 마지막 테스트가
+달라도 같은 크기에서 끝난다.
+
+| 실행 | commit | 마지막 테스트 | 줄 | 바이트 |
+|---|---|---|---|---|
+| 37552832725 | 38934c4b | `TestManifestLeavesNonReservedInteractionAlone` | 8,566 | 2,260,151 |
+| 37554447670 | 406324b7 | `TestManifestLeavesNonReservedInteractionAlone` | 8,568 | 2,260,099 |
+| 38533431297 a1 | 6c37f680 | `…/malformed/execution` | 8,564 | 2,259,970 |
+| 38533431297 a2 | 6c37f680 | `…/malformed/execution` | 8,566 | 2,260,209 |
+| 38907704289 | 3070ea1c | `…/malformed/execution` | 8,564 | 2,260,162 |
+| 39372724570 | 129a2627 | `…/malformed/execution` | 8,565 | 2,259,992 |
+| 39379552072 | 89caebc9 | `…/malformed/execution` | 8,565 | 2,260,006 |
+
+`gh`가 줄마다 붙이는 접두사(`test\tUNKNOWN STEP\t`, 18바이트)를 빼면 약 2.10MB로 2MiB에
+가깝다. 마지막 성공 실행은 2026-09-08(`34203911056`)이며 취소는 2026-10-07 Test 단계에
+`-json` 출력과 `tee`가 들어온 `38934c4b`부터 시작됐다(그 사이는 failure).
+
+결론(관측): 정지 지점은 특정 테스트 동작이 아니라 job 로그의 누적 크기 약 2MiB에 묶여 있다.
+`malformed/execution`은 현재 테스트 순서에서 그 크기에 도달하는 위치일 뿐이다.
+
+미확정: (1) 그 크기에서 runner가 실제로 멈추는지(파이프 역압으로 test가 정지), 아니면
+로그만 잘리고 job은 다른 이유로 끝나지 못하는지. (2) 후자라면 아래 고아 프로세스가 Test
+단계의 stdout 파이프를 붙잡아 `tee`가 EOF를 받지 못하는 경로가 후보다. 둘을 가르려면 Test
+단계의 stdout 양을 줄이는 CI 변경이 필요하며, 이는 이 카드의 범위 밖이므로 별도 승인 대상이다.
+
+부수 발견: Linux 재현에서 `internal/cli` 테스트가 `sleep 999` 2개(각자 별도 pgid, ppid 1)와
+`sleep 600` 1개(`timeout`의 pgid, ppid 1)를 남겼고, 셋 다 패키지 종료 뒤에도 살아 있었다.
+별도 카드로 등록한다. 원본은 같은 디렉터리의 `linux-repro-1.log`, `linux-full.jsonl`,
+`linux-full-ps.log`, `test-job-run*.log`와 재현 스크립트 `repro/`다.
+
 ## 후속 범위
 
 Actions write 권한을 가진 승인된 인증으로 기존 지원 경로를 사용하고, 요청 뒤 실제
