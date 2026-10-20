@@ -54,10 +54,11 @@ receipt 형식과 `dva ci status` 출력은 DVA `internal/cirun`이 소유한다
   `129a262706746c20618226f18b7537d791bb6177`.
 - 소비자 맥락: ce-agent-kit ADR-0155(full CI를 납품에서 빼고 schedule과 수동 실행으로 옮김).
 - 추가 소비자 근거(2026-10-20): `infra-ops` ISSUE-029가 이 장비의 receipt에서 infra-ops
-  full 실패 8건을 모았으나, 7건은 `root`가 작업 트리나 gz-git 임시 준비 디렉터리뿐이라
+  full 실패 8건을 모았다. 8건 모두 receipt에 commit이 없었다. 1건(gz-git 임시 준비
+  root)만 `branch-integrate` 출력에서 SHA를 찾았고, 나머지 7건(root가 작업 트리)은
   source commit에 다시 묶지 못해 좁은 선택 재생에서 빠졌다. 기록: `infra-ops`
   `devlog/2026-10/2026-10-20-common-mbp-affected-plan-history-replay.md`의
-  「full 실패의 분류」. 같은 요구라 별도 카드는 만들지 않았다.
+  「표본을 어디서 얻었나」·「full 실패의 분류」. 같은 요구라 별도 카드는 만들지 않았다.
 - 관련 관측(별도 확인 필요, 이 카드의 범위 아님): 위 develop-view root들의 receipt는
   `attestation.available: true`인데 before/after가 모두
   `e3b0c442…7852b855`(빈 입력의 sha256)다. root가 상위 저장소의 ignored 경로라서
