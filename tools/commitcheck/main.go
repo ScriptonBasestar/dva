@@ -157,6 +157,11 @@ var grandfatheredCommits = []struct {
 		subject: "fix(cli): report suggestion_ignore entries shadowed by interactions - ISSUE-505: an ignore pattern whose every matched name an interaction   already covers (command set, subcommand coverage, wrapped command)   suppresses nothing today, yet the stale check never fires for it because   it still matches something. - Track per-pattern matches and which of them reach the suggestion pass   while the suggestion_ignore filter runs, then emit a warning-only   \"redundant ignore\" line naming the covered names and an ignore_redundant   row in the JSON report. - Patterns matching nothing stay with the stale check; patterns still   hiding an uncovered name stand down, so globs keep their legitimate use. - Cover the judgment rule with five tests, including the e2e printed line.",
 		reason:  "published malformed paragraph subject; TASK-513 option 1 was accepted by the user on 2026-10-14, and rewriting the immutable object is forbidden",
 	},
+	{
+		sha:     "5fb5afcaf026234cc405da247fbc22b5b643a2b3",
+		subject: "ci: auto-merge Dependabot patch and minor updates",
+		reason:  "scope-less subject pushed to master 2026-10-20 from a cross-repository Dependabot rollout clone without the commit-msg hook; the object is published, so the subject is no longer rewritable",
+	},
 }
 
 // maxSubject is the enforced ceiling. See the package comment for why it is 72 and not
