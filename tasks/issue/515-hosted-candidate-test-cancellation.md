@@ -91,10 +91,18 @@ test 외 job은 모두 성공했다. 따라서 위 "재실행에서 정지가 �
   `internal/cli` 패키지 전체 25.8s로 통과한다. `6c37f680..89caebc9`에는
   `internal/cli`·`internal/config` 변경이 없다.
 
+- 같은 지점은 후보 밖에서도 반복된다. master 실행 `38907704289`(`3070ea1c`),
+  `39372724570`(`129a2627`), `39379552072`(`89caebc9`)의 test job도 cancelled이고
+  Test `in_progress`·`Preserve test progress` `pending`이며, 확인한 두 실행의
+  마지막 `run` 이벤트도 같은 `malformed/execution`이다. 출력 정지까지의 시간도
+  Test 시작 후 약 90초로 같다.
+
 해석(가설): 테스트 프로세스 안의 정지라면 5분 Go deadline이 스택을 남겨야 하므로,
 관측은 test 바이너리 정지보다 runner와 control plane의 통신 상실에 더 부합한다.
-workflow 주석의 이전 heartbeat 기아 기록(-race, 2코어)과도 일치한다. 두 attempt가
-같은 지점에서 끊긴 이유는 설명되지 않았고 원인은 여전히 미확정이다.
+다만 세 commit·네 실행에서 같은 하위 테스트에 수렴하므로 무작위 heartbeat 기아로는
+설명이 부족하다. 이 하위 테스트(또는 같은 시점의 다른 동작)가 Linux runner에서
+runner 프로세스 자체를 잃게 만드는 동작을 일으킨다는 가설을 우선 검증 대상으로 둔다.
+원인은 미확정이다.
 
 원본 로그는 primary checkout의 무시된
 `tmp/hosted-followup-20261020/`(`test-job-attempt1.log`, `test-job-attempt2.log`,
