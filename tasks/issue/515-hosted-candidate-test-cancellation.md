@@ -306,6 +306,29 @@ cancelled되며 job log가 남지 않는다(`log not found`).
 오류를 버리지 않는 원인 수정을 하고, hosted에서 반복 실행해 정지가 없는지 확인한다.
 이는 이 카드의 조사 범위를 넘는 코드 변경이다.
 
+## 2026-10-21 원인 수정과 hosted 검증 (사용자 승인)
+
+- 수정: master `647d56c6`. `internal/lifecycle/process_test.go`의 cleanup 3곳을
+  `killProcessGroupInCleanup`(`internal/lifecycle/process_group_kill_unix_test.go`)로 바꿨다.
+  이 helper는 `syscall.Kill(-pid, SIGKILL)`을 보내고, ESRCH가 아닌 오류는 테스트 실패로 만든다.
+  pid ≤ 1과 자기 그룹은 거부한다. restart 테스트가 실패할 때 교체 프로세스도 정리한다.
+  검토에서 발견한 운영 코드의 같은 경계 결함은 ISSUE-525로 분리했다.
+- 반복 검증: 실험 run 39513943508(`exp/claude/mst/fix/issue-515` `5d61398f`, base `69c907fc`)에서
+  build→dogfood→`make test`를 8개 job으로 돌렸다. **정지 0/8**이다(job 4~5분). 7개는 성공했다.
+  g(job 118941445932)는 `internal/cirun` TestLockRejectsAnotherProcess
+  (`child never held lock: <nil>`)로 실패했다. 이 실패는 1회차에도 관측된 기존 flaky로, 정지와는
+  무관하다. 이 결함은 ISSUE-526으로 분리했다. 모든 job의 `make test` 직후 목록에 `trap '' TERM`
+  루프가 남지 않았다. ISSUE-522의 `sleep 999` 2개와 `sleep 600` 1개는 계속 남았다.
+- 실제 CI: 수정 후 master `69c907fc` run 39513864028과 task 브랜치 run 39513836067은 test를
+  포함한 전 job이 성공했다. 같은 시각 수정 전 `3cf01c72`의 task 브랜치 run 39511894688은 test가
+  약 35분 뒤 cancelled됐다. 이는 이전과 같은 정지다. master run 39511919376의 test cancelled는
+  23:21:01, 곧 다음 master run이 시작된 시각에 끝났으므로 동시성 취소로 보고 정지 표본에서 뺐다.
+- 판단: 수정 전 대조군은 23개 중 18개가 정지했다. 수정 후에는 실험 8개와 CI 2개, 모두 10개 중
+  0개가 정지했다. 이 카드의 hosted test 정지는 해소된 것으로 본다. 원래 대상인 후보
+  `6c37f680`의 재실행과 재실행 권한 문제는 정지 원인이 사라진 지금 새 후보의 CI로 대체할 수
+  있다. 다만 이 카드는 `human-grade: human`이므로 종료 판정은 사람이 한다.
+- 증거: `tmp/hosted-followup-20261020/verify/`.
+
 ## 후속 범위
 
 Actions write 권한을 가진 승인된 인증으로 기존 지원 경로를 사용하고, 요청 뒤 실제
