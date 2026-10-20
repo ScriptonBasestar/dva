@@ -26,11 +26,14 @@ func cleanupGroup(pid int) {
 }
 func terminateProcessGroup(pid int, waited <-chan error) {
 	_ = syscall.Kill(-pid, syscall.SIGTERM)
+	// The wait error is expected here: the group is being signalled to exit.
+	// errcheck flags the bare receive and staticcheck S1005 flags `_ =`, so the
+	// discard is marked for errcheck instead.
 	select {
-	case <-waited:
+	case <-waited: //nolint:errcheck // expected exit error, see above
 	case <-time.After(750 * time.Millisecond):
 		_ = syscall.Kill(-pid, syscall.SIGKILL)
-		<-waited
+		<-waited //nolint:errcheck // expected exit error, see above
 	}
 	cleanupGroup(pid)
 }

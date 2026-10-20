@@ -133,7 +133,7 @@ jobs:
       - name: Lint
         uses: golangci/golangci-lint-action@v8
         with:
-          version: v2.12.2
+          version: v2.15.0
 
       # gopls covers modernize-analyzer findings golangci-lint's vendored copy
       # misses (TASK-130). No golangci-lint-action equivalent exists, so
