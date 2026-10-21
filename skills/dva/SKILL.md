@@ -119,7 +119,8 @@ A reserved name such as `build` is not shorthand for `dva run`. `dva build` is t
 lifecycle built-in and runs that name's `before`/`replace`/`after` hooks, so an
 `interaction.build.replace` declaring the production build is the expected path, not a
 defect. `dva run build` is the interaction runner, which skips hooks, so for a `build`
-that only declares hooks it finds nothing to run.
+that only declares hooks it finds nothing to run. Declaring `command:` under `build` is a
+`dva validate` conflict; such a command is reachable only as `dva run build`.
 
 For subproject commands in monorepos, use namespace syntax:
 
