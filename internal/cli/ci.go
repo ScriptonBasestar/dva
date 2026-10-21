@@ -14,16 +14,24 @@ import (
 	"github.com/ScriptonBasestar/dva/internal/output"
 )
 
-var ciProject string
+var ciProject, ciSubproject string
+
+// ciSubprojectEnv names the declared subproject a --subproject run checks. It is
+// the only thing DVA adds: the root's own steps decide what scoping it means,
+// so DVA neither selects task cards nor knows the board tool that does.
+const ciSubprojectEnv = "DVA_CI_SUBPROJECT"
 
 var ciCmd = &cobra.Command{
 	Use:   "ci [profile]",
 	Short: "Run budgeted CI checks (default: commit), with scoped exclusion",
-	Long:  "Run a declared ci.profiles entry. Commit checks warn after five minutes and have a ten-minute maximum. Full checks require an explicit timeout. A concurrent CI that has the same owning config directory or declared shared lock returns busy instead of starting. Use --dry-run to inspect the resolved profile without executing checks.",
+	Long:  "Run a declared ci.profiles entry. Commit checks warn after five minutes and have a ten-minute maximum. Full checks require an explicit timeout. A concurrent CI that has the same owning config directory or declared shared lock returns busy instead of starting. Use --dry-run to inspect the resolved profile without executing checks. --project runs a declared subproject's own profile in its directory; --subproject runs this root's profile and exports the declared subproject name to its steps as DVA_CI_SUBPROJECT.",
 	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c, err := loadConfig()
 		if err != nil {
+			return err
+		}
+		if err := ciSubprojectDeclared(c, ciProject, ciSubproject); err != nil {
 			return err
 		}
 		c, err = ciOwner(c, ciProject)
@@ -42,11 +50,16 @@ var ciCmd = &cobra.Command{
 		if err := envIncompleteError(owned.report); err != nil {
 			return err
 		}
+		env := owned.env.EnvSlice()
+		if ciSubproject != "" {
+			env = append(env, ciSubprojectEnv+"="+ciSubproject)
+		}
 		if dryRun {
 			return output.PrintJSON(struct {
 				config.CIProfile
-				Workers []cirun.StepWorkers `json:"workers"`
-			}{profile, cirun.WorkerPlan(profile, owned.env.EnvSlice())})
+				Subproject string              `json:"subproject,omitempty"`
+				Workers    []cirun.StepWorkers `json:"workers"`
+			}{profile, ciSubproject, cirun.WorkerPlan(profile, env)})
 		}
 		ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
 		defer stop()
@@ -54,7 +67,7 @@ var ciCmd = &cobra.Command{
 		if jsonOutput {
 			writer = cmd.ErrOrStderr()
 		}
-		report, runErr := cirun.Run(ctx, cirun.Options{Root: c.FileDir(), ProfileName: name, Profile: profile, Env: owned.env.EnvSlice(), Output: writer})
+		report, runErr := cirun.Run(ctx, cirun.Options{Root: c.FileDir(), ProfileName: name, Profile: profile, Env: env, Output: writer})
 		if jsonOutput {
 			if err := output.PrintJSON(report); err != nil {
 				return err
@@ -65,6 +78,23 @@ var ciCmd = &cobra.Command{
 		}
 		return runErr
 	},
+}
+
+// ciSubprojectDeclared accepts only a subproject the root declares, so the name
+// a step receives is one the root owns; whatever the step hands it to rejects a
+// name it does not declare itself. --project already moves the run into the
+// child, where the root's subproject names no longer apply.
+func ciSubprojectDeclared(c *config.Config, project, subproject string) error {
+	if subproject == "" {
+		return nil
+	}
+	if project != "" {
+		return errors.New("--subproject runs the root's profile and cannot be combined with --project")
+	}
+	if _, ok := c.Subprojects[subproject]; !ok {
+		return fmt.Errorf("unknown CI subproject %q", subproject)
+	}
+	return nil
 }
 
 func ciOwner(c *config.Config, project string) (*config.Config, error) {
@@ -85,6 +115,7 @@ func ciOwner(c *config.Config, project string) (*config.Config, error) {
 func init() {
 	ciCmd.GroupID = "core"
 	ciCmd.Flags().StringVar(&ciProject, "project", "", "Run a declared subproject's own CI profile")
+	ciCmd.Flags().StringVar(&ciSubproject, "subproject", "", "Run this root's CI profile with a declared subproject's name exported as "+ciSubprojectEnv)
 	ciCmd.AddCommand(&cobra.Command{
 		Use: "status", Short: "List CI run receipts on this machine", Args: cobra.NoArgs,
 		Long: "List local CI receipts, including the active execution. This read-only query does not load the current project's configuration or start checks. An interrupted running receipt is reported as stale when its owning lock is no longer held.",

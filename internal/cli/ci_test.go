@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/ScriptonBasestar/dva/internal/cirun"
@@ -253,5 +254,66 @@ func TestCIProjectAndDirectChildShareRootLock(t *testing.T) {
 				t.Fatalf("busy route executed CI step: stat error = %v", err)
 			}
 		})
+	}
+}
+
+// --subproject keeps the root's profile and directory and only names a declared
+// child, so a root step can scope a shared check (for example a board gate) to
+// that child. Undeclared names and the --project combination fail before any
+// profile is resolved.
+func TestCISubprojectRunsRootProfileWithDeclaredName(t *testing.T) {
+	dir := t.TempDir()
+	childDir := filepath.Join(dir, "site-a")
+	if err := os.Mkdir(childDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	for path, contents := range map[string]string{
+		filepath.Join(dir, "dva.yml"):      "subprojects:\n  site-a:\n    path: site-a\nci:\n  profiles:\n    predeploy:\n      timeout: 1m\n      steps:\n        - name: root-step\n          run: touch executed\n",
+		filepath.Join(childDir, "dva.yml"): "ci:\n  profiles:\n    predeploy:\n      timeout: 1m\n      steps:\n        - name: child-step\n          run: true\n",
+	} {
+		if err := os.WriteFile(path, []byte(contents), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	c, err := config.Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	withEnvPolicyGlobals(t, c, true)
+	oldProject, oldSubproject := ciProject, ciSubproject
+	oldDryRun := dryRun
+	t.Cleanup(func() { ciProject, ciSubproject, dryRun = oldProject, oldSubproject, oldDryRun })
+	dryRun = true
+
+	ciProject, ciSubproject = "", "site-a"
+	var runErr error
+	data := captureStdout(t, func() { runErr = ciCmd.RunE(ciCmd, []string{"predeploy"}) })
+	if runErr != nil {
+		t.Fatal(runErr)
+	}
+	var preview struct {
+		config.CIProfile
+		Subproject string `json:"subproject"`
+	}
+	if err := json.Unmarshal([]byte(data), &preview); err != nil {
+		t.Fatal(err)
+	}
+	if preview.Subproject != "site-a" || len(preview.Steps) != 1 || preview.Steps[0].Name != "root-step" {
+		t.Fatalf("preview %s, want the root's profile scoped to site-a", data)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "executed")); !os.IsNotExist(err) {
+		t.Fatal("preview executed a check")
+	}
+
+	for _, bad := range []struct{ project, subproject, want string }{
+		{"", "site-b", `unknown CI subproject "site-b"`},
+		{"site-a", "site-a", "cannot be combined with --project"},
+	} {
+		ciProject, ciSubproject = bad.project, bad.subproject
+		output.ResetStdoutDocument()
+		captureStdout(t, func() { runErr = ciCmd.RunE(ciCmd, []string{"predeploy"}) })
+		if runErr == nil || !strings.Contains(runErr.Error(), bad.want) {
+			t.Fatalf("--project=%q --subproject=%q: err = %v, want %q", bad.project, bad.subproject, runErr, bad.want)
+		}
 	}
 }

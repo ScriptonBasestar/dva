@@ -5,13 +5,16 @@ type: tech-debt
 priority: P2
 effort: S
 exec-tier: standard
-status: todo
+status: done
 ownership: split
 upstream-ref: "ce-agent-kit ISSUE-444 (tasks/_archive/issue/444-task-gate-bindings-root-scope.md)"
 severity: medium
 discovered-in: "singlepageweb-devbox TASK-270 (owner of the board-wide binding run)"
 discovered-at: 2026-10-20
 created: 2026-10-20
+resolution: fixed
+resolved-at: 2026-10-21T15:56:12Z
+resolution-summary: "Resolved as fixed."
 ---
 
 ## Summary
@@ -82,3 +85,22 @@ ce-agent-kit ISSUE-444는 `ce task gate`가 external root 하나의 binding만 �
 - 소비자 근거: singlepageweb-devbox 문서 `docs/40-development/50-board-readiness-adoption-plan.md`
   "범위 없는 전체 binding 실행 (TASK-270)" 절, `ce-tasks.yaml` external-roots(12개 사이트).
 - 범위: dva 진입점의 설계와 구현까지다. 카드 소속 규칙은 ce-agent-kit ISSUE-444의 범위다.
+
+## 2026-10-22 해결
+
+- 진입점 형태(소유자 결정, 바꿀 수 있음): `dva ci <profile> --subproject <name>`. root의
+  프로필·환경·디렉터리를 그대로 실행하고, root가 `subprojects`에 선언한 이름을
+  `DVA_CI_SUBPROJECT`로 단계에 내보낸다. `--project`(child 자신의 프로필 실행)와는 함께 쓸 수
+  없다. DVA는 카드를 고르지 않으며 `ce`를 알지 못한다. 위임은 DevBox가 선언한 단계가 한다.
+- 이름 대응(소유자 결정): **같은 이름 강제**. 매핑 선언은 두지 않는다. DVA는 선언되지 않은
+  subproject를 실행 전에 거부하고, gate는 선언되지 않은 external root를 rc=2로 거부한다.
+- 문서: `docs/71-ci-subproject-scope.md`(docs/53에서 링크)에 DevBox `predeploy` 예시
+  (`ce task gate --external-base . --bindings-root "${DVA_CI_SUBPROJECT:?…}"`), dva-ci 스킬,
+  CHANGELOG Unreleased.
+- 검증: `TestCISubprojectRunsRootProfileWithDeclaredName`(dry-run이 root 프로필과 이름을 보이고
+  실행하지 않음, 미선언 이름·`--project` 조합 거부). 빌드한 바이너리로 임시 root에서
+  `dva ci --subproject site-a predeploy`가 단계에 `site-a`를 전달(rc=0), 플래그 없이는
+  `${DVA_CI_SUBPROJECT:?}`로 실패(rc=1), `site-b`는 `unknown CI subproject`로 거부(rc=1)함을 확인했다.
+  실제 DevBox에서 `ce task gate --bindings-root`까지 이어 돌리지는 않았다.
+- 남은 일(소비자 소유): singlepageweb-devbox가 `predeploy` 프로필을 선언하고 배포 절차에서
+  이 진입점을 부른다.

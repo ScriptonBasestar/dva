@@ -27,6 +27,9 @@ when a technical verification method is needed.
    Neither profile authorizes deployment.
 4. `dva ci --dry-run <profile>` shows the resolved profile without running checks.
    `dva ci --project <child> <profile>` uses that child's config and environment.
+   `dva ci --subproject <child> <profile>` keeps the root's profile and exports
+   the declared child name as `DVA_CI_SUBPROJECT` for root steps that scope a
+   shared check to one child.
 5. Report the run ID, profile, result, per-step and total elapsed time, and
    unexecuted checks. Keep cold and warm observations separate. A
    timeout, busy result, cancellation, or changed input is not passing evidence.

@@ -14,6 +14,7 @@ dva ci                       # commit 프로필
 dva ci commit
 dva ci full
 dva ci --project api commit   # child 설정·환경·디렉터리 사용
+dva ci --subproject api predeploy  # root 프로필, 단계에 DVA_CI_SUBPROJECT=api
 dva ci --dry-run full         # 실행 없이 해석한 프로필 출력
 dva ci status                # 머신의 실행 기록 조회
 dva ci logs <run-id>
@@ -22,6 +23,11 @@ dva ci logs <run-id>
 `status`와 `logs`는 현재 디렉터리의 설정이나 비밀값을 로드하지 않는다.
 `--json` 실행은 검사 출력을 stderr로 보내고 stdout에 결과 문서를 출력한다.
 `ci`는 예약 명령이며 기존 `interaction.ci`는 이름 충돌을 해결해야 한다.
+
+## subproject 범위 실행
+
+`--subproject`는 root 프로필을 실행하며 선언된 child 이름을 `DVA_CI_SUBPROJECT`로 단계에
+내보낸다. 계약과 DevBox 예시는 [subproject 범위 CI](71-ci-subproject-scope.md)를 따른다.
 
 ## 설정
 

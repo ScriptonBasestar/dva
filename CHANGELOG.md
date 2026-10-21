@@ -5,6 +5,13 @@ All notable changes to DVA are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- **`dva ci --subproject <name>`**: root의 CI 프로필을 그대로 실행하면서, root가 선언한
+  subproject 이름을 `DVA_CI_SUBPROJECT`로 단계에 내보냅니다. DevBox가 사이트 배포 전에
+  `ce task gate --bindings-root "$DVA_CI_SUBPROJECT"`로 그 사이트 카드의 binding만 돌리는
+  진입점입니다. 선언되지 않은 이름과 `--project` 조합은 실행 전에 거부합니다 (ISSUE-523).
+
 ## [0.4.0] - 2026-10-21
 
 ### Changed
