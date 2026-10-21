@@ -1,10 +1,13 @@
 package cirun
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -720,27 +723,44 @@ func TestLockReportsActiveRun(t *testing.T) {
 	}
 }
 
+// TestLockRejectsAnotherProcess synchronizes on the child's report instead of a deadline, so a
+// slow child start on a loaded runner cannot fail it (ISSUE-526): the child writes a line once it
+// holds the lock and keeps holding it until the parent closes the child's stdin.
 func TestLockRejectsAnotherProcess(t *testing.T) {
 	state, root := t.TempDir(), t.TempDir()
-	cmd := exec.Command(os.Args[0], "-test.run=TestLockHelperProcess")
+	cmd := exec.Command(os.Args[0], "-test.run=^TestLockHelperProcess$")
 	cmd.Env = append(os.Environ(), "DVA_CIRUN_HELPER=1", "DVA_CIRUN_STATE="+state, "DVA_CIRUN_ROOT="+root)
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
 	if err := cmd.Start(); err != nil {
 		t.Fatal(err)
 	}
-	defer cmd.Wait()
-	deadline := time.Now().Add(time.Second)
-	for {
-		h, err := acquire(state, root, "parent")
-		if errors.Is(err, ErrBusy) {
-			return
-		}
-		if err == nil {
-			h.release()
-		}
-		if time.Now().After(deadline) {
-			t.Fatalf("child never held lock: %v", err)
-		}
-		time.Sleep(10 * time.Millisecond)
+	held, readErr := bufio.NewReader(stdout).ReadString('\n')
+	if readErr != nil || held != "held\n" {
+		_ = stdin.Close()
+		waitErr := cmd.Wait()
+		t.Fatalf("child did not report holding the lock: %q, %v; wait: %v; stderr: %s", held, readErr, waitErr, stderr.String())
+	}
+	h, err := acquire(state, root, "parent")
+	if err == nil {
+		h.release()
+	}
+	if closeErr := stdin.Close(); closeErr != nil {
+		t.Errorf("close child stdin: %v", closeErr)
+	}
+	if waitErr := cmd.Wait(); waitErr != nil {
+		t.Errorf("child exit: %v", waitErr)
+	}
+	if !errors.Is(err, ErrBusy) {
+		t.Fatalf("acquire while child holds lock error = %v, want ErrBusy", err)
 	}
 }
 
@@ -750,9 +770,14 @@ func TestLockHelperProcess(t *testing.T) {
 	}
 	h, err := acquire(os.Getenv("DVA_CIRUN_STATE"), os.Getenv("DVA_CIRUN_ROOT"), "child")
 	if err != nil {
+		fmt.Fprintf(os.Stderr, "child acquire: %v\n", err)
 		os.Exit(2)
 	}
-	time.Sleep(500 * time.Millisecond)
+	if _, err := os.Stdout.WriteString("held\n"); err != nil {
+		os.Exit(3)
+	}
+	// Hold the lock until the parent closes stdin; EOF or any read error ends the hold.
+	_, _ = io.Copy(io.Discard, os.Stdin)
 	h.release()
 	os.Exit(0)
 }

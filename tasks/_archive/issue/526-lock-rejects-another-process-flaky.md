@@ -5,12 +5,15 @@ type: bug
 priority: P3
 effort: XS
 exec-tier: standard
-status: todo
+status: done
 severity: low
 ownership: local
 discovered-in: "ISSUE-515 hosted bisection and fix verification"
 discovered-at: 2026-10-21
 created: 2026-10-21
+resolution: fixed
+resolved-at: 2026-10-21T03:21:44Z
+resolution-summary: "Resolved as fixed."
 ---
 
 ## Summary
@@ -45,3 +48,9 @@ hosted ubuntu runner에서 CI와 같은 `GOMAXPROCS=1`로 돌리면 자식이 �
 자식이 lock을 잡았다는 신호를 시간 기한이 아닌 동기화로 기다리도록 테스트를 고친다. 예를 들면
 자식이 lock을 잡은 뒤 파일이나 pipe로 알리는 방식이다. 테스트 생략과 단순한 기한 연장은
 범위 밖이다.
+
+## 2026-10-21 해결
+
+- 기한 대신 pipe로 동기화한다. 자식이 lock을 잡은 뒤 stdout에 `held`를 쓰고, 부모가 stdin을 닫을 때까지 lock을 유지한다. 부모는 그 줄을 읽은 뒤 `acquire`를 한 번만 호출해 `ErrBusy`를 확인하고, stdin을 닫아 자식 종료를 `Wait`로 확인한다.
+- 자식이 lock을 얻지 못하면 원인을 stderr로 남기고, 부모의 실패 메시지가 그 stderr를 포함한다.
+- 검증: `GOMAXPROCS=1 go test -run TestLock -count=30` 통과. 자식 acquire 앞에 2초 지연을 넣은 임시 변형에서도 통과했다(이전 테스트는 1초 기한에서 실패). make gate 전부, `GOOS=windows go vet`.
