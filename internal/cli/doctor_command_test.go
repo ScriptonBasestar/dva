@@ -91,6 +91,21 @@ func TestRunDoctorCommandLaunchErrorsAndEvidenceDoNotLeakOutput(t *testing.T) {
 	})
 }
 
+func TestDoctorCommandFindingSignal(t *testing.T) {
+	named := doctorCommandFinding("cmd", &DoctorCommandEvidence{ErrorClassification: "signal", Signal: "SIGKILL"})
+	if named != "command terminated by SIGKILL: cmd" {
+		t.Fatalf("named signal finding = %q", named)
+	}
+	unnamed := doctorCommandFinding("cmd", &DoctorCommandEvidence{ErrorClassification: "signal"})
+	if unnamed != "command terminated by a signal: cmd" {
+		t.Fatalf("unnamed signal finding = %q", unnamed)
+	}
+	exited := doctorCommandFinding("cmd", &DoctorCommandEvidence{ErrorClassification: "exit_status"})
+	if exited != "command exited non-zero: cmd" {
+		t.Fatalf("exit status finding = %q", exited)
+	}
+}
+
 // This is the command's public path, not just the helper: two inner successes cannot
 // turn a final outer exit 2 into a doctor success or hide that exit from --json.
 func TestDoctorCommandJSONPreservesOuterExitFailure(t *testing.T) {

@@ -19,6 +19,7 @@ type DoctorCommandEvidence struct {
 	TimedOut            bool     `json:"timed_out,omitempty"`
 	Duration            string   `json:"duration"`
 	ErrorClassification string   `json:"error_classification,omitempty"`
+	Signal              string   `json:"signal,omitempty"`
 	LaunchError         string   `json:"launch_error,omitempty"`
 }
 
@@ -34,6 +35,11 @@ func doctorCommandFinding(command string, evidence *DoctorCommandEvidence) strin
 			return "command could not start (" + evidence.LaunchError + "): " + command
 		}
 		return "command could not start: " + command
+	case "signal":
+		if evidence.Signal != "" {
+			return "command terminated by " + evidence.Signal + ": " + command
+		}
+		return "command terminated by a signal: " + command
 	case "invalid_configuration":
 		return "command has invalid configuration: " + command
 	default:
@@ -95,6 +101,7 @@ func runDoctorCommand(check config.DoctorCheck, configDir string) (bool, *Doctor
 		evidence.ExitCode = &code
 		if code < 0 {
 			evidence.ErrorClassification = "signal"
+			evidence.Signal = doctorCommandSignal(exitErr)
 		} else {
 			evidence.ErrorClassification = "exit_status"
 		}

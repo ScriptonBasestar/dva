@@ -12,6 +12,13 @@ All notable changes to DVA are documented here.
   `ce task gate --bindings-root "$DVA_CI_SUBPROJECT"`로 그 사이트 카드의 binding만 돌리는
   진입점입니다. 선언되지 않은 이름과 `--project` 조합은 실행 전에 거부합니다 (ISSUE-523).
 
+### Fixed
+
+- **doctor command의 종료 신호**: 사용자 `type: command` 검사가 신호로 종료되면 JSON
+  `command.signal`이 `SIGTERM`처럼 신호 이름을 기록하고, finding은 "command exited
+  non-zero" 대신 `command terminated by SIGTERM: <command>`로 실제 종료 원인을
+  표시합니다. `exit_code: -1`과 `error_classification: "signal"`은 그대로입니다(ISSUE-530).
+
 ## [0.4.0] - 2026-10-21
 
 ### Changed

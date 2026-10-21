@@ -766,6 +766,8 @@ timeout과 실행 시간을 구분합니다. `command.shell_argv`와 `command.cw
 경계를, `command.exit_code`는 실제 자식 종료 코드(0 포함)를 나타냅니다.
 `command.timed_out`와 `command.error_classification`은 timeout·signal·시작 오류를
 구분하며, timeout/시작 실패에는 실제 exit code가 없을 수 있습니다.
+신호로 종료된 명령은 `command.exit_code`가 `-1`이고 Unix에서는 `command.signal`이
+`SIGTERM`처럼 종료 신호 이름(표에 없는 신호는 번호)을 기록합니다.
 `command.launch_error`는 셸 미발견과 프로세스 시작 실패를 구분하며 원문 OS 오류는
 출력하지 않습니다. stdout/stderr와 환경값은 자동 수집하지 않습니다.
 Unix 지원 플랫폼에서는 timeout 시 셸 process group을 종료합니다. Windows에서는

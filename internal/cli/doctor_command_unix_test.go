@@ -3,6 +3,7 @@
 package cli
 
 import (
+	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
@@ -53,4 +54,25 @@ func TestRunDoctorCommandTimeoutTerminatesShellChildren(t *testing.T) {
 		time.Sleep(10 * time.Millisecond)
 	}
 	t.Fatalf("timed out command left child pid %d running", pid)
+}
+
+func TestRunDoctorCommandNamesTerminatingSignal(t *testing.T) {
+	const command = "kill -TERM $$"
+	passed, evidence := runDoctorCommand(config.DoctorCheck{Name: "killed", Type: "command", Command: command}, t.TempDir())
+	if passed || evidence.ErrorClassification != "signal" || evidence.Signal != "SIGTERM" {
+		t.Fatalf("signal result = passed=%t evidence=%+v", passed, evidence)
+	}
+	if evidence.ExitCode == nil || *evidence.ExitCode != -1 {
+		t.Fatalf("exit_code = %v, want pointer to -1", evidence.ExitCode)
+	}
+	if got, want := doctorCommandFinding(command, evidence), "command terminated by SIGTERM: "+command; got != want {
+		t.Fatalf("finding = %q, want %q", got, want)
+	}
+	encoded, err := json.Marshal(evidence)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(encoded), `"signal":"SIGTERM"`) {
+		t.Fatalf("signal name missing from JSON: %s", encoded)
+	}
 }
