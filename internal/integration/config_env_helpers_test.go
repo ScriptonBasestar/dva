@@ -94,7 +94,7 @@ func realTool(t *testing.T, name string) string {
 			}
 		}
 	}
-	p, err := lookPathOutsideShims(name)
+	p, err := lookPathOutsideShims(name, os.Getenv("PATH"))
 	if err != nil {
 		t.Skipf("%s is not installed outside a version-manager shim directory; see .mise.toml "+
 			"and the config-env-platform CI job for where each tool comes from", name)
@@ -102,13 +102,20 @@ func realTool(t *testing.T, name string) string {
 	return p
 }
 
-// lookPathOutsideShims is exec.LookPath minus mise's shim directory. When mise
-// has no configuration for name — sops is workstation-provided, not pinned in
-// .mise.toml — `mise which` fails and PATH would otherwise hand back the shim,
-// the cwd-dependent indirection realTool exists to avoid.
-func lookPathOutsideShims(name string) (string, error) {
-	for _, dir := range filepath.SplitList(os.Getenv("PATH")) {
-		if dir == "" || filepath.Base(dir) == "shims" && strings.Contains(dir, "mise") {
+// lookPathOutsideShims is exec.LookPath over pathList minus version-manager shim
+// directories. When mise has no configuration for name — sops is
+// workstation-provided, not pinned in .mise.toml — `mise which` fails and PATH
+// would otherwise hand back a shim, the cwd-dependent indirection realTool exists
+// to avoid. Any directory named `shims` is skipped, not only mise's: asdf, rbenv
+// and pyenv shims resolve from the working directory the same way.
+//
+// Relative entries are skipped too. The result is later run, or symlinked by
+// toolPATH, from a different directory, where a relative path would name
+// something else; and a relative PATH entry is not a location a workstation
+// installs tools into.
+func lookPathOutsideShims(name, pathList string) (string, error) {
+	for _, dir := range filepath.SplitList(pathList) {
+		if !filepath.IsAbs(dir) || filepath.Base(dir) == "shims" {
 			continue
 		}
 		p := filepath.Join(dir, name)
@@ -125,7 +132,28 @@ func lookPathOutsideShims(name string) (string, error) {
 // the latest stable release so both ends of the supported range stay covered.
 var minSopsVersion = [3]int{3, 13, 1}
 
-var sopsVersionRE = regexp.MustCompile(`\bsops (\d+)\.(\d+)\.(\d+)`)
+// sopsVersionRE accepts what the config-env-platform job's toolchain check
+// accepts: `sops X.Y.Z`, alone or followed by a space. A suffix glued to the
+// patch number — a prerelease such as 3.13.1-rc1 — is not a release the floor
+// speaks for, so it does not match.
+var sopsVersionRE = regexp.MustCompile(`^sops (\d+)\.(\d+)\.(\d+)(?: |$)`)
+
+// parseSopsVersion reads the version from the first line of `sops --version`
+// output only. Official builds print their own version there; a later line, or
+// a wrapper's line printed after it, is not the binary's version.
+func parseSopsVersion(out string) ([3]int, error) {
+	var got [3]int
+	first, _, _ := strings.Cut(out, "\n")
+	first = strings.TrimSuffix(first, "\r")
+	m := sopsVersionRE.FindStringSubmatch(first)
+	if m == nil {
+		return got, fmt.Errorf("first line %q is not `sops X.Y.Z` (a prerelease or wrapper is not accepted)", first)
+	}
+	for i := range got {
+		got[i], _ = strconv.Atoi(m[i+1])
+	}
+	return got, nil
+}
 
 // realSops is realTool for sops plus the floor. It logs which binary and version
 // a run exercised, so a pass is attributable, and fails rather than skips below
@@ -137,13 +165,9 @@ func realSops(t *testing.T) string {
 	if err != nil {
 		t.Fatalf("%s --version: %v: %s", p, err, out)
 	}
-	m := sopsVersionRE.FindStringSubmatch(string(out))
-	if m == nil {
-		t.Fatalf("%s --version: no version in output: %s", p, out)
-	}
-	var got [3]int
-	for i := range got {
-		got[i], _ = strconv.Atoi(m[i+1])
+	got, err := parseSopsVersion(string(out))
+	if err != nil {
+		t.Fatalf("%s --version: %v", p, err)
 	}
 	t.Logf("sops %d.%d.%d at %s", got[0], got[1], got[2], p)
 	for i := range got {
