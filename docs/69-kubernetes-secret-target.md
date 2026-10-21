@@ -55,10 +55,27 @@ dev 전용 경계: `environment: dev` 선언이 없거나 다른 값이면 설�
 선행규칙(stringData 우선)으로 병합해 읽는다. 전송 전에 복호화와 전체 키 존재를 검사하고,
 선언되지 않았거나 누락된 키는 클러스터 호출 전에 실패한다.
 
-적용은 선언된 키만 담은 Secret 매니페스트를 `kubectl apply -f -`의 stdin으로 보내는 단일
-요청이다. 값은 argv에 담지 않는다. apply 병합 의미론 때문에 DVA가 선언하지 않은 data 키는
-보존된다 — 소유 분할의 핵심으로, DVA는 매핑 키만 소유하고 chart는 `existingSecret` 참조로
-같은 Secret을 읽는다. 단일 apply는 하나의 객체 쓰기라 모든 키 상태가 함께
+적용은 선언된 키만 담은 Secret 매니페스트를 `kubectl apply --server-side
+--field-manager=dva --force-conflicts -f -`의 stdin으로 보내는 단일 요청이다. 값은 argv에
+담지 않는다. server-side apply는 필드 소유를 `managedFields`의 field manager 단위로 기록하므로
+DVA(`dva` manager)는 매핑 키만 소유하고, 다른 manager(helm, `kubectl create`, `kubectl
+patch`, 다른 field manager의 server-side apply)가 쓴 data 키는 보존된다 — 소유 분할의
+핵심으로, chart는 `existingSecret` 참조로 같은 Secret을 읽는다. client-side apply(`kubectl
+apply`의 기본값)는 쓰지 않는다. 그 방식은 값을 `last-applied-configuration` annotation에
+복사한다.
+
+한계: 같은 Secret의 키를 client-side `kubectl apply`로 쓴 적이 있으면, kubectl은 server-side
+apply 때 `kubectl-client-side-apply` manager의 필드 소유를 적용하는 manager(`dva`)로
+이관하고(client-side → server-side 이관 동작), DVA 매니페스트에 없는 그 키는 지워진다. 끄는
+옵션은 없다. DVA와 같은 Secret을 함께 쓰는 키는 client-side apply가 아닌 위 방식으로 쓴다.
+`kubectl patch --type=merge --patch-file=/dev/stdin`과 없을 때 `kubectl create -f -`로 우회할
+수는 있지만, 한 번의 객체 쓰기가 두 요청이 되어 둘 사이 경쟁이 생기고 receipt의 단일 쓰기
+계약(`unknown` → `accepted`)이 깨지며, Windows에서 동작하지 않고, 매핑에서 뺀 키의 소유도
+정리되지 않아 택하지 않는다. server-side apply는 Kubernetes 1.22 이상이 필요하다.
+
+`--force-conflicts`는 다른 manager가 소유하던 매핑 키의 소유를 DVA로 옮긴다 — 매핑 키는 DVA
+소유라는 계약 그대로다. 매핑에서 뺀 키는 DVA 소유에서 풀리며, 다른 manager도 소유하지 않으면
+다음 전송에서 지워진다. 단일 apply는 하나의 객체 쓰기라 모든 키 상태가 함께
 `unknown` → `accepted`로 움직이고, receipt에는 키 이름만 남는다.
 
 ## 상태 보고

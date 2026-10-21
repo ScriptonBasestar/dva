@@ -24,10 +24,10 @@ var kubernetesSecretKey = regexp.MustCompile(`^[-._a-zA-Z0-9]{1,253}$`)
 
 // pushKubernetes decrypts a SOPS-encrypted Kubernetes Secret manifest, selects
 // only the declared keys, and applies one Secret containing exactly those keys
-// to the explicitly declared cluster. Client-side apply merges map keys, so
-// data keys DVA never declared survive untouched — ownership of the Secret's
-// key set is shared with whatever else wrote to it, while ownership of the
-// declared keys is DVA's.
+// to the explicitly declared cluster. Server-side apply records ownership per
+// field manager, so the declared keys are DVA's and data keys other managers
+// wrote survive — except keys an earlier client-side kubectl apply wrote, whose
+// ownership kubectl hands to dva (see applyKubeManifest).
 func pushKubernetes(ctx context.Context, opts Options) (Report, error) {
 	report, root, source, err := prepareKubernetes(opts)
 	if err != nil {
@@ -278,13 +278,19 @@ func rawJSONString(raw json.RawMessage) ([]byte, bool) {
 	return inner, true
 }
 
+// kubeFieldManager names DVA's ownership of the mapped keys in managedFields.
+const kubeFieldManager = "dva"
+
 // applyKubeManifest sends the manifest over stdin. The ambient KUBECONFIG is
 // stripped so the declared file is the only credential source, and values are
-// never present in argv.
+// never present in argv. Server-side apply under the dva field manager makes
+// DVA own exactly the mapped keys, so keys other managers wrote survive and no
+// last-applied annotation copies the values into metadata. kubectl still hands
+// the fields of an earlier client-side apply to dva, which then prunes them.
 func applyKubeManifest(ctx context.Context, kubeconfig, kubeContext string, manifest []byte) error {
 	ctx, cancel := context.WithTimeout(ctx, kubeTimeout)
 	defer cancel()
-	cmd := exec.CommandContext(ctx, "kubectl", "--kubeconfig", kubeconfig, "--context", kubeContext, "apply", "-f", "-")
+	cmd := exec.CommandContext(ctx, "kubectl", "--kubeconfig", kubeconfig, "--context", kubeContext, "apply", "--server-side", "--field-manager="+kubeFieldManager, "--force-conflicts", "-f", "-")
 	cmd.WaitDelay = time.Second
 	cmd.Env = withoutAmbiguousKubeEnv(os.Environ())
 	cmd.Stdin = bytes.NewReader(manifest)

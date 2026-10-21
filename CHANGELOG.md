@@ -22,6 +22,16 @@ All notable changes to DVA are documented here.
   않고 오류로 멈춥니다.
   오류는 확인하고 지울 pidfile 경로를 함께 표시하며, pidfile은 그대로 남습니다(ISSUE-525).
 
+- **kubernetes Secret 목적지 검증**: `dva config validate`가 문서대로 선언한
+  `provider: kubernetes` 목적지를 schema 오류로 거부하던 문제를 고쳤습니다. schema가
+  provider별로 허용 필드를 나눠, 다른 provider의 필드는 여전히 거부합니다(ISSUE-528).
+
+- **kubernetes Secret 전송의 키 보존**: `dva secret push`가 server-side apply(field manager
+  `dva`)로 매핑 키만 소유합니다. client-side apply가 남긴 annotation 때문에 DVA가 선언하지
+  않은 키를 지우거나 값을 annotation에 복사하던 동작이 없어졌습니다. 같은 Secret의 키를
+  client-side `kubectl apply`로 쓴 적이 있으면 kubectl의 소유 이관 때문에 그 키는 여전히
+  지워지므로, 함께 쓰는 키는 helm·`kubectl create`·server-side apply로 씁니다(ISSUE-529).
+
 ## [0.4.0] - 2026-10-14
 
 릴리스 후보 준비 기록이며 아직 tag·Release·설치를 수행하지 않았습니다.
@@ -92,8 +102,8 @@ All notable changes to DVA are documented here.
   받습니다. SOPS로 암호화한 k8s Secret YAML에서 선언한 키만 골라 dev 클러스터의 이름 붙은
   Secret에 stdin apply로 적용합니다. `environment: dev` 선언이 필수이고(plan 환경·context
   이름에서 추론하지 않음), `kubeconfig`와 `context`도 명시해야 합니다 — 암묵적 `KUBECONFIG`
-  환경변수는 자식 프로세스에서 제거합니다. apply 병합 의미론으로 선언하지 않은 data 키는
-  보존되므로 DVA는 매핑 키만, chart는 `existingSecret` 참조로 소유를 나눕니다. 새
+  환경변수는 자식 프로세스에서 제거합니다. server-side apply(field manager `dva`)로 매핑 키만
+  소유하므로 DVA는 매핑 키만, chart는 `existingSecret` 참조로 소유를 나눕니다. 새
   `dva secret status <target>`은 kubernetes 대상의 존재 여부와 키 이름 대조를 값 없이
   보고합니다.
 

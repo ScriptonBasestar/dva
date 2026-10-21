@@ -70,7 +70,7 @@ func TestKubernetesKeyMapping(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := "--kubeconfig " + filepath.Join(home, "kube", "config") + " --context c1 apply -f -"; strings.TrimSuffix(string(args), "\n") != want {
+	if want := "--kubeconfig " + filepath.Join(home, "kube", "config") + " --context c1 apply --server-side --field-manager=dva --force-conflicts -f -"; strings.TrimSuffix(string(args), "\n") != want {
 		t.Fatalf("kubectl argv = %q, want %q", args, want)
 	}
 	manifest, err := os.ReadFile(filepath.Join(stdinDir, "1"))

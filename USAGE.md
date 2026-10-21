@@ -2433,7 +2433,7 @@ secrets:
 
 ```bash
 dva secret push primeno1-api --dry-run   # 대상 Secret과 키 이름 확인, 미복호화
-dva secret push primeno1-api             # 매핑된 키만 적용 (선언하지 않은 키는 보존)
+dva secret push primeno1-api             # 매핑된 키만 적용 (다른 키 보존, 예외는 docs/69)
 dva secret status primeno1-api           # 존재 여부 + 키 이름 대조 (값 미포함)
 ```
 
