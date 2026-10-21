@@ -4,9 +4,11 @@
 # worktree-roots 는 장비 키(ce.workHost)별로 둔다. dva 는 포트폴리오 카탈로그에
 # 등재돼 있지 않아 product 폴백이 `misc` 이고, 그래서 루트가 foundation/ 이 아닌
 # misc/ 아래다. 이 파일은 추적되지만 키가 장비별이라 다른 장비는 자기 줄을 더한다.
-schema-version: 1
+schema-version: 2
 repository-id: dva
 worktree-roots:
   mbp: /Users/archmagece/worktrees/misc/dva
   mst: /Users/archmagece/worktrees/misc/dva
 integration-provider: gz-git
+integration-network-policy: allow
+integration-judgment-runner: .gz-git/readiness/check
