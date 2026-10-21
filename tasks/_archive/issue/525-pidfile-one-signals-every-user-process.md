@@ -5,12 +5,15 @@ type: bug
 priority: P2
 effort: S
 exec-tier: standard
-status: todo
+status: done
 severity: medium
 ownership: local
 discovered-in: "ISSUE-515 test cleanup fix review (2026-10-21)"
 discovered-at: 2026-10-21
 created: 2026-10-21
+resolution: fixed
+resolved-at: 2026-10-21T03:21:11Z
+resolution-summary: "Resolved as fixed."
 ---
 
 ## Summary
@@ -47,3 +50,11 @@ pidfile을 해석하고 프로세스 그룹에 신호를 보내는 코드는 DVA
 hosted 정지는 다른 원인으로 확인됐다(그 카드의 2026-10-20 그룹 신호 진단). 이 카드는 그
 조사에서 기각된 가설의 실제 결함 부분만 다룬다. 테스트 cleanup의 같은 경계는
 `internal/lifecycle/process_group_kill_unix_test.go`에 이미 들어갔다.
+
+## 2026-10-21 해결
+
+- 판정을 모든 호출부가 신호 전에 거치는 순수 함수 `processGroupPIDError`(`internal/lifecycle/process_group_contract.go`)로 모았다. pid 1과 DVA 자신의 process group은 모든 플랫폼에서 `errUnsafeProcessGroup` 오류가 된다. 그래서 stop·down·status, orchestrator health-check stop(dry-run 포함), sam·serverless·tilt가 모두 신호 없이 오류를 돌려주고 pidfile을 남긴다.
+- unix `terminateProcessGroup`은 require를 거치지 않는 경로(시작 직후 정리, tunnel)를 위한 마지막 방어로 `pid <= 1`과 자기 group을 다시 거부한다.
+- pid 0과 음수는 이전처럼 "프로세스 없음"으로 다루며 신호를 보내지 않는다. 오류로 바꾸지 않은 이유는 이 값이 kill 대상이 되지 않기 때문이다.
+- 검증: `TestProcessGroupPIDError` 판정표, `TestTerminateProcessGroupRefusesUnsafePIDs`, pidfile `1`로 Stop/Down/Status를 실행하는 `TestRetainedPIDOneIsReportedNotSignalled`, make gate 전부, `GOOS=windows|linux go vet`.
+- 남은 개선 여지(차단 아님): 오류 메시지에 pidfile 경로가 없어 사용자가 항목 이름으로 파일을 찾아야 한다.

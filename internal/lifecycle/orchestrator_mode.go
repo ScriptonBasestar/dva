@@ -165,8 +165,9 @@ func (o *Orchestrator) signalModeProcesses(mode string, removePID, dryRun bool) 
 			if dryRun {
 				// The signal line is conditional on the process existing because the real
 				// path's is: it prints only when Kill returns nil. The delete line is not,
-				// because the real path's os.Remove runs for any pid > 0 whether the kill
-				// succeeded or not — a preview that hid it would understate the loss.
+				// because the real path's os.Remove runs for every pid that passed
+				// requireProcessGroupPID whether the kill succeeded or not — a preview that
+				// hid it would understate the loss.
 				if IsProcessRunning(pid) {
 					fmt.Fprintf(os.Stderr, "[native] (dry-run) would stop %s (pid %d)\n", hcName, pid)
 				}

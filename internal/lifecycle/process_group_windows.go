@@ -15,6 +15,9 @@ func terminateProcessGroup(_ int) error { return errProcessGroupsUnsupported }
 
 func processGroupsSupported() bool { return false }
 
+// Windows has no process groups DVA could signal, so no PID is this process's own group.
+func ownProcessGroup() int { return 0 }
+
 // Windows cannot probe an arbitrary PID's liveness through os.FindProcess; startup is rejected,
 // so a retained PID is never reported as a running DVA-managed process.
 func isProcessRunning(_ int) bool { return false }
