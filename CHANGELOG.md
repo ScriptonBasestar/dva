@@ -5,36 +5,7 @@ All notable changes to DVA are documented here.
 
 ## [Unreleased]
 
-### Fixed
-
-- **dva 스킬의 build 설명**: 번들 `dva` 스킬이 `dva build`를 `dva run build`의 생략형으로
-  설명하던 오류를 고쳤습니다. `dva build`는 hook을 실행하는 lifecycle 내장 명령이고,
-  `dva run build`는 hook을 건너뛰는 interaction runner입니다(ISSUE-516).
-
-- **composition child의 Compose 대기**: `dva up`/`dva restart <composition>`에서 DVA
-  `health_checks`가 없는 compose entry도 Compose `--wait`를 유지해, 다음 wave가 준비되지
-  않은 서비스 위에서 시작하지 않습니다. health check가 있는 entry는 기존처럼 wave
-  경계에서 기다리며, `--no-wait`는 둘 다 끕니다(ISSUE-527).
-
-- **손상된 pidfile의 신호 차단**: native·tilt·sam·serverless 백그라운드 프로세스의 pidfile이
-  1이나 DVA 자신의 프로세스 그룹을 가리키면 `dva down`/`stop`/`status`가, mode health check의
-  pidfile이 그러면 `dva down`/`stop`이 `kill(-1)`처럼 사용자의 다른 프로세스에 신호를 보내지
-  않고 오류로 멈춥니다.
-  오류는 확인하고 지울 pidfile 경로를 함께 표시하며, pidfile은 그대로 남습니다(ISSUE-525).
-
-- **kubernetes Secret 목적지 검증**: `dva config validate`가 문서대로 선언한
-  `provider: kubernetes` 목적지를 schema 오류로 거부하던 문제를 고쳤습니다. schema가
-  provider별로 허용 필드를 나눠, 다른 provider의 필드는 여전히 거부합니다(ISSUE-528).
-
-- **kubernetes Secret 전송의 키 보존**: `dva secret push`가 server-side apply(field manager
-  `dva`)로 매핑 키만 소유합니다. client-side apply가 남긴 annotation 때문에 DVA가 선언하지
-  않은 키를 지우거나 값을 annotation에 복사하던 동작이 없어졌습니다. 같은 Secret의 키를
-  client-side `kubectl apply`로 쓴 적이 있으면 kubectl의 소유 이관 때문에 그 키는 여전히
-  지워지므로, 함께 쓰는 키는 helm·`kubectl create`·server-side apply로 씁니다(ISSUE-529).
-
-## [0.4.0] - 2026-10-14
-
-릴리스 후보 준비 기록이며 아직 tag·Release·설치를 수행하지 않았습니다.
+## [0.4.0] - 2026-10-21
 
 ### Changed
 
@@ -84,6 +55,22 @@ All notable changes to DVA are documented here.
 - **만료 Access 토큰 판정 (TASK-495)**: 성공 종료만으로 인증됨으로 판정하지 않고,
   `access token --app`의 stdout이 비어 있으면 인증되지 않은 것으로 처리합니다.
 
+- **dva 스킬의 build 설명**: 번들 `dva` 스킬이 `dva build`를 `dva run build`의 생략형으로
+  설명하던 오류를 고쳤습니다. `dva build`는 hook을 실행하는 lifecycle 내장 명령이고,
+  `dva run build`는 hook을 건너뛰는 interaction runner입니다(ISSUE-516).
+
+- **composition child의 Compose 대기**: `dva up`/`dva restart <composition>`에서 DVA
+  `health_checks`가 없는 compose entry도 Compose `--wait`를 유지해, 다음 wave가 준비되지
+  않은 서비스 위에서 시작하지 않습니다. health check가 있는 entry는 기존처럼 wave
+  경계에서 기다리며, `--no-wait`는 둘 다 끕니다(ISSUE-527).
+
+- **손상된 pidfile의 신호 차단**: native·tilt·sam·serverless 백그라운드 프로세스의 pidfile이
+  1이나 DVA 자신의 프로세스 그룹을 가리키면 `dva down`/`stop`/`status`가, mode health check의
+  pidfile이 그러면 `dva down`/`stop`이 `kill(-1)`처럼 사용자의 다른 프로세스에 신호를 보내지
+  않고 오류로 멈춥니다.
+  오류는 확인하고 지울 pidfile 경로를 함께 표시하며, pidfile은 그대로 남습니다(ISSUE-525).
+
+
 ### Added
 
 - **`dva config env reseal`**: `.sops.yaml`의 생성 규칙이 바뀌었을 때 선언된
@@ -96,14 +83,18 @@ All notable changes to DVA are documented here.
   access tcp를 띄워 준비를 기다렸다가, 명령이 끝나면 자신이 시작한 프로세스만
   닫습니다. 이미 리슨 중인 포트는 소유자를 알 수 없어 재사용하지 않고 실패하고,
   JWT는 출력·로그에 절대 나오지 않습니다. `dva doctor`에 설치·인증 상태 행이
-  추가됐습니다. 예시: `examples/tunnel-remote.yml`.
+  추가됐습니다. 예시: `examples/tunnel-remote.yml`. 실제 Cloudflare Access 애플리케이션을
+  통한 터널 개통·종료는 이 릴리스에서 검증하지 않았습니다.
 
 - **Kubernetes Secret 전송 목적지 (TASK-458)**: `dva secret push`가 `provider: kubernetes`를
   받습니다. SOPS로 암호화한 k8s Secret YAML에서 선언한 키만 골라 dev 클러스터의 이름 붙은
   Secret에 stdin apply로 적용합니다. `environment: dev` 선언이 필수이고(plan 환경·context
   이름에서 추론하지 않음), `kubeconfig`와 `context`도 명시해야 합니다 — 암묵적 `KUBECONFIG`
   환경변수는 자식 프로세스에서 제거합니다. server-side apply(field manager `dva`)로 매핑 키만
-  소유하므로 DVA는 매핑 키만, chart는 `existingSecret` 참조로 소유를 나눕니다. 새
+  소유하므로 DVA는 매핑 키만, chart는 `existingSecret` 참조로 소유를 나눕니다. 같은 Secret의
+  키를 client-side `kubectl apply`로 쓴 적이 있으면 kubectl의 소유 이관 때문에 그 키는
+  지워지므로, 함께 쓰는 키는 helm·`kubectl create`·server-side apply로 씁니다(ISSUE-529).
+  `dva config validate`도 이 목적지를 provider별 schema로 검증합니다(ISSUE-528). 새
   `dva secret status <target>`은 kubernetes 대상의 존재 여부와 키 이름 대조를 값 없이
   보고합니다.
 
@@ -122,8 +113,7 @@ All notable changes to DVA are documented here.
 ### Compatibility
 
 - 새 선언은 기존 v0.3.0 바이너리에서 사용할 수 없습니다. 실제 지원 범위는
-  [사용법](USAGE.md#버전과-지원-범위), 다음 후보의 채택·검증 결정은
-  [로드맵](ROADMAP.md#v040-후보-범위)을 따릅니다.
+  [사용법](USAGE.md#버전과-지원-범위)을 따릅니다.
 
 ## [0.3.0] - 2026-09-23
 

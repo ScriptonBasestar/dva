@@ -40,7 +40,7 @@ deadline과 별도로 GNU `timeout`의 10분 제한과 30초 강제 종료 유�
 2026-10-14: 후보 `6c37f680`의 개별 test job 재실행은 지원되지 않았고,
 실패 job 범위 요청은 현재 인증으로 거부됐다. 요청 전후 attempt 1·동일 source·
 cancelled 상태를 확인했다. [후속 증거](hosted-candidate-followup.json)와
-[ISSUE-515](../tasks/issue/515-hosted-candidate-test-cancellation.md)에 기록했으며,
+[ISSUE-515](../tasks/_archive/issue/515-hosted-candidate-test-cancellation.md)에 기록했으며,
 새 실행 성공이나 취소 원인 해결을 뜻하지 않는다.
 
 2026-10-07: Mac의 `make recovery-check`와 통합 검사가 통과했다.

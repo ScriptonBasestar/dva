@@ -18,7 +18,7 @@
 |---|---|---|---|
 | 1 · P1 | 현재 상태 문서 정합화 | 공개판·소스 구분, 지원표, named plan 빠른 시작, 문서 게이트와 독립 리뷰 | 완료 — 도입 커밋의 검증 기록 참조 |
 | 2 · P1 | 릴리스 범위 확정 | 목표 버전·포함/이월·호환성 주의사항과 변경 내역 대조 | 완료 — 범위 대조·독립 리뷰 기록 보존 |
-| 3 · P1 | 후보 검증 | 동일 후보 소스에서 아래 검증 범위의 결과와 미실행 항목을 기록 | 부분 완료 — 로컬 full·snapshot PASS, hosted test 취소 |
+| 3 · P1 | 후보 검증 | 동일 후보 소스에서 아래 검증 범위의 결과와 미실행 항목을 기록 | 진행 중 — 실사용 검증·발견 수정 완료, 최종 후보의 full·hosted·snapshot 확인 대기 |
 | 4 · P1 | 공개와 설치 확인 | 기존 런북의 preflight·공개·postflight 성공, 설치 문서 버전 갱신 | 대기 |
 
 단계 3부터는 검증 대상 소스, 선행 조건, 실행 명령과 필요한 실환경 검증을 기록한다.
@@ -91,8 +91,35 @@ run attempt는 1로 유지됐다. 이 상태를 재실행 성공으로 기록하
 `tmp/dva-project-tooling-evidence-20261014/hosted-followup/`에 보존한다.
 지원되는 재실행에 필요한 Actions write 권한은 별도 인증 준비 사항이며, 이번
 변경에서 token·인증 설정·job timeout·워크플로 구조를 바꾸지 않았다.
-hosted test 재확인과 인증 준비는 [ISSUE-515](tasks/issue/515-hosted-candidate-test-cancellation.md)가
-추적한다. 등록은 새 구현·게시·설치 범위를 승인하지 않는다.
+hosted test 재확인과 인증 준비는 [ISSUE-515](tasks/_archive/issue/515-hosted-candidate-test-cancellation.md)가
+추적해 fixed로 해결됐다. 해결은 이 후보의 hosted 결과를 대신하지 않는다.
+
+### 2026-10-21 실사용 검증
+
+이번 릴리스에서 바뀐 외부 연동을 `6911d747` 빌드로, 일회용 자원(임시 age 키, 일회용 kind
+클러스터와 전용 kubeconfig)에서 검증했다. 원시 로그와 요약 `REPORT.md`는 이 저장소의
+gitignore된 `tmp/release-v0.4.0-real-use-20261021/`에 보존한다.
+
+- 통과: `config env reseal`(실패 경우마다 원본 보존), Kubernetes Secret dry-run·매핑 키만
+  전송·ambient `KUBECONFIG` 무시·null 값과 잘못된 이름·`stg` 거부, doctor command의 cwd·
+  종료 코드·timeout·프로세스 그룹 종료, CI `tool_jobs` 지정·계산·상속과
+  `RUST_TEST_THREADS=1`.
+- 발견과 처리: `dva config validate`의 kubernetes 목적지 거부는
+  [ISSUE-528](tasks/_archive/issue/528-k8s-target-schema.md), client-side apply의 미선언 키
+  삭제와 annotation 값 복사는 [ISSUE-529](tasks/_archive/issue/529-k8s-push-prunes-keys.md)로
+  수정했다. 529의 server-side apply는 kind에서 재검증했고, client-side `kubectl apply`로 쓴
+  키가 지워지는 남은 한계는 [전송 계약](docs/69-kubernetes-secret-target.md)에 기록했다.
+  신호 종료 doctor 결과([ISSUE-530](tasks/issue/530-doctor-signal-exit.md))와 입력 0개
+  attestation([ISSUE-531](tasks/issue/531-ci-attestation-empty-inputs.md))은 low로 등록하고
+  이번 후보에서 고치지 않는다.
+- 범위 결정: Cloudflare Access `tunnel:`의 실제 터널 개통·종료는 계정 인가가 필요해 이번
+  후보에서 검증하지 않는다. 인증 판정과 프로세스 수명주기의 fixture 테스트, 실제 cloudflared의
+  만료 토큰 판정과 `dva doctor` 보고([ISSUE-488](tasks/_archive/issue/488-measure-expired-tunnel-token-and-live-doctor.md))가
+  기존 증거이며, 이 제한을 [지원표](USAGE.md#버전과-지원-범위)·CHANGELOG·릴리스 노트에 명시했다.
+
+최종 후보 SHA의 `dva ci full`·hosted CI·snapshot 결과는 후보 commit 뒤에 만들어지므로 후보가
+source tip으로 tag될 때까지 같은 tmp 증거 디렉터리에 두고, 공개 뒤 단계 4 기록에서 이 문서로
+옮긴다.
 
 - 로컬: 선언된 `dva ci full`의 모든 단계 성공. run ID, 소스 입력, 실행 환경을 기록한다.
 - 호스팅 CI: 같은 후보의 Linux/macOS 검사와 GoReleaser snapshot 결과를 확인한다.

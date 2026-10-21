@@ -29,7 +29,7 @@ root·공유 자원별 중복 실행 방지, 상태 조회는 [CI 프로필](doc
 | doctor command 실행 증거·timeout | 미공개 | config cwd, inherited 환경. Unix group 종료, Windows shell-only. [doctor](#doctor) |
 | GitHub Secret 전송·artifact job·OCI 검증 | v0.3.0에 포함 | Linux/macOS. github.com의 저장소 수준 Secret과 공개 OCI 대상. [상세 계약](docs/62-remote-artifact-jobs.md) |
 | Kubernetes Secret 전송·`secret status` | 미공개 | Linux/macOS, 명시적 dev 대상·kubeconfig·context. [상세 계약](docs/69-kubernetes-secret-target.md) |
-| 원격 접근 `tunnel:` | 미공개 | cloudflared, kubectl/helm 엔트리. Windows 미지원. [상세 계약](docs/68-remote-access-tunnel.md) |
+| 원격 접근 `tunnel:` | 미공개 | cloudflared, kubectl/helm 엔트리. Windows 미지원. 실제 Access 애플리케이션 터널은 v0.4.0에서 미검증. [상세 계약](docs/68-remote-access-tunnel.md) |
 | `agent-deny` | v0.3.0에 포함 | Claude Code만 구현. 다른 런타임의 현황·제약은 [deny 지원표](docs/agent-deny-rules.md#runtime-coverage) 참조 |
 | Skaffold 상태 조회 | v0.3.0에 포함 | 시작·종료 adapter는 있으나 `status`는 실제 클러스터 조회 없이 `unknown` 반환 |
 
