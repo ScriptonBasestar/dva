@@ -317,3 +317,24 @@ func TestCISubprojectRunsRootProfileWithDeclaredName(t *testing.T) {
 		}
 	}
 }
+
+// An inherited DVA_CI_SUBPROJECT (OS, environment: or env_file) never reaches
+// steps in place of the flag: a step guarding with ${DVA_CI_SUBPROJECT:?}
+// must fail on a run without --subproject.
+func TestCIStepEnvironmentReplacesInheritedSubproject(t *testing.T) {
+	inherited := []string{"PATH=/bin", config.CISubprojectEnv + "=ambient"}
+	for _, tc := range []struct{ subproject, want string }{
+		{"", ""},
+		{"site-a", config.CISubprojectEnv + "=site-a"},
+	} {
+		var got []string
+		for _, e := range ciStepEnvironment(inherited, tc.subproject) {
+			if strings.HasPrefix(e, config.CISubprojectEnv+"=") {
+				got = append(got, e)
+			}
+		}
+		if strings.Join(got, ",") != tc.want {
+			t.Fatalf("--subproject=%q: %v, want only %q", tc.subproject, got, tc.want)
+		}
+	}
+}

@@ -8,6 +8,13 @@ root의 프로필·환경·디렉터리를 그대로 쓰고, root가 `subproject
 프로필을 해석하기 전에 실패한다. DVA는 이름만 전달하며, 그 이름으로 무엇을 좁힐지는
 root 단계가 정한다.
 
+값은 플래그만이 정한다. OS 환경, `environment:`, `env_file`에서 물려받은 `DVA_CI_SUBPROJECT`는
+지우고, 단계 `environment:`가 이 키를 설정하면 설정 검증이 거부한다. 따라서
+`--subproject` 없는 실행에서는 `:?` 가드가 실패한다.
+
+실행은 root 디렉터리의 root 락을 쓰므로, 같은 root의 사이트들은 한 번에 하나씩 돈다.
+동시에 시작한 두 번째 실행은 기다리지 않고 busy를 돌려준다.
+
 DevBox가 사이트 하나를 배포하기 전에 그 사이트에 속한 task 카드의 binding만 돌리는 경우가
 대표적이다. 카드 선택과 판정은 공유 `ce task gate`가 소유하므로, DVA는 카드를 고르지 않고
 단계가 gate에 이름을 넘긴다.

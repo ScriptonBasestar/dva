@@ -163,13 +163,17 @@ func TestValidateRejectsInvalidDuplicateLocksAndReservedStepEnvironment(t *testi
 		{"invalid lock", "locks: [bad/key]", "lock \"bad/key\" must match"},
 		{"duplicate case sensitive lock", "locks: [database, database]", "duplicate lock \"database\""},
 		{"reserved environment", "", "environment must not set reserved DVA_CI_PARENT_RUN"},
+		{"reserved subproject environment", "", "environment must not set reserved DVA_CI_SUBPROJECT"},
 		{"zero tool jobs", "tool_jobs: 0", "tool_jobs"},
 		{"negative tool jobs", "tool_jobs: -1", "tool_jobs"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			stepEnvironment := ""
-			if tc.name == "reserved environment" {
+			switch tc.name {
+			case "reserved environment":
 				stepEnvironment = "\n          environment: {DVA_CI_PARENT_RUN: spoofed}"
+			case "reserved subproject environment":
+				stepEnvironment = "\n          environment: {DVA_CI_SUBPROJECT: spoofed}"
 			}
 			content := "ci:\n  profiles:\n    full:\n      timeout: 20m\n      " + tc.content + "\n      steps:\n        - name: unit\n          run: true" + stepEnvironment + "\n"
 			err := loadCIConfig(t, content)

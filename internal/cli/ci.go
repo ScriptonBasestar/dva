@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/spf13/cobra"
@@ -16,10 +17,24 @@ import (
 
 var ciProject, ciSubproject string
 
-// ciSubprojectEnv names the declared subproject a --subproject run checks. It is
-// the only thing DVA adds: the root's own steps decide what scoping it means,
-// so DVA neither selects task cards nor knows the board tool that does.
-const ciSubprojectEnv = "DVA_CI_SUBPROJECT"
+// ciStepEnvironment drops any inherited config.CISubprojectEnv and exports the
+// validated --subproject value only when one was given, so an ambient or
+// env_file value can never stand in for the flag. The name is the only thing
+// DVA adds: the root's own steps decide what scoping it means, so DVA neither
+// selects task cards nor knows the board tool that does.
+func ciStepEnvironment(env []string, subproject string) []string {
+	prefix := config.CISubprojectEnv + "="
+	out := make([]string, 0, len(env)+1)
+	for _, e := range env {
+		if !strings.HasPrefix(e, prefix) {
+			out = append(out, e)
+		}
+	}
+	if subproject != "" {
+		out = append(out, prefix+subproject)
+	}
+	return out
+}
 
 var ciCmd = &cobra.Command{
 	Use:   "ci [profile]",
@@ -50,10 +65,7 @@ var ciCmd = &cobra.Command{
 		if err := envIncompleteError(owned.report); err != nil {
 			return err
 		}
-		env := owned.env.EnvSlice()
-		if ciSubproject != "" {
-			env = append(env, ciSubprojectEnv+"="+ciSubproject)
-		}
+		env := ciStepEnvironment(owned.env.EnvSlice(), ciSubproject)
 		if dryRun {
 			return output.PrintJSON(struct {
 				config.CIProfile
@@ -115,7 +127,7 @@ func ciOwner(c *config.Config, project string) (*config.Config, error) {
 func init() {
 	ciCmd.GroupID = "core"
 	ciCmd.Flags().StringVar(&ciProject, "project", "", "Run a declared subproject's own CI profile")
-	ciCmd.Flags().StringVar(&ciSubproject, "subproject", "", "Run this root's CI profile with a declared subproject's name exported as "+ciSubprojectEnv)
+	ciCmd.Flags().StringVar(&ciSubproject, "subproject", "", "Run this root's CI profile with a declared subproject's name exported as "+config.CISubprojectEnv)
 	ciCmd.AddCommand(&cobra.Command{
 		Use: "status", Short: "List CI run receipts on this machine", Args: cobra.NoArgs,
 		Long: "List local CI receipts, including the active execution. This read-only query does not load the current project's configuration or start checks. An interrupted running receipt is reported as stale when its owning lock is no longer held.",

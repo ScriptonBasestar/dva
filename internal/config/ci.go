@@ -23,6 +23,10 @@ var ciNamePattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_.-]*$`)
 // steps may not set it: the supervisor owns its value for nested-run checks.
 const CIParentRunEnv = "DVA_CI_PARENT_RUN"
 
+// CISubprojectEnv names the declared subproject a `dva ci --subproject` run
+// checks. CI steps may not set it: only the validated flag value reaches steps.
+const CISubprojectEnv = "DVA_CI_SUBPROJECT"
+
 // CIConfig declares named CI gate profiles.
 type CIConfig struct {
 	Profiles map[string]CIProfile `yaml:"profiles" json:"profiles"`
@@ -164,8 +168,10 @@ func validateCIProfile(name string, profile CIProfile) error {
 		if strings.TrimSpace(step.Run) == "" {
 			return fmt.Errorf("ci profile %q step %q: run must not be empty", name, step.Name)
 		}
-		if _, reserved := step.Environment[CIParentRunEnv]; reserved {
-			return fmt.Errorf("ci profile %q step %q: environment must not set reserved %s", name, step.Name, CIParentRunEnv)
+		for _, key := range []string{CIParentRunEnv, CISubprojectEnv} {
+			if _, reserved := step.Environment[key]; reserved {
+				return fmt.Errorf("ci profile %q step %q: environment must not set reserved %s", name, step.Name, key)
+			}
 		}
 		if step.Timeout != "" {
 			stepTimeout, err := parsePositiveCIDuration(name+" step "+fmt.Sprintf("%q", step.Name), "timeout", step.Timeout)

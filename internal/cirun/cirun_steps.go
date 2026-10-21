@@ -283,7 +283,7 @@ func ciEnv(base []string, add map[string]string, workers int) []string {
 		m["GOFLAGS"] = strings.TrimSpace(m["GOFLAGS"] + " -p=1")
 	}
 	for k, v := range add {
-		if k == "DVA_CI_JOBS" || k == parentRunEnv {
+		if k == "DVA_CI_JOBS" || k == parentRunEnv || k == config.CISubprojectEnv {
 			continue
 		}
 		m[k] = v
