@@ -5,7 +5,7 @@ type: bug
 priority: P1
 effort: S
 exec-tier: strong
-status: todo
+status: done
 severity: medium
 ownership: local
 needs-human: true
@@ -14,6 +14,9 @@ human-grade: human
 discovered-in: "Hosted candidate test cancellation and rerun authorization remain open"
 discovered-at: 2026-10-14
 created: 2026-10-14
+resolution: fixed
+resolved-at: 2026-10-21T00:00:13Z
+resolution-summary: "Resolved as fixed."
 ---
 
 ## Summary
@@ -63,7 +66,7 @@ source `6c37f680d8dd36bbcbb38cf018d03c667054ffef`를 대조했다.
 새 실행은 시작되지 않았다. `--failed`가 취소된 job을 포함하는지는 이번 거부만으로
 확인할 수 없다. 권한 거부 이후 전체 workflow 요청이나 인증 변경을
 추가 시도하지 않았다. 취소 원인은 여전히 미확정이며 이 카드는 열린 상태로 유지한다.
-[API·요청 증거](../../docs/hosted-candidate-followup.json)는 인증 토큰을 포함하지 않는다.
+[API·요청 증거](../../../docs/hosted-candidate-followup.json)는 인증 토큰을 포함하지 않는다.
 
 실행 인계에 필요한 미확인 입력은 승인된 Actions 재실행 인증과 그 준비 경로다.
 현재 설정에서 같은 요청을 반복하거나 token 값을 수집하지 않는다. 인증이 준비되면
