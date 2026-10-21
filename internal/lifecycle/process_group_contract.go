@@ -13,10 +13,12 @@ var errUnsafeProcessGroup = errors.New("refusing to signal a process group DVA d
 // A retained PID of 1 or of DVA's own process group never names a group DVA started: negated,
 // 1 becomes kill(-1), every process the user owns, and the own group would signal DVA and its
 // caller (ISSUE-525). Both are errors on every platform, so a corrupt pidfile is reported
-// instead of being dropped or reported as stopped.
-func processGroupPIDError(pid int, supported bool, ownGroup int) error {
+// instead of being dropped or reported as stopped. The error names pidFile because the
+// sentinel tells the user to inspect and remove it, and the caller's prefix names only the
+// entry.
+func processGroupPIDError(pid int, pidFile string, supported bool, ownGroup int) error {
 	if pid == 1 || (pid > 0 && pid == ownGroup) {
-		return fmt.Errorf("%w: pid %d", errUnsafeProcessGroup, pid)
+		return fmt.Errorf("%w: %s holds pid %d", errUnsafeProcessGroup, pidFile, pid)
 	}
 	if pid > 0 && !supported {
 		return errProcessGroupsUnsupported
@@ -24,16 +26,16 @@ func processGroupPIDError(pid int, supported bool, ownGroup int) error {
 	return nil
 }
 
-func requireProcessGroupPID(pid int) error {
-	return processGroupPIDError(pid, processGroupsSupported(), ownProcessGroup())
+func requireProcessGroupPID(pid int, pidFile string) error {
+	return processGroupPIDError(pid, pidFile, processGroupsSupported(), ownProcessGroup())
 }
 
 // signalableProcessGroupPID only says the pidfile names a process; whether that PID may be
 // signalled is requireProcessGroupPID's decision, so keep safety checks there.
 func signalableProcessGroupPID(pid int) bool { return pid > 0 }
 
-func managedProcessStatus(name string, pid int) ([]ServiceStatus, error) {
-	if err := requireProcessGroupPID(pid); err != nil {
+func managedProcessStatus(name, pidFile string, pid int) ([]ServiceStatus, error) {
+	if err := requireProcessGroupPID(pid, pidFile); err != nil {
 		return nil, fmt.Errorf("status %s: %w", name, err)
 	}
 	if pid > 0 && IsProcessRunning(pid) {

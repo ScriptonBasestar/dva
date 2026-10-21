@@ -12,6 +12,11 @@ All notable changes to DVA are documented here.
   않은 서비스 위에서 시작하지 않습니다. health check가 있는 entry는 기존처럼 wave
   경계에서 기다리며, `--no-wait`는 둘 다 끕니다(ISSUE-527).
 
+- **손상된 pidfile의 신호 차단**: native·tilt·sam·serverless 백그라운드 프로세스와 mode
+  health check의 pidfile이 1이나 DVA 자신의 프로세스 그룹을 가리키면 `dva down`/`stop`/
+  `status`가 `kill(-1)`처럼 사용자의 다른 프로세스에 신호를 보내지 않고 오류로 멈춥니다.
+  오류는 확인하고 지울 pidfile 경로를 함께 표시하며, pidfile은 그대로 남습니다(ISSUE-525).
+
 ## [0.4.0] - 2026-10-14
 
 릴리스 후보 준비 기록이며 아직 tag·Release·설치를 수행하지 않았습니다.

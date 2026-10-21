@@ -108,7 +108,7 @@ func (p *ServerlessPlugin) Status(ctx context.Context, pctx *PluginContext) ([]S
 	}
 
 	pid, _ := strconv.Atoi(strings.TrimSpace(string(data)))
-	return managedProcessStatus(name, pid)
+	return managedProcessStatus(name, pidFile, pid)
 }
 
 func (p *ServerlessPlugin) stopProcess(pctx *PluginContext) error {
@@ -127,7 +127,7 @@ func (p *ServerlessPlugin) stopProcess(pctx *PluginContext) error {
 		_ = os.Remove(pidFile)
 		return nil
 	}
-	if err := requireProcessGroupPID(pid); err != nil {
+	if err := requireProcessGroupPID(pid, pidFile); err != nil {
 		return fmt.Errorf("stop %s: %w", name, err)
 	}
 	if err := terminateProcessGroup(pid); err == nil {

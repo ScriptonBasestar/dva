@@ -159,7 +159,7 @@ func (o *Orchestrator) signalModeProcesses(mode string, removePID, dryRun bool) 
 		var pid int
 		_, _ = fmt.Sscanf(strings.TrimSpace(string(data)), "%d", &pid)
 		if signalableProcessGroupPID(pid) {
-			if err := requireProcessGroupPID(pid); err != nil {
+			if err := requireProcessGroupPID(pid, pidFile); err != nil {
 				return fmt.Errorf("stop health check %s: %w", hcName, err)
 			}
 			if dryRun {

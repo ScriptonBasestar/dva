@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/ScriptonBasestar/dva/internal/config"
@@ -30,9 +31,14 @@ func TestProcessGroupPIDError(t *testing.T) {
 		{name: "own process group", pid: 7, supported: true, ownGroup: 7, want: errUnsafeProcessGroup},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			err := processGroupPIDError(tc.pid, tc.supported, tc.ownGroup)
+			const pidFile = "/project/.dva/pids/api.pid"
+			err := processGroupPIDError(tc.pid, pidFile, tc.supported, tc.ownGroup)
 			if tc.want == nil && err != nil || tc.want != nil && !errors.Is(err, tc.want) {
 				t.Fatalf("processGroupPIDError(%d, %v, %d) error = %v, want %v", tc.pid, tc.supported, tc.ownGroup, err, tc.want)
+			}
+			// The sentinel tells the user to remove the pidfile, so the error must say which.
+			if errors.Is(err, errUnsafeProcessGroup) && !strings.Contains(err.Error(), pidFile) {
+				t.Fatalf("processGroupPIDError(%d) error = %q, want it to name %s", tc.pid, err, pidFile)
 			}
 		})
 	}
@@ -50,8 +56,9 @@ func TestSignalableProcessGroupPID(t *testing.T) {
 }
 
 // TestRetainedPIDOneIsReportedNotSignalled drives the stop, down and status paths with a pidfile
-// holding 1 (ISSUE-525): each must return errUnsafeProcessGroup instead of signalling kill(-1) or
-// reporting success, and must keep the pidfile so the corrupt state stays visible.
+// holding 1 (ISSUE-525): each must return errUnsafeProcessGroup naming that pidfile instead of
+// signalling kill(-1) or reporting success, and must keep the pidfile so the corrupt state stays
+// visible.
 func TestRetainedPIDOneIsReportedNotSignalled(t *testing.T) {
 	p := &ProcessPlugin{}
 	for _, tc := range []struct {
@@ -72,8 +79,12 @@ func TestRetainedPIDOneIsReportedNotSignalled(t *testing.T) {
 				t.Fatal(err)
 			}
 			pctx := &PluginContext{Entry: &config.LifecycleEntry{Name: "api"}, ConfigDir: dir, Logger: slog.Default()}
-			if err := tc.run(pctx); !errors.Is(err, errUnsafeProcessGroup) {
+			err := tc.run(pctx)
+			if !errors.Is(err, errUnsafeProcessGroup) {
 				t.Fatalf("%s with pidfile 1 error = %v, want errUnsafeProcessGroup", tc.name, err)
+			}
+			if !strings.Contains(err.Error(), pidFile) {
+				t.Fatalf("%s with pidfile 1 error = %q, want it to name %s", tc.name, err, pidFile)
 			}
 			if _, err := os.Stat(pidFile); err != nil {
 				t.Fatalf("%s removed the pidfile holding 1: %v", tc.name, err)

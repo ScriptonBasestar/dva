@@ -143,7 +143,7 @@ func (p *ProcessPlugin) Status(ctx context.Context, pctx *PluginContext) ([]Serv
 	}
 
 	pid, _ := strconv.Atoi(strings.TrimSpace(string(data)))
-	return managedProcessStatus(name, pid)
+	return managedProcessStatus(name, pidFile, pid)
 }
 
 // haltProcess sends SIGTERM but preserves the PID file so the process
@@ -171,7 +171,7 @@ func (p *ProcessPlugin) haltProcess(ctx context.Context, pctx *PluginContext) er
 		_ = os.Remove(pidFile)
 		return nil
 	}
-	if err := requireProcessGroupPID(pid); err != nil {
+	if err := requireProcessGroupPID(pid, pidFile); err != nil {
 		return fmt.Errorf("stop %s: %w", name, err)
 	}
 	if pid > 0 && IsProcessRunning(pid) {
@@ -214,7 +214,7 @@ func (p *ProcessPlugin) removeProcess(ctx context.Context, pctx *PluginContext) 
 	}
 
 	if signalableProcessGroupPID(pid) {
-		if err := requireProcessGroupPID(pid); err != nil {
+		if err := requireProcessGroupPID(pid, pidFile); err != nil {
 			return fmt.Errorf("remove %s: %w", name, err)
 		}
 		if IsProcessRunning(pid) {
