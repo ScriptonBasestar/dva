@@ -35,7 +35,7 @@ func runCompositionRestart(c *config.Config, el *envLoad, planName string, extra
 		return err
 	}
 
-	exec := newCompositionExecutor(c, el, scopedChildName(flags))
+	exec := newCompositionExecutor(c, el, scopedChildName(flags), flags.noWait)
 	report, runErr := restartCompositionChildren(context.Background(), comp, exec, flags.noWait)
 	return renderCompositionReport(report, runErr)
 }

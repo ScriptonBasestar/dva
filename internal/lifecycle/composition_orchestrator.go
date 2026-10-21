@@ -436,6 +436,9 @@ type PlanChildExecutor struct {
 	Environment func(child *ExecutionPlan) (*config.Config, *config.Environment, error)
 	DryRun      bool
 	Force       bool
+	// NoWait is the composition's --no-wait: it also drops the Compose --wait that Up
+	// keeps for entries without DVA health checks.
+	NoWait bool
 }
 
 func (e *PlanChildExecutor) orchestrator(child *ExecutionPlan) (*Orchestrator, error) {
@@ -454,13 +457,15 @@ func (e *PlanChildExecutor) Up(ctx context.Context, child *ExecutionPlan) error 
 	if err != nil {
 		return err
 	}
-	// Wait is false: the readiness gate belongs to the wave boundary (§4.5), not to each
-	// entry inside a child.
+	// Wait is false: the DVA health-check gate belongs to the wave boundary (§4.5), not
+	// to each entry inside a child. That gate skips entries without health checks, so
+	// those keep Compose's --wait unless the composition runs with --no-wait.
 	return orch.Up(ctx, UpOptions{
-		DryRun: e.DryRun,
-		Force:  e.Force,
-		Names:  executionPlanEntryNames(child),
-		Env:    child.EnvironmentName,
+		DryRun:                         e.DryRun,
+		Force:                          e.Force,
+		ComposeWaitWithoutHealthChecks: !e.NoWait,
+		Names:                          executionPlanEntryNames(child),
+		Env:                            child.EnvironmentName,
 	})
 }
 

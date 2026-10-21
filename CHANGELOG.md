@@ -5,6 +5,13 @@ All notable changes to DVA are documented here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **composition child의 Compose 대기**: `dva up`/`dva restart <composition>`에서 DVA
+  `health_checks`가 없는 compose entry도 Compose `--wait`를 유지해, 다음 wave가 준비되지
+  않은 서비스 위에서 시작하지 않습니다. health check가 있는 entry는 기존처럼 wave
+  경계에서 기다리며, `--no-wait`는 둘 다 끕니다(ISSUE-527).
+
 ## [0.4.0] - 2026-10-14
 
 릴리스 후보 준비 기록이며 아직 tag·Release·설치를 수행하지 않았습니다.

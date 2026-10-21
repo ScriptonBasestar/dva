@@ -12,14 +12,19 @@ import (
 
 // UpOptions configures orchestrator Up behavior.
 type UpOptions struct {
-	DryRun      bool
-	Force       bool
-	Wait        bool
-	Names       []string // specific stack entry names (empty = all)
-	IncludeTags []string
-	ExcludeTags []string
-	Mode        string
-	Env         string
+	DryRun bool
+	Force  bool
+	Wait   bool
+	// ComposeWaitWithoutHealthChecks keeps Compose's --wait for an entry that declares
+	// no DVA health checks while Wait is false. A composition child leaves Wait false
+	// because its wave boundary gates the entries with health checks; an entry with
+	// none is skipped there, so Compose --wait is its only readiness signal.
+	ComposeWaitWithoutHealthChecks bool
+	Names                          []string // specific stack entry names (empty = all)
+	IncludeTags                    []string
+	ExcludeTags                    []string
+	Mode                           string
+	Env                            string
 }
 
 // DownOptions configures orchestrator Down behavior.
@@ -137,7 +142,7 @@ func (o *Orchestrator) Up(ctx context.Context, opts UpOptions) error {
 			ConfigDir:       o.cfg.FileDir(),
 			DryRun:          opts.DryRun,
 			Force:           opts.Force,
-			Wait:            opts.Wait,
+			Wait:            opts.Wait || (opts.ComposeWaitWithoutHealthChecks && len(entry.HealthChecks) == 0),
 			ComposeProfiles: entryComposeProfiles,
 			ComposeServices: entryComposeServices,
 			Logger:          o.logger.With("entry", entry.Name, "plugin", pluginType),

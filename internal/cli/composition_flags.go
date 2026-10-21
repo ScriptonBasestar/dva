@@ -215,11 +215,14 @@ type compositionExecutor struct {
 // the global and strips it from extraArgs before this file sees anything — so the only place
 // composition dry-run can be honored is here, matching PlanChildExecutor's existing DryRun
 // handling in Up/WaitReady/Down/Stop/IsUp (TASK-291).
-func newCompositionExecutor(c *config.Config, el *envLoad, forceChild string) *compositionExecutor {
+//
+// noWait is the composition's --no-wait. It reaches PlanChildExecutor so a child's Compose
+// --wait is dropped along with the wave gate the orchestrator skips.
+func newCompositionExecutor(c *config.Config, el *envLoad, forceChild string, noWait bool) *compositionExecutor {
 	env := compositionChildEnvironment(c, el)
 	return &compositionExecutor{
-		forced:     &lifecycle.PlanChildExecutor{Environment: env, Force: true, DryRun: dryRun},
-		unforced:   &lifecycle.PlanChildExecutor{Environment: env, Force: false, DryRun: dryRun},
+		forced:     &lifecycle.PlanChildExecutor{Environment: env, Force: true, DryRun: dryRun, NoWait: noWait},
+		unforced:   &lifecycle.PlanChildExecutor{Environment: env, Force: false, DryRun: dryRun, NoWait: noWait},
 		forceChild: forceChild,
 	}
 }
@@ -348,7 +351,7 @@ func runCompositionUp(c *config.Config, el *envLoad, planName string, extraArgs 
 		return err
 	}
 
-	orch, err := lifecycle.NewCompositionOrchestrator(comp, newCompositionExecutor(c, el, scopedChildName(flags)))
+	orch, err := lifecycle.NewCompositionOrchestrator(comp, newCompositionExecutor(c, el, scopedChildName(flags), flags.noWait))
 	if err != nil {
 		return err
 	}
@@ -385,7 +388,7 @@ func runCompositionDown(c *config.Config, el *envLoad, planName string, extraArg
 		}
 	}
 
-	orch, err := lifecycle.NewCompositionOrchestrator(comp, newCompositionExecutor(c, el, scopedChildName(flags)))
+	orch, err := lifecycle.NewCompositionOrchestrator(comp, newCompositionExecutor(c, el, scopedChildName(flags), flags.noWait))
 	if err != nil {
 		return err
 	}
@@ -406,7 +409,7 @@ func runCompositionStop(c *config.Config, el *envLoad, planName string, extraArg
 		return err
 	}
 
-	orch, err := lifecycle.NewCompositionOrchestrator(comp, newCompositionExecutor(c, el, scopedChildName(flags)))
+	orch, err := lifecycle.NewCompositionOrchestrator(comp, newCompositionExecutor(c, el, scopedChildName(flags), flags.noWait))
 	if err != nil {
 		return err
 	}
@@ -506,7 +509,7 @@ func runCompositionStatus(c *config.Config, el *envLoad, planName string) error 
 	// it would fabricate "up" child states on a fully-down composition (found in review of
 	// TASK-297: newCompositionExecutor's DryRun wiring exists for up/down/stop/restart's
 	// teardown gate, not for status). Force it off regardless of the global --dry-run flag.
-	exec := newCompositionExecutor(c, el, "")
+	exec := newCompositionExecutor(c, el, "", false)
 	exec.forced.DryRun = false
 	exec.unforced.DryRun = false
 	orch, err := lifecycle.NewCompositionOrchestrator(comp, exec)
