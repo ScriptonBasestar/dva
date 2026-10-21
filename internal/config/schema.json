@@ -28,37 +28,93 @@
         "targets": {
           "type": "object",
           "additionalProperties": {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-              "provider": {
-                "enum": [
-                  "github-actions"
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "provider": {
+                    "const": "github-actions"
+                  },
+                  "repository": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*/[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                    "maxLength": 200
+                  },
+                  "source": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$"
+                  },
+                  "keys": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "minProperties": 1,
+                    "maxProperties": 64
+                  }
+                },
+                "required": [
+                  "provider",
+                  "repository",
+                  "source",
+                  "keys"
                 ]
               },
-              "repository": {
-                "type": "string",
-                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*/[A-Za-z0-9][A-Za-z0-9_.-]*$",
-                "maxLength": 200
-              },
-              "source": {
-                "type": "string",
-                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$"
-              },
-              "keys": {
+              {
                 "type": "object",
-                "additionalProperties": {
-                  "type": "string"
+                "additionalProperties": false,
+                "description": "Kubernetes Secret on an explicit dev cluster (docs/69-kubernetes-secret-target.md). Never falls back to an ambient KUBECONFIG",
+                "properties": {
+                  "provider": {
+                    "const": "kubernetes"
+                  },
+                  "environment": {
+                    "const": "dev",
+                    "description": "Only dev is accepted: stg/prd are variable-set labels, never permission to operate that environment"
+                  },
+                  "kubeconfig": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Absolute or ~/ path to the kubeconfig"
+                  },
+                  "context": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "namespace": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Secret name (DNS-1123 subdomain)"
+                  },
+                  "source": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$"
+                  },
+                  "keys": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "minProperties": 1,
+                    "maxProperties": 64
+                  }
                 },
-                "minProperties": 1,
-                "maxProperties": 64
+                "required": [
+                  "provider",
+                  "environment",
+                  "kubeconfig",
+                  "context",
+                  "namespace",
+                  "name",
+                  "source",
+                  "keys"
+                ]
               }
-            },
-            "required": [
-              "provider",
-              "repository",
-              "source",
-              "keys"
             ]
           }
         }

@@ -60,3 +60,27 @@ func TestSecretKubernetesTarget(t *testing.T) {
 		})
 	}
 }
+
+// TestSecretKubernetesTargetSchema covers what dva validate reports: the schema accepts
+// the documented kubernetes target and still rejects fields that belong to the other provider.
+func TestSecretKubernetesTargetSchema(t *testing.T) {
+	if err := validateYAMLSchema([]byte(kubernetesSecretFixture)); err != nil {
+		t.Fatalf("schema rejected the documented kubernetes target: %v", err)
+	}
+	if _, _, err := ValidateConfigBytes([]byte(kubernetesSecretFixture)); err != nil {
+		t.Fatalf("validate rejected the documented kubernetes target: %v", err)
+	}
+	for _, test := range []struct{ name, old, next string }{
+		{"unknown provider", "provider: kubernetes", "provider: vault"},
+		{"non-dev environment", "environment: dev", "environment: stg"},
+		{"repository on kubernetes", "      context: scripton-cluster", "      repository: owner/images\n      context: scripton-cluster"},
+		{"missing kubeconfig", "      kubeconfig: ~/.kube/scripton-cluster\n", ""},
+		{"kubernetes fields on github-actions", "provider: kubernetes", "provider: github-actions"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			if err := validateYAMLSchema([]byte(strings.ReplaceAll(kubernetesSecretFixture, test.old, test.next))); err == nil {
+				t.Fatal("schema accepted an invalid secret target")
+			}
+		})
+	}
+}
