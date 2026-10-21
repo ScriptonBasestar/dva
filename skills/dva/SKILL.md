@@ -106,14 +106,20 @@ For CI profiles, commit/full verification, time budgets, or duplicate AI-session
 checks, use the bundled `dva-ci` skill. Discover `ci_profiles` in the manifest;
 `dva ci` defaults to `commit`, while `dva ci status` inspects existing runs.
 
-Run project-defined interaction commands directly. The `run` prefix is optional:
+Run project-defined interaction commands directly. The `run` prefix is optional for
+names that are not reserved:
 
 ```bash
 dva test               # = dva run test
-dva build              # = dva run build
 dva lint               # = dva run lint
 dva <command>          # any interaction command from dva.yml
 ```
+
+A reserved name such as `build` is not shorthand for `dva run`. `dva build` is the
+lifecycle built-in and runs that name's `before`/`replace`/`after` hooks, so an
+`interaction.build.replace` declaring the production build is the expected path, not a
+defect. `dva run build` is the interaction runner, which skips hooks, so for a `build`
+that only declares hooks it finds nothing to run.
 
 For subproject commands in monorepos, use namespace syntax:
 

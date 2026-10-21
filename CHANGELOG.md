@@ -7,6 +7,10 @@ All notable changes to DVA are documented here.
 
 ### Fixed
 
+- **dva 스킬의 build 설명**: 번들 `dva` 스킬이 `dva build`를 `dva run build`의 생략형으로
+  설명하던 오류를 고쳤습니다. `dva build`는 hook을 실행하는 lifecycle 내장 명령이고,
+  `dva run build`는 hook을 건너뛰는 interaction runner입니다(ISSUE-516).
+
 - **composition child의 Compose 대기**: `dva up`/`dva restart <composition>`에서 DVA
   `health_checks`가 없는 compose entry도 Compose `--wait`를 유지해, 다음 wave가 준비되지
   않은 서비스 위에서 시작하지 않습니다. health check가 있는 entry는 기존처럼 wave

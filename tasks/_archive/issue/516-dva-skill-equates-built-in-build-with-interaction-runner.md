@@ -5,12 +5,15 @@ type: bug
 priority: P2
 effort: XS
 exec-tier: standard
-status: todo
+status: done
 ownership: local
 severity: medium
 discovered-in: "DVA skill incorrectly equates built-in build with dva run build"
 discovered-at: 2026-10-15
 created: 2026-10-15
+resolution: fixed
+resolved-at: 2026-10-21T07:39:09Z
+resolution-summary: "Resolved as fixed."
 ---
 
 ## Summary
@@ -60,3 +63,12 @@ DVA가 정본 `skills/dva/SKILL.md`와 build/run 실행 계약을 소유한다.
 - 후속 수정은 정본 skill과 지정된 생성/설치 흐름에서 수행한다. 설치 runtime을
   직접 수정하거나 소비자 build command를 중복 추가하지 않는다.
   이 카드는 등록만 하며 DVA 문서 수정이나 설치를 수행하지 않았다.
+
+## 2026-10-21 해결
+
+- `skills/dva/SKILL.md` Execute Commands에서 `dva build # = dva run build` 줄을 지우고,
+  `run` 생략형은 예약되지 않은 이름에만 해당한다고 범위를 좁혔다. 예약어 `build`는
+  hook을 실행하는 lifecycle 내장이고 `dva run build`는 hook을 건너뛰는 interaction
+  runner라는 구분을 명시했다. `references/commands.md`와 USAGE.md의 기존 설명과 일치한다.
+- 저장소 안에서 같은 오기가 있는 복사본은 이 한 줄뿐이었다(`git grep`). 설치본은 다음
+  릴리스의 지정 설치 흐름으로 갱신되며 직접 수정하지 않았다.
