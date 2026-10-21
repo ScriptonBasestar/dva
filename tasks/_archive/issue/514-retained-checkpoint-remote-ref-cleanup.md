@@ -4,7 +4,7 @@ title: "Retained checkpoint remote ref needs lifecycle cleanup"
 type: bug
 priority: P2
 effort: XS
-status: todo
+status: done
 severity: medium
 ownership: local
 needs-human: true
@@ -13,6 +13,9 @@ human-grade: human
 discovered-in: "Retained checkpoint remote ref needs lifecycle cleanup"
 discovered-at: 2026-10-14
 created: 2026-10-14
+resolution: fixed
+resolved-at: 2026-10-21T15:51:52Z
+resolution-summary: "Resolved as fixed."
 ---
 
 ## Summary
@@ -70,3 +73,13 @@ ce task run-status ci-running-receipt-checkpoint
 소유 운영자가 단일 ref 회수를 지원하는 공식 경로를 정한 뒤, 실행 직전에 원격 SHA가
 위 값과 같고 전달 증거가 보존됐는지 확인한다. 회수 후 `git ls-remote`로 부재를
 확인한다. 다른 task ref, 진행 중 Rust worktree, source 이력은 변경하지 않는다.
+
+## 2026-10-22 해결
+
+- 소유 운영자(사용자)가 공식 단일 ref 회수 경로 대신 직접 원격 ref를 삭제하기로 정하고
+  실행했다. 에이전트는 raw Git 삭제를 하지 않았다.
+- 확인: `git ls-remote origin refs/heads/dev/codex/mbp/fix/ci-running-receipt-checkpoint`가
+  빈 출력으로 끝나 원격 ref 부재를 확인했다(2026-10-22). 전달 증거는 위 Reproduction의
+  CE 영수증과 master의 `562cd8c2`에 남아 있다.
+- 단일 ref 회수 명령의 부재 자체는 CE/gz-git 소유 저장소의 결정 사항이며 이 카드는
+  그 기능을 요구하지 않는다.

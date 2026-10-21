@@ -4,12 +4,15 @@ title: "Should dva doctor's sops advisory fire on a root that holds only .sops.y
 type: bug
 priority: P3
 effort: S
-status: todo
+status: done
 severity: medium
 ownership: local
 discovered-in: "gzh-cli-devbox dva.yml authoring session (2026-10-20)"
 discovered-at: 2026-10-20
 created: 2026-10-21
+resolution: wontfix
+resolved-at: 2026-10-21T15:51:53Z
+resolution-summary: "Resolved as wontfix."
 ---
 
 ## Summary
@@ -106,3 +109,14 @@ the card by recording that decision (and any reworded hint text) here instead.
 - [ ] A root with an encrypted payload and no `sops_source` declaration still reports the finding; the existing `DoctorEnvSops` tests exist and pass | verify: `go test ./internal/cli/ -list DoctorEnvSops | /usr/bin/grep -q DoctorEnvSops && go test ./internal/cli/ -run DoctorEnvSops`
 - [ ] A new test `TestInitSopsRulesOnlyPassesDoctor` runs `doctor` on the config `init` writes for a rules-file-only root and asserts no undeclared-source finding. The existing `InitSops` tests do not run doctor, so the test must be added; the binding runs the package without `-run` and requires that test's PASS line, so it fails if the test is missing | verify: `go test ./internal/cli/ -v -count=1 2>&1 | /usr/bin/grep -qE '^--- PASS: TestInitSopsRulesOnlyPassesDoctor \('`
 - [ ] Full test suite passes | verify: `make test`
+
+## 2026-10-22 결정 — Keep
+
+- 소유자가 **Keep**을 골랐다. `.sops.yaml`만 있는 root는 설계상 seal 이전의 정상 상태이고,
+  doctor의 행은 그 상태에서 `sops_source` 선언과 seal로 이끄는 안내다. TASK-440의 수락된
+  동작을 유지하며 init(441:22)과 doctor의 차이는 의도된 handoff로 본다.
+- 코드와 문구는 바꾸지 않았다. 위 Completion Criteria는 Exclude를 골랐을 때만 적용되므로
+  실행하지 않는다.
+- 남는 비용: 첫 암호화 파일 이전의 devbox는 매 실행마다 advisory `[FAIL]` 행을 본다(exit 0).
+  doctor 결과에는 FAIL과 별개인 경고 등급이 없어, 행의 등급을 낮추려면 결과 모델 변경이
+  필요하다. 필요해지면 별도 카드로 다룬다.
