@@ -4,6 +4,7 @@
 package cirun
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -142,11 +143,11 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 		}
 		report.Steps, retErr = execute(ctx, root, opts.Profile, env, writer, checkpoint)
 	}
-	after, attestErr := fingerprint(ctx, root)
+	after, _, attestErr := fingerprintInputs(ctx, root)
 	retErr = errors.Join(retErr, attestErr)
 	if report.Attestation.Available {
-		report.Attestation.After = after.Before
-		if report.Attestation.Before != after.Before && retErr == nil {
+		report.Attestation.After = after
+		if report.Attestation.Before != after && retErr == nil {
 			report.Status = "stale"
 			retErr = errors.New("ci inputs changed during run")
 		}
@@ -293,36 +294,114 @@ func safeID(id string) bool {
 	return true
 }
 
+// Unavailable attestation reasons. A root inside an ignored path of an enclosing
+// repository is a work tree whose ls-files lists nothing; its empty digest would
+// claim unchanged inputs without having read any (ISSUE-531).
+const (
+	reasonNotGit   = "ci root is not inside a Git working tree"
+	reasonNoInputs = "no Git inputs: the ci root has no tracked or unignored files"
+)
+
+// fingerprint attests the root's Git inputs. An available attestation also
+// records the HEAD commit and whether those inputs differ from it (ISSUE-521);
+// an unavailable one records neither, because the enclosing HEAD of an ignored
+// or non-Git root does not describe what CI ran against.
 func fingerprint(ctx context.Context, root string) (Attestation, error) {
-	probe, e := gitOutput(ctx, root, "rev-parse", "--is-inside-work-tree")
-	if e != nil {
-		if ctx.Err() != nil {
-			return Attestation{}, ctx.Err()
-		}
-		if strings.Contains(string(probe), "not a git repository") {
-			return Attestation{}, nil
-		}
-		return Attestation{}, fmt.Errorf("probe git inputs: %w: %s", e, probe)
-	}
-	if strings.TrimSpace(string(probe)) != "true" {
-		return Attestation{}, errors.New("CI requires a Git working tree, not a bare repository")
-	}
-	b, e := gitOutput(ctx, root, "ls-files", "-z", "--cached", "--others", "--exclude-standard")
-	if e != nil {
-		return Attestation{}, fmt.Errorf("list git inputs: %w", e)
-	}
-	index, e := gitIndexEntries(ctx, root)
+	digest, inputs, e := fingerprintInputs(ctx, root)
 	if e != nil {
 		return Attestation{}, e
 	}
+	if digest == "" {
+		return Attestation{Reason: reasonNotGit}, nil
+	}
+	if inputs == 0 {
+		return Attestation{Reason: reasonNoInputs}, nil
+	}
+	a := Attestation{Available: true, Before: digest}
+	a.Commit, a.Dirty, e = sourceCommit(ctx, root)
+	return a, e
+}
+
+// sourceCommit returns HEAD and whether the root's subtree differs from it. An
+// unborn HEAD has no commit, so neither value is recorded; any other failure to
+// resolve HEAD is an error. Status reads submodules regardless of their ignore
+// setting, but cannot see assume-unchanged or skip-worktree entries.
+func sourceCommit(ctx context.Context, root string) (string, *bool, error) {
+	head, e := gitStdout(ctx, root, "rev-parse", "-q", "--verify", "HEAD^{commit}")
+	if e != nil {
+		if ctx.Err() != nil {
+			return "", nil, ctx.Err()
+		}
+		unborn, unbornErr := unbornHead(ctx, root)
+		if unbornErr != nil || !unborn {
+			return "", nil, errors.Join(fmt.Errorf("read git HEAD: %w", gitError(e)), unbornErr)
+		}
+		return "", nil, nil
+	}
+	status, e := gitStdout(ctx, root, "--no-optional-locks", "status", "--porcelain", "-z", "--untracked-files=normal", "--ignore-submodules=none", "--", ".")
+	if e != nil {
+		return "", nil, fmt.Errorf("read git status: %w", gitError(e))
+	}
+	dirty := len(status) > 0
+	return strings.TrimSpace(string(head)), &dirty, nil
+}
+
+// unbornHead reports whether HEAD names a branch that has no commit yet.
+func unbornHead(ctx context.Context, root string) (bool, error) {
+	ref, e := gitStdout(ctx, root, "symbolic-ref", "-q", "HEAD")
+	if e != nil {
+		if ctx.Err() != nil {
+			return false, ctx.Err()
+		}
+		return false, nil // detached HEAD: a resolution failure is not unborn.
+	}
+	_, e = gitStdout(ctx, root, "rev-parse", "-q", "--verify", strings.TrimSpace(string(ref)))
+	if e == nil {
+		return false, nil
+	}
+	if ctx.Err() != nil {
+		return false, ctx.Err()
+	}
+	if exitErr, ok := errors.AsType[*exec.ExitError](e); ok && exitErr.ExitCode() == 1 {
+		return true, nil
+	}
+	return false, fmt.Errorf("verify git HEAD ref: %w", gitError(e))
+}
+
+// fingerprintInputs hashes the root's Git inputs and counts them. An empty
+// digest means the root is not inside a Git working tree.
+func fingerprintInputs(ctx context.Context, root string) (string, int, error) {
+	probe, e := gitOutput(ctx, root, "rev-parse", "--is-inside-work-tree")
+	if e != nil {
+		if ctx.Err() != nil {
+			return "", 0, ctx.Err()
+		}
+		if strings.Contains(string(probe), "not a git repository") {
+			return "", 0, nil
+		}
+		return "", 0, fmt.Errorf("probe git inputs: %w: %s", e, probe)
+	}
+	if strings.TrimSpace(string(probe)) != "true" {
+		return "", 0, errors.New("CI requires a Git working tree, not a bare repository")
+	}
+	b, e := gitOutput(ctx, root, "ls-files", "-z", "--cached", "--others", "--exclude-standard")
+	if e != nil {
+		return "", 0, fmt.Errorf("list git inputs: %w", e)
+	}
+	index, e := gitIndexEntries(ctx, root)
+	if e != nil {
+		return "", 0, e
+	}
 	h := sha256.New()
+	inputs := 0
 	for name := range strings.SplitSeq(string(b), "\x00") {
 		if name == "" {
 			continue
 		}
 		if e := ctx.Err(); e != nil {
-			return Attestation{}, e
+			return "", 0, e
 		}
+		inputs++
 		_, _ = fmt.Fprintf(h, "%d:%s\x00", len(name), name)
 		entry, tracked := index[name]
 		if tracked {
@@ -330,7 +409,7 @@ func fingerprint(ctx context.Context, root string) (Attestation, error) {
 		}
 		if tracked && entry.mode == "160000" {
 			if e := fingerprintGitlink(ctx, root, name, entry.object, h); e != nil {
-				return Attestation{}, e
+				return "", 0, e
 			}
 			continue
 		}
@@ -341,33 +420,33 @@ func fingerprint(ctx context.Context, root string) (Attestation, error) {
 			continue
 		}
 		if e != nil {
-			return Attestation{}, e
+			return "", 0, e
 		}
 		_, _ = fmt.Fprintf(h, "%s\x00", info.Mode().String())
 		if info.Mode()&os.ModeSymlink != 0 {
 			target, e := os.Readlink(path)
 			if e != nil {
-				return Attestation{}, e
+				return "", 0, e
 			}
 			_, _ = fmt.Fprintf(h, "link:%d:%s\x00", len(target), target)
 			continue
 		}
 		if !info.Mode().IsRegular() {
-			return Attestation{}, fmt.Errorf("unsupported git input type %s", name)
+			return "", 0, fmt.Errorf("unsupported git input type %s", name)
 		}
 		file, e := os.Open(path)
 		if e != nil {
-			return Attestation{}, e
+			return "", 0, e
 		}
 		_, _ = fmt.Fprintf(h, "data:%d:\x00", info.Size())
 		_, readErr := io.CopyBuffer(h, &contextReader{ctx: ctx, reader: file}, make([]byte, 64*1024))
 		closeErr := file.Close()
 		if e := errors.Join(readErr, closeErr); e != nil {
-			return Attestation{}, e
+			return "", 0, e
 		}
 
 	}
-	return Attestation{Available: true, Before: hex.EncodeToString(h.Sum(nil))}, nil
+	return hex.EncodeToString(h.Sum(nil)), inputs, nil
 }
 
 type gitIndexEntry struct {
@@ -444,19 +523,20 @@ func fingerprintGitlink(ctx context.Context, root, name, object string, h io.Wri
 	if err != nil {
 		return fmt.Errorf("read gitlink %s HEAD: %w", name, err)
 	}
-	nested, err := fingerprint(ctx, path)
+	// An initialized submodule with no files is still attested by its HEAD.
+	nested, _, err := fingerprintInputs(ctx, path)
 	if err != nil {
 		return fmt.Errorf("fingerprint gitlink %s: %w", name, err)
 	}
-	if !nested.Available {
+	if nested == "" {
 		return fmt.Errorf("gitlink %s has no Git attestation", name)
 	}
-	_, _ = fmt.Fprintf(h, "gitlink:%s:head:%s:worktree:%s\x00", object, strings.TrimSpace(string(head)), nested.Before)
+	_, _ = fmt.Fprintf(h, "gitlink:%s:head:%s:worktree:%s\x00", object, strings.TrimSpace(string(head)), nested)
 	return nil
 }
 
 // Git sees the owning working tree, not an index/worktree override inherited from a caller.
-func gitOutput(ctx context.Context, root string, args ...string) ([]byte, error) {
+func gitCommand(ctx context.Context, root string, args ...string) *exec.Cmd {
 	cmd := exec.CommandContext(ctx, "git", append([]string{"-C", root}, args...)...)
 	cmd.WaitDelay = time.Second
 	for _, e := range os.Environ() {
@@ -466,7 +546,24 @@ func gitOutput(ctx context.Context, root string, args ...string) ([]byte, error)
 		}
 	}
 	cmd.Env = append(cmd.Env, "LC_ALL=C")
-	return cmd.CombinedOutput()
+	return cmd
+}
+
+func gitOutput(ctx context.Context, root string, args ...string) ([]byte, error) {
+	return gitCommand(ctx, root, args...).CombinedOutput()
+}
+
+// gitStdout keeps stderr out of the result, so a warning is never read as data.
+func gitStdout(ctx context.Context, root string, args ...string) ([]byte, error) {
+	return gitCommand(ctx, root, args...).Output()
+}
+
+// gitError attaches the stderr that gitStdout captured to its exit error.
+func gitError(err error) error {
+	if exitErr, ok := errors.AsType[*exec.ExitError](err); ok && len(bytes.TrimSpace(exitErr.Stderr)) > 0 {
+		return fmt.Errorf("%w: %s", err, bytes.TrimSpace(exitErr.Stderr))
+	}
+	return err
 }
 
 type contextReader struct {

@@ -91,7 +91,8 @@ canonical root를 전달하며, 실제 parent root 락과 ID가 살아 있으면
 로컬 결과에는 run ID, 프로필, 단계 결과·시간, 로그 위치와 Git 입력 검증 정보가
 남는다. 시작·종료 시점의 Git 입력이 다르면 현재 트리의 성공 증거로 인정하지 않는다.
 중간에 변경했다가 되돌린 입력까지 탐지하는 지속 감시나 snapshot 격리는 아니다.
-Git 저장소가 아니면 Git attestation이 없다고 표시한다. HEAD만 같은 과거 결과를
+attestation 필드(`available`·`reason`·`commit`·`dirty`)는
+[CI receipt attestation](72-ci-receipt-attestation.md)을 따른다. HEAD만 같은 과거 결과를
 자동 재사용하지 않는다. 로그는 비밀값이 포함될 수 있어 자동 게시하지 않는다.
 
 실행 중 step의 dispatch와 완료 때 기존 receipt를 atomic checkpoint로 저장한다.

@@ -65,10 +65,17 @@ type WorkerBudget struct {
 	RustTestThreadsSource string `json:"rust_test_threads_source,omitempty"`
 }
 
+// Attestation describes the Git inputs a run measured. Reason explains an
+// unavailable attestation. Commit is HEAD at run start and Dirty whether the
+// root's inputs differed from it; both are absent when unavailable, when HEAD
+// is unborn, and in receipts written before they existed.
 type Attestation struct {
 	Available bool   `json:"available"`
+	Reason    string `json:"reason,omitempty"`
 	Before    string `json:"before,omitempty"`
 	After     string `json:"after,omitempty"`
+	Commit    string `json:"commit,omitempty"`
+	Dirty     *bool  `json:"dirty,omitempty"`
 }
 
 type Report struct {

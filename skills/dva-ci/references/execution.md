@@ -61,7 +61,12 @@ automatically. Use run status rather than parsing a line that merely says PASS.
 Different Git input at the start/end snapshots invalidates current-tree evidence.
 This does not detect transient edits that are reverted between snapshots; use an
 isolated checkout and avoid editing it during verification. A run against
-a non-Git directory has no Git attestation. Historical results are not reusable
+a non-Git directory, or a root with zero Git inputs such as one under an
+ignored path of an enclosing repository, has no Git attestation:
+`available: false` with a `reason`. An available attestation records the
+`HEAD` at run start as `commit` and whether the root's inputs differed from it
+as `dirty` (submodule edits count; assume-unchanged and skip-worktree entries
+do not); use them as a comparison baseline. Historical results are not reusable
 solely because HEAD matches: dirty input, configuration and tool versions matter.
 Only reuse a complete gate when its executing tool validates the evidence for
 the current inputs. A DVA success receipt is historical evidence, not an

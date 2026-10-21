@@ -356,6 +356,212 @@ func TestRunDetectsInputMutationAndCleansBackgroundGroup(t *testing.T) {
 	}
 }
 
+func commitAll(t *testing.T, root string) string {
+	t.Helper()
+	if err := runGit(root, "add", "-A"); err != nil {
+		t.Fatal(err)
+	}
+	if err := runGit(root, "-c", "user.name=ci", "-c", "user.email=ci@example.invalid", "-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", "commit", "-qm", "init"); err != nil {
+		t.Fatal(err)
+	}
+	head, err := gitOutput(context.Background(), root, "rev-parse", "HEAD")
+	if err != nil {
+		t.Fatal(err)
+	}
+	return strings.TrimSpace(string(head))
+}
+
+func TestRunRecordsSourceCommitAndDirtyState(t *testing.T) {
+	root, state := t.TempDir(), t.TempDir()
+	if err := runGit(root, "init"); err != nil {
+		t.Skipf("git unavailable: %v", err)
+	}
+	input := filepath.Join(root, "input")
+	if err := os.WriteFile(input, []byte("one"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	head := commitAll(t, root)
+	run := func() Report {
+		t.Helper()
+		r, err := Run(context.Background(), Options{Root: root, ProfileName: "receipt", StateDir: state, lockDirectory: state, Env: os.Environ(), Profile: profile(config.CIStep{Name: "noop", Run: "true"})})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return r
+	}
+	clean := run()
+	if !clean.Attestation.Available || clean.Attestation.Commit != head || clean.Attestation.Dirty == nil || *clean.Attestation.Dirty {
+		t.Fatalf("clean attestation %#v", clean.Attestation)
+	}
+	if err := os.WriteFile(input, []byte("two"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	dirty := run()
+	if dirty.Attestation.Commit != head || dirty.Attestation.Dirty == nil || !*dirty.Attestation.Dirty {
+		t.Fatalf("dirty attestation %#v", dirty.Attestation)
+	}
+	b, err := json.Marshal(dirty)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Contains(b, []byte(`"commit":"`+head+`","dirty":true`)) {
+		t.Fatalf("receipt JSON %s", b)
+	}
+	reports, err := Status(state)
+	if err != nil || len(reports) != 2 || reports[0].ID != dirty.ID || reports[0].Attestation.Commit != head || !*reports[0].Attestation.Dirty {
+		t.Fatalf("reports=%#v err=%v", reports, err)
+	}
+}
+
+func dirtyState(t *testing.T, root string) bool {
+	t.Helper()
+	a, err := fingerprint(context.Background(), root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !a.Available || a.Commit == "" || a.Dirty == nil {
+		t.Fatalf("attestation %#v", a)
+	}
+	return *a.Dirty
+}
+
+func TestDirtyIsScopedToRootAndSeesUntrackedInputs(t *testing.T) {
+	repo := t.TempDir()
+	if err := runGit(repo, "init"); err != nil {
+		t.Skipf("git unavailable: %v", err)
+	}
+	root := filepath.Join(repo, "project")
+	if err := os.Mkdir(root, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{filepath.Join(repo, "outside"), filepath.Join(root, "input")} {
+		if err := os.WriteFile(name, []byte("one"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	commitAll(t, repo)
+	if err := os.WriteFile(filepath.Join(repo, "outside"), []byte("two"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if dirtyState(t, root) {
+		t.Fatal("edit outside the root marked it dirty")
+	}
+	if err := os.WriteFile(filepath.Join(root, "new"), []byte("new"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if !dirtyState(t, root) {
+		t.Fatal("untracked input under the root was not dirty")
+	}
+}
+
+func TestDirtyIgnoresSubmoduleIgnoreSetting(t *testing.T) {
+	root := t.TempDir()
+	if err := runGit(root, "init"); err != nil {
+		t.Skipf("git unavailable: %v", err)
+	}
+	module := filepath.Join(root, "module")
+	if err := os.Mkdir(module, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := runGit(module, "init"); err != nil {
+		t.Fatal(err)
+	}
+	input := filepath.Join(module, "input")
+	if err := os.WriteFile(input, []byte("one"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	commitAll(t, module)
+	gitmodules := "[submodule \"module\"]\n\tpath = module\n\turl = ./module\n\tignore = all\n"
+	if err := os.WriteFile(filepath.Join(root, ".gitmodules"), []byte(gitmodules), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	commitAll(t, root)
+	if dirtyState(t, root) {
+		t.Fatal("clean superproject marked dirty")
+	}
+	if err := os.WriteFile(input, []byte("two"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if !dirtyState(t, root) {
+		t.Fatal("edit inside an ignore=all submodule was not dirty")
+	}
+}
+
+func TestSourceCommitRejectsUnresolvableHead(t *testing.T) {
+	root := t.TempDir()
+	if err := runGit(root, "init"); err != nil {
+		t.Skipf("git unavailable: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "input"), []byte("one"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	commitAll(t, root)
+	// A detached HEAD naming a missing object is broken, not unborn.
+	if err := os.WriteFile(filepath.Join(root, ".git", "HEAD"), []byte(strings.Repeat("1", 40)+"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := sourceCommit(context.Background(), root); err == nil || !strings.Contains(err.Error(), "read git HEAD") {
+		t.Fatalf("unresolvable HEAD err=%v", err)
+	}
+}
+
+func TestFingerprintOmitsCommitForUnbornHead(t *testing.T) {
+	root := t.TempDir()
+	if err := runGit(root, "init"); err != nil {
+		t.Skipf("git unavailable: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "input"), []byte("one"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	a, err := fingerprint(context.Background(), root)
+	if err != nil || !a.Available || a.Commit != "" || a.Dirty != nil {
+		t.Fatalf("attestation=%#v err=%v", a, err)
+	}
+}
+
+func TestFingerprintUnavailableWithoutGitInputs(t *testing.T) {
+	outer := t.TempDir()
+	if err := runGit(outer, "init"); err != nil {
+		t.Skipf("git unavailable: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(outer, ".gitignore"), []byte("tmp/\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	commitAll(t, outer)
+	root := filepath.Join(outer, "tmp", "project")
+	if err := os.MkdirAll(root, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "input"), []byte("one"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	ignored, err := fingerprint(context.Background(), root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ignored.Available || ignored.Reason != reasonNoInputs || ignored.Before != "" || ignored.Commit != "" || ignored.Dirty != nil {
+		t.Fatalf("ignored root attestation %#v", ignored)
+	}
+	notGit, err := fingerprint(context.Background(), t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if notGit.Available || notGit.Reason != reasonNotGit {
+		t.Fatalf("non-Git root attestation %#v", notGit)
+	}
+}
+
+func TestReceiptWithoutNewAttestationFieldsLoads(t *testing.T) {
+	old := `{"id":"` + strings.Repeat("a", 32) + `","root":"/r","profile":"p","status":"succeeded","log_path":"/l","started_at":"2026-10-20T00:00:00Z","finished_at":"2026-10-20T00:00:01Z","duration":"1s","steps":[],"attestation":{"available":true,"before":"x","after":"x"}}`
+	var r Report
+	if err := json.Unmarshal([]byte(old), &r); err != nil {
+		t.Fatal(err)
+	}
+	if !r.Attestation.Available || r.Attestation.Commit != "" || r.Attestation.Dirty != nil || r.Attestation.Reason != "" {
+		t.Fatalf("old receipt attestation %#v", r.Attestation)
+	}
+}
+
 func TestFingerprintAttestsUninitializedGitlinkIndexRevision(t *testing.T) {
 	root := t.TempDir()
 	if err := runGit(root, "init"); err != nil {
@@ -785,5 +991,11 @@ func TestLockHelperProcess(t *testing.T) {
 func runGit(dir string, args ...string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	return exec.CommandContext(ctx, "git", append([]string{"-C", dir}, args...)...).Run()
+	cmd := exec.CommandContext(ctx, "git", append([]string{"-C", dir}, args...)...)
+	for _, e := range os.Environ() {
+		if key, _, _ := strings.Cut(e, "="); key != "GIT_DIR" && key != "GIT_WORK_TREE" {
+			cmd.Env = append(cmd.Env, e)
+		}
+	}
+	return cmd.Run()
 }

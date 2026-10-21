@@ -12,12 +12,23 @@ All notable changes to DVA are documented here.
   `ce task gate --bindings-root "$DVA_CI_SUBPROJECT"`로 그 사이트 카드의 binding만 돌리는
   진입점입니다. 선언되지 않은 이름과 `--project` 조합은 실행 전에 거부합니다 (ISSUE-523).
 
+- **CI receipt의 측정 commit**: Git 입력 attestation이 있으면 `dva ci` receipt의
+  `attestation.commit`에 실행 시작 시점의 `HEAD` SHA를, `attestation.dirty`에 root 아래
+  입력이 그 commit과 달랐는지를 기록합니다. 마지막으로 통과한 commit을 receipt만으로
+  찾을 수 있습니다. Git이 아니거나 commit이 없는 root는 생략하며, 기존 receipt도
+  그대로 읽습니다. 상위 저장소의 ignored 경로 아래 root(예: `tmp/develop-view/...`)는
+  의도적으로 commit을 기록하지 않으므로, 그런 소비자는 디렉터리 이름 우회를 유지합니다(ISSUE-521).
+
 ### Fixed
 
 - **doctor command의 종료 신호**: 사용자 `type: command` 검사가 신호로 종료되면 JSON
   `command.signal`이 `SIGTERM`처럼 신호 이름을 기록하고, finding은 "command exited
   non-zero" 대신 `command terminated by SIGTERM: <command>`로 실제 종료 원인을
   표시합니다. `exit_code: -1`과 `error_classification: "signal"`은 그대로입니다(ISSUE-530).
+
+- **입력 0개 CI attestation**: 상위 저장소의 ignored 경로처럼 Git 입력을 하나도 읽지 못한
+  root는 빈 입력의 sha256으로 `available: true`를 보고하지 않고, `available: false`와
+  `reason`을 기록합니다. Git이 아닌 root도 같은 `reason` 필드로 이유를 남깁니다(ISSUE-531).
 
 ## [0.4.0] - 2026-10-21
 

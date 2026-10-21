@@ -110,7 +110,7 @@ gitignore된 `tmp/release-v0.4.0-real-use-20261021/`에 보존한다.
   수정했다. 529의 server-side apply는 kind에서 재검증했고, client-side `kubectl apply`로 쓴
   키가 지워지는 남은 한계는 [전송 계약](docs/69-kubernetes-secret-target.md)에 기록했다.
   신호 종료 doctor 결과([ISSUE-530](tasks/issue/530-doctor-signal-exit.md))와 입력 0개
-  attestation([ISSUE-531](tasks/issue/531-ci-attestation-empty-inputs.md))은 low로 등록하고
+  attestation([ISSUE-531](tasks/_archive/issue/531-ci-attestation-empty-inputs.md))은 low로 등록하고
   이번 후보에서 고치지 않는다.
 - 범위 결정: Cloudflare Access `tunnel:`의 실제 터널 개통·종료는 계정 인가가 필요해 이번
   후보에서 검증하지 않는다. 인증 판정과 프로세스 수명주기의 fixture 테스트, 실제 cloudflared의
