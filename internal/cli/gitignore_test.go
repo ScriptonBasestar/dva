@@ -469,9 +469,10 @@ func TestGitignoreFallsBackWhenGitCannotAnswer(t *testing.T) {
 // would warn about repositories that are configured correctly, which is the failure this whole
 // file is built to avoid.
 func TestGitCheckIgnoreGivesUpOnAStalledGit(t *testing.T) {
-	// A git that answers nothing, ever.
+	// A git that answers nothing, ever. exec makes sleep the process the deadline kills; a
+	// forked sleep would be orphaned by that kill and outlive the package (ISSUE-522).
 	shimDir := t.TempDir()
-	shim := "#!/bin/sh\nif [ \"$1\" = check-ignore ]; then sleep 600; fi\nexit 1\n"
+	shim := "#!/bin/sh\nif [ \"$1\" = check-ignore ]; then exec sleep 600; fi\nexit 1\n"
 	if err := os.WriteFile(filepath.Join(shimDir, "git"), []byte(shim), 0o755); err != nil {
 		t.Fatalf("WriteFile git shim: %v", err)
 	}

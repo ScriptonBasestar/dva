@@ -5,12 +5,15 @@ type: bug
 priority: P2
 effort: S
 exec-tier: standard
-status: todo
+status: done
 severity: medium
 ownership: local
 discovered-in: "ISSUE-515 Linux reproduction of the hosted test stall"
 discovered-at: 2026-10-20
 created: 2026-10-20
+resolution: fixed
+resolved-at: 2026-10-21T03:22:44Z
+resolution-summary: "Resolved as fixed."
 ---
 
 ## Summary
@@ -49,3 +52,11 @@ created: 2026-10-20
 
 어느 테스트가 누수를 만드는지 확정하고 그 테스트의 정리 경계를 고친다. CI workflow 변경,
 timeout 연장, 테스트 생략은 범위 밖이다.
+
+## 2026-10-21 해결
+
+- 누수 출처를 linux 컨테이너(golang:1.26.5, 비root, `GOMAXPROCS=1`)에서 테스트별로 확정했다.
+  - `sleep 999` ×2: `TestCompositionDownDryRunPerformsNoRealTeardown`. 실제 up 뒤 down은 dry-run이므로 t.Cleanup 안전망이 정리를 맡는다. 안전망은 pidfile의 pid(`sh -c sleep 999` group leader)만 `os.Process.Kill`로 죽였다. Debian dash는 `sleep`을 exec하지 않고 fork하므로 자식이 ppid 1로 남았다. macOS `/bin/sh`는 exec하므로 재현되지 않는다.
+  - `sleep 600` ×1: `TestGitCheckIgnoreGivesUpOnAStalledGit`. git shim이 `if` 안에서 `sleep 600`을 fork해서, 기한이 shim `sh`만 죽이고 `sleep`을 남겼다. macOS에서도 재현된다.
+- 수정: 안전망이 process group 전체를 SIGKILL한다(`internal/cli/process_group_kill_unix_test.go`, pid 1 이하와 테스트 자신의 group은 거부). shim은 `exec sleep 600`으로 기한이 죽이는 프로세스와 잠자는 프로세스를 같게 했다.
+- 검증: 수정 뒤 `internal/cli` 전체 실행 후 linux 컨테이너와 macOS 모두 남은 `sleep` 프로세스가 없다. 독립 리뷰가 수정 전 상태에서 카드의 3개 누수를 그대로 재현하고 수정 후 `none`을 확인했다. make gate 전부, `GOOS=windows go vet`.

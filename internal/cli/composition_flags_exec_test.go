@@ -41,8 +41,9 @@ plans:
 `
 
 // killLeftoverCompositionProcess is a t.Cleanup safety net for compositionProcessFixtureConfig
-// tests: it best-effort kills whatever a pid file still names, in case the test fails before
-// its own runCompositionDown call reaps the background `sleep 999`.
+// tests: it kills the process group a pid file still names, in case the test fails before its
+// own runCompositionDown call reaps the background `sleep 999`, or never makes one for real
+// (TestCompositionDownDryRunPerformsNoRealTeardown leaves both children up by design).
 func killLeftoverCompositionProcess(t *testing.T, fileDir, name string) {
 	t.Helper()
 	data, err := os.ReadFile(filepath.Join(fileDir, config.DotDirName, config.PidsDirName, name+".pid"))
@@ -53,9 +54,7 @@ func killLeftoverCompositionProcess(t *testing.T, fileDir, name string) {
 	if err != nil || pid <= 0 {
 		return
 	}
-	if proc, err := os.FindProcess(pid); err == nil {
-		_ = proc.Kill()
-	}
+	killLeftoverProcessGroup(t, pid)
 }
 
 // TestCompositionUpDownExecuteRealOrchestrator proves up/down on a composition plan now run
