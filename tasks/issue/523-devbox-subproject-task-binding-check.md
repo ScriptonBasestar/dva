@@ -7,7 +7,7 @@ effort: S
 exec-tier: standard
 status: todo
 ownership: split
-upstream-ref: "ce-agent-kit ISSUE-444 (tasks/issue/444-task-gate-bindings-root-scope.md)"
+upstream-ref: "ce-agent-kit ISSUE-444 (tasks/_archive/issue/444-task-gate-bindings-root-scope.md)"
 severity: medium
 discovered-in: "singlepageweb-devbox TASK-270 (owner of the board-wide binding run)"
 discovered-at: 2026-10-20
@@ -36,6 +36,19 @@ singlepageweb-devbox는 단일 제품이 아니다. `dva.yml` `subprojects`에 �
 `policy:no-second-board-grader`도 같은 규칙이다. 그래서 dva가 카드를 직접 고르면 안 된다.
 ce-agent-kit ISSUE-444는 `ce task gate`가 external root 하나의 binding만 돌게 하는 옵션을
 요구한다. 이 카드는 그 옵션이 생긴 뒤에 dva 쪽 진입점을 만드는 몫이다.
+
+**2026-10-22 상류 해소.** ce-agent-kit master `e20116ba`·`07fcbde7`·`e7040d9a`에 `ce task gate
+--bindings-root NAME`이 들어갔다. 진입점이 기대해도 되는 계약은 다음과 같다(상류
+`docs/10-ce-cli/22-readiness-runner-adapter.md` "납품 바인딩 범위").
+
+- NAME은 `ce-tasks.yaml` `task-bindings.external-roots`의 키다. 선언되지 않은 NAME은 rc=2
+  (unavailable)이므로 dva가 이름을 미리 검증하지 않아도 실패로 끝난다.
+- 카드 소속은 gate가 정한다. `allowed-paths`가 모두 선언된 루트 아래이고 하나 이상이 NAME
+  아래인 카드만 돈다. DevBox 자신의 파일을 건드리는 카드는 어느 사이트에도 속하지 않아 미뤄진다.
+- 다른 사이트의 체크아웃이 없어도 NAME의 검사는 막히지 않는다. `--bindings-since` 없이 속한 카드가 없는 루트도 rc=2다(`e7040d9a`).
+- 통과 시 `detail`에 실행·미룬 카드 수가 적힌다. rc는 0(ready)·1(not-ready)·2(unavailable).
+
+따라서 남은 결정은 subproject 이름과 external root 이름의 대응 규칙과 진입점 형태뿐이다.
 
 ## Reproduction
 
