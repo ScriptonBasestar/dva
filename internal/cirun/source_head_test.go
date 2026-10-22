@@ -23,12 +23,14 @@ func TestSourceCommitRejectsBranchRefToMissingObject(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// A loose ref file overrides any packed entry, but only the files backend
+	// stores refs as files; reftable keeps them in tables this test cannot edit.
+	if info, err := os.Stat(filepath.Join(root, ".git", "refs", "heads")); err != nil || !info.IsDir() {
+		t.Skip("repository does not use the files ref backend")
+	}
 	ref := filepath.Join(root, ".git", filepath.FromSlash(strings.TrimSpace(string(head))))
 	if err := os.WriteFile(ref, []byte(strings.Repeat("1", 40)+"\n"), 0o600); err != nil {
 		t.Fatal(err)
-	}
-	if _, err := os.Stat(filepath.Join(root, ".git", "packed-refs")); err == nil {
-		t.Skip("branch ref is packed; the loose ref above would not be the only definition")
 	}
 	if _, _, err := sourceCommit(context.Background(), root); err == nil || !strings.Contains(err.Error(), "read git HEAD") {
 		t.Fatalf("branch ref to missing object err=%v", err)

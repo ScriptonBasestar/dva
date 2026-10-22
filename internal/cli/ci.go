@@ -45,13 +45,15 @@ var ciCmd = &cobra.Command{
 		if err := envIncompleteError(owned.report); err != nil {
 			return err
 		}
-		env := owned.env.EnvSlice()
+		// The preview prints the Options Run would receive, so the dry-run test
+		// also covers the flag-to-Options wiring.
+		opts := cirun.Options{Root: c.FileDir(), ProfileName: name, Subproject: ciSubproject, Profile: profile, Env: owned.env.EnvSlice()}
 		if dryRun {
 			return output.PrintJSON(struct {
 				config.CIProfile
 				Subproject string              `json:"subproject,omitempty"`
 				Workers    []cirun.StepWorkers `json:"workers"`
-			}{profile, ciSubproject, cirun.WorkerPlan(profile, env)})
+			}{profile, opts.Subproject, cirun.WorkerPlan(profile, opts.Env)})
 		}
 		ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
 		defer stop()
@@ -59,7 +61,8 @@ var ciCmd = &cobra.Command{
 		if jsonOutput {
 			writer = cmd.ErrOrStderr()
 		}
-		report, runErr := cirun.Run(ctx, cirun.Options{Root: c.FileDir(), ProfileName: name, Subproject: ciSubproject, Profile: profile, Env: env, Output: writer})
+		opts.Output = writer
+		report, runErr := cirun.Run(ctx, opts)
 		if jsonOutput {
 			if err := output.PrintJSON(report); err != nil {
 				return err
