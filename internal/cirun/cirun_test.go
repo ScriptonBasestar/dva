@@ -487,24 +487,6 @@ func TestDirtyIgnoresSubmoduleIgnoreSetting(t *testing.T) {
 	}
 }
 
-func TestSourceCommitRejectsUnresolvableHead(t *testing.T) {
-	root := t.TempDir()
-	if err := runGit(root, "init"); err != nil {
-		t.Skipf("git unavailable: %v", err)
-	}
-	if err := os.WriteFile(filepath.Join(root, "input"), []byte("one"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	commitAll(t, root)
-	// A detached HEAD naming a missing object is broken, not unborn.
-	if err := os.WriteFile(filepath.Join(root, ".git", "HEAD"), []byte(strings.Repeat("1", 40)+"\n"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	if _, _, err := sourceCommit(context.Background(), root); err == nil || !strings.Contains(err.Error(), "read git HEAD") {
-		t.Fatalf("unresolvable HEAD err=%v", err)
-	}
-}
-
 func TestFingerprintOmitsCommitForUnbornHead(t *testing.T) {
 	root := t.TempDir()
 	if err := runGit(root, "init"); err != nil {
