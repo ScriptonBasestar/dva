@@ -75,7 +75,7 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 	if err != nil {
 		return report, err
 	}
-	report = Report{ID: id, Root: root, Profile: opts.ProfileName, Status: "running", StartedAt: time.Now(), LogPath: filepath.Join(state, "logs", id+".log")}
+	report = Report{ID: id, Root: root, Profile: opts.ProfileName, Subproject: opts.Subproject, Status: "running", StartedAt: time.Now(), LogPath: filepath.Join(state, "logs", id+".log")}
 	if err := os.MkdirAll(filepath.Dir(report.LogPath), 0o700); err != nil {
 		return report, err
 	}
@@ -136,7 +136,7 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 		if marshalErr != nil {
 			return report, marshalErr
 		}
-		env := append(append([]string(nil), opts.Env...), parentRunEnv+"="+string(parentInfo))
+		env := append(subprojectEnv(opts.Env, opts.Subproject), parentRunEnv+"="+string(parentInfo))
 		checkpoint := func(steps []StepReport) error {
 			report.Steps = append([]StepReport(nil), steps...)
 			return writeReport(state, report)

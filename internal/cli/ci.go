@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 
 	"github.com/spf13/cobra"
@@ -16,25 +15,6 @@ import (
 )
 
 var ciProject, ciSubproject string
-
-// ciStepEnvironment drops any inherited config.CISubprojectEnv and exports the
-// validated --subproject value only when one was given, so an ambient or
-// env_file value can never stand in for the flag. The name is the only thing
-// DVA adds: the root's own steps decide what scoping it means, so DVA neither
-// selects task cards nor knows the board tool that does.
-func ciStepEnvironment(env []string, subproject string) []string {
-	prefix := config.CISubprojectEnv + "="
-	out := make([]string, 0, len(env)+1)
-	for _, e := range env {
-		if !strings.HasPrefix(e, prefix) {
-			out = append(out, e)
-		}
-	}
-	if subproject != "" {
-		out = append(out, prefix+subproject)
-	}
-	return out
-}
 
 var ciCmd = &cobra.Command{
 	Use:   "ci [profile]",
@@ -65,7 +45,7 @@ var ciCmd = &cobra.Command{
 		if err := envIncompleteError(owned.report); err != nil {
 			return err
 		}
-		env := ciStepEnvironment(owned.env.EnvSlice(), ciSubproject)
+		env := owned.env.EnvSlice()
 		if dryRun {
 			return output.PrintJSON(struct {
 				config.CIProfile
@@ -79,7 +59,7 @@ var ciCmd = &cobra.Command{
 		if jsonOutput {
 			writer = cmd.ErrOrStderr()
 		}
-		report, runErr := cirun.Run(ctx, cirun.Options{Root: c.FileDir(), ProfileName: name, Profile: profile, Env: env, Output: writer})
+		report, runErr := cirun.Run(ctx, cirun.Options{Root: c.FileDir(), ProfileName: name, Subproject: ciSubproject, Profile: profile, Env: env, Output: writer})
 		if jsonOutput {
 			if err := output.PrintJSON(report); err != nil {
 				return err

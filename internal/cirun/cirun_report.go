@@ -37,10 +37,14 @@ func (e *BusyError) Unwrap() error { return ErrBusy }
 
 type Options struct {
 	Root, ProfileName, StateDir string
-	Profile                     config.CIProfile
-	Env                         []string
-	Output                      io.Writer
-	lockDirectory               string // test seam; production callers cannot set it.
+	// Subproject is the declared child named by `dva ci --subproject`. Run is
+	// the only source of config.CISubprojectEnv for steps and records it in the
+	// receipt, so the receipt names the scope the steps actually received.
+	Subproject    string
+	Profile       config.CIProfile
+	Env           []string
+	Output        io.Writer
+	lockDirectory string // test seam; production callers cannot set it.
 }
 
 type StepReport struct {
@@ -80,6 +84,7 @@ type Attestation struct {
 
 type Report struct {
 	ID, Root, Profile, Status, LogPath string
+	Subproject                         string
 	Error                              string
 	StartedAt, FinishedAt              time.Time
 	Duration                           time.Duration
@@ -93,6 +98,7 @@ func (r Report) MarshalJSON() ([]byte, error) {
 		ID          string       `json:"id"`
 		Root        string       `json:"root"`
 		Profile     string       `json:"profile"`
+		Subproject  string       `json:"subproject,omitempty"`
 		Status      string       `json:"status"`
 		LogPath     string       `json:"log_path"`
 		Error       string       `json:"error,omitempty"`
@@ -103,7 +109,7 @@ func (r Report) MarshalJSON() ([]byte, error) {
 		Attestation Attestation  `json:"attestation"`
 		Conflict    *Conflict    `json:"conflict,omitempty"`
 	}
-	return json.Marshal(wire{r.ID, r.Root, r.Profile, r.Status, r.LogPath, r.Error, r.StartedAt, r.FinishedAt, r.Duration.String(), r.Steps, r.Attestation, r.Conflict})
+	return json.Marshal(wire{r.ID, r.Root, r.Profile, r.Subproject, r.Status, r.LogPath, r.Error, r.StartedAt, r.FinishedAt, r.Duration.String(), r.Steps, r.Attestation, r.Conflict})
 }
 
 func (r *Report) UnmarshalJSON(data []byte) error {
@@ -111,6 +117,7 @@ func (r *Report) UnmarshalJSON(data []byte) error {
 		ID          string       `json:"id"`
 		Root        string       `json:"root"`
 		Profile     string       `json:"profile"`
+		Subproject  string       `json:"subproject,omitempty"`
 		Status      string       `json:"status"`
 		LogPath     string       `json:"log_path"`
 		Error       string       `json:"error,omitempty"`
@@ -129,7 +136,7 @@ func (r *Report) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
-	*r = Report{ID: in.ID, Root: in.Root, Profile: in.Profile, Status: in.Status, LogPath: in.LogPath, Error: in.Error, StartedAt: in.StartedAt, FinishedAt: in.FinishedAt, Duration: d, Steps: in.Steps, Attestation: in.Attestation, Conflict: in.Conflict}
+	*r = Report{ID: in.ID, Root: in.Root, Profile: in.Profile, Subproject: in.Subproject, Status: in.Status, LogPath: in.LogPath, Error: in.Error, StartedAt: in.StartedAt, FinishedAt: in.FinishedAt, Duration: d, Steps: in.Steps, Attestation: in.Attestation, Conflict: in.Conflict}
 	return nil
 }
 

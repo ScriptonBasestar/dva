@@ -11,6 +11,8 @@ All notable changes to DVA are documented here.
   subproject 이름을 `DVA_CI_SUBPROJECT`로 단계에 내보냅니다. DevBox가 사이트 배포 전에
   `ce task gate --bindings-root "$DVA_CI_SUBPROJECT"`로 그 사이트 카드의 binding만 돌리는
   진입점입니다. 선언되지 않은 이름과 `--project` 조합은 실행 전에 거부합니다 (ISSUE-523).
+  receipt의 `subproject`가 단계가 받은 이름을 기록하므로, 같은 root 프로필의 사이트별
+  receipt를 receipt만으로 구분할 수 있습니다. 플래그 없는 실행은 이 필드를 생략합니다.
 
 - **CI receipt의 측정 commit**: Git 입력 attestation이 있으면 `dva ci` receipt의
   `attestation.commit`에 실행 시작 시점의 `HEAD` SHA를, `attestation.dirty`에 root 아래

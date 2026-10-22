@@ -259,6 +259,25 @@ func runStep(ctx context.Context, root string, step config.CIStep, inherited []s
 	}
 }
 
+// subprojectEnv drops any inherited config.CISubprojectEnv and exports the
+// --subproject value only when one was given, so an ambient or env_file value
+// can never stand in for the flag. The name is the only thing DVA adds: the
+// root's own steps decide what scoping it means, so DVA neither selects task
+// cards nor knows the board tool that does.
+func subprojectEnv(env []string, subproject string) []string {
+	prefix := config.CISubprojectEnv + "="
+	out := make([]string, 0, len(env)+1)
+	for _, e := range env {
+		if !strings.HasPrefix(e, prefix) {
+			out = append(out, e)
+		}
+	}
+	if subproject != "" {
+		out = append(out, prefix+subproject)
+	}
+	return out
+}
+
 func ciEnv(base []string, add map[string]string, workers int) []string {
 	m := map[string]string{}
 	for _, e := range base {
