@@ -9,9 +9,11 @@ All notable changes to DVA are documented here.
 
 - **ldflags 없는 빌드의 `dva version` commit**: ldflags가 commit을 넣지 않은 빌드가 `dev` 대신
   build info로 무엇을 설치했는지 보고합니다. checkout 안의 빌드(`go install ./cmd/dva`)는 VCS
-  revision을, 변경이 있던 tree면 `-dirty`를 붙여 보고하고, module 설치(`go install …@vX.Y.Z`)는
-  SHA로 오인하지 않도록 `unknown (module vX.Y.Z)`를 보고합니다. GoReleaser·`make build`의
-  stamp는 그대로 우선합니다 (ISSUE-533).
+  revision에 `(vcs)`를 붙여, 변경이 있던 tree면 revision 뒤에 `-dirty`도 붙여 보고하고, module
+  설치(`go install …@vX.Y.Z`)는 SHA로 오인하지 않도록 `unknown (module vX.Y.Z)`를 보고합니다.
+  `--json`은 출처를 `commit_source`(`ldflags`·`vcs`·`module`·`default`)로, module 설치의 버전을
+  `module_version`으로 함께 줍니다. GoReleaser·`make build`의 stamp는 그대로 우선해 맨 SHA로
+  출력되고, VCS 정보가 없는 빌드(`-buildvcs=false` 등)는 계속 `dev`를 보고합니다 (ISSUE-533).
 
 ## [0.4.1] - 2026-10-23
 

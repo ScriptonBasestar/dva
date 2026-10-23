@@ -31,23 +31,57 @@ var (
 // unstampedCommit is Commit when no ldflags stamped the build.
 const unstampedCommit = "dev"
 
+// Commit sources, reported as CommitInfo.Source and `dva version --json`'s
+// commit_source.
+const (
+	CommitFromLdflags = "ldflags" // stamped by GoReleaser or `make build`
+	CommitFromVCS     = "vcs"     // build info of a build inside a checkout
+	CommitFromModule  = "module"  // module install: no commit is known
+	CommitFromDefault = "default" // nothing identifies the build
+)
+
+// CommitInfo is the commit `dva version` reports and where it came from.
+type CommitInfo struct {
+	Value  string // the SHA (with -dirty), or unstampedCommit, or "unknown"
+	Source string // one of the CommitFrom* constants
+	Module string // module version, set only when Source is CommitFromModule
+}
+
+// String is the text form. Only an ldflags stamp prints as a bare SHA, so a
+// release check that wants the exact commit still fails on an unstamped build;
+// the other sources say where the value came from.
+func (c CommitInfo) String() string {
+	switch c.Source {
+	case CommitFromVCS:
+		return c.Value + " (vcs)"
+	case CommitFromModule:
+		return fmt.Sprintf("unknown (module %s)", c.Module)
+	default:
+		return c.Value
+	}
+}
+
 // ResolvedCommit reports the commit `dva version` prints. An ldflags stamp
 // (GoReleaser, `make build`) wins. Without one, a build inside a checkout
 // (`go install ./cmd/dva`) still carries the VCS revision in its build info, so
 // that is used, marked -dirty when the tree had changes. A module install
 // (`go install …/cmd/dva@v0.4.1`) has no VCS revision, only the module
-// version; it is labelled so nobody mistakes it for a commit SHA.
-func ResolvedCommit() string {
+// version; it is labelled so nobody mistakes it for a commit SHA. A
+// -buildvcs=false build outside a module install keeps the default.
+func ResolvedCommit() CommitInfo {
 	info, ok := debug.ReadBuildInfo()
 	if !ok {
-		return Commit
+		info = nil
 	}
 	return resolveCommit(Commit, info)
 }
 
-func resolveCommit(stamped string, info *debug.BuildInfo) string {
-	if stamped != unstampedCommit || info == nil {
-		return stamped
+func resolveCommit(stamped string, info *debug.BuildInfo) CommitInfo {
+	if stamped != unstampedCommit {
+		return CommitInfo{Value: stamped, Source: CommitFromLdflags}
+	}
+	if info == nil {
+		return CommitInfo{Value: stamped, Source: CommitFromDefault}
 	}
 	var revision string
 	modified := false
@@ -61,14 +95,14 @@ func resolveCommit(stamped string, info *debug.BuildInfo) string {
 	}
 	if revision != "" {
 		if modified {
-			return revision + "-dirty"
+			revision += "-dirty"
 		}
-		return revision
+		return CommitInfo{Value: revision, Source: CommitFromVCS}
 	}
 	if version := info.Main.Version; version != "" && version != "(devel)" {
-		return fmt.Sprintf("unknown (module %s)", version)
+		return CommitInfo{Value: "unknown", Source: CommitFromModule, Module: version}
 	}
-	return stamped
+	return CommitInfo{Value: stamped, Source: CommitFromDefault}
 }
 
 // checkConfigVersion refuses configs that declare a minimum version newer than

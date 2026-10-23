@@ -34,3 +34,20 @@ func TestVersionJSON(t *testing.T) {
 		t.Errorf("JSON output should contain version %q, got: %s", config.Version, output)
 	}
 }
+
+func TestVersionReportsCommitSource(t *testing.T) {
+	oldJSON := jsonOutput
+	jsonOutput = true
+	defer func() { jsonOutput = oldJSON }()
+
+	output := captureStdout(t, func() {
+		versionCmd.RunE(versionCmd, nil)
+	})
+	want := config.ResolvedCommit()
+	if !strings.Contains(output, `"commit_source": "`+want.Source+`"`) {
+		t.Errorf("JSON output should carry commit_source %q, got: %s", want.Source, output)
+	}
+	if !strings.Contains(output, `"commit": "`+want.Value+`"`) {
+		t.Errorf("JSON output should carry commit %q, got: %s", want.Value, output)
+	}
+}
