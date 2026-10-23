@@ -6,7 +6,7 @@
 **제품 특성**: 재사용할 실행 대상은 `stack`, 실행할 조합은 **named plan**으로 선언합니다.
 구성과 실행 방식이 달라져도 공통 환경 입력과 의존 관계를 유지합니다. 제품 경계는 [PRODUCT.md](PRODUCT.md#product-boundaries)를 따릅니다.
 
-아래 설치·빠른 시작은 공개 버전 **v0.3.0** 기준입니다. 최신 소스의 추가 기능은
+아래 설치·빠른 시작은 공개 버전 **v0.4.1** 기준입니다. 최신 소스의 추가 기능은
 [버전과 지원 범위](USAGE.md#버전과-지원-범위), 다음 릴리스의 완료 기준은
 [ROADMAP.md](ROADMAP.md)를 확인하세요.
 
@@ -16,7 +16,7 @@ DVA는 Go toolchain에서 버전을 고정해 설치하는 방법을 권장합�
 
 ```bash
 # Reproducible module install
-go install github.com/ScriptonBasestar/dva/cmd/dva@v0.3.0
+go install github.com/ScriptonBasestar/dva/cmd/dva@v0.4.1
 
 # Or build locally
 make build
@@ -26,7 +26,7 @@ make build
 Go가 설치한 바이너리는 `GOBIN` 또는 `$(go env GOPATH)/bin`에 생성됩니다. 해당 디렉터리가
 `PATH`에 없으면 추가한 뒤 `dva`를 실행하세요.
 
-Go toolchain 없이 설치하려면 [v0.3.0 Release](https://github.com/ScriptonBasestar/dva/releases/tag/v0.3.0)에서
+Go toolchain 없이 설치하려면 [v0.4.1 Release](https://github.com/ScriptonBasestar/dva/releases/tag/v0.4.1)에서
 OS/architecture archive와 `checksums.txt`를 함께 내려받으세요. 자산 선택과 SHA-256 검증 절차는
 [USAGE.md의 설치](USAGE.md#설치)를 따릅니다. 최신판을 자동 추적하려는 경우에만 `@latest`를
 사용하세요.
