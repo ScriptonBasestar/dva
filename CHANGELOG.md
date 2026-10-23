@@ -7,8 +7,8 @@ All notable changes to DVA are documented here.
 
 ## [0.4.1] - 2026-10-23
 
-v0.4.0 tag는 GitHub Release와 배포 산출물 없이 남았습니다. 그 tag의 Release를 만들던
-release token이 Workflows 권한 없이 거부됐고, 그 권한을 받는 대신 공개 방식을 바꿨기
+v0.4.0 tag는 GitHub Release와 배포 산출물 없이 남았습니다. Release 생성 요청이
+Workflows 권한이 없어 거부됐고, 그 권한을 받는 대신 공개 방식을 바꿨기
 때문입니다(아래 Changed). v0.4.1은 아래 변경과 함께 0.4.0 섹션의 변경을 처음으로 공개하는
 릴리스입니다.
 

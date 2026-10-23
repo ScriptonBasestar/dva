@@ -27,6 +27,9 @@
 
 ## v0.4.0 후보 범위
 
+이 절은 v0.4.0 tag 당시의 범위 기록이다. v0.4.1의 추가 범위는
+[v0.4.1로 공개 전환](#v041로-공개-전환-2026-10-23)을 따른다.
+
 기능의 상세 목록은 [CHANGELOG](CHANGELOG.md)의 0.4.0 후보 섹션, OS·런타임 지원표는
 [USAGE.md](USAGE.md#버전과-지원-범위)를 따른다.
 
@@ -110,7 +113,7 @@ gitignore된 `tmp/release-v0.4.0-real-use-20261021/`에 보존한다.
   삭제와 annotation 값 복사는 [ISSUE-529](tasks/_archive/issue/529-k8s-push-prunes-keys.md)로
   수정했다. 529의 server-side apply는 kind에서 재검증했고, client-side `kubectl apply`로 쓴
   키가 지워지는 남은 한계는 [전송 계약](docs/69-kubernetes-secret-target.md)에 기록했다.
-  신호 종료 doctor 결과([ISSUE-530](tasks/issue/530-doctor-signal-exit.md))와 입력 0개
+  신호 종료 doctor 결과([ISSUE-530](tasks/_archive/issue/530-doctor-signal-exit.md))와 입력 0개
   attestation([ISSUE-531](tasks/_archive/issue/531-ci-attestation-empty-inputs.md))은 low로 등록하고
   이번 후보에서 고치지 않는다.
 - 범위 결정: Cloudflare Access `tunnel:`의 실제 터널 개통·종료는 계정 인가가 필요해 이번
@@ -139,8 +142,8 @@ source tip으로 tag될 때까지 같은 tmp 증거 디렉터리에 두고, 공�
 v0.4.0 tag(`8e8f8499`)를 push한 뒤의 publish에서 GoReleaser의 Release 생성이 403으로
 거부됐다. GoReleaser가 보낸 `target_commitish` 때문에 Release API가 tag를 만들게 되는데,
 `.github/workflows/`를 바꾼 commit에 tag를 만들려면 Workflows write가 필요했기 때문이다.
-사용자는 그 권한을 release token에 주지 않기로 했다. Workflows write는 Actions secret으로
-코드를 실행시킬 수 있기 때문이다. 대신 사람이 tag를 먼저 push하고 GoReleaser는 그 tag에
+사용자는 그 권한을 release 자격(org App installation)에 주지 않기로 했다. Workflows write가
+있으면 workflow 파일을 바꿔 Actions secret에 접근하는 코드를 실행시킬 수 있기 때문이다. 대신 사람이 tag를 먼저 push하고 GoReleaser는 그 tag에
 Release만 만들도록 바꿨다(TASK-532). 공개된 tag는 이동하지 않으므로 v0.4.0 tag는 Release
 없이 두고, 그 뒤의 수정과 함께 v0.4.1로 공개한다. 그때 생긴 draft release는 삭제했다.
 
