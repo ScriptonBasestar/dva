@@ -5,6 +5,8 @@ All notable changes to DVA are documented here.
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-10-24
+
 ### Fixed
 
 - **ldflags 없는 빌드의 `dva version` commit**: ldflags가 commit을 넣지 않은 빌드가 `dev` 대신
