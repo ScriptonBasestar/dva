@@ -22,8 +22,9 @@ module install gives them no commit to check. The Release archive binary reports
 
 ## 소유권 — 이 저장소다
 
-`internal/config/version.go` defaults `Commit` to `"dev"` and `BuildDate` to `"unknown"`, and
-only GoReleaser's ldflags replace them. `go install module@version` applies no ldflags.
+`internal/config/version.go` defaults `Commit` to `"dev"` and `BuildDate` to `"unknown"`.
+GoReleaser (`.goreleaser.yml`) and `make build` (`Makefile`, also used by `make install`) stamp
+them with ldflags; `go install module@version` applies none.
 
 ## Reproduction
 

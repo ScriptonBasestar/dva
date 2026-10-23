@@ -14,7 +14,7 @@ root·공유 자원별 중복 실행 방지, 상태 조회는 [CI 프로필](doc
 2026-10-23 기준 공개 설치 버전은 **v0.4.1**이다. v0.4.0 tag는 Release 없이 남았으므로
 v0.3.0 다음 공개판은 v0.4.1이다. 이 문서는 현재 소스의 사용법도 포함하므로 아래에서
 `미공개`인 기능은 v0.4.1 설치만으로 사용할 수 없다. 공개 검증 기록은
-[v0.4.1 공개 전환](ROADMAP.md#v041로-공개-전환-2026-10-23)에 있다.
+[v0.4.1 후보 검증과 공개](ROADMAP.md#2026-10-23-v041-후보-검증과-공개)에 있다.
 로컬 빌드는 같은 버전 문자열을 사용할 수 있으므로 `dva version`의 commit도 확인한다.
 Release archive의 바이너리는 tag commit을 보고하지만, `go install …@v0.4.1`로 설치한
 바이너리는 commit을 `dev`로 보고한다([ISSUE-533](tasks/issue/533-go-install-version-reports-dev-commit.md)).

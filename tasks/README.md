@@ -1,6 +1,12 @@
 # DVA Task Management Board
 
-## 현재 상태 (2026-10-08)
+## 현재 상태 (2026-10-23)
+
+v0.4.1이 2026-10-23 공개됐다(v0.4.0 tag는 Release 없음). 기록은
+[ROADMAP.md](../ROADMAP.md#2026-10-23-v041-후보-검증과-공개)에 있다. 열린 이슈는
+[ISSUE-533](issue/533-go-install-version-reports-dev-commit.md)이다.
+
+### 2026-10-08 기록
 
 v0.3.0 공개·postflight와 PLAN-010(8/8)·PLAN-011(19/19)의 종결 기록은
 `tasks/_archive/plan/`에 있다. 종결에는 다른 제품으로의 이관도 포함되므로
@@ -233,7 +239,7 @@ TASK-498은 생산 판정을 변경하지 않았으며, 실제 inventory와 읽�
 
 ## 로컬 DVA 적용 (TASK-499)
 
-기본 DVA는 버전 0.3.0, commit 2d08fcde 로컬 빌드다. 공식 dva install의
+TASK-499 당시 기본 DVA는 버전 0.3.0, commit 2d08fcde 로컬 빌드였다. 공식 dva install의
 원자적 교체와 기본 PATH 버전·해시, 읽기 전용 queue/verdict를 검증했다.
 이것은 새 공개 릴리스가 아니며 TASK-496의 역사적 host 실행 증거를 다시 만들지 않았다.
 백업과 설치 증거는 tasks/done/evidence/TASK-499에 있다.

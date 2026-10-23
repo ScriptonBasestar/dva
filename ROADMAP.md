@@ -20,7 +20,7 @@ v0.4.1로 옮겼다([v0.4.1로 공개 전환](#v041로-공개-전환-2026-10-23)
 | 1 · P1 | 현재 상태 문서 정합화 | 공개판·소스 구분, 지원표, named plan 빠른 시작, 문서 게이트와 독립 리뷰 | 완료 — 도입 커밋의 검증 기록 참조 |
 | 2 · P1 | 릴리스 범위 확정 | 목표 버전·포함/이월·호환성 주의사항과 변경 내역 대조 | 완료 — 범위 대조·독립 리뷰 기록 보존 |
 | 3 · P1 | 후보 검증 | 동일 후보 소스에서 아래 검증 범위의 결과와 미실행 항목을 기록 | 완료 — [v0.4.1 후보 검증과 공개](#2026-10-23-v041-후보-검증과-공개) |
-| 4 · P1 | 공개와 설치 확인 | 기존 런북의 preflight·공개·postflight 성공, 설치 문서 버전 갱신 | 완료 — v0.4.1 공개(2026-10-23), 설치 문서 갱신 |
+| 4 · P1 | 공개와 설치 확인 | 기존 런북의 preflight·공개·postflight 성공, 설치 문서 버전 갱신 | 공개 완료(v0.4.1, 2026-10-23) — USAGE.md 설치 문서 갱신, README.md 갱신은 사용자 승인 대기 |
 
 단계 3부터는 검증 대상 소스, 선행 조건, 실행 명령과 필요한 실환경 검증을 기록한다.
 전체 완료는 네 단계의 인수 기준 충족으로 판정한다.
@@ -122,8 +122,8 @@ gitignore된 `tmp/release-v0.4.0-real-use-20261021/`에 보존한다.
   기존 증거이며, 이 제한을 [지원표](USAGE.md#버전과-지원-범위)·CHANGELOG·릴리스 노트에 명시했다.
 
 최종 후보 SHA의 `dva ci full`·hosted CI·snapshot 결과는 후보 commit 뒤에 만들어지므로 후보가
-source tip으로 tag될 때까지 같은 tmp 증거 디렉터리에 두고, 공개 뒤 단계 4 기록에서 이 문서로
-옮긴다.
+source tip으로 tag될 때까지 같은 tmp 증거 디렉터리에 두었고, 공개 뒤
+[단계 4 기록](#2026-10-23-v041-후보-검증과-공개)으로 옮겼다.
 
 - 로컬: 선언된 `dva ci full`의 모든 단계 성공. run ID, 소스 입력, 실행 환경을 기록한다.
 - 호스팅 CI: 같은 후보의 Linux/macOS 검사와 GoReleaser snapshot 결과를 확인한다.
@@ -155,11 +155,13 @@ Release만 만들도록 바꿨다(TASK-532). 공개된 tag는 이동하지 않�
 
 ### 2026-10-23 v0.4.1 후보 검증과 공개
 
-후보는 `addb2af975ad8fbee6f07769760685cc594d264e`(master tip, `v0.4.1` tag)다.
+후보는 `addb2af975ad8fbee6f07769760685cc594d264e`(tag 시점의 master tip, `v0.4.1` tag)다.
 
 - 로컬: `dva ci full` run `084cfecbf713bb6d1b12f6222f571b5f`가 9단계(format·docs·vet·lint·
   test·build·integration·skill-dogfood·commit-subjects) 모두 성공했다(2m15s, macOS arm64).
   receipt attestation은 시작·종료 입력이 같고 commit이 후보와 같으며 `dirty: false`다.
+  receipt는 실행 장비의 `~/.local/state/dva/ci/084cfecbf713bb6d1b12f6222f571b5f.json`에만 있고
+  저장소에 보존하지 않았다. 실행 root였던 release-prep worktree는 정리됐다.
 - 호스팅 CI: 같은 commit의 master push run `39912353702`가 성공했다. lint·test·commit-subjects,
   ubuntu·macOS의 config-env-platform 네 job, `goreleaser-snapshot`이 모두 성공이다.
 - 실제 사용: v0.4.0 이후 바뀐 외부 도구 경로는 TASK-532의 공개 절차뿐이며, 아래 공개 자체로
