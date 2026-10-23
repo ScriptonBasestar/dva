@@ -53,7 +53,6 @@ release:
   github:
     owner: ScriptonBasestar
     name: dva
-  target_commitish: "{{ .Commit }}"
   use_existing_draft: true
   replace_existing_artifacts: true
   draft: false

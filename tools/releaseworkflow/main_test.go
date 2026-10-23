@@ -18,12 +18,12 @@ case "$*" in
   "status --porcelain") exit 0 ;;
   "cat-file -t refs/tags/v1.2.3") echo commit ;;
   "rev-list -n1 refs/tags/v1.2.3"|"rev-parse HEAD") echo aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ;;
-  "ls-remote --exit-code --tags origin refs/tags/v1.2.3") exit 2 ;;
+  "ls-remote --exit-code --tags origin refs/tags/v1.2.3 refs/tags/v1.2.3^{}") echo 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa refs/tags/v1.2.3' ;;
   *) echo "unexpected git: $*" >&2; exit 9 ;;
 esac`, `
 case "$*" in
   "api --include repos/ScriptonBasestar/dva/releases/tags/v1.2.3") echo 'HTTP/2.0 404 Not Found' >&2; exit 1 ;;
-  "api --method POST repos/ScriptonBasestar/dva/releases/generate-notes -f tag_name=v1.2.3 -f target_commitish=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") echo '{}' ;;
+  "api --method POST repos/ScriptonBasestar/dva/releases/generate-notes -f tag_name=v1.2.3") echo '{}' ;;
   *) echo "unexpected gh: $*" >&2; exit 9 ;;
 esac`, `echo 'goreleaser version 2.12.7'`)
 	notes, digest := fixtureNotes(t, dir)
@@ -51,15 +51,42 @@ func TestPreflightRefusesUnknownDetachedState(t *testing.T) {
 	}
 }
 
-func TestPreflightRefusesExistingRemoteTag(t *testing.T) {
-	dir := fakeCommands(t, `
+func TestPreflightRequiresPushedTagAtCommit(t *testing.T) {
+	for name, tc := range map[string]struct{ remote, want string }{
+		"unpushed":               {`exit 2`, "is not pushed"},
+		"other commit":           {`echo 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb refs/tags/v1.2.3'`, "a published tag is never moved"},
+		"annotated other commit": {`printf '%s\n' 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa refs/tags/v1.2.3' 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb refs/tags/v1.2.3^{}'`, "a published tag is never moved"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			dir := fakeCommands(t, `
 case "$*" in
  "symbolic-ref -q HEAD") exit 1;; "status --porcelain") ;; "cat-file -t refs/tags/v1.2.3") echo commit;;
  "rev-list -n1 refs/tags/v1.2.3"|"rev-parse HEAD") echo aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa;;
- "ls-remote --exit-code --tags origin refs/tags/v1.2.3") echo exists;; *) exit 9;; esac`, "exit 9", "echo 'goreleaser version 2.12.7'")
-	notes, digest := fixtureNotes(t, dir)
-	err := preflight([]string{"--tag", "v1.2.3", "--commit", testCommit, "--release-notes", notes, "--release-notes-sha256", digest, "--mise-file", filepath.Join(dir, ".mise.toml")})
-	if err == nil || !strings.Contains(err.Error(), "already exists") {
+ "ls-remote --exit-code --tags origin refs/tags/v1.2.3 refs/tags/v1.2.3^{}") `+tc.remote+`;; *) exit 9;; esac`, "echo SHOULD_NOT_RUN >&2; exit 9", "echo 'goreleaser version 2.12.7'")
+			notes, digest := fixtureNotes(t, dir)
+			err := preflight([]string{"--tag", "v1.2.3", "--commit", testCommit, "--release-notes", notes, "--release-notes-sha256", digest, "--mise-file", filepath.Join(dir, ".mise.toml")})
+			if err == nil || !strings.Contains(err.Error(), tc.want) || !strings.Contains(err.Error(), "push the reviewed tag") || strings.Contains(err.Error(), "SHOULD_NOT_RUN") {
+				t.Fatalf("error = %v", err)
+			}
+		})
+	}
+}
+
+func TestRemoteTagTargetPeelsAnnotatedTag(t *testing.T) {
+	fakeCommands(t, `
+case "$*" in
+ "ls-remote --exit-code --tags origin refs/tags/v1.2.3 refs/tags/v1.2.3^{}") printf '%s\n' 'cccccccccccccccccccccccccccccccccccccccc refs/tags/v1.2.3' 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa refs/tags/v1.2.3^{}';; *) exit 9;; esac`, "exit 9", "exit 9")
+	if err := remoteTagTarget("v1.2.3", testCommit); err != nil {
+		t.Fatalf("annotated tag peeling to the commit: %v", err)
+	}
+}
+
+func TestRemoteTagTargetRefusesUnmatchedOutput(t *testing.T) {
+	fakeCommands(t, `
+case "$*" in
+ "ls-remote --exit-code --tags origin refs/tags/v1.2.3 refs/tags/v1.2.3^{}") echo 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa refs/tags/other/v1.2.3';; *) exit 9;; esac`, "exit 9", "exit 9")
+	err := remoteTagTarget("v1.2.3", testCommit)
+	if err == nil || !strings.Contains(err.Error(), "cannot determine") || strings.Contains(err.Error(), "never moved") {
 		t.Fatalf("error = %v", err)
 	}
 }
@@ -69,7 +96,7 @@ func TestPreflightRefusesUnknownRemoteState(t *testing.T) {
 case "$*" in
  "symbolic-ref -q HEAD") exit 1;; "status --porcelain") ;; "cat-file -t refs/tags/v1.2.3") echo commit;;
  "rev-list -n1 refs/tags/v1.2.3"|"rev-parse HEAD") echo aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa;;
- "ls-remote --exit-code --tags origin refs/tags/v1.2.3") echo 'network unavailable' >&2; exit 128;; *) exit 9;; esac`, "exit 9", "echo 'goreleaser version 2.12.7'")
+ "ls-remote --exit-code --tags origin refs/tags/v1.2.3 refs/tags/v1.2.3^{}") echo 'network unavailable' >&2; exit 128;; *) exit 9;; esac`, "exit 9", "echo 'goreleaser version 2.12.7'")
 	notes, digest := fixtureNotes(t, dir)
 	err := preflight([]string{"--tag", "v1.2.3", "--commit", testCommit, "--release-notes", notes, "--release-notes-sha256", digest, "--mise-file", filepath.Join(dir, ".mise.toml")})
 	if err == nil || !strings.Contains(err.Error(), "cannot determine") {
@@ -111,7 +138,7 @@ case "$*" in
   "status --porcelain") exit 0 ;;
   "cat-file -t refs/tags/v1.2.3") echo commit ;;
   "rev-list -n1 refs/tags/v1.2.3"|"rev-parse HEAD") echo aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ;;
-  "ls-remote --exit-code --tags origin refs/tags/v1.2.3") exit 2 ;;
+  "ls-remote --exit-code --tags origin refs/tags/v1.2.3 refs/tags/v1.2.3^{}") echo 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa refs/tags/v1.2.3' ;;
   *) exit 9 ;;
 esac`, `
 test "$GH_TOKEN" = provided || { echo wrong-token >&2; exit 9; }
@@ -120,7 +147,7 @@ test "$GH_HOST" = github.com || { echo wrong-host >&2; exit 9; }
 test -z "$GH_ENTERPRISE_TOKEN" || { echo enterprise-token-leaked >&2; exit 9; }
 case "$*" in
   "api --include repos/ScriptonBasestar/dva/releases/tags/v1.2.3") echo 'HTTP/2.0 404 Not Found' >&2; exit 1 ;;
-  "api --method POST repos/ScriptonBasestar/dva/releases/generate-notes -f tag_name=v1.2.3 -f target_commitish=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") echo '{}' ;;
+  "api --method POST repos/ScriptonBasestar/dva/releases/generate-notes -f tag_name=v1.2.3") echo '{}' ;;
   *) exit 9 ;;
 esac`, `echo 'goreleaser version 2.12.7'`)
 	notes, digest := fixtureNotes(t, dir)
@@ -130,10 +157,11 @@ esac`, `echo 'goreleaser version 2.12.7'`)
 }
 
 func TestPostflightRequiresFinalExactSevenAssetsAndCleanup(t *testing.T) {
-	assetJSON := `{"tagName":"v1.2.3","targetCommitish":"` + testCommit + `","isDraft":false,"isPrerelease":false,"assets":[{"name":"checksums.txt","state":"uploaded","size":1},{"name":"dva_linux_amd64.tar.gz","state":"uploaded","size":1},{"name":"dva_linux_arm64.tar.gz","state":"uploaded","size":1},{"name":"dva_darwin_amd64.tar.gz","state":"uploaded","size":1},{"name":"dva_darwin_arm64.tar.gz","state":"uploaded","size":1},{"name":"dva_windows_amd64.zip","state":"uploaded","size":1},{"name":"dva_windows_arm64.zip","state":"uploaded","size":1}]}`
-	dir := fakeCommands(t, `case "$*" in "ls-remote --tags origin refs/tags/v1.2.3 refs/tags/v1.2.3^{}") echo 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa refs/tags/v1.2.3';; *) exit 9;; esac`, `
+	// A Release created on an existing tag reports the default branch as targetCommitish.
+	assetJSON := `{"tagName":"v1.2.3","targetCommitish":"master","isDraft":false,"isPrerelease":false,"assets":[{"name":"checksums.txt","state":"uploaded","size":1},{"name":"dva_linux_amd64.tar.gz","state":"uploaded","size":1},{"name":"dva_linux_arm64.tar.gz","state":"uploaded","size":1},{"name":"dva_darwin_amd64.tar.gz","state":"uploaded","size":1},{"name":"dva_darwin_arm64.tar.gz","state":"uploaded","size":1},{"name":"dva_windows_amd64.zip","state":"uploaded","size":1},{"name":"dva_windows_arm64.zip","state":"uploaded","size":1}]}`
+	dir := fakeCommands(t, `case "$*" in "ls-remote --exit-code --tags origin refs/tags/v1.2.3 refs/tags/v1.2.3^{}") echo 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa refs/tags/v1.2.3';; *) exit 9;; esac`, `
 case "$*" in
-  "release view v1.2.3 --repo ScriptonBasestar/dva --json tagName,targetCommitish,isDraft,isPrerelease,assets") echo '`+assetJSON+`' ;;
+  "release view v1.2.3 --repo ScriptonBasestar/dva --json tagName,isDraft,isPrerelease,assets") echo '`+assetJSON+`' ;;
   "release download v1.2.3"*)
     while [ "$#" -gt 0 ]; do [ "$1" = --dir ] && { shift; out=$1; }; shift; done
     cp "$RELEASE_ASSET_FIXTURE"/* "$out" ;;

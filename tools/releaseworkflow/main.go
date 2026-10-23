@@ -131,7 +131,6 @@ func commandStatus(cmd *exec.Cmd) ([]byte, int, error) {
 
 type release struct {
 	TagName    string `json:"tagName"`
-	Target     string `json:"targetCommitish"`
 	Draft      bool   `json:"isDraft"`
 	Prerelease bool   `json:"isPrerelease"`
 	Assets     []struct {
@@ -141,8 +140,10 @@ type release struct {
 	} `json:"assets"`
 }
 
-func finalRelease(repo, tag, commit string) error {
-	out, err := runGH("release", "view", tag, "--repo", repo, "--json", "tagName,targetCommitish,isDraft,isPrerelease,assets")
+// finalRelease ignores targetCommitish: for a Release made on an existing tag GitHub reports
+// the default branch there, so the tag's commit is checked by remoteTagTarget instead.
+func finalRelease(repo, tag string) error {
+	out, err := runGH("release", "view", tag, "--repo", repo, "--json", "tagName,isDraft,isPrerelease,assets")
 	if err != nil {
 		return err
 	}
@@ -150,8 +151,8 @@ func finalRelease(repo, tag, commit string) error {
 	if err := json.Unmarshal(out, &r); err != nil {
 		return fmt.Errorf("parse GitHub release response: %w", err)
 	}
-	if r.TagName != tag || r.Target != commit || r.Draft || r.Prerelease {
-		return fmt.Errorf("release must be final and target %s (tag=%q target=%q draft=%t prerelease=%t)", commit, r.TagName, r.Target, r.Draft, r.Prerelease)
+	if r.TagName != tag || r.Draft || r.Prerelease {
+		return fmt.Errorf("release must be final for %s (tag=%q draft=%t prerelease=%t)", tag, r.TagName, r.Draft, r.Prerelease)
 	}
 	got := map[string]bool{}
 	for _, a := range r.Assets {

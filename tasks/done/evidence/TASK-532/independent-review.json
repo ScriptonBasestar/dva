@@ -1,0 +1,30 @@
+{
+  "task": "TASK-532",
+  "verdict": "PASS",
+  "reviewer": "claude general-purpose subagent (separate agent context from the implementer)",
+  "capabilityGrade": "strong",
+  "note": "The board names Grok 4.7 for review; launching a separate AI runtime was not authorized in this session, so an independent Claude subagent reviewed instead.",
+  "reviewedAt": "2026-10-23",
+  "rounds": [
+    {
+      "round": 1,
+      "verdict": "PASS",
+      "findings": [
+        {"severity": "minor", "file": "tools/releaseworkflow/main_test.go", "summary": "No passing test for an annotated tag whose peeled line is the commit", "resolution": "added TestRemoteTagTargetPeelsAnnotatedTag"},
+        {"severity": "minor", "file": "tools/releaseworkflow/preflight.go", "summary": "ls-remote exit 0 without an exact ref produced a misleading 'never moved' error", "resolution": "now 'cannot determine'; added TestRemoteTagTargetRefusesUnmatchedOutput"},
+        {"severity": "minor", "file": "docs/52-manual-release-runbook.md", "summary": "step 3 used $RELEASE_TAG before the export block", "resolution": "step 3 now exports RELEASE_TAG/RELEASE_COMMIT first"},
+        {"severity": "nit", "file": "tools/releaseworkflow/preflight.go", "summary": "tag-deletion race between preflight and publish", "resolution": "documented in the runbook failure section"},
+        {"severity": "nit", "file": "tools/releaseworkflow/main_test.go", "summary": "postflight fixture keeps targetCommitish master although not requested", "resolution": "kept intentionally to show the field is ignored"}
+      ]
+    },
+    {
+      "round": 2,
+      "verdict": "PASS",
+      "findings": [
+        {"severity": "minor", "file": "tasks/todo/532-release-tag-first.md", "summary": "verify -run regex omitted the two new remoteTagTarget tests", "resolution": "added both names"},
+        {"severity": "nit", "file": "docs/52-manual-release-runbook.md", "summary": "race note overstated postflight rejection", "resolution": "now 'rejected when it differs from the release commit'"}
+      ],
+      "checked": ["go test ./tools/releaseworkflow/ -count=1 passes", "go vet ./tools/releaseworkflow/ clean", "no target_commitish in .goreleaser.yml or the probe", "no leftover callers of remoteTagAbsent or the old finalRelease signature"]
+    }
+  ]
+}

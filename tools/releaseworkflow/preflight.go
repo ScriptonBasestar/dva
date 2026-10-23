@@ -49,13 +49,15 @@ func preflight(args []string) error {
 	if err := checkGoReleaser(*miseFile); err != nil {
 		return err
 	}
-	if err := remoteTagAbsent(c.tag); err != nil {
-		return err
+	// The human pushes the reviewed tag first, so GoReleaser only creates a Release for an
+	// existing tag. Creating the tag through the Release API would need Workflows write.
+	if err := remoteTagTarget(c.tag, c.commit); err != nil {
+		return fmt.Errorf("push the reviewed tag before preflight: %w", err)
 	}
 	if err := releaseAbsent(c.repo, c.tag); err != nil {
 		return err
 	}
-	if err := capabilityProbe(c.repo, c.tag, c.commit); err != nil {
+	if err := capabilityProbe(c.repo, c.tag); err != nil {
 		return err
 	}
 	if err := checkCleanup(c.cleanupPaths); err != nil {
@@ -84,7 +86,7 @@ func postflight(args []string) error {
 	if err := remoteTagTarget(c.tag, c.commit); err != nil {
 		return err
 	}
-	if err := finalRelease(c.repo, c.tag, c.commit); err != nil {
+	if err := finalRelease(c.repo, c.tag); err != nil {
 		return err
 	}
 	if err := checkCleanup(c.cleanupPaths); err != nil {
@@ -208,19 +210,6 @@ func checkGoReleaser(miseFile string) error {
 	return nil
 }
 
-func remoteTagAbsent(tag string) error {
-	out, code, err := runStatus("git", "ls-remote", "--exit-code", "--tags", "origin", "refs/tags/"+tag)
-	if err != nil {
-		return err
-	}
-	if code == 0 {
-		return fmt.Errorf("remote tag %s already exists", tag)
-	}
-	if code == 2 && strings.TrimSpace(string(out)) == "" {
-		return nil
-	}
-	return fmt.Errorf("cannot determine whether remote tag %s exists (git ls-remote exit %d: %s)", tag, code, strings.TrimSpace(string(out)))
-}
 func releaseAbsent(repo, tag string) error {
 	out, code, err := runGHStatus("api", "--include", "repos/"+repo+"/releases/tags/"+tag)
 	if err != nil {
@@ -235,24 +224,47 @@ func releaseAbsent(repo, tag string) error {
 	return fmt.Errorf("cannot determine whether GitHub release %s exists (gh api exit %d: %s)", tag, code, redactCredential(strings.TrimSpace(string(out))))
 }
 
-func capabilityProbe(repo, tag, commit string) error {
-	_, err := runGH("api", "--method", "POST", "repos/"+repo+"/releases/generate-notes", "-f", "tag_name="+tag, "-f", "target_commitish="+commit)
+// capabilityProbe sends no target_commitish: the tag already exists, and naming a commit is
+// what makes GitHub demand Workflows write when that commit changes .github/workflows.
+func capabilityProbe(repo, tag string) error {
+	_, err := runGH("api", "--method", "POST", "repos/"+repo+"/releases/generate-notes", "-f", "tag_name="+tag)
 	if err != nil {
 		return fmt.Errorf("non-persisting GitHub generate-notes write-capability probe failed: %w", err)
 	}
 	return nil
 }
 
+// remoteTagTarget requires the pushed tag to resolve to commit, peeling an annotated tag.
 func remoteTagTarget(tag, commit string) error {
-	out, err := run("git", "ls-remote", "--tags", "origin", "refs/tags/"+tag, "refs/tags/"+tag+"^{}")
+	ref := "refs/tags/" + tag
+	out, code, err := runStatus("git", "ls-remote", "--exit-code", "--tags", "origin", ref, ref+"^{}")
 	if err != nil {
 		return err
 	}
+	if code == 2 && strings.TrimSpace(string(out)) == "" {
+		return fmt.Errorf("remote tag %s is not pushed", tag)
+	}
+	if code != 0 {
+		return fmt.Errorf("cannot determine whether remote tag %s targets %s (git ls-remote exit %d: %s)", tag, commit, code, strings.TrimSpace(string(out)))
+	}
+	direct, peeled := "", ""
 	for line := range strings.SplitSeq(strings.TrimSpace(string(out)), "\n") {
-		fields := strings.Fields(line)
-		if len(fields) == 2 && fields[0] == commit {
-			return nil
+		switch fields := strings.Fields(line); {
+		case len(fields) == 2 && fields[1] == ref:
+			direct = fields[0]
+		case len(fields) == 2 && fields[1] == ref+"^{}":
+			peeled = fields[0]
 		}
 	}
-	return fmt.Errorf("remote tag %s does not target %s", tag, commit)
+	got := direct
+	if peeled != "" {
+		got = peeled
+	}
+	if got == "" {
+		return fmt.Errorf("cannot determine whether remote tag %s targets %s (no exact ref in git ls-remote output: %s)", tag, commit, strings.TrimSpace(string(out)))
+	}
+	if got != commit {
+		return fmt.Errorf("remote tag %s = %q, want %s; a published tag is never moved", tag, got, commit)
+	}
+	return nil
 }

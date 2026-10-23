@@ -21,6 +21,16 @@ All notable changes to DVA are documented here.
   그대로 읽습니다. 상위 저장소의 ignored 경로 아래 root(예: `tmp/develop-view/...`)는
   의도적으로 commit을 기록하지 않으므로, 그런 소비자는 디렉터리 이름 우회를 유지합니다(ISSUE-521).
 
+### Changed
+
+- **공개 릴리스는 tag를 먼저 push합니다**: GoReleaser 설정이 `target_commitish`를 더 이상
+  보내지 않아 Release API가 tag를 만들지 않고, 사람이 push한 tag에 Release만 만듭니다.
+  `.github/workflows/`를 바꾼 commit에 Release API로 tag를 만들면 GitHub가 Workflows write를
+  요구하므로, 릴리스 자격은 Contents 권한만으로 충분해집니다. `release-preflight`는 remote
+  tag 부재 대신 remote tag가 release commit을 가리키는지(annotated tag는 peel)를 요구하고,
+  `release-postflight`는 Release의 `targetCommitish`가 아니라 remote tag로 commit identity를
+  판정합니다 (TASK-532).
+
 ### Fixed
 
 - **doctor command의 종료 신호**: 사용자 `type: command` 검사가 신호로 종료되면 JSON
