@@ -4,7 +4,8 @@
 
 v0.4.1이 2026-10-23 공개됐다(v0.4.0 tag는 Release 없음). 기록은
 [ROADMAP.md](../ROADMAP.md#2026-10-23-v041-후보-검증과-공개)에 있다. 열린 이슈는
-[ISSUE-533](issue/533-go-install-version-reports-dev-commit.md)이다.
+[ISSUE-533](issue/533-go-install-version-reports-dev-commit.md)이다. 이 밖에 `decision/`의 Proposed 결정
+501-504와, 보관 전인 `done/`의 520·532가 남아 있다.
 
 ### 2026-10-08 기록
 

@@ -121,9 +121,9 @@ gitignore된 `tmp/release-v0.4.0-real-use-20261021/`에 보존한다.
   만료 토큰 판정과 `dva doctor` 보고([ISSUE-488](tasks/_archive/issue/488-measure-expired-tunnel-token-and-live-doctor.md))가
   기존 증거이며, 이 제한을 [지원표](USAGE.md#버전과-지원-범위)·CHANGELOG·릴리스 노트에 명시했다.
 
-최종 후보 SHA의 `dva ci full`·hosted CI·snapshot 결과는 후보 commit 뒤에 만들어지므로 후보가
-source tip으로 tag될 때까지 같은 tmp 증거 디렉터리에 두었고, 공개 뒤
-[단계 4 기록](#2026-10-23-v041-후보-검증과-공개)으로 옮겼다.
+v0.4.0 최종 후보(`8e8f8499`)의 `dva ci full`·hosted CI·snapshot 결과는 같은 tmp 증거 디렉터리의
+`06-candidate-8e8f8499/`에 남았고, 그 후보는 공개되지 않았다. v0.4.1 후보의 결과는
+[단계 4 기록](#2026-10-23-v041-후보-검증과-공개)에 직접 기록했다.
 
 - 로컬: 선언된 `dva ci full`의 모든 단계 성공. run ID, 소스 입력, 실행 환경을 기록한다.
 - 호스팅 CI: 같은 후보의 Linux/macOS 검사와 GoReleaser snapshot 결과를 확인한다.
