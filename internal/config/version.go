@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"regexp"
+	"runtime/debug"
 	"strconv"
 )
 
@@ -20,11 +21,55 @@ const MinScaffoldVersion = "0.1.44"
 var (
 	// Version is the current DVA version (bump manually for releases).
 	Version = "0.4.1"
-	// Commit is the git commit hash, injected at build time via ldflags.
-	Commit = "dev"
+	// Commit is the git commit hash, injected at build time via ldflags. Read it
+	// through ResolvedCommit, which falls back to build info when ldflags left it.
+	Commit = unstampedCommit
 	// BuildDate is the build timestamp, injected at build time via ldflags.
 	BuildDate = "unknown"
 )
+
+// unstampedCommit is Commit when no ldflags stamped the build.
+const unstampedCommit = "dev"
+
+// ResolvedCommit reports the commit `dva version` prints. An ldflags stamp
+// (GoReleaser, `make build`) wins. Without one, a build inside a checkout
+// (`go install ./cmd/dva`) still carries the VCS revision in its build info, so
+// that is used, marked -dirty when the tree had changes. A module install
+// (`go install …/cmd/dva@v0.4.1`) has no VCS revision, only the module
+// version; it is labelled so nobody mistakes it for a commit SHA.
+func ResolvedCommit() string {
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		return Commit
+	}
+	return resolveCommit(Commit, info)
+}
+
+func resolveCommit(stamped string, info *debug.BuildInfo) string {
+	if stamped != unstampedCommit || info == nil {
+		return stamped
+	}
+	var revision string
+	modified := false
+	for _, setting := range info.Settings {
+		switch setting.Key {
+		case "vcs.revision":
+			revision = setting.Value
+		case "vcs.modified":
+			modified = setting.Value == "true"
+		}
+	}
+	if revision != "" {
+		if modified {
+			return revision + "-dirty"
+		}
+		return revision
+	}
+	if version := info.Main.Version; version != "" && version != "(devel)" {
+		return fmt.Sprintf("unknown (module %s)", version)
+	}
+	return stamped
+}
 
 // checkConfigVersion refuses configs that declare a minimum version newer than
 // the running DVA binary. Empty version is allowed (no gate) — see version.go.

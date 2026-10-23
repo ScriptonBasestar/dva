@@ -14,17 +14,19 @@ var versionCmd = &cobra.Command{
 	Aliases: []string{"-v", "--version"},
 	Short:   "Show DVA version",
 	Long: `Print the dva binary's version, commit, and build date, injected at build time
-via -ldflags; this reflects the binary, not the dva.yml in the current directory.`,
+via -ldflags; this reflects the binary, not the dva.yml in the current directory.
+Without an ldflags commit, a build inside a checkout reports its VCS revision and
+a module install reports "unknown (module <version>)".`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if jsonOutput {
 			return output.PrintJSON(map[string]string{
 				"version":    config.Version,
-				"commit":     config.Commit,
+				"commit":     config.ResolvedCommit(),
 				"build_date": config.BuildDate,
 			})
 		}
 		fmt.Printf("dva version %s\n", config.Version)
-		fmt.Printf("commit: %s\n", config.Commit)
+		fmt.Printf("commit: %s\n", config.ResolvedCommit())
 		fmt.Printf("build date: %s\n", config.BuildDate)
 		return nil
 	},

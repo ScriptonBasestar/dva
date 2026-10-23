@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"regexp"
+	"runtime/debug"
 	"strings"
 	"testing"
 )
@@ -215,5 +216,32 @@ func TestVersionPatternMatchesSchema(t *testing.T) {
 	}
 	if _, err := parseVersion(tooWide); err == nil {
 		t.Errorf("parseVersion(%q) error = nil, want an int-range rejection", tooWide)
+	}
+}
+
+func TestResolveCommit(t *testing.T) {
+	const sha = "addb2af975ad8fbee6f07769760685cc594d264e"
+	vcs := func(modified string) []debug.BuildSetting {
+		return []debug.BuildSetting{{Key: "vcs", Value: "git"}, {Key: "vcs.revision", Value: sha}, {Key: "vcs.modified", Value: modified}}
+	}
+	tests := []struct {
+		name    string
+		stamped string
+		info    *debug.BuildInfo
+		want    string
+	}{
+		{"ldflags stamp wins over build info", "1111111111111111111111111111111111111111", &debug.BuildInfo{Settings: vcs("false")}, "1111111111111111111111111111111111111111"},
+		{"checkout build uses the VCS revision", unstampedCommit, &debug.BuildInfo{Main: debug.Module{Version: "(devel)"}, Settings: vcs("false")}, sha},
+		{"dirty checkout build is marked", unstampedCommit, &debug.BuildInfo{Settings: vcs("true")}, sha + "-dirty"},
+		{"module install labels the module version", unstampedCommit, &debug.BuildInfo{Main: debug.Module{Version: "v0.4.1"}}, "unknown (module v0.4.1)"},
+		{"no build info keeps the default", unstampedCommit, nil, unstampedCommit},
+		{"devel build without VCS keeps the default", unstampedCommit, &debug.BuildInfo{Main: debug.Module{Version: "(devel)"}}, unstampedCommit},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := resolveCommit(tt.stamped, tt.info); got != tt.want {
+				t.Errorf("resolveCommit() = %q, want %q", got, tt.want)
+			}
+		})
 	}
 }

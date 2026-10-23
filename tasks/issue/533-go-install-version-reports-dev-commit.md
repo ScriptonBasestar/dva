@@ -11,6 +11,9 @@ ownership: local
 discovered-in: "v0.4.1 publication install check (2026-10-23)"
 discovered-at: 2026-10-23
 created: 2026-10-23
+resolution: fixed
+resolved-at: 2026-10-23T13:00:40Z
+resolution-summary: "Resolved as fixed."
 ---
 
 ## Summary
@@ -42,5 +45,7 @@ them with ldflags; `go install module@version` applies none.
 ## 범위
 
 Only the version output when ldflags are absent. GoReleaser-stamped builds keep their values.
-Decide in the fix whether a VCS revision from build info (present for builds inside a checkout)
-also replaces `dev`.
+Decided in the fix: a VCS revision from build info (present for builds inside a checkout) also
+replaces `dev`, with `-dirty` when `vcs.modified` is true. ce-devenv's internal Go tool installer
+builds DVA with `go install ./cmd/dva` inside its checkout and checks the reported commit
+against its recorded revision (ce-devenv TASK-040), so the module version alone is not enough.
