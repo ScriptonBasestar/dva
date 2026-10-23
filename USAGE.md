@@ -11,12 +11,13 @@ root·공유 자원별 중복 실행 방지, 상태 조회는 [CI 프로필](doc
 
 ## 버전과 지원 범위
 
-2026-10-08 기준 공개 설치 버전은 **v0.3.0**이다. 이 문서는 현재 소스의 사용법도
-포함하므로 아래에서 `미공개`인 기능은 v0.3.0 설치만으로 사용할 수 없다.
-다음 목표는 v0.4.1이지만 아직 공개판은 아니다. v0.4.0 tag는 Release 없이 남았다.
-후보 범위와 검증 상태는 [로드맵](ROADMAP.md#v040-후보-범위)과
-[v0.4.1 공개 전환](ROADMAP.md#v041로-공개-전환-2026-10-23)을 따른다.
+2026-10-23 기준 공개 설치 버전은 **v0.4.1**이다. v0.4.0 tag는 Release 없이 남았으므로
+v0.3.0 다음 공개판은 v0.4.1이다. 이 문서는 현재 소스의 사용법도 포함하므로 아래에서
+`미공개`인 기능은 v0.4.1 설치만으로 사용할 수 없다. 공개 검증 기록은
+[v0.4.1 공개 전환](ROADMAP.md#v041로-공개-전환-2026-10-23)에 있다.
 로컬 빌드는 같은 버전 문자열을 사용할 수 있으므로 `dva version`의 commit도 확인한다.
+Release archive의 바이너리는 tag commit을 보고하지만, `go install …@v0.4.1`로 설치한
+바이너리는 commit을 `dev`로 보고한다([ISSUE-533](tasks/issue/533-go-install-version-reports-dev-commit.md)).
 `dva manifest -f json`으로 설치본의 명령과 프로젝트 선언을 조회한다.
 
 | 기능 | 제공 시점 | 현재 지원·제한 |
@@ -24,13 +25,13 @@ root·공유 자원별 중복 실행 방지, 상태 조회는 [CI 프로필](doc
 | named plan, 설정 합성, interaction/provision, subproject, 스킬 설치 | v0.3.0에 포함 | 외부 runner 도구 설치가 필요. 스킬 설치와 런타임 deny 지원은 별개 |
 | 로컬 background process | v0.3.0에 포함 | Windows 미지원. 다른 OS의 프로세스 그룹 계약을 사용 |
 | `dva ci` | v0.3.0에 포함 | macOS/Linux/BSD에서 감독 실행. Windows는 실행 전 거부. [CI 계약](docs/53-ci-profiles.md) |
-| CI `tool_jobs`, Rust 빌드 worker 기본값 개선 | 미공개 | 설정·기존 값 보존·`tool_jobs: 1` 재현은 [CI 계약](docs/53-ci-profiles.md) |
+| CI `tool_jobs`, Rust 빌드 worker 기본값 개선 | v0.4.1에 포함 | 설정·기존 값 보존·`tool_jobs: 1` 재현은 [CI 계약](docs/53-ci-profiles.md) |
 | `config env edit/unseal/seal/show` | v0.3.0에 포함 | Linux/macOS. 쓰기·평문 표시 게이트는 [env bridge](#암호화된-소스-브리지-dva-config-env) 참조 |
-| `config env reseal`, init의 SOPS 소스 감지·doctor 안내 | 미공개 | 기존 암호화 소스 갱신과 선언 안내 보완 |
-| doctor command 실행 증거·timeout | 미공개 | config cwd, inherited 환경. Unix group 종료, Windows shell-only. [doctor](#doctor) |
+| `config env reseal`, init의 SOPS 소스 감지·doctor 안내 | v0.4.1에 포함 | 기존 암호화 소스 갱신과 선언 안내 보완 |
+| doctor command 실행 증거·timeout | v0.4.1에 포함 | config cwd, inherited 환경. Unix group 종료, Windows shell-only. [doctor](#doctor) |
 | GitHub Secret 전송·artifact job·OCI 검증 | v0.3.0에 포함 | Linux/macOS. github.com의 저장소 수준 Secret과 공개 OCI 대상. [상세 계약](docs/62-remote-artifact-jobs.md) |
-| Kubernetes Secret 전송·`secret status` | 미공개 | Linux/macOS, 명시적 dev 대상·kubeconfig·context. [상세 계약](docs/69-kubernetes-secret-target.md) |
-| 원격 접근 `tunnel:` | 미공개 | cloudflared, kubectl/helm 엔트리. Windows 미지원. 실제 Access 애플리케이션 터널은 v0.4.1에서도 미검증. [상세 계약](docs/68-remote-access-tunnel.md) |
+| Kubernetes Secret 전송·`secret status` | v0.4.1에 포함 | Linux/macOS, 명시적 dev 대상·kubeconfig·context. [상세 계약](docs/69-kubernetes-secret-target.md) |
+| 원격 접근 `tunnel:` | v0.4.1에 포함 | cloudflared, kubectl/helm 엔트리. Windows 미지원. 실제 Access 애플리케이션 터널은 v0.4.1에서도 미검증. [상세 계약](docs/68-remote-access-tunnel.md) |
 | `agent-deny` | v0.3.0에 포함 | Claude Code만 구현. 다른 런타임의 현황·제약은 [deny 지원표](docs/agent-deny-rules.md#runtime-coverage) 참조 |
 | Skaffold 상태 조회 | v0.3.0에 포함 | 시작·종료 adapter는 있으나 `status`는 실제 클러스터 조회 없이 `unknown` 반환 |
 
@@ -44,7 +45,7 @@ root·공유 자원별 중복 실행 방지, 상태 조회는 [CI 프로필](doc
 
 ```bash
 set -euo pipefail
-go install github.com/ScriptonBasestar/dva/cmd/dva@v0.3.0
+go install github.com/ScriptonBasestar/dva/cmd/dva@v0.4.1
 go_bin="$(go env GOBIN)"
 test -n "$go_bin" || go_bin="$(go env GOPATH)/bin"
 "$go_bin/dva" version
@@ -55,7 +56,7 @@ test -n "$go_bin" || go_bin="$(go env GOPATH)/bin"
 검증한 버전을 고정해야 같은 바이너리를 다시 설치할 수 있습니다. 이후 `dva`를 직접
 호출하려면 위에서 확인한 `go_bin`을 `PATH`에 추가합니다.
 
-Go toolchain 없이 설치하려면 [v0.3.0 Release](https://github.com/ScriptonBasestar/dva/releases/tag/v0.3.0)에서
+Go toolchain 없이 설치하려면 [v0.4.1 Release](https://github.com/ScriptonBasestar/dva/releases/tag/v0.4.1)에서
 현재 플랫폼의 archive와 `checksums.txt`를 내려받습니다.
 
 | OS | Architecture | Asset |
@@ -71,7 +72,7 @@ macOS Apple Silicon 예시:
 
 ```bash
 set -euo pipefail
-version=v0.3.0
+version=v0.4.1
 asset=dva_darwin_arm64.tar.gz
 base=https://github.com/ScriptonBasestar/dva/releases/download/$version
 curl -fLO "$base/$asset"
