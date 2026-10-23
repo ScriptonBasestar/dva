@@ -7,10 +7,10 @@
 ## 다음 릴리스 목표
 
 최신 소스의 구현을 지원 범위와 검증 증거가 명확한 공개 버전으로 전달한다.
-직전 목표 **v0.4.1**은 2026-10-23 공개했다. v0.4.0 tag는 Release 없이 남았고 공개는
-v0.4.1로 옮겼다([v0.4.1로 공개 전환](#v041로-공개-전환-2026-10-23)). 다음 목표는
-**v0.4.2**다([v0.4.2 범위](#v042-범위-2026-10-24)). 기존 공개판을 재발행하거나 기존 태그를
-이동하지 않는다. 변경 목록은 [CHANGELOG](CHANGELOG.md)의 0.4.2 섹션이, 그 뒤 새 변경은
+직전 목표 **v0.4.2**는 2026-10-24 공개했다([v0.4.2 범위](#v042-범위-2026-10-24)). v0.4.0
+tag는 Release 없이 남았고 공개는 v0.4.1로 옮겼다([v0.4.1로 공개 전환](#v041로-공개-전환-2026-10-23)).
+다음 릴리스의 목표 버전과 범위는 아직 정하지 않았다. 기존 공개판을 재발행하거나 기존 태그를
+이동하지 않는다. 변경 목록은 [CHANGELOG](CHANGELOG.md)의 0.4.2·0.4.1 섹션이, 그 뒤 새 변경은
 Unreleased가 소유한다. 이 문서의 작성이나 로컬 설치는 새 공개 릴리스가 아니다.
 
 ## 단계와 완료 기준
@@ -19,8 +19,8 @@ Unreleased가 소유한다. 이 문서의 작성이나 로컬 설치는 새 공�
 |---|---|---|---|
 | 1 · P1 | 현재 상태 문서 정합화 | 공개판·소스 구분, 지원표, named plan 빠른 시작, 문서 게이트와 독립 리뷰 | 완료 — 도입 커밋의 검증 기록 참조 |
 | 2 · P1 | 릴리스 범위 확정 | 목표 버전·포함/이월·호환성 주의사항과 변경 내역 대조 | 완료 — 범위 대조·독립 리뷰 기록 보존 |
-| 3 · P1 | 후보 검증 | 동일 후보 소스에서 아래 검증 범위의 결과와 미실행 항목을 기록 | v0.4.2 대기 — 후보 commit의 full·hosted 확인 전. v0.4.1은 [완료](#2026-10-23-v041-후보-검증과-공개) |
-| 4 · P1 | 공개와 설치 확인 | 기존 런북의 preflight·공개·postflight 성공, 설치 문서 버전 갱신 | v0.4.2 대기. v0.4.1은 공개 완료(2026-10-23) — USAGE.md·README.md 설치 문서 갱신 |
+| 3 · P1 | 후보 검증 | 동일 후보 소스에서 아래 검증 범위의 결과와 미실행 항목을 기록 | 완료 — [v0.4.2 후보 검증과 공개](#2026-10-24-v042-후보-검증과-공개) |
+| 4 · P1 | 공개와 설치 확인 | 기존 런북의 preflight·공개·postflight 성공, 설치 문서 버전 갱신 | 공개 완료(v0.4.2, 2026-10-24) — USAGE.md·README.md 설치 문서 갱신 |
 
 단계 3부터는 검증 대상 소스, 선행 조건, 실행 명령과 필요한 실환경 검증을 기록한다.
 전체 완료는 네 단계의 인수 기준 충족으로 판정한다.
@@ -186,6 +186,30 @@ checkout 안 `go install ./cmd/dva` 설치본의 commit 확인에 이 수정을 
 ISSUE-534(`ci --subproject`의 무관한 import 해석)는 고쳐지지 않아 이월한다. 공개 동작 제거나
 비호환 변경이 없으므로 patch를 올린다. 단계 3·4의 증거는 v0.4.2 후보 commit에서 다시
 기록하며 v0.4.1 증거가 대신하지 않는다.
+
+### 2026-10-24 v0.4.2 후보 검증과 공개
+
+후보는 `787cc59ae631aa98bf541ac91c42de71e1d64cef`(tag 시점의 master tip, `v0.4.2` tag)다.
+
+- 로컬: `dva ci full` run `a87ce3ad604507a15b371b168d76d901`이 9단계(format·docs·vet·lint·
+  test·build·integration·skill-dogfood·commit-subjects) 모두 성공했다(2m20s, macOS arm64).
+  receipt attestation은 시작·종료 입력이 같고 commit이 후보와 같으며 `dirty: false`다.
+  receipt는 실행 장비의 `~/.local/state/dva/ci/a87ce3ad604507a15b371b168d76d901.json`에만 있고
+  저장소에 보존하지 않았다. 실행 root였던 release-prep worktree는 정리됐다.
+- 호스팅 CI: 같은 commit의 master push run `39978102999`가 성공했다. lint·test·commit-subjects,
+  ubuntu·macOS의 config-env-platform 네 job, `goreleaser-snapshot`이 모두 성공이다.
+- 실제 사용: v0.4.1 이후 변경은 `dva version`의 commit 보고뿐이고 외부 서비스 경로가 없다.
+  회귀 테스트와 아래 설치 확인으로 검증했으며 [실사용 검증](#2026-10-21-실사용-검증)은
+  다시 실행하지 않았다.
+- 공개: 사람이 `v0.4.2` tag를 후보 commit에 push한 뒤 [런북](docs/52-manual-release-runbook.md)의
+  preflight·GoReleaser 공개·postflight를 Contents write 릴리스 자격으로 실행했다. postflight가
+  원격 tag identity와 7개 자산을 확인했다. Release `422049540`은 draft·prerelease가 아니며
+  공개 시각은 `2026-10-23T16:12:18Z`(KST 2026-10-24)다.
+- 설치 확인: 작업 시스템의 설치본을 바꾸지 않고 임시 디렉터리에서 확인했다.
+  `dva_darwin_arm64.tar.gz`는 `checksums.txt` 대조가 OK이고, 그 바이너리의 `dva version`이
+  `0.4.2`와 후보 commit을, `--json`이 `commit_source: ldflags`를 보고한다.
+  `go install …/cmd/dva@v0.4.2`는 `commit: unknown (module v0.4.2)`와 `commit_source: module`,
+  `module_version: v0.4.2`를 보고한다. 다른 OS archive는 실행하지 않았다.
 
 ## 선택적 후속 후보
 
