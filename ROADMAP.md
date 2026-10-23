@@ -7,9 +7,10 @@
 ## 다음 릴리스 목표
 
 최신 소스의 구현을 지원 범위와 검증 증거가 명확한 공개 버전으로 전달한다.
-목표 버전은 **v0.4.0**, 공개일은 후보 검증 이후 정한다. 기존 공개 v0.3.0을 재발행하거나
-기존 태그를 이동하지 않는다. 후보 변경 목록은 [CHANGELOG](CHANGELOG.md)의 0.4.0 섹션이,
-후보 고정 뒤 새 변경은 Unreleased가 소유한다. 이 문서의 작성이나 로컬 설치는 새 공개
+목표 버전은 **v0.4.1**이다. v0.4.0 tag는 Release 없이 남았고 공개는 v0.4.1로 옮겼다
+([v0.4.1로 공개 전환](#v041로-공개-전환-2026-10-23)). 기존 공개 v0.3.0을 재발행하거나
+기존 태그를 이동하지 않는다. 변경 목록은 [CHANGELOG](CHANGELOG.md)의 0.4.1·0.4.0 섹션이,
+그 뒤 새 변경은 Unreleased가 소유한다. 이 문서의 작성이나 로컬 설치는 새 공개
 릴리스가 아니다.
 
 ## 단계와 완료 기준
@@ -132,6 +133,22 @@ source tip으로 tag될 때까지 같은 tmp 증거 디렉터리에 두고, 공�
 
 실패는 수정하거나, 지원 약속을 바꾸는 명시적 범위 결정으로 처리한다. 검사 누락을
 성공으로 기록하지 않는다.
+
+## v0.4.1로 공개 전환 (2026-10-23)
+
+v0.4.0 tag(`8e8f8499`)를 push한 뒤의 publish에서 GoReleaser의 Release 생성이 403으로
+거부됐다. GoReleaser가 보낸 `target_commitish` 때문에 Release API가 tag를 만들게 되는데,
+`.github/workflows/`를 바꾼 commit에 tag를 만들려면 Workflows write가 필요했기 때문이다.
+사용자는 그 권한을 release token에 주지 않기로 했다. Workflows write는 Actions secret으로
+코드를 실행시킬 수 있기 때문이다. 대신 사람이 tag를 먼저 push하고 GoReleaser는 그 tag에
+Release만 만들도록 바꿨다(TASK-532). 공개된 tag는 이동하지 않으므로 v0.4.0 tag는 Release
+없이 두고, 그 뒤의 수정과 함께 v0.4.1로 공개한다. 그때 생긴 draft release는 삭제했다.
+
+- v0.4.0 이후 포함: TASK-532의 tag 선행 공개, `dva ci --subproject`(ISSUE-523), CI receipt의
+  측정 commit(ISSUE-521)과 입력 0개 attestation(ISSUE-531), doctor command의 종료
+  신호(ISSUE-530). 위 실사용 검증 절에서 이월로 적은 530·531도 이 범위에서 고쳤다.
+- 단계 3의 후보 검증과 단계 4의 공개 확인은 v0.4.1 후보 commit을 대상으로 다시 기록한다.
+  v0.4.0 후보 commit의 증거는 v0.4.1 후보를 대신하지 않는다.
 
 ## 선택적 후속 후보
 
