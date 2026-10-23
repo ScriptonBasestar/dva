@@ -19,7 +19,8 @@ v0.3.0 다음 공개판은 v0.4.1이고, v0.4.2는 그 위의 patch다. 이 문�
 Release archive의 바이너리는 tag commit을 맨 SHA로, `go install …@v0.4.2` 같은 module
 설치는 `unknown (module v0.4.2)`를, checkout 안의 빌드는 `<revision> (vcs)`를(변경이 있던
 tree면 `<revision>-dirty (vcs)`) 보고하며 `--json`의 `commit_source`가 그 출처를 준다.
-VCS 정보가 없는 빌드와 v0.4.1 이하의 module 설치는 commit을 `dev`로 보고한다
+v0.4.1 이하에서 ldflags 없이 만든 빌드(module 설치·checkout 빌드 모두)와, VCS revision도
+module 버전도 없는 빌드(`-buildvcs=false` 등)는 commit을 `dev`로 보고한다
 ([ISSUE-533](tasks/_archive/issue/533-go-install-version-reports-dev-commit.md)).
 `dva manifest -f json`으로 설치본의 명령과 프로젝트 선언을 조회한다.
 
@@ -35,7 +36,7 @@ VCS 정보가 없는 빌드와 v0.4.1 이하의 module 설치는 commit을 `dev`
 | GitHub Secret 전송·artifact job·OCI 검증 | v0.3.0에 포함 | Linux/macOS. github.com의 저장소 수준 Secret과 공개 OCI 대상. [상세 계약](docs/62-remote-artifact-jobs.md) |
 | Kubernetes Secret 전송·`secret status` | v0.4.1에 포함 | Linux/macOS, 명시적 dev 대상·kubeconfig·context. [상세 계약](docs/69-kubernetes-secret-target.md) |
 | 원격 접근 `tunnel:` | v0.4.1에 포함 | cloudflared, kubectl/helm 엔트리. Windows 미지원. 실제 Access 애플리케이션 터널은 v0.4.1에서도 미검증. [상세 계약](docs/68-remote-access-tunnel.md) |
-| `dva version` commit 출처(`--json`의 `commit_source`) | v0.4.2에 포함 | ldflags 없는 빌드는 build info로 commit을 보고. VCS 정보가 없으면 `dev` |
+| `dva version` commit 출처(`--json`의 `commit_source`) | v0.4.2에 포함 | ldflags 없는 빌드는 build info로 commit을 보고. VCS revision도 module 버전도 없으면 `dev` |
 | `agent-deny` | v0.3.0에 포함 | Claude Code만 구현. 다른 런타임의 현황·제약은 [deny 지원표](docs/agent-deny-rules.md#runtime-coverage) 참조 |
 | Skaffold 상태 조회 | v0.3.0에 포함 | 시작·종료 adapter는 있으나 `status`는 실제 클러스터 조회 없이 `unknown` 반환 |
 
