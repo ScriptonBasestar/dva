@@ -17,9 +17,10 @@ v0.3.0 다음 공개판은 v0.4.1이다. 이 문서는 현재 소스의 사용�
 [v0.4.1 후보 검증과 공개](ROADMAP.md#2026-10-23-v041-후보-검증과-공개)에 있다.
 로컬 빌드는 같은 버전 문자열을 사용할 수 있으므로 `dva version`의 commit도 확인한다.
 Release archive의 바이너리는 tag commit을 보고하지만, `go install …@v0.4.1`로 설치한
-바이너리는 commit을 `dev`로 보고한다([ISSUE-533](tasks/issue/533-go-install-version-reports-dev-commit.md)).
+바이너리는 commit을 `dev`로 보고한다([ISSUE-533](tasks/_archive/issue/533-go-install-version-reports-dev-commit.md)).
 미공개 수정 이후 빌드는 module 설치에서 `unknown (module vX.Y.Z)`를, checkout 안의 빌드에서
-`<revision> (vcs)`를 보고하며 `--json`의 `commit_source`가 그 출처를 준다.
+`<revision> (vcs)`를(변경이 있던 tree면 `<revision>-dirty (vcs)`) 보고하며 `--json`의
+`commit_source`가 그 출처를 준다.
 `dva manifest -f json`으로 설치본의 명령과 프로젝트 선언을 조회한다.
 
 | 기능 | 제공 시점 | 현재 지원·제한 |

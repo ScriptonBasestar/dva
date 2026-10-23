@@ -175,7 +175,7 @@ Release만 만들도록 바꿨다(TASK-532). 공개된 tag는 이동하지 않�
 - 설치 확인: 작업 시스템의 설치본을 바꾸지 않고 임시 디렉터리에서 확인했다.
   `dva_darwin_arm64.tar.gz`는 `checksums.txt` 대조가 OK이고, 그 바이너리의 `dva version`이
   `0.4.1`과 후보 commit을 보고한다. `go install …/cmd/dva@v0.4.1`도 `0.4.1`을 보고하지만
-  commit은 `dev`다([ISSUE-533](tasks/issue/533-go-install-version-reports-dev-commit.md)).
+  commit은 `dev`다([ISSUE-533](tasks/_archive/issue/533-go-install-version-reports-dev-commit.md)).
   다른 OS archive는 실행하지 않았다.
 
 ## 선택적 후속 후보

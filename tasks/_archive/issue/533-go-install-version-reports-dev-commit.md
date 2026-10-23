@@ -5,7 +5,9 @@ type: bug
 priority: P3
 effort: S
 exec-tier: standard
-status: todo
+status: done
+quality-review: conditional
+quality-review-evidence: "Independent review of 72078e9f and 23e5dbc3 returned CONDITIONAL on archiving this card and dva ci full; both met: card archived with links repointed, dva ci full run 68ba90a21cf0175586ce8acd7352732a exit 0. Reviewer built plain, ldflags, -buildvcs=false and dirty variants; releasecheck binary rejects the (vcs) line and accepts the stamp."
 severity: low
 ownership: local
 discovered-in: "v0.4.1 publication install check (2026-10-23)"
@@ -13,7 +15,7 @@ discovered-at: 2026-10-23
 created: 2026-10-23
 resolution: fixed
 resolved-at: 2026-10-23T13:00:40Z
-resolution-summary: "Resolved as fixed."
+resolution-summary: "dva version falls back to build info when ldflags leave no commit: <sha> (vcs), -dirty when modified, unknown (module vX) for a module install; --json adds commit_source. Ships in the next tag after v0.4.1."
 ---
 
 ## Summary
