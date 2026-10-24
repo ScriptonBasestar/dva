@@ -956,7 +956,7 @@ interaction:
 | `health_checks` | 비-compose 서비스 헬스체크 |
 | `interaction` | 커맨드 정의 (command, command list, script, script_file, steps, subcommands 등) — 예약어/훅 규칙은 아래 [interaction](#interaction-예약어와-훅) 참조 |
 | `provision` | 프로비저닝 프로필 및 스텝 정의 |
-| `modules` | `.sb/dva/*.yml` 모듈 분리 |
+| `modules` | `.sb/dva/*.yml` 모듈 분리 — 섹션 단위 권장 방법은 [32-config-modules.md](docs/32-config-modules.md) |
 | `subprojects` | 서브프로젝트 참조 (모노레포) |
 | `endpoints` | 사용자 노출 URL 정의 |
 | `infra` | 공유 인프라 서비스 (git 기반) |

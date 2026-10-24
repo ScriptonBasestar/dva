@@ -57,4 +57,6 @@ ci:
 프로필 map은 이름별 병합, scalar는 나중 값 우선, `steps`와 `locks` 목록은 지정 시
 교체한다. `tool_jobs` 생략은 이전 값을 유지하고, 명시한 양의 정수는 이전 값을
 바꾼다. 장비별 값은 기존 사용자 설정을 보존하며 로컬 `dva.override.yml`에 둔다.
+`ci`를 `.sb/dva/` 모듈로 옮길 때는 각 프로필을 한 파일에 온전히 둔다. 두 레이어에
+나눈 프로필은 나중 레이어의 `steps`만 남는다([설정 모듈](https://github.com/ScriptonBasestar/dva/blob/master/docs/32-config-modules.md)).
 `status`와 `logs`는 프로필 이름으로 사용할 수 없다.
