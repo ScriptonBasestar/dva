@@ -38,7 +38,8 @@ validate --strict`는 다른 위치를 경고합니다.
 
 `ci.profiles`는 이름별로 병합되지만 프로필의 `steps`와 `locks` 목록은 통째로
 교체됩니다([CI 설정](../skills/dva-ci/references/configuration.md)). 같은 프로필을 두
-파일에 나눠 쓰면 나중 레이어의 `steps`가 앞의 단계를 조용히 지웁니다. 각 프로필은
+파일에 나눠 쓰면 `steps`를 선언한 나중 레이어가 앞의 단계를 조용히 지웁니다(`timeout`만
+둔 레이어는 앞의 `steps`를 유지합니다). 각 프로필은
 한 파일에 온전히 둡니다. 서로 다른 프로필을 다른 파일에 두는 것은 괜찮습니다.
 
 ## 4. 모듈을 Git에 추적하기
@@ -60,9 +61,10 @@ validate --strict`는 다른 위치를 경고합니다.
 분리 전후의 최종 설정을 비교합니다. 분리 후에는 `modules` 값만 달라야 합니다.
 
 ```bash
-dva config show > before.json        # 분리 전
-dva config show > after.json         # 분리 후
-diff <(jq -S 'del(.modules)' before.json) <(jq -S 'del(.modules)' after.json)
+mkdir -p tmp
+dva config show > tmp/before.json    # 분리 전
+dva config show > tmp/after.json     # 분리 후
+diff <(jq -S 'del(.modules)' tmp/before.json) <(jq -S 'del(.modules)' tmp/after.json)
 dva config validate --strict
 dva ci --dry-run commit
 ```

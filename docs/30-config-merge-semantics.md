@@ -5,8 +5,8 @@
 관련 구조 설명은 아래 문서를 기준으로 합니다.
 
 - [31-execution-plan-resolution.md](31-execution-plan-resolution.md)
-- [40-declarative-stack-and-plans.md](40-declarative-stack-and-plans.md)
 - [32-config-modules.md](32-config-modules.md): 크기 제한을 넘는 `dva.yml`을 섹션 단위 모듈로 나누는 권장 방법
+- [40-declarative-stack-and-plans.md](40-declarative-stack-and-plans.md)
 
 ## 1. 레이어 우선순위
 
