@@ -2,9 +2,8 @@
 
 Rust worker 개선판의 장비 적용 증거는 [로컬 설치 기록](local-rust-worker-installation.md)을 따른다.
 
-DVA는 `ci.profiles`에 선언한 검증을 감독한다. 서비스 수명 주기의 `plans`나
-준비 절차인 `provision`과 달리, CI는 종료하는 검사와 시간 예산을 소유한다.
-배포·릴리스 게시·운영 환경 변경은 이 명령의 책임이 아니다.
+DVA는 `ci.profiles`의 검사와 시간 예산을 감독한다. 서비스 수명 주기와
+배포·릴리스·운영 환경 변경은 소유하지 않는다.
 
 ## 명령
 
@@ -20,14 +19,16 @@ dva ci status                # 머신의 실행 기록 조회
 dva ci logs <run-id>
 ```
 
-`status`와 `logs`는 현재 디렉터리의 설정이나 비밀값을 로드하지 않는다.
-`--json` 실행은 검사 출력을 stderr로 보내고 stdout에 결과 문서를 출력한다.
+`status`와 `logs`는 현재 설정·비밀값을 읽지 않는다. `--json`은 검사 출력을 stderr,
+결과 문서를 stdout에 쓴다.
 `ci`는 예약 명령이며 기존 `interaction.ci`는 이름 충돌을 해결해야 한다.
 
 ## subproject 범위 실행
 
 `--subproject`는 root 프로필을 실행하며 선언된 child 이름을 `DVA_CI_SUBPROJECT`로 단계에
 내보낸다. 계약과 DevBox 예시는 [subproject 범위 CI](71-ci-subproject-scope.md)를 따른다.
+CI는 root 설정만 읽고 `--project`는 선택한 child만 읽는다. 기본 `config.Load`와 전체 검증은
+모든 import를 계속 해석한다.
 
 ## 설정
 

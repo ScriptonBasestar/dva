@@ -15,8 +15,9 @@ import (
 type LoadOption func(*loadOptions)
 
 type loadOptions struct {
-	skipVersionCheck     bool
-	collectEntryProblems bool
+	skipVersionCheck      bool
+	skipSubprojectImports bool
+	collectEntryProblems  bool
 }
 
 // CollectEntryProblems returns a LoadOption that records stack-entry shape errors
@@ -37,6 +38,16 @@ func CollectEntryProblems() LoadOption {
 func SkipVersionCheck() LoadOption {
 	return func(o *loadOptions) {
 		o.skipVersionCheck = true
+	}
+}
+
+// SkipSubprojectImportResolution loads and validates the current config without
+// opening imported child configs. Use only when the command consumes the current
+// config but does not consume declarations from its imported subprojects (for
+// example, a root-owned CI profile). The default Load behavior remains strict.
+func SkipSubprojectImportResolution() LoadOption {
+	return func(o *loadOptions) {
+		o.skipSubprojectImports = true
 	}
 }
 
@@ -109,7 +120,7 @@ func Load(workDir string, opts ...LoadOption) (*Config, error) {
 
 	applyConfigDefaults(cfg)
 
-	if len(cfg.Subprojects) > 0 {
+	if len(cfg.Subprojects) > 0 && !o.skipSubprojectImports {
 		if err := resolveSubprojectImports(cfg, opts...); err != nil {
 			return nil, fmt.Errorf("resolving subprojects: %w", err)
 		}

@@ -3,8 +3,9 @@
 ## 현재 상태 (2026-10-23)
 
 v0.4.1이 2026-10-23 공개됐다(v0.4.0 tag는 Release 없음). 기록은
-[ROADMAP.md](../ROADMAP.md#2026-10-23-v041-후보-검증과-공개)에 있다. 열린 이슈는
-[ISSUE-534](issue/534-ci-subproject-run-resolves-unrelated-imports.md)이다.
+[ROADMAP.md](../ROADMAP.md#2026-10-23-v041-후보-검증과-공개)에 있다.
+[ISSUE-534](_archive/issue/534-ci-subproject-run-resolves-unrelated-imports.md)는
+[[TASK-533]]에서 선택 범위에 맞는 CI 설정 로드로 수정했다.
 [ISSUE-533](_archive/issue/533-go-install-version-reports-dev-commit.md)(go install 설치본 commit `dev`)은 수정됐고 v0.4.1 다음 tag에
 공개된다. 이 밖에 `decision/`의 Proposed 결정
 501-504와, 보관 전인 `done/`의 520·532가 남아 있다.

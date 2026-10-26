@@ -147,6 +147,77 @@ subprojects:
 	}
 }
 
+func TestLoadSkipSubprojectImportResolutionKeepsDefaultStrict(t *testing.T) {
+	tmpDir := t.TempDir()
+	configText := `version: "0.1.0"
+subprojects:
+  selected:
+    path: selected
+    import:
+      interactions: [shell]
+  unrelated:
+    path: unrelated
+    import:
+      interactions: [shell]
+ci:
+  profiles:
+    predeploy:
+      timeout: 1m
+      steps:
+        - name: root-check
+          run: true
+`
+	if err := os.WriteFile(filepath.Join(tmpDir, FileName), []byte(configText), 0644); err != nil {
+		t.Fatalf("write root config: %v", err)
+	}
+
+	if _, err := Load(tmpDir); err == nil || !strings.Contains(err.Error(), "resolving subprojects") {
+		t.Fatalf("Load() error = %v, want strict imported-child resolution error", err)
+	}
+
+	cfg, err := Load(tmpDir, SkipSubprojectImportResolution())
+	if err != nil {
+		t.Fatalf("Load(SkipSubprojectImportResolution()) error = %v", err)
+	}
+	if _, ok := cfg.Subprojects["selected"]; !ok {
+		t.Fatal("selected declaration was lost")
+	}
+	if _, err := cfg.ResolveCIProfile("predeploy"); err != nil {
+		t.Fatalf("root CI profile did not remain available: %v", err)
+	}
+
+	malformedDir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(malformedDir, FileName), []byte(configText), 0644); err != nil {
+		t.Fatalf("write malformed-child root config: %v", err)
+	}
+	malformedChild := filepath.Join(malformedDir, "unrelated")
+	if err := os.Mkdir(malformedChild, 0755); err != nil {
+		t.Fatalf("create malformed child: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(malformedChild, FileName), []byte("version: 0.1.0\nunknown_child_field: true\n"), 0644); err != nil {
+		t.Fatalf("write malformed child config: %v", err)
+	}
+	if _, err := Load(malformedDir, SkipSubprojectImportResolution()); err != nil {
+		t.Fatalf("CI-scoped load resolved malformed unrelated child: %v", err)
+	}
+	if _, err := Load(malformedDir); err == nil || !strings.Contains(err.Error(), "resolving subprojects") {
+		t.Fatalf("Load() error = %v, want strict malformed imported-child error", err)
+	}
+}
+
+func TestLoadSkipSubprojectImportResolutionStillRejectsMalformedYAML(t *testing.T) {
+	tmpDir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(tmpDir, FileName), []byte("version: [\n"), 0644); err != nil {
+		t.Fatalf("write root config: %v", err)
+	}
+	if _, err := Load(tmpDir); err == nil {
+		t.Fatal("Load() accepted malformed root YAML")
+	}
+	if _, err := Load(tmpDir, SkipSubprojectImportResolution()); err == nil {
+		t.Fatal("Load(SkipSubprojectImportResolution()) accepted malformed root YAML")
+	}
+}
+
 // TestLoadSubprojects_NestedModules_Fails locks TASK-043: a subproject module that
 // declares modules: must fail with the same nested-modules rule as root Load, not
 // silently drop the nested file and later report a misleading import miss.

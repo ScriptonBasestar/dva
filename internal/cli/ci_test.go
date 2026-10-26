@@ -317,3 +317,148 @@ func TestCISubprojectRunsRootProfileWithDeclaredName(t *testing.T) {
 		}
 	}
 }
+
+func TestCIRootProfileSkipsUnrelatedImportedChildren(t *testing.T) {
+	dir := t.TempDir()
+	rootConfig := `subprojects:
+  site-a:
+    path: site-a
+    import:
+      interactions: [shell]
+  unrelated:
+    path: missing-child
+    import:
+      interactions: [shell]
+ci:
+  profiles:
+    predeploy:
+      timeout: 1m
+      steps:
+        - name: root-step
+          run: true
+`
+	if err := os.WriteFile(filepath.Join(dir, "dva.yml"), []byte(rootConfig), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	withCIWorkingDirectory(t, dir)
+	withEnvPolicyGlobals(t, nil, true)
+	oldProject, oldSubproject, oldDryRun := ciProject, ciSubproject, dryRun
+	ciProject, ciSubproject, dryRun = "", "site-a", true
+	t.Cleanup(func() { ciProject, ciSubproject, dryRun = oldProject, oldSubproject, oldDryRun })
+
+	var runErr error
+	data := captureStdout(t, func() { runErr = ciCmd.RunE(ciCmd, []string{"predeploy"}) })
+	if runErr != nil {
+		t.Fatalf("root CI dry-run rejected an unrelated missing child: %v", runErr)
+	}
+	var preview struct {
+		config.CIProfile
+		Subproject string `json:"subproject"`
+	}
+	if err := json.Unmarshal([]byte(data), &preview); err != nil {
+		t.Fatalf("decode preview %q: %v", data, err)
+	}
+	if preview.Subproject != "site-a" || len(preview.Steps) != 1 || preview.Steps[0].Name != "root-step" {
+		t.Fatalf("preview = %s, want root profile with site-a scope", data)
+	}
+
+	ciSubproject = ""
+	output.ResetStdoutDocument()
+	data = captureStdout(t, func() { runErr = ciCmd.RunE(ciCmd, []string{"predeploy"}) })
+	if runErr != nil {
+		t.Fatalf("root-only CI dry-run rejected an unrelated missing child: %v", runErr)
+	}
+	preview = struct {
+		config.CIProfile
+		Subproject string `json:"subproject"`
+	}{}
+	if err := json.Unmarshal([]byte(data), &preview); err != nil {
+		t.Fatalf("decode root-only preview %q: %v", data, err)
+	}
+	if preview.Subproject != "" || len(preview.Steps) != 1 || preview.Steps[0].Name != "root-step" {
+		t.Fatalf("preview = %s, want unscoped root profile", data)
+	}
+}
+
+func TestCIProjectLoadsOnlySelectedChild(t *testing.T) {
+	dir := t.TempDir()
+	selectedDir := filepath.Join(dir, "selected")
+	if err := os.Mkdir(selectedDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	rootConfig := `subprojects:
+  selected:
+    path: selected
+    import:
+      interactions: [shell]
+  declared-missing:
+    path: missing-selected
+  unrelated:
+    path: missing-child
+    import:
+      interactions: [shell]
+`
+	childConfig := `ci:
+  profiles:
+    predeploy:
+      timeout: 1m
+      steps:
+        - name: selected-step
+          run: true
+`
+	for path, contents := range map[string]string{
+		filepath.Join(dir, "dva.yml"):         rootConfig,
+		filepath.Join(selectedDir, "dva.yml"): childConfig,
+	} {
+		if err := os.WriteFile(path, []byte(contents), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	withCIWorkingDirectory(t, dir)
+	withEnvPolicyGlobals(t, nil, true)
+	oldProject, oldSubproject, oldDryRun := ciProject, ciSubproject, dryRun
+	ciProject, ciSubproject, dryRun = "selected", "", true
+	t.Cleanup(func() { ciProject, ciSubproject, dryRun = oldProject, oldSubproject, oldDryRun })
+
+	var runErr error
+	data := captureStdout(t, func() { runErr = ciCmd.RunE(ciCmd, []string{"predeploy"}) })
+	if runErr != nil {
+		t.Fatalf("selected child CI dry-run rejected unrelated child: %v", runErr)
+	}
+	var preview config.CIProfile
+	if err := json.Unmarshal([]byte(data), &preview); err != nil {
+		t.Fatalf("decode preview %q: %v", data, err)
+	}
+	if len(preview.Steps) != 1 || preview.Steps[0].Name != "selected-step" {
+		t.Fatalf("preview = %s, want selected child's profile", data)
+	}
+
+	ciProject = "declared-missing"
+	output.ResetStdoutDocument()
+	captureStdout(t, func() { runErr = ciCmd.RunE(ciCmd, []string{"predeploy"}) })
+	if runErr == nil || !strings.Contains(runErr.Error(), "loading subproject \"declared-missing\"") {
+		t.Fatalf("missing selected child error = %v, want selected config load failure", runErr)
+	}
+	ciProject = "unknown"
+	output.ResetStdoutDocument()
+	captureStdout(t, func() { runErr = ciCmd.RunE(ciCmd, []string{"predeploy"}) })
+	if runErr == nil || !strings.Contains(runErr.Error(), "unknown CI project") {
+		t.Fatalf("unregistered selected child error = %v, want unknown CI project", runErr)
+	}
+}
+
+func withCIWorkingDirectory(t *testing.T, dir string) {
+	t.Helper()
+	oldDir, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := os.Chdir(oldDir); err != nil {
+			t.Errorf("restore working directory: %v", err)
+		}
+	})
+}

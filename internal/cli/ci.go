@@ -22,7 +22,7 @@ var ciCmd = &cobra.Command{
 	Long:  "Run a declared ci.profiles entry. Commit checks warn after five minutes and have a ten-minute maximum. Full checks require an explicit timeout. A concurrent CI that has the same owning config directory or declared shared lock returns busy instead of starting. Use --dry-run to inspect the resolved profile without executing checks. --project runs a declared subproject's own profile in its directory; --subproject runs this root's profile and exports the declared subproject name to its steps as DVA_CI_SUBPROJECT.",
 	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		c, err := loadConfig()
+		c, err := loadConfig(config.SkipSubprojectImportResolution())
 		if err != nil {
 			return err
 		}

@@ -408,12 +408,12 @@ func helpRequested(args []string) bool {
 	return false
 }
 
-func loadConfig() (*config.Config, error) {
+func loadConfig(opts ...config.LoadOption) (*config.Config, error) {
 	if cfg != nil {
 		return cfg, nil
 	}
 	var err error
-	cfg, err = config.Load(".")
+	cfg, err = config.Load(".", opts...)
 	if err != nil {
 		return nil, err
 	}

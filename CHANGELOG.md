@@ -5,6 +5,13 @@ All notable changes to DVA are documented here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **CI의 불필요한 하위 프로젝트 import 로드**: root CI 프로필은 선언된 하위 프로젝트 이름만
+  `DVA_CI_SUBPROJECT`로 전달하고 child 설정을 소비하지 않으므로, 이제 CI 실행은 unrelated child
+  import를 열지 않습니다. `--project`는 선택한 child만 읽고, 기본 설정 로드와 전체 검증은 모든
+  import를 계속 확인합니다 (ISSUE-534).
+
 ## [0.4.2] - 2026-10-24
 
 ### Fixed

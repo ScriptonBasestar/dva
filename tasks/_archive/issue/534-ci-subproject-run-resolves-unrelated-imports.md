@@ -5,12 +5,15 @@ type: bug
 priority: P2
 effort: M
 exec-tier: standard
-status: todo
+status: done
 severity: medium
 ownership: local
 discovered-in: "singlepageweb-devbox TASK-270 predeploy profile check (2026-10-23)"
 discovered-at: 2026-10-23
 created: 2026-10-23
+resolution: fixed
+resolved-at: 2026-10-26T06:46:15Z
+resolution-summary: "Resolved as fixed by TASK-533."
 ---
 
 ## Summary
@@ -44,9 +47,11 @@ fails on `singlepageweb-draw`, whose prepared workspace is absent.
 
 ## Expected vs Actual
 
-- Expected: a run scoped to subproject `a` needs only the root config and, if the profile uses
-  it, `a`'s imports. A broken or absent unrelated subproject does not block the run. A command
-  that does need every import (for example `dva config validate`) still reports it.
+- Expected: root CI, with or without `--subproject a`, needs the root config and the declared
+  name only; it does not load child configs because CI does not consume their plans or
+  interactions. `--project a` needs the selected child's config, but not unrelated children.
+  Default config loading and commands that validate or consume all imports still report broken
+  imported children.
 - Actual: every config load fails on the first subproject import it cannot resolve.
 
 ## 영향
@@ -56,7 +61,8 @@ is prepared and current. singlepageweb-devbox TASK-270 criterion 3 is blocked on
 
 ## 범위
 
-Decide in the fix whether import resolution becomes lazy (resolved when a command consumes it)
-or is filtered by the command's selected subprojects. Keep the full resolution for validation
-commands. A root-only CI profile run without `--subproject` should also not need subproject
-imports.
+Use an explicit CI-only load option to skip imported-child resolution for root CI. Keep default
+`config.Load` strict. For `--project`, load only the selected child and preserve errors for an
+unknown selection or missing selected child config. A root-only CI profile without
+`--subproject` also does not need child configs. Implementation and regression criteria are
+tracked by TASK-533.
