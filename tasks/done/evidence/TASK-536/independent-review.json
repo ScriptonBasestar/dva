@@ -1,0 +1,28 @@
+{
+  "verdict": "PASS",
+  "reviewer": "native Codex ce-judge /root/judge_finite_oci_scope",
+  "date": "2026-10-27",
+  "scope": "TASK-536 configuration, OCI backend, parent routing, schema, documentation and actual kernel acceptance evidence",
+  "reviewed_commit": "476c668dc17dfa57960d489ae37967c20c911aa9",
+  "target_commit": "d80823fcf3e8b2c4c20cb4fc2e050d9286abdeef",
+  "code_manifest_sha256": "a5b4dcba1203681929b09a5fc315a33e672d1df5707528a39e90d31d9671dda7",
+  "findings": [],
+  "method": "Independent static review with exact manifest/commit binding, direct inspection of all five live intents, logs and the full CI receipt. The reviewer did not rerun Go or Docker.",
+  "ci": {
+    "run": "6e697752be0cbe9c8d92508fda35e8d2",
+    "result": "succeeded",
+    "steps": 9,
+    "limitation": "This full CI measured the identical dirty precommit source at d80823fc; it is not commit-bound CI admission proof. Independent review binds the exact commit pair."
+  },
+  "kernel_acceptance": {
+    "cases": ["limits", "exit", "timeout_reparented", "cancel_reparented", "output"],
+    "result": "PASS",
+    "pids_max": 16,
+    "memory_max": 134217728,
+    "swap_max": 0,
+    "cpu_quota": 100000,
+    "cpu_period": 100000,
+    "cleanup": "All five exact owned containers absent, no cleanup errors, all input snapshots removed."
+  },
+  "limits": "External SIGKILL or daemon loss may leave running/stopped resources. Hostile sandboxing and native macOS diagnostic support are not claimed. ISSUE-091 remains open."
+}
