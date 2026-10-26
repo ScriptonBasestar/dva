@@ -1,5 +1,7 @@
 # CI 프로필과 실행 규약
 
+[OCI 단계](ci-oci-steps.md)는 별도 격리·정리 계약을 따른다.
+
 Rust worker 개선판의 장비 적용 증거는 [로컬 설치 기록](local-rust-worker-installation.md)을 따른다.
 
 DVA는 `ci.profiles`의 검사와 시간 예산을 감독한다. 서비스 수명 주기와

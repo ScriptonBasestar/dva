@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/ScriptonBasestar/dva/internal/cirun/ociexec"
 	"github.com/ScriptonBasestar/dva/internal/config"
 )
 
@@ -48,13 +49,14 @@ type Options struct {
 }
 
 type StepReport struct {
-	Name         string        `json:"name"`
-	Status       string        `json:"status"`
-	Error        string        `json:"error,omitempty"`
-	StartedAt    time.Time     `json:"started_at"`
-	FinishedAt   time.Time     `json:"finished_at"`
-	Duration     time.Duration `json:"duration"`
-	WorkerBudget *WorkerBudget `json:"worker_budget,omitempty"`
+	OCI          *ociexec.Report `json:"oci,omitempty"`
+	Name         string          `json:"name"`
+	Status       string          `json:"status"`
+	Error        string          `json:"error,omitempty"`
+	StartedAt    time.Time       `json:"started_at"`
+	FinishedAt   time.Time       `json:"finished_at"`
+	Duration     time.Duration   `json:"duration"`
+	WorkerBudget *WorkerBudget   `json:"worker_budget,omitempty"`
 }
 
 // WorkerBudget records the numeric worker limits actually supplied to a CI step.

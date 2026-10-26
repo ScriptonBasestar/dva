@@ -141,7 +141,8 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 			report.Steps = append([]StepReport(nil), steps...)
 			return writeReport(state, report)
 		}
-		report.Steps, retErr = execute(ctx, root, opts.Profile, env, writer, checkpoint)
+		executionCtx := context.WithValue(ctx, ociScopeKey{}, ociScope{state: state, runID: id})
+		report.Steps, retErr = execute(executionCtx, root, opts.Profile, env, writer, checkpoint)
 	}
 	after, _, attestErr := fingerprintInputs(ctx, root)
 	retErr = errors.Join(retErr, attestErr)

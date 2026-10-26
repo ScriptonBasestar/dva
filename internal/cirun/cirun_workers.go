@@ -57,6 +57,10 @@ func WorkerPlan(p config.CIProfile, inherited []string) []StepWorkers {
 	jobs, source := toolWorkerBudget(p, availableCPUs())
 	result := make([]StepWorkers, 0, len(p.Steps))
 	for _, step := range p.Steps {
+		if step.OCI != nil {
+			result = append(result, StepWorkers{Step: step.Name})
+			continue
+		}
 		env := ciEnv(inherited, step.Environment, jobs)
 		result = append(result, StepWorkers{Step: step.Name, WorkerBudget: workerBudget(env, step.Environment, inherited, jobs, source)})
 	}

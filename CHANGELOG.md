@@ -5,6 +5,13 @@ All notable changes to DVA are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- **유한 OCI CI 단계**: `run` 대신 `oci`를 선언해 digest로 고정한 로컬 Docker image에서
+  fixture를 실행합니다. Linux cgroup-v2의 실제 PID·memory·swap·CPU 제한을 실행 전에 확인하며
+  설정·환경·입력을 격리하고 출력·시간·CID 기반 정리 결과를 구분합니다.
+  지원 범위와 강제 종료 한계는 [OCI 단계](docs/ci-oci-steps.md)를 따릅니다.
+
 ### Fixed
 
 - **CI의 불필요한 하위 프로젝트·실행 설정 검증**: root CI는 root 환경과 CI 프로필만 사용하므로

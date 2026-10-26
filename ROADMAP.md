@@ -13,6 +13,16 @@ tag는 Release 없이 남았고 공개는 v0.4.1로 옮겼다([v0.4.1로 공개 
 이동하지 않는다. 변경 목록은 [CHANGELOG](CHANGELOG.md)의 0.4.2·0.4.1 섹션이, 그 뒤 새 변경은
 Unreleased가 소유한다. 이 문서의 작성이나 로컬 설치는 새 공개 릴리스가 아니다.
 
+### 채택한 후속: 유한 OCI CI 단계
+
+- devenv ISSUE-091의 고정 fixture 실행을 위해 `ci` 안의 일회용 Docker/Linux cgroup-v2 단계를 구현한다.
+- DVA가 입력·수명 주기·결과를 소유하고, kernel/Docker가 자원 격리를 소유한다.
+  기존 장기 Docker/Compose 서비스나 범용 shell supervisor를 추가하지 않는다.
+- image/입력 고정, 실제 제한 확인, bounded capture, CID·label 기반 정리와 실패 증거를 수용 기준으로 둔다.
+- native CI 호환성을 유지하며 실제 kernel 수용 검사 전에는 host 지원 완료로 표시하지 않는다.
+- macOS 네이티브 진단과 외부 SIGKILL 뒤 자동 복구는 이번 지원 범위에 포함하지 않는다.
+  정본: [유한 OCI CI 단계](docs/ci-oci-steps.md).
+
 ## 단계와 완료 기준
 
 | 순서·우선순위 | 작업 | 완료 기준 | 상태 |

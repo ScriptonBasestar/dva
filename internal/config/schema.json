@@ -1874,9 +1874,29 @@
                       "depends_on": { "type": "array", "items": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$" } },
                       "workdir": { "type": "string" },
                       "environment": { "type": "object", "additionalProperties": { "type": "string" } },
+                      "oci": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "image": { "type": "string", "pattern": "^(sha256:[0-9a-f]{64}|[A-Za-z0-9][A-Za-z0-9._:/-]*@sha256:[0-9a-f]{64})$" },
+                          "argv": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+                          "source": { "type": "string" },
+                          "workdir": { "type": "string" },
+                          "environment": { "type": "object", "additionalProperties": { "type": "string" } },
+                          "pids_limit": { "type": "integer", "minimum": 8, "maximum": 4096 },
+                          "memory_bytes": { "type": "integer", "minimum": 16777216 },
+                          "cpus": { "type": "integer", "minimum": 1, "maximum": 128 },
+                          "output_limit_bytes": { "type": "integer", "minimum": 1024, "maximum": 67108864 }
+                        },
+                        "required": ["image", "argv", "source", "pids_limit", "memory_bytes", "cpus", "output_limit_bytes"]
+                      },
                       "timeout": { "type": "string", "description": "Positive Go duration no greater than the profile timeout" }
                     },
-                    "required": ["name", "run"]
+                    "required": ["name"],
+                    "oneOf": [
+                      { "required": ["run"], "not": { "required": ["oci"] } },
+                      { "required": ["oci", "timeout"], "not": { "anyOf": [{ "required": ["run"] }, { "required": ["workdir"] }, { "required": ["environment"] }] } }
+                    ]
                   }
                 }
               }

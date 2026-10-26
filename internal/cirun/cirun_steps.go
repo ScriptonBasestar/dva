@@ -51,7 +51,7 @@ func execute(ctx context.Context, root string, p config.CIProfile, inherited []s
 	reports := make([]StepReport, n)
 	byName := map[string]int{}
 	for i, s := range p.Steps {
-		if s.Name == "" || s.Run == "" {
+		if s.Name == "" || (s.Run == "" && s.OCI == nil) {
 			return reports, errors.New("ci steps require name and run")
 		}
 		if _, ok := byName[s.Name]; ok {
@@ -97,7 +97,9 @@ func execute(ctx context.Context, root string, p config.CIProfile, inherited []s
 	start := func(i int) error {
 		reports[i].Status = "running"
 		reports[i].StartedAt = time.Now()
-		reports[i].WorkerBudget = workerBudget(ciEnv(inherited, p.Steps[i].Environment, workers), p.Steps[i].Environment, inherited, workers, source)
+		if p.Steps[i].OCI == nil {
+			reports[i].WorkerBudget = workerBudget(ciEnv(inherited, p.Steps[i].Environment, workers), p.Steps[i].Environment, inherited, workers, source)
+		}
 		if err := checkpoint(reports); err != nil {
 			reports[i].Status = "pending"
 			reports[i].StartedAt = time.Time{}
@@ -229,6 +231,10 @@ func runStep(ctx context.Context, root string, step config.CIStep, inherited []s
 		}
 		stepCtx, cancel = context.WithTimeout(ctx, d)
 		defer cancel()
+	}
+	if step.OCI != nil {
+		r.OCI, ret = runOCIStep(stepCtx, root, step, out)
+		return r, ret
 	}
 	cmd := exec.Command("/bin/sh", "-eu", "-c", step.Run)
 	cmd.Dir = workdir

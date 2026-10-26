@@ -51,6 +51,7 @@ type CIStep struct {
 	Workdir     string            `yaml:"workdir" json:"workdir"`
 	Environment map[string]string `yaml:"environment" json:"environment"`
 	Timeout     string            `yaml:"timeout" json:"timeout"`
+	OCI         *CIOCI            `yaml:"oci,omitempty" json:"oci,omitempty"`
 }
 
 // ResolveCIProfile returns an executable CI profile. An empty name selects commit.
@@ -165,8 +166,19 @@ func validateCIProfile(name string, profile CIProfile) error {
 		if _, exists := steps[step.Name]; exists {
 			return fmt.Errorf("ci profile %q: duplicate step name %q", name, step.Name)
 		}
-		if strings.TrimSpace(step.Run) == "" {
+		if step.OCI == nil && strings.TrimSpace(step.Run) == "" {
 			return fmt.Errorf("ci profile %q step %q: run must not be empty", name, step.Name)
+		}
+		if step.OCI != nil {
+			if strings.TrimSpace(step.Run) != "" || step.Workdir != "" || step.Environment != nil {
+				return fmt.Errorf("ci profile %q step %q: oci is exclusive with run, workdir, and environment", name, step.Name)
+			}
+			if step.Timeout == "" {
+				return fmt.Errorf("ci profile %q step %q: oci requires an explicit timeout", name, step.Name)
+			}
+			if err := validateCIOCI(name, step.Name, *step.OCI); err != nil {
+				return err
+			}
 		}
 		for _, key := range []string{CIParentRunEnv, CISubprojectEnv} {
 			if _, reserved := step.Environment[key]; reserved {
