@@ -15,9 +15,9 @@ import (
 type LoadOption func(*loadOptions)
 
 type loadOptions struct {
-	skipVersionCheck      bool
-	skipSubprojectImports bool
-	collectEntryProblems  bool
+	skipVersionCheck     bool
+	ciProfileOnly        bool
+	collectEntryProblems bool
 }
 
 // CollectEntryProblems returns a LoadOption that records stack-entry shape errors
@@ -41,13 +41,14 @@ func SkipVersionCheck() LoadOption {
 	}
 }
 
-// SkipSubprojectImportResolution loads and validates the current config without
-// opening imported child configs. Use only when the command consumes the current
-// config but does not consume declarations from its imported subprojects (for
-// example, a root-owned CI profile). The default Load behavior remains strict.
-func SkipSubprojectImportResolution() LoadOption {
+// ForCI loads the root config fields used by a CI profile: root variables,
+// environment inputs, and CI declarations. It still parses and merges the root,
+// modules, and override and validates environment inputs and CI profiles, while
+// omitting imported children and unrelated runtime declarations. Ordinary Load
+// remains fully strict.
+func ForCI() LoadOption {
 	return func(o *loadOptions) {
-		o.skipSubprojectImports = true
+		o.ciProfileOnly = true
 	}
 }
 
@@ -120,24 +121,46 @@ func Load(workDir string, opts ...LoadOption) (*Config, error) {
 
 	applyConfigDefaults(cfg)
 
-	if len(cfg.Subprojects) > 0 && !o.skipSubprojectImports {
+	if len(cfg.Subprojects) > 0 && !o.ciProfileOnly {
 		if err := resolveSubprojectImports(cfg, opts...); err != nil {
 			return nil, fmt.Errorf("resolving subprojects: %w", err)
 		}
 	}
 
-	if migrated, err := finalizeLoadedConfig(cfg); err != nil {
+	var migrated []string
+	if o.ciProfileOnly {
+		err = finalizeCIConfig(cfg)
+	} else {
+		migrated, err = finalizeLoadedConfig(cfg)
+	}
+	if err != nil {
 		return nil, err
-	} else if len(migrated) > 0 {
+	}
+	if len(migrated) > 0 {
 		fmt.Fprintf(os.Stderr, "⚠  'infra:' is deprecated (TASK-051): migrated %s into stack: as source-backed compose entries (tag: infra).\n   Declare them under stack.<name>.source instead; 'infra:' will be removed in a future release.\n", strings.Join(migrated, ", "))
 	}
 
 	// Reserved-command warnings belong to the root command surface. Imported
 	// children are finalized for execution but do not independently expose their
 	// whole interaction tree, so warning here avoids duplicate child warnings.
-	WarnReservedCommandConflicts(cfg.Interaction)
+	if !o.ciProfileOnly {
+		WarnReservedCommandConflicts(cfg.Interaction)
+	}
 
 	return cfg, nil
+}
+
+// finalizeCIConfig validates only the configuration consumed by a root CI
+// profile. Environment-source declarations must remain valid because CI loads
+// them into its step environment; all CI profiles are checked before selection.
+// Plans, stack entries, remote jobs/secrets, and endpoints belong to other
+// execution surfaces and do not participate in CI profile loading.
+func finalizeCIConfig(cfg *Config) error {
+	applyConfigDefaults(cfg)
+	if err := validateEnvSourceDeclarations(cfg); err != nil {
+		return err
+	}
+	return cfg.validateCIProfiles()
 }
 
 // applyConfigDefaults initializes the maps that downstream config consumers may

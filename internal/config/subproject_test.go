@@ -147,18 +147,20 @@ subprojects:
 	}
 }
 
-func TestLoadSkipSubprojectImportResolutionKeepsDefaultStrict(t *testing.T) {
+func TestLoadForCIValidatesRootCIWithoutResolvingImportedPlans(t *testing.T) {
 	tmpDir := t.TempDir()
 	configText := `version: "0.1.0"
+plans:
+  local-dev:
+    composes:
+      - plan: textcove
 subprojects:
-  selected:
-    path: selected
+  singlepageweb-text:
+    path: missing-child
     import:
-      interactions: [shell]
-  unrelated:
-    path: unrelated
-    import:
-      interactions: [shell]
+      plans:
+        - name: local-dev
+          as: textcove
 ci:
   profiles:
     predeploy:
@@ -175,37 +177,22 @@ ci:
 		t.Fatalf("Load() error = %v, want strict imported-child resolution error", err)
 	}
 
-	cfg, err := Load(tmpDir, SkipSubprojectImportResolution())
+	cfg, err := Load(tmpDir, ForCI())
 	if err != nil {
-		t.Fatalf("Load(SkipSubprojectImportResolution()) error = %v", err)
+		t.Fatalf("Load(ForCI()) error = %v", err)
 	}
-	if _, ok := cfg.Subprojects["selected"]; !ok {
-		t.Fatal("selected declaration was lost")
+	if _, ok := cfg.Subprojects["singlepageweb-text"]; !ok {
+		t.Fatal("subproject declaration was lost")
 	}
 	if _, err := cfg.ResolveCIProfile("predeploy"); err != nil {
 		t.Fatalf("root CI profile did not remain available: %v", err)
 	}
-
-	malformedDir := t.TempDir()
-	if err := os.WriteFile(filepath.Join(malformedDir, FileName), []byte(configText), 0644); err != nil {
-		t.Fatalf("write malformed-child root config: %v", err)
-	}
-	malformedChild := filepath.Join(malformedDir, "unrelated")
-	if err := os.Mkdir(malformedChild, 0755); err != nil {
-		t.Fatalf("create malformed child: %v", err)
-	}
-	if err := os.WriteFile(filepath.Join(malformedChild, FileName), []byte("version: 0.1.0\nunknown_child_field: true\n"), 0644); err != nil {
-		t.Fatalf("write malformed child config: %v", err)
-	}
-	if _, err := Load(malformedDir, SkipSubprojectImportResolution()); err != nil {
-		t.Fatalf("CI-scoped load resolved malformed unrelated child: %v", err)
-	}
-	if _, err := Load(malformedDir); err == nil || !strings.Contains(err.Error(), "resolving subprojects") {
-		t.Fatalf("Load() error = %v, want strict malformed imported-child error", err)
+	if _, ok := cfg.Plans["textcove"]; ok {
+		t.Fatal("CI profile load unexpectedly resolved an imported plan")
 	}
 }
 
-func TestLoadSkipSubprojectImportResolutionStillRejectsMalformedYAML(t *testing.T) {
+func TestLoadForCIStillRejectsMalformedRootYAMLAndCIProfiles(t *testing.T) {
 	tmpDir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(tmpDir, FileName), []byte("version: [\n"), 0644); err != nil {
 		t.Fatalf("write root config: %v", err)
@@ -213,8 +200,27 @@ func TestLoadSkipSubprojectImportResolutionStillRejectsMalformedYAML(t *testing.
 	if _, err := Load(tmpDir); err == nil {
 		t.Fatal("Load() accepted malformed root YAML")
 	}
-	if _, err := Load(tmpDir, SkipSubprojectImportResolution()); err == nil {
-		t.Fatal("Load(SkipSubprojectImportResolution()) accepted malformed root YAML")
+	if _, err := Load(tmpDir, ForCI()); err == nil {
+		t.Fatal("Load(ForCI()) accepted malformed root YAML")
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, FileName), []byte(`ci:
+  profiles:
+    predeploy:
+      timeout: 0s
+      steps:
+        - name: check
+          run: true
+`), 0644); err != nil {
+		t.Fatalf("write invalid CI profile: %v", err)
+	}
+	if _, err := Load(tmpDir, ForCI()); err == nil || !strings.Contains(err.Error(), "ci predeploy") {
+		t.Fatalf("Load(ForCI()) error = %v, want invalid CI profile rejection", err)
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, FileName), []byte("env_file:\n  - {path: .env, sops_source: .env}\n"), 0644); err != nil {
+		t.Fatalf("write invalid root env declaration: %v", err)
+	}
+	if _, err := Load(tmpDir, ForCI()); err == nil || !strings.Contains(err.Error(), "source_is_target") {
+		t.Fatalf("Load(ForCI()) error = %v, want invalid root env declaration rejection", err)
 	}
 }
 

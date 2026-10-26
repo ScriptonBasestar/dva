@@ -320,11 +320,17 @@ func TestCISubprojectRunsRootProfileWithDeclaredName(t *testing.T) {
 
 func TestCIRootProfileSkipsUnrelatedImportedChildren(t *testing.T) {
 	dir := t.TempDir()
-	rootConfig := `subprojects:
+	rootConfig := `plans:
+  local-dev:
+    composes:
+      - plan: site-a-plan
+subprojects:
   site-a:
     path: site-a
     import:
-      interactions: [shell]
+      plans:
+        - name: local-dev
+          as: site-a-plan
   unrelated:
     path: missing-child
     import:
@@ -444,6 +450,15 @@ func TestCIProjectLoadsOnlySelectedChild(t *testing.T) {
 	captureStdout(t, func() { runErr = ciCmd.RunE(ciCmd, []string{"predeploy"}) })
 	if runErr == nil || !strings.Contains(runErr.Error(), "unknown CI project") {
 		t.Fatalf("unregistered selected child error = %v, want unknown CI project", runErr)
+	}
+	if err := os.WriteFile(filepath.Join(selectedDir, "dva.yml"), []byte("version: [\n"), 0o600); err != nil {
+		t.Fatalf("write malformed selected child config: %v", err)
+	}
+	ciProject = "selected"
+	output.ResetStdoutDocument()
+	captureStdout(t, func() { runErr = ciCmd.RunE(ciCmd, []string{"predeploy"}) })
+	if runErr == nil || !strings.Contains(runErr.Error(), "parsing YAML") {
+		t.Fatalf("malformed selected child error = %v, want YAML parse failure", runErr)
 	}
 }
 

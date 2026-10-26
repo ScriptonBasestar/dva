@@ -27,8 +27,8 @@ dva ci logs <run-id>
 
 `--subproject`는 root 프로필을 실행하며 선언된 child 이름을 `DVA_CI_SUBPROJECT`로 단계에
 내보낸다. 계약과 DevBox 예시는 [subproject 범위 CI](71-ci-subproject-scope.md)를 따른다.
-CI는 root 설정만 읽고 `--project`는 선택한 child만 읽는다. 기본 `config.Load`와 전체 검증은
-모든 import를 계속 해석한다.
+CI는 root 환경·CI 프로필만 검증하고 child import와 stack·remote·plan·endpoint 최종화는 생략한다.
+`--project`는 선택 child를 읽는다. 기본 `config.Load`와 전체 검증은 모든 import를 계속 해석한다.
 
 ## 설정
 
