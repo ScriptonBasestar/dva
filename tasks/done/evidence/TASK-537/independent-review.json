@@ -1,0 +1,31 @@
+{
+  "verdict": "PASS",
+  "reviewer": "native Codex ce-judge /root/dva_composition_contract_judge",
+  "date": "2026-10-27",
+  "scope": "TASK-537 pre-integration source readiness: configuration, all-ancestor admission, cancellation, budgets, preview, receipts, public manifest and canonical guidance",
+  "reviewed_commit": "9ce78b11bfb3d8b9117d216cf56cc356b9b1da2b",
+  "target_commit": "1929292365ef96e1c27d43b6c3395a5bf5a42b8f",
+  "code_manifest_sha256": "e8d45612fd17c7896d4adc26887b7b5615d275c7768c2066cc77b527bb46e2d4",
+  "code_manifest_files": 34,
+  "code_manifest_definition": "SHA-256 of compact sort_keys JSON array sorted by path, each entry {path,sha256(blob)}. Paths are changed implementation files between target and reviewed commit, excluding tasks/, ROADMAP.md and docs/ci-child-composition-evidence.md.",
+  "findings": [],
+  "method": "Independent static reviews plus direct inspection of actual old/new CLI outputs, persisted receipts, OCI intents and full CI evidence. All 34 implementation files independently matched committed blobs, with zero mismatches. The reviewer did not rerun tests.",
+  "ci": {
+    "run": "43f5efc5ce3e5fa9bebcc61953f6e273",
+    "result": "succeeded",
+    "steps": 9,
+    "duration": "2m7.725794208s",
+    "input_sha256": "745dbf8adf45ab0f53f6825148a948a1a8722a5b95a4c01f7f54be5fd15f72f4",
+    "before_equals_after": true,
+    "dirty": true,
+    "limitation": "The full receipt attests the dirty precommit input, not the final commit itself. Independent manifest-to-commit equality and separate documentation/board verification cover subsequent record-only changes."
+  },
+  "binary": {
+    "sha256": "efec59bcb9f09238ba774c9f91482a93157ba26288d411d9833129dd696bca5e",
+    "manifest_schema": "1.10",
+    "mixed_versions": "Both directions reject live nested CI; old binary rejects child_ci; old receipt reader reads the two new successful fixture receipts.",
+    "native_composition": "New parent/child succeed with linked receipts and unchanged available Git attestations.",
+    "ordinary_oci_leaf": "Success and parent SIGTERM cancellation have identity-matched exact-CID cleanup and successful absence proof, without cleanup errors."
+  },
+  "limits": "This is source readiness, not proof of completed source integration/push/reclaim, installed-binary update, consumer predeploy, public release or deployment. Native hard containment, malicious detached work and OCI-internal child composition are excluded."
+}

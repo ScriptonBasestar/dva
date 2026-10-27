@@ -5,8 +5,11 @@ type: feature
 priority: P1
 effort: L
 exec-tier: strong
-status: doing
+status: done
 created: 2026-10-27
+quality-review: pass
+quality-reviewed-at: 2026-10-27
+quality-review-evidence: tasks/done/evidence/TASK-537/independent-review.json
 ---
 
 ## Summary
@@ -15,9 +18,9 @@ Implement the adopted native-only child CI contract while keeping current nested
 
 ## Completion Criteria
 
-- [ ] Native step opt-in admits independent roots while defaults, cycle checks and old/new compatibility fail visibly. | verify: human — independent review compares contract, schema and admission regressions
-- [ ] Parent deadline, cooperative jobs and normal cancellation/descendant cleanup are verified through real process tests without weakening ordinary native or OCI behavior. | verify: human — compare finite integration outputs and cleanup evidence
-- [ ] Manifest, dry-run and linked receipts describe actual parent/child results; required checks and source delivery are verified before consumer adoption. | verify: human — compare CLI evidence, checks and native delivery receipt
+- [x] Native step opt-in admits independent roots while defaults, cycle checks and old/new compatibility fail visibly. | verify: human — independent review compares contract, schema and admission regressions
+- [x] Parent deadline, cooperative jobs and normal cancellation/descendant cleanup are verified through real process tests without weakening ordinary native or OCI behavior. | verify: human — compare finite integration outputs and cleanup evidence
+- [x] Manifest, dry-run and linked receipts describe actual parent/child results; required checks and source delivery are verified before consumer adoption. | verify: human — compare CLI evidence, checks and native delivery receipt
 
 ## Sources
 
@@ -73,9 +76,11 @@ Final full gate 43f5efc5ce3e5fa9bebcc61953f6e273 passed all nine steps in
 actual final CLI/OCI evidence. Implementation manifest (34 files) is
 e8d45612fd17c7896d4adc26887b7b5615d275c7768c2066cc77b527bb46e2d4.
 
-Remaining: bind independent done-review to the committed implementation,
-complete the canonical transition and native source delivery. No installation
-or consumer predeploy attempt has been made.
+Independent done-review passed committed implementation
+9ce78b11bfb3d8b9117d216cf56cc356b9b1da2b. The receipt binds that commit and the
+34-file implementation manifest. This transition is the final record batch for
+native source integration; its finish receipt must confirm push/reclaim before
+consumer adoption. Installation and consumer predeploy remain separate outcomes.
 
 ## Attempts
 
