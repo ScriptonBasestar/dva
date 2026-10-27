@@ -25,7 +25,9 @@ Thumbs.db
 .goreleaser.yaml.bak
 
 # Claude/AI
-.claude/
+!/.claude/
+/.claude/*
+!/.claude/plugins.yaml
 .serena/
 .cursor/
 # `.ce/` 는 도구 런타임 캐시라 어느 깊이에서든 무시한다. 다만 **루트의**

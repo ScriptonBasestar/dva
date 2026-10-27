@@ -1,0 +1,10 @@
+version: "1.0"
+plugins:
+  - name: tool
+    enabled: true
+    skills:
+      - project-evidence
+    agents: []
+    commands: []
+settings:
+  clean_install: false

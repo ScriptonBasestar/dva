@@ -58,6 +58,12 @@ DVA는 개발 환경 구성을 일관되게 선언하고, 암호화된 설정과
 봉인된 done 카드의 사실관계 정정은 위조(리뷰 없이 digest 갱신)가 아니라
 [docs/406-sealed-card-correction.md](docs/406-sealed-card-correction.md)다.
 
+## Optional completion capture
+
+Host-adopted contribution capture runs after successful source delivery under the
+destination's explicit policy. Follow [completion evidence capture](docs/evidence-capture.md).
+No destination is hardcoded here; installation or a catalog relationship alone is not adoption.
+
 ## Repository Map
 
 구현 경계와 데이터 흐름의 원본은 `ARCHITECTURE.md`입니다. 아래 목록은 코드 탐색용입니다.
