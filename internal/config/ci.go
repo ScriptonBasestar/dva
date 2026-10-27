@@ -23,6 +23,12 @@ var ciNamePattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_.-]*$`)
 // steps may not set it: the supervisor owns its value for nested-run checks.
 const CIParentRunEnv = "DVA_CI_PARENT_RUN"
 
+// CICompositionEnv is issued only by opted-in native CI steps.
+const CICompositionEnv = "DVA_CI_COMPOSITION"
+
+// CIChildIndependentRoot is the only supported native child CI admission mode.
+const CIChildIndependentRoot = "independent-root"
+
 // CISubprojectEnv names the declared subproject a `dva ci --subproject` run
 // checks. CI steps may not set it: only the validated flag value reaches steps.
 const CISubprojectEnv = "DVA_CI_SUBPROJECT"
@@ -45,6 +51,7 @@ type CIProfile struct {
 
 // CIStep is one named CI gate.
 type CIStep struct {
+	ChildCI     string            `yaml:"child_ci,omitempty" json:"child_ci,omitempty"`
 	Name        string            `yaml:"name" json:"name"`
 	Run         string            `yaml:"run" json:"run"`
 	DependsOn   []string          `yaml:"depends_on" json:"depends_on"`
@@ -169,6 +176,12 @@ func validateCIProfile(name string, profile CIProfile) error {
 		if step.OCI == nil && strings.TrimSpace(step.Run) == "" {
 			return fmt.Errorf("ci profile %q step %q: run must not be empty", name, step.Name)
 		}
+		if step.ChildCI != "" && step.ChildCI != CIChildIndependentRoot {
+			return fmt.Errorf("ci profile %q step %q: child_ci must be independent-root", name, step.Name)
+		}
+		if step.ChildCI != "" && step.OCI != nil {
+			return fmt.Errorf("ci profile %q step %q: child_ci is only supported by native run steps", name, step.Name)
+		}
 		if step.OCI != nil {
 			if strings.TrimSpace(step.Run) != "" || step.Workdir != "" || step.Environment != nil {
 				return fmt.Errorf("ci profile %q step %q: oci is exclusive with run, workdir, and environment", name, step.Name)
@@ -180,7 +193,7 @@ func validateCIProfile(name string, profile CIProfile) error {
 				return err
 			}
 		}
-		for _, key := range []string{CIParentRunEnv, CISubprojectEnv} {
+		for _, key := range []string{CIParentRunEnv, CISubprojectEnv, CICompositionEnv} {
 			if _, reserved := step.Environment[key]; reserved {
 				return fmt.Errorf("ci profile %q step %q: environment must not set reserved %s", name, step.Name, key)
 			}
@@ -225,7 +238,10 @@ func parsePositiveCIDuration(subject, field, value string) (time.Duration, error
 	return duration, nil
 }
 
-func validCIName(name string) bool { return ciNamePattern.MatchString(name) }
+// IsCIName reports whether a runtime CI identity has the declared name grammar.
+func IsCIName(name string) bool { return ciNamePattern.MatchString(name) }
+
+func validCIName(name string) bool { return IsCIName(name) }
 
 func hasCIStepCycle(steps map[string]CIStep) bool {
 	const (

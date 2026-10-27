@@ -82,10 +82,11 @@ Dry-run의 `workers`와 실행 로그, 단계 receipt의 선택적 `worker_budge
 
 실행기는 부모 프로세스로 남아 자식 process group을 감독한다. 실패나 timeout 시
 진행 중인 검사를 취소하고 후속 의존 검사를 실행하지 않은 뒤 결과를 기록하고 락을
-해제한다. 단계는 보호된 `DVA_CI_PARENT_RUN`을 덮어쓸 수 없다. 이 값은 parent run ID와
-canonical root를 전달하며, 실제 parent root 락과 ID가 살아 있으면 중첩 `dva ci`를
-거절한다. 정상 형식이지만 이미 비활성인 parent 정보는 무시하고, 형식 오류나 조회
-오류는 명확히 실패한다.
+해제한다. 보호된 `DVA_CI_PARENT_RUN`은 parent run ID와 canonical root를 전달한다.
+실제 parent 락·ID가 살아 있으면 중첩을 기본 거절한다. 정상 stale 정보는 무시하며,
+형식·조회 오류는 실패한다. 단계 환경으로 이 값을 덮어쓸 수 없다.
+
+Native `child_ci: independent-root`의 예산·취소·호환성은 [구성 계약](ci-child-composition-proposal.md)을 따른다.
 
 감독 프로세스를 강제로 종료하면 OS 락은 회수된다. 이때 남아 있는 자식 프로세스를
 정리한다는 보장은 없다. 락 회수와 잔존 workload 정리는 별개의 책임이며, detached

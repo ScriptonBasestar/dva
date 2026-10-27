@@ -170,12 +170,11 @@ func TestCommandHelpGroupsAndDiscoveryDescriptions(t *testing.T) {
 		}
 	}
 
-	// schema_version moved 1.4 -> 1.5 under TASK-258/TASK-272 (the canonical_name route-identity
-	// marker); TestValidateRouteCompatibilityContract owns that change, this test only keeps the
-	// value pinned so a future presentation-only change does not drift it again unnoticed.
+	// Keep the current public shape pinned: 1.10 adds optional child CI
+	// composition to CI profile steps (TASK-537), preserving route identity.
 	manifest := buildManifest(&config.Config{})
-	if manifest.SchemaVersion != "1.9" {
-		t.Errorf("manifest schema version = %q, want 1.9 (imported plan identity)", manifest.SchemaVersion)
+	if manifest.SchemaVersion != "1.10" {
+		t.Errorf("manifest schema version = %q, want 1.10 (optional child CI)", manifest.SchemaVersion)
 	}
 	for _, name := range []string{"manifest", "show", "status"} {
 		entry, ok := manifest.StaticCommands[name]

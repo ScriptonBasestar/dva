@@ -55,6 +55,10 @@ func workerBudget(env []string, step map[string]string, inherited []string, jobs
 // WorkerPlan uses the same owning environment and worker resolver as execution.
 func WorkerPlan(p config.CIProfile, inherited []string) []StepWorkers {
 	jobs, source := toolWorkerBudget(p, availableCPUs())
+	return workerPlan(p, inherited, jobs, source)
+}
+
+func workerPlan(p config.CIProfile, inherited []string, jobs int, source string) []StepWorkers {
 	result := make([]StepWorkers, 0, len(p.Steps))
 	for _, step := range p.Steps {
 		if step.OCI != nil {

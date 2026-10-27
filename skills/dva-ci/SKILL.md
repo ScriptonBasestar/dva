@@ -30,6 +30,9 @@ when a technical verification method is needed.
    `dva ci --subproject <child> <profile>` keeps the root's profile and exports
    the declared child name as `DVA_CI_SUBPROJECT` for root steps that scope a
    shared check to one child.
+   Native `child_ci: independent-root` is a separate explicit composition option;
+   use the execution contract rather than clearing parent metadata or duplicating
+   child checks. Omission keeps nested CI rejection.
 5. Report the run ID, profile, result, per-step and total elapsed time, and
    unexecuted checks. Keep cold and warm observations separate. A
    timeout, busy result, cancellation, or changed input is not passing evidence.

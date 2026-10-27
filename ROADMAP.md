@@ -239,8 +239,9 @@ Legacy 설정 제거는 마이그레이션과 제거 버전이 결정된 뒤 별
 ## 독립 root CI 구성 구현 범위 — 2026-10-27
 
 SOUL의 실행 수명주기 책임과 child-owned 검사 경계를 적용해, native step의 명시적
-독립-root child CI 구성을 후속 구현 범위로 채택한다. 기본 중첩 거절을 유지하며
-OCI 구성·remote 실행·운영 배포는 포함하지 않는다. 현재 기능이나 공개판 지원을 뜻하지 않는다.
+독립-root child CI 구성을 TASK-537의 미공개 소스에 구현했다. 기본 중첩 거절을 유지하며
+OCI 내부 구성·remote 실행·운영 배포는 포함하지 않는다. 공개판 지원을 뜻하지 않는다.
 정확한 설정·토큰·취소·결과·수용 기준의 정본은
-[독립 root CI 구성 계약](docs/ci-child-composition-proposal.md)이다. wire lock-state와
-multi-level cleanup은 구현 리뷰·실제 프로세스 시험으로 확정해야 하며 통과 전 소비하지 않는다.
+[독립 root CI 구성 계약](docs/ci-child-composition-proposal.md)이다. lock_state와
+multi-level cleanup의 리뷰·실제 프로세스 관측은 [검증 기록](docs/ci-child-composition-evidence.md)에 둔다.
+소스 통합·설치·소비자 gate와 공개 릴리스는 각각 확인한 뒤 채택한다.

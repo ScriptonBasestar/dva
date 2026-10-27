@@ -1871,6 +1871,7 @@
                     "properties": {
                       "name": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$" },
                       "run": { "type": "string" },
+                      "child_ci": { "type": "string", "enum": ["independent-root"], "description": "Opt in this native step to supervised independent-root child CI" },
                       "depends_on": { "type": "array", "items": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$" } },
                       "workdir": { "type": "string" },
                       "environment": { "type": "object", "additionalProperties": { "type": "string" } },
@@ -1895,7 +1896,7 @@
                     "required": ["name"],
                     "oneOf": [
                       { "required": ["run"], "not": { "required": ["oci"] } },
-                      { "required": ["oci", "timeout"], "not": { "anyOf": [{ "required": ["run"] }, { "required": ["workdir"] }, { "required": ["environment"] }] } }
+                      { "required": ["oci", "timeout"], "not": { "anyOf": [{ "required": ["run"] }, { "required": ["workdir"] }, { "required": ["environment"] }, { "required": ["child_ci"] }] } }
                     ]
                   }
                 }

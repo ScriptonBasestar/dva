@@ -52,7 +52,7 @@ func TestCIDiscoveryAndDryRunDoNotExecute(t *testing.T) {
 
 func TestCIManifestAndDryRunExposeLocks(t *testing.T) {
 	dir := t.TempDir()
-	if err := os.WriteFile(filepath.Join(dir, "dva.yml"), []byte("ci:\n  profiles:\n    commit:\n      locks: [integration-db]\n      steps:\n        - name: test\n          run: true\n"), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "dva.yml"), []byte("ci:\n  profiles:\n    commit:\n      locks: [integration-db]\n      steps:\n        - name: test\n          run: true\n          child_ci: independent-root\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	c, err := config.Load(dir)
@@ -63,6 +63,9 @@ func TestCIManifestAndDryRunExposeLocks(t *testing.T) {
 	m := buildManifest(c)
 	if got := m.CIProfiles["commit"].Locks; len(got) != 1 || got[0] != "integration-db" {
 		t.Fatalf("manifest locks = %#v", got)
+	}
+	if m.SchemaVersion != "1.10" || m.CIProfiles["commit"].Steps[0].ChildCI != config.CIChildIndependentRoot {
+		t.Fatalf("manifest child composition shape: %+v", m.CIProfiles)
 	}
 	oldProject := ciProject
 	ciProject = ""
@@ -79,6 +82,9 @@ func TestCIManifestAndDryRunExposeLocks(t *testing.T) {
 	}
 	if got := profile.Locks; len(got) != 1 || got[0] != "integration-db" {
 		t.Fatalf("dry-run locks = %#v", got)
+	}
+	if profile.Steps[0].ChildCI != config.CIChildIndependentRoot {
+		t.Fatalf("dry-run dropped composition field: %+v", profile)
 	}
 }
 

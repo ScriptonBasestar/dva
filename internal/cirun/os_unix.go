@@ -37,3 +37,18 @@ func terminateProcessGroup(pid int, waited <-chan error) {
 	}
 	cleanupGroup(pid)
 }
+
+func signalCompositionGroup(pid int) { _ = syscall.Kill(-pid, syscall.SIGTERM) }
+
+// TERM was already sent before draining child supervisors. Do not start another
+// 750ms grace per ancestor after the shared drain; charge elapsed time once.
+func finishCompositionGroup(pid int, waited <-chan error, signaledAt time.Time) {
+	remaining := max(time.Duration(0), 750*time.Millisecond-time.Since(signaledAt))
+	select {
+	case <-waited: //nolint:errcheck // expected signalled exit
+	case <-time.After(remaining):
+		_ = syscall.Kill(-pid, syscall.SIGKILL)
+		<-waited //nolint:errcheck // expected signalled exit
+	}
+	cleanupGroup(pid)
+}

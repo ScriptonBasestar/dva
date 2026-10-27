@@ -71,6 +71,14 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 	if err := os.MkdirAll(state, 0o700); err != nil {
 		return report, err
 	}
+	state, err = filepath.Abs(state)
+	if err != nil {
+		return report, err
+	}
+	state, err = filepath.EvalSymlinks(state)
+	if err != nil {
+		return report, err
+	}
 	id, err := runID()
 	if err != nil {
 		return report, err
@@ -87,14 +95,45 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 	if opts.lockDirectory != "" {
 		lockState = opts.lockDirectory
 	}
+	if err := os.MkdirAll(lockState, 0o700); err != nil {
+		return report, err
+	}
+	lockState, err = filepath.Abs(lockState)
+	if err != nil {
+		return report, err
+	}
+	lockState, err = filepath.EvalSymlinks(lockState)
+	if err != nil {
+		return report, err
+	}
 	parentValue, present := os.LookupEnv(parentRunEnv)
 	if !present {
 		parentValue = environmentValue(opts.Env, parentRunEnv)
 	}
-	err = checkParent(lockState, parentValue)
+	grantValue, composing := compositionGrantValue(opts.Env)
+	var grant *compositionGrant
+	var boundedWorkers *compositionWorkers
 	var locks heldLocks
-	if err == nil {
-		locks, err = acquire(lockState, root, id, opts.Profile.Locks...)
+	if composing {
+		grant, err = admitComposition(lockState, root, parentValue, grantValue, time.Now(), nil)
+		if err == nil {
+			opts.Env = compositionWorkerEnvironment(opts.Env, *grant, opts.WorkerEnvironment)
+			workers, budgetErr := constrainCompositionWorkers(opts.Profile, opts.Env, grant.JobsLimit, availableCPUs())
+			err = budgetErr
+			boundedWorkers = &workers
+		}
+		if err == nil {
+			deadline, _ := compositionDeadline(grant.Deadline) // validated by admission
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithDeadline(ctx, deadline)
+			defer cancel()
+			locks, grant, err = acquireComposition(ctx, lockState, root, id, state, parentValue, grantValue, opts.Profile.Locks)
+		}
+	} else {
+		err = checkParent(lockState, parentValue)
+		if err == nil {
+			locks, err = acquire(lockState, root, id, opts.Profile.Locks...)
+		}
 	}
 	if err != nil {
 		if busy, ok := errors.AsType[*BusyError](err); ok {
@@ -103,7 +142,24 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 		}
 		return report, err
 	}
-	defer locks.release()
+	stopMonitor := func() {}
+	if grant != nil {
+		last := grant.Ancestry[len(grant.Ancestry)-1]
+		report.Parent = &CompositionParent{RunID: last.RunID, Root: last.Root, Step: last.Step}
+		report.CompositionDepth = len(grant.Ancestry)
+		var cancel context.CancelCauseFunc
+		ctx, cancel = context.WithCancelCause(ctx)
+		done := monitorComposition(ctx, cancel, lockState, *grant)
+		stopMonitor = func() { cancel(context.Canceled); <-done }
+	}
+	defer func() {
+		stopMonitor()
+		locks.release()
+		if grant != nil {
+			scope := scopeFor(lockState, grant.Ancestry[len(grant.Ancestry)-1])
+			retErr = finishCompositionChild(scope, state, report, retErr)
+		}
+	}()
 	log, err := os.OpenFile(report.LogPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
 	if err != nil {
 		return report, err
@@ -142,6 +198,11 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 			return writeReport(state, report)
 		}
 		executionCtx := context.WithValue(ctx, ociScopeKey{}, ociScope{state: state, runID: id})
+		runtime := compositionRuntime{id: id, root: root, state: lockState, workers: boundedWorkers}
+		if grant != nil {
+			runtime.ancestry = append([]compositionFrame(nil), grant.Ancestry...)
+		}
+		executionCtx = context.WithValue(executionCtx, compositionRuntimeKey{}, runtime)
 		report.Steps, retErr = execute(executionCtx, root, opts.Profile, env, writer, checkpoint)
 	}
 	after, _, attestErr := fingerprintInputs(ctx, root)

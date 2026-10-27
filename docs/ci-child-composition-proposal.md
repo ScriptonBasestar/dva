@@ -1,6 +1,6 @@
 # 독립 root의 native child CI 구성 계약
 
-상태: 구현 대상으로 채택한 설계. 현재 소스·공개판에서 지원하지 않는다.
+상태: Unreleased 구현 계약. 공개판과 기존 설치본의 지원을 가정하지 않는다.
 이 문서는 `child_ci` 구현과 검증의 경계를 소유한다. 현재 동작은
 [CI 프로필](53-ci-profiles.md), OCI는 [별도 계약](ci-oci-steps.md)을 따른다.
 
@@ -22,7 +22,7 @@ native `run` step에만 선택적 `child_ci: independent-root`를 둔다. 이 en
 검증하거나 같은 취소 경계를 보장한 것으로 추정하지 않는다.
 
 strict struct/schema, validation, manifest와 dry-run에 동일 필드를 반영한다.
-이름은 실제 구현 전까지 현재 설정에 넣지 않는다. 다른 root란 기존 CI가 사용하는
+사용할 설치본의 지원을 확인한 뒤 설정에 채택한다. 다른 root란 기존 CI가 사용하는
 canonical 설정 소유 root 경로이며 Git remote 정체성이나 별도 저장소 인가를 뜻하지 않는다.
 
 ## 권한과 ancestry 전달
@@ -35,9 +35,15 @@ canonical 설정 소유 root 경로이며 Git remote 정체성이나 별도 저�
   `root`, 허용을 발급한 `step`을 가진다. 중복 root와 과도한 깊이를 거절한다.
 - `deadline`: 현재 parent step context의 절대 UTC RFC3339Nano 시각.
 - `jobs_limit`: 현재 parent step의 유효 cooperative worker ceiling.
-- lock state의 정체성: child가 같은 runtime lock store를 사용하는지 검증할 수 있어야 한다.
-  state 위치를 환경으로 바꿔 ancestor 검사를 건너뛰지 못한다. 정확한 wire 필드는 구현
-  리뷰에서 확정하고, 불일치나 lookup 오류를 허용으로 해석하지 않는다.
+- `lock_state`: 실제 공유 runtime lock store의 canonical absolute directory다.
+  Child의 store와 정확히 같아야 한다. 환경 경로 변경으로 ancestor 검사를 건너뛰지
+  못하며, 불일치나 lookup 오류를 허용으로 해석하지 않는다.
+- `worker_defaults`: 선택적 map. 런타임이 기본값으로 넣은 `CARGO_BUILD_JOBS`와
+  `RUST_TEST_THREADS`의 양수 정규 십진 문자열만 담고 jobs_limit 이하로 제한한다.
+  Child는 실제 상속값이 발급값과 같고
+  자신의 root 선언이 없는 경우에만 이를 제거하고 child 병렬도 안에서 기본값을 다시
+  계산한다. 다른 값과 root/step의 명시 선언은 그대로 초과 검증한다. 같은 숫자를 root에서
+  명시해도 기본값으로 바꾸지 않는다. Scope metadata는 전체 grant와 이 출처를 함께 묶는다.
 
 새 변수도 사용자 step environment의 reserved key다. 각 step dispatch에서 상속된
 composition grant를 제거하고 그 step의 선언으로만 다시 발급한다. B의 일반 step이
@@ -72,12 +78,32 @@ jobs는 현재 DVA의 협력적 tool-worker 예산이다. child의 최대 병렬
 CPU/RAM/PID hard cap을 주장하지 않으며 hard containment는 OCI의 별도 계약이다.
 동일 shared-resource lock은 reentrant하게 만들지 않고 기존 busy/no retry를 유지한다.
 
+한 parent step의 grant는 step 전체 예산이므로 live direct child는 한 번에 하나만
+허용한다. 두 번째 동시 child는 `composition_child` busy로 즉시 거절하며 자동 재시도하지
+않는다. 앞선 child의 root lock이 해제되면 순차 호출할 수 있다. 여러 child에 예산을
+동적으로 분배하는 scheduler는 이번 범위가 아니다. 서로 다른 parent steps의 병렬성은
+기존 profile의 max_parallel과 step별 worker 예산을 따른다.
+
 정상 SIGINT/SIGTERM·deadline·sibling 실패에서 parent와 child는 하위 DVA 실행 및 해당
 실행이 소유한 step process group을 정리하고 receipt를 종료한 뒤 lock을 해제해야 한다.
 child가 별도 PGID를 만들므로 outer group kill만으로 이 조건을 충족했다고 보지 않는다.
 현재 750ms TERM→KILL 경계와 정상 종료 후 group 정리 경로도 포함해 multi-level 실제
 프로세스 시험으로 증명한다. cleanup 미확인은 성공이 아니며 lock/receipt를 조기 완료하지 않는다.
 SIGKILL·악성 detached workload·외부 서비스의 범용 정리는 기존 native 지원 밖이다.
+
+각 opt-in step은 공유 lock store에 admission scope를 둔다. 같은 짧은 OS flock 안에서
+전체 ancestry를 다시 확인하고 child root/resource lock 획득과 등록을 마친다. Parent는
+같은 flock으로 admission을 닫은 뒤에만 등록된 child의 종료를 기다린다. 정상 shell
+성공이면 원래 step deadline까지 기다리고, 실패·취소·deadline이면 별도 cancel marker로
+모든 하위 실행에 알린다. Child watcher는 모든 ancestor scope를 확인한다.
+
+취소 후 cleanup grace는 15초이며 작업 시간 연장이 아니다. Admitted native child의
+일반 OCI leaf도 허용하고 기존 10초 cleanup을 보존한다. Scope close/cancel 후 즉시
+outer group에 graceful TERM을 보내고, child 최종 receipt와 root lock 해제를 기다린 뒤
+forced KILL로 정리한다. Grace 초과와 상태 확인
+실패는 unresolved run/root를 남기는 실패이며 cleanup 성공으로 보고하지 않는다.
+닫힌 scope는 늦은 등록을 막는 로컬 진단 상태로 유지한다.
+한 scope의 누적 child 등록은 최대 256개로 제한하며 초과하면 명시적으로 실패한다.
 
 ## 결과 연결
 

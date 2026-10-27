@@ -48,12 +48,20 @@ var ciCmd = &cobra.Command{
 		// The preview prints the Options Run would receive, so the dry-run test
 		// also covers the flag-to-Options wiring.
 		opts := cirun.Options{Root: c.FileDir(), ProfileName: name, Subproject: ciSubproject, Profile: profile, Env: owned.env.EnvSlice()}
+		opts.WorkerEnvironment = map[string]bool{}
+		for _, key := range []string{"CARGO_BUILD_JOBS", "RUST_TEST_THREADS"} {
+			_, opts.WorkerEnvironment[key] = owned.env.Vars[key]
+		}
 		if dryRun {
+			workers, err := cirun.PreviewWorkers(opts)
+			if err != nil {
+				return err
+			}
 			return output.PrintJSON(struct {
 				config.CIProfile
 				Subproject string              `json:"subproject,omitempty"`
 				Workers    []cirun.StepWorkers `json:"workers"`
-			}{profile, opts.Subproject, cirun.WorkerPlan(profile, opts.Env)})
+			}{profile, opts.Subproject, workers})
 		}
 		ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
 		defer stop()

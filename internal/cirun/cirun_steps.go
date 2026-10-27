@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -82,6 +83,9 @@ func execute(ctx context.Context, root string, p config.CIProfile, inherited []s
 		max = n
 	}
 	workers, source := toolWorkerBudget(p, availableCPUs())
+	if scope, ok := ctx.Value(compositionRuntimeKey{}).(compositionRuntime); ok && scope.workers != nil {
+		workers, source = scope.workers.jobs, scope.workers.source
+	}
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	type result struct {
@@ -240,6 +244,44 @@ func runStep(ctx context.Context, root string, step config.CIStep, inherited []s
 	cmd.Dir = workdir
 	cmd.Env = ciEnv(inherited, step.Environment, workers)
 	r.WorkerBudget = workerBudget(cmd.Env, step.Environment, inherited, workers, source)
+	var childScope *compositionScope
+	var lockState string
+	if step.ChildCI != "" {
+		runtime, ok := ctx.Value(compositionRuntimeKey{}).(compositionRuntime)
+		if !ok {
+			return r, compositionFailure("scope", "opt-in step requires its owning CI execution")
+		}
+		deadline, bounded := stepCtx.Deadline()
+		if !bounded || !time.Now().Before(deadline) {
+			return r, compositionFailure("deadline", "opt-in step requires a live finite deadline")
+		}
+		if r.WorkerBudget == nil {
+			return r, compositionFailure("jobs", "opt-in step requires valid numeric worker limits")
+		}
+		jobs := max(r.WorkerBudget.ToolJobs, r.WorkerBudget.CargoBuildJobs, r.WorkerBudget.RustTestThreads)
+		ancestry := append(append([]compositionFrame(nil), runtime.ancestry...), compositionFrame{RunID: runtime.id, Root: root, Step: step.Name})
+		if len(ancestry) > maxCompositionDepth {
+			return r, compositionFailure("depth", "maximum composition depth reached")
+		}
+		grant := compositionGrant{Version: 1, Ancestry: ancestry, Deadline: deadline.UTC().Format(time.RFC3339Nano), JobsLimit: jobs, LockState: runtime.state}
+		grant.WorkerDefaults = map[string]string{}
+		for key, source := range map[string]string{"CARGO_BUILD_JOBS": r.WorkerBudget.CargoBuildJobsSource, "RUST_TEST_THREADS": r.WorkerBudget.RustTestThreadsSource} {
+			if source != "step.environment" && source != "inherited.environment" {
+				grant.WorkerDefaults[key] = environmentValue(cmd.Env, key)
+			}
+		}
+		scope := scopeFor(runtime.state, ancestry[len(ancestry)-1])
+		if err := scope.createGrant(grant); err != nil {
+			return r, err
+		}
+		childScope, lockState = &scope, runtime.state
+		encoded, err := json.Marshal(grant)
+		if err != nil {
+			return r, err
+		}
+		cmd.Env = compositionEnvironment(cmd.Env, string(encoded))
+		r.CompositionBudget = &CompositionBudget{Deadline: grant.Deadline, JobsLimit: jobs}
+	}
 	if r.WorkerBudget != nil {
 		_, _ = fmt.Fprintf(out, "ci step %s tool_jobs=%d source=%s cargo_build_jobs=%d source=%s rust_test_threads=%d source=%s dva_ci_jobs=%d\n", step.Name, r.WorkerBudget.ToolJobs, r.WorkerBudget.Source, r.WorkerBudget.CargoBuildJobs, r.WorkerBudget.CargoBuildJobsSource, r.WorkerBudget.RustTestThreads, r.WorkerBudget.RustTestThreadsSource, r.WorkerBudget.DVAJobs)
 	}
@@ -249,19 +291,44 @@ func runStep(ctx context.Context, root string, step config.CIStep, inherited []s
 	// A background descendant retaining the output pipes must not keep Wait
 	// blocked after its parent exited. The group is cleaned on every wait path.
 	cmd.WaitDelay = time.Second
+	if err := stepCtx.Err(); err != nil {
+		if childScope != nil {
+			err = errors.Join(err, childScope.drain(stepCtx, lockState, true, nil))
+		}
+		return r, err
+	}
 	if err := startProcess(cmd); err != nil {
+		if childScope != nil {
+			err = errors.Join(err, childScope.drain(stepCtx, lockState, true, nil))
+		}
 		return r, err
 	}
 	pid := cmd.Process.Pid
+	var signaledAt time.Time
+	signalWork := func() {
+		if signaledAt.IsZero() {
+			signaledAt = time.Now()
+			signalCompositionGroup(pid)
+		}
+	}
 	waited := make(chan error, 1)
 	go func() { waited <- cmd.Wait() }()
 	select {
 	case err := <-waited:
+		if childScope != nil {
+			err = errors.Join(err, childScope.drain(stepCtx, lockState, err != nil || stepCtx.Err() != nil, signalWork))
+		}
 		cleanupGroup(pid)
 		return r, err
 	case <-stepCtx.Done():
-		terminateProcessGroup(pid, waited)
-		return r, stepCtx.Err()
+		var cleanupErr error
+		if childScope != nil {
+			cleanupErr = childScope.drain(stepCtx, lockState, true, signalWork)
+			finishCompositionGroup(pid, waited, signaledAt)
+		} else {
+			terminateProcessGroup(pid, waited)
+		}
+		return r, errors.Join(context.Cause(stepCtx), cleanupErr)
 	}
 }
 
@@ -288,6 +355,9 @@ func ciEnv(base []string, add map[string]string, workers int) []string {
 	m := map[string]string{}
 	for _, e := range base {
 		if i := strings.IndexByte(e, '='); i > 0 {
+			if e[:i] == config.CICompositionEnv {
+				continue
+			}
 			m[e[:i]] = e[i+1:]
 		}
 	}
@@ -308,7 +378,7 @@ func ciEnv(base []string, add map[string]string, workers int) []string {
 		m["GOFLAGS"] = strings.TrimSpace(m["GOFLAGS"] + " -p=1")
 	}
 	for k, v := range add {
-		if k == "DVA_CI_JOBS" || k == parentRunEnv || k == config.CISubprojectEnv {
+		if k == "DVA_CI_JOBS" || k == parentRunEnv || k == config.CISubprojectEnv || k == config.CICompositionEnv {
 			continue
 		}
 		m[k] = v

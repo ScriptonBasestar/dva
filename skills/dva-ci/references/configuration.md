@@ -46,6 +46,7 @@ ci:
 | `steps[].workdir` | 설정 디렉터리 기준 상대 경로 또는 절대 경로 |
 | `steps[].environment` | 단계 환경 변수 |
 | `steps[].timeout` | 전체 제한보다 작거나 같은 개별 제한 |
+| `steps[].child_ci` | native run에서만 `independent-root` 허용. 생략하면 중첩 CI 거절 |
 
 독립 단계는 `max_parallel` 범위에서 병렬 실행할 수 있다. 목록 순서로 선행 관계를
 대신하지 않는다. 순환·없는 참조·중복 이름·빈 명령은 실행 전에 실패한다.
@@ -60,3 +61,6 @@ ci:
 `ci`를 `.sb/dva/` 모듈로 옮길 때는 각 프로필을 한 파일에 온전히 둔다. 두 레이어에
 나눈 프로필은 `steps`를 선언한 나중 레이어의 단계만 남는다([설정 모듈](https://github.com/ScriptonBasestar/dva/blob/master/docs/32-config-modules.md)).
 `status`와 `logs`는 프로필 이름으로 사용할 수 없다.
+
+`child_ci`는 검사 목록을 복제하지 않고 child의 고유 profile을 실행할 때만 채택한다.
+부모 예산·전체 ancestor 검증·취소·구버전 호환은 [구성 계약](../../../docs/ci-child-composition-proposal.md)을 따른다.

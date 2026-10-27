@@ -41,22 +41,37 @@ type Options struct {
 	// Subproject is the declared child named by `dva ci --subproject`. Run is
 	// the only source of config.CISubprojectEnv for steps and records it in the
 	// receipt, so the receipt names the scope the steps actually received.
-	Subproject    string
-	Profile       config.CIProfile
-	Env           []string
-	Output        io.Writer
-	lockDirectory string // test seam; production callers cannot set it.
+	Subproject string
+	Profile    config.CIProfile
+	Env        []string
+	// WorkerEnvironment marks root-owned Cargo/Rust declarations. They remain
+	// explicit even when numerically equal to an inherited runtime default.
+	WorkerEnvironment map[string]bool
+	Output            io.Writer
+	lockDirectory     string // test seam; production callers cannot set it.
 }
 
 type StepReport struct {
-	OCI          *ociexec.Report `json:"oci,omitempty"`
-	Name         string          `json:"name"`
-	Status       string          `json:"status"`
-	Error        string          `json:"error,omitempty"`
-	StartedAt    time.Time       `json:"started_at"`
-	FinishedAt   time.Time       `json:"finished_at"`
-	Duration     time.Duration   `json:"duration"`
-	WorkerBudget *WorkerBudget   `json:"worker_budget,omitempty"`
+	CompositionBudget *CompositionBudget `json:"composition_budget,omitempty"`
+	OCI               *ociexec.Report    `json:"oci,omitempty"`
+	Name              string             `json:"name"`
+	Status            string             `json:"status"`
+	Error             string             `json:"error,omitempty"`
+	StartedAt         time.Time          `json:"started_at"`
+	FinishedAt        time.Time          `json:"finished_at"`
+	Duration          time.Duration      `json:"duration"`
+	WorkerBudget      *WorkerBudget      `json:"worker_budget,omitempty"`
+}
+
+type CompositionBudget struct {
+	Deadline  string `json:"deadline"`
+	JobsLimit int    `json:"jobs_limit"`
+}
+
+type CompositionParent struct {
+	RunID string `json:"run_id"`
+	Root  string `json:"root"`
+	Step  string `json:"step"`
 }
 
 // WorkerBudget records the numeric worker limits actually supplied to a CI step.
@@ -93,42 +108,48 @@ type Report struct {
 	Steps                              []StepReport
 	Attestation                        Attestation
 	Conflict                           *Conflict
+	Parent                             *CompositionParent
+	CompositionDepth                   int
 }
 
 func (r Report) MarshalJSON() ([]byte, error) {
 	type wire struct {
-		ID          string       `json:"id"`
-		Root        string       `json:"root"`
-		Profile     string       `json:"profile"`
-		Subproject  string       `json:"subproject,omitempty"`
-		Status      string       `json:"status"`
-		LogPath     string       `json:"log_path"`
-		Error       string       `json:"error,omitempty"`
-		StartedAt   time.Time    `json:"started_at"`
-		FinishedAt  time.Time    `json:"finished_at"`
-		Duration    string       `json:"duration"`
-		Steps       []StepReport `json:"steps"`
-		Attestation Attestation  `json:"attestation"`
-		Conflict    *Conflict    `json:"conflict,omitempty"`
+		ID               string             `json:"id"`
+		Root             string             `json:"root"`
+		Profile          string             `json:"profile"`
+		Subproject       string             `json:"subproject,omitempty"`
+		Status           string             `json:"status"`
+		LogPath          string             `json:"log_path"`
+		Error            string             `json:"error,omitempty"`
+		StartedAt        time.Time          `json:"started_at"`
+		FinishedAt       time.Time          `json:"finished_at"`
+		Duration         string             `json:"duration"`
+		Steps            []StepReport       `json:"steps"`
+		Attestation      Attestation        `json:"attestation"`
+		Conflict         *Conflict          `json:"conflict,omitempty"`
+		Parent           *CompositionParent `json:"parent,omitempty"`
+		CompositionDepth int                `json:"composition_depth,omitempty"`
 	}
-	return json.Marshal(wire{r.ID, r.Root, r.Profile, r.Subproject, r.Status, r.LogPath, r.Error, r.StartedAt, r.FinishedAt, r.Duration.String(), r.Steps, r.Attestation, r.Conflict})
+	return json.Marshal(wire{r.ID, r.Root, r.Profile, r.Subproject, r.Status, r.LogPath, r.Error, r.StartedAt, r.FinishedAt, r.Duration.String(), r.Steps, r.Attestation, r.Conflict, r.Parent, r.CompositionDepth})
 }
 
 func (r *Report) UnmarshalJSON(data []byte) error {
 	type wire struct {
-		ID          string       `json:"id"`
-		Root        string       `json:"root"`
-		Profile     string       `json:"profile"`
-		Subproject  string       `json:"subproject,omitempty"`
-		Status      string       `json:"status"`
-		LogPath     string       `json:"log_path"`
-		Error       string       `json:"error,omitempty"`
-		StartedAt   time.Time    `json:"started_at"`
-		FinishedAt  time.Time    `json:"finished_at"`
-		Duration    string       `json:"duration"`
-		Steps       []StepReport `json:"steps"`
-		Attestation Attestation  `json:"attestation"`
-		Conflict    *Conflict    `json:"conflict,omitempty"`
+		ID               string             `json:"id"`
+		Root             string             `json:"root"`
+		Profile          string             `json:"profile"`
+		Subproject       string             `json:"subproject,omitempty"`
+		Status           string             `json:"status"`
+		LogPath          string             `json:"log_path"`
+		Error            string             `json:"error,omitempty"`
+		StartedAt        time.Time          `json:"started_at"`
+		FinishedAt       time.Time          `json:"finished_at"`
+		Duration         string             `json:"duration"`
+		Steps            []StepReport       `json:"steps"`
+		Attestation      Attestation        `json:"attestation"`
+		Conflict         *Conflict          `json:"conflict,omitempty"`
+		Parent           *CompositionParent `json:"parent,omitempty"`
+		CompositionDepth int                `json:"composition_depth,omitempty"`
 	}
 	var in wire
 	if err := json.Unmarshal(data, &in); err != nil {
@@ -138,7 +159,7 @@ func (r *Report) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
-	*r = Report{ID: in.ID, Root: in.Root, Profile: in.Profile, Subproject: in.Subproject, Status: in.Status, LogPath: in.LogPath, Error: in.Error, StartedAt: in.StartedAt, FinishedAt: in.FinishedAt, Duration: d, Steps: in.Steps, Attestation: in.Attestation, Conflict: in.Conflict}
+	*r = Report{ID: in.ID, Root: in.Root, Profile: in.Profile, Subproject: in.Subproject, Status: in.Status, LogPath: in.LogPath, Error: in.Error, StartedAt: in.StartedAt, FinishedAt: in.FinishedAt, Duration: d, Steps: in.Steps, Attestation: in.Attestation, Conflict: in.Conflict, Parent: in.Parent, CompositionDepth: in.CompositionDepth}
 	return nil
 }
 

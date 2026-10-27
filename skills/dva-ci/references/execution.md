@@ -31,11 +31,17 @@ key, and an occupant run ID only when that ID can be verified. There is no
 invisible queue or default retry.
 
 Do not delete lock files or kill another session's processes. The files are
-durable lock locations, not evidence that a lock is held. A CI step cannot start
-a nested `dva ci`: DVA passes protected parent-run metadata and accepts it only
+durable lock locations, not evidence that a lock is held. By default a CI step cannot start
+a nested `dva ci`: DVA passes protected parent-run metadata and rejects nesting
 when the parent root lock and run ID are live. Malformed parent metadata and lock
 lookup errors fail clearly; stale, well-formed metadata is ignored. Keep profile
-steps as leaf tool invocations, not nested CI orchestrators.
+steps as leaf tool invocations unless a native step explicitly adopts
+`child_ci: independent-root`. That option composes the child's own profile under
+the parent step deadline and cooperative worker ceiling, one live direct child
+at a time. All ancestor locks and the issued scope are verified. Do not erase
+tokens, retry busy results, or copy child checks into the parent.
+See the [composition contract](../../../docs/ci-child-composition-proposal.md)
+for cancellation, OCI leaves, receipt edges and old/new compatibility.
 
 ## Parallel work
 

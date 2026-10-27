@@ -6,6 +6,7 @@ import (
 	"errors"
 	"os"
 	"os/exec"
+	"time"
 )
 
 func tryLock(*os.File) error {
@@ -16,5 +17,7 @@ func lockContended(error) bool { return false }
 func startProcess(*exec.Cmd) error {
 	return errors.New("dva ci process supervision is unsupported on this operating system")
 }
-func cleanupGroup(int)                        {}
-func terminateProcessGroup(int, <-chan error) {}
+func cleanupGroup(int)                                    {}
+func terminateProcessGroup(int, <-chan error)             {}
+func signalCompositionGroup(int)                          {}
+func finishCompositionGroup(int, <-chan error, time.Time) {}

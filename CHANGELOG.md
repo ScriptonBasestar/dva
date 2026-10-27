@@ -7,6 +7,12 @@ All notable changes to DVA are documented here.
 
 ### Added
 
+- **독립 root의 native child CI 구성**: native step에 `child_ci: independent-root`를
+  선언하면 하위 프로젝트의 고유 CI를 부모 deadline·협력적 worker 예산 안에서 실행합니다.
+  전체 ancestor lock과 순환을 검사하며 취소·receipt·정리를 연결합니다. 생략 시 기존 중첩
+  거절을 유지하고 OCI step에는 선언할 수 없습니다. Manifest schema는 새 optional 필드를
+  반영해 1.9 → 1.10입니다. [구성 계약](docs/ci-child-composition-proposal.md)을 따릅니다.
+
 - **유한 OCI CI 단계**: `run` 대신 `oci`를 선언해 digest로 고정한 로컬 Docker image에서
   fixture를 실행합니다. Linux cgroup-v2의 실제 PID·memory·swap·CPU 제한을 실행 전에 확인하며
   설정·환경·입력을 격리하고 출력·시간·CID 기반 정리 결과를 구분합니다.
