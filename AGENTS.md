@@ -48,7 +48,11 @@ DVA는 개발 환경 구성을 일관되게 선언하고, 암호화된 설정과
 카드를 `done`으로 옮기기 전에는 구현 세션과 다른 세션에서 `done-review`를 거쳐야 한다.
 카드 frontmatter에는 `quality-review: pass`, `conditional`, `waived` 중 하나를 남기며,
 `waived`에는 `quality-review-evidence`도 남긴다. 전이와 증거의 정확한 규칙은
-[ce-workbook task-management done-review 정책](https://gitlab.polypia.net/archmagece/ce-workbook/-/blob/master/task_management/execution/actions/done-review.md)을 따른다.
+catalog ID `ce-agent-kit`의 `src/units/task/skills/quality-review/prompt.md`와
+`docs/10-ce-cli/18-task-archive.md`의 리뷰·증거 계약을 따른다. 위치는 portfolio
+resolver로 찾고 실행에는 active runtime의 설치된 task quality-review 기능을 사용한다.
+workbook 내부 파일은 필수 의존성으로 삼지 않는다. 이 저장소의 완료 규칙과 증거 경로는
+여기서 소유하며, 외부 계약 참조가 다른 저장소의 변경 권한을 뜻하지 않는다.
 
 `blocks:`를 선언한 done 카드는 여기에 더해 `quality-review-receipt`를 남긴다 —
 `ce task validate`가 그 파일을 읽어 `reviewed-card-sha256`을 카드의 정본 digest와
