@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/ScriptonBasestar/dva/internal/config"
@@ -111,10 +112,35 @@ func TestInteractionTreeList(t *testing.T) {
 	}
 }
 
+func TestNewRunnerNamedRunners(t *testing.T) {
+	for _, name := range []string{"compose", "docker_compose", "Compose"} {
+		r, err := NewRunner(&ResolvedCommand{RunnerName: name}, RunOptions{})
+		if err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+		if _, ok := r.(*DockerComposeRunner); !ok {
+			t.Errorf("%s: expected DockerComposeRunner, got %T", name, r)
+		}
+	}
+}
+
+func TestNewRunnerRejectsUnknownName(t *testing.T) {
+	r, err := NewRunner(&ResolvedCommand{Name: "deploy", RunnerName: "kubctl"}, RunOptions{})
+	if err == nil {
+		t.Fatalf("expected an error, got runner %T", r)
+	}
+	if !strings.Contains(err.Error(), `"kubctl"`) {
+		t.Errorf("error does not name the runner: %v", err)
+	}
+}
+
 func TestNewRunnerSelection(t *testing.T) {
 	t.Run("docker compose runner", func(t *testing.T) {
 		cmd := &ResolvedCommand{Service: "app"}
-		r := NewRunner(cmd, RunOptions{})
+		r, err := NewRunner(cmd, RunOptions{})
+		if err != nil {
+			t.Fatal(err)
+		}
 		if _, ok := r.(*DockerComposeRunner); !ok {
 			t.Errorf("expected DockerComposeRunner, got %T", r)
 		}
@@ -122,7 +148,10 @@ func TestNewRunnerSelection(t *testing.T) {
 
 	t.Run("kubectl runner", func(t *testing.T) {
 		cmd := &ResolvedCommand{Pod: "my-pod:container"}
-		r := NewRunner(cmd, RunOptions{})
+		r, err := NewRunner(cmd, RunOptions{})
+		if err != nil {
+			t.Fatal(err)
+		}
 		if _, ok := r.(*KubectlRunner); !ok {
 			t.Errorf("expected KubectlRunner, got %T", r)
 		}
@@ -130,7 +159,10 @@ func TestNewRunnerSelection(t *testing.T) {
 
 	t.Run("local runner", func(t *testing.T) {
 		cmd := &ResolvedCommand{Command: "echo hello"}
-		r := NewRunner(cmd, RunOptions{})
+		r, err := NewRunner(cmd, RunOptions{})
+		if err != nil {
+			t.Fatal(err)
+		}
 		if _, ok := r.(*LocalRunner); !ok {
 			t.Errorf("expected LocalRunner, got %T", r)
 		}

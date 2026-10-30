@@ -8,6 +8,19 @@ import (
 )
 
 // InteractionCommand defines a command in the interaction section.
+// Runner names an interaction command may select. compose is the spelling stack entries use.
+const (
+	InteractionRunnerDockerCompose = "docker_compose"
+	InteractionRunnerCompose       = "compose"
+	InteractionRunnerKubectl       = "kubectl"
+	InteractionRunnerLocal         = "local"
+)
+
+// InteractionRunners lists the accepted runner names, matched case-insensitively.
+var InteractionRunners = []string{
+	InteractionRunnerCompose, InteractionRunnerDockerCompose, InteractionRunnerKubectl, InteractionRunnerLocal,
+}
+
 type InteractionCommand struct {
 	Description string                         `yaml:"description"`
 	Service     string                         `yaml:"service"`

@@ -112,11 +112,14 @@ See USAGE.md's "run" section for worked examples.`,
 			return err
 		}
 
-		r := runner.NewRunner(resolved, runner.RunOptions{
+		r, err := runner.NewRunner(resolved, runner.RunOptions{
 			Publish: publishPorts,
 			Explain: dryRun,
 			Config:  rt.config,
 		})
+		if err != nil {
+			return err
+		}
 
 		return r.Execute(e)
 	},
@@ -218,11 +221,14 @@ func runSubprojectCommand(parentCfg *config.Config, project, cmdName string, cmd
 		return err
 	}
 
-	r := runner.NewRunner(resolved, runner.RunOptions{
+	r, err := runner.NewRunner(resolved, runner.RunOptions{
 		Publish: publishPorts,
 		Explain: dryRun,
 		Config:  rt.config,
 	})
+	if err != nil {
+		return fmt.Errorf("[%s]: %w", project, err)
+	}
 
 	if err := r.Execute(subEnv); err != nil {
 		return fmt.Errorf("[%s]: %w", project, err)

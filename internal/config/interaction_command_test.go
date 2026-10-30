@@ -1,6 +1,7 @@
 package config
 
 import (
+	"strings"
 	"testing"
 
 	"gopkg.in/yaml.v3"
@@ -198,5 +199,18 @@ func TestInteractionCommandUnmarshal_CommandLinesKeepEveryLine(t *testing.T) {
 	// runners' formCommandList cases.
 	if cmd.Command != "git pull" {
 		t.Errorf("Command = %q, want the first line retained for reachability checks", cmd.Command)
+	}
+}
+
+func TestValidateInteractionRunners(t *testing.T) {
+	c := &Config{Interaction: map[string]*InteractionCommand{
+		"ok": {Runner: "Compose"},
+		"outer": {Subcommands: map[string]*InteractionCommand{
+			"deploy": {Runner: "kubctl"},
+		}},
+	}}
+	errs := c.validateInteractionRunners()
+	if len(errs) != 1 || !strings.Contains(errs[0].Error(), `interaction.outer.subcommands.deploy.runner: unknown runner "kubctl"`) {
+		t.Fatalf("got %v", errs)
 	}
 }

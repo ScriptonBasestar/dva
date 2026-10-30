@@ -13,9 +13,10 @@ import (
 
 // Runner type constants.
 const (
-	RunnerDockerCompose = "docker_compose"
-	RunnerKubectl       = "kubectl"
-	RunnerLocal         = "local"
+	RunnerDockerCompose = config.InteractionRunnerDockerCompose
+	RunnerCompose       = config.InteractionRunnerCompose
+	RunnerKubectl       = config.InteractionRunnerKubectl
+	RunnerLocal         = config.InteractionRunnerLocal
 )
 
 // Runner type display names.
@@ -31,27 +32,30 @@ type Runner interface {
 }
 
 // NewRunner creates the appropriate runner based on the resolved command.
-func NewRunner(cmd *ResolvedCommand, opts RunOptions) Runner {
+// An unknown runner name is an error: the run path does not pass through config validation,
+// and guessing compose would execute a typo in the wrong place.
+func NewRunner(cmd *ResolvedCommand, opts RunOptions) (Runner, error) {
 	if cmd.RunnerName != "" {
 		switch strings.ToLower(cmd.RunnerName) {
-		case RunnerDockerCompose:
-			return &DockerComposeRunner{Cmd: cmd, Opts: opts}
+		case RunnerDockerCompose, RunnerCompose:
+			return &DockerComposeRunner{Cmd: cmd, Opts: opts}, nil
 		case RunnerKubectl:
-			return &KubectlRunner{Cmd: cmd, Opts: opts}
+			return &KubectlRunner{Cmd: cmd, Opts: opts}, nil
 		case RunnerLocal:
-			return &LocalRunner{Cmd: cmd, Opts: opts}
+			return &LocalRunner{Cmd: cmd, Opts: opts}, nil
 		default:
-			return &DockerComposeRunner{Cmd: cmd, Opts: opts}
+			return nil, fmt.Errorf("command %q: unknown runner %q (want one of: %s)",
+				cmd.Name, cmd.RunnerName, strings.Join(config.InteractionRunners, ", "))
 		}
 	}
 
 	if cmd.Service != "" {
-		return &DockerComposeRunner{Cmd: cmd, Opts: opts}
+		return &DockerComposeRunner{Cmd: cmd, Opts: opts}, nil
 	}
 	if cmd.Pod != "" {
-		return &KubectlRunner{Cmd: cmd, Opts: opts}
+		return &KubectlRunner{Cmd: cmd, Opts: opts}, nil
 	}
-	return &LocalRunner{Cmd: cmd, Opts: opts}
+	return &LocalRunner{Cmd: cmd, Opts: opts}, nil
 }
 
 // DetectRunnerType returns the display name for the runner that would handle this command.

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 
@@ -112,6 +113,7 @@ func (c *Config) Validate() error {
 			RootOwnerName, RootOwnerName, RootOwnerName))
 	}
 
+	errs = append(errs, c.validateInteractionRunners()...)
 	errs = append(errs, c.validateHookPlacement()...)
 	errs = append(errs, c.validateHookPlanFilters()...)
 
@@ -171,6 +173,24 @@ func (c *Config) Validate() error {
 	}
 
 	return joinValidationErrors(errs)
+}
+
+// validateInteractionRunners rejects a runner name no interaction runner answers to, at any
+// depth. Paths are sorted because the tree is walked through maps.
+func (c *Config) validateInteractionRunners() []error {
+	var problems []string
+	eachInteractionNode(c.Interaction, func(path string, cmd *InteractionCommand, _ inheritedExec) {
+		if cmd.Runner != "" && !slices.Contains(InteractionRunners, strings.ToLower(cmd.Runner)) {
+			problems = append(problems, fmt.Sprintf("%s.runner: unknown runner %q (want one of: %s)",
+				path, cmd.Runner, strings.Join(InteractionRunners, ", ")))
+		}
+	})
+	sort.Strings(problems)
+	errs := make([]error, 0, len(problems))
+	for _, p := range problems {
+		errs = append(errs, errors.New(p))
+	}
+	return errs
 }
 
 // validateHookPlacement rejects before/replace/after wherever they cannot execute.
