@@ -23,6 +23,11 @@ All notable changes to DVA are documented here.
 
 ### Fixed
 
+- **설치된 스킬의 초기화 경로**: `dva skill status`가 바이너리보다 뒤처진 설치를 `outdated`로
+  표시합니다. `dva-config`에 `dva init` 절차를 추가하고 `dva init` 안내에서 `am`을 선택 사항으로
+  분리했습니다. 스킬의 저장소 전용 경로와 Claude 전용 명령 주입을 제거해 모든 런타임에서 동일하게
+  동작합니다.
+
 - **CI의 불필요한 하위 프로젝트·실행 설정 검증**: root CI는 root 환경과 CI 프로필만 사용하므로
   child import 및 stack·remote·plan·endpoint 최종화를 생략합니다. `--project`는 선택 child를
   읽고, 기본 설정 로드와 전체 검증은 모든 import를 계속 확인합니다 (ISSUE-534).

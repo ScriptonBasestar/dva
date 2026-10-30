@@ -88,7 +88,7 @@ not close a status bug if DVA still reports an unrelated process as healthy.
   development bundle.
 - Validate lifecycle previews only after the installed DVA version is proven
   non-mutating in a disposable fixture. See the sibling `dva` skill's
-  `skills/dva/references/operation-safety.md` for the execution protocol.
+  [operation-safety.md](../../dva/references/operation-safety.md) for the execution protocol.
 
 ## Preserve Observable Behavior During Migration
 

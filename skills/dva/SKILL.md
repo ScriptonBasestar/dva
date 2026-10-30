@@ -23,7 +23,7 @@ Configuration generation stays within this purpose; staging and production appli
 is outside its scope.
 
 For project-owned build/quality tool preparation, follow the `dva-config` skill
-and its `../dva-config/references/project-local-tooling.md`; keep bootstrap and gate outcomes separate.
+and its [project-local tooling reference](../dva-config/references/project-local-tooling.md); keep bootstrap and gate outcomes separate.
 
 ## Rules (Mandatory)
 
@@ -42,11 +42,8 @@ paths, read **`references/operation-safety.md`** and use its authority and dispo
 
 ## Project Context
 
-!`dva show 2>/dev/null || echo "DVA not configured in this project"`
-
-## Available Commands
-
-!`dva ls -f json 2>/dev/null || echo "No dva.yml found"`
+Run `dva show` and `dva ls -f json` first. If either reports no `dva.yml`, DVA is not configured
+here: use the `dva-config` skill to initialize it.
 
 ## Workflow
 
@@ -67,7 +64,7 @@ Read the `dynamic_commands` section from manifest output to identify project-spe
 
 For deep configuration authoring, migration, and defect attribution (ownership
 model, change modes, risk-ordered validation), use the **`dva-config` skill**
-(`dva:dva-config`). This section covers only the quick-start surface.
+This section covers only the quick-start surface.
 
 For repeatable `dva.yml` work, load **`references/patterns.md`** first, then choose a template.
 Devbox-wide apply (Make/npm → DVA, `.gz-git.yaml` children, infra vs app plans, Compose

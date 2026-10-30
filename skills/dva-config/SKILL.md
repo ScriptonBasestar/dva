@@ -1,11 +1,10 @@
 ---
 name: dva-config
 description: >-
-  Use when creating, auditing, repairing, or migrating a dva.yml configuration; diagnosing `dva
+  Use when initializing DVA in a project, or creating, auditing, repairing, or migrating a dva.yml configuration; diagnosing `dva
   config validate`, `dva show`, or `dva doctor` warnings; separating DVA CLI defects from project
   configuration and environment issues; or applying DVA across a devbox root and active subprojects.
 allowed-tools: [Read, Edit, Bash, Grep, Glob]
-user-invocable: false
 ---
 
 # DVA Config Authoring & Diagnosis
@@ -83,14 +82,14 @@ dva doctor --json
 
 Do not use `--fix`, rewrite, reset, cleanup, or service-starting commands in the baseline. Treat
 lifecycle help and previews as potentially executable until proven safe for the installed version;
-use the sibling `dva` skill's `skills/dva/references/operation-safety.md`. A zero exit status does
+use the sibling `dva` skill's [operation safety reference](../dva/references/operation-safety.md). A zero exit status does
 not make contradictory output correct.
 
 ### 3. Select the Change Mode
 
 | Mode     | Condition                                              | Default action                                 |
 | -------- | ------------------------------------------------------ | ---------------------------------------------- |
-| New      | no `dva.yml`                                           | discover project, scaffold, then refine        |
+| New      | no `dva.yml`                                           | follow Initialize a New Project below          |
 | Preserve | existing config contains useful working intent         | edit minimally; default for existing projects  |
 | Migrate  | installed validator reports deprecated sections        | translate while preserving observable commands |
 | Rewrite  | config is unusable or user explicitly requests rebuild | require approval and a before/after proposal   |
@@ -100,6 +99,22 @@ Never infer rewrite merely because a newer model exists.
 Command and lifecycle migration onto DVA uses `apply_mode` / `legacy_surface` from
 `references/devbox-apply.md` (default `propose` + `alias`). `force` applies the same table
 in-run; it is not `dva up --force`.
+
+### Initialize a New Project
+
+Run from the project root. `dva init` writes only what it can prove; it does not guess run or
+build commands.
+
+```bash
+dva init --dry-run      # preview; writes nothing
+dva init                # scaffold dva.yml from detected evidence
+dva config validate
+dva ls
+```
+
+If `dva init` reports no verified evidence, it creates nothing: use `am run dva-discover` when `am`
+is on PATH, otherwise author `dva.yml` from the bundled templates in the `dva` skill and validate
+it. Then refine in Preserve mode. `am` flows are optional; never block initialization on them.
 
 ### 4. Model Boundaries
 

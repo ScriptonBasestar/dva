@@ -33,11 +33,9 @@ reverse. **Three targets read the format itself** (zero conversion) — each is 
 symlinked directory pointing at canonical `skills/`, so an edit propagates with no
 regeneration:
 
-- **Claude Code** — `claude-plugin/skills` → `../skills`. Zero conversion, but **not
-  auto-discovered**: this repo ships no `.claude/skills/`, so the skills reach a session
-  only as part of the plugin, loaded per session with `claude --plugin-dir ./claude-plugin`
-  (`README.md`, `claude-plugin/README.md`). No marketplace manifest ships, so there is no
-  persistent install — the symlink is necessary, not sufficient.
+- **Claude Code** — `claude-plugin/skills` → `../skills`. Zero conversion for the per-session
+  plugin (`claude --plugin-dir ./claude-plugin`). This repo ships no `.claude/skills/`; a persistent
+  install comes from `dva skill install` (see Binary installation).
 - **Antigravity** — `.agents/skills` → `../skills` (reads `.agents/skills/<name>/SKILL.md`,
   **not** bare root `skills/`; `references/` supported). Ref: antigravity.google/docs/skills
 - **OpenCode** — `.opencode/skills` → `../skills` (native Agent Skills at
@@ -47,6 +45,9 @@ regeneration:
 Only **Cursor** (`.mdc`) and the repository's **Codex compatibility projection** (`AGENTS.md`)
 require real conversion. Current Codex can also consume Agent Skills natively; the binary
 installer uses `.agents/skills` instead of editing instruction files.
+
+Installed bytes are identical across runtimes, so canonical skills must not use runtime-only
+syntax such as Claude Code `!` command injection.
 
 ## Canonical frontmatter
 
@@ -120,7 +121,7 @@ fresh clone materializes the gitignored ones locally.
 ## Binary installation
 
 `make generate` projects skills only inside a DVA source checkout. It is not a user-level
-installer, and `make install` installs only the `dva` binary. Released binaries embed the two
+installer, and `make install` installs only the `dva` binary. Released binaries embed the three
 canonical skill directories and expose deterministic installation without an AI agent:
 
 ```bash
@@ -132,7 +133,8 @@ dva skill uninstall
 
 The installer copies `dva`, `dva-ci`, and `dva-config` to native runtime discovery paths, records hashes
 under the user's XDG state directory, refuses unmanaged collisions, and removes only unchanged
-DVA-owned files. Agent Mesh is supported by the same `dva skill install` command: it renders
+DVA-owned files. `dva skill status` reports `outdated` when the receipt differs from the running
+binary's bundle. Agent Mesh is supported by the same `dva skill install` command: it renders
 `dva.md`, `dva-ci.md`, and `dva-config.md` into its dedicated `skills/dva` namespace, strips frontmatter, and
 inlines Markdown references and text assets in deterministic order. Relative bundle support is
 not assumed, so local paths link to their inlined content. DVA owns file installation and receipt

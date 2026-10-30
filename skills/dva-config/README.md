@@ -1,6 +1,6 @@
 <!-- AI_SKIP: Human documentation -->
 
-# dva-config (dva:dva-config)
+# dva-config
 
 Reusable workflow for creating, preserving, migrating, and diagnosing DVA configuration in devbox
 projects. Ported from the `claude-ce-plugin` `tool-dva-config` skill; the DVA repository is now the

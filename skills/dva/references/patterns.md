@@ -15,7 +15,7 @@ Use this reference when creating, reviewing, or migrating `dva.yml` files. Keep 
 1. Discover current surface: `dva config show`, `dva ls`, `dva show`, `.gz-git.yaml`,
    compose files (root, `compose/`, `ops/*/compose.y*ml`), Makefile/package scripts, and
    subproject directories. Command migration, gz-git child connection, infra vs app plans,
-   and Compose scaffold: `skills/dva-config/references/devbox-apply.md`.
+   and Compose scaffold: [devbox-apply.md](../../dva-config/references/devbox-apply.md).
 2. Classify responsibilities:
    - `stack`: compose bundles, native apps, docker images, kubectl/helm targets.
    - `plans`: executable names such as `local-infra`, `local-dev`, `full-stack`, `observability`, `tools`.

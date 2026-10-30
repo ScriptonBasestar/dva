@@ -168,7 +168,8 @@ func localResources(skill string) []localResource {
 			continue
 		}
 		for _, relative := range paths {
-			resources = append(resources, localResource{"skills/" + other + "/" + relative, "https://github.com/ScriptonBasestar/dva/blob/master/skills/" + other + "/" + relative})
+			canonical := "https://github.com/ScriptonBasestar/dva/blob/master/skills/" + other + "/" + relative
+			resources = append(resources, localResource{"../../" + other + "/" + relative, canonical}, localResource{"../" + other + "/" + relative, canonical})
 		}
 	}
 	return resources

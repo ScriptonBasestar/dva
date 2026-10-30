@@ -97,11 +97,13 @@ Use 'am run dva-improve -p mode=rewrite' only when a full rewrite is intentional
 
 		fmt.Println()
 		fmt.Println("Next steps:")
+		fmt.Println("  dva config validate  — validate the config")
+		fmt.Println("  dva ls               — list available commands")
+		fmt.Println()
+		fmt.Println("Optional AI analysis (requires am):")
 		fmt.Println("  am run dva-discover   — inspect the project and configuration options")
 		fmt.Println("  am run dva-improve    — optimize the existing config via AI agent")
 		fmt.Println("  am run dva-improve -p mode=rewrite — explicitly rewrite the config")
-		fmt.Println("  dva config validate  — validate the config")
-		fmt.Println("  dva ls               — list available commands")
 		return nil
 	},
 }

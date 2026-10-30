@@ -126,7 +126,11 @@ func DefaultRuntimes() []Runtime {
 	return []Runtime{RuntimeClaudeCode, RuntimeCodex, RuntimeOpenCode, RuntimeGrok, RuntimeAntigravity, RuntimeAgentMesh}
 }
 
-// Status reports whether every requested destination is installed and unmodified.
+// statusBundleSHA is the bundle identity Status compares receipts against.
+var statusBundleSHA = sourceBundleSHA
+
+// Status reports whether every requested destination is installed, unmodified,
+// and current with this binary's bundle.
 func Status(options Options) (Result, error) {
 	resolved, destinations, err := resolve(options)
 	if err != nil {
@@ -138,7 +142,7 @@ func Status(options Options) (Result, error) {
 		if err != nil {
 			return Result{}, err
 		}
-		entry := resultEntry(target, resolved.Version, sourceBundleSHA(bundle.files))
+		entry := resultEntry(target, resolved.Version, statusBundleSHA(bundle.files))
 		record, found, err := readReceipt(receiptPath(resolved.StateRoot, target.path))
 		if err != nil {
 			entry.Status, entry.Detail = "invalid-receipt", err.Error()
@@ -215,7 +219,12 @@ func Status(options Options) (Result, error) {
 			setAllRuntimeStatuses(&entry, entry.Status)
 		} else {
 			entry.InstalledVersion, entry.InstalledBundleSHA = record.Version, record.BundleSHA
-			entry.Status = setMembershipStatuses(&entry, record.Runtimes, "installed", "absent")
+			presentStatus := "installed"
+			if record.BundleSHA != entry.SourceBundleSHA {
+				presentStatus = "outdated"
+				entry.Detail = fmt.Sprintf("installed %s differs from bundled %s; run dva skill install", record.Version, resolved.Version)
+			}
+			entry.Status = setMembershipStatuses(&entry, record.Runtimes, presentStatus, "absent")
 			if len(record.Takeovers) > 0 {
 				entry.BackupStatus, entry.TakeoverBackup = verifyTakeoverBackups(resolved.StateRoot, record)
 				if entry.BackupStatus == "corrupt" {
