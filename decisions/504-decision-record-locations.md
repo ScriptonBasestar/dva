@@ -23,7 +23,7 @@ created: 2026-10-10
 - [tasks/README.md](../tasks/README.md)의 보드 구조는 `tasks/decision/`을 "미결 결정 카드와
   인덱스, 수락된 정본은 `decisions/`"라고 쓴다. 같은 문서의 현재 상태 절은
   "수락된 결정: decision/"이라고 링크한다.
-- [tasks/decision/README.md](README.md)는 "미결 선택이다"라고 쓴다. 그러나 표의 두 행
+- 당시 `tasks/decision/README.md`는 "미결 선택이다"라고 쓴다. 그러나 표의 두 행
   (TASK-487, TASK-491)은 모두 accepted다.
 - [decisions/README.md](README.md)도 Proposed 카드가 인간 확정을 기다리는
   곳이라고 쓴다. 수락된 DECISION-001~004를 담고 있다.

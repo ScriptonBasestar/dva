@@ -402,7 +402,7 @@ func (c *Config) warnMissingDefaultMode() []string {
 		return nil
 	}
 	return []string{
-		"modes are defined but default_mode is not set — dva up without -M will start all services from all compose files; migrate to plans, because modes are removed in v0.5.0",
+		"modes are defined but default_mode is not set — dva up without -M will start all services from all compose files; migrate to plans, because modes will be removed in v0.5.0",
 	}
 }
 
