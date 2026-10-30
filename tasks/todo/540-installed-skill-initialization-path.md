@@ -9,10 +9,10 @@ created: 2026-10-31
 
 ## Summary
 
-<!-- One paragraph: what changes and why. -->
+Installed skills gain a working `dva init` path that needs neither a source checkout nor `am`, and `dva skill status` reports installs that differ from the running binary.
 
 ## Completion Criteria
 
-- [ ] dva skill status reports outdated installs | verify: `go test -count=1 -run "^TestStatusReportsOutdatedBundle$" -v ./internal/skillinstall | /usr/bin/grep -q "^--- PASS"`
-- [ ] bundled skills are portable | verify: `go test -count=1 -run "^TestBundledSkillsAvoidRuntimeOnlyInjection$" -v ./internal/skillinstall | /usr/bin/grep -q "^--- PASS"`
+- [ ] dva skill status reports outdated installs | verify: `go test -count=1 -run TestStatusClassifiesBundleDrift ./internal/skillinstall`
+- [ ] bundled skills are portable | verify: `go test -count=1 -run TestBundledSkillsAvoidRuntimeOnlyInjection ./internal/skillinstall`
 - [ ] dva-config documents dva init | verify: `/usr/bin/grep -q "dva init --dry-run" skills/dva-config/SKILL.md`

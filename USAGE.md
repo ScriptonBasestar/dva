@@ -246,8 +246,8 @@ dva config init --all            # 가능한 모든 기능 통합 활성화 (dev
 dva init --dry-run               # 생성될 dva.yml만 stdout에 preview하고 파일은 쓰지 않음
 ```
 
-생성 후 `am run dva-discover`로 프로젝트와 설정 후보를 먼저 확인하세요. 기존 설정을
-개선하려면 `am run dva-improve`를 사용하고, 전체 재작성은 명시적으로
+생성 후 `dva config validate`로 설정을 검증하세요. AI 분석은 선택 사항이며 `am`이 필요합니다.
+`am run dva-discover`로 프로젝트와 설정 후보를 확인하고, 기존 설정을 개선하려면 `am run dva-improve`를 사용하고, 전체 재작성은 명시적으로
 `am run dva-improve -p mode=rewrite`를 지정한 경우에만 실행하세요.
 
 **dry-run preview (TASK-340, Option A)**: `dva init --dry-run`은 실제 생성과 같은
@@ -266,7 +266,7 @@ dva init --dry-run               # 생성될 dva.yml만 stdout에 preview하고 
   아예 생략하고 수동으로 `stack.<name>.runners.native`를 채우는 방법을 주석으로 안내합니다.
 - 둘 다 있으면 (`hybrid`) Compose 쪽을 검증된 근거로 사용하고, 언어 매니페스트는 정보 제공에만
   씁니다.
-- 둘 다 없으면 (`no-discovery`) 아무 파일도 쓰지 않고 `am run dva-discover` 안내만 출력합니다.
+- 둘 다 없으면 (`no-discovery`) 아무 파일도 쓰지 않고 수동 작성 절차와 선택 사항인 `am run dva-discover`를 안내합니다.
 
 기존 `dva.yml`은 절대 덮어쓰지 않으며, 다시 실행해도 같은 상태면 아무 것도 바뀌지 않습니다
 (idempotent). 단일 검증된 closure에는 `plans:` 없이 bare lifecycle 기본값을 그대로 쓰고,

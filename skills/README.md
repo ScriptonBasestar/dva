@@ -90,8 +90,7 @@ The two converted targets differ in how their content is loaded, so they degrade
 differently:
 
 - **Cursor** rules are **lazy-loaded** on `globs` match → the generator **inlines
-  the full body** but rewrites `references/`/`assets/` links to repo-root paths
-  (Claude-only `` !`cmd` `` dynamics and now-empty sections are stripped).
+  the full body** but rewrites `references/`/`assets/` links to repo-root paths.
 - **Codex** `AGENTS.md` is **always-injected** → each skill degrades to a
   **pointer-only** entry (description + link to `skills/<name>/SKILL.md`), never the
   body. `references/` are never inlined anywhere.

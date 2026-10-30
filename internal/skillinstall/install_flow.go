@@ -69,6 +69,9 @@ func preflightInstall(options Options, target destination) error {
 	if err := verifyInstalled(target.path, record.Files); err != nil {
 		return fmt.Errorf("refusing to update drifted DVA skill installation at %s: %w", target.path, err)
 	}
+	if !options.AllowDowngrade && record.BundleSHA != currentBundleSHA(bundle.files) && bundleDrift(record.Version, options.Version) == "newer" {
+		return fmt.Errorf("refusing to replace DVA skills %s at %s with older %s; upgrade this dva binary or pass --allow-downgrade", record.Version, target.path, options.Version)
+	}
 	oldProjection, err := projectedClaims(target, options.Scope, record.Runtimes, skillBundle{files: record.Files}, skillclaim.StateActive, operationID)
 	if err != nil {
 		return err

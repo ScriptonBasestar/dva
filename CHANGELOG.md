@@ -23,6 +23,9 @@ All notable changes to DVA are documented here.
 
 ### Fixed
 
+- **스킬 다운그레이드 방지**: `dva skill status`가 `outdated`·`newer`·`differs`를 구분하고,
+  `dva skill install`은 더 새로운 릴리스가 설치한 스킬을 `--allow-downgrade` 없이 교체하지 않습니다.
+- **`make test`**: 상속된 `GOFLAGS`에 `-trimpath`가 섞여 경로 기반 테스트가 깨지던 문제를 고쳤습니다.
 - **설치된 스킬의 초기화 경로**: `dva skill status`가 바이너리보다 뒤처진 설치를 `outdated`로
   표시합니다. `dva-config`에 `dva init` 절차를 추가하고 `dva init` 안내에서 `am`을 선택 사항으로
   분리했습니다. 스킬의 저장소 전용 경로와 Claude 전용 명령 주입을 제거해 모든 런타임에서 동일하게

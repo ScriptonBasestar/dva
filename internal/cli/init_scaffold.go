@@ -245,12 +245,11 @@ func scaffoldDvaYmlWithPreview(dir, tmpl string, preview bool) (bool, error) {
 		err := fmt.Errorf(`%w in %s; dva.yml was not created
   DVA init also found no recognized language manifest, so it has no verified
   evidence to scaffold from.
-  For non-standard or multi-project layouts, inspect the project first:
+  Create dva.yml manually, then run:
+    dva config validate
+  Optional AI analysis (requires am):
     am run dva-discover
-  If a full rewrite is explicitly intended, run:
-    am run dva-improve -p mode=rewrite
-  Or create dva.yml manually, then run:
-    dva config validate`, errComposeFileNotFound, dir)
+    am run dva-improve -p mode=rewrite   # only when a full rewrite is intended`, errComposeFileNotFound, dir)
 		if preview {
 			fmt.Printf("[dry-run] no dva.yml preview for %s:\n%s\n", dir, err)
 			return false, nil

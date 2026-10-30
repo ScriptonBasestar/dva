@@ -9,7 +9,9 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/ScriptonBasestar/dva/internal/skillclaim"
@@ -43,6 +45,7 @@ type Options struct {
 	ClaimRoot             string
 	DryRun                bool
 	Takeover              bool
+	AllowDowngrade        bool
 	RestoreTakeoverBackup bool
 	Version               string
 }
@@ -126,8 +129,47 @@ func DefaultRuntimes() []Runtime {
 	return []Runtime{RuntimeClaudeCode, RuntimeCodex, RuntimeOpenCode, RuntimeGrok, RuntimeAntigravity, RuntimeAgentMesh}
 }
 
-// statusBundleSHA is the bundle identity Status compares receipts against.
-var statusBundleSHA = sourceBundleSHA
+// currentBundleSHA is the bundle identity receipts are compared against.
+var currentBundleSHA = sourceBundleSHA
+
+// bundleDrift classifies an installed bundle that differs from this binary's. Only
+// release versions are ordered, so same-version dev builds and unreadable versions
+// report "differs" rather than a direction nobody can prove.
+func bundleDrift(installed, bundled string) string {
+	left, leftOK := releaseVersion(installed)
+	right, rightOK := releaseVersion(bundled)
+	if !leftOK || !rightOK {
+		return "differs"
+	}
+	switch slices.Compare(left, right) {
+	case -1:
+		return "outdated"
+	case 1:
+		return "newer"
+	default:
+		return "differs"
+	}
+}
+
+func releaseVersion(version string) ([]int, bool) {
+	parts := strings.Split(strings.TrimPrefix(version, "v"), ".")
+	if len(parts) != 3 {
+		return nil, false
+	}
+	numbers := make([]int, 3)
+	for i, part := range parts {
+		number, err := strconv.Atoi(part)
+		if err != nil {
+			return nil, false
+		}
+		numbers[i] = number
+	}
+	return numbers, true
+}
+
+func shortSHA(sha string) string {
+	return sha[:min(12, len(sha))]
+}
 
 // Status reports whether every requested destination is installed, unmodified,
 // and current with this binary's bundle.
@@ -142,7 +184,7 @@ func Status(options Options) (Result, error) {
 		if err != nil {
 			return Result{}, err
 		}
-		entry := resultEntry(target, resolved.Version, statusBundleSHA(bundle.files))
+		entry := resultEntry(target, resolved.Version, currentBundleSHA(bundle.files))
 		record, found, err := readReceipt(receiptPath(resolved.StateRoot, target.path))
 		if err != nil {
 			entry.Status, entry.Detail = "invalid-receipt", err.Error()
@@ -221,8 +263,13 @@ func Status(options Options) (Result, error) {
 			entry.InstalledVersion, entry.InstalledBundleSHA = record.Version, record.BundleSHA
 			presentStatus := "installed"
 			if record.BundleSHA != entry.SourceBundleSHA {
-				presentStatus = "outdated"
-				entry.Detail = fmt.Sprintf("installed %s differs from bundled %s; run dva skill install", record.Version, resolved.Version)
+				presentStatus = bundleDrift(record.Version, resolved.Version)
+				entry.Detail = fmt.Sprintf("installed %s (%s) vs this binary %s (%s)", record.Version, shortSHA(record.BundleSHA), resolved.Version, shortSHA(entry.SourceBundleSHA))
+				if presentStatus == "newer" {
+					entry.Detail += "; upgrade this dva binary"
+				} else {
+					entry.Detail += "; run dva skill install if this binary is the current one"
+				}
 			}
 			entry.Status = setMembershipStatuses(&entry, record.Runtimes, presentStatus, "absent")
 			if len(record.Takeovers) > 0 {

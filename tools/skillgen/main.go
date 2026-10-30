@@ -189,7 +189,7 @@ func emitCursor(root string, s skill, man manifest, outDir, ext string, defaultA
 		}
 	}
 
-	body := rewriteRefPaths(stripClaudeDynamics(s.body), s.dir)
+	body := rewriteRefPaths(s.body, s.dir)
 	var b strings.Builder
 	b.WriteString("---\n")
 	fmt.Fprintf(&b, "description: %s\n", oneLine(s.fm.Description))
@@ -334,56 +334,7 @@ func parseSkill(path string) (frontmatter, string, error) {
 
 // ── body transforms ──────────────────────────────────────────────────────────
 
-var claudeDynamicLine = regexp.MustCompile("(?m)^!`.*`\\s*$")
 var relRefPath = regexp.MustCompile("`(references/|assets/)")
-
-// stripClaudeDynamics removes Claude-Code `!`cmd“ dynamic-injection lines (which
-// render as literal text elsewhere) and then prunes any section heading those
-// lines left empty (e.g. "## Project Context" whose only content was `!`dva show“).
-func stripClaudeDynamics(body string) string {
-	out := claudeDynamicLine.ReplaceAllString(body, "")
-	out = removeEmptyHeadings(out)
-	return regexp.MustCompile(`\n{3,}`).ReplaceAllString(out, "\n\n")
-}
-
-// removeEmptyHeadings drops a heading whose section has no content — detected by
-// the next non-blank line being a heading of equal-or-shallower level, or EOF. A
-// heading followed by a deeper heading (a real subsection) is kept.
-func removeEmptyHeadings(body string) string {
-	level := func(s string) int {
-		s = strings.TrimSpace(s)
-		n := 0
-		for n < len(s) && s[n] == '#' {
-			n++
-		}
-		if n > 0 && (n == len(s) || s[n] == ' ') {
-			return n
-		}
-		return 0
-	}
-	lines := strings.Split(body, "\n")
-	drop := make(map[int]bool)
-	for i, ln := range lines {
-		lvl := level(ln)
-		if lvl == 0 {
-			continue
-		}
-		j := i + 1
-		for j < len(lines) && strings.TrimSpace(lines[j]) == "" {
-			j++
-		}
-		if j >= len(lines) || (level(lines[j]) != 0 && level(lines[j]) <= lvl) {
-			drop[i] = true
-		}
-	}
-	out := make([]string, 0, len(lines))
-	for i, ln := range lines {
-		if !drop[i] {
-			out = append(out, ln)
-		}
-	}
-	return strings.Join(out, "\n")
-}
 
 // rewriteRefPaths turns skill-relative `references/…`/`assets/…` links into
 // repo-root paths so they resolve from a generated file elsewhere in the tree.

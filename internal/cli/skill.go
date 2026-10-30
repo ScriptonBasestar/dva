@@ -26,6 +26,7 @@ var (
 	skillInstallScope                string
 	skillInstallRuntimes             []string
 	skillInstallTakeover             bool
+	skillInstallAllowDowngrade       bool
 	skillStatusScope                 string
 	skillStatusRuntimes              []string
 	skillRemoveScope                 string
@@ -48,6 +49,7 @@ of leaving them alone.`,
 			return err
 		}
 		options.Takeover = skillInstallTakeover
+		options.AllowDowngrade = skillInstallAllowDowngrade
 		result, err := skillinstall.Install(options)
 		if err != nil {
 			return err
@@ -137,6 +139,7 @@ func init() {
 	skillInstallCmd.Flags().StringVar(&skillInstallScope, "scope", string(skillinstall.ScopeUser), scopeUsage)
 	skillInstallCmd.Flags().StringSliceVar(&skillInstallRuntimes, "runtime", nil, runtimeUsage)
 	skillInstallCmd.Flags().BoolVar(&skillInstallTakeover, "takeover", false, "Back up and replace only receipt-less DVA-name collisions")
+	skillInstallCmd.Flags().BoolVar(&skillInstallAllowDowngrade, "allow-downgrade", false, "Replace skills installed by a newer DVA release with this binary's bundle")
 	skillStatusCmd.Flags().StringVar(&skillStatusScope, "scope", string(skillinstall.ScopeUser), scopeUsage)
 	skillStatusCmd.Flags().StringSliceVar(&skillStatusRuntimes, "runtime", nil, runtimeUsage)
 	skillUninstallCmd.Flags().StringVar(&skillRemoveScope, "scope", string(skillinstall.ScopeUser), scopeUsage)

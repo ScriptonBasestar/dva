@@ -33,9 +33,10 @@ Makefile development targets, PORT_MAPPINGS manifests, and .gz-git workspaces.
 Use --recursive to also scaffold dva.yml in detected sub-projects. The sub-project
 scan runs even when the current directory itself has no Compose file and no
 recognized language manifest.
-After scaffolding, run 'am run dva-discover' to inspect the project, then
-'am run dva-improve' to let an AI agent optimize the existing configuration.
-Use 'am run dva-improve -p mode=rewrite' only when a full rewrite is intentional.`,
+After scaffolding, run 'dva config validate'.
+Optional AI analysis requires am: 'am run dva-discover' inspects the project and
+'am run dva-improve' optimizes the existing configuration. Use
+'am run dva-improve -p mode=rewrite' only when a full rewrite is intentional.`,
 	Example: `  dva init                  # Scaffold dva.yml in the current directory
   dva init --template node  # Scaffold using the node template
   dva init --recursive      # Also scaffold dva.yml in detected sub-projects
