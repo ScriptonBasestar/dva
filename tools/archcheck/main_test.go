@@ -26,3 +26,11 @@ func TestCheckAcceptsAllowedImports(t *testing.T) {
 		t.Fatalf("unexpected violations: %v", got)
 	}
 }
+
+func TestCheckReportsRepeatedImportOnce(t *testing.T) {
+	graph := map[string][]string{"internal/logger": {"internal/output", "internal/output", "internal/output"}}
+	got := check(graph, map[string][]string{"internal/logger": {}})
+	if want := []string{"internal/logger: must not import internal/output"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("got %v, want %v", got, want)
+	}
+}

@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"slices"
 	"sort"
 	"strings"
 )
@@ -114,7 +115,7 @@ func check(graph, allowed map[string][]string) []string {
 		}
 	}
 	sort.Strings(violations)
-	return violations
+	return slices.Compact(violations)
 }
 
 func report(w io.Writer, violations []string) {
