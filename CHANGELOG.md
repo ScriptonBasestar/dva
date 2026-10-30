@@ -23,6 +23,8 @@ All notable changes to DVA are documented here.
 
 ### Fixed
 
+- **`dva init` 스캐폴드**: Compose에 `app` 서비스가 없으면 없는 서비스를 가리키는 interaction을 만들지
+  않고, `package.json`에 없는 npm 스크립트를 넣지 않으며, 섹션을 표준 순서로 출력합니다.
 - **스킬 다운그레이드 방지**: `dva skill status`가 `outdated`·`newer`·`differs`를 구분하고,
   `dva skill install`은 더 새로운 릴리스가 설치한 스킬을 `--allow-downgrade` 없이 교체하지 않습니다.
 - **`make test`**: 상속된 `GOFLAGS`에 `-trimpath`가 섞여 경로 기반 테스트가 깨지던 문제를 고쳤습니다.

@@ -43,6 +43,49 @@ func TestDetectTemplateIn(t *testing.T) {
 	os.Remove("go.mod")
 }
 
+func writeInitFixture(t *testing.T, files map[string]string) string {
+	t.Helper()
+	dir := t.TempDir()
+	for name, content := range files {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return dir
+}
+
+func TestGenerateConfigOmitsInteractionsWithoutAppService(t *testing.T) {
+	dir := writeInitFixture(t, map[string]string{
+		"compose.yml":  "services:\n  db:\n    image: postgres:16\n",
+		"package.json": `{"scripts":{"dev":"node server.js"}}`,
+	})
+	got := generateConfigIn(dir, "node")
+	if strings.Contains(got, "service: app") || strings.Contains(got, "\ninteraction:") {
+		t.Fatalf("scaffold references an unproven service:\n%s", got)
+	}
+}
+
+func TestGenerateConfigKeepsOnlyDeclaredNpmScripts(t *testing.T) {
+	dir := writeInitFixture(t, map[string]string{
+		"compose.yml":  "services:\n  app:\n    image: node:22\n",
+		"package.json": `{"scripts":{"dev":"node server.js"}}`,
+	})
+	got := generateConfigIn(dir, "node")
+	for _, want := range []string{"command: npm run dev", "command: npm\n"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("scaffold lost %q:\n%s", want, got)
+		}
+	}
+	for _, unwanted := range []string{"npm test", "npm run lint"} {
+		if strings.Contains(got, unwanted) {
+			t.Errorf("scaffold kept undeclared %q:\n%s", unwanted, got)
+		}
+	}
+	if strings.Index(got, "environment:") > strings.Index(got, "stack:") {
+		t.Fatalf("environment must precede stack:\n%s", got)
+	}
+}
+
 func TestGenerateConfig(t *testing.T) {
 	// Setup a temporary directory
 	tempDir, err := os.MkdirTemp("", "dva-init-config-*")
@@ -56,7 +99,7 @@ func TestGenerateConfig(t *testing.T) {
 	defer os.Chdir(originalWd)
 
 	// Create a dummy compose file so it gets detected
-	os.WriteFile("docker-compose.yml", []byte(""), 0644)
+	os.WriteFile("docker-compose.yml", []byte("services:\n  app:\n    image: node:22\n"), 0644)
 
 	config := generateConfigIn(".", "node")
 	if !strings.Contains(config, `npm run dev`) {

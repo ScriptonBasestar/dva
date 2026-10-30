@@ -146,7 +146,7 @@ See USAGE.md's "config validate" section for the full list of semantic checks.`,
 		}
 
 		if validateStrict && (len(driftWarnings) > 0 || len(semanticWarnings) > 0 || len(collisionWarnings) > 0) {
-			return report.fail(fmt.Errorf("config warnings detected; review warnings above or run 'am run dva-improve'"))
+			return report.fail(fmt.Errorf("config warnings detected; review warnings above (optional AI help: am run dva-improve)"))
 		}
 
 		// Check devcontainer sync

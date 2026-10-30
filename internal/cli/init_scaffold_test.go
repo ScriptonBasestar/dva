@@ -469,7 +469,7 @@ func TestHybridTemplateSelection(t *testing.T) {
 	}{
 		{
 			name:       "go.work workspace root with a Compose file selects the go template",
-			files:      map[string]string{"go.work": "go 1.25\n", "docker-compose.yml": "services: {}\n"},
+			files:      map[string]string{"go.work": "go 1.25\n", "docker-compose.yml": "services:\n  app:\n    image: x\n"},
 			wantLang:   "go",
 			wantTmpl:   "go",
 			wantHas:    "go test ./...",
@@ -477,7 +477,7 @@ func TestHybridTemplateSelection(t *testing.T) {
 		},
 		{
 			name:       "a direct manifest is unaffected",
-			files:      map[string]string{"Gemfile": "source 'x'\n", "docker-compose.yml": "services: {}\n"},
+			files:      map[string]string{"Gemfile": "source 'x'\n", "docker-compose.yml": "services:\n  app:\n    image: x\n"},
 			wantLang:   "rails",
 			wantTmpl:   "rails",
 			wantHas:    "bundle exec rspec",
@@ -486,7 +486,7 @@ func TestHybridTemplateSelection(t *testing.T) {
 		{
 			// The reviewer's case: python pinned for pre-commit hooks only.
 			name:       "a .tool-versions pin must not select a template",
-			files:      map[string]string{".tool-versions": "python 3.12.0\n", "docker-compose.yml": "services: {}\n"},
+			files:      map[string]string{".tool-versions": "python 3.12.0\n", "docker-compose.yml": "services:\n  app:\n    image: x\n"},
 			wantLang:   "python",
 			wantTmpl:   "minimal",
 			wantHas:    "/bin/bash",
@@ -495,7 +495,7 @@ func TestHybridTemplateSelection(t *testing.T) {
 		},
 		{
 			name:       "a mise.toml pin must not select a template",
-			files:      map[string]string{"mise.toml": "[tools]\nnode = \"24\"\n", "docker-compose.yml": "services: {}\n"},
+			files:      map[string]string{"mise.toml": "[tools]\nnode = \"24\"\n", "docker-compose.yml": "services:\n  app:\n    image: x\n"},
 			wantLang:   "node",
 			wantTmpl:   "minimal",
 			wantHas:    "/bin/bash",
@@ -504,7 +504,7 @@ func TestHybridTemplateSelection(t *testing.T) {
 		},
 		{
 			name:     "a Compose file with no manifest at all is still minimal",
-			files:    map[string]string{"docker-compose.yml": "services: {}\n"},
+			files:    map[string]string{"docker-compose.yml": "services:\n  app:\n    image: x\n"},
 			wantLang: "",
 			wantTmpl: "minimal",
 			wantHas:  "/bin/bash",

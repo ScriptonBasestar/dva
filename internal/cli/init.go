@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -438,7 +439,71 @@ interaction:
 `)
 	}
 
-	return b.String()
+	return arrangeTemplate(b.String(), dir, composeFiles)
+}
+
+// arrangeTemplate puts sections in canonical order and, when a Compose file exists,
+// keeps only what it proves: template interactions need a service named app, and
+// npm script shortcuts need the script in package.json.
+func arrangeTemplate(content, dir string, composeFiles []string) string {
+	stackStart := strings.Index(content, "stack:\n")
+	rest := content[stackStart:]
+	stackLen := strings.Index(rest, "\n\n") + 2
+	head, stack, body := content[:stackStart], rest[:stackLen], rest[stackLen:]
+	interactionStart := strings.Index(body, "interaction:\n")
+	env, interaction := body[:interactionStart], body[interactionStart:]
+
+	if len(composeFiles) > 0 {
+		if !composeDefinesService(dir, composeFiles, "app") {
+			return head + stack + "# dva init generated no interactions: no Compose service is named app.\n" +
+				"# Add interaction entries for the services your Compose files define.\n"
+		}
+		interaction = dropMissingNpmScripts(interaction, dir)
+	}
+	return head + env + stack + interaction
+}
+
+func composeDefinesService(dir string, composeFiles []string, name string) bool {
+	for _, file := range composeFiles {
+		if slices.Contains(extractComposeServices(filepath.Join(dir, file)), name) {
+			return true
+		}
+	}
+	return false
+}
+
+func dropMissingNpmScripts(interaction, dir string) string {
+	data, err := os.ReadFile(filepath.Join(dir, "package.json"))
+	if err != nil {
+		return interaction
+	}
+	var manifest struct {
+		Scripts map[string]string `json:"scripts"`
+	}
+	if json.Unmarshal(data, &manifest) != nil {
+		return interaction
+	}
+	for _, script := range []string{"dev", "test", "lint"} {
+		if _, ok := manifest.Scripts[script]; !ok {
+			interaction = dropInteraction(interaction, script)
+		}
+	}
+	return interaction
+}
+
+// dropInteraction removes one two-space-indented entry and its nested fields.
+func dropInteraction(interaction, name string) string {
+	var kept []string
+	dropping := false
+	for _, line := range strings.SplitAfter(interaction, "\n") {
+		if strings.HasPrefix(line, "  ") && !strings.HasPrefix(line, "   ") {
+			dropping = line == "  "+name+":\n"
+		}
+		if !dropping {
+			kept = append(kept, line)
+		}
+	}
+	return strings.Join(kept, "")
 }
 
 // detectComposeFiles finds existing docker compose files in the current directory.

@@ -80,6 +80,9 @@ dva manifest -f json
 dva doctor --json
 ```
 
+These commands need a `dva.yml`. In New mode they only report that it is missing, so go to
+Initialize a New Project and run them after `dva init`.
+
 Do not use `--fix`, rewrite, reset, cleanup, or service-starting commands in the baseline. Treat
 lifecycle help and previews as potentially executable until proven safe for the installed version;
 use the sibling `dva` skill's [operation safety reference](../dva/references/operation-safety.md). A zero exit status does
@@ -102,8 +105,9 @@ in-run; it is not `dva up --force`.
 
 ### Initialize a New Project
 
-Run from the project root. `dva init` writes only what it can prove; it does not guess run or
-build commands.
+Run from the project root. `dva init` takes services and npm scripts from the project. With no
+Compose service named `app` it writes no interactions, so add them for the real services. Template
+commands for other languages are starting points: confirm each one before relying on it.
 
 ```bash
 dva init --dry-run      # preview; writes nothing
@@ -114,7 +118,8 @@ dva ls
 
 If `dva init` reports no verified evidence, it creates nothing: use `am run dva-discover` when `am`
 is on PATH, otherwise author `dva.yml` from the bundled templates in the `dva` skill and validate
-it. Then refine in Preserve mode. `am` flows are optional; never block initialization on them.
+it. Then refine in Preserve mode. A scaffold may list warnings such as missing `plans`; plain
+`dva config validate` still passes, while `--strict` fails until they are resolved. `am` flows are optional; never block initialization on them.
 
 ### 4. Model Boundaries
 
