@@ -1,7 +1,7 @@
 BINARY     := dva
 MODULE     := github.com/ScriptonBasestar/dva
 BUILD_DIR  := ./bin
-GOFLAGS     := -trimpath
+BUILD_FLAGS := -trimpath
 
 # Both destinations remain configurable for an isolated install fixture. The defaults are the
 # public installation paths; callers may set LOCAL_BIN_DIR and GO_BIN_DIR without changing their
@@ -32,7 +32,7 @@ build: generate
 	$(eval VERSION := $(shell grep -E '^[[:space:]]+Version = ' internal/config/version.go | cut -d'"' -f2))
 	$(eval COMMIT  := $(shell git rev-parse HEAD 2>/dev/null || echo "none"))
 	$(eval BUILD_DATE := $(shell date -u +%Y-%m-%dT%H:%M:%SZ))
-	go build $(GOFLAGS) -ldflags '-s -w -X $(MODULE)/internal/config.Version=$(VERSION) -X $(MODULE)/internal/config.Commit=$(COMMIT) -X $(MODULE)/internal/config.BuildDate=$(BUILD_DATE)' -o $(BUILD_DIR)/$(BINARY) ./cmd/dva
+	go build $(BUILD_FLAGS) -ldflags '-s -w -X $(MODULE)/internal/config.Version=$(VERSION) -X $(MODULE)/internal/config.Commit=$(COMMIT) -X $(MODULE)/internal/config.BuildDate=$(BUILD_DATE)' -o $(BUILD_DIR)/$(BINARY) ./cmd/dva
 
 ## install: Atomically replace each dva destination with a verified binary
 install: build
