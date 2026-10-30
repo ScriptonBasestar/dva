@@ -77,3 +77,12 @@ plans:
 		t.Errorf("no semantic-category warning carries the D7 message; got %+v", doc.Warnings)
 	}
 }
+
+func TestStrictIgnoresInformationalHints(t *testing.T) {
+	if hasActionableWarning([]string{"ℹ No 'plans' defined"}) {
+		t.Fatal("an informational hint must not fail --strict")
+	}
+	if !hasActionableWarning([]string{"ℹ hint", "⚠ deprecated"}) {
+		t.Fatal("a real warning must still fail --strict")
+	}
+}

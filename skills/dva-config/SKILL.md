@@ -118,8 +118,8 @@ dva ls
 
 If `dva init` reports no verified evidence, it creates nothing: use `am run dva-discover` when `am`
 is on PATH, otherwise author `dva.yml` from the bundled templates in the `dva` skill and validate
-it. Then refine in Preserve mode. A scaffold may list warnings such as missing `plans`; plain
-`dva config validate` still passes, while `--strict` fails until they are resolved. `am` flows are optional; never block initialization on them.
+it. Then refine in Preserve mode. A missing-`plans` hint is advice for a scaffold, not a failure, including under
+`--strict`. `am` flows are optional; never block initialization on them.
 
 ### 4. Model Boundaries
 

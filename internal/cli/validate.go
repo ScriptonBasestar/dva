@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -145,7 +146,7 @@ See USAGE.md's "config validate" section for the full list of semantic checks.`,
 			return err
 		}
 
-		if validateStrict && (len(driftWarnings) > 0 || len(semanticWarnings) > 0 || len(collisionWarnings) > 0) {
+		if validateStrict && (len(driftWarnings) > 0 || hasActionableWarning(semanticWarnings) || len(collisionWarnings) > 0) {
 			return report.fail(fmt.Errorf("config warnings detected; review warnings above (optional AI help: am run dva-improve)"))
 		}
 
@@ -263,4 +264,12 @@ func (v validationFailure) Unwrap() []error { return v }
 func init() {
 	addValidateFlags(validateCmd)
 	configCmd.AddCommand(validateCmd)
+}
+
+// hasActionableWarning ignores "ℹ" hints: a config with no plans is the supported
+// bare lifecycle `dva init` writes, so advice about it must not fail --strict.
+func hasActionableWarning(warnings []string) bool {
+	return slices.ContainsFunc(warnings, func(warning string) bool {
+		return !strings.HasPrefix(warning, "ℹ")
+	})
 }

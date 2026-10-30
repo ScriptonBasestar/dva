@@ -28,6 +28,8 @@ All notable changes to DVA are documented here.
 
 ### Fixed
 
+- **`dva config validate --strict`**: `plans` 미정의 안내(ℹ)만으로는 실패하지 않습니다. `plans` 없는
+  bare lifecycle은 `dva init`이 생성하는 지원 구성입니다.
 - **`dva init` 스캐폴드**: Compose에 `app` 서비스가 없으면 없는 서비스를 가리키는 interaction을 만들지
   않고, `package.json`에 없는 npm 스크립트를 넣지 않으며, 섹션을 표준 순서로 출력합니다.
 - **스킬 다운그레이드 방지**: `dva skill status`가 `outdated`·`newer`·`differs`를 구분하고,
