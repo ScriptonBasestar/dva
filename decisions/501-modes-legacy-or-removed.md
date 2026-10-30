@@ -7,7 +7,7 @@ effort: S
 needs-human: true
 execution-mode: decision
 human-grade: human
-status: Proposed
+status: Accepted
 created: 2026-10-10
 ---
 
@@ -21,9 +21,9 @@ created: 2026-10-10
 
 2026-10-10 문서 정합성 검토에서 확인했다.
 
-- [docs/42](../../docs/42-migration-and-compatibility.md) 표는 `modes`를 "제거 후 분해",
-  [docs/30 예시](../../docs/30-config-merge-examples.md)의 하위호환 메모는 "`modes` 제거"라고 쓴다.
-- [ARCHITECTURE.md](../../ARCHITECTURE.md)의 도메인 경계 표는 `modes`/`default_mode`를
+- [docs/42](../docs/42-migration-and-compatibility.md) 표는 `modes`를 "제거 후 분해",
+  [docs/30 예시](../docs/30-config-merge-examples.md)의 하위호환 메모는 "`modes` 제거"라고 쓴다.
+- [ARCHITECTURE.md](../ARCHITECTURE.md)의 도메인 경계 표는 `modes`/`default_mode`를
   "legacy — validate가 plans 이관을 권고"로 둔다.
 - `internal/config/schema.json`은 최상위 `modes`와 `default_mode`를 아직 받는다.
   `applications`는 스키마가 거부한다.
@@ -33,7 +33,7 @@ created: 2026-10-10
   `modes`가 있고 `default_mode`가 없으면 "set default_mode to a minimal infrastructure mode"라고
   권한다. USAGE.md `### default_mode`도 같은 권고를 싣는다. deprecated 기능을 더 쓰라고
   안내하는 셈이다.
-- [ROADMAP.md](../../ROADMAP.md)는 "Legacy 설정 제거는 마이그레이션과 제거 버전이 결정된 뒤
+- [ROADMAP.md](../ROADMAP.md)는 "Legacy 설정 제거는 마이그레이션과 제거 버전이 결정된 뒤
   별도 변경"이라고 적는다. 제거 버전은 아직 정해지지 않았다.
 
 이번 검토는 USAGE.md 표·플래그 행과 CLAUDE.md에 "legacy" 표기만 더했다. 경고 문구,
@@ -41,7 +41,9 @@ docs/30·42의 "제거" 서술, 제거 시점은 이 결정을 기다린다.
 
 ## Decision
 
-- Status: Proposed
+- Status: Accepted
+
+2026-10-31에 사용자가 권장안 옵션 2를 수락했다. 제거 버전은 v0.5.0이다. 그때 스키마가 거부하고, 그전까지 `dva config migrate`와 경고를 유지한다.
 
 선택지:
 
@@ -68,4 +70,4 @@ docs/30·42의 "제거" 서술, 제거 시점은 이 결정을 기다린다.
 
 ## Resolution Criteria
 
-- [ ] 사람이 legacy 유지, 제거 버전 확정, 1급 복귀 중 하나를 고르고 적용 범위를 적는다 | verify: human — choice recorded on this card before any schema, warning, or doc wording change
+- [x] 사람이 legacy 유지, 제거 버전 확정, 1급 복귀 중 하나를 고르고 적용 범위를 적는다 | verify: human — accepted by the user on 2026-10-31

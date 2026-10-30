@@ -75,5 +75,5 @@ subject로 해석한 공개 object이기 때문이다. 공유 이력을 재작�
 
 ## References
 
-- [ISSUE-512](../_archive/issue/512-published-commit-subject-length-baseline.md)
-- [기존 역사 처리 정책](../_archive/2026-09/278-gate-commit-subjects-before-they-land.md)
+- [ISSUE-512](../tasks/_archive/issue/512-published-commit-subject-length-baseline.md)
+- [기존 역사 처리 정책](../tasks/_archive/2026-09/278-gate-commit-subjects-before-they-land.md)

@@ -19,15 +19,15 @@ ISSUE-004·006의 과거 카드·자동 루프 기준을 현재 소비자 계약
 
 ## Context
 
-- [ISSUE-004](../_archive/issue/004-controller-scope-admission-cannot-represent-external-or-human-only-cards.md)의
+- [ISSUE-004](../tasks/_archive/issue/004-controller-scope-admission-cannot-represent-external-or-human-only-cards.md)의
   기준 2는 과거 ISSUE-001의 “routes”를 요구한다. 분류인지 종료 전이인지 불명확하다.
-- [ISSUE-006](../_archive/issue/006-preflight-reports-needs-human-cards-as-runnable.md)의
+- [ISSUE-006](../tasks/_archive/issue/006-preflight-reports-needs-human-cards-as-runnable.md)의
   기준 2는 더 이상 없는 “현재 네 카드”, 기준 3은 구현되지 않은 run-all loop를 가리킨다.
 - `internal/taskqueue/taskqueue.go:57`의 Verdict는 읽기 전용이다. `:84`의 Start만
   승인 pin을 요구한다. 사람 terminal/rollback은 이 소비자의 구현 기능이 아니다.
-- 현재 실제 조회는 [ISSUE-490](../_archive/issue/490-selected-taskchain-rejects-native-decision-directory.md)의
+- 현재 실제 조회는 [ISSUE-490](../tasks/_archive/issue/490-selected-taskchain-rejects-native-decision-directory.md)의
   native decision 디렉터리 호환성 실패로 막힌다. 공개 승인과 다른 차단 원인이다.
-- `tasks/decision/487-changelog-half-ceiling-trigger.md`의 실제 사용자 승인과 Accepted
+- `decisions/487-changelog-half-ceiling-trigger.md`의 실제 사용자 승인과 Accepted
   전이는 현행 결정 카드 증거로 사용할 후보다. 합성 카드 전이를 실제 사용자 승인으로 쓰지 않는다.
 
 ## Decision
@@ -60,7 +60,7 @@ ISSUE-453의 읽기 전용 provenance 안내는 현재 문서 계약을 유지�
 
 - 2026-10-05 옵션 1 수락 뒤 ISSUE-004·006의 현재 기준은 기계 명령이다. 과거 기준은
   Historical acceptance에 활성 verify 없이 남긴다. 사람 terminal 플래그는 현재 기준이 아니다.
-- [TASK-492](../_archive/done/492-apply-approved-readonly-queue-acceptance.md)가 그 기준을 현행화한다.
+- [TASK-492](../tasks/_archive/done/492-apply-approved-readonly-queue-acceptance.md)가 그 기준을 현행화한다.
   ISSUE-490이 풀리기 전에는 실제 보드 출력과 종료 판정 증거를 성공으로 적지 않는다.
 - producer canonical 경로 확인과 공개 산출물 승인 입력은 여전히 필요하다.
 - 새 daemon/run-all 엔진이나 두 번째 보드 grader는 만들지 않는다.

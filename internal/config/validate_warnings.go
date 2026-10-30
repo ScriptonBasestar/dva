@@ -154,7 +154,7 @@ func (c *Config) warnLegacyModes() []string {
 	}
 
 	return []string{
-		fmt.Sprintf("⚠ 'modes' section detected — consider migrating to 'plans' + 'environments' + 'sites'\n  Migration guide: %s\n  Hint: modes will continue to work but are deprecated in favor of the new plans model", migrationGuideURL),
+		fmt.Sprintf("⚠ 'modes' section detected — consider migrating to 'plans' + 'environments' + 'sites'\n  Migration guide: %s\n  Hint: modes are deprecated in favor of the new plans model and will be removed in v0.5.0", migrationGuideURL),
 	}
 }
 

@@ -7,7 +7,7 @@ effort: S
 needs-human: true
 execution-mode: decision
 human-grade: human
-status: Proposed
+status: Accepted
 created: 2026-10-10
 ---
 
@@ -21,7 +21,7 @@ created: 2026-10-10
 
 2026-10-10 문서 정합성 검토에서 확인했다.
 
-- `docs/README.md`는 없다. [AGENTS.md](../../AGENTS.md)의 Documentation Ownership 표는
+- `docs/README.md`는 없다. [AGENTS.md](../AGENTS.md)의 Documentation Ownership 표는
   루트 문서의 읽기 순서만 정한다.
 - 핵심 문서가 링크하는 설계 문서는 일부뿐이다. ARCHITECTURE는 30·31·40·43,
   PRODUCT는 30·31·40을 링크한다. 57~61 등은 핵심 문서 어디에서도 닿지 않는다.
@@ -32,7 +32,9 @@ created: 2026-10-10
 
 ## Decision
 
-- Status: Proposed
+- Status: Accepted
+
+2026-10-31에 사용자가 권장안 옵션 1을 수락했다. 색인은 `docs/README.md`가 소유하고 번호는 바꾸지 않는다.
 
 선택지:
 
@@ -57,4 +59,4 @@ created: 2026-10-10
 
 ## Resolution Criteria
 
-- [ ] 사람이 색인 신설, 색인과 번호 규약, 현행 유지 중 하나를 고르고 색인의 소유 문서를 적는다 | verify: human — choice recorded on this card before any docs/ file is added or renamed
+- [x] 사람이 색인 신설, 색인과 번호 규약, 현행 유지 중 하나를 고르고 색인의 소유 문서를 적는다 | verify: human — accepted by the user on 2026-10-31

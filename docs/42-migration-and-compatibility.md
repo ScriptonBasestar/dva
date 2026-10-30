@@ -10,7 +10,7 @@
 
 - 기존 `stack` 엔트리는 최대한 유지
 - `order`, `tags`, `services` 같은 실행 계획 성격 필드는 plan 쪽으로 이동
-- 기존 `modes`는 삭제하거나 점진적으로 `plans` / `sites` / `environments`로 분해
+- `modes`는 v0.5.0에서 제거하므로 `plans` / `sites` / `environments`로 분해
 - 기존 `applications`는 가능하면 `stack` 안의 runner 선언으로 통합
 
 ### 11-1. 기존 설정에서 사라지거나 이동하는 항목
@@ -19,7 +19,7 @@
 
 | 기존 개념/키 | 새 구조 상태 | 설명 |
 |---|---|---|
-| `modes` | 제거 후 분해 | 기존 `mode`의 책임을 `plans`, `environments`, `sites`로 분리 |
+| `modes` | v0.5.0 제거 예정 | 기존 `mode`의 책임을 `plans`, `environments`, `sites`로 분리 |
 | `applications` | 최상위 섹션 제거 | 앱 정의를 `stack` 내부 runner 선언으로 통합 |
 | `stack.*.order` | `plans.*.entries[].order` 로 이동 | 실행 순서는 선언이 아니라 실행 계획 책임 |
 | `stack.*.tags` | 축소 또는 선택적 메타데이터화 | 핵심 실행 제어 수단으로는 사용하지 않음 |

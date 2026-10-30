@@ -5,6 +5,11 @@ All notable changes to DVA are documented here.
 
 ## [Unreleased]
 
+### Deprecated
+
+- **`modes`/`default_mode` 제거 예정**: v0.5.0부터 스키마가 거부합니다. 그전까지 동작하며
+  `dva config migrate`로 `plans`로 이관하세요.
+
 ### Added
 
 - **패키지 경계 검사**: `tools/archcheck`가 `internal/` 패키지별 허용 import를 검사하고

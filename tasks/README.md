@@ -7,8 +7,8 @@ v0.4.1이 2026-10-23 공개됐다(v0.4.0 tag는 Release 없음). 기록은
 [ISSUE-534](_archive/issue/534-ci-subproject-run-resolves-unrelated-imports.md)는
 [[TASK-533]]에서 선택 범위에 맞는 CI 설정 로드로 수정했다.
 [ISSUE-533](_archive/issue/533-go-install-version-reports-dev-commit.md)(go install 설치본 commit `dev`)은 수정됐고 v0.4.1 다음 tag에
-공개된다. 이 밖에 `decision/`의 Proposed 결정
-501-504와, 보관 전인 `done/`의 520·532가 남아 있다.
+공개된다. 이 밖에 보관 전인
+`done/`의 520·532가 남아 있다.
 
 ### 2026-10-08 기록
 
@@ -26,7 +26,7 @@ v0.3.0 공개·postflight와 PLAN-010(8/8)·PLAN-011(19/19)의 종결 기록은
 - TaskChain 승인 pin과 host 검증: [TASK-496](_archive/done/496-activate-dd3ec0a-darwin-arm64-pin.md).
 - 기본 PATH DVA의 로컬 빌드 적용: [TASK-499](_archive/done/499-install-verified-master-dva-locally.md).
 - 현행 지원 범위: [USAGE.md](../USAGE.md#버전과-지원-범위).
-- 수락된 결정: [decision/](decision/README.md). 봉인된 카드·영수증은 해당 경로에 보존한다.
+- 수락된 결정: [decisions/](../decisions/README.md). 봉인된 카드·영수증은 해당 경로에 보존한다.
 
 아래 날짜별 결과는 당시 입력·설치본을 대상으로 한 역사 기록이며, 현재 호스트나
 새 릴리스의 검증 결과를 대신하지 않는다.
@@ -42,7 +42,7 @@ v0.3.0 공개·postflight와 PLAN-010(8/8)·PLAN-011(19/19)의 종결 기록은
 - policy:dependency-order — 의존 순서대로 진행한다.
 - policy:parallel-ownership-isolated — 독립 병렬은 소유 파일이 겹치지 않을 때만 한다.
 - policy:one-repo-explicit-files — 카드 하나는 저장소 하나, 명시 파일, 결정적 Steps다.
-- policy:human-excluded — needs-human, execution-mode external, tasks/decision의 미결은 자동 실행 집합에서 뺀다. 사람이 대상과 인가 맥락을 준 뒤 그 카드 Steps의 읽기 전용 확인은 실행할 수 있다.
+- policy:human-excluded — needs-human, execution-mode external, decisions/의 Proposed은 자동 실행 집합에서 뺀다. 사람이 대상과 인가 맥락을 준 뒤 그 카드 Steps의 읽기 전용 확인은 실행할 수 있다.
 - policy:human-grade-encoding — 사람 작업의 표기는 human-grade: human 이다. CE exec-tier 스키마는 cheap, standard, strong만 받으므로 exec-tier는 비운다. exec-tier: human 은 쓰지 않는다.
 - policy:no-self-review — 작성 세션이 자기 카드를 통과시키지 않는다.
 - policy:review-separate-session — 독립 리뷰는 같은 Grok 4.7의 다른 세션이다. 호출은 grok(기본) 또는 grok --model grok-4.7 이다.
@@ -70,7 +70,7 @@ v0.3.0 공개·postflight와 PLAN-010(8/8)·PLAN-011(19/19)의 종결 기록은
 - `tasks/done/`: 구현 및 마감 리뷰가 완료되어 아카이빙을 대기 중인 카드
 - `tasks/plan/`: 다중 태스크 묶음을 관리하는 상위 계획 카드
 - `tasks/issue/`: 발견된 버그, 구조 결함, 상류 의존성 이슈 카드
-- `tasks/decision/`: 미결 결정 카드와 인덱스. 수락된 정본은 `decisions/`다. CE의 내장 decision kind 디렉터리이며 별도 zones 선언 없이 검증한다.
+- 결정 기록은 보드 밖 `decisions/`가 미결과 수락을 모두 소유한다.
 - `tasks/review/`: 리뷰 대기 중인 카드
 - `tasks/backlog/`: 아직 착수 순번이 오지 않은 카드
 - `tasks/_archive/YYYY-MM/`: 모든 완료 기준 및 실측 검증을 통과하여 보관된 아카이브 카드.

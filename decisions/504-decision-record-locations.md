@@ -7,7 +7,7 @@ effort: S
 needs-human: true
 execution-mode: decision
 human-grade: human
-status: Proposed
+status: Accepted
 created: 2026-10-10
 ---
 
@@ -20,12 +20,12 @@ created: 2026-10-10
 
 2026-10-10 문서 정합성 검토에서 확인했다.
 
-- [tasks/README.md](../README.md)의 보드 구조는 `tasks/decision/`을 "미결 결정 카드와
+- [tasks/README.md](../tasks/README.md)의 보드 구조는 `tasks/decision/`을 "미결 결정 카드와
   인덱스, 수락된 정본은 `decisions/`"라고 쓴다. 같은 문서의 현재 상태 절은
   "수락된 결정: decision/"이라고 링크한다.
 - [tasks/decision/README.md](README.md)는 "미결 선택이다"라고 쓴다. 그러나 표의 두 행
   (TASK-487, TASK-491)은 모두 accepted다.
-- [decisions/README.md](../../decisions/README.md)도 Proposed 카드가 인간 확정을 기다리는
+- [decisions/README.md](README.md)도 Proposed 카드가 인간 확정을 기다리는
   곳이라고 쓴다. 수락된 DECISION-001~004를 담고 있다.
 - 두 색인의 계수기가 다르다. `decisions/`는 "로그 000, 다음 001"이고
   `tasks/decision/`은 "로그 491, 다음 492"다. ce의 decision index root가 경로마다 따로
@@ -34,7 +34,9 @@ created: 2026-10-10
 
 ## Decision
 
-- Status: Proposed
+- Status: Accepted
+
+2026-10-31에 사용자가 옵션 2를 수락했다. 모든 결정은 `decisions/`에 두고 `tasks/decision/`은 없앤다. 계수기 정본은 `decisions/README.md`이며, 기존 카드의 `TASK-` ID는 유지한다.
 
 선택지:
 
@@ -58,4 +60,4 @@ created: 2026-10-10
 
 ## Resolution Criteria
 
-- [ ] 사람이 세 위치 규약 중 하나를 고르고 계수기 정본을 적는다 | verify: human — choice recorded on this card before any decision card is moved
+- [x] 사람이 세 위치 규약 중 하나를 고르고 계수기 정본을 적는다 | verify: human — accepted by the user on 2026-10-31

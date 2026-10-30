@@ -28,9 +28,11 @@ DVA는 개발 환경 구성을 일관되게 선언하고, 암호화된 설정과
 | 사용법 | `README.md` → `USAGE.md` |
 | 릴리스·작업 계획 | `PRODUCT.md` → `ROADMAP.md` → `tasks/README.md` |
 | 코드 작업 | `AGENTS.md` → `ARCHITECTURE.md` → 해당 소스 |
+| 설계 문서 탐색 | `docs/README.md` → 해당 문서 |
 
 각 사실은 하나의 canonical document만 소유합니다.
 
+- `docs/README.md`: 설계 문서 분류와 읽는 순서
 - `SOUL.md`: Why, 핵심 신념, 변하지 않는 tradeoff
 - `PRODUCT.md`: What/Who, 사용자 가치, 제품 경계와 현재 상태
 - `ARCHITECTURE.md`: How, 컴포넌트 책임, 의존 방향, 데이터 흐름

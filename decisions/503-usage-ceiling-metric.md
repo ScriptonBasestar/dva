@@ -7,7 +7,7 @@ effort: S
 needs-human: true
 execution-mode: decision
 human-grade: human
-status: Proposed
+status: Accepted
 created: 2026-10-10
 ---
 
@@ -38,7 +38,9 @@ USAGE.md 최상단 마커의 상한 `143360 bytes, 1600 lines`는 무엇을 셀�
 
 ## Decision
 
-- Status: Proposed
+- Status: Accepted
+
+2026-10-31에 사용자가 권장안 옵션 3을 수락했다. 측정 기준은 펜스 밖 비지 않은 줄이며 측정 명령은 마커에 적는다. 2026-10-31 측정값은 1271이다.
 
 선택지:
 
@@ -63,4 +65,4 @@ USAGE.md 최상단 마커의 상한 `143360 bytes, 1600 lines`는 무엇을 셀�
 
 ## Resolution Criteria
 
-- [ ] 사람이 측정 기준과 대응(분할, 상한 재설정, 기준 명시)을 고르고 이 카드에 적는다 | verify: human — choice recorded on this card before the USAGE.md marker is edited
+- [x] 사람이 측정 기준과 대응(분할, 상한 재설정, 기준 명시)을 고르고 이 카드에 적는다 | verify: human — accepted by the user on 2026-10-31

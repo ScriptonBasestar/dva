@@ -75,7 +75,7 @@ plans:
 
 핵심 변화:
 
-- `modes` 제거
+- `modes` deprecated (v0.5.0 제거 예정, 그전까지 허용)
 - `applications`를 `stack` 안의 logical unit 선언으로 통합
 - 실행 순서를 `plans.entries` 로 이동
 - environment/site는 stack 선택이 아니라 vars와 override 해석에 집중

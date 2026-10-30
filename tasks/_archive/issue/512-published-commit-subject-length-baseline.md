@@ -50,7 +50,7 @@ DVA의 공개 source 이력에 있다. Git은 문단 subject를 정상적으로 
 
 ## Manual action guide
 
-1. [결정 513](../../decision/513-published-commit-history-policy.md)에서 기존 4건의 처리 방식을 승인 주체·날짜와 함께 기록한다.
+1. [결정 513](../../../decisions/513-published-commit-history-policy.md)에서 기존 4건의 처리 방식을 승인 주체·날짜와 함께 기록한다.
 2. 승인 전에는 공유 이력 재작성, baseline 이동, waiver 추가, gate 생략을 하지 않는다. 기존 SHA와 실패 로그를 보존한다.
 3. 정책 적용은 별도 owner task에서 정해진 literal SHA에 한정하고, 신규 위반은 여전히 실패함을 확인한다.
 4. source 개선 전달 시 기존 실패와 신규 commit이 이를 악화시키지 않은 검사 결과를 구분한다. 전체 full CI를 PASS라고 보고하지 않는다.
