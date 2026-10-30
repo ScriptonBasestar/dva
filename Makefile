@@ -232,6 +232,7 @@ test-integration:
 
 ## lint: Run linters (golangci-lint v2 + gopls check, both pinned in .mise.toml)
 lint: vet fmt-check
+	go run ./tools/archcheck
 	sh scripts/ci-lint.sh
 
 ## vet: Run go vet

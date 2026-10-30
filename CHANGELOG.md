@@ -7,6 +7,9 @@ All notable changes to DVA are documented here.
 
 ### Added
 
+- **패키지 경계 검사**: `tools/archcheck`가 `internal/` 패키지별 허용 import를 검사하고
+  `make lint`에서 실패시킵니다. 의존 방향이 문서 설명에서 기계 검증 규칙이 됩니다.
+
 - **독립 root의 native child CI 구성**: native step에 `child_ci: independent-root`를
   선언하면 하위 프로젝트의 고유 CI를 부모 deadline·협력적 worker 예산 안에서 실행합니다.
   전체 ancestor lock과 순환을 검사하며 취소·receipt·정리를 연결합니다. 생략 시 기존 중첩

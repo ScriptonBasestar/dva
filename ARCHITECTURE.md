@@ -104,6 +104,7 @@ CLI는 설정 타입을 runtime 입력으로 변환하고 명시적인 `--with-s
 `internal/cli`의 step 실행기(`internal/exec`)로 내려가며, `internal/lifecycle/`와
 `internal/runner/`는 서로 import하지 않는다. Orchestrator가 runner를 호출하는 구조가
 아니다.
+이 의존 방향은 `tools/archcheck`의 패키지별 허용 목록이 소유하며 `make lint`가 검사한다.
 
 ## Source of Truth
 
