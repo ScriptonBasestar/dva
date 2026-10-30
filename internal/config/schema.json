@@ -734,7 +734,7 @@
         },
         "runner": {
           "type": "string",
-          "description": "Specifies the runner: compose, docker_compose, kubectl or local"
+          "description": "Specifies the runner: compose, docker-compose, docker_compose, kubectl or local"
         },
         "pod": {
           "type": "string",

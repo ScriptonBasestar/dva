@@ -7,20 +7,22 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// InteractionCommand defines a command in the interaction section.
-// Runner names an interaction command may select. compose is the spelling stack entries use.
+// Runner names an interaction command may select. compose and docker-compose were
+// honored by the old fallthrough to compose and stay valid.
 const (
-	InteractionRunnerDockerCompose = "docker_compose"
-	InteractionRunnerCompose       = "compose"
-	InteractionRunnerKubectl       = "kubectl"
-	InteractionRunnerLocal         = "local"
+	InteractionRunnerDockerCompose     = "docker_compose"
+	InteractionRunnerDockerComposeDash = "docker-compose"
+	InteractionRunnerCompose           = "compose"
+	InteractionRunnerKubectl           = "kubectl"
+	InteractionRunnerLocal             = "local"
 )
 
 // InteractionRunners lists the accepted runner names, matched case-insensitively.
 var InteractionRunners = []string{
-	InteractionRunnerCompose, InteractionRunnerDockerCompose, InteractionRunnerKubectl, InteractionRunnerLocal,
+	InteractionRunnerCompose, InteractionRunnerDockerComposeDash, InteractionRunnerDockerCompose, InteractionRunnerKubectl, InteractionRunnerLocal,
 }
 
+// InteractionCommand defines a command in the interaction section.
 type InteractionCommand struct {
 	Description string                         `yaml:"description"`
 	Service     string                         `yaml:"service"`

@@ -1976,10 +1976,9 @@ interaction:
 권한은 있는데 shebang이 없으면 `exec format error`입니다. 후자를 권한 문제로 읽고 `chmod`을
 반복하는 것이 흔한 헛수고입니다.
 
-**interaction의 `runner:`가 인식하는 값은 `local`/`docker_compose`/`kubectl` 셋뿐입니다.**
-그 밖의 값은 거부되지 않고 **compose 러너로 처리됩니다**
-(`internal/runner/runner.go` `NewRunner`의 `default:`). 즉 `runner: native`라고 쓰면
-오류도 경고도 없이 compose 러너가 되어, 위 문단이 보증한 exec 동작을 얻지 못합니다.
+**interaction의 `runner:`가 받는 값은 `local`/`compose`/`docker-compose`/`docker_compose`/
+`kubectl`뿐입니다.** 그 밖의 값은 `dva config validate`, `dva run`, `--dry-run`이 모두 오류로
+거부합니다. `runner: native`도 interaction에서는 거부됩니다.
 stack 쪽 `native` 러너는 별개의 표면이고, 그쪽에도 `script_file:`은 없습니다
 (`NativeRunnerConfig`의 필드는 `dir`/`build`/`run`/`env` 넷뿐).
 

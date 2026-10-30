@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/ScriptonBasestar/dva/internal/config"
@@ -13,10 +14,11 @@ import (
 
 // Runner type constants.
 const (
-	RunnerDockerCompose = config.InteractionRunnerDockerCompose
-	RunnerCompose       = config.InteractionRunnerCompose
-	RunnerKubectl       = config.InteractionRunnerKubectl
-	RunnerLocal         = config.InteractionRunnerLocal
+	RunnerDockerCompose     = config.InteractionRunnerDockerCompose
+	RunnerDockerComposeDash = config.InteractionRunnerDockerComposeDash
+	RunnerCompose           = config.InteractionRunnerCompose
+	RunnerKubectl           = config.InteractionRunnerKubectl
+	RunnerLocal             = config.InteractionRunnerLocal
 )
 
 // Runner type display names.
@@ -35,17 +37,17 @@ type Runner interface {
 // An unknown runner name is an error: the run path does not pass through config validation,
 // and guessing compose would execute a typo in the wrong place.
 func NewRunner(cmd *ResolvedCommand, opts RunOptions) (Runner, error) {
+	if err := checkRunnerName(cmd); err != nil {
+		return nil, err
+	}
 	if cmd.RunnerName != "" {
 		switch strings.ToLower(cmd.RunnerName) {
-		case RunnerDockerCompose, RunnerCompose:
+		case RunnerDockerCompose, RunnerDockerComposeDash, RunnerCompose:
 			return &DockerComposeRunner{Cmd: cmd, Opts: opts}, nil
 		case RunnerKubectl:
 			return &KubectlRunner{Cmd: cmd, Opts: opts}, nil
 		case RunnerLocal:
 			return &LocalRunner{Cmd: cmd, Opts: opts}, nil
-		default:
-			return nil, fmt.Errorf("command %q: unknown runner %q (want one of: %s)",
-				cmd.Name, cmd.RunnerName, strings.Join(config.InteractionRunners, ", "))
 		}
 	}
 
@@ -56,6 +58,16 @@ func NewRunner(cmd *ResolvedCommand, opts RunOptions) (Runner, error) {
 		return &KubectlRunner{Cmd: cmd, Opts: opts}, nil
 	}
 	return &LocalRunner{Cmd: cmd, Opts: opts}, nil
+}
+
+// checkRunnerName is shared by NewRunner and Explain so a preview cannot pass a name the run
+// would refuse.
+func checkRunnerName(cmd *ResolvedCommand) error {
+	if cmd.RunnerName == "" || slices.Contains(config.InteractionRunners, strings.ToLower(cmd.RunnerName)) {
+		return nil
+	}
+	return fmt.Errorf("command %q: unknown runner %q (want one of: %s)",
+		cmd.Name, cmd.RunnerName, strings.Join(config.InteractionRunners, ", "))
 }
 
 // DetectRunnerType returns the display name for the runner that would handle this command.
@@ -119,6 +131,9 @@ func (p *planWriter) println(a ...any) {
 // The cost that argument was really protecting against — an error check after each print — is
 // paid once by planWriter instead of 24 times.
 func Explain(cmd *ResolvedCommand, jsonOutput bool) error {
+	if err := checkRunnerName(cmd); err != nil {
+		return err
+	}
 	runner := DetectRunnerType(cmd)
 
 	if jsonOutput {

@@ -37,8 +37,9 @@ All notable changes to DVA are documented here.
 - **`make test`**: 상속된 `GOFLAGS`에 `-trimpath`가 섞여 경로 기반 테스트가 깨지던 문제를 고쳤습니다.
 ||||||| parent of a7af6609 (fix(runner): reject unknown interaction runner names)
 - **알 수 없는 interaction runner 거부**: `runner:` 오타가 조용히 compose로 실행되던 동작을
-  없앴습니다. `dva config validate`와 `dva run` 모두 오류로 거부하며, 허용값은 `compose`,
-  `docker_compose`, `kubectl`, `local`입니다.
+  없앴습니다. `dva config validate`, `dva run`, `--dry-run` 모두 오류로 거부합니다. 허용값은
+  `compose`, `docker-compose`, `docker_compose`, `kubectl`, `local`이며, 기존에 조용히 compose로
+  실행되던 `runner: native`도 이제 거부됩니다.
 
 - **설치된 스킬의 초기화 경로**: `dva skill status`가 바이너리보다 뒤처진 설치를 `outdated`로
   표시합니다. `dva-config`에 `dva init` 절차를 추가하고 `dva init` 안내에서 `am`을 선택 사항으로

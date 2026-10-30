@@ -113,7 +113,7 @@ func TestInteractionTreeList(t *testing.T) {
 }
 
 func TestNewRunnerNamedRunners(t *testing.T) {
-	for _, name := range []string{"compose", "docker_compose", "Compose"} {
+	for _, name := range []string{"compose", "docker_compose", "docker-compose", "Compose"} {
 		r, err := NewRunner(&ResolvedCommand{RunnerName: name}, RunOptions{})
 		if err != nil {
 			t.Fatalf("%s: %v", name, err)
@@ -131,6 +131,12 @@ func TestNewRunnerRejectsUnknownName(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), `"kubctl"`) {
 		t.Errorf("error does not name the runner: %v", err)
+	}
+}
+
+func TestExplainRejectsUnknownName(t *testing.T) {
+	if err := Explain(&ResolvedCommand{Name: "deploy", RunnerName: "kubctl"}, false); err == nil {
+		t.Fatal("expected an error")
 	}
 }
 
