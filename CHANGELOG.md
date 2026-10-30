@@ -35,7 +35,6 @@ All notable changes to DVA are documented here.
 - **스킬 다운그레이드 방지**: `dva skill status`가 `outdated`·`newer`·`differs`를 구분하고,
   `dva skill install`은 더 새로운 릴리스가 설치한 스킬을 `--allow-downgrade` 없이 교체하지 않습니다.
 - **`make test`**: 상속된 `GOFLAGS`에 `-trimpath`가 섞여 경로 기반 테스트가 깨지던 문제를 고쳤습니다.
-||||||| parent of a7af6609 (fix(runner): reject unknown interaction runner names)
 - **알 수 없는 interaction runner 거부**: `runner:` 오타가 조용히 compose로 실행되던 동작을
   없앴습니다. `dva config validate`, `dva run`, `--dry-run` 모두 오류로 거부합니다. 허용값은
   `compose`, `docker-compose`, `docker_compose`, `kubectl`, `local`이며, 기존에 조용히 compose로
