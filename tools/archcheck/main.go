@@ -6,6 +6,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -41,13 +42,27 @@ var allowedImports = map[string][]string{
 	"internal/skillinstall": {"internal/skillclaim", "skills"},
 }
 
+// targetOSes covers every OS with build-tagged files; a host-only listing misses the rest.
+var targetOSes = []string{"darwin", "linux", "windows"}
+
 func main() {
-	out, err := exec.Command("go", "list", "-f", "{{.ImportPath}} {{join .Imports \" \"}}", "./cmd/...", "./internal/...").Output()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "archcheck: go list: %v\n", err)
-		os.Exit(2)
+	graph := map[string][]string{}
+	for _, goos := range targetOSes {
+		cmd := exec.Command("go", "list", "-f", "{{.ImportPath}} {{join .Imports \" \"}}", "./cmd/...", "./internal/...")
+		cmd.Env = append(os.Environ(), "GOOS="+goos)
+		out, err := cmd.Output()
+		if err != nil {
+			if exitErr, ok := errors.AsType[*exec.ExitError](err); ok {
+				fmt.Fprintf(os.Stderr, "%s", exitErr.Stderr)
+			}
+			fmt.Fprintf(os.Stderr, "archcheck: go list (GOOS=%s): %v\n", goos, err)
+			os.Exit(2)
+		}
+		for pkg, imports := range parseGraph(string(out)) {
+			graph[pkg] = append(graph[pkg], imports...)
+		}
 	}
-	violations := check(parseGraph(string(out)), allowedImports)
+	violations := check(graph, allowedImports)
 	report(os.Stdout, violations)
 	if len(violations) > 0 {
 		os.Exit(1)
@@ -91,6 +106,11 @@ func check(graph, allowed map[string][]string) []string {
 			if !set[imported] {
 				violations = append(violations, fmt.Sprintf("%s: must not import %s", pkg, imported))
 			}
+		}
+	}
+	for pkg := range allowed {
+		if _, exists := graph[pkg]; !exists {
+			violations = append(violations, fmt.Sprintf("%s: declared in allowedImports but no such package", pkg))
 		}
 	}
 	sort.Strings(violations)
