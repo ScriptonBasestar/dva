@@ -130,9 +130,10 @@ If you're new to DVA, start with [`basic.yml`](basic.yml) - it contains the esse
   - Use when: Complex multi-environment setups
 
 - **[env-file-multi-env.yml](env-file-multi-env.yml)** - Multi-environment support
-  - Environment-specific .env files (.env.development, .env.staging, .env.production)
-  - Variable interpolation ($VAR, ${VAR})
-  - Dynamic file selection based on ENV variable
+  - Per-environment variables in `environments:`, with a shared `.env.local`
+  - Variable interpolation ($VAR, ${VAR}) in the compose file list
+  - Plans select compose files through each environment profile's ENV
+  - env_file paths are literal, so they cannot select a per-environment file
   - Use when: Supporting development, staging, production environments
 
 ## Using These Examples

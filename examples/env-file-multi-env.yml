@@ -1,16 +1,24 @@
 # yaml-language-server: $schema=../internal/config/schema.json
 #
 # Example: Multi-Environment with env_file
+#
+# A plan selects its environment, and that profile sets ENV, so the compose file
+# list follows the plan:
+#   dva up env-aware-production --dry-run    # docker-compose.production.yml
+#
+# env_file cannot select per environment: dva opens each path literally, with no
+# ${VAR} expansion, and skips a missing optional file without an error. Keep values
+# that differ by environment in `environments:`, not in `.env.<environment>` files.
+#
+# OS variables override every layer, so an exported ENV also replaces the plan's
+# ENV: `ENV=staging dva up env-aware-production` uses the staging compose file.
 
 version: "0.1.44"
 
 vars:
-  NODE_ENV: ${ENV:-development}
-  RAILS_ENV: ${ENV:-development}
   APP_NAME: myapp
 
 env_file:
-  - .env.${ENV:-development}
   - .env.local
 
 stack:
@@ -43,12 +51,21 @@ environments:
   development:
     environment:
       APP_ENV: development
+      ENV: development
+      NODE_ENV: ${ENV}
+      RAILS_ENV: ${ENV}
   staging:
     environment:
       APP_ENV: staging
+      ENV: staging
+      NODE_ENV: ${ENV}
+      RAILS_ENV: ${ENV}
   production:
     environment:
       APP_ENV: production
+      ENV: production
+      NODE_ENV: ${ENV}
+      RAILS_ENV: ${ENV}
 
 sites:
   local:
