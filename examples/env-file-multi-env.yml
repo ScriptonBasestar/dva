@@ -30,6 +30,14 @@ plans:
       - name: compose-bundle
         runner: compose
         order: 10
+  env-aware-staging:
+    extends: env-aware
+    environment: staging
+  env-aware-production:
+    extends: env-aware
+    environment: production
+
+default_plan: env-aware
 
 environments:
   development:
