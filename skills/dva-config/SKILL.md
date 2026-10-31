@@ -61,7 +61,8 @@ configuration authoring, migration, and defect attribution.
 ### 1. Protect Context
 
 1. Read target and active module guidance.
-2. Inspect scoped Git status; protect secrets, generated files, archives, and unrelated user
+2. Inspect scoped Git status when the project is a Git repository (otherwise note that changes
+   have no history to fall back on); protect secrets, generated files, archives, and unrelated user
    changes.
 3. At a devbox root, inspect `.gz-git.yaml` when present and inventory every child listed in its
    workspace inventory before selecting scope. Inventory is read-only evidence: do not clone or
