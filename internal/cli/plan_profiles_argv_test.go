@@ -157,3 +157,26 @@ func TestPlanLogsArgvUnchangedWhenThePlanDeclaresNoProfiles(t *testing.T) {
 		t.Fatalf("logs argv:\n got %q\nwant %q", argv, want)
 	}
 }
+
+// A profile-gated service does not exist for compose unless its profile is active, so
+// teardown without the flag exits 0 and leaves the containers running.
+func TestPlanTeardownArgvActivatesThePlanProfiles(t *testing.T) {
+	for verb, run := range map[string]func(*config.Config, *envLoad, string, []string) error{
+		"down": runPlanDown,
+		"stop": runPlanStop,
+	} {
+		t.Run(verb, func(t *testing.T) {
+			enableDryRun(t)
+			c := planProfilesCLIConfigOnDisk(t)
+			logged := useBufferedSlog(t)
+			var err error
+			captureBothStreams(t, func() { err = run(c, planEnv(buildTestEnv(c)), "gated", nil) })
+			if err != nil {
+				t.Fatalf("%s gated: %v", verb, err)
+			}
+			if !strings.Contains(logged.String(), "--profile rust --profile monitoring "+verb) {
+				t.Errorf("%s argv must activate the plan profiles, got: %s", verb, logged)
+			}
+		})
+	}
+}

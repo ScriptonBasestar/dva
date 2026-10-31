@@ -249,6 +249,7 @@ func (o *Orchestrator) Down(ctx context.Context, opts DownOptions) error {
 			Volumes:         opts.Volumes,
 			RemoveImages:    opts.RemoveImages,
 			Purge:           opts.Purge,
+			ComposeProfiles: o.planComposeProfiles(entry.Name),
 			ComposeServices: entryComposeServices,
 			Logger:          o.logger.With("entry", entry.Name, "plugin", pluginType),
 		}
@@ -268,6 +269,13 @@ func (o *Orchestrator) Down(ctx context.Context, opts DownOptions) error {
 	}
 
 	return errors.Join(downErrs...)
+}
+
+// planComposeProfiles returns the profiles a plan activates for an entry. Teardown needs them
+// as much as Up does: compose ignores a profile-gated service unless its profile is active,
+// so `down` or `stop` without the flag reports success and leaves those containers running.
+func (o *Orchestrator) planComposeProfiles(entryName string) []string {
+	return append([]string(nil), o.composeProfiles[entryName]...)
 }
 
 // Stop stops all matching lifecycle entries in reverse order without removing resources.
@@ -318,6 +326,7 @@ func (o *Orchestrator) Stop(ctx context.Context, opts StopOptions) error {
 			Env:             entryEnv,
 			ConfigDir:       o.cfg.FileDir(),
 			DryRun:          opts.DryRun,
+			ComposeProfiles: o.planComposeProfiles(entry.Name),
 			ComposeServices: entryComposeServices,
 			Logger:          o.logger.With("entry", entry.Name, "plugin", pluginType),
 		}

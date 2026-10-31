@@ -12,6 +12,9 @@ import (
 	"github.com/ScriptonBasestar/dva/internal/output"
 )
 
+// statusAll selects the whole declared stack, which default_plan otherwise shadows.
+var statusAll bool
+
 var statusCmd = &cobra.Command{
 	Use:   "status [NAME]",
 	Short: "Display current workspace and runtime status",
@@ -21,16 +24,20 @@ checks when endpoints: are declared.
 
 With no NAME it queries the effective default plan when one can be selected, or the whole
 declared stack otherwise; with NAME it scopes the query to that named plan's entries only.
+--all always queries the whole declared stack and takes no NAME.
 It requires a complete environment (vars/environment/env_file) — an incomplete one is
 reported and the command exits non-zero without querying runtime state.
 
 See USAGE.md's "named execution entry" section for status usage alongside up/down/stop.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if statusAll && len(args) > 0 {
+			return fmt.Errorf("--all queries the whole stack and takes no NAME, got %q", args[0])
+		}
 		c, err := loadConfig()
 		var rootLoad *envLoad
 		if err == nil {
 			el := rootEnvLoad(c)
-			if planName, _, ok := detectPlanRoute(c, args); ok {
+			if planName, _, ok := detectPlanRoute(c, args); ok && !statusAll {
 				if isCompositionPlan(c, planName) {
 					return runCompositionStatus(c, el, planName)
 				}
@@ -144,5 +151,6 @@ See USAGE.md's "named execution entry" section for status usage alongside up/dow
 }
 
 func init() {
+	statusCmd.Flags().BoolVar(&statusAll, "all", false, "Query the whole declared stack, ignoring default_plan")
 	rootCmd.AddCommand(statusCmd)
 }

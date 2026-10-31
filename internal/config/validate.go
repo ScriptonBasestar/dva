@@ -116,6 +116,7 @@ func (c *Config) Validate() error {
 	errs = append(errs, c.validateInteractionRunners()...)
 	errs = append(errs, c.validateHookPlacement()...)
 	errs = append(errs, c.validateHookPlanFilters()...)
+	errs = append(errs, c.validatePlanEnvironments()...)
 
 	// Stack is a map: sort so two problems are reported in the same order on every run.
 	entryNames := make([]string, 0, len(c.Stack))
@@ -282,6 +283,24 @@ func (c *Config) validateHookPlacement() []error {
 	errs := make([]error, 0, len(problems))
 	for _, p := range problems {
 		errs = append(errs, errors.New(p))
+	}
+	return errs
+}
+
+// validatePlanEnvironments rejects a plan naming an environment its owner does not declare.
+// ResolvePlan refuses that plan at run time, so accepting it here would pass a config that no
+// verb can execute. The owner decides because an imported plan resolves against its own
+// config's environments, not the importer's.
+func (c *Config) validatePlanEnvironments() []error {
+	var errs []error
+	for _, name := range sortedPlanNames(c) {
+		plan := c.Plans[name]
+		if plan == nil || plan.Environment == "" {
+			continue
+		}
+		if _, ok := plan.OwnerConfig(c).Environments[plan.Environment]; !ok {
+			errs = append(errs, fmt.Errorf("plan '%s': environment '%s' not found in environments", name, plan.Environment))
+		}
 	}
 	return errs
 }

@@ -634,6 +634,18 @@ func runPlanStatus(c *config.Config, el *envLoad, planName string) error {
 	}
 
 	filtered := filterStatusByNames(status, planEntryNames(plan))
+	if jsonOutput {
+		doc := map[string]any{
+			"action":      "status",
+			"dva_version": config.Version,
+			"plan":        planName,
+			"status":      filtered,
+		}
+		if printErr := output.PrintJSON(doc); printErr != nil {
+			return printErr
+		}
+		return lifecycle.StatusExitError(filtered)
+	}
 	lifecycle.PrintStatus(filtered, c.FileDir())
 	return lifecycle.StatusExitError(filtered)
 }

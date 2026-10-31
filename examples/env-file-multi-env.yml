@@ -24,7 +24,7 @@ stack:
 
 plans:
   env-aware:
-    environment: ${ENV:-development}
+    environment: development
     site: local
     entries:
       - name: compose-bundle

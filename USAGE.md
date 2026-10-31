@@ -451,8 +451,12 @@ dva down local-dev
 dva stop local-dev
 dva status                # effective default plan 상태; 없으면 전체 상태
 dva status local-dev      # 특정 named execution entry 상태
+dva status --all          # default_plan과 무관하게 선언된 전체 stack 상태
 dva status --json         # JSON 출력
 ```
+
+`default_plan`이 있으면 인자 없는 `dva status`는 그 plan만 조회합니다. 전체 stack은
+`dva status --all`로 조회하며, `--all`은 NAME과 함께 쓸 수 없습니다.
 
 위치 인자로 stack entry 이름을 받는 라이프사이클 동사는 `restart` 하나뿐입니다.
 `up`/`down`/`stop`은 위치 인자를 plan 이름으로만 읽으므로, entry 이름을 주면 그것이

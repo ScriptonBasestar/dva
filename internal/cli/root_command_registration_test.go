@@ -142,7 +142,7 @@ func TestCommandHelpGroupsAndDiscoveryDescriptions(t *testing.T) {
 			flags: []commandFlagSpec{{Name: "format", DefValue: "json", Usage: "Output format (json, yaml)"}},
 		},
 		{name: "show", use: "show", group: "project", description: "Show declared workspace configuration", flags: []commandFlagSpec{}},
-		{name: "status", use: "status [NAME]", group: "lifecycle", description: "Display current workspace and runtime status", flags: []commandFlagSpec{}},
+		{name: "status", use: "status [NAME]", group: "lifecycle", description: "Display current workspace and runtime status", flags: []commandFlagSpec{{Name: "all", DefValue: "false", Usage: "Query the whole declared stack, ignoring default_plan"}}},
 	}
 
 	for _, want := range commands {
