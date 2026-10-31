@@ -4,8 +4,11 @@ title: "Pass plan compose profiles to down and stop"
 type: bug
 priority: P2
 exec-tier: standard
-status: todo
+status: done
 created: 2026-11-01
+quality-review: pass
+quality-reviewed-at: 2026-11-01
+quality-review-evidence: tasks/done/evidence/TASK-552/independent-review.json
 ---
 
 # TASK-552: Pass plan compose profiles to down and stop

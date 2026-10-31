@@ -4,8 +4,11 @@ title: "Fail validation on an undeclared plan environment"
 type: bug
 priority: P2
 exec-tier: standard
-status: todo
+status: done
 created: 2026-11-01
+quality-review: pass
+quality-reviewed-at: 2026-11-01
+quality-review-evidence: tasks/done/evidence/TASK-555/independent-review.json
 ---
 
 # TASK-555: Fail validation on an undeclared plan environment

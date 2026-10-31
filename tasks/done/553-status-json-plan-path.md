@@ -4,8 +4,11 @@ title: "Emit JSON from status on the plan path"
 type: bug
 priority: P2
 exec-tier: standard
-status: todo
+status: done
 created: 2026-11-01
+quality-review: pass
+quality-reviewed-at: 2026-11-01
+quality-review-evidence: tasks/done/evidence/TASK-553/independent-review.json
 ---
 
 # TASK-553: Emit JSON from status on the plan path

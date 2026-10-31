@@ -4,8 +4,11 @@ title: "Expand env_file paths and fail on unresolved references"
 type: fix
 priority: P2
 exec-tier: standard
-status: todo
+status: done
 created: 2026-11-01
+quality-review: pass
+quality-reviewed-at: 2026-11-01
+quality-review-evidence: tasks/done/evidence/TASK-556/independent-review.json
 ---
 
 # TASK-556: Expand env_file paths and fail on unresolved references
