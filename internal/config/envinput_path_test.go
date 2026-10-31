@@ -91,3 +91,19 @@ func TestValidateWarnsOnUnresolvedEnvFilePath(t *testing.T) {
 		t.Fatalf("warnings = %v", warnings)
 	}
 }
+
+func TestEnvFilePathNestedDefaults(t *testing.T) {
+	env := NewEnvironment(map[string]string{"SET_T": "stg", "EMPTY_T": ""}, ".", ".")
+	for path, want := range map[string]int{
+		"${SET_T:-${DVA_TEST_UNSET_X}}":      0,
+		"${SET_T-${DVA_TEST_UNSET_X}}":       0,
+		"${EMPTY_T-${DVA_TEST_UNSET_X}}":     0,
+		"${EMPTY_T:-${DVA_TEST_UNSET_X}}":    1,
+		"${DVA_TEST_UNSET_X:-${SET_T}}":      0,
+		"${DVA_TEST_UNSET_X:-${DVA_UNSET2}}": 1,
+	} {
+		if got := unresolvedRefs(path, env); len(got) != want {
+			t.Errorf("%s: refs %v, want %d", path, got, want)
+		}
+	}
+}

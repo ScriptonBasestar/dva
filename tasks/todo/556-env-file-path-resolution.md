@@ -19,6 +19,6 @@ runtime behaviour and only fails `doctor --strict`.
 
 ## Completion Criteria
 
-- [x] Paths expand and unresolved paths fail closed | verify: `go test -count=1 -run 'TestEnvFilePathExpandsAgainstEnvironment|TestEnvFileUnresolvedPathFailsRegardlessOfRequired|TestEnvFileValueReferenceKeptVerbatimAndCounted|TestValidateWarnsOnUnresolvedEnvFilePath' -v ./internal/config 2>&1 | /usr/bin/grep -c -- '^--- PASS' | /usr/bin/grep -qx 4`
-- [x] Doctor rows are advisory and fail under --strict | verify: `go test -count=1 -run 'TestDoctorEnvFileUnresolvedRows' -v ./internal/cli 2>&1 | /usr/bin/grep -q -- '^--- PASS: TestDoctorEnvFileUnresolvedRows'`
+- [x] Paths expand and unresolved paths fail closed | verify: `go test -count=1 -run 'TestEnvFilePathExpandsAgainstEnvironment|TestEnvFileUnresolvedPathFailsRegardlessOfRequired|TestEnvFileValueReferenceKeptVerbatimAndCounted|TestValidateWarnsOnUnresolvedEnvFilePath|TestEnvFilePathNestedDefaults' -v ./internal/config 2>&1 | /usr/bin/grep -c -- '^--- PASS' | /usr/bin/grep -qx 5`
+- [x] Doctor rows are advisory and fail under --strict | verify: `go test -count=1 -run 'TestDoctorEnvFileUnresolvedRows|TestValidateStrictFailsOnUnresolvedEnvFilePath' -v ./internal/cli 2>&1 | /usr/bin/grep -c -- '^--- PASS' | /usr/bin/grep -qx 2`
 - [x] USAGE.md documents the error | verify: `/usr/bin/grep -q 'unresolved_path' USAGE.md`

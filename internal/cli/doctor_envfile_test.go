@@ -93,21 +93,43 @@ func TestDoctorEnvFileUnresolvedRows(t *testing.T) {
 		t.Fatal(err)
 	}
 	for name, tt := range map[string]struct {
-		decl any
-		want string
+		decl          any
+		want          string
+		defaultPasses bool
 	}{
 		"path":  {decl: ".env.${DVA_TEST_UNSET_X}", want: "unresolved variable reference ${DVA_TEST_UNSET_X} in path"},
-		"value": {decl: ".env", want: "1 value(s) with unresolved references"},
+		"value": {decl: ".env", want: "1 value(s) with unresolved references", defaultPasses: true},
 	} {
 		t.Run(name, func(t *testing.T) {
 			report := config.ApplyEnvFiles(tt.decl, dir, config.NewEnvironment(nil, dir, dir))
+			old := doctorStrict
+			t.Cleanup(func() { doctorStrict = old })
+			doctorStrict = true
 			rows := envInputResults(report)
 			if len(rows) != 1 || rows[0].Passed || !strings.Contains(rows[0].Finding, tt.want) {
 				t.Fatalf("rows = %+v", rows)
 			}
-			if doctorExitError(rows, false) != nil || doctorExitError(rows, true) == nil {
-				t.Error("want advisory by default and failing under --strict")
+			if doctorExitError(rows, true) == nil {
+				t.Error("want failure under --strict")
+			}
+			doctorStrict = false
+			if rows := envInputResults(report); len(rows) != 1 || rows[0].Passed != tt.defaultPasses {
+				t.Fatalf("default rows = %+v", rows)
+			}
+			if doctorExitError(rows, false) != nil {
+				t.Error("want advisory exit by default")
 			}
 		})
+	}
+}
+
+func TestValidateStrictFailsOnUnresolvedEnvFilePath(t *testing.T) {
+	configPath := filepath.Join(t.TempDir(), "dva.yml")
+	body := "version: \"0.1.44\"\nenv_file:\n  - .env.${DVA_TEST_UNSET_X}\n"
+	if err := os.WriteFile(configPath, []byte(body), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if run := runValidateCommandForTest(t, configPath, "validate", "--strict"); run.err == "" {
+		t.Fatal("--strict succeeded on an unresolved env_file path")
 	}
 }

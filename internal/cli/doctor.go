@@ -117,7 +117,7 @@ func runDoctorChecks(c *config.Config) []DoctorResult {
 	results = append(results, checkSubprojectComposeProjectNames(c)...)
 
 	// Built-in: environment inputs. This is the same report the execution routes fail
-	// closed on, inspected rather than applied, so doctor and `up` can never disagree
+	// closed on, applied to a throwaway scope, so doctor and `up` can never disagree
 	// about which declarations are loadable (TASK-247 §5).
 	envReport := config.ApplyEnvFiles(c.EnvFile, c.FileDir(), c.EnvFileScope())
 	results = append(results, envInputResults(envReport)...)
@@ -496,8 +496,9 @@ func envInputResults(r *config.EnvInputReport) []DoctorResult {
 			Passed: entry.Status == config.EnvInputLoaded,
 		}
 		if entry.UnresolvedValues > 0 {
-			// A count only: the row may not widen to a key or a value.
-			result.Passed = false
+			// A count only: the row may not widen to a key or a value. Strict-only by
+			// contract: the runtime passes these on, so it fails nothing by default.
+			result.Passed = !doctorStrict
 			result.Finding = fmt.Sprintf("Environment input has %d value(s) with unresolved references, passed on verbatim", entry.UnresolvedValues)
 			result.FixHint = fmt.Sprintf("Define the referenced variables for env_file entry: %s", entry.File)
 		} else if !result.Passed {

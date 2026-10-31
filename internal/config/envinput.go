@@ -302,15 +302,20 @@ func countUnresolvedValues(report *EnvInputReport, env *Environment) {
 	}
 }
 
-// unresolvedRefs returns the references in value that env cannot satisfy. Defined
-// names expand to nothing rather than to their values, so a value that happens to
-// contain `$` is not mistaken for a reference; a default still counts as resolved.
+// unresolvedRefs returns the references in value that env cannot satisfy. A defined
+// name expands to a placeholder rather than its value, so a value that happens to
+// contain `$` is not mistaken for a reference. Emptiness is preserved because `:-`
+// branches on it: `${A:-${B}}` needs B only when A is empty.
 func unresolvedRefs(value string, env *Environment) []string {
 	return findVarRefs(interpolateWith(value, func(name string) (string, bool) {
-		if _, ok := env.lookup(name); ok {
+		v, ok := env.lookup(name)
+		if !ok {
+			return "", false
+		}
+		if v == "" {
 			return "", true
 		}
-		return "", false
+		return "x", true
 	}))
 }
 
