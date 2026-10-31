@@ -105,7 +105,7 @@ in-run; it is not `dva up --force`.
 
 ### Initialize a New Project
 
-Run from the project root. `dva init` takes services and npm scripts from the project. With no
+Run from the project root. `dva init` is the same command as `dva config init`. It takes services and npm scripts from the project. With no
 Compose service named `app` it writes no interactions, so add them for the real services. Template
 commands for other languages are starting points: confirm each one before relying on it.
 

@@ -33,7 +33,7 @@ and its [project-local tooling reference](../dva-config/references/project-local
 - **NEVER guess available commands.** Run `dva ls` or `dva manifest -f json` to discover project-specific commands before execution.
 - **Do not trust lifecycle `--dry-run` blindly.** Prove the installed version is
   non-mutating in a disposable fixture before using it with up/down/provision.
-- **Prefer `am run dva-improve` for broad configuration rewrites.** For targeted config authoring or migration, start from the bundled templates and validate with `dva config validate`.
+- **When `am` is available, `am run dva-improve` can assist broad configuration rewrites; it is optional.** For targeted config authoring or migration, start from the bundled templates and validate with `dva config validate`.
 - **Use `dva doctor` read-only first.** `--fix` requires explicit authority and
   review of the proposed mutation.
 
@@ -207,6 +207,8 @@ with a plan and use the lifecycle verbs above.
 | `--json` | JSON output (LLM-optimized) |
 
 ## LLM Integration
+
+Optional: these flows require `am` on PATH. Every task here also works without them.
 
 DVA provides first-class LLM support:
 
