@@ -119,7 +119,7 @@ func runDoctorChecks(c *config.Config) []DoctorResult {
 	// Built-in: environment inputs. This is the same report the execution routes fail
 	// closed on, inspected rather than applied, so doctor and `up` can never disagree
 	// about which declarations are loadable (TASK-247 §5).
-	envReport := config.InspectEnvFiles(c.EnvFile, c.FileDir())
+	envReport := config.ApplyEnvFiles(c.EnvFile, c.FileDir(), c.EnvFileScope())
 	results = append(results, envInputResults(envReport)...)
 
 	// Built-in: sops in use but not declared on any env_file entry.
@@ -455,7 +455,7 @@ func sameStringSet(a, b []string) bool {
 // that could not see the reason. Asking the loader instead of os.Stat means doctor
 // reports exactly what the runtime will decide.
 func checkEnvFiles(c *config.Config) []DoctorResult {
-	return envInputResults(config.InspectEnvFiles(c.EnvFile, c.FileDir()))
+	return envInputResults(config.ApplyEnvFiles(c.EnvFile, c.FileDir(), c.EnvFileScope()))
 }
 
 // checkEnvSopsDeclaration reports sops evidence that no env_file entry claims.
@@ -495,7 +495,12 @@ func envInputResults(r *config.EnvInputReport) []DoctorResult {
 			Name:   fmt.Sprintf("Environment input loads: %s", entry.File),
 			Passed: entry.Status == config.EnvInputLoaded,
 		}
-		if !result.Passed {
+		if entry.UnresolvedValues > 0 {
+			// A count only: the row may not widen to a key or a value.
+			result.Passed = false
+			result.Finding = fmt.Sprintf("Environment input has %d value(s) with unresolved references, passed on verbatim", entry.UnresolvedValues)
+			result.FixHint = fmt.Sprintf("Define the referenced variables for env_file entry: %s", entry.File)
+		} else if !result.Passed {
 			// entry.Reason() is the frozen, content-free explanation. Nothing here can
 			// widen it to a key, a value or a merge count, because the report does not
 			// carry those in the first place.

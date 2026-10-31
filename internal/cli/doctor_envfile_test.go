@@ -3,7 +3,10 @@ package cli
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+
+	"github.com/ScriptonBasestar/dva/internal/config"
 )
 
 func TestDoctorEnvFilesHonorRequired(t *testing.T) {
@@ -81,5 +84,30 @@ func TestDoctorOptionalEnvFileDoesNotHideReadErrors(t *testing.T) {
 	}
 	if result.FixHint != "Fix env_file entry: .env.local" {
 		t.Errorf("FixHint = %q, want the configured path as written", result.FixHint)
+	}
+}
+
+func TestDoctorEnvFileUnresolvedRows(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, ".env"), []byte("A=${DVA_TEST_UNSET_X}\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	for name, tt := range map[string]struct {
+		decl any
+		want string
+	}{
+		"path":  {decl: ".env.${DVA_TEST_UNSET_X}", want: "unresolved variable reference ${DVA_TEST_UNSET_X} in path"},
+		"value": {decl: ".env", want: "1 value(s) with unresolved references"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			report := config.ApplyEnvFiles(tt.decl, dir, config.NewEnvironment(nil, dir, dir))
+			rows := envInputResults(report)
+			if len(rows) != 1 || rows[0].Passed || !strings.Contains(rows[0].Finding, tt.want) {
+				t.Fatalf("rows = %+v", rows)
+			}
+			if doctorExitError(rows, false) != nil || doctorExitError(rows, true) == nil {
+				t.Error("want advisory by default and failing under --strict")
+			}
+		})
 	}
 }

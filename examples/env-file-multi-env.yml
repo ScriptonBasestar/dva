@@ -6,9 +6,11 @@
 # list follows the plan:
 #   dva up env-aware-production --dry-run    # docker-compose.production.yml
 #
-# env_file cannot select per environment: dva opens each path literally, with no
-# ${VAR} expansion, and skips a missing optional file without an error. Keep values
-# that differ by environment in `environments:`, not in `.env.<environment>` files.
+# env_file paths expand ${VAR} from vars, environment: and OS variables, but not
+# from a plan's environment, which applies later. So env_file cannot follow the
+# plan; a missing optional file is skipped without an error, and an unresolved
+# reference is an error even for an optional entry. Keep values that differ by
+# environment in `environments:`, not in `.env.<environment>` files.
 #
 # OS variables override every layer, so an exported ENV also replaces the plan's
 # ENV: `ENV=staging dva up env-aware-production` uses the staging compose file.

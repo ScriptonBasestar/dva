@@ -5,6 +5,16 @@ All notable changes to DVA are documented here.
 
 ## [Unreleased]
 
+### Changed
+
+- **호환성 변경 — `env_file` 경로 변수 확장**: 경로의 `${VAR}`, `${VAR:-default}`를 `vars`,
+  `environment:`, OS 환경 변수로 확장합니다. 이전에는 문자 그대로 열어 없는 선택 파일이면
+  조용히 건너뛰었습니다. 이제 해석되지 않는 참조는 `required`와 무관하게 오류입니다.
+  실행·정리·관찰 명령이 멈추고(`unresolved variable reference ${X} in path`, JSON
+  `kind: unresolved_path`), `dva doctor`와 `dva validate`가 보고하며 각 `--strict`에서
+  실패합니다. 해당 변수가 없는 환경에서는 기본값을 넣거나 변수를 정의하세요. 값에 남은
+  `${X}`는 런타임 동작이 그대로이며 `dva doctor --strict`에서만 실패합니다.
+
 ### Deprecated
 
 - **`modes`/`default_mode` 제거 예정**: v0.5.0부터 스키마가 거부합니다. 그전까지 동작하며

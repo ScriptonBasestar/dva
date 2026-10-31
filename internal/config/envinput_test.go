@@ -134,7 +134,7 @@ func TestEnvInputStates(t *testing.T) {
 // every diagnostic, and the relative form is the one the user has to go and edit.
 func TestEnvInputReportListsEveryFailingPathAsWritten(t *testing.T) {
 	dir := t.TempDir()
-	report := InspectEnvFiles(map[string]any{"files": []any{"missing/one.env", "missing/two.env"}, "required": true}, dir)
+	report := InspectEnvFiles(map[string]any{"files": []any{"missing/one.env", "missing/two.env"}, "required": true}, dir, nil)
 
 	msg := report.Message()
 	want := "environment inputs are incomplete\n  - missing/one.env: missing required file\n  - missing/two.env: missing required file"

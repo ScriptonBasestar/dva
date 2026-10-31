@@ -797,6 +797,8 @@ Windows command 검사에 background/장기 자식을 실행하는 용도로 사
   `(skipped: environment input unavailable)` 행으로 표시합니다 — 값이 채워지지 않은
   환경에서 경로를 해석하면 멀쩡한 설정을 MISSING으로 보고하기 때문입니다. 이때 기본
   exit는 0이고, `--strict`에서만 1입니다 (아래 [환경 입력이 불완전할 때](#환경-입력이-불완전할-때) 참조)
+- `env_file` 경로의 해석되지 않은 참조, 로드한 값에 남은 참조 (아래
+  [env_file 경로의 변수](#env_file-경로의-변수) 참조). 기본 exit는 0, `--strict`에서만 1입니다
 - Stack 엔트리 참조 파일 존재 여부
 - `.sb/dva/`가 `.gitignore`에 포함되어 있는지
 - devcontainer 설정 시 `devcontainer.json` 존재 여부
@@ -1458,7 +1460,7 @@ OS 환경 변수가 가장 높은 우선순위입니다. 같은 키가 OS에 설
 project name이나 다른 cluster를 가리킬 수 있고, 그 상태로 실행·정리하는 것이 멈추는
 것보다 위험하기 때문입니다.
 
-진단은 선언한 경로와 아래 세 가지 이유만 출력합니다. 키, 값, 파일 내용, 그리고 실패
+진단은 선언한 경로와 아래 이유만 출력합니다. 키, 값, 파일 내용, 그리고 실패
 직전까지 몇 개가 병합됐는지는 어떤 출력에도 나오지 않습니다.
 
 ```text
@@ -1466,6 +1468,7 @@ environment inputs are incomplete
   - .env: missing required file
   - config/app.env: cannot read file
   - .env.local: invalid dotenv syntax at line 12
+  - .env.${DEPLOY_ENV}: unresolved variable reference ${DEPLOY_ENV} in path
 ```
 
 명령별 동작:
@@ -1502,6 +1505,28 @@ dva status --json
 소유자는 선언한 config 단위입니다. root의 `env_file` 실패는 `subprojects:`로 가져온
 plan·interaction·provision을 막지 않고, 반대로 child의 실패도 root 경로를 막지
 않습니다. 각 경로는 자기 소유자의 판정만 사용합니다.
+
+#### env_file 경로의 변수
+
+`env_file` 경로는 열기 전에 `${VAR}`, `${VAR:-default}`를 확장합니다. 범위는 `vars`,
+`environment:`, OS 환경 변수입니다. 다른 `env_file`의 값과 plan의 `environments:` 프로필은
+env_file보다 늦게 적용되므로 범위 밖입니다.
+
+```yaml
+env_file:
+  - .env.${DEPLOY_ENV:-development}   # 확장된 경로를 엽니다
+```
+
+참조를 해석할 수 없으면 **`required`와 무관하게 오류**입니다. 환경 입력이 불완전한 경우로
+취급되어 위 표대로 실행·정리·관찰 명령이 멈추고 어떤 env_file 값도 적용되지 않습니다.
+이유는 `unresolved variable reference ${X} in path`, JSON `kind`는 `unresolved_path`입니다.
+`dva doctor`는 항목을 표시하고(`--strict`에서 exit 1), `dva validate`는 파일을 열지 않고
+경고로 미리 알립니다(`--strict`에서 실패). 진단의 경로는 선언한 문자열 그대로입니다.
+
+로드한 값에 남은 `${X}`는 런타임에서 그대로 전달됩니다. `dva doctor`가 파일별 개수만
+보고하고(`--strict`에서 실패) 키와 값은 출력하지 않습니다. `validate`는 env 파일을
+열지 않으므로 이 경우를 검사하지 않습니다. `sops_source` 대상 경로 등 `dva config env`
+명령은 확장하지 않습니다.
 
 > **마이그레이션**: 이전 버전은 위 상황에서 `WARN: env_file: ...`을 출력하고 계속
 > 실행했습니다. dotenv 문법이 아닌 줄을 조용히 무시하던 파일은 이제 명시적 오류이므로

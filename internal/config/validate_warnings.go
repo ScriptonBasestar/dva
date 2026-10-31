@@ -55,6 +55,7 @@ func (c *Config) ValidateWarnings() []string {
 	env := NewEnvironment(c.Environment, c.FileDir(), c.FileDir())
 
 	warnings = append(warnings, c.warnUnresolvedEnvVars(env, c.EnvFile != nil)...)
+	warnings = append(warnings, c.warnUnresolvedEnvFilePaths()...)
 	warnings = append(warnings, c.warnSuspiciousEnvPatterns()...)
 
 	if c.filePath != "" {
@@ -607,6 +608,24 @@ func (c *Config) warnUnresolvedEnvVars(env *Environment, envFilesDeclared bool) 
 	}
 
 	sort.Strings(warnings)
+	return warnings
+}
+
+// warnUnresolvedEnvFilePaths reports env_file paths the runtime will refuse, ahead of
+// any run. Expanding a path opens nothing, so unlike the check above this needs no
+// deferral.
+//
+// Severity: Semantic Warning
+func (c *Config) warnUnresolvedEnvFilePaths() []string {
+	scope := c.EnvFileScope()
+	var warnings []string
+	for _, f := range c.AllEnvFileConfigs() {
+		if refs := unresolvedRefs(f.Path, scope); len(refs) > 0 {
+			warnings = append(warnings,
+				fmt.Sprintf("env_file %s: unresolved variable reference %v; execution fails until it resolves (vars, environment and OS variables are in scope, a plan's environment is not)",
+					f.Path, refs))
+		}
+	}
 	return warnings
 }
 

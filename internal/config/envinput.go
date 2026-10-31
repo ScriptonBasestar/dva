@@ -9,9 +9,9 @@ import (
 
 // EnvInputKind classifies why one declared env file could not contribute values.
 //
-// The three kinds are the only ones TASK-247 froze, and they are the JSON wire
-// values as well as the switch keys: a fourth kind is a contract change, not an
-// implementation detail.
+// These kinds are the JSON wire values as well as the switch keys: adding one is a
+// contract change, not an implementation detail. TASK-247 froze the first three;
+// EnvInputUnresolvedPath is the v0.4.3 addition, recorded in CHANGELOG.
 type EnvInputKind string
 
 const (
@@ -24,6 +24,11 @@ const (
 	// EnvInputMalformed is a scanner error, or a non-blank non-comment line that is
 	// not a dotenv assignment. Only the line number is ever reported.
 	EnvInputMalformed EnvInputKind = "malformed"
+	// EnvInputUnresolvedPath is a path still holding a ${VAR} reference nothing
+	// defines. Required is irrelevant: the declaration names no file at all, so
+	// "optional and absent" cannot be concluded, and opening the literal would
+	// report the wrong cause.
+	EnvInputUnresolvedPath EnvInputKind = "unresolved_path"
 )
 
 // EnvInputState is the aggregate verdict over every declaration of one owner.
@@ -62,9 +67,12 @@ type EnvInputFailure struct {
 	// line carries the offending line for EnvInputMalformed. It is unexported and
 	// absent from JSON on purpose: it reaches the user only through Reason.
 	line int
+	// refs carries the unresolved references for EnvInputUnresolvedPath. They are
+	// names written in dva.yml, never env-file content.
+	refs []string
 }
 
-// Reason renders the stable, content-free explanation for one failure. The three
+// Reason renders the stable, content-free explanation for one failure. These
 // strings are part of the frozen contract; callers must not build their own.
 func (f EnvInputFailure) Reason() string {
 	switch f.Kind {
@@ -77,6 +85,8 @@ func (f EnvInputFailure) Reason() string {
 			return fmt.Sprintf("invalid dotenv syntax at line %d", f.line)
 		}
 		return "invalid dotenv syntax"
+	case EnvInputUnresolvedPath:
+		return "unresolved variable reference " + strings.Join(f.refs, ", ") + " in path"
 	}
 	return string(f.Kind)
 }
@@ -88,6 +98,13 @@ type EnvInputEntry struct {
 	Status   EnvInputStatus
 	Kind     EnvInputKind
 	line     int
+
+	refs []string
+
+	// UnresolvedValues counts this entry's keys whose merged value still holds a
+	// reference. It is set by ApplyEnvFiles only, and is a count because a value
+	// that merely contains `$` must not reach a diagnostic.
+	UnresolvedValues int
 
 	// vars holds this entry's parsed assignments while the report is being built.
 	// They are merged only if the whole report turns out loadable.
@@ -101,7 +118,7 @@ func (e EnvInputEntry) Reason() string {
 	if e.Status != EnvInputFailed {
 		return ""
 	}
-	return EnvInputFailure{File: e.File, Required: e.Required, Kind: e.Kind, line: e.line}.Reason()
+	return EnvInputFailure{File: e.File, Required: e.Required, Kind: e.Kind, line: e.line, refs: e.refs}.Reason()
 }
 
 // EnvInputReport is the atomic verdict for one owner's env-file declarations.
@@ -128,7 +145,7 @@ func (r *EnvInputReport) Failures() []EnvInputFailure {
 	var out []EnvInputFailure
 	for _, e := range r.Entries {
 		if e.Status == EnvInputFailed {
-			out = append(out, EnvInputFailure{File: e.File, Required: e.Required, Kind: e.Kind, line: e.line})
+			out = append(out, EnvInputFailure{File: e.File, Required: e.Required, Kind: e.Kind, line: e.line, refs: e.refs})
 		}
 	}
 	return out
@@ -168,14 +185,29 @@ func (r *EnvInputReport) Err() error {
 // Every declaration is examined even after one fails, because the diagnostic
 // contract promises the author the complete list in declaration order rather
 // than a first-error abort that hides the rest.
-func InspectEnvFiles(envFileConfig any, basePath string) *EnvInputReport {
+//
+// Paths are expanded against env, so only layers merged before env files are in
+// scope: another env file's values are not, and neither is a plan's environment.
+// A nil env means the OS environment alone.
+func InspectEnvFiles(envFileConfig any, basePath string, env *Environment) *EnvInputReport {
+	if env == nil {
+		env = NewEnvironment(nil, basePath, basePath)
+	}
 	report := &EnvInputReport{State: EnvInputComplete}
 	skipped := false
 
 	for _, f := range normalizeEnvFileConfig(envFileConfig) {
 		entry := EnvInputEntry{File: f.Path, Required: f.Required}
 
-		path := f.Path
+		if refs := unresolvedRefs(f.Path, env); len(refs) > 0 {
+			entry.Status = EnvInputFailed
+			entry.Kind = EnvInputUnresolvedPath
+			entry.refs = refs
+			report.Entries = append(report.Entries, entry)
+			continue
+		}
+
+		path := env.Interpolate(f.Path)
 		if !filepath.IsAbs(path) {
 			path = filepath.Join(basePath, path)
 		}
@@ -238,7 +270,7 @@ func InspectEnvFiles(envFileConfig any, basePath string) *EnvInputReport {
 // the whole point: a later file failing must not leave an earlier file's values
 // behind for a caller that decides to continue anyway.
 func ApplyEnvFiles(envFileConfig any, basePath string, env *Environment) *EnvInputReport {
-	report := InspectEnvFiles(envFileConfig, basePath)
+	report := InspectEnvFiles(envFileConfig, basePath, env)
 	if report.Incomplete() {
 		return report
 	}
@@ -248,5 +280,44 @@ func ApplyEnvFiles(envFileConfig any, basePath string, env *Environment) *EnvInp
 		}
 	}
 	interpolateEnvVars(env)
+	countUnresolvedValues(report, env)
 	return report
+}
+
+// countUnresolvedValues records, per entry, the keys still holding a reference after
+// the repair pass. The runtime keeps those values verbatim (see interpolateWith), so
+// this is diagnostic only. A key the OS defines is skipped: its value is not the
+// declaration's, and MergeVars never looked at that.
+func countUnresolvedValues(report *EnvInputReport, env *Environment) {
+	for i := range report.Entries {
+		entry := &report.Entries[i]
+		for key := range entry.vars {
+			if _, inOS := os.LookupEnv(key); inOS {
+				continue
+			}
+			if len(findVarRefs(env.Vars[key])) > 0 {
+				entry.UnresolvedValues++
+			}
+		}
+	}
+}
+
+// unresolvedRefs returns the references in value that env cannot satisfy. Defined
+// names expand to nothing rather than to their values, so a value that happens to
+// contain `$` is not mistaken for a reference; a default still counts as resolved.
+func unresolvedRefs(value string, env *Environment) []string {
+	return findVarRefs(interpolateWith(value, func(name string) (string, bool) {
+		if _, ok := env.lookup(name); ok {
+			return "", true
+		}
+		return "", false
+	}))
+}
+
+// EnvFileScope builds the layers env_file paths may reference, without applying any
+// env file, so a check that does not load env files sees the runtime's answer.
+func (c *Config) EnvFileScope() *Environment {
+	env := NewEnvironment(c.Vars, c.FileDir(), c.FileDir())
+	env.MergeVars(c.Environment)
+	return env
 }
