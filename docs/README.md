@@ -23,7 +23,6 @@
 - [원격 산출물 작업](62-remote-artifact-jobs.md)
 - [원격 리소스 접근 터널](68-remote-access-tunnel.md)
 - [kubernetes Secret 목적지](69-kubernetes-secret-target.md)
-- [프로젝트 개발도구 위임](74-project-local-tooling-verification.md)
 - Capability-driven init: [설계](58-capability-driven-init-design.md),
   [검증](59-capability-driven-init-verification.md),
   [인벤토리](60-capability-driven-init-label-inventory.md),
@@ -44,6 +43,7 @@
 - [수동 공개 릴리스](52-manual-release-runbook.md)
 - [improve flow 백업과 복원](50-improve-flow-backup-and-restore.md)
 - [flowcheck 규칙](51-flowcheck-rules.md)
+- [프로젝트 개발도구 위임 진단 기록](74-project-local-tooling-verification.md)
 - [agent deny 규칙 (생성물)](agent-deny-rules.md)
 - [봉인 카드 정정](406-sealed-card-correction.md), [카드 이름 변경](407-correction-procedure.md)
 - [`ce task gate` 연결 지점](65-ce-task-gate-attachment-options.md)
