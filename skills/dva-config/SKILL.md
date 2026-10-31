@@ -121,6 +121,16 @@ is on PATH, otherwise author `dva.yml` from the bundled templates in the `dva` s
 it. Then refine in Preserve mode. A missing-`plans` hint is advice for a scaffold, not a failure, including under
 `--strict`. `am` flows are optional; never block initialization on them.
 
+After `dva init` writes a `dva.yml`, this is Preserve mode. Complete the scaffold from project
+evidence:
+
+1. Add an interaction only for a command the project declares, such as a `package.json` script.
+   Take credentials and users from Compose or env files; if they are absent, ask instead of guessing.
+2. Treat `[warn] config suggestion` lines as optional; they do not fail `--strict`.
+3. `dva config validate` does not check the host-port convention in
+   `references/schema-reference.md`. Report a violating Compose port; change it only with project
+   scope, because other tooling may depend on it.
+
 ### 4. Model Boundaries
 
 - Standardize Compose/ports/env prerequisites before DVA references them.
