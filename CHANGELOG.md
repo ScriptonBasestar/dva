@@ -5,6 +5,8 @@ All notable changes to DVA are documented here.
 
 ## [Unreleased]
 
+## [0.4.3] - 2026-11-01
+
 ### Changed
 
 - **호환성 변경 — `env_file` 경로 변수 확장**: 경로의 `${VAR}`, `${VAR:-default}`를 `vars`,
