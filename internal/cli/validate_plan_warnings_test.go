@@ -86,3 +86,10 @@ func TestStrictIgnoresInformationalHints(t *testing.T) {
 		t.Fatal("a real warning must still fail --strict")
 	}
 }
+
+func TestValidateStrictFailsOnUnresolvedEnvFilePath(t *testing.T) {
+	configPath := writeValidateConfigForTest(t, "version: \"0.1.44\"\nenv_file:\n  - .env.${DVA_TEST_UNSET_X}\n")
+	if run := runValidateCommandForTest(t, configPath, "validate", "--strict"); run.err == "" {
+		t.Fatal("--strict succeeded on an unresolved env_file path")
+	}
+}

@@ -122,14 +122,3 @@ func TestDoctorEnvFileUnresolvedRows(t *testing.T) {
 		})
 	}
 }
-
-func TestValidateStrictFailsOnUnresolvedEnvFilePath(t *testing.T) {
-	configPath := filepath.Join(t.TempDir(), "dva.yml")
-	body := "version: \"0.1.44\"\nenv_file:\n  - .env.${DVA_TEST_UNSET_X}\n"
-	if err := os.WriteFile(configPath, []byte(body), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	if run := runValidateCommandForTest(t, configPath, "validate", "--strict"); run.err == "" {
-		t.Fatal("--strict succeeded on an unresolved env_file path")
-	}
-}

@@ -10,8 +10,8 @@ import (
 // gets to spell the contract differently.
 //
 // Nothing here prints a variable name, a value, or how many files merged before a
-// failure. The report carries only the configured path, the required flag and the
-// failure kind, and these renderers cannot add what the report does not hold.
+// failure. These renderers emit only the configured path, the required flag and the
+// failure kind; a reason may also name a reference written in dva.yml.
 
 // envPartialJSON is the `environment` block every partial observation document
 // carries. State is the literal "partial" rather than the report's own state,
