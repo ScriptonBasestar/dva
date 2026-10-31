@@ -1,7 +1,7 @@
 ---
 id: TASK-558
 title: "Declare intended shadow keys"
-type: feat
+type: feature
 priority: P3
 exec-tier: standard
 status: todo

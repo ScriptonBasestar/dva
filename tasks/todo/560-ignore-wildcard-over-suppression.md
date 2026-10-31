@@ -1,7 +1,7 @@
 ---
 id: TASK-560
 title: "Diagnose over-broad ignores and record ignore reasons"
-type: feat
+type: feature
 priority: P3
 exec-tier: standard
 status: todo

@@ -1,7 +1,7 @@
 ---
 id: TASK-564
 title: "Stop reporting parent-owned compose as drift"
-type: fix
+type: bug
 priority: P3
 exec-tier: standard
 status: todo

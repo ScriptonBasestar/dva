@@ -1,7 +1,7 @@
 ---
 id: TASK-557
 title: "Warn when a subproject target has no dva.yml"
-type: feat
+type: feature
 priority: P3
 exec-tier: standard
 status: todo

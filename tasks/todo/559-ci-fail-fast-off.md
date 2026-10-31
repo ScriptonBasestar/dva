@@ -1,7 +1,7 @@
 ---
 id: TASK-559
 title: "Allow turning off ci fail_fast"
-type: feat
+type: feature
 priority: P3
 exec-tier: standard
 status: todo

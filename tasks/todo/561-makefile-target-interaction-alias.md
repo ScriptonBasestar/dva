@@ -1,7 +1,7 @@
 ---
 id: TASK-561
 title: "Declare Makefile target and interaction aliases"
-type: feat
+type: feature
 priority: P3
 exec-tier: standard
 status: todo

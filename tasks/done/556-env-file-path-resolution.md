@@ -1,7 +1,7 @@
 ---
 id: TASK-556
 title: "Expand env_file paths and fail on unresolved references"
-type: fix
+type: bug
 priority: P2
 exec-tier: standard
 status: done

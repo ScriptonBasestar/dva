@@ -1,7 +1,7 @@
 ---
 id: TASK-562
 title: "Point compose profiles errors at plan entries"
-type: fix
+type: bug
 priority: P3
 exec-tier: standard
 status: todo
