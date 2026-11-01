@@ -313,14 +313,43 @@ func unresolvedRefs(value string, env *Environment) []string {
 // unresolvedPathRefs is unresolvedRefs for an env_file path. Syntax the expander does
 // not implement (`${A:?x}`) survives expansion and would be opened literally, and a
 // path expanding to nothing would open the config directory, so both count as
-// unresolved.
+// unresolved. The real expansion is checked too, because a variable's value can carry
+// the same `${` that the placeholder expansion hides.
 func unresolvedPathRefs(path string, env *Environment) []string {
 	expanded := checkExpand(path, env)
-	refs := findVarRefs(expanded)
-	if len(refs) == 0 && (strings.Contains(expanded, "${") || (path != "" && expanded == "")) {
+	for i := strings.Index(expanded, "${"); i >= 0 && i < len(expanded); {
+		if _, end, ok := parseBracedRef(expanded, i); ok {
+			next := strings.Index(expanded[end:], "${")
+			if next < 0 {
+				break
+			}
+			i = end + next
+			continue
+		}
+		return []string{leftoverRef(expanded[i:])}
+	}
+	if refs := findVarRefs(expanded); len(refs) > 0 {
+		return refs
+	}
+	if ref := leftoverRef(env.Interpolate(path)); ref != "" {
+		return []string{ref}
+	}
+	if strings.Contains(path, "$") && strings.Trim(expanded, "/") == "" {
 		return []string{path}
 	}
-	return refs
+	return nil
+}
+
+// leftoverRef returns the first `${...}` fragment in value, or "" when there is none.
+func leftoverRef(value string) string {
+	start := strings.Index(value, "${")
+	if start < 0 {
+		return ""
+	}
+	if end := strings.IndexByte(value[start:], '}'); end >= 0 {
+		return value[start : start+end+1]
+	}
+	return value[start:]
 }
 
 func checkExpand(value string, env *Environment) string {
