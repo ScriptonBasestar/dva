@@ -1,0 +1,13 @@
+{
+  "verdict": "PASS",
+  "reviewer": "claude-code-subagent-a2c78af78491811a7",
+  "date": "2026-11-02",
+  "scope": "First review FAIL at 0b325efa (release notes incomplete); delta PASS at 6bc59b82.",
+  "reviewed_commit": "6bc59b82",
+  "findings": [
+    "path check inspects references, not variable values: V='${B}' with path lit${V} opens a literal file",
+    "${A:?x}${HOME} fails but names the defined ${HOME}",
+    "${A:-}/ fails as cannot read file rather than unresolved_path"
+  ],
+  "limits": "Findings are known limits, left open. The delta was documentation only, so tests were not rerun by the reviewer; make test and make lint were run by the implementer at 0b325efa."
+}
