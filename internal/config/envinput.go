@@ -336,11 +336,30 @@ func unresolvedPathRefs(path string, env *Environment) []string {
 		return []string{ref}
 	}
 	if strings.Contains(path, "$") {
-		if clean := filepath.Clean(actual); clean == "." || clean == "/" {
+		if clean := filepath.Clean(actual); clean == "." || clean == "/" || emptyPrefixRoots(path, env) {
 			return []string{path}
 		}
 	}
 	return nil
+}
+
+// emptyPrefixRoots reports whether leading references expand to nothing right before a `/`,
+// which would silently turn `${E}/.env` into a filesystem-root path.
+func emptyPrefixRoots(path string, env *Environment) bool {
+	rest := path
+	for strings.HasPrefix(rest, "$") {
+		end := 0
+		if _, braced, ok := parseBracedRef(rest, 0); ok {
+			end = braced
+		} else if name := scanVarName(rest[1:]); name != "" {
+			end = 1 + len(name)
+		}
+		if end == 0 || env.Interpolate(rest[:end]) != "" {
+			return false
+		}
+		rest = rest[end:]
+	}
+	return rest != path && strings.HasPrefix(rest, "/")
 }
 
 // leftoverRef returns the first `${...}` fragment in value, or "" when there is none.
