@@ -306,8 +306,12 @@ func countUnresolvedValues(report *EnvInputReport, env *Environment) {
 // name expands to a placeholder rather than its value, so a value that happens to
 // contain `$` is not mistaken for a reference. Emptiness is preserved because `:-`
 // branches on it: `${A:-${B}}` needs B only when A is empty.
+//
+// Syntax the expander does not implement (`${A:?x}`) survives expansion and would be
+// opened literally, and a path expanding to nothing would open the config directory,
+// so both count as unresolved.
 func unresolvedRefs(value string, env *Environment) []string {
-	return findVarRefs(interpolateWith(value, func(name string) (string, bool) {
+	expanded := interpolateWith(value, func(name string) (string, bool) {
 		v, ok := env.lookup(name)
 		if !ok {
 			return "", false
@@ -316,7 +320,12 @@ func unresolvedRefs(value string, env *Environment) []string {
 			return "", true
 		}
 		return "x", true
-	}))
+	})
+	refs := findVarRefs(expanded)
+	if len(refs) == 0 && (strings.Contains(expanded, "${") || (value != "" && expanded == "")) {
+		return []string{value}
+	}
+	return refs
 }
 
 // EnvFileScope builds the layers env_file paths may reference, without applying any

@@ -5,9 +5,28 @@ All notable changes to DVA are documented here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`env_file` 경로의 미지원 문법과 빈 경로**: `${A:?x}`, `${A:+x}`가 검증을 통과해 문자
+  그대로 열리던 문제와, 경로 전체가 빈 값이면 config 디렉터리를 열던 문제를 고쳤습니다. 둘 다
+  이제 `unresolved_path` 오류이며 `dva validate`가 미리 경고합니다.
+
 ## [0.4.3] - 2026-11-01
 
+### Fixed
+
+- `dva down <plan>`, `dva stop <plan>`이 plan의 compose profile을 넘기지 않아 profile 서비스가
+  계속 실행되던 문제를 고쳤습니다.
+- plan 경로의 `dva status --json`이 JSON을 출력합니다.
+
+### Added
+
+- `dva status --all`: `default_plan`과 무관하게 선언된 전체 stack을 조회합니다.
+
 ### Changed
+
+- **호환성 변경 — 선언되지 않은 plan environment 거부**: plan이 소유자가 선언하지 않은
+  environment를 가리키면 `dva validate`가 실패합니다.
 
 - **호환성 변경 — `env_file` 경로 변수 확장**: 경로의 `${VAR}`, `${VAR:-default}`를 `vars`,
   `environment:`, OS 환경 변수로 확장합니다. 이전에는 문자 그대로 열어 없는 선택 파일이면

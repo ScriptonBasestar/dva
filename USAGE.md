@@ -37,6 +37,7 @@ module 버전도 없는 빌드(`-buildvcs=false` 등)는 commit을 `dev`로 보�
 | Kubernetes Secret 전송·`secret status` | v0.4.1에 포함 | Linux/macOS, 명시적 dev 대상·kubeconfig·context. [상세 계약](docs/69-kubernetes-secret-target.md) |
 | 원격 접근 `tunnel:` | v0.4.1에 포함 | cloudflared, kubectl/helm 엔트리. Windows 미지원. 실제 Access 애플리케이션 터널은 v0.4.1에서도 미검증. [상세 계약](docs/68-remote-access-tunnel.md) |
 | `dva version` commit 출처(`--json`의 `commit_source`) | v0.4.2에 포함 | ldflags 없는 빌드는 build info로 commit을 보고. VCS revision도 module 버전도 없으면 `dev` |
+| `env_file` 경로 변수 확장, `dva status --all` | v0.4.3 태그에 포함 | GitHub Release 발행 전. 해석되지 않는 경로는 오류. [경로 변수](#env_file-경로의-변수) 절 참조 |
 | `agent-deny` | v0.3.0에 포함 | Claude Code만 구현. 다른 런타임의 현황·제약은 [deny 지원표](docs/agent-deny-rules.md#runtime-coverage) 참조 |
 | Skaffold 상태 조회 | v0.3.0에 포함 | 시작·종료 adapter는 있으나 `status`는 실제 클러스터 조회 없이 `unknown` 반환 |
 
@@ -1520,6 +1521,8 @@ env_file:
 참조를 해석할 수 없으면 **`required`와 무관하게 오류**입니다. 환경 입력이 불완전한 경우로
 취급되어 위 표대로 실행·정리·관찰 명령이 멈추고 어떤 env_file 값도 적용되지 않습니다.
 이유는 `unresolved variable reference ${X} in path`, JSON `kind`는 `unresolved_path`입니다.
+확장기가 지원하지 않는 문법(`${A:?x}`, `${A:+x}`)과 경로 전체가 빈 값으로 확장되는 경우도
+같은 오류입니다.
 `dva doctor`는 항목을 표시하고(`--strict`에서 exit 1), `dva validate`는 파일을 열지 않고
 경고로 미리 알립니다(`--strict`에서 실패). 진단의 경로는 선언한 문자열 그대로입니다.
 

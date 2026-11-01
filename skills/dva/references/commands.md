@@ -198,6 +198,7 @@ Display workspace status: container states, health check results, command counts
 ```bash
 dva status                # human-readable
 dva status --json         # JSON output
+dva status --all          # whole declared stack, past default_plan
 ```
 
 ### `dva config show`
