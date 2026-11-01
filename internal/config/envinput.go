@@ -343,8 +343,8 @@ func unresolvedPathRefs(path string, env *Environment) []string {
 	return nil
 }
 
-// emptyPrefixRoots reports whether leading references expand to nothing right before a `/`,
-// which would silently turn `${E}/.env` into a filesystem-root path.
+// emptyPrefixRoots reports whether leading references, or a default taken by one, expand to
+// nothing right before a `/`, which would silently turn `${E}/.env` into a root-based path.
 func emptyPrefixRoots(path string, env *Environment) bool {
 	rest := path
 	for strings.HasPrefix(rest, "$") {
