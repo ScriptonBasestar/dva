@@ -1523,9 +1523,10 @@ env_file:
 이유는 `unresolved variable reference ${X} in path`, JSON `kind`는 `unresolved_path`입니다.
 확장기가 지원하지 않는 문법(`${A:?x}`, `${A:+x}`), 변수 값에 든 `${`, 디렉터리(`.`, `/`)로
 확장되는 경로, 맨 앞 변수가 비어 절대 경로가 되는 `${E}/.env`, `${PREFIX}/etc/app/.env`도 같은 오류입니다.
-값의 `${`는 `required: false` 항목에서도 건너뛰지 않습니다. 이 판정은 선언한 경로 문자열 기준이라,
-값 자체가 `${E}/conf`처럼 이미 펼쳐져 들어오면 잡지 못합니다. `..`처럼 다른 디렉터리로 확장되는
-경로는 `unresolved_path`가 아니라 열 때 `inaccessible`로 실패합니다.
+값의 `${`는 `required: false` 항목에서도 건너뛰지 않습니다. 빈 변수 판정은 선언한 경로 문자열 기준이라,
+`vars`나 `environment:`에서 이미 `/conf`로 펼쳐진 값은 잡지 못합니다. `..`처럼 존재하는 다른
+디렉터리로 확장되는 경로는 `unresolved_path`가 아니라 열 때 `inaccessible`로 실패하며,
+`dva validate`는 이를 미리 경고하지 않습니다.
 `dva doctor`는 항목을 표시하고(`--strict`에서 exit 1), `dva validate`는 파일을 열지 않고
 경고로 미리 알립니다(`--strict`에서 실패). 진단의 경로는 선언한 문자열 그대로입니다.
 

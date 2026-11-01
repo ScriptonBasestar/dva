@@ -333,14 +333,18 @@ func unresolvedPathRefs(path string, env *Environment) []string {
 	}
 	actual := env.Interpolate(path)
 	if ref := leftoverRef(actual); ref != "" {
+		// An unterminated reference runs on into expanded text, which must stay out of diagnostics.
+		if !strings.HasSuffix(ref, "}") {
+			ref = ref[:2+len(scanVarName(ref[2:]))]
+		}
 		return []string{ref}
 	}
 	if strings.Contains(path, "$") {
-		if clean := filepath.Clean(actual); clean == "." || clean == "/" {
-			return []string{path}
-		}
 		if ref := emptyRootPrefix(path, env); ref != "" {
 			return []string{ref}
+		}
+		if clean := filepath.Clean(actual); clean == "." || clean == "/" {
+			return []string{path}
 		}
 	}
 	return nil
@@ -385,10 +389,10 @@ func leftoverRef(value string) string {
 	}
 	depth := 0
 	for i := start; i < len(value); i++ {
-		switch value[i] {
-		case '{':
+		switch {
+		case strings.HasPrefix(value[i:], "${"):
 			depth++
-		case '}':
+		case value[i] == '}':
 			depth--
 			if depth == 0 {
 				return value[start : i+1]
