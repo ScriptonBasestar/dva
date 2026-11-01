@@ -17,6 +17,7 @@ func TestEnvFilePathUnsupportedOrEmptyIsUnresolved(t *testing.T) {
 		{name: "alternate syntax", path: ".env.${DVA_TEST_A:+x}"},
 		{name: "empty default", path: "${DVA_TEST_A:-}"},
 		{name: "empty value", path: "${DVA_TEST_EMPTY}", vars: map[string]string{"DVA_TEST_EMPTY": ""}},
+		{name: "empty root", path: "${DVA_TEST_EMPTY}/.env", vars: map[string]string{"DVA_TEST_EMPTY": ""}},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			dir := t.TempDir()

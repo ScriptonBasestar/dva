@@ -208,22 +208,18 @@ type varRef struct {
 
 func (r varRef) expand(lookup func(name string) (string, bool)) string {
 	v, ok := lookup(r.name)
-	switch r.op {
-	case ":-":
-		if !ok || v == "" {
-			return interpolateWith(r.def, lookup)
-		}
-		return v
-	case "-":
-		if !ok {
-			return interpolateWith(r.def, lookup)
-		}
-		return v
+	if r.takesDefault(v, ok) {
+		return interpolateWith(r.def, lookup)
 	}
 	if ok {
 		return v
 	}
 	return r.literal
+}
+
+// takesDefault reports whether the reference uses its default for this lookup result.
+func (r varRef) takesDefault(v string, ok bool) bool {
+	return (r.op == ":-" && (!ok || v == "")) || (r.op == "-" && !ok)
 }
 
 // scanVarName returns the leading identifier of s, or "" when s does not start with one.

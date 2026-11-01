@@ -1509,7 +1509,7 @@ plan·interaction·provision을 막지 않고, 반대로 child의 실패도 root
 
 #### env_file 경로의 변수
 
-`env_file` 경로는 열기 전에 `${VAR}`, `${VAR:-default}`를 확장합니다. 범위는 `vars`,
+`env_file` 경로는 열기 전에 `$VAR`, `${VAR}`, `${VAR:-default}`, `${VAR-default}`를 확장합니다. 범위는 `vars`,
 `environment:`, OS 환경 변수입니다. 다른 `env_file`의 값과 plan의 `environments:` 프로필은
 env_file보다 늦게 적용되므로 범위 밖입니다.
 
@@ -1523,7 +1523,9 @@ env_file:
 이유는 `unresolved variable reference ${X} in path`, JSON `kind`는 `unresolved_path`입니다.
 확장기가 지원하지 않는 문법(`${A:?x}`, `${A:+x}`), 변수 값에 든 `${`, 디렉터리(`.`, `/`)로
 확장되는 경로, 맨 앞 변수가 비어 절대 경로가 되는 `${E}/.env`, `${PREFIX}/etc/app/.env`도 같은 오류입니다.
-값의 `${`는 `required: false` 항목에서도 건너뛰지 않습니다.
+값의 `${`는 `required: false` 항목에서도 건너뛰지 않습니다. 이 판정은 선언한 경로 문자열 기준이라,
+값 자체가 `${E}/conf`처럼 이미 펼쳐져 들어오면 잡지 못합니다. `..`처럼 다른 디렉터리로 확장되는
+경로는 `unresolved_path`가 아니라 열 때 `inaccessible`로 실패합니다.
 `dva doctor`는 항목을 표시하고(`--strict`에서 exit 1), `dva validate`는 파일을 열지 않고
 경고로 미리 알립니다(`--strict`에서 실패). 진단의 경로는 선언한 문자열 그대로입니다.
 

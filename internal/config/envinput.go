@@ -326,7 +326,7 @@ func unresolvedPathRefs(path string, env *Environment) []string {
 			i = end + next
 			continue
 		}
-		return []string{leftoverRef(expanded[i:])}
+		return append(findVarRefs(expanded[:i]), leftoverRef(expanded[i:]))
 	}
 	if refs := findVarRefs(expanded); len(refs) > 0 {
 		return refs
@@ -336,37 +336,45 @@ func unresolvedPathRefs(path string, env *Environment) []string {
 		return []string{ref}
 	}
 	if strings.Contains(path, "$") {
-		if clean := filepath.Clean(actual); clean == "." || clean == "/" || emptyPrefixRoots(path, env) {
+		if clean := filepath.Clean(actual); clean == "." || clean == "/" {
 			return []string{path}
+		}
+		if ref := emptyRootPrefix(path, env); ref != "" {
+			return []string{ref}
 		}
 	}
 	return nil
 }
 
-// emptyPrefixRoots reports whether leading references, or a default taken by one, expand to
-// nothing right before a `/`, which would silently turn `${E}/.env` into a root-based path.
-func emptyPrefixRoots(path string, env *Environment) bool {
+// emptyRootPrefix returns the leading references, or those inside a default taken by one,
+// that expand to nothing right before a `/` and would silently turn `${E}/.env` into a
+// root-based path. A `/` the author wrote into a default, as in `${E}${U:-/x}`, is deliberate
+// and stays allowed. It returns "" when the path has no such prefix.
+func emptyRootPrefix(path string, env *Environment) string {
 	rest := path
 	for strings.HasPrefix(rest, "$") {
 		end := 1 + len(scanVarName(rest[1:]))
 		if strings.HasPrefix(rest, "${") {
 			ref, braced, ok := parseBracedRef(rest, 0)
 			if !ok {
-				return false
+				return ""
 			}
-			v, set := env.lookup(ref.name)
-			takesDefault := (ref.op == ":-" && (!set || v == "")) || (ref.op == "-" && !set)
-			if takesDefault && emptyPrefixRoots(ref.def, env) {
-				return true
+			if v, set := env.lookup(ref.name); ref.takesDefault(v, set) {
+				if inner := emptyRootPrefix(ref.def, env); inner != "" {
+					return inner
+				}
 			}
 			end = braced
 		}
 		if end == 1 || env.Interpolate(rest[:end]) != "" {
-			return false
+			return ""
 		}
 		rest = rest[end:]
 	}
-	return rest != path && strings.HasPrefix(rest, "/")
+	if strings.HasPrefix(rest, "/") {
+		return path[:len(path)-len(rest)]
+	}
+	return ""
 }
 
 // leftoverRef returns the first `${...}` fragment in value, or "" when there is none.
@@ -375,8 +383,17 @@ func leftoverRef(value string) string {
 	if start < 0 {
 		return ""
 	}
-	if end := strings.IndexByte(value[start:], '}'); end >= 0 {
-		return value[start : start+end+1]
+	depth := 0
+	for i := start; i < len(value); i++ {
+		switch value[i] {
+		case '{':
+			depth++
+		case '}':
+			depth--
+			if depth == 0 {
+				return value[start : i+1]
+			}
+		}
 	}
 	return value[start:]
 }
