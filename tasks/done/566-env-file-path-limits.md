@@ -4,8 +4,11 @@ title: "Close the env_file path limits left by TASK-565"
 type: bug
 priority: P3
 exec-tier: standard
-status: todo
+status: done
 created: 2026-11-02
+quality-review: pass
+quality-reviewed-at: 2026-11-02
+quality-review-evidence: tasks/done/evidence/TASK-566/independent-review.json
 ---
 
 # TASK-566: Close the env_file path limits left by TASK-565
@@ -19,4 +22,4 @@ usable in a path.
 
 ## Completion Criteria
 
-- [ ] Path limits are unresolved and name the cause | verify: `go test -count=1 -run 'TestUnresolvedPathRefsNamesTheCause' -v ./internal/config 2>&1 | /usr/bin/grep -c -- '^--- PASS' | /usr/bin/grep -qx 1`
+- [x] Path limits are unresolved and name the cause | verify: `go test -count=1 -run 'TestUnresolvedPathRefsNamesTheCause' -v ./internal/config 2>&1 | /usr/bin/grep -c -- '^--- PASS' | /usr/bin/grep -qx 1`

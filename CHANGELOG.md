@@ -9,7 +9,8 @@ All notable changes to DVA are documented here.
 
 - **`env_file` 경로의 미지원 문법과 빈 경로**: `${A:?x}`, `${A:+x}`가 검증을 통과해 문자
   그대로 열리던 문제와, 경로 전체가 빈 값이면 config 디렉터리를 열던 문제를 고쳤습니다. 둘 다
-  이제 `unresolved_path` 오류이며 `dva validate`가 미리 경고합니다.
+  이제 `unresolved_path` 오류이며 `dva validate`가 미리 경고합니다. 변수 값에 든 `${`도
+  `required: false` 항목까지 같은 오류로 멈추므로, 그런 값을 경로에 쓰던 설정은 바꿔야 합니다.
 
 ## [0.4.3] - 2026-11-01
 

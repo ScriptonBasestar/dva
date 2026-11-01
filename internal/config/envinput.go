@@ -331,11 +331,14 @@ func unresolvedPathRefs(path string, env *Environment) []string {
 	if refs := findVarRefs(expanded); len(refs) > 0 {
 		return refs
 	}
-	if ref := leftoverRef(env.Interpolate(path)); ref != "" {
+	actual := env.Interpolate(path)
+	if ref := leftoverRef(actual); ref != "" {
 		return []string{ref}
 	}
-	if strings.Contains(path, "$") && strings.Trim(expanded, "/") == "" {
-		return []string{path}
+	if strings.Contains(path, "$") {
+		if clean := filepath.Clean(actual); clean == "." || clean == "/" {
+			return []string{path}
+		}
 	}
 	return nil
 }
