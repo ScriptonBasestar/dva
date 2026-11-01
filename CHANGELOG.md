@@ -13,16 +13,6 @@ All notable changes to DVA are documented here.
 
 ## [0.4.3] - 2026-11-01
 
-### Fixed
-
-- `dva down <plan>`, `dva stop <plan>`이 plan의 compose profile을 넘기지 않아 profile 서비스가
-  계속 실행되던 문제를 고쳤습니다.
-- plan 경로의 `dva status --json`이 JSON을 출력합니다.
-
-### Added
-
-- `dva status --all`: `default_plan`과 무관하게 선언된 전체 stack을 조회합니다.
-
 ### Changed
 
 - **호환성 변경 — 선언되지 않은 plan environment 거부**: plan이 소유자가 선언하지 않은
@@ -42,6 +32,8 @@ All notable changes to DVA are documented here.
   `dva config migrate`로 `plans`로 이관하세요.
 
 ### Added
+
+- `dva status --all`: `default_plan`과 무관하게 선언된 전체 stack을 조회합니다.
 
 - **패키지 경계 검사**: `tools/archcheck`가 `internal/` 패키지별 허용 import를 검사하고
   `make lint`에서 실패시킵니다. 의존 방향이 문서 설명에서 기계 검증 규칙이 됩니다.
@@ -66,6 +58,9 @@ All notable changes to DVA are documented here.
 - **스킬 다운그레이드 방지**: `dva skill status`가 `outdated`·`newer`·`differs`를 구분하고,
   `dva skill install`은 더 새로운 릴리스가 설치한 스킬을 `--allow-downgrade` 없이 교체하지 않습니다.
 - **`make test`**: 상속된 `GOFLAGS`에 `-trimpath`가 섞여 경로 기반 테스트가 깨지던 문제를 고쳤습니다.
+- `dva down <plan>`, `dva stop <plan>`이 plan의 compose profile을 넘기지 않아 profile 서비스가
+  계속 실행되던 문제를 고쳤습니다.
+- plan 경로의 `dva status --json`이 JSON을 출력합니다.
 - **알 수 없는 interaction runner 거부**: `runner:` 오타가 조용히 compose로 실행되던 동작을
   없앴습니다. `dva config validate`, `dva run`, `--dry-run` 모두 오류로 거부합니다. 허용값은
   `compose`, `docker-compose`, `docker_compose`, `kubectl`, `local`이며, 기존에 조용히 compose로
