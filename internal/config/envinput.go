@@ -348,13 +348,20 @@ func unresolvedPathRefs(path string, env *Environment) []string {
 func emptyPrefixRoots(path string, env *Environment) bool {
 	rest := path
 	for strings.HasPrefix(rest, "$") {
-		end := 0
-		if _, braced, ok := parseBracedRef(rest, 0); ok {
+		end := 1 + len(scanVarName(rest[1:]))
+		if strings.HasPrefix(rest, "${") {
+			ref, braced, ok := parseBracedRef(rest, 0)
+			if !ok {
+				return false
+			}
+			v, set := env.lookup(ref.name)
+			takesDefault := (ref.op == ":-" && (!set || v == "")) || (ref.op == "-" && !set)
+			if takesDefault && emptyPrefixRoots(ref.def, env) {
+				return true
+			}
 			end = braced
-		} else if name := scanVarName(rest[1:]); name != "" {
-			end = 1 + len(name)
 		}
-		if end == 0 || env.Interpolate(rest[:end]) != "" {
+		if end == 1 || env.Interpolate(rest[:end]) != "" {
 			return false
 		}
 		rest = rest[end:]
