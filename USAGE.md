@@ -37,7 +37,7 @@ module 버전도 없는 빌드(`-buildvcs=false` 등)는 commit을 `dev`로 보�
 | Kubernetes Secret 전송·`secret status` | v0.4.1에 포함 | Linux/macOS, 명시적 dev 대상·kubeconfig·context. [상세 계약](docs/69-kubernetes-secret-target.md) |
 | 원격 접근 `tunnel:` | v0.4.1에 포함 | cloudflared, kubectl/helm 엔트리. Windows 미지원. 실제 Access 애플리케이션 터널은 v0.4.1에서도 미검증. [상세 계약](docs/68-remote-access-tunnel.md) |
 | `dva version` commit 출처(`--json`의 `commit_source`) | v0.4.2에 포함 | ldflags 없는 빌드는 build info로 commit을 보고. VCS revision도 module 버전도 없으면 `dev` |
-| `env_file` 경로 변수 확장, `dva status --all` | v0.4.3 태그에 포함 | GitHub Release 발행 전. 해석되지 않는 경로는 오류. [경로 변수](#env_file-경로의-변수) 절 참조 |
+| `env_file` 경로 변수 확장, `dva status --all` | v0.4.3 | 해석되지 않는 경로는 오류. [경로 변수](#env_file-경로의-변수) 절 참조 |
 | `agent-deny` | v0.3.0에 포함 | Claude Code만 구현. 다른 런타임의 현황·제약은 [deny 지원표](docs/agent-deny-rules.md#runtime-coverage) 참조 |
 | Skaffold 상태 조회 | v0.3.0에 포함 | 시작·종료 adapter는 있으나 `status`는 실제 클러스터 조회 없이 `unknown` 반환 |
 

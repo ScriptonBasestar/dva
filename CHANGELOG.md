@@ -5,6 +5,8 @@ All notable changes to DVA are documented here.
 
 ## [Unreleased]
 
+## [0.4.4] - 2026-11-02
+
 ### Fixed
 
 - **`env_file` 경로의 미지원 문법과 빈 경로**: `${A:?x}`, `${A:+x}`가 검증을 통과해 문자
