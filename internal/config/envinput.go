@@ -199,7 +199,7 @@ func InspectEnvFiles(envFileConfig any, basePath string, env *Environment) *EnvI
 	for _, f := range normalizeEnvFileConfig(envFileConfig) {
 		entry := EnvInputEntry{File: f.Path, Required: f.Required}
 
-		if refs := unresolvedRefs(f.Path, env); len(refs) > 0 {
+		if refs := unresolvedPathRefs(f.Path, env); len(refs) > 0 {
 			entry.Status = EnvInputFailed
 			entry.Kind = EnvInputUnresolvedPath
 			entry.refs = refs
@@ -306,12 +306,25 @@ func countUnresolvedValues(report *EnvInputReport, env *Environment) {
 // name expands to a placeholder rather than its value, so a value that happens to
 // contain `$` is not mistaken for a reference. Emptiness is preserved because `:-`
 // branches on it: `${A:-${B}}` needs B only when A is empty.
-//
-// Syntax the expander does not implement (`${A:?x}`) survives expansion and would be
-// opened literally, and a path expanding to nothing would open the config directory,
-// so both count as unresolved.
 func unresolvedRefs(value string, env *Environment) []string {
-	expanded := interpolateWith(value, func(name string) (string, bool) {
+	return findVarRefs(checkExpand(value, env))
+}
+
+// unresolvedPathRefs is unresolvedRefs for an env_file path. Syntax the expander does
+// not implement (`${A:?x}`) survives expansion and would be opened literally, and a
+// path expanding to nothing would open the config directory, so both count as
+// unresolved.
+func unresolvedPathRefs(path string, env *Environment) []string {
+	expanded := checkExpand(path, env)
+	refs := findVarRefs(expanded)
+	if len(refs) == 0 && (strings.Contains(expanded, "${") || (path != "" && expanded == "")) {
+		return []string{path}
+	}
+	return refs
+}
+
+func checkExpand(value string, env *Environment) string {
+	return interpolateWith(value, func(name string) (string, bool) {
 		v, ok := env.lookup(name)
 		if !ok {
 			return "", false
@@ -321,11 +334,6 @@ func unresolvedRefs(value string, env *Environment) []string {
 		}
 		return "x", true
 	})
-	refs := findVarRefs(expanded)
-	if len(refs) == 0 && (strings.Contains(expanded, "${") || (value != "" && expanded == "")) {
-		return []string{value}
-	}
-	return refs
 }
 
 // EnvFileScope builds the layers env_file paths may reference, without applying any

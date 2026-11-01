@@ -620,7 +620,7 @@ func (c *Config) warnUnresolvedEnvFilePaths() []string {
 	scope := c.EnvFileScope()
 	var warnings []string
 	for _, f := range c.AllEnvFileConfigs() {
-		if refs := unresolvedRefs(f.Path, scope); len(refs) > 0 {
+		if refs := unresolvedPathRefs(f.Path, scope); len(refs) > 0 {
 			warnings = append(warnings,
 				fmt.Sprintf("env_file %s: unresolved variable reference %v; execution fails until it resolves (vars, environment and OS variables are in scope, a plan's environment is not)",
 					f.Path, refs))
