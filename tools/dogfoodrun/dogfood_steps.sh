@@ -176,7 +176,7 @@ read|validate|$DVA validate
 read|plan list|$DVA ls
 start|up local-dev (composition)|$DVA up local-dev
 read|status|$DVA status
-destructive|down local-dev (볼륨 보존, 대상 저장소가 --purge를 금지)|$DVA down local-dev --force
+destructive|down local-dev (볼륨 보존, 대상 저장소가 --purge를 금지)|$DVA down local-dev
 EOF
 }
 
