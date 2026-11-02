@@ -385,6 +385,7 @@ func runPlanUp(c *config.Config, el *envLoad, planName string, extraArgs []strin
 		return err
 	}
 	printPlanWarnings(runtime.plan)
+	warnUnsealedEnv(runtime.config, runtime.report)
 	// Fail closed before the first child. The plan's own owner decides this — a root
 	// env_file failure never reaches an imported plan, and vice versa (TASK-247 §3, §4).
 	if err := runtime.report.Err(); err != nil {

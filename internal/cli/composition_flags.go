@@ -346,6 +346,7 @@ func runCompositionUp(c *config.Config, el *envLoad, planName string, extraArgs 
 		return err
 	}
 	printCompositionWarnings(comp)
+	warnUnsealedEnv(c, el.report)
 	flags, err := validateCompositionFlagScope(comp, planName, "up", extraArgs)
 	if err != nil {
 		return err

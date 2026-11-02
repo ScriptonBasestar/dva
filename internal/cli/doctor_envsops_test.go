@@ -73,3 +73,22 @@ func TestNoEncryptedEntryMessageNamesEvidence(t *testing.T) {
 		t.Fatalf("error without evidence = %q", msg)
 	}
 }
+
+func TestDoctorEnvUnsealed(t *testing.T) {
+	yaml := simpleBridgeYAML(".env", "secrets.env.enc")
+	absent := newBridgeFixture(t, yaml, map[string]string{"secrets.env.enc": "ENC"})
+	rows := checkEnvUnsealed(absent.cfg)
+	if len(rows) != 1 || rows[0].Passed || !strings.Contains(rows[0].FixHint, "dva config env unseal") {
+		t.Fatalf("checkEnvUnsealed() = %+v, want one failing row with the unseal hint", rows)
+	}
+
+	present := newBridgeFixture(t, yaml, map[string]string{"secrets.env.enc": "ENC", ".env": "A=1\n"})
+	if rows := checkEnvUnsealed(present.cfg); len(rows) != 0 {
+		t.Fatalf("checkEnvUnsealed() with the target present = %+v", rows)
+	}
+
+	plain := newBridgeFixture(t, "version: \"0.1.45\"\nenv_file: [.env]\n", nil)
+	if rows := checkEnvUnsealed(plain.cfg); len(rows) != 0 {
+		t.Fatalf("checkEnvUnsealed() for an optional plain file = %+v", rows)
+	}
+}

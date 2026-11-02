@@ -124,6 +124,7 @@ func runDoctorChecks(c *config.Config) []DoctorResult {
 
 	// Built-in: sops in use but not declared on any env_file entry.
 	results = append(results, checkEnvSopsDeclaration(c)...)
+	results = append(results, checkEnvUnsealed(c)...)
 
 	// Built-in: non-Compose stack entry files exist
 	results = append(results, checkStackFiles(c)...)
@@ -476,6 +477,34 @@ func checkEnvSopsDeclaration(c *config.Config) []DoctorResult {
 		Finding: "sops files found but no env_file entry declares sops_source: " + sopsEvidenceSummary(ev),
 		FixHint: "Declare the source in dva.yml, e.g. " + sopsDeclarationExample(c, ev),
 	}}
+}
+
+// checkEnvUnsealed reports encrypted env_file targets that are absent. The loader
+// skips them as optional, so `up` proceeds without their values.
+func checkEnvUnsealed(c *config.Config) []DoctorResult {
+	var results []DoctorResult
+	r := config.InspectEnvFiles(c.EnvFile, c.FileDir(), c.EnvFileScope())
+	for _, target := range c.UnsealedEnvTargets(r) {
+		results = append(results, DoctorResult{
+			Name:    fmt.Sprintf("Encrypted env target present: %s", target),
+			Finding: unsealedEnvFinding(target),
+			FixHint: "Run: dva config env unseal",
+		})
+	}
+	return results
+}
+
+func unsealedEnvFinding(target string) string {
+	return fmt.Sprintf("env_file %s declares sops_source but does not exist, so its values are not loaded", target)
+}
+
+// warnUnsealedEnv tells `up` what doctor reports. It cannot fail the run: the entry
+// is optional, and sops_source stays invisible to loading (TASK-245). The recreate
+// note matters because unsealing later changes the environment of running containers.
+func warnUnsealedEnv(c *config.Config, r *config.EnvInputReport) {
+	for _, target := range c.UnsealedEnvTargets(r) {
+		fmt.Fprintf(os.Stderr, "warning: %s; run `dva config env unseal`, then `dva up` again (compose containers using these values are recreated)\n", unsealedEnvFinding(target))
+	}
 }
 
 // envInputResults renders one report into doctor rows, in declaration order.

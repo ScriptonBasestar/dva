@@ -166,6 +166,26 @@ func (c *Config) DeclaredEncryptedTargets() []string {
 	return out
 }
 
+// UnsealedEnvTargets lists encrypted targets the report skipped as absent. An
+// optional file is allowed to be missing, but one with a declared source is
+// expected to exist, so its absence means the run silently lacks those values.
+func (c *Config) UnsealedEnvTargets(r *EnvInputReport) []string {
+	if r == nil {
+		return nil
+	}
+	encrypted := make(map[string]bool)
+	for _, e := range c.EncryptedEnvEntries() {
+		encrypted[e.Path] = true
+	}
+	var out []string
+	for _, e := range r.Entries {
+		if e.Status == EnvInputSkipped && encrypted[e.File] {
+			out = append(out, e.File)
+		}
+	}
+	return out
+}
+
 // JoinTargets renders a target list for a diagnostic. Declared strings only —
 // never an expanded local absolute path (TASK-245 §7-2, TASK-247 §2).
 func JoinTargets(targets []string) string { return strings.Join(targets, ", ") }
