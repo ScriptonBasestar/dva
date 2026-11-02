@@ -94,3 +94,10 @@ composition plan이라 teardown은 `--project local-infra`로 스코프된다. e
     taskchain-qa024_redis-data
 ```
 
+
+## 재기동 점검 (2026-11-02, dva 0.4.4)
+
+- 2026-09-16의 `dva up local-dev` exit 143은 재현되지 않았다. 이번 기동과 `engine/dev` 재기동은 정상 종료했고, 143의 원인은 확정하지 못했다.
+- 다른 문제가 드러났다. `sops_source`를 선언한 `.env`가 없어도 선택 항목이라 조용히 건너뛰었고, engine이 postgres 인증에 실패했다. `dva config env unseal`로 복구했다. `.env`가 사라진 경위는 밝혀지지 않았다.
+- TASK-573으로 `dva up` 경고와 `dva doctor` 행을 추가했다. 복구 시 환경값이 바뀌므로 그 값을 쓰는 compose 컨테이너는 재생성된다.
+- engine의 `/health`는 저장소 종류와 무관하게 200이므로, flow 쪽에 postgres 연결을 직접 확인하는 `engine-postgres` 헬스 체크를 추가했다.
