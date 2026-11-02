@@ -220,7 +220,7 @@ install-binary:
 				printf '%s\n' "make install: WARNING: no install destination is on PATH: $$local_dir, $$go_dir" >&2; \
 			fi; \
 		}; \
-		( trap '' PIPE; warn_path_resolution ) </dev/null || :
+		( warn_path_resolution ) </dev/null || :
 
 ## dogfood-skill-install: Black-box test a selected SHA-pinned DVA executable against a stable flow repository
 dogfood-skill-install:
