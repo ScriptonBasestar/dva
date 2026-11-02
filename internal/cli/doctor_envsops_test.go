@@ -3,6 +3,8 @@ package cli
 import (
 	"strings"
 	"testing"
+
+	"github.com/ScriptonBasestar/dva/internal/config"
 )
 
 func TestDoctorEnvSopsDeclaration(t *testing.T) {
@@ -75,20 +77,62 @@ func TestNoEncryptedEntryMessageNamesEvidence(t *testing.T) {
 }
 
 func TestDoctorEnvUnsealed(t *testing.T) {
+	unsealed := func(f *bridgeFixture) []DoctorResult {
+		return checkEnvUnsealed(f.cfg, config.InspectEnvFiles(f.cfg.EnvFile, f.cfg.FileDir(), f.cfg.EnvFileScope()))
+	}
 	yaml := simpleBridgeYAML(".env", "secrets.env.enc")
 	absent := newBridgeFixture(t, yaml, map[string]string{"secrets.env.enc": "ENC"})
-	rows := checkEnvUnsealed(absent.cfg)
-	if len(rows) != 1 || rows[0].Passed || !strings.Contains(rows[0].FixHint, "dva config env unseal") {
+	rows := unsealed(absent)
+	if len(rows) != 1 || rows[0].Passed || !strings.Contains(rows[0].FixHint, "dva config env unseal .env") {
 		t.Fatalf("checkEnvUnsealed() = %+v, want one failing row with the unseal hint", rows)
+	}
+	found := false
+	for _, r := range runDoctorChecks(absent.cfg) {
+		found = found || strings.HasPrefix(r.Name, "Encrypted env target present")
+	}
+	if !found {
+		t.Fatal("runDoctorChecks() omits the encrypted target row")
 	}
 
 	present := newBridgeFixture(t, yaml, map[string]string{"secrets.env.enc": "ENC", ".env": "A=1\n"})
-	if rows := checkEnvUnsealed(present.cfg); len(rows) != 0 {
+	if rows := unsealed(present); len(rows) != 0 {
 		t.Fatalf("checkEnvUnsealed() with the target present = %+v", rows)
 	}
 
 	plain := newBridgeFixture(t, "version: \"0.1.45\"\nenv_file: [.env]\n", nil)
-	if rows := checkEnvUnsealed(plain.cfg); len(rows) != 0 {
+	if rows := unsealed(plain); len(rows) != 0 {
 		t.Fatalf("checkEnvUnsealed() for an optional plain file = %+v", rows)
+	}
+}
+
+func TestUpWarnsOnEveryRouteWhenTargetMissing(t *testing.T) {
+	body := simpleBridgeYAML(".env", "secrets.env.enc") + `stack:
+  svc:
+    default_runner: script
+    runners:
+      script:
+        up: "true"
+        stop: "true"
+`
+	withPlans := body + "plans:\n  one:\n    entries:\n      - name: svc\n  both:\n    composes:\n      - plan: one\n"
+	for _, tt := range []struct {
+		name string
+		yaml string
+		args []string
+	}{
+		{"whole stack", body, nil},
+		{"plan", withPlans, []string{"one"}},
+		{"composition", withPlans, []string{"both"}},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			f := newBridgeFixture(t, tt.yaml, map[string]string{"secrets.env.enc": "ENC"})
+			t.Chdir(f.cfg.FileDir())
+			env = nil
+			t.Cleanup(func() { env = nil })
+			stderr := captureStderr(t, func() { _ = upCmd.RunE(upCmd, tt.args) })
+			if strings.Count(stderr, "declares sops_source") != 1 {
+				t.Fatalf("stderr = %q, want one warning", stderr)
+			}
+		})
 	}
 }

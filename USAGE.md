@@ -1590,7 +1590,9 @@ dva config env reseal                 # 기존 암호화 소스를 현재 키로
 - **lifecycle 커맨드는 복호화하지 않습니다.** `dva up`, `dva run`, `dva down`은
   `sops_source`를 보지 않습니다. 평문 target이 없으면 그것은 `env_file`이 없는 상황일
   뿐이고, 위 [환경 입력이 불완전할 때](#환경-입력이-불완전할-때) 규칙이 그대로
-  적용됩니다. 필요한 복호화는 `dva config env unseal`을 직접 실행해야 합니다.
+  적용됩니다. 다만 `dva up`은 경고를, `dva doctor`는 실패 행을 냅니다. 그래서
+  `dva doctor --strict`는 이 경우 0이 아닌 코드로 끝납니다. 필요한 복호화는
+  `dva config env unseal`을 직접 실행해야 합니다.
 - **복호화된 값을 stdout에 출력하는 커맨드는 없습니다.** `unseal`이 쓰는 곳은 0600
   권한의 target 파일 하나뿐이고, sops가 만들어낸 평문은 DVA의 버퍼를 거치지 않고 그
   파일의 파일 디스크립터로 직접 들어갑니다. `dva config show`도 값이 아니라 선언을

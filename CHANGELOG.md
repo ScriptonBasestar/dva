@@ -7,7 +7,7 @@ All notable changes to DVA are documented here.
 
 ### Fixed
 
-- `dva up` warns and `dva doctor` reports when an `env_file` entry declares `sops_source` but its target is missing.
+- `dva up` warns and `dva doctor` reports when an `env_file` entry declares `sops_source` but its target is missing; `dva doctor --strict` now fails in that case.
 - `make install` warns when another `dva` earlier on PATH hides the install or no destination is on PATH.
 
 ## [0.4.4] - 2026-11-02

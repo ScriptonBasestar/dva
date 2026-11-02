@@ -19,3 +19,4 @@ now warns and `dva doctor` reports a row; neither changes loading.
 ## Completion Criteria
 
 - [ ] Absent, present and plain cases pass | verify: `go test -count=1 -v ./internal/cli -run '^TestDoctorEnvUnsealed$' | /usr/bin/grep -q '^--- PASS: TestDoctorEnvUnsealed'`
+- [ ] Every up route warns once | verify: `go test -count=1 -v ./internal/cli -run '^TestUpWarnsOnEveryRouteWhenTargetMissing$' | /usr/bin/grep -q '^--- PASS: TestUpWarnsOnEveryRouteWhenTargetMissing'`

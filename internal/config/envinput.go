@@ -38,7 +38,8 @@ const (
 	// EnvInputComplete means every declaration loaded, or none was declared.
 	EnvInputComplete EnvInputState = "complete"
 	// EnvInputCompleteWithSkips means the only non-loads were optional missing files.
-	// This is a healthy state and produces no failure diagnostic anywhere.
+	// This is a healthy state and produces no failure diagnostic. An absent target
+	// with a declared sops_source only warns (UnsealedEnvTargets).
 	EnvInputCompleteWithSkips EnvInputState = "complete_with_skips"
 	// EnvInputIncomplete means at least one declaration failed. No env-file-derived
 	// value from ANY declaration may be applied in this state.
