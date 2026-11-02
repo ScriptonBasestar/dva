@@ -132,8 +132,8 @@ EOF
 		;;
 	flow-taskchain)
 		cat <<'EOF'
-composition plan이라 teardown은 `--project local-infra`로 스코프된다. engine/mcp/portal은
-자식 저장소의 native plan이며 purge 대상이 아니다.
+대상 저장소의 AGENTS.md가 실제 대상의 `--purge`를 금지하므로 teardown은 볼륨을 보존한다.
+engine/mcp/portal은 자식 저장소의 native plan이다.
 EOF
 		;;
 	task348)
@@ -176,7 +176,7 @@ read|validate|$DVA validate
 read|plan list|$DVA ls
 start|up local-dev (composition)|$DVA up local-dev
 read|status|$DVA status
-destructive|down local-dev --purge (scoped to local-infra)|$DVA down local-dev --purge --project local-infra --force
+destructive|down local-dev (볼륨 보존, 대상 저장소가 --purge를 금지)|$DVA down local-dev --force
 EOF
 }
 

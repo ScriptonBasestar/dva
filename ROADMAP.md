@@ -240,7 +240,7 @@ ISSUE-534(`ci --subproject`의 무관한 import 해석)는 고쳐지지 않아 �
 
 SOUL의 실행 수명주기 책임과 child-owned 검사 경계를 적용해, native step의 명시적
 독립-root child CI 구성을 TASK-537의 미공개 소스에 구현했다. 기본 중첩 거절을 유지하며
-OCI 내부 구성·remote 실행·운영 배포는 포함하지 않는다. 공개판 지원을 뜻하지 않는다.
+OCI 내부 구성·remote 실행·운영 배포는 포함하지 않는다. 이후 v0.4.3으로 공개했다.
 정확한 설정·토큰·취소·결과·수용 기준의 정본은
 [독립 root CI 구성 계약](docs/ci-child-composition-proposal.md)이다. lock_state와
 multi-level cleanup의 리뷰·실제 프로세스 관측은 [검증 기록](docs/ci-child-composition-evidence.md)에 둔다.

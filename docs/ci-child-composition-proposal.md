@@ -1,6 +1,6 @@
 # 독립 root의 native child CI 구성 계약
 
-상태: Unreleased 구현 계약. 공개판과 기존 설치본의 지원을 가정하지 않는다.
+상태: v0.4.3에 포함된 구현 계약. 그 이전 설치본의 지원을 가정하지 않는다.
 이 문서는 `child_ci` 구현과 검증의 경계를 소유한다. 현재 동작은
 [CI 프로필](53-ci-profiles.md), OCI는 [별도 계약](ci-oci-steps.md)을 따른다.
 

@@ -1476,7 +1476,7 @@ environment inputs are incomplete
 
 | 분류 | 명령 | 동작 |
 |---|---|---|
-| 실행/변경 | `up`, `restart`, `build`, `run`, `provision`, `compose`, `ktl`, `ssh up` | hook·health check·백엔드를 **시작하기 전에** exit 1 |
+| 실행/변경 | `up`, `restart`, `build`, `run`, `provision`, `compose`, `ktl`, `ssh up` | hook·health check·백엔드를 **시작하기 전에** exit 1. `provision`은 profile을 소유한 설정의 `env_file`만 보므로, child 소유 profile은 root 실패로 멈추지 않습니다 |
 | 정리 | `down`, `stop` | 같음. 잘못된 환경으로 해석한 리소스를 지울 수 있으므로 예외를 두지 않습니다 |
 | 관찰 | `status`, `logs` | 자식 프로세스를 실행하지 않고, 조회하지 않았음을 명시한 부분 결과를 출력한 뒤 exit 1 |
 | 진단 | `doctor` | 독립적인 체크는 끝까지 수행. 기본 exit 0, `--strict`에서 exit 1 |
