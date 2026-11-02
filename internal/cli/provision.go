@@ -51,10 +51,14 @@ See USAGE.md's "provision" section for examples.`,
 		// before the first step runs. An imported profile executes against the child that
 		// declared it, so its steps see the child's vars, environment: and env_file and run
 		// from the child config directory; a root profile is unchanged. Resolving here also
-		// keeps a broken root env_file from blocking a purely child-owned profile — the
-		// warning-and-continue policy itself is TASK-248's to change (TASK-264).
+		// keeps a broken root env_file from blocking a purely child-owned profile (TASK-264).
 		rt, err := resolveProvisionRuntime(c, profile)
 		if err != nil {
+			return err
+		}
+		// Runs before the dry-run branch too: a plan printed from incomplete env input is
+		// not the plan that would execute.
+		if err := rt.report.Err(); err != nil {
 			return err
 		}
 		e, owner := rt.env, rt.config

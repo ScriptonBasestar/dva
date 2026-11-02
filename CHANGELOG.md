@@ -17,6 +17,9 @@ All notable changes to DVA are documented here.
   관계없이 같은 오류입니다. `.`, `/`로 확장되는 경로도 마찬가지이며, 값에서 비롯된 오류는 값 대신
   선언한 경로 문자열만 표시합니다. 빈 `PREFIX`로 루트 기준 경로를 쓰던 설정은 절대 경로를 직접 적거나 `${PREFIX:-/}/etc/app/.env`처럼 기본값을 지정해야 합니다.
 
+- **`dva provision`이 `env_file` 실패에도 실행되던 문제**: 이제 다른 실행 명령처럼 첫 step 전에
+  멈추고 0이 아닌 코드로 끝납니다. `--dry-run`도 같습니다.
+
 ## [0.4.3] - 2026-11-01
 
 ### Changed
