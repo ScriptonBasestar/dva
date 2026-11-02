@@ -332,12 +332,9 @@ func unresolvedPathRefs(path string, env *Environment) []string {
 		return refs
 	}
 	actual := env.Interpolate(path)
-	if ref := leftoverRef(actual); ref != "" {
-		// An unterminated reference runs on into expanded text, which must stay out of diagnostics.
-		if !strings.HasSuffix(ref, "}") {
-			ref = ref[:2+len(scanVarName(ref[2:]))]
-		}
-		return []string{ref}
+	// The fragment came from a value and may hold expanded text, so name only the declared path.
+	if leftoverRef(actual) != "" {
+		return []string{path}
 	}
 	if strings.Contains(path, "$") {
 		if ref := emptyRootPrefix(path, env); ref != "" {

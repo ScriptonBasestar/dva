@@ -14,7 +14,8 @@ All notable changes to DVA are documented here.
   이제 `unresolved_path` 오류이며 `dva validate`가 미리 경고합니다. 변수 값에 든 `${`도
   `required: false` 항목까지 같은 오류로 멈추므로, 그런 값을 경로에 쓰던 설정은 바꿔야 합니다.
   맨 앞 변수가 비어 절대 경로가 되는 `${E}/.env`, `${PREFIX}/etc/app/.env`도 `required`와
-  관계없이 같은 오류입니다. 빈 `PREFIX`로 루트 기준 경로를 쓰던 설정은 절대 경로를 직접 적거나 `${PREFIX:-/}/etc/app/.env`처럼 기본값을 지정해야 합니다.
+  관계없이 같은 오류입니다. `.`, `/`로 확장되는 경로도 마찬가지이며, 값에서 비롯된 오류는 값 대신
+  선언한 경로 문자열만 표시합니다. 빈 `PREFIX`로 루트 기준 경로를 쓰던 설정은 절대 경로를 직접 적거나 `${PREFIX:-/}/etc/app/.env`처럼 기본값을 지정해야 합니다.
 
 ## [0.4.3] - 2026-11-01
 

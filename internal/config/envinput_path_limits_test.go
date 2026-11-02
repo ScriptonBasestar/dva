@@ -21,8 +21,8 @@ func TestUnresolvedPathRefsNamesTheCause(t *testing.T) {
 		path string
 		want []string
 	}{
-		{path: "lit${DVA_T_REF}", want: []string{"${DVA_T_OTHER}"}},
-		{path: "${DVA_T_BAD}", want: []string{"${DVA_T_OTHER:?x}"}},
+		{path: "lit${DVA_T_REF}", want: []string{"lit${DVA_T_REF}"}},
+		{path: "${DVA_T_BAD}", want: []string{"${DVA_T_BAD}"}},
 		{path: "${DVA_T_A:?x}${DVA_T_SET}", want: []string{"${DVA_T_A:?x}"}},
 		{path: "${DVA_T_UNSET_A:-}/", want: []string{"${DVA_T_UNSET_A:-}"}},
 		{path: "./${DVA_T_EMPTY}", want: []string{"./${DVA_T_EMPTY}"}},
@@ -45,8 +45,8 @@ func TestUnresolvedPathRefsNamesTheCause(t *testing.T) {
 		{path: "${DVA_T_SET}/.env"},
 		{path: "${DVA_T_EMPTY}.env"},
 		{path: "${DVA_T_UNSET_A:-/abs}/.env"},
-		{path: "${DVA_T_OPEN}/${DVA_T_SEC}.env", want: []string{"${a"}},
-		{path: "${DVA_T_BRACE}/${DVA_T_SEC}.env", want: []string{"${a{b}"}},
+		{path: "${DVA_T_OPEN}/${DVA_T_SEC}.env", want: []string{"${DVA_T_OPEN}/${DVA_T_SEC}.env"}},
+		{path: "${DVA_T_BRACE}/${DVA_T_SEC}.env", want: []string{"${DVA_T_BRACE}/${DVA_T_SEC}.env"}},
 		{path: "${DVA_T_A:?x", want: []string{"${DVA_T_A:?x"}},
 		{path: "${DVA_T_A:?${DVA_T_B}/.env", want: []string{"${DVA_T_A:?${DVA_T_B}/.env"}},
 		{path: "${DVA_T_A:?{x}/y", want: []string{"${DVA_T_A:?{x}"}},
