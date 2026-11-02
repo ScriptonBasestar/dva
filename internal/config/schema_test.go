@@ -684,7 +684,7 @@ stack:
 	cfg := loadConfigForSchemaTest(t, tmpDir, content)
 
 	want := []string{"docker-compose.yml", "compose/alpha.yaml", "docker-compose.yml", "compose/zeta.yaml"}
-	for i := 0; i < 50; i++ {
+	for i := range 50 {
 		if got := cfg.AllComposeFiles(); !slices.Equal(got, want) {
 			t.Fatalf("AllComposeFiles() run %d = %v, want %v", i, got, want)
 		}
