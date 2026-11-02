@@ -92,7 +92,7 @@ plans:
 		"b/" + config.FileName: mk(".env.b", "b.enc"),
 	})
 	stderr := upStderr(t, f, []string{"all"})
-	if !strings.Contains(stderr, "[child: a/deploy] env_file .env.a") || !strings.Contains(stderr, "[child: b/deploy] env_file .env.b") {
+	if strings.Count(stderr, "declares sops_source") != 2 || !strings.Contains(stderr, "[child: a/deploy] env_file .env.a") || !strings.Contains(stderr, "[child: b/deploy] env_file .env.b") {
 		t.Fatalf("stderr = %q", stderr)
 	}
 }
@@ -114,7 +114,5 @@ func TestDoctorStrictFailsOnUnsealed(t *testing.T) {
 	}
 	if err := doctorExitError(rows, true); err == nil {
 		t.Fatal("strict exit = nil, want error")
-	} else {
-		t.Logf("strict: %v", err)
 	}
 }
