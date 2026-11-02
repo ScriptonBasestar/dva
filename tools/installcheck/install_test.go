@@ -1,6 +1,7 @@
 package installcheck
 
 import (
+	"context"
 	"crypto/sha256"
 	"os"
 	"os/exec"
@@ -8,6 +9,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestInstallerOnlyTargetUsesVerifiedIsolatedDestinations(t *testing.T) {
@@ -429,7 +431,7 @@ func TestInstallerOnlyTargetWarnsAboutPathResolution(t *testing.T) {
 			}
 			return shadowDir + ":" + localDir + ":" + systemPath
 		})
-		if !strings.Contains(output, "WARNING") || !strings.Contains(output, "stale") || !strings.Contains(output, "shadows this install") {
+		if !strings.Contains(output, "WARNING") || !strings.Contains(output, "stale") || !strings.Contains(output, "shadows it") {
 			t.Fatalf("missing shadow warning:\n%s", output)
 		}
 	})
@@ -445,6 +447,91 @@ func TestInstallerOnlyTargetWarnsAboutPathResolution(t *testing.T) {
 		})
 		if strings.Contains(output, "WARNING") {
 			t.Fatalf("unexpected warning:\n%s", output)
+		}
+	})
+
+	t.Run("identical copy and dva-less directory ahead stay quiet", func(t *testing.T) {
+		output := install(t, func(fixture, localDir, goDir string) string {
+			sameDir := filepath.Join(fixture, "same")
+			if err := os.Rename(fixtureDVA(t, sameDir), filepath.Join(sameDir, "dva")); err != nil {
+				t.Fatal(err)
+			}
+			emptyDir := filepath.Join(fixture, "empty")
+			for _, dir := range []string{localDir, filepath.Join(emptyDir, "dva")} {
+				if err := os.MkdirAll(dir, 0o755); err != nil {
+					t.Fatal(err)
+				}
+			}
+			return sameDir + ":" + emptyDir + ":" + localDir + ":" + systemPath
+		})
+		if strings.Contains(output, "WARNING") {
+			t.Fatalf("unexpected warning:\n%s", output)
+		}
+	})
+
+	t.Run("Go destination and symlinked destination count as reachable", func(t *testing.T) {
+		for _, useLink := range []bool{false, true} {
+			output := install(t, func(fixture, localDir, goDir string) string {
+				if err := os.MkdirAll(goDir, 0o755); err != nil {
+					t.Fatal(err)
+				}
+				entry := goDir
+				if useLink {
+					entry = filepath.Join(fixture, "link")
+					if err := os.Symlink(goDir, entry); err != nil {
+						t.Fatal(err)
+					}
+				}
+				return entry + ":" + systemPath
+			})
+			if strings.Contains(output, "WARNING") {
+				t.Fatalf("unexpected warning (link=%v):\n%s", useLink, output)
+			}
+		}
+	})
+
+	t.Run("unreadable shadow warns without failing", func(t *testing.T) {
+		output := install(t, func(fixture, localDir, goDir string) string {
+			shadowDir := filepath.Join(fixture, "shadow")
+			writeExecutableMode(t, filepath.Join(shadowDir, "dva"), "#!/bin/sh\n", 0o111)
+			if err := os.MkdirAll(localDir, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			return shadowDir + ":" + localDir + ":" + systemPath
+		})
+		if !strings.Contains(output, "unknown version") {
+			t.Fatalf("missing unknown-version warning:\n%s", output)
+		}
+	})
+
+	t.Run("stdin-reading shadow cannot hang and warning goes to stderr", func(t *testing.T) {
+		fixture := t.TempDir()
+		source := fixtureDVA(t, filepath.Join(fixture, "source"))
+		shadowDir := filepath.Join(fixture, "shadow")
+		writeExecutable(t, filepath.Join(shadowDir, "dva"), "#!/bin/sh\ncat >/dev/null\n")
+		localDir := filepath.Join(fixture, "local", "bin")
+		if err := os.MkdirAll(localDir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		held, writer, err := os.Pipe()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer held.Close()
+		defer writer.Close()
+		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+		defer cancel()
+		cmd := exec.CommandContext(ctx, "make", "-C", repo, "--no-print-directory", "install-binary", "INSTALL_SOURCE="+source,
+			"LOCAL_BIN_DIR="+localDir, "GO_BIN_DIR="+filepath.Join(fixture, "go", "bin"))
+		cmd.Env = append(os.Environ(), "PATH="+shadowDir+":"+localDir+":"+systemPath)
+		cmd.Stdin = held
+		var stdout, stderr strings.Builder
+		cmd.Stdout, cmd.Stderr = &stdout, &stderr
+		if err := cmd.Run(); err != nil {
+			t.Fatalf("install failed or hung: %v\n%s", err, stderr.String())
+		}
+		if !strings.Contains(stderr.String(), "WARNING") || strings.Contains(stdout.String(), "WARNING") {
+			t.Fatalf("warning must reach stderr only\nstdout: %s\nstderr: %s", stdout.String(), stderr.String())
 		}
 	})
 

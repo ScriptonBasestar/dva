@@ -137,7 +137,8 @@ Linux에서도 같은 절차로 해당 archive를 선택하고 `sha256sum -c`를
 
 ### AI 스킬 설치
 
-`make install`은 바이너리만 설치합니다. 바이너리에 포함된 정본 스킬 `dva`, `dva-ci`,
+`make install`은 PATH에서 앞선 다른 `dva`가 새 설치를 가리거나 설치 경로가 PATH에 없으면
+경고합니다. `make install`은 바이너리만 설치합니다. 바이너리에 포함된 정본 스킬 `dva`, `dva-ci`,
 `dva-config`는 AI 에이전트 없이 다음 명령으로 복사 설치합니다. 기본 scope는 `user`,
 기본 runtime은 지원 대상 전체입니다.
 
