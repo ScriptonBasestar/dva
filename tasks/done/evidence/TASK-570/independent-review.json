@@ -1,0 +1,11 @@
+{
+  "verdict": "PASS",
+  "reviewer": "claude-code-subagent-a2db592e750eaca89",
+  "date": "2026-11-02",
+  "scope": "Publication facts, anchor and install commands verified at 629d97e9. The ROADMAP findings it raised were fixed afterwards.",
+  "reviewed_commit": "629d97e9b6218a1e899ea25b89ce80e0dbad12fb",
+  "findings": [
+    "docs/ci-child-composition-proposal.md:3 still says Unreleased; left open"
+  ],
+  "limits": "Its FAIL was on ROADMAP wording; the fixes were not re-reviewed. Postflight output for v0.4.4 was not seen."
+}
