@@ -24,7 +24,8 @@ Without PROFILE it runs the "default" profile when declared, falling back to
 default_profile, then to the single declared profile when there is exactly one; with
 several profiles and no match it lists what is available with a "did you mean" hint.
 --list prints the declared profiles without running any of them. --dry-run prints each
-step's resolved command without executing it. A profile owned by a subprojects: entry
+step's resolved command without executing it; an env_file failure stops both --dry-run
+and a real run before the first step. A profile owned by a subprojects: entry
 runs against that subproject's own vars/environment/env_file.
 
 See USAGE.md's "provision" section for examples.`,
