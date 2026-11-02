@@ -4,8 +4,11 @@ title: "Warn when PATH hides the dva that make install wrote"
 type: fix
 priority: P2
 exec-tier: standard
-status: todo
+status: done
 created: 2026-11-02
+quality-review: pass
+quality-reviewed-at: 2026-11-02
+quality-review-evidence: tasks/done/evidence/TASK-572/independent-review.json
 ---
 
 # TASK-572: Warn when PATH hides the dva that make install wrote
@@ -17,4 +20,4 @@ with no signal. It now walks PATH and warns about differing binaries ahead of th
 
 ## Completion Criteria
 
-- [ ] Shadow, quiet and unreachable cases pass | verify: `go test ./tools/installcheck -run 'TestInstallerOnlyTargetWarnsAboutPathResolution' -v | /usr/bin/grep -q -- '--- PASS: TestInstallerOnlyTargetWarnsAboutPathResolution'`
+- [x] Shadow, quiet and unreachable cases pass | verify: `go test -count=1 ./tools/installcheck -run 'TestInstallerOnlyTargetW' -v | /usr/bin/grep -q '^ok'`

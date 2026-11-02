@@ -5,6 +5,10 @@ All notable changes to DVA are documented here.
 
 ## [Unreleased]
 
+### Fixed
+
+- `make install` warns when another `dva` earlier on PATH hides the install or no destination is on PATH.
+
 ## [0.4.4] - 2026-11-02
 
 ### Fixed

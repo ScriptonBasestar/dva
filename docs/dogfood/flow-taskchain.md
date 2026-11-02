@@ -1,9 +1,9 @@
 # flow-taskchain-devbox dva 적용 분석
 
 ## 현황
-- 파일: `dva.yml` (22,353 bytes, 733줄) — 8개 프로젝트 중 최대 규모
-- 사용 섹션: `version`, `env_file`(files 객체 형식), `stack`(5 엔트리: compose 1 + native 4), `plans`(local-infra/local-dev/local-full), `default_plan`, `environments`, `sites`, `checks`, `suggestion_ignore`(약 120항목), `interaction`(다층 subcommands), `provision`, `endpoints`
-- `dva validate`: **통과** (Makefile 타겟 매핑 suggestion warn 4건만)
+- 파일: `dva.yml` — 분석 대상 8개 프로젝트 중 최대 규모
+- 사용 섹션: `version`, `env_file`(files 객체 형식), `stack`(5 엔트리: compose 1 + native 4), `plans`(local-infra/local-dev/local-full), `default_plan`, `environments`, `sites`, `checks`, `suggestion_ignore`, `interaction`(다층 subcommands), `provision`, `endpoints`
+- `dva validate`: **통과** (Makefile 타겟 매핑 suggestion은 warn으로만 보고)
 
 ## 문제점
 - 구조 위반 없음. 새 stack/plans 모델을 가장 충실히 따르는 config다.

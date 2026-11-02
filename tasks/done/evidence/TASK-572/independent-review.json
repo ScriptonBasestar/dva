@@ -1,0 +1,9 @@
+{
+  "verdict": "PASS",
+  "reviewer": "claude-code-subagent-third-pass",
+  "date": "2026-11-02",
+  "scope": "Third review after two FAIL rounds; hang, SIGPIPE and test gaps fixed and mutation-checked.",
+  "reviewed_commit": "40fa87b1b95e5e5a2917cf6ff70b742a79d05f00",
+  "findings": [],
+  "limits": "macOS only; a shadow that blocks forever remains an accepted risk."
+}
