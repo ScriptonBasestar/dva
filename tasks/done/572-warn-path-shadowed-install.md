@@ -1,7 +1,7 @@
 ---
 id: TASK-572
 title: "Warn when PATH hides the dva that make install wrote"
-type: fix
+type: bug
 priority: P2
 exec-tier: standard
 status: done
