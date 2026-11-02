@@ -31,7 +31,8 @@ OS/architecture archive와 `checksums.txt`를 함께 내려받으세요. 자산 
 [USAGE.md의 설치](USAGE.md#설치)를 따릅니다. 최신판을 자동 추적하려는 경우에만 `@latest`를
 사용하세요.
 
-`make install`은 DVA 바이너리만 설치합니다. 내장된 `dva`, `dva-ci`, `dva-config` 스킬은
+`make install`은 PATH에서 앞선 다른 `dva`가 새 설치를 가리거나 설치 경로가 PATH에 없으면
+경고합니다. `make install`은 DVA 바이너리만 설치합니다. 내장된 `dva`, `dva-ci`, `dva-config` 스킬은
 AI 없이 별도 설치합니다:
 
 ```bash

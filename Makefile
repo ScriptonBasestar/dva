@@ -202,7 +202,26 @@ install-binary:
 		verify_target "$$local_target" local; \
 		if [ "$$go_target" != "$$local_target" ]; then verify_target "$$go_target" Go; fi; \
 		printf '%s\n' "make install: installed version evidence:"; \
-		printf '%s\n' "$$source_version"
+		printf '%s\n' "$$source_version"; \
+		warn_path_resolution() { \
+			destination_on_path=no; path_ifs="$$IFS"; IFS=:; set -f; \
+			for path_dir in $${PATH:-}; do \
+				[ -n "$$path_dir" ] && [ -d "$$path_dir" ] || continue; \
+				resolved_dir=$$(cd "$$path_dir" 2>/dev/null && pwd -P) || continue; \
+				if [ "$$resolved_dir" = "$$local_dir" ] || [ "$$resolved_dir" = "$$go_dir" ]; then destination_on_path=yes; break; fi; \
+				shadow="$$resolved_dir/$(BINARY)"; \
+				[ -f "$$shadow" ] && [ -x "$$shadow" ] || continue; \
+				shadow_sha=$$(sha256 "$$shadow") || shadow_sha=unknown; \
+				[ "$$shadow_sha" != "$$source_sha" ] || continue; \
+				shadow_version=$$("$$shadow" version 2>/dev/null | head -n 1) || shadow_version=''; \
+				printf '%s\n' "make install: WARNING: $$shadow ($${shadow_version:-unknown version}) comes first on PATH and shadows this install; remove it or reorder PATH" >&2; \
+			done; \
+			IFS="$$path_ifs"; set +f; \
+			if [ "$$destination_on_path" = no ]; then \
+				printf '%s\n' "make install: WARNING: no install destination is on PATH: $$local_dir, $$go_dir" >&2; \
+			fi; \
+		}; \
+		warn_path_resolution
 
 ## dogfood-skill-install: Black-box test a selected SHA-pinned DVA executable against a stable flow repository
 dogfood-skill-install:

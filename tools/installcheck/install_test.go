@@ -403,6 +403,59 @@ func TestInstallerOnlyTargetRollsBackAfterVersionVerificationFailure(t *testing.
 	assertNoInstallerArtifacts(t, goDir)
 }
 
+func TestInstallerOnlyTargetWarnsAboutPathResolution(t *testing.T) {
+	repo := repositoryRoot(t)
+	systemPath := os.Getenv("PATH")
+	install := func(t *testing.T, pathFor func(fixture, localDir, goDir string) string) string {
+		t.Helper()
+		fixture := t.TempDir()
+		source := fixtureDVA(t, filepath.Join(fixture, "source"))
+		localDir := filepath.Join(fixture, "local", "bin")
+		goDir := filepath.Join(fixture, "go", "bin")
+		output, err := runInstallerResult(repo, source, []string{"PATH=" + pathFor(fixture, localDir, goDir)},
+			"LOCAL_BIN_DIR="+localDir, "GO_BIN_DIR="+goDir)
+		if err != nil {
+			t.Fatalf("a PATH warning must not fail the install: %v\n%s", err, output)
+		}
+		return output
+	}
+
+	t.Run("earlier binary shadows the install", func(t *testing.T) {
+		output := install(t, func(fixture, localDir, goDir string) string {
+			shadowDir := filepath.Join(fixture, "shadow")
+			writeExecutable(t, filepath.Join(shadowDir, "dva"), "#!/bin/sh\necho stale\n")
+			if err := os.MkdirAll(localDir, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			return shadowDir + ":" + localDir + ":" + systemPath
+		})
+		if !strings.Contains(output, "WARNING") || !strings.Contains(output, "stale") || !strings.Contains(output, "shadows this install") {
+			t.Fatalf("missing shadow warning:\n%s", output)
+		}
+	})
+
+	t.Run("later binary stays quiet", func(t *testing.T) {
+		output := install(t, func(fixture, localDir, goDir string) string {
+			laterDir := filepath.Join(fixture, "later")
+			writeExecutable(t, filepath.Join(laterDir, "dva"), "#!/bin/sh\necho stale\n")
+			if err := os.MkdirAll(localDir, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			return localDir + ":" + laterDir + ":" + systemPath
+		})
+		if strings.Contains(output, "WARNING") {
+			t.Fatalf("unexpected warning:\n%s", output)
+		}
+	})
+
+	t.Run("no destination on PATH", func(t *testing.T) {
+		output := install(t, func(fixture, localDir, goDir string) string { return systemPath })
+		if !strings.Contains(output, "no install destination is on PATH") {
+			t.Fatalf("missing unreachable warning:\n%s", output)
+		}
+	})
+}
+
 func TestInstallerOnlyTargetDoesNotWriteCheckout(t *testing.T) {
 	repo := repositoryRoot(t)
 	before := gitStatus(t, repo)
