@@ -11,13 +11,13 @@ root·공유 자원별 중복 실행 방지, 상태 조회는 [CI 프로필](doc
 
 ## 버전과 지원 범위
 
-2026-10-24 기준 공개 설치 버전은 **v0.4.2**다. v0.4.0 tag는 Release 없이 남았으므로
-v0.3.0 다음 공개판은 v0.4.1이고, v0.4.2는 그 위의 patch다. 이 문서는 현재 소스의 사용법도
-포함하므로 아래에서 `미공개`인 기능은 v0.4.2 설치만으로 사용할 수 없다. 공개 검증 기록은
-[v0.4.2 후보 검증과 공개](ROADMAP.md#2026-10-24-v042-후보-검증과-공개)에 있다.
+2026-11-02 기준 공개 설치 버전은 **v0.4.4**다. v0.4.0 tag는 Release 없이 남았으므로
+v0.3.0 다음 공개판은 v0.4.1이고, v0.4.2~v0.4.4는 그 위의 patch다. 이 문서는 현재 소스의 사용법도
+포함하므로 아래에서 `미공개`인 기능은 v0.4.4 설치만으로 사용할 수 없다. 공개 기록은
+[v0.4.3·v0.4.4 공개](ROADMAP.md#2026-11-02-v043v044-공개)에 있다.
 로컬 빌드는 같은 버전 문자열을 사용할 수 있으므로 `dva version`의 commit도 확인한다.
-Release archive의 바이너리는 tag commit을 맨 SHA로, `go install …@v0.4.2` 같은 module
-설치는 `unknown (module v0.4.2)`를, checkout 안의 빌드는 `<revision> (vcs)`를(변경이 있던
+Release archive의 바이너리는 tag commit을 맨 SHA로, `go install …@v0.4.4` 같은 module
+설치는 `unknown (module v0.4.4)`를, checkout 안의 빌드는 `<revision> (vcs)`를(변경이 있던
 tree면 `<revision>-dirty (vcs)`) 보고하며 `--json`의 `commit_source`가 그 출처를 준다.
 v0.4.1 이하에서 ldflags 없이 만든 빌드(module 설치·checkout 빌드 모두)와, VCS revision도
 module 버전도 없는 빌드(`-buildvcs=false` 등)는 commit을 `dev`로 보고한다
@@ -51,7 +51,7 @@ module 버전도 없는 빌드(`-buildvcs=false` 등)는 commit을 `dev`로 보�
 
 ```bash
 set -euo pipefail
-go install github.com/ScriptonBasestar/dva/cmd/dva@v0.4.2
+go install github.com/ScriptonBasestar/dva/cmd/dva@v0.4.4
 go_bin="$(go env GOBIN)"
 test -n "$go_bin" || go_bin="$(go env GOPATH)/bin"
 "$go_bin/dva" version
@@ -62,7 +62,7 @@ test -n "$go_bin" || go_bin="$(go env GOPATH)/bin"
 검증한 버전을 고정해야 같은 바이너리를 다시 설치할 수 있습니다. 이후 `dva`를 직접
 호출하려면 위에서 확인한 `go_bin`을 `PATH`에 추가합니다.
 
-Go toolchain 없이 설치하려면 [v0.4.2 Release](https://github.com/ScriptonBasestar/dva/releases/tag/v0.4.2)에서
+Go toolchain 없이 설치하려면 [v0.4.4 Release](https://github.com/ScriptonBasestar/dva/releases/tag/v0.4.4)에서
 현재 플랫폼의 archive와 `checksums.txt`를 내려받습니다.
 
 | OS | Architecture | Asset |
@@ -78,7 +78,7 @@ macOS Apple Silicon 예시:
 
 ```bash
 set -euo pipefail
-version=v0.4.2
+version=v0.4.4
 asset=dva_darwin_arm64.tar.gz
 base=https://github.com/ScriptonBasestar/dva/releases/download/$version
 curl -fLO "$base/$asset"

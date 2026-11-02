@@ -7,7 +7,7 @@
 ## 다음 릴리스 목표
 
 최신 소스의 구현을 지원 범위와 검증 증거가 명확한 공개 버전으로 전달한다.
-직전 목표 **v0.4.2**는 2026-10-24 공개했다([v0.4.2 후보 검증과 공개](#2026-10-24-v042-후보-검증과-공개)). v0.4.0
+최신 공개판은 **v0.4.4**다([v0.4.3·v0.4.4 공개](#2026-11-02-v043v044-공개)). v0.4.0
 tag는 Release 없이 남았고 공개는 v0.4.1로 옮겼다([v0.4.1로 공개 전환](#v041로-공개-전환-2026-10-23)).
 다음 릴리스의 목표 버전과 범위는 아직 정하지 않았다. 기존 공개판을 재발행하거나 기존 태그를
 이동하지 않는다. 변경 목록은 [CHANGELOG](CHANGELOG.md)의 0.4.2·0.4.1 섹션이, 그 뒤 새 변경은
@@ -245,3 +245,12 @@ OCI 내부 구성·remote 실행·운영 배포는 포함하지 않는다. 공�
 [독립 root CI 구성 계약](docs/ci-child-composition-proposal.md)이다. lock_state와
 multi-level cleanup의 리뷰·실제 프로세스 관측은 [검증 기록](docs/ci-child-composition-evidence.md)에 둔다.
 소스 통합·설치·소비자 gate와 공개 릴리스는 각각 확인한 뒤 채택한다.
+
+## 2026-11-02 v0.4.3·v0.4.4 공개
+
+v0.4.3은 2026-11-01, v0.4.4는 2026-11-02에 사람이 [런북](docs/52-manual-release-runbook.md)으로
+공개한 final Release이며 각각 asset 7개를 담는다. v0.4.4 후보는
+`c085bc3f26e586343433d3b9c0347032193eda19`(tag 시점의 master tip)이고 hosted CI가 성공했다.
+v0.4.4는 `env_file` 경로 오류와 `dva provision`의 `env_file` 실패 중단을 담은 patch이며 범위는
+[릴리스 노트](release-notes/v0.4.4.md)에 있다. v0.4.4 Release의 asset 수와 tag commit은 공개 뒤
+다시 확인했고, 다른 OS archive는 실행하지 않았다.
