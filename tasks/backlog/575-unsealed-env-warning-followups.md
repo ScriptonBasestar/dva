@@ -1,8 +1,8 @@
 ---
 id: TASK-575
 title: "Unsealed env warning follow-ups"
-type: improvement
-priority: P4
+type: feature
+priority: P3
 exec-tier: standard
 status: backlog
 created: 2026-11-02
