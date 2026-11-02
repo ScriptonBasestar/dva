@@ -795,7 +795,7 @@ Windows command 검사에 background/장기 자식을 실행하는 용도로 사
 - Docker 소켓 권한 및 데몬 접근 가능 여부
 - Compose 파일 존재 여부 및 project name 정합성
 - 선언된 `env_file`이 **로드 가능한지** (존재 여부가 아니라 실제 파싱까지 — 누락된 선택
-  파일은 진단에서 제외). 실패 시 `Environment input is UNAVAILABLE: <이유>` 한 줄과
+  파일은 진단에서 제외, 단 `sops_source`를 선언한 target은 별도 행으로 보고). 실패 시 `Environment input is UNAVAILABLE: <이유>` 한 줄과
   `Fix env_file entry: <선언한 경로>` 힌트를 출력합니다
 - 환경 입력이 불완전하면 Compose 존재/해석 체크는 실행하지 않고
   `(skipped: environment input unavailable)` 행으로 표시합니다 — 값이 채워지지 않은
@@ -1587,11 +1587,11 @@ dva config env reseal                 # 기존 암호화 소스를 현재 키로
 
 ##### 복호화는 언제나 사용자가 시킬 때만
 
-- **lifecycle 커맨드는 복호화하지 않습니다.** `dva up`, `dva run`, `dva down`은
-  `sops_source`를 보지 않습니다. 평문 target이 없으면 그것은 `env_file`이 없는 상황일
+- **lifecycle 커맨드는 복호화하지 않습니다.** `dva up`, `dva run`, `dva down`의 로딩은
+  `sops_source`에 영향받지 않습니다. `dva up`은 경고에만 이 값을 읽습니다. 평문 target이 없으면 그것은 `env_file`이 없는 상황일
   뿐이고, 위 [환경 입력이 불완전할 때](#환경-입력이-불완전할-때) 규칙이 그대로
   적용됩니다. 다만 `dva up`은 경고를, `dva doctor`는 실패 행을 냅니다. 그래서
-  `dva doctor --strict`는 이 경우 0이 아닌 코드로 끝납니다. 필요한 복호화는
+  `dva doctor --strict`는 이 경우 0이 아닌 코드로 끝납니다(doctor는 루트 설정만 봅니다). 필요한 복호화는
   `dva config env unseal`을 직접 실행해야 합니다.
 - **복호화된 값을 stdout에 출력하는 커맨드는 없습니다.** `unseal`이 쓰는 곳은 0600
   권한의 target 파일 하나뿐이고, sops가 만들어낸 평문은 DVA의 버퍼를 거치지 않고 그

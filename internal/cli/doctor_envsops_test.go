@@ -127,12 +127,49 @@ func TestUpWarnsOnEveryRouteWhenTargetMissing(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			f := newBridgeFixture(t, tt.yaml, map[string]string{"secrets.env.enc": "ENC"})
 			t.Chdir(f.cfg.FileDir())
-			env = nil
-			t.Cleanup(func() { env = nil })
-			stderr := captureStderr(t, func() { _ = upCmd.RunE(upCmd, tt.args) })
-			if strings.Count(stderr, "declares sops_source") != 1 {
-				t.Fatalf("stderr = %q, want one warning", stderr)
+			withEnvPolicyGlobals(t, nil, false)
+			var err error
+			stderr := captureStderr(t, func() { err = upCmd.RunE(upCmd, tt.args) })
+			if err != nil {
+				t.Fatalf("up %v: %v", tt.args, err)
+			}
+			if strings.Count(stderr, "declares sops_source") != 1 || !strings.Contains(stderr, "dva config env unseal .env") {
+				t.Fatalf("stderr = %q, want one warning naming the target", stderr)
 			}
 		})
+	}
+}
+
+func TestCompositionWarnsForChildOwner(t *testing.T) {
+	stack := `stack:
+  svc:
+    default_runner: script
+    runners:
+      script:
+        up: "true"
+        stop: "true"
+`
+	root := simpleBridgeYAML(".env.root", "root.enc") + `subprojects:
+  backend:
+    path: backend
+    import:
+      plans:
+        - name: deploy
+plans:
+  all:
+    composes:
+      - plan: backend/deploy
+`
+	child := simpleBridgeYAML(".env.child", "child.enc") + stack + "plans:\n  deploy:\n    entries:\n      - name: svc\n"
+	f := newBridgeFixture(t, root, map[string]string{"backend/" + config.FileName: child})
+	t.Chdir(f.cfg.FileDir())
+	withEnvPolicyGlobals(t, nil, false)
+	var err error
+	stderr := captureStderr(t, func() { err = upCmd.RunE(upCmd, []string{"all"}) })
+	if err != nil {
+		t.Fatalf("up all: %v", err)
+	}
+	if !strings.Contains(stderr, "[child: backend/deploy] env_file .env.child") || strings.Contains(stderr, ".env.root") {
+		t.Fatalf("stderr = %q, want only the child owner's target", stderr)
 	}
 }

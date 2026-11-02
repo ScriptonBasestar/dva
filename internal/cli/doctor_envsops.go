@@ -51,9 +51,9 @@ func unsealedEnvFinding(target string) string {
 // warnUnsealedEnv tells `up` what doctor reports. It cannot fail the run: the entry
 // is optional, and sops_source stays invisible to loading (TASK-245). The recreate
 // note matters because unsealing later changes the environment of running containers.
-func warnUnsealedEnv(c *config.Config, r *config.EnvInputReport) {
+func warnUnsealedEnv(c *config.Config, r *config.EnvInputReport, label string) {
 	for _, target := range c.UnsealedEnvTargets(r) {
-		fmt.Fprintf(os.Stderr, "warning: %s; run `%s` in the project that declares it, then `dva up` again (compose containers using these values are recreated)\n", unsealedEnvFinding(target), unsealCommand(target))
+		fmt.Fprintf(os.Stderr, "warning: %s%s; run `%s` in the project that declares it, then `dva up` again (compose containers using these values are recreated)\n", label, unsealedEnvFinding(target), unsealCommand(target))
 	}
 }
 
@@ -68,6 +68,6 @@ func warnCompositionUnsealed(c *config.Config, comp *lifecycle.CompositionPlan) 
 			continue
 		}
 		seen[owner] = true
-		warnUnsealedEnv(owner, config.InspectEnvFiles(owner.EnvFile, owner.FileDir(), owner.EnvFileScope()))
+		warnUnsealedEnv(owner, config.InspectEnvFiles(owner.EnvFile, owner.FileDir(), owner.EnvFileScope()), "[child: "+entry.ChildPlan.Name+"] ")
 	}
 }
