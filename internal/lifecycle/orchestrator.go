@@ -176,16 +176,8 @@ func (o *Orchestrator) Up(ctx context.Context, opts UpOptions) error {
 			fmt.Fprintf(os.Stderr, "[health] (dry-run) would wait for entry %q: %s\n",
 				entry.Name, describeHealthChecks(entry.HealthChecks))
 		} else if len(entry.HealthChecks) > 0 && opts.Wait {
-			results := o.hc.WaitUntilReadyWithContext(ctx, entry.HealthChecks, entryEnv.WorkDir(), entryEnv)
-			allReady := true
-			for _, r := range results {
-				if !r.Ready {
-					allReady = false
-					break
-				}
-			}
-			if !allReady {
-				fmt.Fprintf(os.Stderr, "[warn] some health checks not ready for entry %q\n", entry.Name)
+			if err := o.waitEntryReady(ctx, entry, entryEnv); err != nil {
+				return err
 			}
 		}
 	}

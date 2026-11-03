@@ -190,7 +190,7 @@ func TestOptionalSkipWarnsBeforeTheVerbRejects(t *testing.T) {
 	enableDryRun(t)
 	c, e := optionalSkipFixture(t)
 	var err error
-	stderr := captureBothStreams(t, func() { err = runPlanUp(c, incompleteEnvLoad(t, c, e), "dev", nil) })
+	stderr := captureBothStreams(t, func() { err = runPlanUp(t.Context(), c, incompleteEnvLoad(t, c, e), "dev", nil) })
 	if err == nil {
 		t.Fatal("incomplete environment inputs must still reject the run")
 	}
@@ -206,7 +206,7 @@ func TestOptionalSkipWarnsBeforeTheVerbRejects(t *testing.T) {
 func TestOptionalSkipWarningPrecedesThePlanHeader(t *testing.T) {
 	enableDryRun(t)
 	c, e := optionalSkipFixture(t)
-	stderr := captureBothStreams(t, func() { _ = runPlanUp(c, planEnv(e), "dev", nil) })
+	stderr := captureBothStreams(t, func() { _ = runPlanUp(t.Context(), c, planEnv(e), "dev", nil) })
 	assertSkipWarned(t, "dva up", stderr)
 	warn, header := strings.Index(stderr, "warning: entry:"), strings.Index(stderr, "[plan: ")
 	if header < 0 {

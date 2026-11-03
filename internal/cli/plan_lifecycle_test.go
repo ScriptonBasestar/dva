@@ -120,7 +120,7 @@ plans:
 				_ = runPlanDown(c, planEnv(e), "local-dev", nil)
 			})
 
-			if err := runPlanUp(c, planEnv(e), "local-dev", nil); err != nil {
+			if err := runPlanUp(t.Context(), c, planEnv(e), "local-dev", nil); err != nil {
 				t.Fatalf("plan up failed: %v", err)
 			}
 
@@ -192,6 +192,9 @@ stack:
 // the command under test cannot walk up to the repository's own dva.yml.
 func useConfig(t *testing.T, yml string) {
 	t.Helper()
+	oldContext := upCmd.Context()
+	upCmd.SetContext(t.Context())
+	t.Cleanup(func() { upCmd.SetContext(oldContext) })
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, config.FileName), []byte(yml), 0644); err != nil {
 		t.Fatalf("write config: %v", err)

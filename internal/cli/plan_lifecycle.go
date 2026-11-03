@@ -371,7 +371,7 @@ func setPlanVar(dst map[string]string, kv string) error {
 	return nil
 }
 
-func runPlanUp(c *config.Config, el *envLoad, planName string, extraArgs []string) error {
+func runPlanUp(ctx context.Context, c *config.Config, el *envLoad, planName string, extraArgs []string) error {
 	flags, err := parsePlanFlags("up", extraArgs)
 	if err != nil {
 		return err
@@ -403,7 +403,7 @@ func runPlanUp(c *config.Config, el *envLoad, planName string, extraArgs []strin
 	if err != nil {
 		return err
 	}
-	if err := orch.Up(context.Background(), lifecycle.UpOptions{
+	if err := orch.Up(ctx, lifecycle.UpOptions{
 		DryRun: effectiveDryRun,
 		Force:  flags.force,
 		Wait:   flags.wait,
@@ -414,7 +414,7 @@ func runPlanUp(c *config.Config, el *envLoad, planName string, extraArgs []strin
 	}
 
 	fmt.Fprintln(os.Stderr)
-	status, statusErr := orch.Status(context.Background())
+	status, statusErr := orch.Status(ctx)
 	if statusErr == nil {
 		status = filterStatusByNames(status, planEntryNames(plan))
 		if !jsonOutput {

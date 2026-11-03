@@ -76,7 +76,7 @@ func TestPlanUpDryRunPrintsResolution(t *testing.T) {
 	e := planResolutionEnv(t, c)
 
 	_, stderr := captureStreams(t, func() {
-		if err := runPlanUp(c, planEnv(e), "p1", []string{"--dry-run"}); err != nil {
+		if err := runPlanUp(t.Context(), c, planEnv(e), "p1", []string{"--dry-run"}); err != nil {
 			t.Errorf("plan up dry-run failed: %v", err)
 		}
 	})
@@ -104,7 +104,7 @@ func TestPlanUpWithoutDryRunStaysQuiet(t *testing.T) {
 	e := planResolutionEnv(t, c)
 
 	stdout, stderr := captureStreams(t, func() {
-		if err := runPlanUp(c, planEnv(e), "p1", nil); err != nil {
+		if err := runPlanUp(t.Context(), c, planEnv(e), "p1", nil); err != nil {
 			t.Errorf("plan up failed: %v", err)
 		}
 	})
@@ -126,7 +126,7 @@ func TestPlanResolutionGoesToStderr(t *testing.T) {
 	t.Cleanup(func() { jsonOutput = oldJSON })
 
 	stdout, stderr := captureStreams(t, func() {
-		if err := runPlanUp(c, planEnv(e), "p1", []string{"--dry-run"}); err != nil {
+		if err := runPlanUp(t.Context(), c, planEnv(e), "p1", []string{"--dry-run"}); err != nil {
 			t.Errorf("plan up dry-run --json failed: %v", err)
 		}
 	})

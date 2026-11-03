@@ -226,7 +226,7 @@ func TestPlanUpRejectsDownOnlyFlags(t *testing.T) {
 		run  func(*config.Config, *config.Environment, []string) error
 	}{
 		{"up", func(c *config.Config, e *config.Environment, a []string) error {
-			return runPlanUp(c, planEnv(e), "demo", a)
+			return runPlanUp(t.Context(), c, planEnv(e), "demo", a)
 		}},
 		{"stop", func(c *config.Config, e *config.Environment, a []string) error {
 			return runPlanStop(c, planEnv(e), "demo", a)

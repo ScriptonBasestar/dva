@@ -106,7 +106,7 @@ func TestExecutionAndTeardownRoutesFailClosed(t *testing.T) {
 		name   string
 		invoke func(c *config.Config, el *envLoad) error
 	}{
-		{"up", func(c *config.Config, el *envLoad) error { return runPlanUp(c, el, "dev", nil) }},
+		{"up", func(c *config.Config, el *envLoad) error { return runPlanUp(t.Context(), c, el, "dev", nil) }},
 		{"down", func(c *config.Config, el *envLoad) error { return runPlanDown(c, el, "dev", nil) }},
 		{"stop", func(c *config.Config, el *envLoad) error { return runPlanStop(c, el, "dev", nil) }},
 		{"restart", func(c *config.Config, el *envLoad) error { return runPlanRestart(c, el, "dev", nil) }},
@@ -140,7 +140,7 @@ func TestHooksDoNotFireOnIncompleteEnvironment(t *testing.T) {
 	withEnvPolicyGlobals(t, c, false)
 
 	up := &cobra.Command{RunE: func(_ *cobra.Command, args []string) error {
-		return runPlanUp(c, rootEnvLoad(c), "dev", args)
+		return runPlanUp(t.Context(), c, rootEnvLoad(c), "dev", args)
 	}}
 	wrapWithHooks("up", up)
 
@@ -410,7 +410,7 @@ func TestEnvInputOwnerIsolation(t *testing.T) {
 		withEnvPolicyGlobals(t, root, false)
 
 		var err error
-		captureBothStreams(t, func() { err = runPlanUp(root, rootEnvLoad(root), "child/dev", nil) })
+		captureBothStreams(t, func() { err = runPlanUp(t.Context(), root, rootEnvLoad(root), "child/dev", nil) })
 
 		if err != nil {
 			t.Fatalf("imported plan blocked by the root's own env failure: %v", err)
@@ -425,7 +425,7 @@ func TestEnvInputOwnerIsolation(t *testing.T) {
 		withEnvPolicyGlobals(t, root, false)
 
 		var err error
-		captureBothStreams(t, func() { err = runPlanUp(root, rootEnvLoad(root), "parent", nil) })
+		captureBothStreams(t, func() { err = runPlanUp(t.Context(), root, rootEnvLoad(root), "parent", nil) })
 
 		if err != nil {
 			t.Fatalf("root plan blocked by an imported child's env failure: %v", err)

@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	"github.com/spf13/cobra"
 
@@ -127,7 +129,14 @@ Plan-path flags (only when a plan is being run, e.g. 'dva up <plan>'):
 			if isCompositionPlan(c, planName) {
 				return runCompositionUp(c, el, planName, extraArgs)
 			}
-			return runPlanUp(c, el, planName, extraArgs)
+			parent := cmd.Context()
+			if parent == nil {
+				// Execute supplies this default; direct RunE callers need it too.
+				parent = context.Background()
+			}
+			ctx, stop := signal.NotifyContext(parent, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
+			defer stop()
+			return runPlanUp(ctx, c, el, planName, extraArgs)
 		}
 		// Root-owned route from here: no plan claimed the invocation, so the root's own
 		// env-input report governs and this fails closed before any hook or backend child.

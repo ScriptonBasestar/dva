@@ -529,10 +529,8 @@ func (e *PlanChildExecutor) IsUp(ctx context.Context, child *ExecutionPlan) (boo
 	return false, nil
 }
 
-// waitEntriesReady blocks on the health checks of the named entries and fails when any
-// stays unready. Orchestrator.Up only warns in that situation; composition needs a real
-// gate because the next wave's children assume the previous wave is serving (§4.5). Up's
-// own behavior is untouched.
+// waitEntriesReady applies the shared entry readiness gate at composition wave
+// boundaries, before the next wave's children start (§4.5).
 func (o *Orchestrator) waitEntriesReady(ctx context.Context, names []string) error {
 	entries, err := o.filterEntries(names, nil, nil, "", "")
 	if err != nil {
@@ -579,17 +577,24 @@ func (o *Orchestrator) waitEntryReady(ctx context.Context, entry config.Lifecycl
 	for {
 		select {
 		case results := <-resultsCh:
+			// A completed probe can race cancellation or the readiness deadline.
+			if err := ctx.Err(); err != nil {
+				return fmt.Errorf("entry %q readiness wait cancelled: %w", entry.Name, err)
+			}
+			if waitCtx.Err() == context.DeadlineExceeded {
+				return fmt.Errorf("entry %q not ready within %s (ready_timeout)", entry.Name, timeout)
+			}
 			for _, result := range results {
 				if !result.Ready {
-					if waitCtx.Err() == context.DeadlineExceeded {
-						return fmt.Errorf("entry %q not ready within %s (ready_timeout)", entry.Name, timeout)
-					}
 					return fmt.Errorf("entry %q health check %q not ready", entry.Name, result.Name)
 				}
 			}
 			return nil
-		case <-ctx.Done():
-			return fmt.Errorf("entry %q readiness wait cancelled: %w", entry.Name, ctx.Err())
+		case <-waitCtx.Done():
+			if err := ctx.Err(); err != nil {
+				return fmt.Errorf("entry %q readiness wait cancelled: %w", entry.Name, err)
+			}
+			return fmt.Errorf("entry %q not ready within %s (ready_timeout)", entry.Name, timeout)
 		case <-ticker.C:
 			if pid, known := o.entryPid(entry); known && !IsProcessRunning(pid) {
 				return fmt.Errorf("entry %q native process (pid %d) exited before becoming ready — see %s",
