@@ -11,7 +11,7 @@ created: 2026-11-04
 
 ## Summary
 
-`dva up <plan>`이 공용 readiness 게이트를 쓰도록 바꿔 ready_timeout 초과, 호출자 취소·마감이 실패로 전달되고 이후 엔트리가 시작되지 않게 한다. compose 루트가 signal.NotifyContext로 SIGINT/SIGTERM/SIGHUP을 plan up에 연결하고, 단일 plan 경로의 `orch.Up`이 준비 실패를 warn에서 오류로 승격한다. 구현과 테스트는 codex 세션이 2026-10-29에 `codex__mbp__fix__plan-readiness-bounds` 워크트리에 남긴 미커밋 작업(13파일 수정 + 신규 테스트 2개)에서 온 것이며, 이 카드는 그 통합을 소유한다.
+`dva up <plan>`이 공용 readiness 게이트를 쓰도록 바꿔 ready_timeout 초과, 호출자 취소·마감이 실패로 전달되고 이후 엔트리가 시작되지 않게 한다. compose 루트가 signal.NotifyContext로 SIGINT/SIGTERM/SIGHUP을 plan up에 연결하고, 단일 plan 경로의 `orch.Up`이 준비 실패를 warn에서 오류로 승격한다. 게이트가 `orch.Up` 자체에 있으므로 legacy 전체 스택 `dva up`과 `dva restart`(스택·plan 양쪽, `Wait: true` 호출자)도 같은 실패 전달을 받아 종료 코드가 바뀐다 — 독립 리뷰가 이 범위를 지적해 문서와 CHANGELOG에 명시했다(TASK-117 fail-closed 철학과 일치). 구현과 테스트는 codex 세션이 2026-10-29에 `codex__mbp__fix__plan-readiness-bounds` 워크트리에 남긴 미커밋 작업(13파일 수정 + 신규 테스트 2개)에서 온 것이며, 이 카드는 그 통합을 소유한다.
 
 ## Sources
 

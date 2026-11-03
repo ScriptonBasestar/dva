@@ -11,8 +11,11 @@ All notable changes to DVA are documented here.
 
 ### Fixed
 
-- **단일 plan의 readiness 대기**: `dva up <plan>`이 기존 공통 대기 경로를 사용해
-  `ready_timeout`, native PID 종료와 호출자 취소를 실패로 전달합니다.
+- **readiness 대기의 실패 전달**: 공통 대기 경로가 `ready_timeout` 초과, native PID 종료,
+  호출자 취소를 실패로 전달합니다. `dva up <plan>`은 물론 legacy 전체 스택 `dva up`과
+  `dva restart`(스택·plan 양쪽)도 같은 게이트를 지나므로, 준비되지 않은 채 경고만 내고
+  0으로 끝나던 명령이 이제 0이 아닌 코드로 끝납니다. `dva up <plan>`은
+  SIGINT·SIGTERM·SIGHUP도 대기에 연결합니다.
 
 - `dva up` warns and `dva doctor` reports when an `env_file` entry declares `sops_source` but its target is missing; `dva doctor --strict` now fails in that case.
 - `make install` warns when another `dva` earlier on PATH hides the install or no destination is on PATH.
