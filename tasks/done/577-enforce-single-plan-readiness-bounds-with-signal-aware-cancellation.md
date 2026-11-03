@@ -5,8 +5,11 @@ type: feature
 priority: P2
 effort: M
 exec-tier: standard
-status: todo
+status: done
 created: 2026-11-04
+quality-review: pass
+quality-reviewed-at: 2026-11-04
+quality-review-evidence: tasks/done/evidence/TASK-577/independent-review.json
 ---
 
 ## Summary
@@ -22,7 +25,7 @@ created: 2026-11-04
 
 ## Completion Criteria
 
-- [ ] Single-plan up fails on the declared ready_timeout and bounds in-flight probes | verify: `go test -count=1 -run TestOrchestratorUpReadinessTimeout ./internal/lifecycle -v 2>&1 | /usr/bin/grep -q -- '--- PASS: TestOrchestratorUpReadinessTimeout'`
-- [ ] Caller cancellation and deadline reach the readiness wait and stop later entries | verify: `go test -count=1 -run TestOrchestratorUpReadinessCallerCancellation ./internal/lifecycle -v 2>&1 | /usr/bin/grep -q -- '--- PASS: TestOrchestratorUpReadinessCallerCancellation'`
-- [ ] A dead native entry fails readiness with its PID diagnostic | verify: `go test -count=1 -run TestOrchestratorUpReadinessDeadNativeProcess ./internal/lifecycle -v 2>&1 | /usr/bin/grep -q -- '--- PASS: TestOrchestratorUpReadinessDeadNativeProcess'`
-- [ ] The cobra up command passes its caller context into plan up | verify: `go test -count=1 -run TestPlanUpCallerContextReachesReadiness ./internal/cli -v 2>&1 | /usr/bin/grep -q -- '--- PASS: TestPlanUpCallerContextReachesReadiness'`
+- [x] Single-plan up fails on the declared ready_timeout and bounds in-flight probes | verify: `go test -count=1 -run TestOrchestratorUpReadinessTimeout ./internal/lifecycle -v 2>&1 | /usr/bin/grep -q -- '--- PASS: TestOrchestratorUpReadinessTimeout'`
+- [x] Caller cancellation and deadline reach the readiness wait and stop later entries | verify: `go test -count=1 -run TestOrchestratorUpReadinessCallerCancellation ./internal/lifecycle -v 2>&1 | /usr/bin/grep -q -- '--- PASS: TestOrchestratorUpReadinessCallerCancellation'`
+- [x] A dead native entry fails readiness with its PID diagnostic | verify: `go test -count=1 -run TestOrchestratorUpReadinessDeadNativeProcess ./internal/lifecycle -v 2>&1 | /usr/bin/grep -q -- '--- PASS: TestOrchestratorUpReadinessDeadNativeProcess'`
+- [x] The cobra up command passes its caller context into plan up | verify: `go test -count=1 -run TestPlanUpCallerContextReachesReadiness ./internal/cli -v 2>&1 | /usr/bin/grep -q -- '--- PASS: TestPlanUpCallerContextReachesReadiness'`

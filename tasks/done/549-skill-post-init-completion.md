@@ -3,8 +3,11 @@ id: TASK-549
 title: "Document completing a scaffold after dva init"
 type: bug
 priority: P3
-status: todo
+status: done
 created: 2026-10-31
+quality-review: pass
+quality-reviewed-at: 2026-11-04
+quality-review-evidence: tasks/done/evidence/TASK-549/independent-review.json
 ---
 
 ## Summary
@@ -13,4 +16,4 @@ created: 2026-10-31
 
 ## Completion Criteria
 
-- [ ] dva-config documents post-init completion | verify: `/usr/bin/grep -q "this is Preserve mode" skills/dva-config/SKILL.md`
+- [x] dva-config documents post-init completion | verify: `/usr/bin/grep -q "this is Preserve mode" skills/dva-config/SKILL.md`

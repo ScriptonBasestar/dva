@@ -1,0 +1,13 @@
+{
+  "verdict": "PASS",
+  "reviewer": "claude-code-subagent (review-batch), separate from the implementing sessions",
+  "date": "2026-11-04",
+  "scope": "no-interactions-without-app-service guard, undeclared npm script dropping (dev/test/lint), canonical section order; pre-existing test fixture updates are a legitimate consequence of the new rule",
+  "reviewed_commit": "79cbefd5",
+  "findings": [
+    "(non-blocking) arrangeTemplate panics on slice bounds if a future template omits 'stack:' or 'interaction:' header lines — all five templates guarantee both today, and it would fail loudly in tests",
+    "(non-blocking) when no Compose service is named app, the environment: block is dropped along with interactions (defensible, not stated in the emitted comment)",
+    "(non-blocking) dropMissingNpmScripts runs only on the compose path; a compose-less --template node run still scaffolds undeclared npm scripts (explicit template choice, pre-existing surface)"
+  ],
+  "limits": "Batch review of the commit's git show output; non-blocking findings recorded verbatim, no follow-up applied."
+}
