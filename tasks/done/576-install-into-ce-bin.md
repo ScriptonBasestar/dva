@@ -4,8 +4,11 @@ title: "make install 기본 설치 위치를 ~/.local/share/ce/bin 하나로 바
 type: chore
 priority: P2
 exec-tier: standard
-status: todo
+status: done
 created: 2026-11-03
+quality-review: pass
+quality-reviewed-at: 2026-11-03
+quality-review-evidence: tasks/done/evidence/TASK-576/independent-review.json
 ---
 
 ## Summary
@@ -20,5 +23,5 @@ devenv `own-cli-install` 규칙(TASK-108)은 자체 빌드 CLI를 `~/.local/shar
 ## Completion Criteria
 
 <!-- markdownlint-disable-next-line MD013 -->
-- [ ] 기본 설치가 CE bin 한 곳에만 사본을 둔다 | verify: `go test ./tools/installcheck/ -run 'TestInstallerOnlyTargetRespectsIsolatedHOMEAndGOBIN$' -v 2>&1 | /usr/bin/grep -q -- '--- PASS: TestInstallerOnlyTargetRespectsIsolatedHOMEAndGOBIN'`
-- [ ] 설치 검사 전체가 통과한다 | verify: `go test ./tools/installcheck/`
+- [x] 기본 설치가 CE bin 한 곳에만 사본을 둔다 | verify: `go test ./tools/installcheck/ -run 'TestInstallerOnlyTargetRespectsIsolatedHOMEAndGOBIN$' -v 2>&1 | /usr/bin/grep -q -- '--- PASS: TestInstallerOnlyTargetRespectsIsolatedHOMEAndGOBIN'`
+- [x] 설치 검사 전체가 통과한다 | verify: `go test ./tools/installcheck/`

@@ -5,6 +5,10 @@ All notable changes to DVA are documented here.
 
 ## [Unreleased]
 
+### Changed
+
+- `make install` now installs one copy into `~/.local/share/ce/bin` (override with `LOCAL_BIN_DIR`). Existing `~/.local/bin/dva` and `~/go/bin/dva` copies are left in place; `GO_BIN_DIR=` restores the second GOBIN/GOPATH copy.
+
 ### Fixed
 
 - `dva up` warns and `dva doctor` reports when an `env_file` entry declares `sops_source` but its target is missing; `dva doctor --strict` now fails in that case.

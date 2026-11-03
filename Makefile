@@ -219,7 +219,8 @@ install-binary:
 				printf '%s\n' "make install: WARNING: $$shadow ($${shadow_version:-unknown version}) comes before this install on PATH and shadows it; remove it or reorder PATH" >&2; \
 			done; \
 			if [ "$$destination_on_path" = no ]; then \
-				printf '%s\n' "make install: WARNING: no install destination is on PATH: $$local_dir, $$go_dir" >&2; \
+				if [ "$$go_dir" = "$$local_dir" ]; then path_dirs=$$local_dir; else path_dirs="$$local_dir, $$go_dir"; fi; \
+				printf '%s\n' "make install: WARNING: no install destination is on PATH: $$path_dirs" >&2; \
 			fi; \
 		}; \
 		( warn_path_resolution ) </dev/null || :
