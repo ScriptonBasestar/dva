@@ -18,7 +18,7 @@
 
 ```bash
 make build          # bin/dva 생성 (generate 포함)
-make install        # ~/.local/bin/dva 설치
+make install        # ~/.local/share/ce/bin/dva 설치 (LOCAL_BIN_DIR로 변경)
 make test           # 전체 테스트
 make test-integration  # 통합 테스트 (-tags=integration)
 make generate       # 생성물 일괄 갱신: libgen(fact 블록) + library_reference.txt(am flow가 읽음, 바이너리 임베드 아님) + flowgen(self-contained flow) + skillgen(플랫폼 스킬)

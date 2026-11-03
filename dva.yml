@@ -35,7 +35,7 @@ interaction:
     runner: local
 
   install:
-    description: "Install dva binary to ~/.local/bin and Go bin"
+    description: "Install dva binary to ~/.local/share/ce/bin"
     command: "make install"
     runner: local
 
@@ -86,7 +86,7 @@ provision:
     - step: "Run tests"
       run: "make test"
     - step: "Ready"
-      note: "Run 'dva install' to install to ~/.local/bin"
+      note: "Run 'dva run install' to install to ~/.local/share/ce/bin"
   reset:
     - step: "Remove build artifacts"
       run: "make clean"

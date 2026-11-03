@@ -41,12 +41,16 @@ func TestInstallerOnlyTargetRespectsIsolatedHOMEAndGOBIN(t *testing.T) {
 	goDir := filepath.Join(fixture, "go", "bin")
 
 	output := runInstaller(t, repo, source, "HOME="+home, "GOBIN="+goDir)
-	if !strings.Contains(output, "make install: verified local destination:") ||
-		!strings.Contains(output, "make install: verified Go destination:") {
-		t.Fatalf("install did not verify the default destinations selected by HOME and GOBIN:\n%s", output)
+	if !strings.Contains(output, "local and Go destinations are the same path; installing once") ||
+		!strings.Contains(output, "make install: verified local destination:") {
+		t.Fatalf("install did not verify the single default destination selected by HOME:\n%s", output)
 	}
-	assertSameBinary(t, source, filepath.Join(home, ".local", "bin", "dva"))
-	assertSameBinary(t, source, filepath.Join(goDir, "dva"))
+	assertSameBinary(t, source, filepath.Join(home, ".local", "share", "ce", "bin", "dva"))
+	for _, stray := range []string{filepath.Join(home, ".local", "bin", "dva"), filepath.Join(goDir, "dva")} {
+		if _, err := os.Stat(stray); !os.IsNotExist(err) {
+			t.Fatalf("default install left a copy at %s (stat error: %v)", stray, err)
+		}
+	}
 }
 
 func TestInstallerOnlyTargetUsesFirstPOSIXGOPATHEntry(t *testing.T) {

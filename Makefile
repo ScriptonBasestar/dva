@@ -3,12 +3,14 @@ MODULE     := github.com/ScriptonBasestar/dva
 BUILD_DIR  := ./bin
 BUILD_FLAGS := -trimpath
 
-# Both destinations remain configurable for an isolated install fixture. The defaults are the
-# public installation paths; callers may set LOCAL_BIN_DIR and GO_BIN_DIR without changing their
-# real HOME or Go toolchain configuration. GO_BIN_DIR resolution is intentionally delayed until
-# the installer runs: `make help` must not need a working Go command.
-LOCAL_BIN_DIR ?= $(HOME)/.local/bin
-GO_BIN_DIR ?=
+# Both destinations remain configurable for an isolated install fixture. A local build installs
+# once into the CE own-build directory (devenv own-cli-install), so it never leaves a second copy
+# in ~/.local/bin or the Go bin directory; release installs keep their own paths. Callers may set
+# LOCAL_BIN_DIR and GO_BIN_DIR without changing their real HOME or Go toolchain configuration.
+# An explicitly empty GO_BIN_DIR falls back to GOBIN or the first GOPATH entry; that resolution
+# is delayed until the installer runs because `make help` must not need a working Go command.
+LOCAL_BIN_DIR ?= $(HOME)/.local/share/ce/bin
+GO_BIN_DIR ?= $(LOCAL_BIN_DIR)
 
 # Workflow source directories (single source of truth)
 WF_LIBRARY  := agent-mesh-flows/shared/library
