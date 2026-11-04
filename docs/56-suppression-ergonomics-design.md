@@ -6,13 +6,13 @@
 
 ## 1. 현재 상태
 
-`dva validate`가 내는 비(非)스키마 출력은 세 갈래이고 억제 수단은 하나만 있다.
+`dva validate`의 비(非)스키마 출력은 세 갈래이며, 억제는 선언·추적되는 예외다.
 
 | 출력 | 생산자 | 억제 수단 |
 |---|---|---|
-| suggestion: Makefile/package.json 타겟을 interaction으로 감싸라는 제안 | `detectConfigSuggestionWarnings` | `suggestion_ignore: [glob...]` — 타겟 이름 glob |
+| suggestion: Makefile/package.json 타겟을 interaction으로 감싸라는 제안 | `detectConfigSuggestionWarnings` | legacy `suggestion_ignore` glob 또는 reason·bound 객체 |
 | drift: (a) 루트 compose 자동탐지 파일이 `compose.files`에 없음, (b) 선언된 compose 파일이 디스크에 없음, (c) interaction `service`가 compose에 없음 | `detectConfigDriftWarnings` (:385) | 없음 |
-| 시맨틱 경고 28종 | `config.ValidateWarnings()` | 없음 (설계상 의도: 설정을 고치는 것이 답) |
+| 시맨틱 경고 | `config.ValidateWarnings()` | 없음. 단, root `p:k` key가 subproject route를 가릴 때만 `intentional_shadow: true` acknowledgement 가능 |
 
 dogfood 관찰(2026-09-05, 12개 프로젝트):
 
@@ -34,8 +34,9 @@ SOUL 신념 2(예측 가능성)와 5(기계가 읽는 표면)에서 두 제약�
    (`✅ dva.yml is valid (2 suggestions, 1 drift file ignored by dva.yml)`). 어떤 파일이
    무엇을 가리는지 `dva validate --show-ignored`로 펼칠 수 있어야 한다.
 2. **실행을 깨는 사실은 억제 대상이 아니다.** drift (b) 선언 파일 부재와 (c) 없는 서비스 참조는
-   `dva up`/`dva run`이 실패하는 상태이므로 어떤 ignore도 적용하지 않는다. 시맨틱 경고도 같은
-   이유로 억제 수단을 두지 않는다 — 경고가 틀렸다면 규칙을 고친다.
+   `dva up`/`dva run`을 깨므로 ignore하지 않는다. 시맨틱 경고도 원칙상 같다. 유일한 acknowledgement인
+   `intentional_shadow: true`는 root literal `p:k` shadow 선택을 기록할 뿐 routing을 바꾸지 않으며,
+   대상이 사라지면 stale warning으로 되돌아온다.
 
 ## 3. suggestion 억제 — 선택지
 
@@ -128,9 +129,9 @@ C(소스 개선)를 먼저 넣고, 그래도 남는 목록에 B(카테고리 opt
 "손으로 타겟 이름을 옮겨 적는 수고"뿐이고, 그 수고는 ignore를 **쓰기 어렵게** 만들 뿐
 **남용을 막지는** 못한다. 실제로 dogfood의 20줄짜리 목록들은 A 없이 손으로 쌓인 것이다.
 
-A의 출력은 붙여 넣을 수 있는 `suggestion_ignore:` YAML 블록이며, 제안이 없으면 아무것도
-찍지 않는다. 무엇을 억제하게 되는지 사용자가 읽고 붙여 넣는 절차는 유지한다 — dva.yml을
-직접 고쳐 주지는 않는다.
+A의 출력은 붙여 넣을 수 있는 legacy `suggestion_ignore:` YAML 블록이다. 객체형 rule은
+`pattern`·비어 있지 않은 `reason`, glob이면 양수 `max_matches`를 선언한다. cap은 실제 first-match
+미커버 후보만 세며 초과는 `--strict`에서 실패한다.
 
 ### 6-2. B의 카테고리 단위: 소스 종류만
 
@@ -154,7 +155,8 @@ D는 문서에 "하지 말 것"으로 남기고, F(`compose_autodiscover: false`
 ### 6-5. stale ignore 경고: `suggestion_ignore`에도 소급 적용
 
 매치되는 대상이 하나도 없는 ignore 패턴은 `drift_ignore`·`suggestion_ignore` 양쪽 모두
-경고를 낸다. dogfood 목록의 일부는 이미 사라진 타겟을 가리키고 있고, 그 줄들은 다음 사람에게
+경고를 낸다. 객체형 suggestion rule은 reason을 `--show-ignored`·JSON에도 남기며 cap 초과도
+경고한다. dogfood 목록의 일부는 이미 사라진 타겟을 가리키고 있고, 그 줄들은 다음 사람에게
 "이 프로젝트에는 그런 타겟이 있다"는 잘못된 정보를 준다.
 
 ## 7. 구현 범위

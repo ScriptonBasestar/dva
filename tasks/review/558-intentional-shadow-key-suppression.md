@@ -4,7 +4,7 @@ title: "Declare intended shadow keys"
 type: feature
 priority: P3
 exec-tier: standard
-status: todo
+status: review
 created: 2026-11-01
 ---
 
@@ -16,4 +16,4 @@ An intended shadow key has no suppression, so its warning stays under --strict (
 
 ## Completion Criteria
 
-- [ ] A declared intended shadow key no longer fails --strict, and an undeclared one still does | verify: human — bind a test when the design is settled
+- [ ] A declared intended shadow key no longer fails --strict, and an undeclared one still does | verify: `go test ./internal/cli -run 'Test(ValidateStrictIntentionalShadow|ValidateIntentionalShadowJSONRemainsVisible)$'`

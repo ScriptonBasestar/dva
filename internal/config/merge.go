@@ -139,6 +139,14 @@ func mergeInteractionCommand(base, other *InteractionCommand) (*InteractionComma
 	if other.Destructive != nil {
 		base.Destructive = other.Destructive
 	}
+	if other.IntentionalShadow != nil {
+		base.IntentionalShadow = other.IntentionalShadow
+	}
+	if other.SuggestionAliases != nil {
+		files := make([]string, len(other.SuggestionAliases.Makefile))
+		copy(files, other.SuggestionAliases.Makefile)
+		base.SuggestionAliases = &SuggestionAliasConfig{Makefile: files}
+	}
 	if other.Compose != nil {
 		base.Compose = other.Compose
 	}

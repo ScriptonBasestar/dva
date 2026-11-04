@@ -4,7 +4,7 @@ title: "Diagnose over-broad ignores and record ignore reasons"
 type: feature
 priority: P3
 exec-tier: standard
-status: todo
+status: review
 created: 2026-11-01
 ---
 
@@ -16,4 +16,4 @@ created: 2026-11-01
 
 ## Completion Criteria
 
-- [ ] Validate diagnoses a wildcard that over-suppresses, and an ignore entry can carry a reason | verify: human — bind a test when the design is settled
+- [ ] Validate diagnoses a wildcard that over-suppresses, and an ignore entry can carry a reason | verify: `go test ./internal/cli -run 'Test(SuggestionIgnoreObject.*|ValidateSuggestionIgnoreBoundRendersReasonAndFailsOnlyUnderStrict)$'`

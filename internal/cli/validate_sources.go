@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 
@@ -29,7 +30,9 @@ func detectConfigSuggestionWarnings(c *config.Config) []string {
 // See detectConfigDriftWarningsWithSuppressions for why the plain wrapper stays.
 func detectConfigSuggestionWarningsWithSuppressions(c *config.Config) ([]string, *suppressionSummary) {
 	suppressed := &suppressionSummary{}
-	allCommands := runner.NewInteractionTree(c.Interaction).List()
+	tree := runner.NewInteractionTree(c.Interaction)
+	allCommands := tree.List()
+	aliasedMakefileTargets, aliasWarnings := suggestionAliasCoverage(c, tree)
 
 	// Build subcommand coverage set: for "app:build ce" → also match "build-ce"
 	// This detects when a Makefile target like "build-ce" is already covered by a
@@ -105,13 +108,15 @@ func detectConfigSuggestionWarningsWithSuppressions(c *config.Config) ([]string,
 	// hides nothing while still naming real targets.
 	matchedNames := make([][]string, len(c.SuggestionIgnore))
 	uncoveredMatches := make([]int, len(c.SuggestionIgnore))
+	hiddenMatches := make([]int, len(c.SuggestionIgnore))
 
-	var warnings []string
+	warnings := append([]string(nil), aliasWarnings...)
 	for _, name := range names {
-		for i, pattern := range c.SuggestionIgnore {
-			if ok, _ := filepath.Match(pattern, name); ok {
+		for i, rule := range c.SuggestionIgnore {
+			if rule.Matches(name) {
 				matchedNames[i] = append(matchedNames[i], name)
-				if !commandSet[name] && !subcommandCoverage[name] && !wrapped[name] {
+				if !commandSet[name] && !subcommandCoverage[name] && !wrapped[name] &&
+					!aliasedMakefileTargets[name] && c.Suggestions.Enabled(suggestionSourceKind(candidates[name])) {
 					uncoveredMatches[i]++
 				}
 			}
@@ -127,12 +132,20 @@ func detectConfigSuggestionWarningsWithSuppressions(c *config.Config) ([]string,
 		if wrapped[name] {
 			continue
 		}
+		if aliasedMakefileTargets[name] {
+			continue
+		}
 		if kind := suggestionSourceKind(candidates[name]); !c.Suggestions.Enabled(kind) {
 			suppressed.add(suppressedSuggestion, name, fmt.Sprintf("suggestions.%s: false", kind))
 			continue
 		}
-		if pattern, ok := matchIgnorePattern(name, c.SuggestionIgnore); ok {
-			suppressed.add(suppressedSuggestion, name, fmt.Sprintf("suggestion_ignore: %s", pattern))
+		if index, rule, ok := matchSuggestionIgnoreRule(name, c.SuggestionIgnore); ok {
+			hiddenMatches[index]++
+			reason := fmt.Sprintf("suggestion_ignore: %s", rule.Pattern)
+			if rule.Reason != "" {
+				reason += fmt.Sprintf(" — %s", rule.Reason)
+			}
+			suppressed.add(suppressedSuggestion, name, reason)
 			continue
 		}
 		suppressed.suggested = append(suppressed.suggested, name)
@@ -158,16 +171,72 @@ func detectConfigSuggestionWarningsWithSuppressions(c *config.Config) ([]string,
 	universe := append(allDocumentedMakefileTargetNamesInDir(c.FileDir()), allPackageScriptNamesInDir(c.FileDir())...)
 	if len(universe) > 0 {
 		suppressed.stale = append(suppressed.stale,
-			staleIgnoreWarnings("suggestion_ignore", c.SuggestionIgnore, universe, "Makefile target or package.json script")...)
+			staleSuggestionIgnoreWarnings(c.SuggestionIgnore, universe, "Makefile target or package.json script")...)
 	}
 	// A pattern that matched at least one documented name is never stale, so the check
 	// above reports an entry whose every match an interaction covers nowhere at all
 	// (ISSUE-505). The redundant check needs no empty-sample guard of its own: a warning
 	// requires a recorded match, and an empty sample records none.
 	suppressed.redundant = append(suppressed.redundant,
-		redundantIgnoreWarnings("suggestion_ignore", c.SuggestionIgnore, matchedNames, uncoveredMatches)...)
+		redundantSuggestionIgnoreWarnings(c.SuggestionIgnore, matchedNames, uncoveredMatches)...)
+	suppressed.overbroad = append(suppressed.overbroad,
+		overbroadSuggestionIgnoreWarnings(c.SuggestionIgnore, hiddenMatches)...)
 
 	return warnings, suppressed
+}
+
+// suggestionAliasCoverage returns only aliases whose owning interaction has a
+// real root route in the interaction tree. Aliases are validation metadata, not
+// executable routes: they merely say that an existing DVA interaction covers a
+// named root Makefile target.
+func suggestionAliasCoverage(c *config.Config, tree *runner.InteractionTree) (map[string]bool, []string) {
+	covered := make(map[string]bool)
+	documented := make(map[string]bool)
+	for _, target := range allDocumentedMakefileTargetNamesInDir(c.FileDir()) {
+		documented[target] = true
+	}
+
+	var warnings []string
+	var walk func([]string, map[string]*config.InteractionCommand)
+	walk = func(parent []string, commands map[string]*config.InteractionCommand) {
+		names := make([]string, 0, len(commands))
+		for name := range commands {
+			names = append(names, name)
+		}
+		sort.Strings(names)
+		for _, name := range names {
+			cmd := commands[name]
+			// Imported metadata belongs to the child owning config. It must not
+			// make claims about this root's Makefile, and skipping the root also
+			// skips every raw child subcommand whose owner metadata is inherited
+			// only when the interaction tree resolves it.
+			if cmd == nil || cmd.SubprojectName != "" || cmd.OwnerConfig(c) != c {
+				continue
+			}
+			path := append(append([]string(nil), parent...), name)
+			if cmd.SuggestionAliases != nil {
+				resolved := tree.Find(path[0], path[1:]...)
+				owner := "interaction." + strings.Join(path, ".subcommands.")
+				if resolved == nil || !slices.Equal(resolved.Path, path) || !resolved.HasExecutionTarget() {
+					warnings = append(warnings, fmt.Sprintf(
+						"%s.suggestion_aliases.makefile: interaction has no runnable route; remove the alias or make the interaction runnable", owner))
+				} else {
+					for _, target := range cmd.SuggestionAliases.Makefile {
+						if !documented[target] {
+							warnings = append(warnings, fmt.Sprintf(
+								"%s.suggestion_aliases.makefile: %q is not a documented root Makefile target; remove or correct the alias", owner, target))
+							continue
+						}
+						covered[target] = true
+					}
+				}
+			}
+			walk(path, cmd.Subcommands)
+		}
+	}
+	walk(nil, c.Interaction)
+	sort.Strings(warnings)
+	return covered, warnings
 }
 
 func sortedSuggestionSources(sources map[string]bool) []string {

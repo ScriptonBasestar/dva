@@ -22,22 +22,30 @@ var InteractionRunners = []string{
 	InteractionRunnerCompose, InteractionRunnerDockerComposeDash, InteractionRunnerDockerCompose, InteractionRunnerKubectl, InteractionRunnerLocal,
 }
 
+// SuggestionAliasConfig records existing Makefile targets covered by this command.
+// It does not create executable aliases or change command routing.
+type SuggestionAliasConfig struct {
+	Makefile []string `yaml:"makefile" json:"makefile"`
+}
+
 // InteractionCommand defines a command in the interaction section.
 type InteractionCommand struct {
-	Description string                         `yaml:"description"`
-	Service     string                         `yaml:"service"`
-	Workdir     string                         `yaml:"workdir"`
-	User        string                         `yaml:"user"`
-	DefaultArgs string                         `yaml:"default_args"`
-	Environment map[string]string              `yaml:"environment"`
-	Compose     *ComposeOptions                `yaml:"compose"`
-	Shell       *bool                          `yaml:"shell"`
-	Entrypoint  string                         `yaml:"entrypoint"`
-	Runner      string                         `yaml:"runner"`
-	Pod         string                         `yaml:"pod"`
-	Subcommands map[string]*InteractionCommand `yaml:"subcommands"`
-	Tags        []string                       `yaml:"tags"`
-	Destructive *bool                          `yaml:"destructive,omitempty"`
+	Description       string                         `yaml:"description"`
+	Service           string                         `yaml:"service"`
+	Workdir           string                         `yaml:"workdir"`
+	User              string                         `yaml:"user"`
+	DefaultArgs       string                         `yaml:"default_args"`
+	Environment       map[string]string              `yaml:"environment"`
+	Compose           *ComposeOptions                `yaml:"compose"`
+	Shell             *bool                          `yaml:"shell"`
+	Entrypoint        string                         `yaml:"entrypoint"`
+	Runner            string                         `yaml:"runner"`
+	Pod               string                         `yaml:"pod"`
+	Subcommands       map[string]*InteractionCommand `yaml:"subcommands"`
+	Tags              []string                       `yaml:"tags"`
+	Destructive       *bool                          `yaml:"destructive,omitempty"`
+	IntentionalShadow *bool                          `yaml:"intentional_shadow,omitempty" json:"intentional_shadow,omitempty"`
+	SuggestionAliases *SuggestionAliasConfig         `yaml:"suggestion_aliases,omitempty" json:"suggestion_aliases,omitempty"`
 
 	// Command execution: one of the following should be set.
 	// command: string or []string — single command or list executed sequentially
@@ -177,27 +185,29 @@ func (c *InteractionCommand) UnmarshalYAML(node *yaml.Node) error {
 	// path, which is what makes it honour merge keys like its neighbours (TASK-162). The alias has
 	// no UnmarshalYAML of its own to avoid recursion.
 	type plain struct {
-		Description string                         `yaml:"description"`
-		Service     string                         `yaml:"service"`
-		Workdir     string                         `yaml:"workdir"`
-		User        string                         `yaml:"user"`
-		DefaultArgs string                         `yaml:"default_args"`
-		Environment map[string]string              `yaml:"environment"`
-		Compose     *ComposeOptions                `yaml:"compose"`
-		Shell       *bool                          `yaml:"shell"`
-		Entrypoint  string                         `yaml:"entrypoint"`
-		Runner      string                         `yaml:"runner"`
-		Pod         string                         `yaml:"pod"`
-		Subcommands map[string]*InteractionCommand `yaml:"subcommands"`
-		Tags        []string                       `yaml:"tags"`
-		Destructive *bool                          `yaml:"destructive,omitempty"`
-		Script      string                         `yaml:"script"`
-		ScriptFile  string                         `yaml:"script_file"`
-		Steps       []ProvisionItem                `yaml:"steps"`
-		Before      []ProvisionItem                `yaml:"before"`
-		Replace     []ProvisionItem                `yaml:"replace"`
-		After       []ProvisionItem                `yaml:"after"`
-		Command     polymorphicCommand             `yaml:"command"`
+		Description       string                         `yaml:"description"`
+		Service           string                         `yaml:"service"`
+		Workdir           string                         `yaml:"workdir"`
+		User              string                         `yaml:"user"`
+		DefaultArgs       string                         `yaml:"default_args"`
+		Environment       map[string]string              `yaml:"environment"`
+		Compose           *ComposeOptions                `yaml:"compose"`
+		Shell             *bool                          `yaml:"shell"`
+		Entrypoint        string                         `yaml:"entrypoint"`
+		Runner            string                         `yaml:"runner"`
+		Pod               string                         `yaml:"pod"`
+		Subcommands       map[string]*InteractionCommand `yaml:"subcommands"`
+		Tags              []string                       `yaml:"tags"`
+		Destructive       *bool                          `yaml:"destructive,omitempty"`
+		IntentionalShadow *bool                          `yaml:"intentional_shadow,omitempty" json:"intentional_shadow,omitempty"`
+		SuggestionAliases *SuggestionAliasConfig         `yaml:"suggestion_aliases,omitempty" json:"suggestion_aliases,omitempty"`
+		Script            string                         `yaml:"script"`
+		ScriptFile        string                         `yaml:"script_file"`
+		Steps             []ProvisionItem                `yaml:"steps"`
+		Before            []ProvisionItem                `yaml:"before"`
+		Replace           []ProvisionItem                `yaml:"replace"`
+		After             []ProvisionItem                `yaml:"after"`
+		Command           polymorphicCommand             `yaml:"command"`
 	}
 	var p plain
 	if err := node.Decode(&p); err != nil {
@@ -217,6 +227,8 @@ func (c *InteractionCommand) UnmarshalYAML(node *yaml.Node) error {
 	c.Subcommands = p.Subcommands
 	c.Tags = p.Tags
 	c.Destructive = p.Destructive
+	c.IntentionalShadow = p.IntentionalShadow
+	c.SuggestionAliases = p.SuggestionAliases
 	c.Script = p.Script
 	c.ScriptFile = p.ScriptFile
 	c.Steps = p.Steps

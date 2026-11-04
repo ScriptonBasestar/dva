@@ -728,6 +728,23 @@
           "type": "boolean",
           "description": "Marks this command as destructive (e.g. database reset, cache flush). When true, interactive execution requires confirmation unless --yes is supplied, and 'dva agent-deny install --scope project' projects deny rules into agent runtime settings"
         },
+        "intentional_shadow": {
+          "type": "boolean",
+          "description": "Acknowledge this locally owned literal colon key taking precedence over a declared subproject namespace. Does not suppress reserved command conflicts."
+        },
+        "suggestion_aliases": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["makefile"],
+          "properties": {
+            "makefile": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": { "type": "string", "minLength": 1 }
+            }
+          },
+          "description": "Documented root Makefile targets already covered by this locally owned runnable interaction. Declaration only; no executable alias is created."
+        },
         "entrypoint": {
           "type": "string",
           "description": "Specifies the command entrypoint"
@@ -1570,8 +1587,26 @@
     },
     "suggestion_ignore": {
       "type": "array",
-      "items": { "type": "string" },
-      "description": "Glob patterns for Makefile/package.json targets to suppress from config suggestion warnings. Use when targets are intentionally not mapped to DVA interactions (e.g., CI-only targets, aliases covered by other interactions).",
+      "items": {
+        "anyOf": [
+          { "type": "string" },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["pattern", "reason"],
+            "properties": {
+              "pattern": { "type": "string", "minLength": 1, "pattern": "\\S" },
+              "reason": { "type": "string", "minLength": 1, "pattern": "\\S" },
+              "max_matches": { "type": "integer", "minimum": 1 }
+            },
+            "allOf": [{ "anyOf": [
+              { "properties": { "pattern": { "not": { "pattern": "\\*|\\?|\\[" } } } },
+              { "required": ["max_matches"] }
+            ] }]
+          }
+        ]
+      },
+      "description": "Legacy glob strings or explicit rules with pattern, reason, and optional max_matches. Object glob rules require a positive max_matches; excess uncovered matches warn without changing the match decision.",
       "examples": [["*-release", "clippy*", "test-e2e-*"]]
     },
     "suggestions": {
@@ -1856,7 +1891,11 @@
                 "description": { "type": "string" },
                 "timeout": { "type": "string", "description": "Positive Go duration for the whole profile" },
                 "warn_after": { "type": "string", "description": "Positive Go duration after which the profile warns" },
-                "max_parallel": { "type": "integer", "minimum": 1, "maximum": 32 },
+                "fail_fast": {
+              "type": "boolean",
+              "description": "Cancel other steps on the first step failure (default true). False continues independent steps and skips failed prerequisites' dependents; external cancellation and integrity failures always abort."
+            },
+            "max_parallel": { "type": "integer", "minimum": 1, "maximum": 32 },
                 "tool_jobs": { "type": "integer", "minimum": 1, "description": "Default tool workers supplied to each CI step" },
                 "locks": {
                   "type": "array",

@@ -41,6 +41,12 @@ func TestRootValidateMatchesConfigValidate(t *testing.T) {
 		t.Fatalf("root validate Short = %q, want %q", rootValidate.Short, configValidate.Short)
 	}
 
+	// Cobra lazily adds help and inherited flags during execution. Normalize
+	// both routes before comparing, independent of which earlier tests ran them.
+	for _, cmd := range []*cobra.Command{rootValidate, configValidate} {
+		cmd.InitDefaultHelpFlag()
+		cmd.InheritedFlags()
+	}
 	rootFlags := flagSpecs(rootValidate)
 	configFlags := flagSpecs(configValidate)
 	if !reflect.DeepEqual(rootFlags, configFlags) {

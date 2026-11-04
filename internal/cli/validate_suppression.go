@@ -24,6 +24,7 @@ import (
 const (
 	suppressedSuggestion = "suggestion"
 	suppressedDrift      = "drift file"
+	suppressedShadow     = "shadow key"
 )
 
 type suppressedItem struct {
@@ -44,6 +45,9 @@ type suppressionSummary struct {
 	// is removed it starts silently hiding the suggestion that would have flagged the
 	// target as unwrapped.
 	redundant []string
+	// overbroad holds bounded object rules whose actual first-match suppression
+	// population grew beyond their declared max_matches contract.
+	overbroad []string
 	// suggested holds the candidate names that survived every filter and produced a
 	// warning. --suggest-ignore renders exactly this list, so the block it prints can
 	// never name something the run did not actually warn about.
@@ -61,6 +65,7 @@ func (s *suppressionSummary) merge(other *suppressionSummary) {
 	s.items = append(s.items, other.items...)
 	s.stale = append(s.stale, other.stale...)
 	s.redundant = append(s.redundant, other.redundant...)
+	s.overbroad = append(s.overbroad, other.overbroad...)
 	s.suggested = append(s.suggested, other.suggested...)
 }
 
@@ -78,7 +83,7 @@ func (s *suppressionSummary) count(kind string) int {
 // was suppressed, so a config with no ignore lists reads exactly as it did before.
 func (s *suppressionSummary) summarySuffix() string {
 	var parts []string
-	for _, kind := range []string{suppressedSuggestion, suppressedDrift} {
+	for _, kind := range []string{suppressedSuggestion, suppressedDrift, suppressedShadow} {
 		if n := s.count(kind); n > 0 {
 			parts = append(parts, pluralizeCount(n, kind))
 		}
@@ -152,6 +157,17 @@ func matchIgnorePattern(name string, patterns []string) (string, bool) {
 	return "", false
 }
 
+// matchSuggestionIgnoreRule returns the first matching rule, matching the
+// first-match behaviour legacy suggestion_ignore strings already had.
+func matchSuggestionIgnoreRule(name string, rules []config.SuggestionIgnoreRule) (int, config.SuggestionIgnoreRule, bool) {
+	for i, rule := range rules {
+		if rule.Matches(name) {
+			return i, rule, true
+		}
+	}
+	return 0, config.SuggestionIgnoreRule{}, false
+}
+
 // staleIgnoreWarnings reports patterns that match nothing in universe.
 //
 // A pattern that hides nothing is not merely dead weight: it is a claim to the next reader
@@ -171,6 +187,23 @@ func staleIgnoreWarnings(key string, patterns, universe []string, nothing string
 		}
 		if !matched {
 			warnings = append(warnings, fmt.Sprintf("%s[%d] %q matches no %s; remove it", key, i, pattern, nothing))
+		}
+	}
+	return warnings
+}
+
+func staleSuggestionIgnoreWarnings(rules []config.SuggestionIgnoreRule, universe []string, nothing string) []string {
+	var warnings []string
+	for i, rule := range rules {
+		matched := false
+		for _, name := range universe {
+			if rule.Matches(name) {
+				matched = true
+				break
+			}
+		}
+		if !matched {
+			warnings = append(warnings, fmt.Sprintf("suggestion_ignore[%d] %q matches no %s; remove it", i, rule.Pattern, nothing))
 		}
 	}
 	return warnings
@@ -202,6 +235,37 @@ func redundantIgnoreWarnings(key string, patterns []string, matchedNames [][]str
 		warnings = append(warnings, fmt.Sprintf(
 			"%s[%d] %q only matches targets already covered by an interaction (%s); remove the ignore entry, or it will silently hide the suggestion if the covering interaction is removed or renamed",
 			key, i, pattern, strings.Join(quoted, ", ")))
+	}
+	return warnings
+}
+
+func redundantSuggestionIgnoreWarnings(rules []config.SuggestionIgnoreRule, matchedNames [][]string, uncoveredCounts []int) []string {
+	var warnings []string
+	for i, rule := range rules {
+		names := matchedNames[i]
+		if len(names) == 0 || uncoveredCounts[i] > 0 {
+			continue
+		}
+		quoted := make([]string, len(names))
+		for j, name := range names {
+			quoted[j] = strconv.Quote(name)
+		}
+		warnings = append(warnings, fmt.Sprintf(
+			"suggestion_ignore[%d] %q only matches targets already covered by an interaction (%s); remove the ignore entry, or it will silently hide the suggestion if the covering interaction is removed or renamed",
+			i, rule.Pattern, strings.Join(quoted, ", ")))
+	}
+	return warnings
+}
+
+func overbroadSuggestionIgnoreWarnings(rules []config.SuggestionIgnoreRule, hiddenMatches []int) []string {
+	var warnings []string
+	for i, rule := range rules {
+		if rule.MaxMatches == nil || hiddenMatches[i] <= *rule.MaxMatches {
+			continue
+		}
+		warnings = append(warnings, fmt.Sprintf(
+			"suggestion_ignore[%d] %q suppresses %d uncovered suggestion(s), exceeding max_matches %d; narrow the pattern or raise the declared bound",
+			i, rule.Pattern, hiddenMatches[i], *rule.MaxMatches))
 	}
 	return warnings
 }

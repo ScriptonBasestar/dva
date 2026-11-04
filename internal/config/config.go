@@ -30,7 +30,7 @@ type Config struct {
 	HealthChecks     map[string]HealthCheckConfig   `yaml:"health_checks"`
 	Endpoints        map[string]EndpointConfig      `yaml:"endpoints"`
 	DefaultMode      string                         `yaml:"default_mode"`
-	SuggestionIgnore []string                       `yaml:"suggestion_ignore"`
+	SuggestionIgnore []SuggestionIgnoreRule         `yaml:"suggestion_ignore"`
 	Suggestions      *SuggestionCategories          `yaml:"suggestions"`
 	DriftIgnore      []string                       `yaml:"drift_ignore"`
 	Modes            map[string]ModeConfig          `yaml:"modes"`

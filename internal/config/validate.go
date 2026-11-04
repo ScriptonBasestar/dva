@@ -64,6 +64,9 @@ func (c *Config) Validate() error {
 	if err := c.validateCIProfiles(); err != nil {
 		errs = append(errs, err)
 	}
+	if err := c.validateSuggestionAliases(); err != nil {
+		errs = append(errs, err)
+	}
 	if err := c.validateDoctorChecks(); err != nil {
 		errs = append(errs, err)
 	}

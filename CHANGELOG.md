@@ -9,6 +9,15 @@ All notable changes to DVA are documented here.
 
 - `make install` now installs one copy into `~/.local/share/ce/bin` (override with `LOCAL_BIN_DIR`). Existing `~/.local/bin/dva` and `~/go/bin/dva` copies are left in place; `GO_BIN_DIR=` restores the second GOBIN/GOPATH copy.
 
+- **명시적 validate 예외·연결**: literal interaction key가 declared subproject route를 의도적으로
+  가릴 때 `intentional_shadow: true`로 acknowledgement할 수 있습니다. `suggestion_ignore`는 기존
+  문자열 glob과 호환되며 reason·`max_matches` 객체형 rule을 추가했고, `suggestion_aliases.makefile`은
+  runnable root interaction과 문서화된 Makefile target의 validation-only 연결을 선언합니다. 객체형
+  glob의 cap 초과는 `--strict`에서 실패합니다.
+
+- **CI 계속 실행 선택**: `ci.profiles.<name>.fail_fast: false`는 독립적 ready step을 첫 실패 뒤에도
+  계속 실행합니다. 의존성이 막힌 step은 계속 건너뜁니다.
+
 ### Fixed
 
 - 하위 프로젝트의 설정 파일 누락을 경고하고, stack compose의 잘못된 `profiles`에는

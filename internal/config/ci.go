@@ -44,9 +44,17 @@ type CIProfile struct {
 	Timeout     string   `yaml:"timeout" json:"timeout"`
 	WarnAfter   string   `yaml:"warn_after" json:"warn_after"`
 	MaxParallel int      `yaml:"max_parallel" json:"max_parallel"`
+	FailFast    *bool    `yaml:"fail_fast,omitempty" json:"fail_fast,omitempty"`
 	ToolJobs    *int     `yaml:"tool_jobs,omitempty" json:"tool_jobs,omitempty"`
 	Locks       []string `yaml:"locks" json:"locks"`
 	Steps       []CIStep `yaml:"steps" json:"steps"`
+}
+
+// FailFastEnabled preserves the established cancellation behavior unless a
+// profile explicitly sets fail_fast: false. A pointer distinguishes that explicit
+// opt-out from an omitted field while profiles are merged across layers.
+func (p CIProfile) FailFastEnabled() bool {
+	return p.FailFast == nil || *p.FailFast
 }
 
 // CIStep is one named CI gate.
@@ -285,6 +293,9 @@ func mergeCIProfile(base, other CIProfile) CIProfile {
 	}
 	if other.MaxParallel != 0 {
 		base.MaxParallel = other.MaxParallel
+	}
+	if other.FailFast != nil {
+		base.FailFast = other.FailFast
 	}
 	if other.ToolJobs != nil {
 		base.ToolJobs = other.ToolJobs

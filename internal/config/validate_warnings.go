@@ -27,6 +27,7 @@ func (c *Config) ValidateWarnings() []string {
 	warnings = append(warnings, c.warnChildOverridesParentCritical()...)
 	warnings = append(warnings, c.warnDeepSubcommandNesting()...)
 	warnings = append(warnings, c.warnLiteralKeyShadowsSubproject()...)
+	warnings = append(warnings, c.warnUnusedIntentionalShadows()...)
 	warnings = append(warnings, c.warnMissingSubprojectConfigs()...)
 	warnings = append(warnings, c.warnUnreachableCommands()...)
 	warnings = append(warnings, c.warnInertProvisionSteps()...)
@@ -586,7 +587,7 @@ func (c *Config) warnMultiplePlansWithoutDefault() []string {
 func (c *Config) warnLiteralKeyShadowsSubproject() []string {
 	var warnings []string
 
-	for name := range c.Interaction {
+	for name, cmd := range c.Interaction {
 		idx := strings.Index(name, ":")
 		if idx <= 0 {
 			continue
@@ -601,6 +602,9 @@ func (c *Config) warnLiteralKeyShadowsSubproject() []string {
 		// key, and ReservedSubprojectNames rejects the subproject that gave the prefix its
 		// second meaning.
 		if IsReservedCommand(prefix) {
+			continue
+		}
+		if c.intentionalSubprojectShadow(name, cmd) {
 			continue
 		}
 		warnings = append(warnings, fmt.Sprintf(

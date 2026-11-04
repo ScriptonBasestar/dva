@@ -590,13 +590,18 @@ modes:
 
 **Anti-pattern:** Do NOT create `compose` + `compose-full` as separate stack entries — this duplicates service definitions and compose file references.
 
-**`suggestion_ignore` (optional):** Array of glob patterns for Makefile/package.json targets to suppress from `config suggestion` warnings. Use when targets are intentionally not mapped to DVA interactions:
+**`suggestion_ignore` (optional):** Legacy strings or object rules for uncovered Makefile/package.json suggestions. Objects require a nonblank `pattern` and `reason`; glob objects also require positive `max_matches`. Counts cover actual hidden candidates under the first matching rule; exceeding the cap fails `--strict`. Reasons remain visible in `--show-ignored` and JSON.
 ```yaml
 suggestion_ignore:
   - "*-release"     # CI-only release builds
   - "clippy*"       # covered by lint interaction
   - "test-e2e-*"    # covered by e2e interaction
+  - pattern: "benchmark-*"
+    reason: "CI-only benchmarks"
+    max_matches: 2
 ```
+
+Interaction metadata can declare `intentional_shadow: true` only to acknowledge a local root literal `child:command` key shadowing a declared subproject route; stale declarations warn and reserved keys remain errors. `suggestion_aliases: {makefile: [target]}` links a runnable local interaction to a documented root Makefile target for suggestion coverage. It creates no runtime alias, cannot claim coverage through an imported child, and duplicate target ownership fails validation. Preserve these fields when rewriting config; see [validation reference](../../../USAGE.md#config-validate).
 
 **`compose_profiles` semantics (legacy `modes:` only):**
 - `compose_profiles: [rust]` → activate the "rust" profile

@@ -62,8 +62,6 @@ func execute(ctx context.Context, root string, p config.CIProfile, inherited []s
 		reports[i] = StepReport{Name: s.Name, Status: "pending"}
 	}
 	deps := make([][]int, n)
-	children := make([][]int, n)
-	left := make([]int, n)
 	for i, s := range p.Steps {
 		for _, name := range s.DependsOn {
 			j, ok := byName[name]
@@ -71,9 +69,7 @@ func execute(ctx context.Context, root string, p config.CIProfile, inherited []s
 				return reports, fmt.Errorf("step %q depends on unknown step %q", s.Name, name)
 			}
 			deps[i] = append(deps[i], j)
-			children[j] = append(children[j], i)
 		}
-		left[i] = len(deps[i])
 	}
 	max := p.MaxParallel
 	if max < 1 {
@@ -97,7 +93,30 @@ func execute(ctx context.Context, root string, p config.CIProfile, inherited []s
 	running := 0
 	complete := 0
 	failed := false
+	fatal := false
 	var stepErr error
+	dependencyState := func(i int) (ready, blocked bool) {
+		ready = true
+		for _, dependency := range deps[i] {
+			switch reports[dependency].Status {
+			case "succeeded":
+				continue
+			case "failed", "timed_out", "canceled", "skipped":
+				return false, true
+			default:
+				ready = false
+			}
+		}
+		return ready, false
+	}
+	markSkipped := func(i int) error {
+		reports[i].Status = "skipped"
+		complete++
+		if err := checkpoint(reports); err != nil {
+			return fmt.Errorf("checkpoint skipped step %q: %w", p.Steps[i].Name, err)
+		}
+		return nil
+	}
 	start := func(i int) error {
 		reports[i].Status = "running"
 		reports[i].StartedAt = time.Now()
@@ -120,12 +139,39 @@ func execute(ctx context.Context, root string, p config.CIProfile, inherited []s
 	}
 	for complete < n {
 		if ctx.Err() != nil {
-			failed = true
+			fatal = true
 		}
-		for !failed && running < max {
+		// A failed prerequisite is terminal for every descendant, but it must not
+		// stop independent work when fail_fast is explicitly disabled. Repeating
+		// the scan propagates skipped state even when a descendant appears first in
+		// declaration order.
+		for !fatal {
+			changed := false
+			for i := range p.Steps {
+				if reports[i].Status != "pending" {
+					continue
+				}
+				_, blocked := dependencyState(i)
+				if !blocked {
+					continue
+				}
+				if err := markSkipped(i); err != nil {
+					stepErr = errors.Join(stepErr, err)
+					fatal = true
+					cancel()
+					break
+				}
+				changed = true
+			}
+			if !changed {
+				break
+			}
+		}
+		for !fatal && running < max {
 			next := -1
 			for i := range p.Steps {
-				if reports[i].Status == "pending" && left[i] == 0 {
+				ready, blocked := dependencyState(i)
+				if reports[i].Status == "pending" && ready && !blocked {
 					next = i
 					break
 				}
@@ -135,13 +181,13 @@ func execute(ctx context.Context, root string, p config.CIProfile, inherited []s
 			}
 			if err := start(next); err != nil {
 				stepErr = errors.Join(stepErr, err)
-				failed = true
+				fatal = true
 				cancel()
 				break
 			}
 		}
 		if running == 0 {
-			if !failed {
+			if !fatal && complete < n {
 				return reports, errors.New("ci step dependency cycle")
 			}
 			for i := range reports {
@@ -158,21 +204,21 @@ func execute(ctx context.Context, root string, p config.CIProfile, inherited []s
 		reports[r.i] = r.r
 		if err := checkpoint(reports); err != nil {
 			stepErr = errors.Join(stepErr, fmt.Errorf("checkpoint completed step %q: %w", p.Steps[r.i].Name, err))
-			failed = true
+			fatal = true
 			cancel()
 		}
 		if r.err != nil {
 			stepErr = errors.Join(stepErr, fmt.Errorf("CI step %q: %w", p.Steps[r.i].Name, r.err))
 		}
-		if r.err != nil && !failed {
+		if r.err != nil {
 			failed = true
-			cancel()
-		}
-		for _, child := range children[r.i] {
-			left[child]--
+			if p.FailFastEnabled() {
+				fatal = true
+				cancel()
+			}
 		}
 	}
-	if failed || ctx.Err() != nil {
+	if failed || fatal || ctx.Err() != nil {
 		for i := range reports {
 			if reports[i].Status == "pending" {
 				reports[i].Status = "skipped"
@@ -181,7 +227,7 @@ func execute(ctx context.Context, root string, p config.CIProfile, inherited []s
 		if ctx.Err() != nil {
 			return reports, errors.Join(stepErr, ctx.Err())
 		}
-		return reports, errors.New("ci step failed")
+		return reports, errors.Join(stepErr, errors.New("ci step failed"))
 	}
 	return reports, nil
 }

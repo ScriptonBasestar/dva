@@ -45,7 +45,8 @@ name collisions, config drift, and other semantic warnings. Reached as both
 
 --fix rewrites compose file 'name:' mismatches (and creates a missing devcontainer.json
 when a devcontainer: section is declared and enabled) instead of only reporting them.
---strict turns config-drift, semantic, and interaction-collision warnings into a failing
+--strict turns config-drift, semantic, interaction-collision warnings and exceeded
+suggestion_ignore max_matches limits into a failing
 exit code; without it those are reported but do not fail validation.
 
 See USAGE.md's "config validate" section for the full list of semantic checks.`,
@@ -116,6 +117,9 @@ See USAGE.md's "config validate" section for the full list of semantic checks.`,
 		report.add("interaction_collision", collisionWarnings...)
 
 		suppressed := &suppressionSummary{}
+		for _, name := range c.IntentionalSubprojectShadows() {
+			suppressed.add(suppressedShadow, name, "interaction."+name+".intentional_shadow: true")
+		}
 
 		driftWarnings, driftSuppressed := detectConfigDriftWarningsWithSuppressions(c)
 		suppressed.merge(driftSuppressed)
@@ -136,6 +140,10 @@ See USAGE.md's "config validate" section for the full list of semantic checks.`,
 		// warning, never an error.
 		printRedundantIgnoreWarnings(notice, suppressed.redundant)
 		report.add("ignore_redundant", suppressed.redundant...)
+		for _, warning := range suppressed.overbroad {
+			_, _ = fmt.Fprintf(notice, "[warn] overbroad ignore: %s\n", warning)
+		}
+		report.add("ignore_overbroad", suppressed.overbroad...)
 
 		if showIgnored, _ := cmd.Flags().GetBool("show-ignored"); showIgnored {
 			printSuppressedItems(notice, suppressed)
@@ -146,7 +154,7 @@ See USAGE.md's "config validate" section for the full list of semantic checks.`,
 			return err
 		}
 
-		if validateStrict && (len(driftWarnings) > 0 || hasActionableWarning(semanticWarnings) || len(collisionWarnings) > 0) {
+		if validateStrict && (len(driftWarnings) > 0 || hasActionableWarning(semanticWarnings) || len(collisionWarnings) > 0 || len(suppressed.overbroad) > 0) {
 			return report.fail(fmt.Errorf("config warnings detected; review warnings above (optional AI help: am run dva-improve)"))
 		}
 

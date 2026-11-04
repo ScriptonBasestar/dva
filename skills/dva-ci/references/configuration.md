@@ -9,6 +9,7 @@ ci:
       warn_after: 5m
       timeout: 10m
       max_parallel: 2
+      fail_fast: false
       tool_jobs: 2
       locks: [acme.devbox.integration-db]
       steps:
@@ -38,6 +39,7 @@ ci:
 | `timeout` | 준비와 검사를 포함한 전체 실행 제한 |
 | `warn_after` | 권장 시간 초과 경고 시점 |
 | `max_parallel` | 동시에 실행할 준비 완료 단계 수, 기본 1 |
+| `fail_fast` | 단계 실패 때 다른 단계를 취소할지 여부. 생략하면 `true` |
 | `tool_jobs` | 각 단계의 기본 도구 worker 수. 생략하면 CPU 4개 상한과 단계 병렬도에서 계산하며 양의 정수만 허용 |
 | `locks` | 다른 root와 공유하는 명시적 자원 락 키 목록 |
 | `steps[].name` | 프로필 내 유일한 단계 이름 |
@@ -50,6 +52,11 @@ ci:
 
 독립 단계는 `max_parallel` 범위에서 병렬 실행할 수 있다. 목록 순서로 선행 관계를
 대신하지 않는다. 순환·없는 참조·중복 이름·빈 명령은 실행 전에 실패한다.
+`fail_fast: false`면 일반 단계 실패 뒤에도 그 실패와 독립된 준비 완료 단계는 계속 실행한다.
+실패·skip·timeout·cancel된 단계를 선행 조건으로 하는 모든 후속 단계는 실행하지 않고 skip되며,
+CI 전체 결과는 여전히 nonzero다. 반대로 `fail_fast: true`(기본값)는 첫 일반 단계 실패 때
+다른 단계를 취소한다. 외부 취소·deadline과 checkpoint/report 무결성 오류는 `fail_fast` 값과
+무관하게 모든 실행을 중단한다.
 락 키는 `^[A-Za-z0-9][A-Za-z0-9_.-]*$`를 만족해야 하며 대소문자를 구분한다. 같은
 프로필 안의 중복 키는 오류다. `locks`를 생략하면 병합 전 값을 유지하고, 지정하면
 목록 전체를 교체한다. `locks: []`는 공유 자원 락을 제거한다. 프로필을 소유한 설정
@@ -57,6 +64,7 @@ ci:
 
 프로필 map은 이름별 병합, scalar는 나중 값 우선, `steps`와 `locks` 목록은 지정 시
 교체한다. `tool_jobs` 생략은 이전 값을 유지하고, 명시한 양의 정수는 이전 값을
+바꾼다. `fail_fast`도 생략하면 이전 값을 유지하고, 명시한 `true` 또는 `false`만 이전 값을
 바꾼다. 장비별 값은 기존 사용자 설정을 보존하며 로컬 `dva.override.yml`에 둔다.
 `ci`를 `.sb/dva/` 모듈로 옮길 때는 각 프로필을 한 파일에 온전히 둔다. 두 레이어에
 나눈 프로필은 `steps`를 선언한 나중 레이어의 단계만 남는다([설정 모듈](https://github.com/ScriptonBasestar/dva/blob/master/docs/32-config-modules.md)).

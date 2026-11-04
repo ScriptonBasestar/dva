@@ -287,6 +287,9 @@ func finalizeLoadedConfig(cfg *Config) ([]string, error) {
 	if err := validateCompositionPlans(cfg); err != nil {
 		return nil, err
 	}
+	if err := cfg.validateSuggestionAliases(); err != nil {
+		return nil, err
+	}
 
 	cfg.ResolveEndpoints()
 	return migrated, nil

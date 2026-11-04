@@ -849,9 +849,13 @@ compose 파일에 대한 config drift 경고는 두 방향을 따로 검사합�
 항상 요약 줄에 남고 끄는 스위치가 없습니다 (설계 근거: [docs/56](docs/56-suppression-ergonomics-design.md)).
 
 ```yaml dva.yml
-# Makefile/package.json 타겟 이름 glob — suggestion 경고를 개별로 억제
+# 기존 문자열 형식도 계속 지원합니다.
 suggestion_ignore:
   - "release*"
+  # 객체 형식은 억제 이유와 허용 범위를 기록합니다.
+  - pattern: "benchmark-*"
+    reason: CI 전용 벤치마크
+    max_matches: 2
 
 # suggestion 소스 종류를 통째로 끔. 생략하거나 키가 없으면 켜진 상태
 suggestions:
@@ -873,6 +877,11 @@ drift_ignore:
 
 - `--show-ignored`는 억제된 항목을 한 줄씩, 그것을 가린 dva.yml 줄과 함께 보여줍니다:
   `[info] ignored: suggestion "release" — suggestion_ignore: release*`
+- `suggestion_ignore` 항목은 기존 문자열 또는 `pattern`/`reason` 객체입니다. 객체의 glob
+  패턴에는 양의 `max_matches`가 필수이고, 정확한 이름 패턴에는 생략할 수 있습니다.
+  `max_matches`는 실제로 숨긴 **미포장** suggestion만 셉니다. 이미 interaction이 덮은
+  타겟과 앞선 규칙이 먼저 숨긴 타겟은 소비하지 않습니다. 범위를 넘으면 경고하고
+  `--strict`에서는 실패합니다. `--show-ignored`에는 객체의 `reason`도 함께 표시됩니다.
 - 가리는 대상이 하나도 없는 패턴은 플래그 없이도 경고합니다:
   `[warn] stale ignore: suggestion_ignore[0] "vanished" matches no Makefile target or package.json script`.
   dva.yml의 결함이지 이번 실행의 세부사항이 아니기 때문입니다.
@@ -887,6 +896,44 @@ suggestion 자체도 좁혀져 있습니다. 이미 어떤 interaction이 `make 
 `pnpm|npm|yarn <script>`로 실행하는 타겟(이름이 달라도), `docker-*`·`compose-*`·`k8s-*`·`helm-*`
 계열, `_` 접두 내부 타겟은 제안하지 않습니다. 서브프로젝트에서 가져온 interaction은
 `as:` 별칭이 있어야 루트 경로가 생기므로 여전히 제안 대상입니다.
+
+**서브프로젝트 충돌과 suggestion 메타데이터**
+
+로컬 interaction 키가 선언한 서브프로젝트 경로와 의도적으로 충돌할 때만
+`intentional_shadow: true`로 그 사실을 인정합니다. 예를 들어 아래의 `engine:test`는
+`engine` 서브프로젝트의 `test`가 아니라 루트의 리터럴 interaction입니다.
+
+```yaml dva.yml
+interaction:
+  engine:test:
+    runner: local
+    command: make test
+    intentional_shadow: true
+
+subprojects:
+  engine:
+    path: engine
+```
+
+이 메타데이터는 라우팅을 바꾸지 않습니다. 실제 로컬 리터럴 충돌이 없어지거나 nested
+interaction에 붙으면 stale 선언 경고가 납니다. 가져온 child의 선언은 부모 충돌을 인정하지
+않으며, 예약어 충돌은 여전히 hard error입니다. 인정된
+충돌도 숨겨지지 않습니다: 요약의 shadow count, `--show-ignored`, `--json`의 `suppressed`에
+모두 이유와 함께 남습니다.
+
+`suggestion_aliases.makefile`은 실행 별칭을 만드는 기능이 아니라, **실행 가능한 로컬
+interaction**이 이미 덮고 있는 문서화된 루트 Makefile target을 validator에 알리는 메타데이터입니다.
+가져온 child interaction이나 문서화되지 않은 target에는 쓸 수 없습니다. 한 target을 두 로컬
+interaction이 소유한다고 선언하면 hard error입니다.
+
+```yaml dva.yml
+interaction:
+  check:
+    runner: local
+    command: go test ./...
+    suggestion_aliases:
+      makefile: [legacy-check]
+```
 
 hard error(스키마 위반, legacy compose 선언, 실행 불가능한 훅 위치, 잘못된
 `default_plan` 등)가 하나 있어도 거기서 멈추지 않습니다. 가능한 진단을 끝까지 수행한 뒤
@@ -959,7 +1006,7 @@ interaction:
 | `sites` | 실행 host 프리셋 (`local/remote/cloud`) |
 | `checks` | `dva doctor` 환경 사전조건 체크 |
 | `default_mode` | `--mode` 미지정 시 적용할 기본 `modes` 엔트리 (legacy `modes`와 함께만 의미가 있음) |
-| `suggestion_ignore` | config suggestion 경고에서 제외할 Makefile/package.json 타겟 glob 패턴 |
+| `suggestion_ignore` | config suggestion 경고에서 제외할 Makefile/package.json 타겟: legacy 문자열 패턴 또는 이유·범위를 적은 객체 규칙 |
 | `suggestions` | suggestion 소스 종류별 on/off (`makefile`, `package_json`) |
 | `drift_ignore` | 등록되지 않은 compose 파일 drift 경고에서 제외할 파일 glob 패턴 |
 | `modes` | 런타임 전략 프리셋 (`--mode`로 선택, legacy — `plans`+`environments`+`sites` 이관 권고) |
