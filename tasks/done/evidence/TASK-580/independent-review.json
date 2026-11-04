@@ -1,0 +1,19 @@
+{
+  "verdict": "PASS",
+  "reviewer-execution": "/root/doctor_flake_diagnosis",
+  "reviewer-grade": "strong",
+  "executor-execution": "/root",
+  "executor-grade": "strong",
+  "review-runtime-execution": "review-stop-warning-bundle",
+  "reviewed-commit": "6ef16cbc45dfd070472e0e8e7cb7e5affad6e0dd",
+  "reviewed-at": "2026-11-04T11:02:26Z",
+  "recorded-at": "2026-11-04T11:04:16Z",
+  "checks": [
+    {
+      "command": "sh scripts/without-dva.sh go test -count=1 -v ./internal/config ./internal/cli -run 'Test(ValidationDiagnostic.*|StrictIgnoresInformationalHints|ValidatePlanDriftWarnings.*)$'",
+      "result": "PASS",
+      "exit-code": 0
+    }
+  ],
+  "raw-review": "tasks/done/evidence/stop-warning-bundle-review.txt"
+}

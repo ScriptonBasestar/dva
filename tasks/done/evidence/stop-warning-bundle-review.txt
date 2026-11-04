@@ -1,0 +1,44 @@
+# Formal card review: stop, diagnostics, bundle digest
+
+Reviewed candidate: `6ef16cbc45dfd070472e0e8e7cb7e5affad6e0dd`
+Source worktree: `/Users/archmagece/worktrees/misc/dva/codex__mbp__fix__stop-warning-and-bundle-isolation`
+Reviewer: `/root/doctor_flake_diagnosis` (strong; independent of implementation)
+CE review purpose: `review-stop-warning-bundle` (active review binding; inspected the delivery worktree, not the coordination baseline)
+Review time: 2026-11-04 11:02:26 UTC
+Prior formal attempts: none.
+
+## TASK-579 — Propagate cancellation through stop execution paths
+
+Executor: `/root/parent_compose_drift` (standard).
+Criterion: preserve caller cancellation over whole-stack, plan, and composition stop routes; do not start later entries.
+
+Command actually run:
+`sh scripts/without-dva.sh go test -count=1 -v ./internal/cli ./internal/lifecycle -run 'Test(StopRoutes.*|CompositionStopHonorsCancellationWithoutStartingLaterChildren|OrchestratorCancelledCallerDoesNotStartOrStopEntries|LifecycleCommandContextReceivesSignals)$'`
+
+Result: PASS. Verbose output showed `TestStopRoutesHonorCallerCancellation` whole-stack and plan cases; `TestStopRoutesDoNotStartForCancelledCaller` whole-stack, plan, composition; `TestCompositionStopHonorsCancellationWithoutStartingLaterChildren` before execution, during child stop, and after earlier failure; `TestOrchestratorCancelledCallerDoesNotStartOrStopEntries` up/stop/restart; and signal-context subtests for interrupt, terminated, and hangup. Both packages passed. I inspected the route wiring and stop-specific teardown checks: context is passed into all three stop routes, cancelled callers are checked before entries, cancellation prevents later child stops, and previously completed stops are retained. Down/status/purge semantics are explicitly outside this card. No blocking finding.
+
+## TASK-580 — Classify validation severity independently of warning text
+
+Executor: `/root` (strong).
+Criterion: strict validation uses producer-assigned severity while preserving legacy messages and JSON.
+
+Command actually run:
+`sh scripts/without-dva.sh go test -count=1 -v ./internal/config ./internal/cli -run 'Test(ValidationDiagnostic.*|StrictIgnoresInformationalHints|ValidatePlanDriftWarnings.*)$'`
+
+Result: PASS. Verbose output showed legacy messages/order, text-independent severity including zero/unknown actionable cases, no-plans strict output compatibility, plan-drift text and semantic JSON category, and informational strict exemption. Both packages passed. Source review confirmed `ValidateDiagnostics` is the ordered severity source; the zero severity is warning/actionable, only explicit `SeverityInfo` is exempt, and `ValidateWarnings` projects the original message strings in order. CLI rendering/JSON remain on the legacy warning shape; strict policy reads severity rather than a glyph prefix. No blocking finding.
+
+## TASK-581 — Isolate skill bundle digest state between operations
+
+Executor: `/root/config_missing_and_profiles` (standard).
+Criterion: concurrent operations retain independent bundle identity and preserve receipt and downgrade behavior.
+
+Command actually run:
+`sh scripts/without-dva.sh go test -race -count=1 -v ./internal/skillinstall -run 'Test(BundleDigestStrategyIsOperationLocal|StatusClassifiesBundleDrift|InstallRefusesDowngradeUnlessAllowed)$'`
+
+Result: PASS under the race detector. Verbose output showed all four status drift cases, downgrade refusal behavior, and the operation-local barrier-overlap regression. Source review confirmed the injected bundle hash strategy is private per-operation `Options` state rather than a package global; production defaults and receipt/result identity still use `sourceBundleSHA`. No blocking finding.
+
+## Scope and limitations
+
+All three declared criterion commands were run through `scripts/without-dva.sh`, with `-count=1 -v`; TASK-581 retained `-race`. Named tests appeared in output and passed. The full suite and full CI gate were not run as part of this card review. I found no criterion blocker or compatibility regression in the inspected source/cards. The production working tree was clean at the reviewed commit; the only visible untracked review input was the ignored `tmp/triad-review-handoff.json`.
+
+VERDICT: PASS

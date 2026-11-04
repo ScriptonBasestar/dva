@@ -10,7 +10,8 @@
 후속 진단·설정 개선 TASK-557~564 여덟 장은 독립 리뷰를 거쳐 `tasks/done/`에 있다.
 TASK-558~561의 [최종 독립 리뷰 원문](done/evidence/explicit-suppression-final-review.txt)은
 검토 종료 시점의 실행자·검토자 신원과 명령별 결과를 보존한다.
-현재 todo는 TASK-538·550 두 장, backlog는 TASK-575 한 장이다. 실행 상태는 `ce task run-list`,
+TASK-579~581의 stop 취소·진단 심각도·번들 해시 격리도 [독립 리뷰](done/evidence/stop-warning-bundle-review.txt)를 거쳐 완료했다.
+현재 done은 11장, todo는 TASK-538·550 두 장, backlog는 TASK-575 한 장이다. 실행 상태는 `ce task run-list`,
 제품·릴리스 상태는 [PRODUCT.md](../PRODUCT.md)와 [ROADMAP.md](../ROADMAP.md)를 따른다.
 
 ### 2026-10-23 기록
