@@ -1,0 +1,40 @@
+# Independent TASK-585 source review
+
+- Reviewed candidate: `d767fe59db274ccb45c4ff54f178e23b96f831f6`
+- Runtime purpose: `review-env-bridge-target-resolution` (`review`)
+- Reviewer: `/root/doctor_flake_diagnosis` — strong, independent reviewer
+- Executor: `/root` — strong
+- Review time: 2026-11-04 16:33 UTC (2026-11-05 KST)
+- Review attempts: first formal review; no prior attempts
+- Boundary: source/card criteria for loader-consistent env target resolution, focused path/security regressions, and scope compatibility. No source/card edits, no full suite, no final native full CI, and no hosted CI claim.
+
+## Criterion 1
+
+**PASS — Plaintext bridge reads, writes and Git guards use the loader-resolved target while declared selectors and diagnostics remain stable.**
+
+- `internal/config/envinput.go` adds `ResolveEnvFilePath` and routes `InspectEnvFiles` through it. `Config.EnvFileScopeAt` builds the same pre-file scope used by `internal/cli/root.go`'s `newConfigEnvironmentAt`: vars, top-level environment and OS values, with the invocation working directory. Env-file contents and plan profiles are excluded. Tests cover vars/environment/OS precedence, defaults, nested invocation cwd and the case where another env-file's value must not supply the target.
+- `internal/cli/config_env_path.go` resolves only `entry.Path`; `sops_source` remains a literal path. `preflight` and `sealPreflight` still select by the declared string first, then use the resolved relative path for shape checks and plaintext target I/O. Unseal's anchored writer and Git guard use the resolved target's directory/leaf; seal reads the resolved plaintext while writing only the literal encrypted source. The original selector remains in result/error fields and normal output.
+- Tests prove unseal writes the loader's target while preserving a literal file named by the raw selector, asks Git about the resolved directory/leaf, decrypts the literal `sops_source`, and lets the normal loader read the resulting file. Seal tests prove it reads the resolved plaintext, leaves the literal raw-selector file unchanged and writes to the literal source. Source-only `edit`/`reseal` behavior remains independent of target resolution; `show` is unchanged and uses only the encrypted source.
+- `unsealCommand` uses POSIX single-quote escaping for special selectors and inserts `--` for a leading dash. Tests execute quoted selectors through `/bin/sh`, including a value containing a quote and shell metacharacters, and assert the original declared selector is recovered.
+
+## Criterion 2
+
+**PASS — Unresolved, colliding, escaping and symlink targets fail before SOPS or unrelated-file changes, with expanded values kept out of errors.**
+
+- Unseal and seal run `checkPathAs` against the resolved target before SOPS. This retains the existing closed bridge error-code set for known unsafe shapes; unresolved-target errors are intentionally codeless rather than misclassified.
+- Component-by-component `Lstat`, `filepath.IsLocal`, the anchored target directory and `stillAnchored` same-file revalidation keep containment, reject symlink components and prevent a parent-directory replacement from redirecting a write. `sops_source` still passes through its original literal-path checks.
+- Expanded-path filesystem failures are rendered with the declared selector by `declaredTargetError`; it preserves the error cause and post-rename distinction while removing expanded path payloads. Tests cover both `PathError`/`LinkError` and post-rename forms. The resolver failure reason exposes unresolved variable names, not values.
+- Guard tests assert no fake-SOPS call, no temp residue, the literal selector file and encrypted source remain unchanged, and expanded/private values do not appear in errors. The exact new test delta at `d767fe5` adds the seal-side expanded-symlink case; its named subtest `TestConfigEnvSealRejectsUnsafeResolvedTarget/private-parent/.env` passed, checking code, error privacy, zero SOPS calls and no temp residue. Unseal has the corresponding symlink case.
+
+## Verification performed
+
+- Read the canonical quality-review prompt, `SOUL.md`, `PRODUCT.md`, relevant `ARCHITECTURE.md` boundaries, `USAGE.md` env-path and encrypted-bridge contracts, TASK-585, and source/tests.
+- `dva show` and `dva ls -f json` confirmed the repository declares only the all-tests `test` command; there is no DVA-scoped target for these focused package tests. Following `skills/dva`, ran the scoped Go regressions directly through the DVA self-guard:
+  - `sh scripts/without-dva.sh go test -race -count=1 ./internal/cli ./internal/config -run '^(TestConfigEnv.*|TestEnvFilePath.*|TestValidateWarnsOnUnresolvedEnvFilePath)$'` — exit 0; both packages passed.
+  - `sh scripts/without-dva.sh go test -count=1 -v ./internal/cli -run '^TestConfigEnvSealRejectsUnsafeResolvedTarget$'` — exit 0; all five subtests passed, including the new symlink case.
+- `ce task validate tasks/review/585-env-bridge-target-resolution.md` passed without warnings. `git diff --check` passed, candidate HEAD is exact, and the source worktree is clean.
+- Executor reports guarded config-path/race tests, scoped `go vet`, build and doc-check passing in its logs. I did not rerun those checks. The final native full CI, hosted matrix, and install remain pending after review metadata freeze; the earlier v0.4.5 macOS acceptance does not apply to TASK-585.
+
+No blocking finding remains within these criteria. No full-suite or release-delivery claim is made.
+
+VERDICT: PASS

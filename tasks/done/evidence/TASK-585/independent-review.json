@@ -1,0 +1,29 @@
+{
+  "verdict": "PASS",
+  "reviewer-execution": "/root/doctor_flake_diagnosis",
+  "reviewer-grade": "strong",
+  "executor-execution": "/root",
+  "executor-grade": "strong",
+  "review-runtime-execution": "review-env-bridge-target-resolution",
+  "reviewed-commit": "d767fe59db274ccb45c4ff54f178e23b96f831f6",
+  "reviewed-at": "2026-11-04T16:33:00Z",
+  "checks": [
+    {
+      "command": "sh scripts/without-dva.sh go test -race -count=1 ./internal/cli ./internal/config -run '^(TestConfigEnv.*|TestEnvFilePath.*|TestValidateWarnsOnUnresolvedEnvFilePath)$'",
+      "result": "PASS",
+      "exit-code": 0
+    },
+    {
+      "command": "sh scripts/without-dva.sh go test -count=1 -v ./internal/cli -run '^TestConfigEnvSealRejectsUnsafeResolvedTarget$'",
+      "result": "PASS",
+      "exit-code": 0
+    },
+    {
+      "command": "ce task validate review card; git diff --check; independent scope and safety inspection",
+      "result": "PASS"
+    }
+  ],
+  "raw-review": "tasks/done/evidence/TASK-585/source-review.txt",
+  "raw-review-sha256": "d831ce28280a8194a51b74beda7d1fd8ee7ac2070efbc97d40252f3224307899",
+  "limitations": "Source/card review. Final native full CI and installation still required. Earlier candidate macOS acceptance is not reused for this change."
+}
