@@ -1,0 +1,23 @@
+{
+  "verdict": "PASS",
+  "reviewer-execution": "/root/doctor_flake_diagnosis",
+  "reviewer-grade": "strong",
+  "executor-execution": "/root",
+  "executor-grade": "strong",
+  "review-runtime-execution": "review-release-scope-assessment",
+  "reviewed-commit": "aa1413f5788136d8d9162a9bc3f857e576f797e5",
+  "reviewed-at": "2026-11-04T14:24:00Z",
+  "checks": [
+    {
+      "command": "Independent static review against current source, accepted decision 501, product boundaries and task criteria",
+      "result": "PASS"
+    },
+    {
+      "command": "git diff cea4016d1cb4570d8e8370353d466fc89ce4a1e7..HEAD; git status --short",
+      "result": "PASS"
+    }
+  ],
+  "raw-review": "tasks/done/evidence/TASK-583/review.txt",
+  "raw-review-sha256": "24b60f0913b6e0f564e42bb02bcf834016d1b0eb2f974f6b7ccf92bffbf2bd6c",
+  "limitations": "No tests run by reviewer. Release version, TASK-575 acceptance and publication remain undecided."
+}

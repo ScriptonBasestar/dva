@@ -1,0 +1,35 @@
+# Independent release-scope review
+
+- Reviewed commit: `aa1413f5788136d8d9162a9bc3f857e576f797e5`
+- Runtime purpose: `review` (`review-release-scope-assessment`)
+- Reviewer: `/root/doctor_flake_diagnosis` — strong, independent reviewer
+- Executor: `/root` — strong
+- Review time: 2026-11-04 14:24 UTC
+- Review attempts: first formal review; none previously recorded
+- Boundary: ROADMAP scope assessment, TASK-583, and the final `tasks/README.md` delta. No product/source edits, card transitions, publication, or full test suite.
+
+## Criterion
+
+**PASS — Record release alternatives, upgrade risks, TASK-575 disposition proposals and exact evidence limits in ROADMAP.**
+
+Evidence inspected directly:
+
+- `ROADMAP.md` proposes a 0.4.x maintenance candidate and a separate v0.5.0 candidate. It explicitly says version/range is not finalized, describes v0.4.5 as a candidate under the stated patch approach, and says v0.5.0 requires the still-open TASK-550 implementation and migration verification. This respects the roadmap's existing statement that the next version is undecided and does not bump version metadata or publish anything.
+- `decisions/501-modes-legacy-or-removed.md` is Accepted by the user and fixes removal at v0.5.0. `tasks/todo/550-remove-modes-v050.md` remains todo and lists the schema, CLI, migration and documentation work. The proposed alternatives correctly treat that decision as settled and the implementation as incomplete.
+- The listed compatibility risks match `CHANGELOG.md` Unreleased: readiness failures now exit nonzero; lifecycle/status cancellation propagates and may leave partial state/results; diagnostics can affect strict validation; install uses one new default destination without deleting old copies; and explicit `fail_fast: false` continues independent CI steps while dependencies and overall failure remain meaningful.
+- The v0.5.0 migration limitation is supported by `internal/config/migrate_modes.go` and `internal/config/migrate_report.go`: conversion is restricted to convertible mode fields and remaining modes receive `Left for you`/manual split guidance. The roadmap requests a regression check that schema rejection does not prevent migration from reading legacy input; it does not claim that work is already done.
+- Each TASK-575 proposal accurately preserves the backlog status and the card's four gaps. `runDoctorChecks` applies env checks to the supplied root config; unsealed hints use declared strings; `InspectEnvFiles` interpolates for file loading while retaining the declaration; bridge `checkPath` checks the declared path directly. The composition and plan restart routes lack the up warning calls, while up routes contain them. Root-owned `up` warns before positional-plan refusal. The roadmap marks these as static findings/proposals, requires fixtures for the unresolved path/ordering questions, and explicitly says no new user incident or execution reproduction was obtained. It invents no accepted exception or completed fix.
+- The evidence limits and candidate verification sequence distinguish source CI from candidate verification, hosted CI, install and publication checks. This aligns with `docs/52-manual-release-runbook.md` and `docs/ci-failure-analysis.md`; the CI notes do not assert that the verifier or reported flakes are current failures.
+- TASK-538 is still todo/P1 and its card requires the Singlepageweb pilot; the roadmap keeps it pending until that pilot can validate ownership across worktrees/sites. It does not claim implementation or completion.
+- The final delta from the earlier reviewed source changes only `tasks/README.md`, replacing volatile done/todo/backlog counts with `ce task list` and `ce task run-list` commands. The task board remains consistent with TASK-583 in review and avoids stale counts after its transition.
+
+## Verification performed
+
+- Read the canonical quality-review prompt, TASK-583, `SOUL.md`, `PRODUCT.md`, ROADMAP, accepted decision 501, TASK-538/550/575, CHANGELOG, CI failure analysis, release runbook, and cited source paths.
+- Inspected `git diff cea4016d1cb4570d8e8370353d466fc89ce4a1e7..HEAD`; the only final delta is the `tasks/README.md` status-count replacement above.
+- Confirmed `git status --short` is clean and recorded the exact HEAD.
+- No tests or full integration gate were run by this reviewer. The parent reported `make doc-check` and card validation passing; those are executor-reported evidence, not independently rerun here.
+
+No blocking finding. The version choice remains intentionally open, and the TASK-575 path/diagnostic behaviors remain proposals pending their specified fixture evidence.
+
+VERDICT: PASS
