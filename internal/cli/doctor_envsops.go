@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/ScriptonBasestar/dva/internal/config"
 	"github.com/ScriptonBasestar/dva/internal/lifecycle"
@@ -42,7 +43,19 @@ func checkEnvUnsealed(c *config.Config, r *config.EnvInputReport) []DoctorResult
 	return results
 }
 
-func unsealCommand(target string) string { return "dva config env unseal " + target }
+func unsealCommand(target string) string {
+	separator := ""
+	if strings.HasPrefix(target, "-") {
+		separator = "-- "
+	}
+	if target == "" || strings.IndexFunc(target, func(c rune) bool {
+		return !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+			(c >= '0' && c <= '9') || strings.ContainsRune("_./-", c))
+	}) >= 0 {
+		target = "'" + strings.ReplaceAll(target, "'", "'\"'\"'") + "'"
+	}
+	return "dva config env unseal " + separator + target
+}
 
 func unsealedEnvFinding(target string) string {
 	return fmt.Sprintf("env_file %s declares sops_source but does not exist, so its values are not loaded", target)

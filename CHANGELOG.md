@@ -5,6 +5,13 @@ All notable changes to DVA are documented here.
 
 ## [Unreleased]
 
+### Fixed
+
+- `config env unseal`과 `seal`의 평문 target은 env loader와 같은 변수·환경 범위로
+  경로를 해석합니다. selector·출력은 선언 문자열을 유지하며, 해석한 대상에 Git·경로·symlink·
+  source 충돌 검사를 적용합니다. 경고와 edit 안내는 selector를 셸에서 보존하도록 인용합니다.
+  `sops_source`와 source-only 명령의 의미는 바꾸지 않습니다.
+
 ## [0.4.5] - 2026-11-05
 
 미공개 릴리스 후보다. 날짜는 후보 정리일이며 공개일이 아니다. 범위와 검증 경계는

@@ -43,3 +43,10 @@ loader의 `InspectEnvFiles`는 경로를 보간하고, bridge selector·경로 a
 v0.4.5 후보에서는 [알려진 제약](../release-notes/v0.4.5.md#알려진-제약)으로 공개할 내용을 준비했다.
 encrypted target에는 의도한 고정 상대 경로를 사용하도록 안내한다. TASK-575는 backlog에
 유지하고, 수정 또는 항목별 명시적 수락 없이는 완료로 옮기지 않는다.
+
+## 후속 수정
+
+[TASK-585](../tasks/todo/585-env-bridge-target-resolution.md)는 최신 소스에서 평문 I/O의
+경로 해석을 loader와 공유하고 선언 selector·출력은 보존한다. 고정된 위 재현 결과와
+v0.4.5 준비 기준선의 제약을 소급해 바꾸지는 않는다. 현재 사용법은
+[env bridge](../USAGE.md#암호화된-소스-브리지-dva-config-env), 후보 이후 변경은 CHANGELOG Unreleased를 따른다.

@@ -81,14 +81,19 @@ const (
 // tracked-file` through. The frozen contract makes this an explicit gate rather
 // than a property of os.Root.
 func (r *envRoot) checkPath(declared string) (pathState, fs.FileInfo, error) {
-	if filepath.IsAbs(declared) {
+	return r.checkPathAs(declared, declared)
+}
+
+// checkPathAs checks the actual path while naming only its declaration in errors.
+func (r *envRoot) checkPathAs(path, declared string) (pathState, fs.FileInfo, error) {
+	if filepath.IsAbs(path) {
 		return 0, nil, bridgeErr(codeAbsolutePath, "%q is absolute; env bridge writes only config-relative paths", declared)
 	}
-	if !filepath.IsLocal(declared) {
+	if !filepath.IsLocal(path) {
 		return 0, nil, bridgeErr(codePathEscapes, "%q resolves outside the config directory", declared)
 	}
 
-	parts := strings.Split(filepath.ToSlash(filepath.Clean(declared)), "/")
+	parts := strings.Split(filepath.ToSlash(filepath.Clean(path)), "/")
 	for i := range parts {
 		prefix := strings.Join(parts[:i+1], "/")
 		info, err := r.root.Lstat(prefix)
@@ -101,6 +106,9 @@ func (r *envRoot) checkPath(declared string) (pathState, fs.FileInfo, error) {
 			}
 			if errors.Is(err, fs.ErrPermission) {
 				return 0, nil, bridgeErr(codePermissionDenied, "permission denied writing %s", declared)
+			}
+			if path != declared {
+				err = declaredTargetError(err, declared)
 			}
 			return 0, nil, err
 		}
@@ -143,19 +151,27 @@ type targetAnchor struct {
 	leaf string
 	// declared is the path as dva.yml spells it, for messages only.
 	declared string
+	expanded bool
 }
 
 // openTargetAnchor takes the handle on the directory declared holds its leaf in.
 // Call it only after checkPath has approved declared and its parent is known to
 // exist: this opens a directory, it does not vet one.
 func (r *envRoot) openTargetAnchor(declared string) (*targetAnchor, error) {
-	clean := filepath.Clean(declared)
+	return r.openTargetAnchorAs(declared, declared)
+}
+
+func (r *envRoot) openTargetAnchorAs(path, declared string) (*targetAnchor, error) {
+	clean := filepath.Clean(path)
 	rel, leaf := filepath.Dir(clean), filepath.Base(clean)
 	d, err := r.openAt(rel)
 	if err != nil {
+		if path != declared {
+			err = declaredTargetError(err, declared)
+		}
 		return nil, err
 	}
-	return &targetAnchor{dir: d, cfg: r, rel: rel, leaf: leaf, declared: declared}, nil
+	return &targetAnchor{dir: d, cfg: r, rel: rel, leaf: leaf, declared: declared, expanded: path != declared}, nil
 }
 
 func (a *targetAnchor) Close() { a.dir.Close() }
@@ -176,7 +192,11 @@ func (a *targetAnchor) stillAnchored() error {
 	if a.rel == "." {
 		return nil
 	}
-	state, info, err := a.cfg.checkPath(a.rel)
+	display := a.rel
+	if a.expanded {
+		display = a.declared
+	}
+	state, info, err := a.cfg.checkPathAs(a.rel, display)
 	if err != nil {
 		return err
 	}

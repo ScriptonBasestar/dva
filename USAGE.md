@@ -1596,8 +1596,8 @@ env_file:
 로드한 값에 남은 `${X}`는 런타임에서 그대로 전달됩니다. `dva doctor`가 파일별 개수만
 `--strict`에서 보고하고 실패하며, 키와 값은 출력하지 않습니다. `pa$word`처럼 `$`가 든 값도
 참조로 집계될 수 있습니다. `validate`는 env 파일을
-열지 않으므로 이 경우를 검사하지 않습니다. `sops_source` 대상 경로 등 `dva config env`
-명령은 확장하지 않습니다.
+열지 않으므로 이 경우를 검사하지 않습니다. `sops_source` 자체는 보간하지 않는 literal
+선언입니다. 최신 소스의 평문 bridge 경로는 [아래 selector 규칙](#암호화된-소스-브리지-dva-config-env)을 따릅니다.
 
 > **마이그레이션**: 이전 버전은 위 상황에서 `WARN: env_file: ...`을 출력하고 계속
 > 실행했습니다. dotenv 문법이 아닌 줄을 조용히 무시하던 파일은 이제 명시적 오류이므로
@@ -1644,6 +1644,11 @@ dva config env reseal                 # 기존 암호화 소스를 현재 키로
 
 `[TARGET]`은 dva.yml에 적힌 `path` 문자열 그대로입니다. `sops_source`를 선언한 엔트리가
 여럿이면 생략할 수 없습니다 — 하나를 골라 추측하지 않고 에러로 멈춥니다.
+최신 소스(Unreleased)의 `unseal`·`seal`은 선택 뒤 평문 파일 경로를 위의 env_file 범위로
+해석하고, 해석 결과에 경로·symlink·Git(unseal) 검사를 적용합니다. 다른 env_file 값은
+이 해석에 사용하지 않습니다. `$`·공백 등이 든 selector는 셸에서 인용해 선언 그대로 전달하세요.
+출력과 진단에는 보간 값을 넣지 않습니다. `sops_source`는 계속 literal이며, 평문 target을
+읽거나 쓰지 않는 `edit`·`reseal`·`show`의 source-only 동작은 유지합니다.
 
 ##### 복호화는 언제나 사용자가 시킬 때만
 

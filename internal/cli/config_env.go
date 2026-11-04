@@ -52,6 +52,10 @@ var configEnvUnsealCmd = &cobra.Command{
 only when a single entry declares sops_source; with several, naming one is
 required rather than guessed.
 
+Quote selectors containing shell variables or spaces so they reach DVA unchanged.
+The selected plaintext path is expanded using env_file's pre-file scope before
+filesystem safety checks; sops_source remains a literal declaration.
+
 The write is atomic: a 0600 temporary file in the target's own directory receives
 sops' output directly, is validated as dotenv, and only then replaces the target.
 Any failure leaves an existing target byte-for-byte unchanged.
@@ -120,8 +124,9 @@ func init() {
 // resolvedEntry is what the first nine preflight steps produce: a selection that
 // has been proved safe to act on, plus the handle every later operation uses.
 type resolvedEntry struct {
-	entry config.EnvFileConfig
-	root  *envRoot
+	entry      config.EnvFileConfig
+	root       *envRoot
+	targetPath string
 	// anchor is the handle on the target's own directory. Every byte of the
 	// write — temp create, recovery sweep, rename, fsync — goes through it, so
 	// no component of the declared path is re-resolved after preflight.
@@ -176,13 +181,17 @@ func preflight(c *config.Config, target string, force bool) (*resolvedEntry, err
 	if err != nil {
 		return nil, err
 	}
-	tgtState, tgtInfo, err := root.checkPath(entry.Path)
+	targetPath, err := bridgeTargetPath(c, entry.Path)
+	if err != nil {
+		return nil, err
+	}
+	tgtState, tgtInfo, err := root.checkPathAs(targetPath, entry.Path)
 	if err != nil {
 		return nil, err
 	}
 
 	// 5. source is target
-	if filepath.Clean(entry.SopsSource) == filepath.Clean(entry.Path) {
+	if filepath.Clean(entry.SopsSource) == filepath.Clean(targetPath) {
 		return nil, bridgeErr(codeSourceIsTarget, "%s is both the source and the target", entry.Path)
 	}
 
@@ -213,7 +222,7 @@ func preflight(c *config.Config, target string, force bool) (*resolvedEntry, err
 	// this is the moment to take the handle on it. Everything after this point —
 	// the git question included — is asked about the directory the bytes will
 	// actually land in, not about a name that could be re-resolved later.
-	anchor, err := root.openTargetAnchor(entry.Path)
+	anchor, err := root.openTargetAnchorAs(targetPath, entry.Path)
 	if err != nil {
 		switch {
 		case errors.Is(err, fs.ErrNotExist):
@@ -256,13 +265,14 @@ func preflight(c *config.Config, target string, force bool) (*resolvedEntry, err
 	return &resolvedEntry{
 		entry:        entry,
 		root:         root,
+		targetPath:   targetPath,
 		anchor:       anchor,
 		targetExists: tgtState == pathPresent,
 		outsideRepo:  outside,
 	}, nil
 }
 
-func runEnvUnseal(target string, force bool) error {
+func runEnvUnseal(target string, force bool) (runErr error) {
 	c, err := loadConfig()
 	if err != nil {
 		return err
@@ -274,6 +284,9 @@ func runEnvUnseal(target string, force bool) error {
 	}
 	defer resolved.root.Close()
 	defer resolved.anchor.Close()
+	if resolved.targetPath != resolved.entry.Path {
+		defer func() { runErr = declaredTargetError(runErr, resolved.entry.Path) }()
+	}
 
 	// Recovery runs after preflight, not before: a command that is going to
 	// refuse should not also mutate the directory it refused to write in. It
@@ -441,6 +454,6 @@ func runEnvEdit(target string) error {
 	// stderr, so the hint cannot contaminate whatever the editor left on stdout.
 	// It names a command that exists in this release, with the selector the user
 	// would actually have to type.
-	fmt.Fprintf(os.Stderr, "note: %s is now stale; run `dva config env unseal %s` to refresh it\n", entry.Path, entry.Path)
+	fmt.Fprintf(os.Stderr, "note: %s is now stale; run `%s` to refresh it\n", entry.Path, unsealCommand(entry.Path))
 	return nil
 }

@@ -200,15 +200,15 @@ func InspectEnvFiles(envFileConfig any, basePath string, env *Environment) *EnvI
 	for _, f := range normalizeEnvFileConfig(envFileConfig) {
 		entry := EnvInputEntry{File: f.Path, Required: f.Required}
 
-		if refs := unresolvedPathRefs(f.Path, env); len(refs) > 0 {
+		path, failure := ResolveEnvFilePath(f.Path, env)
+		if failure != nil {
 			entry.Status = EnvInputFailed
-			entry.Kind = EnvInputUnresolvedPath
-			entry.refs = refs
+			entry.Kind = failure.Kind
+			entry.refs = failure.refs
 			report.Entries = append(report.Entries, entry)
 			continue
 		}
 
-		path := env.Interpolate(f.Path)
 		if !filepath.IsAbs(path) {
 			path = filepath.Join(basePath, path)
 		}
@@ -413,10 +413,30 @@ func checkExpand(value string, env *Environment) string {
 	})
 }
 
+// ResolveEnvFilePath resolves a declaration without opening it or loading values.
+// Callers retain the declaration for selectors and diagnostics; the returned
+// path is for filesystem access only. Failure descriptions contain no expanded
+// values. A nil scope uses OS variables, like InspectEnvFiles.
+func ResolveEnvFilePath(declared string, scope *Environment) (string, *EnvInputFailure) {
+	if scope == nil {
+		scope = NewEnvironment(nil, "", "")
+	}
+	if refs := unresolvedPathRefs(declared, scope); len(refs) > 0 {
+		return "", &EnvInputFailure{File: declared, Kind: EnvInputUnresolvedPath, refs: refs}
+	}
+	return scope.Interpolate(declared), nil
+}
+
 // EnvFileScope builds the layers env_file paths may reference, without applying any
 // env file, so a check that does not load env files sees the runtime's answer.
 func (c *Config) EnvFileScope() *Environment {
-	env := NewEnvironment(c.Vars, c.FileDir(), c.FileDir())
+	return c.EnvFileScopeAt(c.FileDir())
+}
+
+// EnvFileScopeAt includes the invocation's working directory in the pre-file
+// scope. Runtime loading and explicit env-file operations use this same scope.
+func (c *Config) EnvFileScopeAt(workDir string) *Environment {
+	env := NewEnvironment(c.Vars, workDir, c.FileDir())
 	env.MergeVars(c.Environment)
 	return env
 }

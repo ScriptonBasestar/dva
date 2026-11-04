@@ -29,6 +29,10 @@ The v0.4.5 candidate documents these limits; this is not an accepted exception o
 Priority is raised to P2 because the interpolation case is an observed loader/write-target
 mismatch, rather than only warning presentation. No real-use incident is claimed.
 
+TASK-585 implements the plaintext target resolution and selector-hint correction in source
+after the v0.4.5 preparation baseline. Child doctor scope, restart warning and unknown-plan
+warning order remain open; this backlog card is not complete.
+
 ## Completion Criteria
 
 - [ ] Each gap is fixed or recorded as accepted | verify: human — review the four items at release planning

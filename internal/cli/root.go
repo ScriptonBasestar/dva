@@ -520,8 +520,7 @@ func newOwnedConfigEnvironment(c *config.Config) *envLoad {
 func newConfigEnvironmentAt(c *config.Config, workDir string) *envLoad {
 	// Precedence (lowest → highest among config layers):
 	// vars < environment: < env_file; OS env still wins per MergeVars.
-	result := config.NewEnvironment(c.Vars, workDir, c.FileDir())
-	result.MergeVars(c.Environment)
+	result := c.EnvFileScopeAt(workDir)
 
 	// ApplyEnvFiles is atomic: if any declaration fails, result keeps the vars and
 	// environment layers and gains nothing from any file, including files that

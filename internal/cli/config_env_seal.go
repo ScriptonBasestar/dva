@@ -52,10 +52,11 @@ func init() {
 // sealResolvedEntry is what sealPreflight produces once every row up to and
 // including the .sops.yaml ancestor check has passed.
 type sealResolvedEntry struct {
-	entry    config.EnvFileConfig
-	root     *envRoot
-	anchor   *targetAnchor // anchored on the source's own directory, not the target's
-	keyNames []string
+	entry      config.EnvFileConfig
+	root       *envRoot
+	anchor     *targetAnchor // anchored on the source's own directory, not the target's
+	keyNames   []string
+	targetPath string
 }
 
 // sealPreflight runs TASK-281 §3-3-1 rows 6-23 in order and stops at the first
@@ -90,13 +91,17 @@ func sealPreflight(c *config.Config, target string) (*sealResolvedEntry, error) 
 	if err != nil {
 		return nil, err
 	}
-	tgtState, tgtInfo, err := root.checkPath(entry.Path)
+	targetPath, err := bridgeTargetPath(c, entry.Path)
+	if err != nil {
+		return nil, err
+	}
+	tgtState, tgtInfo, err := root.checkPathAs(targetPath, entry.Path)
 	if err != nil {
 		return nil, err
 	}
 
 	// 15: source == target.
-	if filepath.Clean(entry.SopsSource) == filepath.Clean(entry.Path) {
+	if filepath.Clean(entry.SopsSource) == filepath.Clean(targetPath) {
 		return nil, bridgeErr(codeSourceIsTarget, "%s is both the source and the target", entry.Path)
 	}
 
@@ -121,10 +126,13 @@ func sealPreflight(c *config.Config, target string) (*sealResolvedEntry, error) 
 
 	// 20: plaintext target unreadable. 21-22: parse and extract key names —
 	// never values — for the confirmation prompt.
-	tf, err := root.root.Open(entry.Path)
+	tf, err := root.root.Open(targetPath)
 	if err != nil {
 		if errors.Is(err, fs.ErrPermission) {
 			return nil, bridgeErr(codePermissionDenied, "permission denied reading %s", entry.Path)
+		}
+		if targetPath != entry.Path {
+			err = declaredTargetError(err, entry.Path)
 		}
 		return nil, err
 	}
@@ -165,7 +173,7 @@ func sealPreflight(c *config.Config, target string) (*sealResolvedEntry, error) 
 	}
 
 	ok = true
-	return &sealResolvedEntry{entry: entry, root: root, anchor: anchor, keyNames: names}, nil
+	return &sealResolvedEntry{entry: entry, root: root, anchor: anchor, keyNames: names, targetPath: targetPath}, nil
 }
 
 // hasSopsCreationRuleAncestor walks from dir (the source's own directory,
@@ -194,7 +202,7 @@ func hasSopsCreationRuleAncestor(root *envRoot, dir string) bool {
 	}
 }
 
-func runEnvSeal(target string, yes bool) error {
+func runEnvSeal(target string, yes bool) (runErr error) {
 	c, err := loadConfig()
 	if err != nil {
 		return err
@@ -224,6 +232,9 @@ func runEnvSeal(target string, yes bool) error {
 	}
 	defer resolved.root.Close()
 	defer resolved.anchor.Close()
+	if resolved.targetPath != resolved.entry.Path {
+		defer func() { runErr = declaredTargetError(runErr, resolved.entry.Path) }()
+	}
 
 	resolved.anchor.dir.reclaimStaleTemps(time.Now())
 
@@ -246,7 +257,7 @@ func runEnvSeal(target string, yes bool) error {
 	}
 	defer w.Abort()
 
-	plaintext, err := resolved.root.root.Open(resolved.entry.Path)
+	plaintext, err := resolved.root.root.Open(resolved.targetPath)
 	if err != nil {
 		return bridgeErr(codePermissionDenied, "permission denied reading %s", resolved.entry.Path)
 	}
