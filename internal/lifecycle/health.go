@@ -192,12 +192,6 @@ func checkTCPWithContext(ctx context.Context, address string) bool {
 	return true
 }
 
-func checkCommand(command string, timeout time.Duration, dir string, env *config.Environment) bool {
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-	return checkCommandWithContext(ctx, command, dir, env)
-}
-
 func checkCommandWithContext(ctx context.Context, command string, dir string, env *config.Environment) bool {
 	cmd := exec.CommandContext(ctx, "sh", "-c", command)
 	if dir != "" {
