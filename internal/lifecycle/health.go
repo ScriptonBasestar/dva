@@ -38,10 +38,22 @@ func (hc *HealthChecker) CheckWithContext(checks map[string]config.HealthCheckCo
 	return hc.checkWithContext(context.Background(), checks, dir, env)
 }
 
+// CheckContext runs one health-check pass using ctx for every probe. Check and
+// CheckWithContext retain their background-context behavior for compatibility.
+func (hc *HealthChecker) CheckContext(ctx context.Context, checks map[string]config.HealthCheckConfig, dir string, env *config.Environment) []HealthCheckResult {
+	return hc.checkPass(ctx, checks, dir, env, true)
+}
+
 // checkWithContext runs one health-check pass and makes every probe subordinate to
 // ctx. The exported CheckWithContext predates readiness cancellation, so it keeps
 // its independent background context; WaitUntilReadyWithContext supplies its own.
 func (hc *HealthChecker) checkWithContext(ctx context.Context, checks map[string]config.HealthCheckConfig, dir string, env *config.Environment) []HealthCheckResult {
+	return hc.checkPass(ctx, checks, dir, env, false)
+}
+
+// Status omits probes interrupted by caller cancellation; legacy/readiness calls
+// retain their historical not-ready results. Completed results survive either way.
+func (hc *HealthChecker) checkPass(ctx context.Context, checks map[string]config.HealthCheckConfig, dir string, env *config.Environment, omitCancelled bool) []HealthCheckResult {
 	if len(checks) == 0 {
 		return nil
 	}
@@ -52,6 +64,9 @@ func (hc *HealthChecker) checkWithContext(ctx context.Context, checks map[string
 
 	for name, check := range checks {
 		if ctx.Err() != nil {
+			if omitCancelled {
+				break
+			}
 			mu.Lock()
 			results = append(results, HealthCheckResult{Name: name, StartHint: check.StartHint})
 			mu.Unlock()
@@ -60,6 +75,9 @@ func (hc *HealthChecker) checkWithContext(ctx context.Context, checks map[string
 		wg.Add(1)
 		go func(name string, check config.HealthCheckConfig) {
 			defer wg.Done()
+			if omitCancelled && ctx.Err() != nil {
+				return
+			}
 
 			result := HealthCheckResult{
 				Name:      name,
@@ -80,11 +98,18 @@ func (hc *HealthChecker) checkWithContext(ctx context.Context, checks map[string
 			case "tcp":
 				result.Ready = checkTCPWithContext(probeCtx, check.Address)
 			case "command":
-				result.Ready = checkCommandWithContext(probeCtx, check.Command, dir, env)
+				if omitCancelled {
+					result.Ready = checkStatusCommandWithContext(probeCtx, check.Command, dir, env)
+				} else {
+					result.Ready = checkCommandWithContext(probeCtx, check.Command, dir, env)
+				}
 			default:
 				fmt.Fprintf(os.Stderr, "[warn] unknown health check type %q for %s\n", check.Type, name)
 			}
 
+			if omitCancelled && ctx.Err() != nil {
+				return
+			}
 			mu.Lock()
 			results = append(results, result)
 			mu.Unlock()
@@ -164,8 +189,22 @@ func checkHTTPWithContext(ctx context.Context, url string) bool {
 // stricter 2xx/3xx health verdict: an API server that 404s on "/" is up, not
 // down. Only a transport error (connection refused, timeout) counts as down.
 func CheckHTTPReachable(url string, timeout time.Duration) bool {
-	client := &http.Client{Timeout: timeout}
-	resp, err := client.Get(url)
+	return CheckHTTPReachableContext(context.Background(), url, timeout)
+}
+
+// CheckHTTPReachableContext is CheckHTTPReachable with caller cancellation.
+// It retains the endpoint contract: any HTTP response is reachable.
+func CheckHTTPReachableContext(ctx context.Context, url string, timeout time.Duration) bool {
+	if timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return false
+	}
+	resp, err := (&http.Client{}).Do(req)
 	if err != nil {
 		return false
 	}
@@ -175,7 +214,13 @@ func CheckHTTPReachable(url string, timeout time.Duration) bool {
 
 // CheckTCP reports whether a TCP connection to address succeeds within timeout.
 func CheckTCP(address string, timeout time.Duration) bool {
-	conn, err := net.DialTimeout("tcp", address, timeout)
+	return CheckTCPContext(context.Background(), address, timeout)
+}
+
+// CheckTCPContext is CheckTCP with caller cancellation. Dialer retains the old
+// timeout semantics: zero is unbounded and a negative timeout expires immediately.
+func CheckTCPContext(ctx context.Context, address string, timeout time.Duration) bool {
+	conn, err := (&net.Dialer{Timeout: timeout}).DialContext(ctx, "tcp", address)
 	if err != nil {
 		return false
 	}
@@ -201,6 +246,15 @@ func checkCommandWithContext(ctx context.Context, command string, dir string, en
 		cmd.Env = env.EnvSlice()
 	}
 	return cmd.Run() == nil
+}
+
+func checkStatusCommandWithContext(ctx context.Context, command string, dir string, env *config.Environment) bool {
+	cmd := exec.Command("sh", "-c", command)
+	cmd.Dir = dir
+	if env != nil {
+		cmd.Env = env.EnvSlice()
+	}
+	return runOwnedQuery(ctx, cmd) == nil
 }
 
 // healthCheckContext preserves each probe type's established timeout behavior

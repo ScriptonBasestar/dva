@@ -164,6 +164,10 @@ Lifecycle, interaction, agent discovery는 같은 effective config를 서로 다
 
 ### Named lifecycle
 
+상태 조회는 CLI의 신호 취소 context를 orchestration, health·endpoint probe와 터널 준비에
+전달한다. 취소는 일반 조회 실패와 구분해 부분 결과와 함께 반환하며, 이후 조회를
+시작하지 않는다. 터널 manager는 조회가 연 접근 프로세스의 회수만 소유한다.
+
 ```text
 dva up/down/stop/status <name>
     → config load and validation

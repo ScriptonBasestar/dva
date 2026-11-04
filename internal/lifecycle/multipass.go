@@ -99,7 +99,10 @@ func (p *MultipassPlugin) Status(ctx context.Context, pctx *PluginContext) ([]Se
 
 	name := p.vmName(pctx)
 
-	out, err := exec.Command("multipass", "info", name, "--format", "json").Output()
+	out, err := runStatusQuery(ctx, exec.Command("multipass", "info", name, "--format", "json"))
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
 	if err != nil {
 		return []ServiceStatus{{Name: name, State: "stopped"}}, nil
 	}

@@ -453,6 +453,11 @@ dva up backend/local-dev
 SIGINT·SIGTERM·SIGHUP을 전달합니다. 취소되면 이후 대상을 중지하지 않고 실패로
 종료하며, 이미 중지한 대상을 다시 시작하지 않습니다.
 
+`status`도 호출자·신호 취소를 runtime 조회, health check, endpoint probe와 조회 전
+터널 준비에 전달합니다. 취소하면 수집한 부분 결과를 표시하고 실패로 종료하며 이후
+조회를 시작하지 않습니다. 관리 대상 애플리케이션은 변경하지 않고, 조회를 위해 자신이
+시작한 터널만 회수합니다. 정상 출력 형식과 일반 조회 오류의 기존 처리 방식은 유지합니다.
+
 ```bash
 dva up local-dev
 dva down local-dev

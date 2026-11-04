@@ -98,7 +98,10 @@ func (p *KubectlPlugin) Status(ctx context.Context, pctx *PluginContext) ([]Serv
 	getArgs = append(getArgs, "-o", "json")
 
 	cmd, cmdArgs := p.buildArgs(pctx, getArgs)
-	out, err := exec.Command(cmd, cmdArgs...).Output()
+	out, err := runStatusQuery(ctx, exec.Command(cmd, cmdArgs...))
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
 	if err != nil {
 		return nil, fmt.Errorf("kubectl get: %w", err)
 	}

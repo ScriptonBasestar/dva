@@ -85,7 +85,10 @@ func (p *DockerPlugin) Status(ctx context.Context, pctx *PluginContext) ([]Servi
 	}
 
 	name := pctx.Env.Interpolate(cfg.Name)
-	out, err := exec.Command("docker", "inspect", "--format", "{{json .State}}", name).Output()
+	out, err := runStatusQuery(ctx, exec.Command("docker", "inspect", "--format", "{{json .State}}", name))
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
 	if err != nil {
 		// Container not found or not running
 		return []ServiceStatus{{Name: name, State: "stopped"}}, nil

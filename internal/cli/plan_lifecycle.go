@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"sort"
@@ -594,6 +595,10 @@ func runPlanRestart(ctx context.Context, c *config.Config, el *envLoad, planName
 }
 
 func runPlanStatus(c *config.Config, el *envLoad, planName string) error {
+	return runPlanStatusContext(context.Background(), c, el, planName)
+}
+
+func runPlanStatusContext(ctx context.Context, c *config.Config, el *envLoad, planName string) error {
 	runtime, err := resolvePlanRuntime(c, el, planName, nil)
 	if err != nil {
 		return err
@@ -629,7 +634,24 @@ func runPlanStatus(c *config.Config, el *envLoad, planName string) error {
 	if err != nil {
 		return err
 	}
-	status, err := orch.Status(context.Background())
+	status, err := orch.Status(ctx)
+	if ctxErr := ctx.Err(); ctxErr != nil {
+		filtered := filterStatusByNames(status, planEntryNames(plan))
+		if jsonOutput {
+			doc := map[string]any{
+				"action":      "status",
+				"dva_version": config.Version,
+				"plan":        planName,
+				"status":      filtered,
+			}
+			if printErr := output.PrintJSON(doc); printErr != nil {
+				return printErr
+			}
+		} else if filtered != nil {
+			lifecycle.PrintStatus(filtered, c.FileDir())
+		}
+		return errors.Join(err, ctxErr)
+	}
 	if err != nil {
 		return err
 	}

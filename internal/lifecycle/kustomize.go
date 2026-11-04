@@ -94,7 +94,10 @@ func (p *KustomizePlugin) Status(ctx context.Context, pctx *PluginContext) ([]Se
 	getArgs := []string{"get", "-k", dir, "-o", "json"}
 
 	cmd, cmdArgs := p.buildArgs(pctx, getArgs)
-	out, err := exec.Command(cmd, cmdArgs...).Output()
+	out, err := runStatusQuery(ctx, exec.Command(cmd, cmdArgs...))
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
 	if err != nil {
 		return nil, fmt.Errorf("kustomize get: %w", err)
 	}

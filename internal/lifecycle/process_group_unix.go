@@ -24,6 +24,13 @@ func terminateProcessGroup(pid int) error {
 	return syscall.Kill(-pid, syscall.SIGTERM)
 }
 
+func killProcessGroup(pid int) error {
+	if pid <= 1 || pid == ownProcessGroup() {
+		return fmt.Errorf("%w: pid %d", errUnsafeProcessGroup, pid)
+	}
+	return syscall.Kill(-pid, syscall.SIGKILL)
+}
+
 func processGroupsSupported() bool { return true }
 
 func ownProcessGroup() int { return syscall.Getpgrp() }

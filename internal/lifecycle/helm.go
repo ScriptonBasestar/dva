@@ -158,7 +158,10 @@ func (p *HelmPlugin) Status(ctx context.Context, pctx *PluginContext) ([]Service
 
 	statusArgs := []string{"status", cfg.Release, "-o", "json"}
 	cmd, cmdArgs := p.buildArgs(pctx, statusArgs)
-	out, err := exec.Command(cmd, cmdArgs...).Output()
+	out, err := runStatusQuery(ctx, exec.Command(cmd, cmdArgs...))
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
 	if err != nil {
 		// Release not found or helm error — treat as stopped.
 		return []ServiceStatus{{

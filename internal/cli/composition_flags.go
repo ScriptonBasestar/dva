@@ -499,6 +499,10 @@ func runCompositionLogs(c *config.Config, el *envLoad, planName string, extraArg
 // there is exactly one Outcome-computation path, and renderCompositionReport reuses the same
 // Up/Down/Stop rendering and flat exit-code convention for status too).
 func runCompositionStatus(c *config.Config, el *envLoad, planName string) error {
+	return runCompositionStatusContext(context.Background(), c, el, planName)
+}
+
+func runCompositionStatusContext(ctx context.Context, c *config.Config, el *envLoad, planName string) error {
 	comp, err := lifecycle.ResolveCompositionPlan(c, planName)
 	if err != nil {
 		return err
@@ -517,6 +521,9 @@ func runCompositionStatus(c *config.Config, el *envLoad, planName string) error 
 	if err != nil {
 		return err
 	}
-	report, runErr := orch.Status(context.Background())
+	report, runErr := orch.Status(ctx)
+	if ctxErr := ctx.Err(); ctxErr != nil {
+		return renderCompositionReport(report, errors.Join(runErr, ctxErr))
+	}
 	return renderCompositionReport(report, runErr)
 }

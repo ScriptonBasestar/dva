@@ -37,6 +37,7 @@ type fakeChildExecutor struct {
 	// arriving mid-run occupies.
 	onUp   map[string]func()
 	onStop map[string]func()
+	onIsUp map[string]func()
 }
 
 func newFakeChildExecutor() *fakeChildExecutor {
@@ -49,6 +50,7 @@ func newFakeChildExecutor() *fakeChildExecutor {
 		liveErr:  map[string]error{},
 		onUp:     map[string]func(){},
 		onStop:   map[string]func(){},
+		onIsUp:   map[string]func(){},
 	}
 }
 
@@ -132,12 +134,38 @@ func (f *fakeChildExecutor) Stop(ctx context.Context, child *ExecutionPlan) erro
 func (f *fakeChildExecutor) IsUp(_ context.Context, child *ExecutionPlan) (bool, error) {
 	f.enter("isup:" + child.Name)
 	defer f.leave()
+	if hook := f.onIsUp[child.Name]; hook != nil {
+		hook()
+	}
 	if err := f.liveErr[child.Name]; err != nil {
 		return false, err
 	}
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return f.live[child.Name], nil
+}
+
+func TestCompositionStatusCancellationPreservesPriorRows(t *testing.T) {
+	plan := resolveTestComposition(t)
+	exec := newFakeChildExecutor()
+	exec.live["a-plan"] = true
+	exec.live["b-plan"] = true
+	exec.live["c-plan"] = true
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	exec.onIsUp["b-plan"] = cancel
+
+	report, err := newTestCompositionOrchestrator(t, plan, exec).Status(ctx)
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("Status error = %v, want context.Canceled", err)
+	}
+	if report.Outcome != CompositionOutcomeFailed {
+		t.Fatalf("outcome = %q, want %q", report.Outcome, CompositionOutcomeFailed)
+	}
+	if report.Children[0].State != ChildStateUp || report.Children[1].State != ChildStateNotStarted || report.Children[2].State != ChildStateNotStarted {
+		t.Fatalf("cancelled report children = %+v, want only first child preserved", report.Children)
+	}
+	requireCalls(t, exec.recorded(), []string{"isup:a-plan", "isup:b-plan"})
 }
 
 func (f *fakeChildExecutor) recorded() []string {

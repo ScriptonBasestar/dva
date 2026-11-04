@@ -71,7 +71,7 @@ func (p *PodmanComposePlugin) Stop(ctx context.Context, pctx *PluginContext) err
 }
 
 func (p *PodmanComposePlugin) Status(ctx context.Context, pctx *PluginContext) ([]ServiceStatus, error) {
-	return p.queryServices(pctx)
+	return p.queryServicesContext(ctx, pctx)
 }
 
 // buildArgs constructs the podman-compose command and arguments from plugin config.
@@ -106,12 +106,15 @@ func (p *PodmanComposePlugin) runSubprocess(pctx *PluginContext, args []string) 
 
 // queryServices runs podman-compose ps and returns parsed service statuses.
 func (p *PodmanComposePlugin) queryServices(pctx *PluginContext) ([]ServiceStatus, error) {
+	return p.queryServicesContext(context.Background(), pctx)
+}
+func (p *PodmanComposePlugin) queryServicesContext(ctx context.Context, pctx *PluginContext) ([]ServiceStatus, error) {
 	if pctx.Entry.PodmanCompose == nil {
 		return nil, nil
 	}
 
 	cmd, cmdArgs := p.buildArgs(pctx, []string{"ps", "--format", "json"})
-	out, err := exec.Command(cmd, cmdArgs...).Output()
+	out, err := runStatusQuery(ctx, exec.Command(cmd, cmdArgs...))
 	if err != nil {
 		return nil, fmt.Errorf("podman-compose ps: %w", err)
 	}

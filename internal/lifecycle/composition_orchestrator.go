@@ -371,21 +371,32 @@ func (o *CompositionOrchestrator) Status(ctx context.Context) (*CompositionRepor
 	report := o.newReport(CompositionOutcomeUp)
 	allUp := true
 	var childErrs []string
+	var childFailureErrs []error
 
 	for i := range o.plan.Entries {
+		if err := ctx.Err(); err != nil {
+			return compositionStatusCancelled(report, err, childFailureErrs)
+		}
 		child := o.plan.Entries[i].ChildPlan
 		up, err := o.exec.IsUp(ctx, child)
+		if cancelErr := ctx.Err(); cancelErr != nil {
+			return compositionStatusCancelled(report, cancelErr, childFailureErrs)
+		}
 		switch {
 		case err != nil:
 			report.Children[i].State = ChildStateFailed
 			report.Children[i].Error = err.Error()
 			childErrs = append(childErrs, fmt.Sprintf("%s: %v", child.Name, err))
+			childFailureErrs = append(childFailureErrs, fmt.Errorf("%s: %w", child.Name, err))
 			allUp = false
 		case up:
 			report.Children[i].State = ChildStateUp
 		default:
 			allUp = false
 		}
+	}
+	if err := ctx.Err(); err != nil {
+		return compositionStatusCancelled(report, err, childFailureErrs)
 	}
 
 	if allUp {
@@ -397,6 +408,14 @@ func (o *CompositionOrchestrator) Status(ctx context.Context) (*CompositionRepor
 	if len(childErrs) > 0 {
 		err = fmt.Errorf("composition %q: %s", o.plan.Name, strings.Join(childErrs, "; "))
 	}
+	report.Error = err.Error()
+	return report, &CompositionError{Err: err, Report: report}
+}
+
+func compositionStatusCancelled(report *CompositionReport, cancelErr error, prior []error) (*CompositionReport, error) {
+	errs := append(append([]error{}, prior...), cancelErr)
+	err := errors.Join(errs...)
+	report.Outcome = CompositionOutcomeFailed
 	report.Error = err.Error()
 	return report, &CompositionError{Err: err, Report: report}
 }

@@ -1,6 +1,7 @@
 package lifecycle
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log/slog"
@@ -61,6 +62,16 @@ func newTunnelManager(logger *slog.Logger) *tunnelManager {
 // failure it tears down what it started so a half-open tunnel never outlives
 // the call.
 func (m *tunnelManager) acquire(entry *config.LifecycleEntry, env *config.Environment) error {
+	return m.acquireContext(context.Background(), entry, env)
+}
+
+// acquireContext is acquire with cancellation for callers that query live state.
+// The legacy acquire wrapper deliberately retains its background context for lifecycle
+// verbs that predate caller cancellation at this prerequisite boundary.
+func (m *tunnelManager) acquireContext(ctx context.Context, entry *config.LifecycleEntry, env *config.Environment) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	t := entry.Tunnel
 	if t == nil {
 		return nil
@@ -81,15 +92,21 @@ func (m *tunnelManager) acquire(entry *config.LifecycleEntry, env *config.Enviro
 		ReadyTimeout:    t.ReadyTimeout,
 	}
 
-	if err := m.authenticate(t); err != nil {
+	if err := m.authenticateContext(ctx, t); err != nil {
 		return err
 	}
 
 	// A port already serving is never reused: the owner is unknown, so a
 	// successful dial is reported as a conflict and fails closed (docs/68 §5).
-	if conn, err := net.DialTimeout("tcp", t.Local, time.Second); err == nil {
+	dialCtx, cancelDial := context.WithTimeout(ctx, time.Second)
+	conn, err := (&net.Dialer{}).DialContext(dialCtx, "tcp", t.Local)
+	cancelDial()
+	if err == nil {
 		_ = conn.Close()
 		return fmt.Errorf("tunnel: local address %s is already in use; not reusing an unowned listener", t.Local)
+	}
+	if err := ctx.Err(); err != nil {
+		return err
 	}
 
 	proc, err := m.startCloudflared(t, env)
@@ -102,8 +119,12 @@ func (m *tunnelManager) acquire(entry *config.LifecycleEntry, env *config.Enviro
 		_ = proc.terminate()
 		return err
 	}
-	if err := waitForTunnelReady(t.Local, timeout, proc); err != nil {
-		_ = proc.terminate()
+	if err := waitForTunnelReadyContext(ctx, t.Local, timeout, proc); err != nil {
+		_ = proc.terminateStatus()
+		return err
+	}
+	if err := ctx.Err(); err != nil {
+		_ = proc.terminateStatus()
 		return err
 	}
 
@@ -120,10 +141,24 @@ func (m *tunnelManager) Close() {
 	}
 }
 
+func (m *tunnelManager) CloseStatus() {
+	for key, proc := range m.open {
+		_ = proc.terminateStatus()
+		delete(m.open, key)
+	}
+}
+
 // authenticate runs the docs/68 §3 checks for the declared auth mode before
 // any cloudflared tunnel process is started. Output that may contain a JWT is
 // captured and discarded — it is never printed or logged.
 func (m *tunnelManager) authenticate(t *config.TunnelConfig) error {
+	return m.authenticateContext(context.Background(), t)
+}
+
+func (m *tunnelManager) authenticateContext(ctx context.Context, t *config.TunnelConfig) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	if t.AuthMode() == config.TunnelAuthServiceToken {
 		for _, name := range []string{t.ServiceTokenEnv.ID, t.ServiceTokenEnv.Secret} {
 			if os.Getenv(name) == "" {
@@ -135,8 +170,10 @@ func (m *tunnelManager) authenticate(t *config.TunnelConfig) error {
 
 	// interactive: a usable token exits 0 and writes at least one stdout byte.
 	// An expired cloudflared token exits 0 and writes nothing (docs/68 §7).
-	if err := runCloudflaredDiscard(t.Hostname); err == nil {
+	if err := runCloudflaredDiscardContext(ctx, t.Hostname); err == nil {
 		return nil
+	} else if cancelErr := ctx.Err(); cancelErr != nil {
+		return cancelErr
 	}
 
 	// No usable token. With a TTY, the login runs in the foreground and the
@@ -147,10 +184,10 @@ func (m *tunnelManager) authenticate(t *config.TunnelConfig) error {
 			"tunnel: not authenticated for %s and no terminal is attached; run: cloudflared access login --quiet https://%s",
 			t.Hostname, t.Hostname)
 	}
-	if err := runCloudflaredLogin(t.Hostname); err != nil {
+	if err := runCloudflaredLoginContext(ctx, t.Hostname); err != nil {
 		return fmt.Errorf("tunnel: login for %s failed: %w", t.Hostname, err)
 	}
-	if err := runCloudflaredDiscard(t.Hostname); err != nil {
+	if err := runCloudflaredDiscardContext(ctx, t.Hostname); err != nil {
 		return fmt.Errorf("tunnel: still not authenticated for %s after login", t.Hostname)
 	}
 	return nil
@@ -161,11 +198,15 @@ func (m *tunnelManager) authenticate(t *config.TunnelConfig) error {
 // never stored or logged, and whitespace is not trimmed. Authenticated means
 // the process succeeded and the count is greater than zero.
 func runCloudflaredDiscard(hostname string) error {
+	return runCloudflaredDiscardContext(context.Background(), hostname)
+}
+
+func runCloudflaredDiscardContext(ctx context.Context, hostname string) error {
 	cmd := exec.Command("cloudflared", "access", "token", "--app", "https://"+hostname)
 	var stdout stdoutByteCounter
 	cmd.Stdout = &stdout
 	cmd.Stderr = io.Discard
-	if err := cmd.Run(); err != nil {
+	if err := runTunnelCommandContext(ctx, cmd); err != nil {
 		return err
 	}
 	if stdout.n == 0 {
@@ -185,11 +226,21 @@ func (c *stdoutByteCounter) Write(p []byte) (int, error) {
 // runCloudflaredLogin runs `cloudflared access login` in the foreground with
 // inherited stdio so the browser flow works.
 func runCloudflaredLogin(hostname string) error {
+	return runCloudflaredLoginContext(context.Background(), hostname)
+}
+
+func runCloudflaredLoginContext(ctx context.Context, hostname string) error {
 	cmd := exec.Command("cloudflared", "access", "login", "--quiet", "https://"+hostname)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	return runTunnelCommandContext(ctx, cmd)
+}
+
+// runTunnelCommandContext owns a cloudflared auth process group. CommandContext only
+// signals its direct child; auth shells may leave descendants holding stdout open.
+func runTunnelCommandContext(ctx context.Context, cmd *exec.Cmd) error {
+	return runOwnedQuery(ctx, cmd)
 }
 
 // startCloudflared launches `cloudflared access tcp` in its own process group,
@@ -222,9 +273,18 @@ func (m *tunnelManager) startCloudflared(t *config.TunnelConfig, env *config.Env
 // TCP alone is not readiness — the caller has already established the auth
 // condition before the process was started.
 func waitForTunnelReady(local string, timeout time.Duration, proc *tunnelProcess) error {
+	return waitForTunnelReadyContext(context.Background(), local, timeout, proc)
+}
+
+func waitForTunnelReadyContext(ctx context.Context, local string, timeout time.Duration, proc *tunnelProcess) error {
 	deadline := time.Now().Add(timeout)
 	for {
-		conn, err := net.DialTimeout("tcp", local, tunnelReadyPollInterval)
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		probeCtx, cancel := context.WithTimeout(ctx, tunnelReadyPollInterval)
+		conn, err := (&net.Dialer{}).DialContext(probeCtx, "tcp", local)
+		cancel()
 		if err == nil {
 			_ = conn.Close()
 			return nil
@@ -233,7 +293,11 @@ func waitForTunnelReady(local string, timeout time.Duration, proc *tunnelProcess
 			return fmt.Errorf("tunnel: %s not ready within %s; cloudflared last said: %s",
 				local, timeout, proc.stderrTail.tail())
 		}
-		time.Sleep(tunnelReadyPollInterval)
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(tunnelReadyPollInterval):
+		}
 	}
 }
 
@@ -243,6 +307,25 @@ func (p *tunnelProcess) terminate() error {
 		_ = terminateProcessGroup(p.pid)
 	}
 	return p.cmd.Wait()
+}
+
+// terminateStatus bounds cleanup for a tunnel started only by a cancellable status query.
+func (p *tunnelProcess) terminateStatus() error {
+	p.cmd.WaitDelay = time.Second
+	if signalableProcessGroupPID(p.pid) {
+		_ = terminateProcessGroup(p.pid)
+	}
+	done := make(chan error, 1)
+	go func() { done <- p.cmd.Wait() }()
+	select {
+	case err := <-done:
+		return err
+	case <-time.After(statusQueryGrace):
+		if signalableProcessGroupPID(p.pid) {
+			_ = killProcessGroup(p.pid)
+		}
+		return <-done
+	}
 }
 
 // tailBuffer keeps the last max bytes of cloudflared stderr so a readiness

@@ -12,6 +12,7 @@ import (
 func configureProcessGroup(_ *exec.Cmd) error { return errProcessGroupsUnsupported }
 
 func terminateProcessGroup(_ int) error { return errProcessGroupsUnsupported }
+func killProcessGroup(_ int) error      { return errProcessGroupsUnsupported }
 
 func processGroupsSupported() bool { return false }
 

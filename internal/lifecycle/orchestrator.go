@@ -379,16 +379,31 @@ func (o *Orchestrator) Restart(ctx context.Context, opts UpOptions) error {
 // Whole-workspace status (no selection) keeps the full compose project list.
 func (o *Orchestrator) Status(ctx context.Context) (*AggregatedStatus, error) {
 	status := &AggregatedStatus{}
+	if err := ctx.Err(); err != nil {
+		return status, err
+	}
 
 	tunnels := newTunnelManager(o.logger)
-	defer tunnels.Close()
+	defer tunnels.CloseStatus()
 	for i := range o.entries {
-		if err := tunnels.acquire(&o.entries[i], o.env); err != nil {
+		if err := ctx.Err(); err != nil {
+			return status, err
+		}
+		if err := tunnels.acquireContext(ctx, &o.entries[i], o.env); err != nil {
+			if cancelErr := ctx.Err(); cancelErr != nil {
+				return status, cancelErr
+			}
 			return nil, fmt.Errorf("entry %q tunnel: %w", o.entries[i].Name, err)
+		}
+		if err := ctx.Err(); err != nil {
+			return status, err
 		}
 	}
 
 	for _, entry := range o.entries {
+		if err := ctx.Err(); err != nil {
+			return status, err
+		}
 		pluginType := entry.DetectPlugin()
 		plugin, err := NewPlugin(pluginType)
 		if err != nil {
@@ -420,22 +435,26 @@ func (o *Orchestrator) Status(ctx context.Context) (*AggregatedStatus, error) {
 			o.logger.Warn("plugin status query failed", "entry", entry.Name, "plugin", pluginType, "error", err)
 		}
 
-		var healthResults []HealthCheckResult
-		if len(entry.HealthChecks) > 0 {
-			healthResults = o.hc.CheckWithContext(entry.HealthChecks, entryEnv.WorkDir(), entryEnv)
-		}
-
 		es := EntryStatus{
 			Name:     entry.Name,
 			Plugin:   pluginType,
 			Services: services,
-			Health:   healthResults,
 		}
 		if selected, ok := o.composeServices[entry.Name]; ok && len(selected) > 0 {
 			es.Services, es.OutOfPlan = partitionPlanServices(services, selected)
 		}
+		if err := ctx.Err(); err != nil {
+			status.Entries = append(status.Entries, es)
+			return status, err
+		}
+		if len(entry.HealthChecks) > 0 {
+			es.Health = o.hc.CheckContext(ctx, entry.HealthChecks, entryEnv.WorkDir(), entryEnv)
+		}
 
 		status.Entries = append(status.Entries, es)
+		if err := ctx.Err(); err != nil {
+			return status, err
+		}
 	}
 
 	return status, nil

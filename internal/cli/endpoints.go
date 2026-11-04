@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"sort"
@@ -18,6 +19,14 @@ import (
 // http) get an HTTP reachability check — any response means up, since API
 // servers legitimately 404 on "/"; others get a TCP check on the resolved port.
 func checkEndpointHealth(endpoints map[string]config.EndpointConfig) []HealthCheckResult {
+	return checkEndpointHealthContext(context.Background(), endpoints)
+}
+
+// checkEndpointHealthContext is checkEndpointHealth with a caller-owned cancellation
+// boundary. The legacy helper deliberately retains its background context for post-up
+// rendering, while status passes its command context so canceled observation starts no
+// further endpoint probe.
+func checkEndpointHealthContext(ctx context.Context, endpoints map[string]config.EndpointConfig) []HealthCheckResult {
 	if len(endpoints) == 0 {
 		return nil
 	}
@@ -29,9 +38,15 @@ func checkEndpointHealth(endpoints map[string]config.EndpointConfig) []HealthChe
 	const timeout = 2 * time.Second
 
 	for name, ep := range endpoints {
+		if ctx.Err() != nil {
+			break
+		}
 		wg.Add(1)
 		go func(name string, ep config.EndpointConfig) {
 			defer wg.Done()
+			if ctx.Err() != nil {
+				return
+			}
 
 			result := HealthCheckResult{Name: name}
 
@@ -45,7 +60,7 @@ func checkEndpointHealth(endpoints map[string]config.EndpointConfig) []HealthChe
 			}
 
 			if strings.HasPrefix(url, "http://") || strings.HasPrefix(url, "https://") {
-				result.Ready = lifecycle.CheckHTTPReachable(url, timeout)
+				result.Ready = lifecycle.CheckHTTPReachableContext(ctx, url, timeout)
 			} else {
 				// Treat as host:port for TCP check
 				host, port, err := net.SplitHostPort(url)
@@ -54,7 +69,13 @@ func checkEndpointHealth(endpoints map[string]config.EndpointConfig) []HealthChe
 					host = "localhost"
 					port = url
 				}
-				result.Ready = lifecycle.CheckTCP(net.JoinHostPort(host, port), timeout)
+				result.Ready = lifecycle.CheckTCPContext(ctx, net.JoinHostPort(host, port), timeout)
+			}
+			// A parent cancellation stops an in-flight endpoint probe. It is not a
+			// negative reachability observation, so omit it rather than rendering a
+			// false red/down result in the partial endpoint table.
+			if ctx.Err() != nil {
+				return
 			}
 
 			mu.Lock()

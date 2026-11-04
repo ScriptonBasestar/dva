@@ -175,7 +175,7 @@ func composeStopArgs(pctx *PluginContext) []string {
 }
 
 func (p *ComposePlugin) Status(ctx context.Context, pctx *PluginContext) ([]ServiceStatus, error) {
-	return p.queryServices(pctx)
+	return p.queryServicesContext(ctx, pctx)
 }
 
 // buildArgs constructs the docker compose command and arguments from plugin config.
@@ -337,6 +337,9 @@ type composePublisher struct {
 
 // queryServices runs docker compose ps and returns parsed service statuses.
 func (p *ComposePlugin) queryServices(pctx *PluginContext) ([]ServiceStatus, error) {
+	return p.queryServicesContext(context.Background(), pctx)
+}
+func (p *ComposePlugin) queryServicesContext(ctx context.Context, pctx *PluginContext) ([]ServiceStatus, error) {
 	if pctx.Entry.ComposeConfig() == nil {
 		return nil, nil
 	}
@@ -347,7 +350,7 @@ func (p *ComposePlugin) queryServices(pctx *PluginContext) ([]ServiceStatus, err
 	}
 	c := exec.Command(cmd, cmdArgs...)
 	c.Dir = composeWorkdir(pctx)
-	out, err := c.Output()
+	out, err := runStatusQuery(ctx, c)
 	if err != nil {
 		return nil, fmt.Errorf("compose ps: %w", err)
 	}

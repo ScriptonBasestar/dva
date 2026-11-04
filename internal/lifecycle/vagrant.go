@@ -108,7 +108,10 @@ func (p *VagrantPlugin) Status(ctx context.Context, pctx *PluginContext) ([]Serv
 	cmd := exec.Command("vagrant", args...)
 	cmd.Dir = p.resolveDir(pctx)
 	cmd.Env = pctx.Env.EnvSlice()
-	out, err := cmd.Output()
+	out, err := runStatusQuery(ctx, cmd)
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
 	if err != nil {
 		return nil, fmt.Errorf("vagrant status: %w", err)
 	}

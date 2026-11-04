@@ -20,6 +20,10 @@ All notable changes to DVA are documented here.
 
 ### Fixed
 
+- `status`의 전체 스택·plan·composition 조회와 health·endpoint probe, 터널 준비가
+  호출자·신호 취소를 전달합니다. 취소 시 부분 결과를 보존하고 이후 조회를 중단하며
+  실패로 종료합니다. 정상 출력과 일반 조회 오류 처리, 기존 probe API는 유지합니다.
+
 - `stop`의 전체 스택·plan·composition 경로에 호출자·신호 취소를 연결해 취소 후
   나머지 대상을 중지하지 않습니다. 이미 중지한 대상은 그대로 유지합니다.
 - validate의 strict 판정은 `ℹ` 접두사 대신 생산자가 선언한 심각도를 사용합니다.

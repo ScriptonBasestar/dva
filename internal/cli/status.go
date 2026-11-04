@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -30,6 +30,8 @@ reported and the command exits non-zero without querying runtime state.
 
 See USAGE.md's "named execution entry" section for status usage alongside up/down/stop.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		ctx, cancel := lifecycleCommandContext(cmd)
+		defer cancel()
 		if statusAll && len(args) > 0 {
 			return fmt.Errorf("--all queries the whole stack and takes no NAME, got %q", args[0])
 		}
@@ -39,9 +41,9 @@ See USAGE.md's "named execution entry" section for status usage alongside up/dow
 			el := rootEnvLoad(c)
 			if planName, _, ok := detectPlanRoute(c, args); ok && !statusAll {
 				if isCompositionPlan(c, planName) {
-					return runCompositionStatus(c, el, planName)
+					return runCompositionStatusContext(ctx, c, el, planName)
 				}
-				return runPlanStatus(c, el, planName)
+				return runPlanStatusContext(ctx, c, el, planName)
 			}
 			// Whole-stack route: root-owned, so the root report governs. Observation does
 			// not fail before printing — it prints a document explicitly marked partial and
@@ -82,11 +84,20 @@ See USAGE.md's "named execution entry" section for status usage alongside up/dow
 				}
 
 				orch := lifecycle.NewOrchestrator(c, rootLoad.env)
-				status, statusErr := orch.Status(context.Background())
-				if statusErr == nil {
-					stackStatus = status
-					statusData["stack"] = status.Entries
+				status, statusErr := orch.Status(ctx)
+				if statusErr == nil || ctx.Err() != nil {
+					if status != nil {
+						stackStatus = status
+						statusData["stack"] = status.Entries
+					}
 				}
+				if printErr := output.PrintJSON(statusData); printErr != nil {
+					return printErr
+				}
+				if ctxErr := ctx.Err(); ctxErr != nil {
+					return errors.Join(statusErr, ctxErr)
+				}
+				return lifecycle.StatusExitError(stackStatus)
 			}
 			if printErr := output.PrintJSON(statusData); printErr != nil {
 				return printErr
@@ -131,16 +142,24 @@ See USAGE.md's "named execution entry" section for status usage alongside up/dow
 			return envIncompleteError(rootLoad.report)
 		}
 		orch := lifecycle.NewOrchestrator(c, rootLoad.env)
-		status, statusErr := orch.Status(context.Background())
-		if statusErr != nil {
+		status, statusErr := orch.Status(ctx)
+		if statusErr != nil && (ctx.Err() == nil || status == nil) {
 			fmt.Println("\nLifecycle: (error querying status)")
-		} else {
+		} else if status != nil {
 			lifecycle.PrintStatus(status, c.FileDir())
+		} else {
+			fmt.Println("\nLifecycle: (no entries queried)")
+		}
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return errors.Join(statusErr, ctxErr)
 		}
 
 		if len(c.Endpoints) > 0 {
-			allHC := checkEndpointHealth(c.Endpoints)
+			allHC := checkEndpointHealthContext(ctx, c.Endpoints)
 			printEndpointTable(c.Endpoints, nil, allHC)
+			if ctxErr := ctx.Err(); ctxErr != nil {
+				return ctxErr
+			}
 		}
 
 		if statusErr == nil {
