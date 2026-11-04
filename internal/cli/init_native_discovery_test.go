@@ -190,8 +190,18 @@ func TestScriptonDashboardFixtureYieldsTwoNativeEntries(t *testing.T) {
 	if err := cfg.Validate(); err != nil {
 		t.Fatalf("generated config does not validate: %v", err)
 	}
-	if warnings := cfg.ValidateWarnings(); len(warnings) > 0 {
-		t.Fatalf("generated config has semantic warnings: %v", warnings)
+	// This fixture declares two workspaces without initializing child DVA
+	// configs. TASK-557 makes those missing inputs visible while keeping the
+	// generated root runnable; require exactly those diagnostics.
+	warnings := cfg.ValidateWarnings()
+	children := []string{"scripton-mfe-protocol", "scripton-ui-components"}
+	if len(warnings) != len(children) {
+		t.Fatalf("generated config warnings = %v, want one missing-config warning per child", warnings)
+	}
+	for i, child := range children {
+		if !strings.HasPrefix(warnings[i], "subprojects."+child+":") || !strings.Contains(warnings[i], "has no dva.yml or dva.yaml") {
+			t.Fatalf("generated config warning = %q, want missing config for %s", warnings[i], child)
+		}
 	}
 }
 
