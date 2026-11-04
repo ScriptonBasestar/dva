@@ -1,0 +1,88 @@
+# Formal quality review — second batch
+
+- Reviewed source commit: `3f7930b953accd2943120cdba177ab8436c116d5`
+- Source worktree: `/Users/archmagece/worktrees/misc/dva/codex__mbp__feat__explicit-suppression-and-ci-continuation`
+- Review execution: `/root/doctor_flake_diagnosis`, strong reviewer, CE runtime purpose `review-explicit-suppression` (`review`)
+- Review boundary: TASK-558, TASK-559, TASK-560, TASK-561; source, schema, docs, and their declared tests.
+- The worktree was clean at the reviewed SHA. No source, task, or evidence files were changed during review. No full suite was run.
+- Prior formal review attempts: none. Earlier exploratory findings were repaired before this frozen review.
+
+## TASK-558 — intended shadow keys
+
+Criterion: a declared intended shadow no longer fails `--strict`, while an undeclared shadow still fails.
+
+Executed with output-preserving, DVA-guarded, uncached commands:
+
+`sh scripts/without-dva.sh go test -count=1 -v ./internal/cli -run 'Test(ValidateStrictIntentionalShadow|ValidateIntentionalShadowJSONRemainsVisible)$'`
+
+Result: PASS, exit 0. Named tests executed and passed: `TestValidateIntentionalShadowJSONRemainsVisible`, and all five `TestValidateStrictIntentionalShadow` cases (unacknowledged collision, acknowledged collision, explicit false, stale declaration, reserved key).
+
+Additional owner/merge contract check:
+
+`sh scripts/without-dva.sh go test -count=1 -v ./internal/config -run '^(TestIntentionalShadowAcknowledgesOnlyLocalSubprojectCollision|TestIntentionalShadowStaleAndNestedDeclarationsWarn|TestMergeInteractionMetadataPreservesExplicitFalseAndEmptyAliases)$'`
+
+These cases passed, including the imported child declaration being unable to acknowledge a parent namespace collision. Source inspection confirms only a locally owned root literal key whose colon prefix names a declared, nonreserved subproject is acknowledged. Acknowledgements remain counted and visible in text, `--show-ignored`, and JSON `suppressed`; stale and reserved conflicts remain reported.
+
+Criterion: PASS.
+
+## TASK-559 — CI `fail_fast`
+
+Criterion: a CI profile can continue after a failed step and still exits nonzero.
+
+Executed:
+
+`sh scripts/without-dva.sh go test -count=1 -v ./internal/cirun -run 'Test(RunFailFastFalseContinuesIndependentAndSkipsFailureDescendants|RunDefaultFailFastCancelsIndependentSibling|FailFastFalseStillHonorsExternalCancellationAndDeadline|FailFastFalseCheckpointFailureStillAborts|FailFastFalseExternalCancellationStopsRunningStep|FailFastFalseProfileDeadlineStopsRunningStep)$'`
+
+Result: PASS, exit 0. All six declared tests executed and passed, including the two cancellation/deadline subtests. The fail-fast-false test verified independent work runs, failed-prerequisite descendants are skipped, and both returned error and top-level report retain the failing step and `exit status 4` while overall status remains failed.
+
+Additional config/schema/merge check:
+
+`sh scripts/without-dva.sh go test -count=1 -v ./internal/config -run '^(TestCIProfileFailFastDefaultsTrueWithoutMaterialization|TestLoadMergesCIProfileExplicitFailFastFalse|TestValidateCIProfileFailFastSchema)$'`
+
+Result: PASS, exit 0. Nil preserves the existing default-true behavior; explicit false survives module/override merge; schema accepts booleans and rejects a string. Source inspection confirms checkpoint/report errors and external cancellation/deadline remain fatal regardless of `fail_fast`, and only failed-prerequisite descendants are skipped when continuing.
+
+Criterion: PASS.
+
+## TASK-560 — bounded suggestion ignores and reasons
+
+Criterion: validation diagnoses an over-broad wildcard, and an ignore entry can carry a reason.
+
+Executed:
+
+`sh scripts/without-dva.sh go test -count=1 -v ./internal/cli -run 'Test(SuggestionIgnoreObject.*|ValidateSuggestionIgnoreBoundRendersReasonAndFailsOnlyUnderStrict)$'`
+
+Result: PASS, exit 0. Four matched tests executed and passed: reason/bound output, first-matching-rule accounting, already-covered target exclusion, and warning/nonzero behavior under strict mode. The cap counts only uncovered suggestions actually suppressed by the first matching rule. Existing scalar rules still round-trip as scalars. Schema is draft-06 and uses `anyOf` for legacy strings vs objects, requires a reason for object rules, and requires positive `max_matches` when the pattern contains glob syntax; the schema contract tests passed.
+
+Criterion: PASS.
+
+## TASK-561 — Makefile target and interaction metadata
+
+Criterion: an alias declaration links a Makefile target to an interaction.
+
+Executed:
+
+`sh scripts/without-dva.sh go test -count=1 -v ./internal/cli -run '^TestSuggestionAliasCoverage'`
+
+Result: PASS, exit 0. All three tests executed and passed: only the named documented Makefile target is covered; undocumented or unrunnable aliases warn; imported-child metadata does not suppress a root target. Additional config tests passed for duplicate target ownership rejection and separation of child namespaces. Source inspection confirms alias declarations are metadata only, require an exact runnable route and documented root Makefile target, and do not create runtime aliases.
+
+Criterion: PASS.
+
+## Repaired test-state regression
+
+Executed:
+
+`sh scripts/without-dva.sh go test -count=1 -v ./internal/cli -run '^TestRootValidateMatchesConfigValidate$'`
+
+Result: PASS, exit 0. The comparison now initializes the default help flag and inherited flags on both commands locally within the equality test, leaving the shared `flagSpecs` helper unchanged for fixed local-only snapshots.
+
+## Other review observations
+
+- `USAGE.md`, `skills/dva-ci/references/configuration.md`, `skills/dva-config/references/schema-reference.md`, `docs/56-suppression-ergonomics-design.md`, and `CHANGELOG.md` describe the implemented behavior. In particular, fail-fast default/continuation/cancellation behavior, ignore reason and cap semantics, and the narrow shadow/alias ownership rules match the source.
+- The ignored alias case where a target already has direct same-name coverage is accepted as redundant metadata without a separate warning. This does not violate TASK-561's criterion and is nonblocking.
+- The full test suite and full CI/doc gates were not run as part of this independent card review; only the declared checks and the scoped compatibility/contract checks above are review evidence.
+
+## Overall
+
+All four card criteria pass. No blocking source, schema, or documentation finding remains in this review scope.
+
+VERDICT: PASS

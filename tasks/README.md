@@ -7,8 +7,8 @@
 이관 전 `done-finalize-all --dry-run`은 후보 28장·스킵 0장을 보고했고,
 이관 후 `make doc-check`가 카드 ID·링크·문서 검사를 통과했다.
 [독립 이관 검토](done/evidence/archive-2026-11-review.txt)는 원문 보존과 기존 완료 증거를 확인했다.
-후속 진단 개선 TASK-557·562·563·564는 독립 리뷰를 거쳐 `tasks/done/`에 있다.
-현재 todo는 6장, backlog는 TASK-575 한 장이다. 실행 상태는 `ce task run-list`,
+후속 진단·설정 개선 TASK-557~564 여덟 장은 독립 리뷰를 거쳐 `tasks/done/`에 있다.
+현재 todo는 TASK-538·550 두 장, backlog는 TASK-575 한 장이다. 실행 상태는 `ce task run-list`,
 제품·릴리스 상태는 [PRODUCT.md](../PRODUCT.md)와 [ROADMAP.md](../ROADMAP.md)를 따른다.
 
 ### 2026-10-23 기록

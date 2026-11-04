@@ -1,0 +1,19 @@
+{
+  "verdict": "PASS",
+  "reviewer-execution": "/root/doctor_flake_diagnosis",
+  "reviewer-grade": "strong",
+  "executor-execution": "/root/parent_compose_drift",
+  "executor-grade": "standard",
+  "integration-executor": "/root",
+  "review-runtime-execution": "review-explicit-suppression",
+  "reviewed-commit": "3f7930b953accd2943120cdba177ab8436c116d5",
+  "recorded-at": "2026-11-04T08:01:37Z",
+  "checks": [
+    {
+      "command": "sh scripts/without-dva.sh go test -count=1 -v ./internal/cli -run 'Test(SuggestionIgnoreObject.*|ValidateSuggestionIgnoreBoundRendersReasonAndFailsOnlyUnderStrict)$'",
+      "result": "PASS",
+      "exit-code": 0
+    }
+  ],
+  "raw-review": "tasks/done/evidence/explicit-suppression-review.txt"
+}
