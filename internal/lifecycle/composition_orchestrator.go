@@ -306,7 +306,14 @@ func (o *CompositionOrchestrator) teardown(ctx context.Context, verb string, run
 			}
 		}
 		child := entry.ChildPlan
-		up, err := o.exec.IsUp(ctx, child)
+		queryCtx := ctx
+		if !stopOnCancel {
+			// Down retains its existing best-effort cleanup policy. A canceled
+			// observation must not become an unreadable-state "assume up" and
+			// trigger teardown of a child that is actually already down.
+			queryCtx = context.WithoutCancel(ctx)
+		}
+		up, err := o.exec.IsUp(queryCtx, child)
 		if stopOnCancel {
 			if cancelErr := ctx.Err(); cancelErr != nil {
 				return compositionTeardownCancelled(report, cancelErr, failureErrs)
