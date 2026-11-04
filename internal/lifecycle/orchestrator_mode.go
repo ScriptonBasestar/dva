@@ -16,6 +16,9 @@ import (
 // startModeProcesses launches native processes for mode health_checks that have a start command.
 // This bridges the gap between compose-managed infra and natively-run app services.
 func (o *Orchestrator) startModeProcesses(ctx context.Context, opts UpOptions, env *config.Environment) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	if opts.Mode == "" {
 		return nil
 	}
@@ -32,6 +35,9 @@ func (o *Orchestrator) startModeProcesses(ctx context.Context, opts UpOptions, e
 	// Collect startable processes
 	var procs []nativeProc
 	for _, hcName := range mode.HealthChecks {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		hc, ok := o.cfg.HealthChecks[hcName]
 		if !ok || hc.Start == "" {
 			continue
@@ -79,6 +85,12 @@ func (o *Orchestrator) startModeProcesses(ctx context.Context, opts UpOptions, e
 				Logger:    o.logger.With("native", p.name),
 			}
 
+			// Cancellation after the collection phase must not race ahead into a
+			// new native process. Do not kill an already-started process here: mode
+			// starts have no rollback contract, and the caller receives ctx.Err below.
+			if ctx.Err() != nil {
+				return
+			}
 			fmt.Fprintf(os.Stderr, "[native] starting %s\n", p.name)
 			if err := startLocalProcess(p.name, p.hc.Start, dir, pctx); err != nil {
 				mu.Lock()
@@ -110,19 +122,22 @@ func (o *Orchestrator) startModeProcesses(ctx context.Context, opts UpOptions, e
 	}
 
 	wg.Wait()
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	return firstErr
 }
 
 // haltModeProcesses sends SIGTERM to mode health_check processes but preserves
 // PID files so they can be restarted by the next `up` call (halt semantics).
-func (o *Orchestrator) haltModeProcesses(mode string, dryRun bool) error {
-	return o.signalModeProcesses(mode, false, dryRun)
+func (o *Orchestrator) haltModeProcesses(ctx context.Context, mode string, dryRun bool) error {
+	return o.signalModeProcesses(ctx, mode, false, dryRun)
 }
 
 // stopModeProcesses sends SIGTERM to mode health_check processes and removes
 // PID files (destroy semantics).
-func (o *Orchestrator) stopModeProcesses(mode string, dryRun bool) error {
-	return o.signalModeProcesses(mode, true, dryRun)
+func (o *Orchestrator) stopModeProcesses(ctx context.Context, mode string, dryRun bool) error {
+	return o.signalModeProcesses(ctx, mode, true, dryRun)
 }
 
 // signalModeProcesses terminates health_check native processes. When removePID
@@ -135,7 +150,10 @@ func (o *Orchestrator) stopModeProcesses(mode string, dryRun bool) error {
 // branch); this half never did, so `dva stop --mode dev --dry-run` sent a real SIGTERM
 // and printed "stopped worker" — output indistinguishable from the run without the flag.
 // Measured, then fixed under TASK-166.
-func (o *Orchestrator) signalModeProcesses(mode string, removePID, dryRun bool) error {
+func (o *Orchestrator) signalModeProcesses(ctx context.Context, mode string, removePID, dryRun bool) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	if mode == "" {
 		return nil
 	}
@@ -145,6 +163,9 @@ func (o *Orchestrator) signalModeProcesses(mode string, removePID, dryRun bool) 
 	}
 
 	for _, hcName := range m.HealthChecks {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		hc, ok := o.cfg.HealthChecks[hcName]
 		if !ok || hc.Start == "" {
 			continue
@@ -161,6 +182,9 @@ func (o *Orchestrator) signalModeProcesses(mode string, removePID, dryRun bool) 
 		if signalableProcessGroupPID(pid) {
 			if err := requireProcessGroupPID(pid, pidFile); err != nil {
 				return fmt.Errorf("stop health check %s: %w", hcName, err)
+			}
+			if err := ctx.Err(); err != nil {
+				return err
 			}
 			if dryRun {
 				// The signal line is conditional on the process existing because the real

@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -98,6 +99,51 @@ subprojects:
 
 	if _, ok := cfg.Subprojects["pending"]; !ok {
 		t.Fatal("subproject 'pending' not found")
+	}
+	if !slices.ContainsFunc(cfg.ValidateWarnings(), func(w string) bool {
+		return strings.Contains(w, "subprojects.pending") &&
+			strings.Contains(w, "pending") &&
+			strings.Contains(w, FileName) &&
+			strings.Contains(w, FileNameAlt)
+	}) {
+		t.Fatalf("ValidateWarnings() = %v, want missing pending config warning", cfg.ValidateWarnings())
+	}
+}
+
+func TestWarnMissingSubprojectConfigDoesNotLoadChild(t *testing.T) {
+	parentDir := t.TempDir()
+	childDir := filepath.Join(parentDir, "child")
+	if err := os.Mkdir(childDir, 0o755); err != nil {
+		t.Fatalf("make child dir: %v", err)
+	}
+	// The warning must not parse a lazy child's malformed config. Presence is enough
+	// for this diagnostic; an import is what makes child validity a hard Load error.
+	if err := os.WriteFile(filepath.Join(childDir, FileNameAlt), []byte("version: [\n"), 0o644); err != nil {
+		t.Fatalf("write legacy child config: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(parentDir, FileName), []byte(`
+version: "0.1.0"
+subprojects:
+  zeta:
+    path: missing-zeta
+  child:
+    path: child
+  alpha:
+    path: missing-alpha
+`), 0o644); err != nil {
+		t.Fatalf("write parent config: %v", err)
+	}
+
+	cfg, err := Load(parentDir)
+	if err != nil {
+		t.Fatalf("Load() eagerly evaluated lazy child: %v", err)
+	}
+	warnings := cfg.warnMissingSubprojectConfigs()
+	if got, want := len(warnings), 2; got != want {
+		t.Fatalf("missing-config warnings = %v, want %d", warnings, want)
+	}
+	if !strings.Contains(warnings[0], "subprojects.alpha") || !strings.Contains(warnings[1], "subprojects.zeta") {
+		t.Fatalf("missing-config warnings = %v, want deterministic alpha then zeta order", warnings)
 	}
 }
 

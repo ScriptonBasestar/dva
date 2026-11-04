@@ -52,6 +52,109 @@ func TestFindConfigDVAFILE(t *testing.T) {
 	}
 }
 
+func TestLoadFromFileTakesPrecedenceOverDVAFILE(t *testing.T) {
+	root := t.TempDir()
+	workDir := filepath.Join(root, "work")
+	parentDir := filepath.Join(root, "parent")
+	childDir := filepath.Join(root, "child")
+	for _, dir := range []string{workDir, parentDir, childDir} {
+		if err := os.Mkdir(dir, 0o755); err != nil {
+			t.Fatalf("make %s: %v", dir, err)
+		}
+	}
+	parentFile := filepath.Join(parentDir, FileName)
+	childFile := filepath.Join(childDir, FileName)
+	if err := os.WriteFile(parentFile, []byte("version: '0.1.0'\ninteraction: {parent: {command: 'echo parent'}}\n"), 0o644); err != nil {
+		t.Fatalf("write parent config: %v", err)
+	}
+	if err := os.WriteFile(childFile, []byte("version: '0.1.0'\ninteraction: {child: {command: 'echo child'}}\n"), 0o644); err != nil {
+		t.Fatalf("write child config: %v", err)
+	}
+	t.Setenv(EnvFileKey, childFile)
+
+	cfg, err := Load(workDir, FromFile(filepath.Join("..", "parent", FileName)))
+	if err != nil {
+		t.Fatalf("Load(FromFile) error: %v", err)
+	}
+	if _, ok := cfg.Interaction["parent"]; !ok {
+		t.Fatalf("Load(FromFile) selected interaction %v, want parent config", cfg.Interaction)
+	}
+	if got, want := cfg.FileDir(), parentDir; got != want {
+		t.Errorf("FileDir() = %q, want %q", got, want)
+	}
+}
+
+func TestLoadWithoutFromFileStillHonorsDVAFILE(t *testing.T) {
+	root := t.TempDir()
+	workDir := filepath.Join(root, "work")
+	childDir := filepath.Join(root, "child")
+	for _, dir := range []string{workDir, childDir} {
+		if err := os.Mkdir(dir, 0o755); err != nil {
+			t.Fatalf("make %s: %v", dir, err)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(workDir, FileName), []byte("version: '0.1.0'\ninteraction: {work: {command: 'echo work'}}\n"), 0o644); err != nil {
+		t.Fatalf("write work config: %v", err)
+	}
+	childFile := filepath.Join(childDir, FileName)
+	if err := os.WriteFile(childFile, []byte("version: '0.1.0'\ninteraction: {child: {command: 'echo child'}}\n"), 0o644); err != nil {
+		t.Fatalf("write child config: %v", err)
+	}
+	t.Setenv(EnvFileKey, childFile)
+
+	cfg, err := Load(workDir)
+	if err != nil {
+		t.Fatalf("Load() error: %v", err)
+	}
+	if _, ok := cfg.Interaction["child"]; !ok {
+		t.Fatalf("Load() selected interaction %v, want DVA_FILE child config", cfg.Interaction)
+	}
+}
+
+func TestLoadFromFileMissingDoesNotFallBack(t *testing.T) {
+	root := t.TempDir()
+	workDir := filepath.Join(root, "work")
+	childDir := filepath.Join(root, "child")
+	for _, dir := range []string{workDir, childDir} {
+		if err := os.Mkdir(dir, 0o755); err != nil {
+			t.Fatalf("make %s: %v", dir, err)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(workDir, FileName), []byte("version: '0.1.0'\n"), 0o644); err != nil {
+		t.Fatalf("write discovered config: %v", err)
+	}
+	childFile := filepath.Join(childDir, FileName)
+	if err := os.WriteFile(childFile, []byte("version: '0.1.0'\n"), 0o644); err != nil {
+		t.Fatalf("write DVA_FILE config: %v", err)
+	}
+	t.Setenv(EnvFileKey, childFile)
+
+	_, err := Load(workDir, FromFile("missing.yml"))
+	if err == nil {
+		t.Fatal("Load(FromFile missing.yml) succeeded by falling back")
+	}
+	if !strings.Contains(err.Error(), "missing.yml") {
+		t.Fatalf("Load(FromFile missing.yml) error = %v, want explicit missing path", err)
+	}
+}
+
+func TestLoadFromFileKeepsVersionValidation(t *testing.T) {
+	root := t.TempDir()
+	workDir := filepath.Join(root, "work")
+	if err := os.Mkdir(workDir, 0o755); err != nil {
+		t.Fatalf("make work dir: %v", err)
+	}
+	configFile := filepath.Join(root, "future.yml")
+	if err := os.WriteFile(configFile, []byte("version: '999.0.0'\n"), 0o644); err != nil {
+		t.Fatalf("write future config: %v", err)
+	}
+
+	_, err := Load(workDir, FromFile("../future.yml"))
+	if err == nil || !strings.Contains(err.Error(), "config requires minimum version") {
+		t.Fatalf("Load(FromFile) error = %v, want version compatibility rejection", err)
+	}
+}
+
 func TestLoadConfig(t *testing.T) {
 	tmpDir := t.TempDir()
 	dvaYml := filepath.Join(tmpDir, FileName)

@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -109,7 +110,9 @@ func TestExecutionAndTeardownRoutesFailClosed(t *testing.T) {
 		{"up", func(c *config.Config, el *envLoad) error { return runPlanUp(t.Context(), c, el, "dev", nil) }},
 		{"down", func(c *config.Config, el *envLoad) error { return runPlanDown(c, el, "dev", nil) }},
 		{"stop", func(c *config.Config, el *envLoad) error { return runPlanStop(c, el, "dev", nil) }},
-		{"restart", func(c *config.Config, el *envLoad) error { return runPlanRestart(c, el, "dev", nil) }},
+		{"restart", func(c *config.Config, el *envLoad) error {
+			return runPlanRestart(context.Background(), c, el, "dev", nil)
+		}},
 		{"build", func(c *config.Config, el *envLoad) error { return runPlanBuild(c, el, "dev", nil) }},
 	} {
 		t.Run(tt.name, func(t *testing.T) {

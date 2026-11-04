@@ -27,6 +27,7 @@ func (c *Config) ValidateWarnings() []string {
 	warnings = append(warnings, c.warnChildOverridesParentCritical()...)
 	warnings = append(warnings, c.warnDeepSubcommandNesting()...)
 	warnings = append(warnings, c.warnLiteralKeyShadowsSubproject()...)
+	warnings = append(warnings, c.warnMissingSubprojectConfigs()...)
 	warnings = append(warnings, c.warnUnreachableCommands()...)
 	warnings = append(warnings, c.warnInertProvisionSteps()...)
 	warnings = append(warnings, c.warnIgnoredParallelSteps()...)
@@ -60,6 +61,37 @@ func (c *Config) ValidateWarnings() []string {
 
 	if c.filePath != "" {
 		warnings = append(warnings, validateCanonicalOrder(c.filePath)...)
+	}
+	return warnings
+}
+
+// warnMissingSubprojectConfigs reports declarations that cannot currently resolve
+// to a DVA config without loading or interpreting the child. A subproject remains
+// lazy until it imports something, so this is deliberately a warning: the parent
+// keeps loading and an imported missing child still fails in LoadSubprojects.
+func (c *Config) warnMissingSubprojectConfigs() []string {
+	if c.filePath == "" || len(c.Subprojects) == 0 {
+		return nil
+	}
+
+	names := make([]string, 0, len(c.Subprojects))
+	for name := range c.Subprojects {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
+	warnings := make([]string, 0)
+	for _, name := range names {
+		path := c.Subprojects[name].Path
+		if !filepath.IsAbs(path) {
+			path = filepath.Join(c.FileDir(), path)
+		}
+		if _, ok := ConfigFileInDir(path); ok {
+			continue
+		}
+		warnings = append(warnings, fmt.Sprintf(
+			"subprojects.%s: target %s has no %s or %s; add a DVA config there, correct path, or remove the declaration",
+			name, filepath.Clean(path), FileName, FileNameAlt))
 	}
 	return warnings
 }

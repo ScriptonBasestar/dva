@@ -232,11 +232,13 @@ Whole-stack-path flags (rejected, not ignored, once a plan is named):
 		}
 		c := mustLoadConfig()
 		el := rootEnvLoad(c)
+		ctx, stop := lifecycleCommandContext(cmd)
+		defer stop()
 		if planName, extraArgs, ok := detectPlanRoute(c, args); ok {
 			if isCompositionPlan(c, planName) {
-				return runCompositionRestart(c, el, planName, extraArgs)
+				return runCompositionRestart(ctx, c, el, planName, extraArgs)
 			}
-			return runPlanRestart(c, el, planName, extraArgs)
+			return runPlanRestart(ctx, c, el, planName, extraArgs)
 		}
 		// Root-owned route from here: no plan claimed the invocation, so the root's own
 		// env-input report governs and this fails closed before any hook or backend child.
@@ -379,7 +381,7 @@ Whole-stack-path flags (rejected, not ignored, once a plan is named):
 		}
 
 		orch := lifecycle.NewOrchestrator(c, e)
-		return orch.Restart(context.Background(), lifecycle.UpOptions{
+		return orch.Restart(ctx, lifecycle.UpOptions{
 			DryRun:      dryRun,
 			Force:       true,
 			Wait:        true,

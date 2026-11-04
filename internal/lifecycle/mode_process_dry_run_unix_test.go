@@ -4,6 +4,8 @@ package lifecycle
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"io"
 	"os"
 	"os/exec"
@@ -140,8 +142,7 @@ func TestSignalModeProcessesDryRun(t *testing.T) {
 			o := modeOrchestrator()
 
 			out, _ := captureStderr(t, func() error {
-				o.signalModeProcesses("dev", tc.removePID, true)
-				return nil
+				return o.signalModeProcesses(context.Background(), "dev", tc.removePID, true)
 			})
 
 			// The load-bearing assertion, and the reason modeStandIn returns a channel.
@@ -171,8 +172,7 @@ func TestSignalModeProcessesDryRun(t *testing.T) {
 		o := modeOrchestrator()
 
 		out, _ := captureStderr(t, func() error {
-			o.signalModeProcesses("dev", true, false)
-			return nil
+			return o.signalModeProcesses(context.Background(), "dev", true, false)
 		})
 		select {
 		case <-reaped:
@@ -200,23 +200,74 @@ func TestSignalModeProcessesDryRun(t *testing.T) {
 func TestHaltAndStopModeProcessesForwardDryRun(t *testing.T) {
 	for _, tc := range []struct {
 		name string
-		call func(o *Orchestrator)
+		call func(o *Orchestrator) error
 	}{
-		{"haltModeProcesses", func(o *Orchestrator) { o.haltModeProcesses("dev", true) }},
-		{"stopModeProcesses", func(o *Orchestrator) { o.stopModeProcesses("dev", true) }},
+		{"haltModeProcesses", func(o *Orchestrator) error { return o.haltModeProcesses(context.Background(), "dev", true) }},
+		{"stopModeProcesses", func(o *Orchestrator) error { return o.stopModeProcesses(context.Background(), "dev", true) }},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			_, pid, reaped := modeStandIn(t, "worker")
 			o := modeOrchestrator()
 
-			out, _ := captureStderr(t, func() error {
-				tc.call(o)
-				return nil
-			})
+			out, _ := captureStderr(t, func() error { return tc.call(o) })
 			assertStillAlive(t, pid, reaped, out)
 			if !strings.Contains(out, "would stop worker") {
 				t.Errorf("%s produced no preview:\n%s", tc.name, out)
 			}
 		})
+	}
+}
+
+func TestCancelledModeProcessesPreserveOwnedPIDState(t *testing.T) {
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	for _, tc := range []struct {
+		name string
+		call func(*Orchestrator, context.Context) error
+	}{
+		{"halt", func(o *Orchestrator, ctx context.Context) error { return o.haltModeProcesses(ctx, "dev", false) }},
+		{"stop", func(o *Orchestrator, ctx context.Context) error { return o.stopModeProcesses(ctx, "dev", false) }},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			pidFile, pid, reaped := modeStandIn(t, "worker")
+			err := tc.call(modeOrchestrator(), ctx)
+			if !errors.Is(err, context.Canceled) {
+				t.Fatalf("cancelled mode %s error = %v, want context.Canceled", tc.name, err)
+			}
+			assertStillAlive(t, pid, reaped, "")
+			if _, err := os.Stat(pidFile); err != nil {
+				t.Fatalf("cancelled mode %s changed owned PID state: %v", tc.name, err)
+			}
+		})
+	}
+}
+
+func TestStartModeProcessesRefusesCancelledContextBeforePIDState(t *testing.T) {
+	dir := t.TempDir()
+	configPath := filepath.Join(dir, config.FileName)
+	if err := os.WriteFile(configPath, []byte(`version: "0.1.0"
+health_checks:
+  worker:
+    start: "echo must-not-run"
+modes:
+  dev:
+    health_checks: [worker]
+`), 0o644); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+	cfg, err := config.Load(dir)
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	o := NewOrchestrator(cfg, config.NewEnvironment(nil, dir, dir))
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+
+	err = o.startModeProcesses(ctx, UpOptions{Mode: "dev"}, config.NewEnvironment(nil, dir, dir))
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("startModeProcesses(cancelled) error = %v, want context.Canceled", err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, config.DotDirName)); !os.IsNotExist(err) {
+		t.Fatalf("cancelled mode start created PID state: %v", err)
 	}
 }

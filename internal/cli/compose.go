@@ -2,11 +2,10 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
-	"os/signal"
 	"strings"
-	"syscall"
 
 	"github.com/spf13/cobra"
 
@@ -125,14 +124,9 @@ Plan-path flags (only when a plan is being run, e.g. 'dva up <plan>'):
 		}
 		c := mustLoadConfig()
 		el := rootEnvLoad(c)
+		ctx, stop := lifecycleCommandContext(cmd)
+		defer stop()
 		if planName, extraArgs, ok := detectPlanRoute(c, args); ok {
-			parent := cmd.Context()
-			if parent == nil {
-				// Execute supplies this default; direct RunE callers need it too.
-				parent = context.Background()
-			}
-			ctx, stop := signal.NotifyContext(parent, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
-			defer stop()
 			if isCompositionPlan(c, planName) {
 				return runCompositionUp(ctx, c, el, planName, extraArgs)
 			}
@@ -269,7 +263,7 @@ Plan-path flags (only when a plan is being run, e.g. 'dva up <plan>'):
 
 		// Phase 1: Stack up (infrastructure)
 		orch := lifecycle.NewOrchestrator(c, e)
-		upErr := orch.Up(context.Background(), lifecycle.UpOptions{
+		upErr := orch.Up(ctx, lifecycle.UpOptions{
 			DryRun:      dryRun,
 			Force:       force,
 			Wait:        !noWait,
@@ -278,6 +272,10 @@ Plan-path flags (only when a plan is being run, e.g. 'dva up <plan>'):
 			Mode:        mode,
 			Env:         envName,
 		})
+
+		if err := ctx.Err(); err != nil {
+			return errors.Join(upErr, err)
+		}
 
 		// Print status summary and endpoints regardless of up errors,
 		// so users can see connection info for services that did start.

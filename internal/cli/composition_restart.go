@@ -24,7 +24,7 @@ import (
 // child that already came back up: there is no whole-composition rollback to opt out of, so
 // --no-rollback keeps being rejected for this verb by validateCompositionFlagScope the same
 // way it always has (TASK-298 gap A).
-func runCompositionRestart(c *config.Config, el *envLoad, planName string, extraArgs []string) error {
+func runCompositionRestart(ctx context.Context, c *config.Config, el *envLoad, planName string, extraArgs []string) error {
 	comp, err := lifecycle.ResolveCompositionPlan(c, planName)
 	if err != nil {
 		return err
@@ -36,7 +36,7 @@ func runCompositionRestart(c *config.Config, el *envLoad, planName string, extra
 	}
 
 	exec := newCompositionExecutor(c, el, scopedChildName(flags), flags.noWait)
-	report, runErr := restartCompositionChildren(context.Background(), comp, exec, flags.noWait)
+	report, runErr := restartCompositionChildren(ctx, comp, exec, flags.noWait)
 	return renderCompositionReport(report, runErr)
 }
 

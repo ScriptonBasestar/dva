@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -75,7 +76,7 @@ plans:
 		t.Fatal(err)
 	}
 
-	if err := runPlanRestart(c, planEnv(e), "local-dev", []string{"--dry-run"}); err != nil {
+	if err := runPlanRestart(context.Background(), c, planEnv(e), "local-dev", []string{"--dry-run"}); err != nil {
 		t.Fatalf("plan restart dry-run failed: %v", err)
 	}
 	if _, err := os.Stat(pidFile); err != nil {
@@ -130,7 +131,7 @@ plans:
 				t.Fatalf("process not running after up (pid %d)", origPID)
 			}
 
-			if err := runPlanRestart(c, planEnv(e), "local-dev", nil); err != nil {
+			if err := runPlanRestart(context.Background(), c, planEnv(e), "local-dev", nil); err != nil {
 				t.Fatalf("plan restart failed: %v", err)
 			}
 

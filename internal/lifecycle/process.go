@@ -103,6 +103,9 @@ func (p *ProcessPlugin) Up(ctx context.Context, pctx *PluginContext) (*Result, e
 		}
 	}
 
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	if err := startLocalProcess(name, cfg.Command, dir, pctx); err != nil {
 		return nil, fmt.Errorf("process up %s: %w", name, err)
 	}

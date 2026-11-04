@@ -4,7 +4,7 @@ title: "Stop reporting parent-owned compose as drift"
 type: bug
 priority: P3
 exec-tier: standard
-status: todo
+status: review
 created: 2026-11-01
 ---
 
@@ -16,4 +16,4 @@ A compose file owned by a parent project is reported as drift in the child. Sour
 
 ## Completion Criteria
 
-- [ ] Drift detection does not report a compose file the parent owns, and still reports a real orphan | verify: human — bind a test when the design is settled
+- [ ] Drift detection does not report a compose file the parent owns, and still reports a real orphan | verify: `go test ./internal/cli -run '^TestDetectConfigDriftWarnings_(Parent|AncestorWithout|UnloadableParent|UnsupportedParent|SymlinkedSubproject)'`

@@ -553,7 +553,7 @@ func runPlanStop(c *config.Config, el *envLoad, planName string, extraArgs []str
 // --force-recreate got it anyway on the compose plugin. optForce ("Compose only: pass
 // --force-recreate; other plugins ignore it") now describes this call site exactly as it
 // already described up's.
-func runPlanRestart(c *config.Config, el *envLoad, planName string, extraArgs []string) error {
+func runPlanRestart(ctx context.Context, c *config.Config, el *envLoad, planName string, extraArgs []string) error {
 	flags, err := parsePlanFlags("restart", extraArgs)
 	if err != nil {
 		return err
@@ -584,7 +584,7 @@ func runPlanRestart(c *config.Config, el *envLoad, planName string, extraArgs []
 	if err != nil {
 		return err
 	}
-	return orch.Restart(context.Background(), lifecycle.UpOptions{
+	return orch.Restart(ctx, lifecycle.UpOptions{
 		DryRun: effectiveDryRun,
 		Force:  flags.force,
 		Wait:   flags.wait,

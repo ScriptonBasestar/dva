@@ -480,7 +480,7 @@ func TestCompositionRestartHaltsAfterFailedChild(t *testing.T) {
 		t.Fatalf("read late-order after initial up: %v", err)
 	}
 
-	restartErr := runCompositionRestart(c, el, "release", nil)
+	restartErr := runCompositionRestart(context.Background(), c, el, "release", nil)
 	if restartErr == nil {
 		t.Fatal("expected restart to fail: svc-bad's up script only succeeds once")
 	}

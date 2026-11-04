@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bytes"
+	"context"
 	"os"
 	"strings"
 	"testing"
@@ -208,7 +209,7 @@ func TestPlanRestartDryRunPrintsResolution(t *testing.T) {
 	e := planResolutionEnv(t, c)
 
 	_, stderr := captureStreams(t, func() {
-		if err := runPlanRestart(c, planEnv(e), "p1", []string{"--dry-run"}); err != nil {
+		if err := runPlanRestart(context.Background(), c, planEnv(e), "p1", []string{"--dry-run"}); err != nil {
 			t.Errorf("plan restart dry-run failed: %v", err)
 		}
 	})

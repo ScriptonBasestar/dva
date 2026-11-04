@@ -9,6 +9,7 @@
 package cli
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"strings"
@@ -60,7 +61,7 @@ func TestPlanRestartHonoursForce(t *testing.T) {
 			c, e := composeRestartFixture(t)
 			logs := useBufferedSlog(t)
 
-			if err := runPlanRestart(c, planEnv(e), "demo", tc.args); err != nil {
+			if err := runPlanRestart(context.Background(), c, planEnv(e), "demo", tc.args); err != nil {
 				t.Fatalf("runPlanRestart failed: %v", err)
 			}
 
@@ -120,7 +121,7 @@ func TestPlanUpRestartAcceptNoWait(t *testing.T) {
 			return runPlanUp(t.Context(), c, planEnv(e), "demo", a)
 		}},
 		{"restart", func(c *config.Config, e *config.Environment, a []string) error {
-			return runPlanRestart(c, planEnv(e), "demo", a)
+			return runPlanRestart(context.Background(), c, planEnv(e), "demo", a)
 		}},
 	} {
 		t.Run(tc.verb, func(t *testing.T) {

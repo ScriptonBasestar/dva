@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bytes"
+	"context"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -232,7 +233,7 @@ func TestPlanUpRejectsDownOnlyFlags(t *testing.T) {
 			return runPlanStop(c, planEnv(e), "demo", a)
 		}},
 		{"restart", func(c *config.Config, e *config.Environment, a []string) error {
-			return runPlanRestart(c, planEnv(e), "demo", a)
+			return runPlanRestart(context.Background(), c, planEnv(e), "demo", a)
 		}},
 	} {
 		for _, flag := range []string{"--purge", "--volumes"} {

@@ -4,7 +4,7 @@ title: "Point compose profiles errors at plan entries"
 type: bug
 priority: P3
 exec-tier: standard
-status: todo
+status: review
 created: 2026-11-01
 ---
 
@@ -16,4 +16,4 @@ The stack runner compose `profiles` error does not tell the author to use a plan
 
 ## Completion Criteria
 
-- [ ] The stack runner compose profiles error names the plan entry fix | verify: human — bind a test when the design is settled
+- [ ] The stack runner compose profiles error names the plan entry fix | verify: `go test ./internal/config -run '^TestValidateRejectsComposeRunnerProfilesWithPlanEntryGuidance$'`

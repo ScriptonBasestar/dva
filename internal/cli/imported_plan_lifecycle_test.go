@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -54,7 +55,7 @@ func TestImportedPlanLifecycleParity(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(child, "second-stop")); err != nil {
 		t.Fatalf("child stop did not run: %v", err)
 	}
-	if err := runPlanRestart(root, planEnv(rootEnv), "child-dev", nil); err != nil {
+	if err := runPlanRestart(context.Background(), root, planEnv(rootEnv), "child-dev", nil); err != nil {
 		t.Fatalf("imported alias restart: %v", err)
 	}
 	if err := runPlanStatus(root, planEnv(rootEnv), "child/dev"); err != nil {

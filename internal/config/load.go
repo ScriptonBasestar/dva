@@ -18,6 +18,8 @@ type loadOptions struct {
 	skipVersionCheck     bool
 	ciProfileOnly        bool
 	collectEntryProblems bool
+	explicitFile         string
+	hasExplicitFile      bool
 }
 
 // CollectEntryProblems returns a LoadOption that records stack-entry shape errors
@@ -52,6 +54,17 @@ func ForCI() LoadOption {
 	}
 }
 
+// FromFile makes Load use path as its root config instead of discovery or
+// DVA_FILE. A relative path is resolved from workDir. The selected file follows
+// the ordinary Load path, including modules, overrides, finalization, and version
+// compatibility checks; a missing explicit file is an error and never falls back.
+func FromFile(path string) LoadOption {
+	return func(o *loadOptions) {
+		o.explicitFile = path
+		o.hasExplicitFile = true
+	}
+}
+
 // Load discovers and loads the dva.yml configuration.
 func Load(workDir string, opts ...LoadOption) (*Config, error) {
 	var o loadOptions
@@ -59,7 +72,7 @@ func Load(workDir string, opts ...LoadOption) (*Config, error) {
 		opt(&o)
 	}
 
-	filePath, err := findConfig(workDir)
+	filePath, err := loadFilePath(workDir, o)
 	if err != nil {
 		return nil, err
 	}
@@ -148,6 +161,25 @@ func Load(workDir string, opts ...LoadOption) (*Config, error) {
 	}
 
 	return cfg, nil
+}
+
+// loadFilePath resolves the root-file choice before Load begins its common
+// processing path. Keeping explicit selection here prevents callers from
+// temporarily mutating DVA_FILE, which is process-global and unsafe for parallel
+// inspections.
+func loadFilePath(workDir string, o loadOptions) (string, error) {
+	if !o.hasExplicitFile {
+		return findConfig(workDir)
+	}
+	path := o.explicitFile
+	if !filepath.IsAbs(path) {
+		path = filepath.Join(workDir, path)
+	}
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return "", fmt.Errorf("resolving explicit config file %q: %w", o.explicitFile, err)
+	}
+	return absPath, nil
 }
 
 // finalizeCIConfig validates only the configuration consumed by a root CI

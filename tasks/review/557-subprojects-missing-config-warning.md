@@ -4,7 +4,7 @@ title: "Warn when a subproject target has no dva.yml"
 type: feature
 priority: P3
 exec-tier: standard
-status: todo
+status: review
 created: 2026-11-01
 ---
 
@@ -16,4 +16,4 @@ Validate says nothing when a `subprojects:` target has no dva.yml (observed in s
 
 ## Completion Criteria
 
-- [ ] Validate warns and names the subproject whose target lacks dva.yml | verify: human — bind a test when the design is settled
+- [ ] Validate warns and names the subproject whose target lacks dva.yml | verify: `go test ./internal/config -run 'Test(LoadConfigWithUnimportedMissingSubproject|WarnMissingSubprojectConfigDoesNotLoadChild|LoadConfigWithImportedMissingSubproject)$'`

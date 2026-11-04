@@ -502,7 +502,7 @@ func TestCompositionRestartAllowsNoRollback(t *testing.T) {
 		t.Fatalf("runCompositionUp: %v", err)
 	}
 
-	err := runCompositionRestart(c, el, "release", nil)
+	err := runCompositionRestart(context.Background(), c, el, "release", nil)
 	if err == nil {
 		t.Fatal("expected restart to fail: svc-bad's up script only succeeds once")
 	}
@@ -564,7 +564,7 @@ func TestCompositionRestartSurfacesRollbackDiagnostics(t *testing.T) {
 
 	var restartErr error
 	out := captureStdout(t, func() {
-		restartErr = runCompositionRestart(c, el, "release", nil)
+		restartErr = runCompositionRestart(context.Background(), c, el, "release", nil)
 	})
 	if restartErr == nil {
 		t.Fatal("expected restart to fail: svc-bad's up script only succeeds once")

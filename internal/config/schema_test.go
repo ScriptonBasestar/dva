@@ -106,6 +106,37 @@ stack:
 	}
 }
 
+func TestValidateRejectsComposeRunnerProfilesWithPlanEntryGuidance(t *testing.T) {
+	tmpDir := t.TempDir()
+	content := `version: "0.1.44"
+stack:
+  core-compose:
+    default_runner: compose
+    runners:
+      compose:
+        files: [compose.yml]
+        profiles: [debug]
+plans:
+  local-dev:
+    entries:
+      - name: core-compose
+        runner: compose
+`
+	cfg := loadConfigForSchemaTest(t, tmpDir, content)
+
+	err := cfg.Validate()
+	if err == nil {
+		t.Fatal("Validate() accepted stack compose profiles")
+	}
+	msg := err.Error()
+	if !strings.Contains(msg, "Additional property profiles is not allowed") {
+		t.Fatalf("Validate() error = %v, want strict profiles rejection", err)
+	}
+	if !strings.Contains(msg, "plans.<plan>.entries[].profiles") {
+		t.Fatalf("Validate() error = %v, want plan-entry migration guidance", err)
+	}
+}
+
 func TestValidateRejectsUnknownComposeRunnerFields(t *testing.T) {
 	tmpDir := t.TempDir()
 	content := `version: "0.1.44"

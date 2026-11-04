@@ -86,6 +86,13 @@ func isInteractionCommandField(field string) bool {
 	return len(parts)%2 == 0
 }
 
+// isComposeRunnerField identifies the runner declaration itself, not a nested
+// compose service. The same key can legitimately mean something else in another
+// schema object, so the profiles migration advice must stay at this exact owner.
+func isComposeRunnerField(field string) bool {
+	return strings.HasPrefix(field, "stack.") && strings.HasSuffix(field, ".runners.compose")
+}
+
 // validateYAMLSchema checks raw config bytes against the embedded JSON schema.
 //
 // Shared by Config.Validate (on-disk path) and VerifyMigrated (in-memory rewrite):
@@ -131,6 +138,10 @@ func validateYAMLSchema(yamlBytes []byte) error {
 					}
 					if !removed && isInteractionCommandField(desc.Field()) {
 						guidance, removed = removedInteractionKeys[prop]
+					}
+					if !removed && prop == "profiles" && isComposeRunnerField(desc.Field()) {
+						guidance = "compose profile selection belongs on plans.<plan>.entries[].profiles; keep stack.<name>.runners.compose for compose-file declarations"
+						removed = true
 					}
 					if removed {
 						line += "\n      " + guidance

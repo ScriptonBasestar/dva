@@ -299,6 +299,7 @@ func composeScanDirLocation(baseDir, dir string) string {
 
 func detectUnregisteredComposeFileWarnings(c *config.Config, suppressed *suppressionSummary) []string {
 	configured, _, _ := configuredComposeFiles(c)
+	parentOwned := parentOwnedComposePaths(c)
 
 	registered := map[string]bool{}
 	scanDirs := map[string]bool{c.FileDir(): true}
@@ -326,7 +327,8 @@ func detectUnregisteredComposeFileWarnings(c *config.Config, suppressed *suppres
 		for _, name := range detectComposeFilesInDir(dir) {
 			ignoreName := driftIgnoreName(c.FileDir(), dir, name)
 			discovered = append(discovered, ignoreName)
-			if registered[canonicalComposePath(filepath.Join(dir, name))] {
+			path := canonicalComposePath(filepath.Join(dir, name))
+			if registered[path] || parentOwned[path] {
 				continue
 			}
 			// docs/56 §6-3: drift_ignore applies to this rule and to nothing else. The
@@ -356,6 +358,59 @@ func detectUnregisteredComposeFileWarnings(c *config.Config, suppressed *suppres
 		staleIgnoreWarnings("drift_ignore", c.DriftIgnore, discovered, "compose file that autodiscovery found")...)
 
 	return warnings
+}
+
+// parentOwnedComposePaths returns compose files an ancestor explicitly owns while
+// declaring c as its subproject. A child may deliberately reference a parent's
+// compose directory (for an overlay split); that expands this child's scan into
+// the parent directory. Without the ownership check, the parent's other declared
+// compose files look like unregistered child drift.
+//
+// An ancestor directory alone is not authority: every candidate must have a
+// DVA config file that names this exact canonical child directory in subprojects. The
+// parent config is then loaded so ownership comes from its effective declarations
+// (including modules and overrides), rather than from compose-shaped filenames.
+// A missing or unloadable parent is deliberately not treated as ownership: a
+// warning is preferable to silently hiding an orphan on incomplete provenance.
+func parentOwnedComposePaths(c *config.Config) map[string]bool {
+	owned := make(map[string]bool)
+	childDir := canonicalComposePath(c.FileDir())
+
+	for ancestor := filepath.Dir(childDir); ; ancestor = filepath.Dir(ancestor) {
+		if parentConfigPath, ok := config.ConfigFileInDir(ancestor); ok {
+			parent, err := config.Load(ancestor, config.FromFile(parentConfigPath))
+			if err == nil && configDeclaresSubprojectDir(parent, childDir) {
+				files, _, _ := configuredComposeFiles(parent)
+				for _, file := range files {
+					if file.root {
+						owned[canonicalComposePath(file.path)] = true
+					}
+				}
+			}
+		}
+
+		next := filepath.Dir(ancestor)
+		if next == ancestor {
+			break
+		}
+	}
+	return owned
+}
+
+// configDeclaresSubprojectDir requires the parent declaration to resolve to the
+// child config root. It intentionally compares canonical paths so a symlinked
+// checkout cannot turn the same declared relationship into a false drift warning.
+func configDeclaresSubprojectDir(parent *config.Config, childDir string) bool {
+	for _, subproject := range parent.Subprojects {
+		path := subproject.Path
+		if !filepath.IsAbs(path) {
+			path = filepath.Join(parent.FileDir(), path)
+		}
+		if canonicalComposePath(path) == childDir {
+			return true
+		}
+	}
+	return false
 }
 
 // driftIgnoreName is what a drift_ignore pattern is matched against: the discovered file's

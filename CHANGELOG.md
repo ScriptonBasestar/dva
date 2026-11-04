@@ -11,6 +11,14 @@ All notable changes to DVA are documented here.
 
 ### Fixed
 
+- 하위 프로젝트의 설정 파일 누락을 경고하고, stack compose의 잘못된 `profiles`에는
+  plan entry의 수정 위치를 안내합니다. 부모가 명시적으로 소유한 Compose 파일은
+  child의 미등록 파일 drift로 보고하지 않습니다.
+
+- legacy 전체 스택 `up`과 모든 `restart` 경로가 호출자 context 및
+  SIGINT·SIGTERM·SIGHUP 취소를 전달합니다. 취소된 native 시작·종료 작업은
+  실행 경계에서 중단하며, 이미 시작된 장기 실행 서비스를 임의로 종료하지 않습니다.
+
 - **readiness probe의 취소 전파**: HTTP·TCP·command probe가 준비 대기의 취소와
   deadline을 따릅니다. composition plan의 `dva up`도 호출자 context와
   SIGINT·SIGTERM·SIGHUP을 전달합니다.

@@ -8,6 +8,20 @@ sha256 digest로 측정해 `attestation.before`/`after`에 남긴다. 두 값이
 
 ## 사용할 수 없는 attestation
 
+### Git 실행 파일이 없는 이미지
+
+`dva ci`를 실행하는 이미지에는 Git 실행 파일을 포함하고, DVA 프로세스의 PATH에서
+찾을 수 있게 해야 한다. Git이 없으면 첫 입력 측정이 `probe git inputs` 오류로
+실패하며 프로필 단계는 실행하지 않는다. 뒤 단계에서 Git을 설치하는 구성으로는
+해결되지 않는다. 이미지 빌드나 DVA 호출 전 준비 단계에서 Git을 설치한다.
+현재 Git 실행 파일 없이 CI를 실행하도록 증거 측정을 끄는 옵션은 없다.
+
+Git 실행 파일이 있지만 root가 저장소 밖인 경우는 다르다. 이때 단계는 실행할 수
+있으며 아래의 `available: false` 결과를 남긴다. Git 입력으로 검증된 결과가 필요하면
+이미지 안에도 저장소를 체크아웃하고 그 디렉터리에서 실행해야 한다.
+
+### 입력을 측정할 수 없는 root
+
 아래 경우에는 digest를 남기지 않고 `available: false`와 `reason`을 기록한다.
 
 - root가 Git 작업 트리 안에 있지 않다.

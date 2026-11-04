@@ -76,6 +76,9 @@ func NewOrchestrator(cfg *config.Config, env *config.Environment) *Orchestrator 
 
 // Up starts all matching lifecycle entries in order.
 func (o *Orchestrator) Up(ctx context.Context, opts UpOptions) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	filtered, err := o.filterEntries(opts.Names, opts.IncludeTags, opts.ExcludeTags, opts.Mode, opts.Env)
 	if err != nil {
 		return err
@@ -112,6 +115,9 @@ func (o *Orchestrator) Up(ctx context.Context, opts UpOptions) error {
 	}
 
 	for _, entry := range filtered {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		pluginType := entry.DetectPlugin()
 		plugin, err := NewPlugin(pluginType)
 		if err != nil {
@@ -196,7 +202,7 @@ func (o *Orchestrator) Down(ctx context.Context, opts DownOptions) error {
 	if err != nil {
 		return err
 	}
-	if err := o.stopModeProcesses(opts.Mode, opts.DryRun); err != nil {
+	if err := o.stopModeProcesses(ctx, opts.Mode, opts.DryRun); err != nil {
 		return err
 	}
 
@@ -272,11 +278,14 @@ func (o *Orchestrator) planComposeProfiles(entryName string) []string {
 
 // Stop stops all matching lifecycle entries in reverse order without removing resources.
 func (o *Orchestrator) Stop(ctx context.Context, opts StopOptions) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	filtered, err := o.filterEntries(opts.Names, opts.IncludeTags, opts.ExcludeTags, opts.Mode, opts.Env)
 	if err != nil {
 		return err
 	}
-	if err := o.haltModeProcesses(opts.Mode, opts.DryRun); err != nil {
+	if err := o.haltModeProcesses(ctx, opts.Mode, opts.DryRun); err != nil {
 		return err
 	}
 
@@ -299,6 +308,9 @@ func (o *Orchestrator) Stop(ctx context.Context, opts StopOptions) error {
 
 	var stopErrs []error
 	for _, entry := range filtered {
+		if err := ctx.Err(); err != nil {
+			return errors.Join(errors.Join(stopErrs...), err)
+		}
 		pluginType := entry.DetectPlugin()
 		plugin, err := NewPlugin(pluginType)
 		if err != nil {

@@ -37,6 +37,13 @@ deadline과 별도로 GNU `timeout`의 10분 제한과 30초 강제 종료 유�
 
 ## 검증 기록
 
+2026-11-04: `TestRunDoctorCommandTimeoutTerminatesShellChildren`의 보고된 부하
+플레이크는 guarded 단독 테스트 20회에서 재현되지 않았다(패키지 합계 4.529초).
+현재 테스트는 PID 파일 미생성을 `read child pid`, 종료되지 않은 자식을
+`timed out command left child pid … running`으로 구분한다. 보고된 실패의 원시 로그가
+없어 시작 지연과 자식 종료 실패 중 어느 쪽인지 확정하지 않았으며, timeout이나
+성공 기준을 완화하지 않았다.
+
 2026-11-04: `75a6efb6`에서 `sh scripts/without-dva.sh go test -count=1 ./...`는
 모든 Go 패키지가 통과한 뒤 exit 97로 종료됐다. 설치 테스트가 상속한 PATH를
 `install-binary`의 경고 검사에 전달하면서 가드의 `dva version`을 실행한 것이 원인이다.
