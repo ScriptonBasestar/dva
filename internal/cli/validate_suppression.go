@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -195,13 +196,7 @@ func staleIgnoreWarnings(key string, patterns, universe []string, nothing string
 func staleSuggestionIgnoreWarnings(rules []config.SuggestionIgnoreRule, universe []string, nothing string) []string {
 	var warnings []string
 	for i, rule := range rules {
-		matched := false
-		for _, name := range universe {
-			if rule.Matches(name) {
-				matched = true
-				break
-			}
-		}
+		matched := slices.ContainsFunc(universe, rule.Matches)
 		if !matched {
 			warnings = append(warnings, fmt.Sprintf("suggestion_ignore[%d] %q matches no %s; remove it", i, rule.Pattern, nothing))
 		}
@@ -209,7 +204,7 @@ func staleSuggestionIgnoreWarnings(rules []config.SuggestionIgnoreRule, universe
 	return warnings
 }
 
-// redundantIgnoreWarnings reports ignore patterns that still match documented names but
+// redundantSuggestionIgnoreWarnings reports ignore patterns that still match documented names but
 // whose every match is already covered by an interaction — by name, by subcommand
 // coverage, or as a wrapped workflow target (ISSUE-505).
 //
@@ -221,24 +216,6 @@ func staleSuggestionIgnoreWarnings(rules []config.SuggestionIgnoreRule, universe
 // pattern position, the way the suggestion pass recorded them; a pattern with no
 // recorded match is someone else's verdict — stale here when it matches nothing, the
 // built-in exclusions when those dropped every name — and is left alone.
-func redundantIgnoreWarnings(key string, patterns []string, matchedNames [][]string, uncoveredCounts []int) []string {
-	var warnings []string
-	for i, pattern := range patterns {
-		names := matchedNames[i]
-		if len(names) == 0 || uncoveredCounts[i] > 0 {
-			continue
-		}
-		quoted := make([]string, len(names))
-		for j, name := range names {
-			quoted[j] = strconv.Quote(name)
-		}
-		warnings = append(warnings, fmt.Sprintf(
-			"%s[%d] %q only matches targets already covered by an interaction (%s); remove the ignore entry, or it will silently hide the suggestion if the covering interaction is removed or renamed",
-			key, i, pattern, strings.Join(quoted, ", ")))
-	}
-	return warnings
-}
-
 func redundantSuggestionIgnoreWarnings(rules []config.SuggestionIgnoreRule, matchedNames [][]string, uncoveredCounts []int) []string {
 	var warnings []string
 	for i, rule := range rules {

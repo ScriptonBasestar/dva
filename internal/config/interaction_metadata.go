@@ -88,7 +88,7 @@ func (c *Config) validateSuggestionAliases() error {
 				continue
 			}
 			if previous, exists := owners[target]; exists {
-				errs = append(errs, fmt.Errorf("Makefile target %q is claimed by %s and %s; declare exactly one owning interaction", target, previous, owner))
+				errs = append(errs, fmt.Errorf("makefile target %q is claimed by %s and %s; declare exactly one owning interaction", target, previous, owner))
 				continue
 			}
 			owners[target] = owner

@@ -13,8 +13,6 @@ import (
 	"github.com/ScriptonBasestar/dva/internal/config"
 )
 
-func boolPointer(value bool) *bool { return &value }
-
 func TestRunFailFastFalseContinuesIndependentAndSkipsFailureDescendants(t *testing.T) {
 	root, state := t.TempDir(), t.TempDir()
 	independent := filepath.Join(root, "independent-ran")
@@ -27,7 +25,7 @@ func TestRunFailFastFalseContinuesIndependentAndSkipsFailureDescendants(t *testi
 		config.CIStep{Name: "grandchild", Run: "touch " + shellQuote(grandchild), DependsOn: []string{"child"}},
 	)
 	p.MaxParallel = 1
-	p.FailFast = boolPointer(false)
+	p.FailFast = new(false)
 
 	r, err := Run(context.Background(), Options{Root: root, ProfileName: "continue", StateDir: state, lockDirectory: state, Env: os.Environ(), Profile: p})
 	if err == nil || r.Status != "failed" {
@@ -93,7 +91,7 @@ func TestFailFastFalseStillHonorsExternalCancellationAndDeadline(t *testing.T) {
 			root, state := t.TempDir(), t.TempDir()
 			marker := filepath.Join(root, "must-not-run")
 			p := profile(config.CIStep{Name: "independent", Run: "touch " + shellQuote(marker)})
-			p.FailFast = boolPointer(false)
+			p.FailFast = new(false)
 
 			r, err := Run(ctx, Options{Root: root, ProfileName: "external-" + tc.name, StateDir: state, lockDirectory: state, Env: os.Environ(), Profile: p})
 			if err == nil || r.Status != tc.want {
@@ -112,7 +110,7 @@ func TestFailFastFalseExternalCancellationStopsRunningStep(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	p := profile(config.CIStep{Name: "slow", Run: "touch " + shellQuote(started) + "; sleep 5"})
-	p.FailFast = boolPointer(false)
+	p.FailFast = new(false)
 	type result struct {
 		report Report
 		err    error
@@ -139,7 +137,7 @@ func TestFailFastFalseProfileDeadlineStopsRunningStep(t *testing.T) {
 	started := filepath.Join(root, "started")
 	p := profile(config.CIStep{Name: "slow", Run: "touch " + shellQuote(started) + "; sleep 5"})
 	p.Timeout = "40ms"
-	p.FailFast = boolPointer(false)
+	p.FailFast = new(false)
 	r, err := Run(context.Background(), Options{Root: root, ProfileName: "running-deadline", StateDir: state, lockDirectory: state, Env: os.Environ(), Profile: p})
 	if err == nil || r.Status != "timed_out" || r.Steps[0].Status != "timed_out" {
 		t.Fatalf("report=%#v err=%v, want timed-out running step", r, err)
@@ -157,7 +155,7 @@ func TestFailFastFalseCheckpointFailureStillAborts(t *testing.T) {
 		config.CIStep{Name: "first", Run: "touch " + shellQuote(first)},
 		config.CIStep{Name: "second", Run: "touch " + shellQuote(second)},
 	)
-	p.FailFast = boolPointer(false)
+	p.FailFast = new(false)
 	sentinel := errors.New("checkpoint unavailable")
 
 	reports, err := execute(context.Background(), root, p, nil, io.Discard, func([]StepReport) error { return sentinel })
