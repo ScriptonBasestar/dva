@@ -2,7 +2,7 @@
 id: TASK-575
 title: "Unsealed env warning follow-ups"
 type: feature
-priority: P3
+priority: P2
 exec-tier: standard
 status: backlog
 created: 2026-11-02
@@ -26,6 +26,8 @@ Gaps left after TASK-573, none seen in real use yet. Review at the next release.
 loaded the expanded file but fake-SOPS unseal created a literal target. Durable facts,
 raw evidence and limits are in [the reproduction record](../../docs/env-warning-reproduction.md).
 The v0.4.5 candidate documents these limits; this is not an accepted exception or completion.
+Priority is raised to P2 because the interpolation case is an observed loader/write-target
+mismatch, rather than only warning presentation. No real-use incident is claimed.
 
 ## Completion Criteria
 

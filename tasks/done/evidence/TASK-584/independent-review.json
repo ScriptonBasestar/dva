@@ -1,0 +1,23 @@
+{
+  "verdict": "PASS",
+  "reviewer-execution": "/root/doctor_flake_diagnosis",
+  "reviewer-grade": "strong",
+  "executor-execution": "/root",
+  "executor-grade": "strong",
+  "review-runtime-execution": "review-v045-candidate",
+  "reviewed-commit": "a5e991541bbfc4899d84761d1c01ce488d77f466",
+  "reviewed-at": "2026-11-04T15:05:00Z",
+  "checks": [
+    {
+      "command": "Independent candidate source, scope and upgrade review",
+      "result": "PASS"
+    },
+    {
+      "command": "Inspect exact preview artifact log and hashes; ce task validate review card; git diff --check",
+      "result": "PASS"
+    }
+  ],
+  "raw-review": "tasks/done/evidence/TASK-584/source-review.txt",
+  "raw-review-sha256": "da8f294de32fd3a3735ec33ccc3e3da1798003db3e9d5668d96e67f4fa5b018b",
+  "limitations": "Card/source preparation review only. Final frozen-candidate full/hosted/archive/install gates are required before delivery. Publication excluded."
+}

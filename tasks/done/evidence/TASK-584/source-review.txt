@@ -1,0 +1,39 @@
+# Independent v0.4.5 candidate review
+
+- Reviewed candidate: `a5e991541bbfc4899d84761d1c01ce488d77f466`
+- Runtime purpose: `review-v045-candidate` (`review`)
+- Reviewer: `/root/doctor_flake_diagnosis` — strong, independent reviewer
+- Executor: `/root` — strong
+- Review time: 2026-11-04 15:05 UTC (2026-11-05 KST)
+- Review attempts: first formal verdict; no prior attempts
+- Boundary: TASK-584's release candidate preparation, release-scope/upgrade documentation, TASK-575 investigation and early nonpublishing artifact evidence. No source/card edits, public tag or Release, final full CI, hosted CI, or installation.
+
+## Criterion 1
+
+**PASS — Version, changelog, roadmap and release notes consistently identify an unpublished v0.4.5 candidate and its limits.**
+
+- `internal/config/version.go` changes only `Version` from `0.4.4` to `0.4.5`; comparison from the reviewed master base `cdb85caba74dcbf5272d805dd86026eaff49a897` shows no other `internal/` source changes.
+- `CHANGELOG.md` labels the dated 0.4.5 section as an unpublished candidate and states the date is preparation rather than publication. It links to the candidate scope and notes. This resolves the initial review ambiguity in which the dated section could be read as a published release.
+- `ROADMAP.md` says the public version remains v0.4.4, records the user's authorization for candidate preparation/validation, excludes TASK-550 and public tag/Release, and defers final candidate verification until after review metadata freeze.
+- `release-notes/v0.4.5.md` identifies itself as an unpublished candidate, preserves v0.5.0-only removal of `modes`/`default_mode`/`--mode`, and explains readiness failure, cancellation/partial-result, strict diagnostics, install destination, and `fail_fast: false` changes. These descriptions agree with CHANGELOG Unreleased content and the current support table in `USAGE.md`.
+- The notes state TASK-575 findings were reproduced but not fixed, accepted, or completed. `docs/env-warning-reproduction.md`, the immutable raw output, overlay source and TASK-575 card consistently record four observations and limits: the child doctor fixture did not activate child import; real SOPS and execution of the shell hint were not tested; the expanded file content was not separately asserted; and the observations do not constitute an accepted exception. The interpolation case specifically demonstrates the loader reading `.env.stg` while fake-SOPS unseal creates literal `.env.${T575}`. TASK-575 remains in backlog.
+- The listed unsupported-platform/integration limits (Windows local background/CI/tunnel execution, actual Access application tunnel and Skaffold cluster status) match the existing `USAGE.md` support table. Archive availability is not presented as added support.
+- Accepted decision 501 and TASK-550 agree that removal is a v0.5.0 change, and the roadmap correctly describes its implementation and migration verification as outstanding.
+
+## Criterion 2
+
+**PASS for the required early nonpublishing artifact check.** The stored preview evidence identifies source commit `accebda5006a01fb54e6b86e4982764927963c69`, records the candidate version/stamp check, and shows `GOMAXPROCS=2 GOFLAGS=-p=2 make release-check` exited 0 after producing and verifying six platform archives and checksums. Its raw log hash is `50da787e8aadb78b7cdf48d49ab57bedd77ed73964f3e54a5d5f118d71910df1`, matching `preview-checks.json`. The log reports snapshot mode, an untagged candidate and skipped announce/publish/validate; the Makefile contract invokes GoReleaser with `--snapshot --clean`. This is a nonpublishing preview, not final exact-SHA evidence.
+
+The preview predates the final frozen candidate and was run on the candidate product source with the card move as its only uncommitted change. The final full CI, hosted CI, exact-candidate archive verification and installation remain outstanding as stated in the card and evidence JSON; they are required before delivery. No public tag or Release is authorized by this preparation review.
+
+## Verification performed
+
+- Read canonical quality-review prompt, TASK-584, SOUL, PRODUCT, ROADMAP, CHANGELOG, release notes, USAGE support table, accepted decision 501, TASK-550 and TASK-575.
+- Inspected TASK-575 command, overlay source, raw log and reproduction note; verified recorded SHA-256 values.
+- Inspected source diff from the baseline and the exact final candidate SHA; `ce task validate tasks/review/584-prepare-v045-release-candidate.md` passed.
+- Verified the preview release-check log SHA against its JSON record and inspected the snapshot-only Makefile target; confirmed the final worktree was clean and `git diff --check` had no findings.
+- `make doc-check`, `make build`, focused version/release tests and preview `make release-check` are recorded as passing in executor evidence; I did not rerun them. Final full CI, hosted CI and install checks were not run by me and remain pending.
+
+No blocker remains within this review boundary. Final frozen-candidate gates and post-review integration evidence are still required.
+
+VERDICT: PASS
