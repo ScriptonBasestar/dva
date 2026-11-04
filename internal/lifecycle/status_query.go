@@ -3,6 +3,7 @@ package lifecycle
 import (
 	"bytes"
 	"context"
+	"errors"
 	"os/exec"
 	"time"
 )
@@ -51,16 +52,17 @@ func runOwnedQuery(ctx context.Context, cmd *exec.Cmd) error {
 		} else {
 			_ = cmd.Process.Kill()
 		}
+		var waitErr error
 		select {
-		case _ = <-done:
+		case waitErr = <-done:
 		case <-time.After(statusQueryGrace):
 			if processGroupsSupported() {
 				_ = killProcessGroup(cmd.Process.Pid)
 			} else {
 				_ = cmd.Process.Kill()
 			}
-			_ = <-done
+			waitErr = <-done
 		}
-		return ctx.Err()
+		return errors.Join(ctx.Err(), waitErr)
 	}
 }
