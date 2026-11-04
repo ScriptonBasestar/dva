@@ -1,0 +1,55 @@
+Regenerating Go-sourced fact blocks in shared-guardrails.md...
+libgen: agent-mesh-flows/shared/library/shared-guardrails.md already up-to-date
+Generating embeddable files from agent-mesh-flows/shared/library/...
+Generated: internal/cli/library_reference.txt
+Rendering self-contained Agent Mesh DVA flows...
+flowgen: public flows already up-to-date
+Generating platform skill artifacts from skills/...
+skillgen: antigravity -> .agents/skills -> ../skills (symlink)
+skillgen: claude-code -> claude-plugin/skills -> ../skills (symlink)
+skillgen: codex     -> AGENTS.md (marked section, 3 skills)
+skillgen: cursor    -> .cursor/rules/*.mdc (3 skills)
+skillgen: opencode  -> .opencode/skills -> ../skills (symlink)
+Rendering agent-runtime deny-rule coverage doc from internal/agentdeny...
+Generated: docs/agent-deny-rules.md
+go build -trimpath -ldflags '-s -w -X github.com/ScriptonBasestar/dva/internal/config.Version=0.4.5 -X github.com/ScriptonBasestar/dva/internal/config.Commit=accebda5006a01fb54e6b86e4982764927963c69 -X github.com/ScriptonBasestar/dva/internal/config.BuildDate=2026-11-04T15:02:09Z' -o ./bin/dva ./cmd/dva
+releasecheck: Makefile and GoReleaser stamp Version, Commit, and BuildDate
+releasecheck: snapshot mode; internal/config.Version=0.4.5 (no exact tag)
+releasecheck: ./bin/dva has stamped version, full commit, and UTC build date
+  • skipping announce, publish, and validate...
+  • cleaning distribution directory
+  • loading environment variables
+    • using token from $GITHUB_TOKEN
+  • getting and validating git state
+    • git state                                      commit=accebda5006a01fb54e6b86e4982764927963c69 branch=dev/codex/mbp/chore/release-v0-4-5-candidate current_tag=v0.4.4 previous_tag=v0.4.3 dirty=true
+    • pipe skipped or partially skipped              reason=disabled during snapshot mode
+  • parsing tag
+  • setting defaults
+  • snapshotting
+    • building snapshot...                           version=0.0.0-SNAPSHOT-accebda5
+  • ensuring distribution directory
+  • setting up metadata
+  • writing release metadata
+  • loading go mod information
+  • build prerequisites
+  • building binaries
+    • building                                       binary=dist/dva_linux_arm64_v8.0/dva
+    • building                                       binary=dist/dva_linux_amd64_v1/dva
+    • building                                       binary=dist/dva_darwin_amd64_v1/dva
+    • building                                       binary=dist/dva_darwin_arm64_v8.0/dva
+    • building                                       binary=dist/dva_windows_amd64_v1/dva.exe
+    • building                                       binary=dist/dva_windows_arm64_v8.0/dva.exe
+      • took: 14s
+  • archives
+    • archiving                                      name=dist/dva_windows_arm64.zip
+    • archiving                                      name=dist/dva_windows_amd64.zip
+    • archiving                                      name=dist/dva_linux_arm64.tar.gz
+    • archiving                                      name=dist/dva_linux_amd64.tar.gz
+    • archiving                                      name=dist/dva_darwin_arm64.tar.gz
+    • archiving                                      name=dist/dva_darwin_amd64.tar.gz
+  • calculating checksums
+  • writing artifacts metadata
+  • release succeeded after 16s
+  • thanks for using GoReleaser!
+releasecheck: verified 6 platform archives and checksums in dist
+releasecheck: /var/folders/gy/5kl7gsfx5qd0xhjldbqpw5140000gn/T/tmp.u6dZXhkQMo/dva has stamped version, full commit, and UTC build date

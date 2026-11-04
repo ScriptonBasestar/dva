@@ -1,0 +1,26 @@
+{
+  "source-commit": "accebda5006a01fb54e6b86e4982764927963c69",
+  "scope": "Pre-review product candidate; only card move was uncommitted. Final exact-SHA artifact gate will run after review metadata freeze.",
+  "checks": [
+    {
+      "command": "make doc-check",
+      "exit-code": 0
+    },
+    {
+      "command": "make build",
+      "exit-code": 0
+    },
+    {
+      "command": "sh scripts/without-dva.sh go test ./internal/config ./internal/cli ./tools/releasecheck -run 'Test(Version|ResolveCommit|ConfigVersion|Release|Snapshot|CheckVersion)' -count=1",
+      "exit-code": 0
+    },
+    {
+      "command": "GOMAXPROCS=2 GOFLAGS=-p=2 make release-check",
+      "exit-code": 0,
+      "artifacts": "6 platform archives and checksums; host snapshot binary stamping verified",
+      "log": "tasks/done/evidence/TASK-584/preview-release-check.log",
+      "log-sha256": "50da787e8aadb78b7cdf48d49ab57bedd77ed73964f3e54a5d5f118d71910df1"
+    }
+  ],
+  "not-yet-run": "Final frozen-candidate full CI, hosted CI and archive checks, installation, and publication (publication not authorized)."
+}

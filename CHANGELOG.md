@@ -5,7 +5,10 @@ All notable changes to DVA are documented here.
 
 ## [Unreleased]
 
-## [0.4.5] - 2026-11-04
+## [0.4.5] - 2026-11-05
+
+미공개 릴리스 후보다. 날짜는 후보 정리일이며 공개일이 아니다. 범위와 검증 경계는
+[ROADMAP](ROADMAP.md#v045-후보-준비), 업그레이드 안내는 [후보 노트](release-notes/v0.4.5.md)를 따른다.
 
 ### Changed
 

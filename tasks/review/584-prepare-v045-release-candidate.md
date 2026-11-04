@@ -4,7 +4,7 @@ title: "Prepare verified v0.4.5 release candidate"
 type: chore
 priority: P1
 exec-tier: strong
-status: doing
+status: review
 created: 2026-11-04
 ---
 
