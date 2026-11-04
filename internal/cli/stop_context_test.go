@@ -90,9 +90,10 @@ stack:
 			cmd := &cobra.Command{}
 			cmd.SetContext(ctx)
 			args := []string(nil)
-			if route == "plan" {
+			switch route {
+			case "plan":
 				args = []string{"preview"}
-			} else if route == "composition" {
+			case "composition":
 				args = []string{"composed"}
 			}
 			err := stopCmd.RunE(cmd, args)
