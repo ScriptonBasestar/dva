@@ -5,6 +5,8 @@ All notable changes to DVA are documented here.
 
 ## [Unreleased]
 
+## [0.4.5] - 2026-11-04
+
 ### Changed
 
 - `make install` now installs one copy into `~/.local/share/ce/bin` (override with `LOCAL_BIN_DIR`). Existing `~/.local/bin/dva` and `~/go/bin/dva` copies are left in place; `GO_BIN_DIR=` restores the second GOBIN/GOPATH copy.

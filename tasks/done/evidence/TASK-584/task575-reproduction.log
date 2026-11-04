@@ -1,0 +1,28 @@
+=== RUN   TestTask575RestartWarnings
+    zz_task575_repro_test.go:18: args=[] err=multiple plans configured; specify one: dva restart <both|one> warned=false out=""
+    zz_task575_repro_test.go:18: args=["one"] err=<nil> warned=false out="[plan: one] environment= site= entries=1\n[lifecycle] stopping svc (script)\n  $ true\n[lifecycle] svc (script)\n  $ true\n"
+Composition plan: both (dva v0.4.4)
+
+  [] one (wave 0): up
+
+outcome: up
+    zz_task575_repro_test.go:18: args=["both"] err=<nil> warned=false out="[lifecycle] stopping svc (script)\n  $ true\n[lifecycle] svc (script)\n  $ true\n"
+    zz_task575_repro_test.go:20: whole-stack err=<nil> warned=false out="[lifecycle] stopping svc (script)\n  $ true\n[lifecycle] svc (script)\n  $ true\n"
+--- PASS: TestTask575RestartWarnings (0.04s)
+=== RUN   TestTask575UnknownPlanOrdering
+    zz_task575_repro_test.go:22: err=plan 'typo' not found. Available: one warned=true out="warning: env_file .env declares sops_source but does not exist, so its values are not loaded; run `dva config env unseal .env` in the project that declares it, then `dva up` again (compose containers using these values are recreated)\n"
+--- PASS: TestTask575UnknownPlanOrdering (0.00s)
+=== RUN   TestTask575ChildDoctorScope
+    zz_task575_repro_test.go:23: child-encrypted-row=false rows=3
+--- PASS: TestTask575ChildDoctorScope (0.25s)
+=== RUN   TestTask575InterpolatedBridge
+    zz_task575_repro_test.go:24: select raw entry={Path:.env.${T575} Required:false SopsSource:x.enc} err=<nil>
+--- PASS: TestTask575InterpolatedBridge (0.00s)
+=== RUN   TestTask575InterpolationWrite
+    zz_task575_repro_test.go:25: loader complete=true entries=[{File:.env.${T575} Required:false Status:loaded Kind: line:0 refs:[] UnresolvedValues:0 vars:map[LOADER:yes]}]
+unsealed .env.${T575} from x.enc (created)
+    zz_task575_repro_test.go:25: unseal err=<nil> raw-created=true expanded-exists=true
+--- PASS: TestTask575InterpolationWrite (0.01s)
+PASS
+ok  	github.com/ScriptonBasestar/dva/internal/cli	0.673s
+exit=0

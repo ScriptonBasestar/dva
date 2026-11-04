@@ -1,0 +1,4 @@
+Baseline: cdb85caba74dcbf5272d805dd86026eaff49a897
+Purpose: experiment; historical invocation, not a source-tree acceptance gate.
+Overlay Replace: internal/cli/zz_task575_repro_test.go -> tmp/zz_task575_repro_test.go
+sh scripts/without-dva.sh go test -overlay tmp/task575-overlay.json -run '^TestTask575' ./internal/cli -count=1 -v

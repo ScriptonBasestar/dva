@@ -1,0 +1,25 @@
+package cli
+
+import (
+ "strings"
+ "os"
+ "path/filepath"
+ "testing"
+ "github.com/ScriptonBasestar/dva/internal/config"
+)
+
+func TestTask575RestartWarnings(t *testing.T) {
+ y:=simpleBridgeYAML(".env","x.enc")+`stack:
+  svc: {default_runner: script, runners: {script: {up: "true", stop: "true"}}}
+plans:
+  one: {entries: [{name: svc}]}
+  both: {composes: [{plan: one}]}
+`
+ for _, a:=range [][]string{nil,{"one"},{"both"}} { f:=newBridgeFixture(t,y,map[string]string{"x.enc":"x"}); t.Chdir(f.cfg.FileDir()); withEnvPolicyGlobals(t,nil,false); var e error; out:=captureStderr(t,func(){e=restartCmd.RunE(restartCmd,a)}); t.Logf("args=%q err=%v warned=%t out=%q",a,e,strings.Contains(out,"declares sops_source"),out) }
+ f:=newBridgeFixture(t,simpleBridgeYAML(".env","x.enc")+`stack: {svc: {default_runner: script, runners: {script: {up: "true", stop: "true"}}}}
+`,map[string]string{"x.enc":"x"}); t.Chdir(f.cfg.FileDir()); withEnvPolicyGlobals(t,nil,false); var e error; out:=captureStderr(t,func(){e=restartCmd.RunE(restartCmd,nil)}); t.Logf("whole-stack err=%v warned=%t out=%q",e,strings.Contains(out,"declares sops_source"),out)
+}
+func TestTask575UnknownPlanOrdering(t *testing.T) { f:=newBridgeFixture(t,simpleBridgeYAML(".env","x.enc")+"plans:\n  one: {entries: []}\n",map[string]string{"x.enc":"x"}); t.Chdir(f.cfg.FileDir()); withEnvPolicyGlobals(t,nil,false); var e error; out:=captureStderr(t,func(){e=upCmd.RunE(upCmd,[]string{"typo"})}); t.Logf("err=%v warned=%t out=%q",e,strings.Contains(out,"declares sops_source"),out) }
+func TestTask575ChildDoctorScope(t *testing.T) { root:="version: \"0.1.45\"\nsubprojects:\n  child: {path: child}\n"; child:=simpleBridgeYAML(".env","x.enc"); f:=newBridgeFixture(t,root,map[string]string{"child/"+config.FileName:child,"child/x.enc":"x"}); rows:=runDoctorChecks(f.cfg); found:=false; for _,r:=range rows { if strings.Contains(r.Name,"Encrypted env target") { found=true } }; t.Logf("child-encrypted-row=%t rows=%d",found,len(rows)) }
+func TestTask575InterpolatedBridge(t *testing.T) { f:=newBridgeFixture(t,"version: \"0.1.45\"\nenv_file:\n  - {path: \".env.${T575}\", sops_source: x.enc}\n",map[string]string{"x.enc":"x"}); e,err:=selectEncryptedEntry(f.cfg,".env.${T575}"); t.Logf("select raw entry=%+v err=%v",e,err) }
+func TestTask575InterpolationWrite(t *testing.T) { t.Setenv("T575","stg"); f:=newBridgeFixture(t,"version: \"0.1.45\"\nenv_file:\n  - {path: \".env.${T575}\", sops_source: x.enc}\n",map[string]string{"x.enc":"x",".env.stg":"LOADER=yes\n"}); r:=config.ApplyEnvFiles(f.cfg.EnvFile,f.cfg.FileDir(),f.cfg.EnvFileScope()); t.Logf("loader complete=%t entries=%+v",!r.Incomplete(),r.Entries); f.install(false); err:=runEnvUnseal(".env.${T575}",false); _,raw:=os.Stat(filepath.Join(f.dir,".env.${T575}")); _,expanded:=os.Stat(filepath.Join(f.dir,".env.stg")); t.Logf("unseal err=%v raw-created=%t expanded-exists=%t",err,raw==nil,expanded==nil) }
