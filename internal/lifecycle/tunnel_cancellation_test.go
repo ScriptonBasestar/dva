@@ -7,8 +7,6 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"strconv"
-	"syscall"
 	"testing"
 	"time"
 )
@@ -27,14 +25,6 @@ func TestCloudflaredAuthCancellationTerminatesItsProcessGroup(t *testing.T) {
 	done := make(chan error, 1)
 	go func() { done <- runCloudflaredDiscardContext(ctx, "app.example.com") }()
 	waitForTunnelCancellationFile(t, started)
-	raw, err := os.ReadFile(childPID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	pid, err := strconv.Atoi(string(raw[:len(raw)-1]))
-	if err != nil {
-		t.Fatal(err)
-	}
 	cancel()
 	select {
 	case err := <-done:
@@ -44,9 +34,7 @@ func TestCloudflaredAuthCancellationTerminatesItsProcessGroup(t *testing.T) {
 	case <-time.After(2 * time.Second):
 		t.Fatal("auth command did not return after cancellation")
 	}
-	if err := syscall.Kill(pid, 0); err == nil {
-		t.Fatalf("auth child %d survived cancellation", pid)
-	}
+	waitForStatusChildGone(t, childPID)
 }
 
 func waitForTunnelCancellationFile(t *testing.T, path string) {
