@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"os"
@@ -101,7 +102,7 @@ func TestCompositionPropagateAllFlags(t *testing.T) {
 	t.Run("both flags together pass validation and reach real execution, not a flag rejection", func(t *testing.T) {
 		c := compositionFixtureConfigLoaded(t)
 		el := planEnv(config.NewEnvironment(nil, c.FileDir(), c.FileDir()))
-		err := runCompositionUp(c, el, "release", []string{"--no-wait", "--no-rollback"})
+		err := runCompositionUp(context.Background(), c, el, "release", []string{"--no-wait", "--no-rollback"})
 		if err != nil && (strings.Contains(err.Error(), "unsupported flag") || strings.Contains(err.Error(), "does not accept")) {
 			t.Fatalf("expected --no-wait/--no-rollback to pass validation and reach real execution, got a flag-scope rejection: %v", err)
 		}
@@ -420,7 +421,7 @@ func TestCompositionExitCodesStayFlat(t *testing.T) {
 	// exercising a deterministic error path — --tag is rejected before any child starts
 	// regardless, keeping this case about runCompositionUp's error type, not its runtime
 	// outcome.
-	if err := runCompositionUp(c, el, "release", []string{"--tag", "x"}); err != nil {
+	if err := runCompositionUp(context.Background(), c, el, "release", []string{"--tag", "x"}); err != nil {
 		errs = append(errs, err)
 	}
 	if err := runCompositionDown(c, el, "release", []string{"--mode", "dev"}); err != nil {
@@ -497,7 +498,7 @@ func TestCompositionRestartAllowsNoRollback(t *testing.T) {
 	c := loadTestConfig(t, compositionRestartFixtureConfig)
 	el := planEnv(config.NewEnvironment(nil, c.FileDir(), c.FileDir()))
 
-	if err := runCompositionUp(c, el, "release", nil); err != nil {
+	if err := runCompositionUp(context.Background(), c, el, "release", nil); err != nil {
 		t.Fatalf("runCompositionUp: %v", err)
 	}
 
@@ -557,7 +558,7 @@ func TestCompositionRestartSurfacesRollbackDiagnostics(t *testing.T) {
 	c := loadTestConfig(t, compositionRestartFixtureConfig)
 	el := planEnv(config.NewEnvironment(nil, c.FileDir(), c.FileDir()))
 
-	if err := runCompositionUp(c, el, "release", nil); err != nil {
+	if err := runCompositionUp(context.Background(), c, el, "release", nil); err != nil {
 		t.Fatalf("runCompositionUp: %v", err)
 	}
 

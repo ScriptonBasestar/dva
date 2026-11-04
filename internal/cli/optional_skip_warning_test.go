@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"slices"
@@ -111,7 +112,7 @@ func TestOptionalSkipIsReportedByPlanLogs(t *testing.T) {
 func TestOptionalSkipIsReportedByCompositionUp(t *testing.T) {
 	enableDryRun(t)
 	c, e := optionalSkipFixture(t)
-	stderr := captureBothStreams(t, func() { _ = runCompositionUp(c, planEnv(e), "all", nil) })
+	stderr := captureBothStreams(t, func() { _ = runCompositionUp(context.Background(), c, planEnv(e), "all", nil) })
 	assertSkipWarnedFrom(t, "dva up <composition>", stderr, "dev")
 }
 
@@ -358,7 +359,7 @@ func TestCompositionUpWarnsBeforeItRejectsItsFlags(t *testing.T) {
 	enableDryRun(t)
 	c, e := optionalSkipFixture(t)
 	var err error
-	stderr := captureBothStreams(t, func() { err = runCompositionUp(c, planEnv(e), "all", []string{"--bogus-flag"}) })
+	stderr := captureBothStreams(t, func() { err = runCompositionUp(context.Background(), c, planEnv(e), "all", []string{"--bogus-flag"}) })
 	if err == nil {
 		t.Fatal("an unsupported composition flag must be rejected")
 	}

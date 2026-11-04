@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -73,7 +74,7 @@ func TestCompositionUpDownExecuteRealOrchestrator(t *testing.T) {
 		killLeftoverCompositionProcess(t, c.FileDir(), "svc-b")
 	})
 
-	if err := runCompositionUp(c, el, "release", nil); err != nil {
+	if err := runCompositionUp(context.Background(), c, el, "release", nil); err != nil {
 		t.Fatalf("runCompositionUp: %v", err)
 	}
 	for _, name := range []string{"svc-a", "svc-b"} {
@@ -193,7 +194,7 @@ func TestCompositionUpRollbackAndNoRollback(t *testing.T) {
 		c := loadTestConfig(t, compositionRollbackFixtureConfig)
 		el := planEnv(config.NewEnvironment(nil, c.FileDir(), c.FileDir()))
 
-		err := runCompositionUp(c, el, "release", nil)
+		err := runCompositionUp(context.Background(), c, el, "release", nil)
 		if err == nil {
 			t.Fatal("expected up to fail: svc-bad always fails")
 		}
@@ -210,7 +211,7 @@ func TestCompositionUpRollbackAndNoRollback(t *testing.T) {
 		c := loadTestConfig(t, compositionRollbackFixtureConfig)
 		el := planEnv(config.NewEnvironment(nil, c.FileDir(), c.FileDir()))
 
-		err := runCompositionUp(c, el, "release", []string{"--no-rollback"})
+		err := runCompositionUp(context.Background(), c, el, "release", []string{"--no-rollback"})
 		if err == nil {
 			t.Fatal("expected up to fail: svc-bad always fails")
 		}
@@ -355,7 +356,7 @@ func TestCompositionUpDryRunPerformsNoRealExecution(t *testing.T) {
 	dryRun = true
 	defer func() { dryRun = oldDryRun }()
 
-	if err := runCompositionUp(c, el, "release", nil); err != nil {
+	if err := runCompositionUp(context.Background(), c, el, "release", nil); err != nil {
 		t.Fatalf("runCompositionUp with dryRun=true: %v", err)
 	}
 	for _, name := range []string{"svc-a", "svc-b"} {
@@ -382,7 +383,7 @@ func TestCompositionDownDryRunPerformsNoRealTeardown(t *testing.T) {
 		killLeftoverCompositionProcess(t, c.FileDir(), "svc-b")
 	})
 
-	if err := runCompositionUp(c, el, "release", nil); err != nil {
+	if err := runCompositionUp(context.Background(), c, el, "release", nil); err != nil {
 		t.Fatalf("runCompositionUp: %v", err)
 	}
 	for _, name := range []string{"svc-a", "svc-b"} {
@@ -464,7 +465,7 @@ func TestCompositionRestartHaltsAfterFailedChild(t *testing.T) {
 	c := loadTestConfig(t, compositionRestartHaltFixtureConfig)
 	el := planEnv(config.NewEnvironment(nil, c.FileDir(), c.FileDir()))
 
-	if err := runCompositionUp(c, el, "release", nil); err != nil {
+	if err := runCompositionUp(context.Background(), c, el, "release", nil); err != nil {
 		t.Fatalf("runCompositionUp: %v", err)
 	}
 

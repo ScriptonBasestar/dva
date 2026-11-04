@@ -11,6 +11,10 @@ All notable changes to DVA are documented here.
 
 ### Fixed
 
+- **readiness probe의 취소 전파**: HTTP·TCP·command probe가 준비 대기의 취소와
+  deadline을 따릅니다. composition plan의 `dva up`도 호출자 context와
+  SIGINT·SIGTERM·SIGHUP을 전달합니다.
+
 - **readiness 대기의 실패 전달**: 공통 대기 경로가 `ready_timeout` 초과, native PID 종료,
   호출자 취소를 실패로 전달합니다. `dva up <plan>`은 물론 legacy 전체 스택 `dva up`과
   `dva restart`(스택·plan 양쪽)도 같은 게이트를 지나므로, 준비되지 않은 채 경고만 내고

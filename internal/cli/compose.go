@@ -126,9 +126,6 @@ Plan-path flags (only when a plan is being run, e.g. 'dva up <plan>'):
 		c := mustLoadConfig()
 		el := rootEnvLoad(c)
 		if planName, extraArgs, ok := detectPlanRoute(c, args); ok {
-			if isCompositionPlan(c, planName) {
-				return runCompositionUp(c, el, planName, extraArgs)
-			}
 			parent := cmd.Context()
 			if parent == nil {
 				// Execute supplies this default; direct RunE callers need it too.
@@ -136,6 +133,9 @@ Plan-path flags (only when a plan is being run, e.g. 'dva up <plan>'):
 			}
 			ctx, stop := signal.NotifyContext(parent, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
 			defer stop()
+			if isCompositionPlan(c, planName) {
+				return runCompositionUp(ctx, c, el, planName, extraArgs)
+			}
 			return runPlanUp(ctx, c, el, planName, extraArgs)
 		}
 		// Root-owned route from here: no plan claimed the invocation, so the root's own

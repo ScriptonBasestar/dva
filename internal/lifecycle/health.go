@@ -35,6 +35,13 @@ func (hc *HealthChecker) Check(checks map[string]config.HealthCheckConfig) []Hea
 // environment. HTTP/TCP checks ignore them; command checks must observe the same
 // project context as the lifecycle entry they guard.
 func (hc *HealthChecker) CheckWithContext(checks map[string]config.HealthCheckConfig, dir string, env *config.Environment) []HealthCheckResult {
+	return hc.checkWithContext(context.Background(), checks, dir, env)
+}
+
+// checkWithContext runs one health-check pass and makes every probe subordinate to
+// ctx. The exported CheckWithContext predates readiness cancellation, so it keeps
+// its independent background context; WaitUntilReadyWithContext supplies its own.
+func (hc *HealthChecker) checkWithContext(ctx context.Context, checks map[string]config.HealthCheckConfig, dir string, env *config.Environment) []HealthCheckResult {
 	if len(checks) == 0 {
 		return nil
 	}
@@ -44,6 +51,12 @@ func (hc *HealthChecker) CheckWithContext(checks map[string]config.HealthCheckCo
 	var wg sync.WaitGroup
 
 	for name, check := range checks {
+		if ctx.Err() != nil {
+			mu.Lock()
+			results = append(results, HealthCheckResult{Name: name, StartHint: check.StartHint})
+			mu.Unlock()
+			continue
+		}
 		wg.Add(1)
 		go func(name string, check config.HealthCheckConfig) {
 			defer wg.Done()
@@ -58,13 +71,16 @@ func (hc *HealthChecker) CheckWithContext(checks map[string]config.HealthCheckCo
 				timeout = 2 * time.Second
 			}
 
+			probeCtx, cancel := healthCheckContext(ctx, timeout, check.Type)
+			defer cancel()
+
 			switch check.Type {
 			case "http":
-				result.Ready = CheckHTTP(check.URL, timeout)
+				result.Ready = checkHTTPWithContext(probeCtx, check.URL)
 			case "tcp":
-				result.Ready = CheckTCP(check.Address, timeout)
+				result.Ready = checkTCPWithContext(probeCtx, check.Address)
 			case "command":
-				result.Ready = checkCommand(check.Command, timeout, dir, env)
+				result.Ready = checkCommandWithContext(probeCtx, check.Command, dir, env)
 			default:
 				fmt.Fprintf(os.Stderr, "[warn] unknown health check type %q for %s\n", check.Type, name)
 			}
@@ -92,7 +108,10 @@ func (hc *HealthChecker) WaitUntilReady(ctx context.Context, checks map[string]c
 // WaitUntilReadyWithContext is WaitUntilReady with project context for command checks.
 func (hc *HealthChecker) WaitUntilReadyWithContext(ctx context.Context, checks map[string]config.HealthCheckConfig, dir string, env *config.Environment) []HealthCheckResult {
 	for {
-		results := hc.CheckWithContext(checks, dir, env)
+		results := hc.checkWithContext(ctx, checks, dir, env)
+		if ctx.Err() != nil {
+			return results
+		}
 		allReady := true
 		for _, r := range results {
 			if !r.Ready {
@@ -118,6 +137,19 @@ func (hc *HealthChecker) WaitUntilReadyWithContext(ctx context.Context, checks m
 func CheckHTTP(url string, timeout time.Duration) bool {
 	client := &http.Client{Timeout: timeout}
 	resp, err := client.Get(url)
+	if err != nil {
+		return false
+	}
+	defer func() { _ = resp.Body.Close() }()
+	return resp.StatusCode >= 200 && resp.StatusCode < 400
+}
+
+func checkHTTPWithContext(ctx context.Context, url string) bool {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return false
+	}
+	resp, err := (&http.Client{}).Do(req)
 	if err != nil {
 		return false
 	}
@@ -151,9 +183,22 @@ func CheckTCP(address string, timeout time.Duration) bool {
 	return true
 }
 
+func checkTCPWithContext(ctx context.Context, address string) bool {
+	conn, err := (&net.Dialer{}).DialContext(ctx, "tcp", address)
+	if err != nil {
+		return false
+	}
+	_ = conn.Close()
+	return true
+}
+
 func checkCommand(command string, timeout time.Duration, dir string, env *config.Environment) bool {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
+	return checkCommandWithContext(ctx, command, dir, env)
+}
+
+func checkCommandWithContext(ctx context.Context, command string, dir string, env *config.Environment) bool {
 	cmd := exec.CommandContext(ctx, "sh", "-c", command)
 	if dir != "" {
 		cmd.Dir = dir
@@ -162,6 +207,15 @@ func checkCommand(command string, timeout time.Duration, dir string, env *config
 		cmd.Env = env.EnvSlice()
 	}
 	return cmd.Run() == nil
+}
+
+// healthCheckContext preserves each probe type's established timeout behavior
+// while making it subordinate to the readiness caller's cancellation.
+func healthCheckContext(ctx context.Context, timeout time.Duration, checkType string) (context.Context, context.CancelFunc) {
+	if checkType == "http" && timeout <= 0 {
+		return context.WithCancel(ctx)
+	}
+	return context.WithTimeout(ctx, timeout)
 }
 
 // describeHealthChecks renders a stable, human-readable summary of health checks

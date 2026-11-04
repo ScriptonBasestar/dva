@@ -14,7 +14,7 @@ import (
 )
 
 func TestPlanUpCallerContextReachesReadiness(t *testing.T) {
-	for _, route := range []string{"direct", "cobra"} {
+	for _, route := range []string{"direct", "cobra", "composition-direct", "composition-cobra"} {
 		t.Run(route, func(t *testing.T) {
 			parent, stop := context.WithTimeout(t.Context(), 5*time.Second)
 			defer stop()
@@ -41,16 +41,27 @@ plans:
   preview:
     entries:
       - name: app
+  composed:
+    composes:
+      - plan: preview
 `, server.URL))
 			start := time.Now()
 			var err error
-			if route == "cobra" {
+			planName := "preview"
+			if strings.HasPrefix(route, "composition-") {
+				planName = "composed"
+			}
+			if strings.HasSuffix(route, "cobra") {
 				cmd := &cobra.Command{}
 				cmd.SetContext(ctx)
-				err = upCmd.RunE(cmd, []string{"preview"})
+				err = upCmd.RunE(cmd, []string{planName})
 			} else {
 				c := mustLoadConfig()
-				err = runPlanUp(ctx, c, rootEnvLoad(c), "preview", nil)
+				if planName == "composed" {
+					err = runCompositionUp(ctx, c, rootEnvLoad(c), planName, nil)
+				} else {
+					err = runPlanUp(ctx, c, rootEnvLoad(c), planName, nil)
+				}
 			}
 			if !errors.Is(err, context.Canceled) || !strings.Contains(err.Error(), "readiness wait cancelled") {
 				t.Fatalf("plan up error = %v, want caller cancellation from readiness", err)

@@ -340,7 +340,7 @@ func printCompositionReportText(report *lifecycle.CompositionReport) {
 	}
 }
 
-func runCompositionUp(c *config.Config, el *envLoad, planName string, extraArgs []string) error {
+func runCompositionUp(ctx context.Context, c *config.Config, el *envLoad, planName string, extraArgs []string) error {
 	comp, err := lifecycle.ResolveCompositionPlan(c, planName)
 	if err != nil {
 		return err
@@ -356,7 +356,7 @@ func runCompositionUp(c *config.Config, el *envLoad, planName string, extraArgs 
 	if err != nil {
 		return err
 	}
-	report, runErr := orch.Up(context.Background(), lifecycle.CompositionUpOptions{
+	report, runErr := orch.Up(ctx, lifecycle.CompositionUpOptions{
 		NoWait:     flags.noWait,
 		NoRollback: flags.noRollback,
 	})
