@@ -1,0 +1,18 @@
+{
+  "verdict": "PASS",
+  "reviewer-execution": "/root/doctor_flake_diagnosis",
+  "reviewer-grade": "strong",
+  "executor-execution": "/root",
+  "executor-grade": "strong",
+  "review-runtime-execution": "review-execution-stability-diagnostics",
+  "reviewed-commit": "9962c14f51e3345fa9d472b19686f96b0882dd85",
+  "recorded-at": "2026-11-04T07:09:40Z",
+  "checks": [
+    {
+      "command": "sh scripts/without-dva.sh go test ./internal/cirun -run '^TestCIWithoutGitRefusesBeforeExecutingSteps$' -count=1 -v",
+      "result": "PASS",
+      "exit-code": 0
+    }
+  ],
+  "raw-review": "tasks/done/evidence/stability-diagnostics-review.txt"
+}

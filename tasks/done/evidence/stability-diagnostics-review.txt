@@ -1,0 +1,12 @@
+**VERDICT: PASS** — candidate `9962c14f51e3345fa9d472b19686f96b0882dd85`. Reviewed at 2026-11-04 07:07 UTC. The delivery branch is clean and tracks its upstream at that commit. I read `SOUL.md` and `ARCHITECTURE.md`; no compatibility or design-contract blocker was found. No source, card, or evidence files were edited.
+
+| Card | Executor | Criterion and evidence |
+|---|---|---|
+| TASK-557 | `/root/config_missing_and_profiles` — standard | **PASS.** The validator names a subproject with no config; an unimported malformed child remains lazy, while an imported missing child still fails. All three named tests passed with `-count=1 -v`. |
+| TASK-562 | `/root/config_missing_and_profiles` — standard | **PASS.** The strict stack compose `profiles` rejection points to `plans.<plan>.entries[].profiles`. The named test passed with `-count=1 -v`. |
+| TASK-563 | `/root` — strong | **PASS.** The docs explain installing Git before DVA runs and distinguish Git absence from running outside a repository. The test confirmed missing Git fails before profile steps execute; it passed with `-count=1 -v`. |
+| TASK-564 | `/root/parent_compose_drift` — standard | **PASS.** Explicit parent ownership suppresses parent-owned compose drift while preserving real child orphans. Tests also cover undeclared ancestry, `dva.yaml`, ambient `DVA_FILE`, malformed or unsupported parent config, and symlinks. All eight matched tests passed with `-count=1 -v`. |
+
+The additional lifecycle review found no blocker: caller context reaches up/restart paths, canceled contexts are checked before native process starts and mode-process signaling, and the signal helper exercises INT/TERM/HUP. Scoped cancellation, mode-process, and signal tests passed with `-count=1`; `git diff --check` was clean. **No full suite was run.** The earlier doctor-command flake remains unreproduced after 20 repetitions; its cause is still unknown.
+
+Prior formal review attempts were reported as empty. The host should record each card’s criterion evidence, the executor/reviewer identities and grades, and the required review fields and receipt before moving cards out of `review/`.

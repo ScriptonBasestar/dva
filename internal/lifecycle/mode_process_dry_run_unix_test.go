@@ -61,7 +61,7 @@ func captureStderr(t *testing.T, fn func() error) (string, error) {
 // FileDir() is filepath.Dir("") == "." for a Config that was not loaded from a file, and
 // there is no exported setter for the path, so the fixture is anchored with t.Chdir —
 // the same shape portowner_test.go and app_start_exit_test.go use.
-func modeStandIn(t *testing.T, name string) (pidFile string, pid int, reaped <-chan struct{}) {
+func modeStandIn(t *testing.T) (pidFile string, pid int, reaped <-chan struct{}) {
 	t.Helper()
 	dir := t.TempDir()
 	t.Chdir(dir)
@@ -85,7 +85,7 @@ func modeStandIn(t *testing.T, name string) (pidFile string, pid int, reaped <-c
 	if err := os.MkdirAll(pidDir, 0o755); err != nil {
 		t.Fatalf("mkdir pids: %v", err)
 	}
-	pidFile = filepath.Join(pidDir, name+".pid")
+	pidFile = filepath.Join(pidDir, "worker.pid")
 	if err := os.WriteFile(pidFile, []byte(strconv.Itoa(helper.Process.Pid)), 0o644); err != nil {
 		t.Fatalf("write pidfile: %v", err)
 	}
@@ -138,7 +138,7 @@ func TestSignalModeProcessesDryRun(t *testing.T) {
 		{"stop: down semantics, pidfile removed", true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			pidFile, pid, reaped := modeStandIn(t, "worker")
+			pidFile, pid, reaped := modeStandIn(t)
 			o := modeOrchestrator()
 
 			out, _ := captureStderr(t, func() error {
@@ -168,7 +168,7 @@ func TestSignalModeProcessesDryRun(t *testing.T) {
 	// signalModeProcesses that had been gutted to do nothing at all — the dry-run branch
 	// has to be what withholds the signal, not the absence of a signal anywhere.
 	t.Run("no dry-run still signals", func(t *testing.T) {
-		pidFile, pid, reaped := modeStandIn(t, "worker")
+		pidFile, pid, reaped := modeStandIn(t)
 		o := modeOrchestrator()
 
 		out, _ := captureStderr(t, func() error {
@@ -206,7 +206,7 @@ func TestHaltAndStopModeProcessesForwardDryRun(t *testing.T) {
 		{"stopModeProcesses", func(o *Orchestrator) error { return o.stopModeProcesses(context.Background(), "dev", true) }},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			_, pid, reaped := modeStandIn(t, "worker")
+			_, pid, reaped := modeStandIn(t)
 			o := modeOrchestrator()
 
 			out, _ := captureStderr(t, func() error { return tc.call(o) })
@@ -229,7 +229,7 @@ func TestCancelledModeProcessesPreserveOwnedPIDState(t *testing.T) {
 		{"stop", func(o *Orchestrator, ctx context.Context) error { return o.stopModeProcesses(ctx, "dev", false) }},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			pidFile, pid, reaped := modeStandIn(t, "worker")
+			pidFile, pid, reaped := modeStandIn(t)
 			err := tc.call(modeOrchestrator(), ctx)
 			if !errors.Is(err, context.Canceled) {
 				t.Fatalf("cancelled mode %s error = %v, want context.Canceled", tc.name, err)
