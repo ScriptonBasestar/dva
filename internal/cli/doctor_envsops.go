@@ -49,8 +49,10 @@ func unsealCommand(target string) string {
 		separator = "-- "
 	}
 	if target == "" || strings.IndexFunc(target, func(c rune) bool {
-		return !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
-			(c >= '0' && c <= '9') || strings.ContainsRune("_./-", c))
+		if (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') {
+			return false
+		}
+		return !strings.ContainsRune("_./-", c)
 	}) >= 0 {
 		target = "'" + strings.ReplaceAll(target, "'", "'\"'\"'") + "'"
 	}
