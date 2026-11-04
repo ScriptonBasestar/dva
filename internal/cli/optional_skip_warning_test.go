@@ -334,12 +334,12 @@ func TestOptionalSkipIsReportedByEveryRemainingVerb(t *testing.T) {
 		run   func(c *config.Config, e *envLoad) error
 	}{
 		{"dva down", "", func(c *config.Config, e *envLoad) error { return runPlanDown(c, e, "dev", nil) }},
-		{"dva stop", "", func(c *config.Config, e *envLoad) error { return runPlanStop(c, e, "dev", nil) }},
+		{"dva stop", "", func(c *config.Config, e *envLoad) error { return runPlanStop(t.Context(), c, e, "dev", nil) }},
 		{"dva restart", "", func(c *config.Config, e *envLoad) error {
 			return runPlanRestart(context.Background(), c, e, "dev", nil)
 		}},
 		{"dva down <composition>", "dev", func(c *config.Config, e *envLoad) error { return runCompositionDown(c, e, "all", nil) }},
-		{"dva stop <composition>", "dev", func(c *config.Config, e *envLoad) error { return runCompositionStop(c, e, "all", nil) }},
+		{"dva stop <composition>", "dev", func(c *config.Config, e *envLoad) error { return runCompositionStop(t.Context(), c, e, "all", nil) }},
 		{"dva restart <composition>", "dev", func(c *config.Config, e *envLoad) error {
 			return runCompositionRestart(context.Background(), c, e, "all", nil)
 		}},

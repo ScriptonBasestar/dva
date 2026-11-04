@@ -158,6 +158,10 @@ base dva.yml
 
 Lifecycle, interaction, agent discovery는 같은 effective config를 서로 다른 목적으로 사용한다.
 
+시맨틱 검증은 `Config.ValidateDiagnostics()`가 생산자별 심각도와 메시지를 순서대로
+수집한다. CLI의 strict 판정은 심각도를 사용하고, 기존 `ValidateWarnings()`는 메시지만
+반환하는 호환 API로 남는다. CLI의 텍스트·JSON 표시는 기존 형식을 유지한다.
+
 ### Named lifecycle
 
 ```text

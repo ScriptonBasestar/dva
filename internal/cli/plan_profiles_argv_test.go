@@ -163,7 +163,9 @@ func TestPlanLogsArgvUnchangedWhenThePlanDeclaresNoProfiles(t *testing.T) {
 func TestPlanTeardownArgvActivatesThePlanProfiles(t *testing.T) {
 	for verb, run := range map[string]func(*config.Config, *envLoad, string, []string) error{
 		"down": runPlanDown,
-		"stop": runPlanStop,
+		"stop": func(c *config.Config, el *envLoad, name string, args []string) error {
+			return runPlanStop(t.Context(), c, el, name, args)
+		},
 	} {
 		t.Run(verb, func(t *testing.T) {
 			enableDryRun(t)

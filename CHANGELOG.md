@@ -20,6 +20,13 @@ All notable changes to DVA are documented here.
 
 ### Fixed
 
+- `stop`의 전체 스택·plan·composition 경로에 호출자·신호 취소를 연결해 취소 후
+  나머지 대상을 중지하지 않습니다. 이미 중지한 대상은 그대로 유지합니다.
+- validate의 strict 판정은 `ℹ` 접두사 대신 생산자가 선언한 심각도를 사용합니다.
+  기존 경고 문구·순서와 JSON 형식은 유지합니다.
+- 스킬 설치·상태 조회의 번들 해시 의존성을 호출별로 격리해 동시 작업의 상태가
+  서로 섞이지 않도록 했습니다. 기존 영수증과 기본 해시 계산은 유지합니다.
+
 - 하위 프로젝트의 설정 파일 누락을 경고하고, stack compose의 잘못된 `profiles`에는
   plan entry의 수정 위치를 안내합니다. 부모가 명시적으로 소유한 Compose 파일은
   child의 미등록 파일 drift로 보고하지 않습니다.

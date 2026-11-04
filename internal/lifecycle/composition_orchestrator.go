@@ -2,6 +2,7 @@ package lifecycle
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -278,12 +279,12 @@ func (o *CompositionOrchestrator) Up(ctx context.Context, opts CompositionUpOpti
 func (o *CompositionOrchestrator) Down(ctx context.Context, opts CompositionDownOptions) (*CompositionReport, error) {
 	return o.teardown(ctx, "down", func(ctx context.Context, child *ExecutionPlan) error {
 		return o.exec.Down(ctx, child, opts.Destructive[child.Name])
-	})
+	}, false)
 }
 
 // Stop is Down's ordering with the child's resources preserved (TASK-260 §4.3).
 func (o *CompositionOrchestrator) Stop(ctx context.Context) (*CompositionReport, error) {
-	return o.teardown(ctx, "stop", o.exec.Stop)
+	return o.teardown(ctx, "stop", o.exec.Stop, true)
 }
 
 // teardown walks children in reverse order, skipping the ones that are not up.
@@ -293,13 +294,24 @@ func (o *CompositionOrchestrator) Stop(ctx context.Context) (*CompositionReport,
 // reuses the two that mean "we brought it down" and "we tried and it did not go down"
 // rather than inventing a sixth. The rollback block stays empty — it reports the
 // automatic rollback of a failed `up`, which an explicit teardown is not.
-func (o *CompositionOrchestrator) teardown(ctx context.Context, verb string, run func(context.Context, *ExecutionPlan) error) (*CompositionReport, error) {
+func (o *CompositionOrchestrator) teardown(ctx context.Context, verb string, run func(context.Context, *ExecutionPlan) error, stopOnCancel bool) (*CompositionReport, error) {
 	report := o.newReport(CompositionOutcomeDown)
 	var failures []string
+	var failureErrs []error
 
 	for i, entry := range slices.Backward(o.plan.Entries) {
+		if stopOnCancel {
+			if err := ctx.Err(); err != nil {
+				return compositionTeardownCancelled(report, err, failureErrs)
+			}
+		}
 		child := entry.ChildPlan
 		up, err := o.exec.IsUp(ctx, child)
+		if stopOnCancel {
+			if cancelErr := ctx.Err(); cancelErr != nil {
+				return compositionTeardownCancelled(report, cancelErr, failureErrs)
+			}
+		}
 		if err != nil {
 			// An unreadable state is not evidence the child is down. Tear it down anyway
 			// and let the child's idempotent teardown absorb a no-op (§6.3).
@@ -314,9 +326,20 @@ func (o *CompositionOrchestrator) teardown(ctx context.Context, verb string, run
 			report.Children[i].State = ChildStateRollbackFailed
 			report.Children[i].Error = err.Error()
 			failures = append(failures, fmt.Sprintf("%s: %v", child.Name, err))
+			failureErrs = append(failureErrs, fmt.Errorf("%s: %w", child.Name, err))
+			if stopOnCancel {
+				if cancelErr := ctx.Err(); cancelErr != nil {
+					return compositionTeardownCancelled(report, cancelErr, failureErrs)
+				}
+			}
 			continue
 		}
 		report.Children[i].State = ChildStateRolledBack
+	}
+	if stopOnCancel {
+		if err := ctx.Err(); err != nil {
+			return compositionTeardownCancelled(report, err, failureErrs)
+		}
 	}
 
 	if len(failures) > 0 {
@@ -326,6 +349,16 @@ func (o *CompositionOrchestrator) teardown(ctx context.Context, verb string, run
 		return report, &CompositionError{Err: err, Report: report}
 	}
 	return report, nil
+}
+
+// compositionTeardownCancelled retains any rows completed before cancellation, but never
+// returns a successful teardown report once its caller withdrew the operation.
+func compositionTeardownCancelled(report *CompositionReport, cancelErr error, prior []error) (*CompositionReport, error) {
+	errs := append(append([]error{}, prior...), cancelErr)
+	err := errors.Join(errs...)
+	report.Outcome = CompositionOutcomeFailed
+	report.Error = err.Error()
+	return report, &CompositionError{Err: err, Report: report}
 }
 
 // Status reports live child state in the same shape as the execution report

@@ -9,41 +9,46 @@ import (
 	"strings"
 )
 
-// ValidateWarnings runs semantic warning checks and returns human-readable messages.
-// These are non-fatal issues that should be surfaced by `dva config validate`.
-func (c *Config) ValidateWarnings() []string {
-	var warnings []string
-	warnings = append(warnings, c.warnLegacyModes()...)
-	warnings = append(warnings, c.warnLegacyStackOrder()...)
-	warnings = append(warnings, c.warnLegacyEnvironmentFields()...)
-	warnings = append(warnings, c.warnNoPlansHint()...)
-	warnings = append(warnings, c.warnHealthCheckRedundancy()...)
-	warnings = append(warnings, c.warnUnreachableHealthChecks()...)
-	warnings = append(warnings, c.warnDuplicateParentSubcommand()...)
-	warnings = append(warnings, c.warnDuplicateStackOrder()...)
-	warnings = append(warnings, c.warnMultiStackComposeSplit()...)
-	warnings = append(warnings, c.warnMissingDefaultMode()...)
-	warnings = append(warnings, c.warnDefaultModeHeavyInfra()...)
-	warnings = append(warnings, c.warnChildOverridesParentCritical()...)
-	warnings = append(warnings, c.warnDeepSubcommandNesting()...)
-	warnings = append(warnings, c.warnLiteralKeyShadowsSubproject()...)
-	warnings = append(warnings, c.warnUnusedIntentionalShadows()...)
-	warnings = append(warnings, c.warnMissingSubprojectConfigs()...)
-	warnings = append(warnings, c.warnUnreachableCommands()...)
-	warnings = append(warnings, c.warnInertProvisionSteps()...)
-	warnings = append(warnings, c.warnIgnoredParallelSteps()...)
-	warnings = append(warnings, c.warnIgnoredPlanFilters()...)
-	warnings = append(warnings, c.warnDuplicatePlanDeclarations()...)
-	warnings = append(warnings, c.warnMultiplePlansWithoutDefault()...)
-	warnings = append(warnings, c.warnPlanServicesNotDeclared()...)
-	warnings = append(warnings, c.warnPlanProfilesNotDefined()...)
-	warnings = append(warnings, c.warnUnreferencedEnvironmentsAndSites()...)
-	warnings = append(warnings, c.warnNoOpEntryOverrides()...)
-	warnings = append(warnings, c.warnEmptyInteractionCommands()...)
-	warnings = append(warnings, c.warnRemovedCLIReferences()...)
-	warnings = append(warnings, c.warnEquivalentReplaceHooks()...)
-	warnings = append(warnings, c.warnOrphanHealthChecks()...)
-	warnings = append(warnings, c.warnMultiplePrimaryCompose()...)
+// ValidateDiagnostics runs semantic checks in their canonical presentation order.
+// Severity is assigned by the producer, never inferred from a message or glyph.
+func (c *Config) ValidateDiagnostics() []ValidationDiagnostic {
+	var diagnostics []ValidationDiagnostic
+	add := func(severity DiagnosticSeverity, messages []string) {
+		for _, message := range messages {
+			diagnostics = append(diagnostics, ValidationDiagnostic{Severity: severity, Message: message})
+		}
+	}
+	add(SeverityWarning, c.warnLegacyModes())
+	add(SeverityWarning, c.warnLegacyStackOrder())
+	add(SeverityWarning, c.warnLegacyEnvironmentFields())
+	add(SeverityInfo, c.warnNoPlansHint())
+	add(SeverityWarning, c.warnHealthCheckRedundancy())
+	add(SeverityWarning, c.warnUnreachableHealthChecks())
+	add(SeverityWarning, c.warnDuplicateParentSubcommand())
+	add(SeverityWarning, c.warnDuplicateStackOrder())
+	add(SeverityWarning, c.warnMultiStackComposeSplit())
+	add(SeverityWarning, c.warnMissingDefaultMode())
+	add(SeverityWarning, c.warnDefaultModeHeavyInfra())
+	add(SeverityWarning, c.warnChildOverridesParentCritical())
+	add(SeverityWarning, c.warnDeepSubcommandNesting())
+	add(SeverityWarning, c.warnLiteralKeyShadowsSubproject())
+	add(SeverityWarning, c.warnUnusedIntentionalShadows())
+	add(SeverityWarning, c.warnMissingSubprojectConfigs())
+	add(SeverityWarning, c.warnUnreachableCommands())
+	add(SeverityWarning, c.warnInertProvisionSteps())
+	add(SeverityWarning, c.warnIgnoredParallelSteps())
+	add(SeverityWarning, c.warnIgnoredPlanFilters())
+	add(SeverityWarning, c.warnDuplicatePlanDeclarations())
+	add(SeverityWarning, c.warnMultiplePlansWithoutDefault())
+	add(SeverityWarning, c.warnPlanServicesNotDeclared())
+	add(SeverityWarning, c.warnPlanProfilesNotDefined())
+	add(SeverityWarning, c.warnUnreferencedEnvironmentsAndSites())
+	add(SeverityWarning, c.warnNoOpEntryOverrides())
+	add(SeverityWarning, c.warnEmptyInteractionCommands())
+	add(SeverityWarning, c.warnRemovedCLIReferences())
+	add(SeverityWarning, c.warnEquivalentReplaceHooks())
+	add(SeverityWarning, c.warnOrphanHealthChecks())
+	add(SeverityWarning, c.warnMultiplePrimaryCompose())
 
 	// Build a contextual environment for accurate interpolation checks.
 	//
@@ -56,14 +61,14 @@ func (c *Config) ValidateWarnings() []string {
 	// and it does not claim success.
 	env := NewEnvironment(c.Environment, c.FileDir(), c.FileDir())
 
-	warnings = append(warnings, c.warnUnresolvedEnvVars(env, c.EnvFile != nil)...)
-	warnings = append(warnings, c.warnUnresolvedEnvFilePaths()...)
-	warnings = append(warnings, c.warnSuspiciousEnvPatterns()...)
+	add(SeverityWarning, c.warnUnresolvedEnvVars(env, c.EnvFile != nil))
+	add(SeverityWarning, c.warnUnresolvedEnvFilePaths())
+	add(SeverityWarning, c.warnSuspiciousEnvPatterns())
 
 	if c.filePath != "" {
-		warnings = append(warnings, validateCanonicalOrder(c.filePath)...)
+		add(SeverityWarning, validateCanonicalOrder(c.filePath))
 	}
-	return warnings
+	return diagnostics
 }
 
 // warnMissingSubprojectConfigs reports declarations that cannot currently resolve

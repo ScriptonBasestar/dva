@@ -135,13 +135,15 @@ Plan-path flags (only when a plan is being run, e.g. 'dva stop <plan>'):
 		if helpRequested(args) {
 			return cmd.Help()
 		}
+		ctx, stop := lifecycleCommandContext(cmd)
+		defer stop()
 		c := mustLoadConfig()
 		el := rootEnvLoad(c)
 		if planName, extraArgs, ok := detectPlanRoute(c, args); ok {
 			if isCompositionPlan(c, planName) {
-				return runCompositionStop(c, el, planName, extraArgs)
+				return runCompositionStop(ctx, c, el, planName, extraArgs)
 			}
-			return runPlanStop(c, el, planName, extraArgs)
+			return runPlanStop(ctx, c, el, planName, extraArgs)
 		}
 		// `dva stop --` ≡ `dva stop`. TASK-216; same ruling, same placement argument, and the
 		// same teardownCommon door as `down` above — stop and down share that helper, but not
@@ -164,7 +166,7 @@ Plan-path flags (only when a plan is being run, e.g. 'dva stop <plan>'):
 		}
 
 		orch := lifecycle.NewOrchestrator(c, e)
-		return orch.Stop(context.Background(), lifecycle.StopOptions{
+		return orch.Stop(ctx, lifecycle.StopOptions{
 			DryRun:      dryRun,
 			IncludeTags: includeTags,
 			ExcludeTags: excludeTags,

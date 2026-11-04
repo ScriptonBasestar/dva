@@ -48,6 +48,11 @@ type Options struct {
 	AllowDowngrade        bool
 	RestoreTakeoverBackup bool
 	Version               string
+
+	// bundleSHA is test-only operation state. Keeping it on Options prevents
+	// concurrent install/status operations from changing one another's source
+	// identity while leaving the public configuration surface unchanged.
+	bundleSHA func([]fileHash) string
 }
 
 type Result struct {
@@ -129,8 +134,12 @@ func DefaultRuntimes() []Runtime {
 	return []Runtime{RuntimeClaudeCode, RuntimeCodex, RuntimeOpenCode, RuntimeGrok, RuntimeAntigravity, RuntimeAgentMesh}
 }
 
-// currentBundleSHA is the bundle identity receipts are compared against.
-var currentBundleSHA = sourceBundleSHA
+func (options Options) currentBundleSHA(files []fileHash) string {
+	if options.bundleSHA != nil {
+		return options.bundleSHA(files)
+	}
+	return sourceBundleSHA(files)
+}
 
 // bundleDrift classifies an installed bundle that differs from this binary's. Only
 // release versions are ordered, so same-version dev builds and unreadable versions
@@ -184,7 +193,7 @@ func Status(options Options) (Result, error) {
 		if err != nil {
 			return Result{}, err
 		}
-		entry := resultEntry(target, resolved.Version, currentBundleSHA(bundle.files))
+		entry := resultEntry(target, resolved.Version, resolved.currentBundleSHA(bundle.files))
 		record, found, err := readReceipt(receiptPath(resolved.StateRoot, target.path))
 		if err != nil {
 			entry.Status, entry.Detail = "invalid-receipt", err.Error()

@@ -508,7 +508,7 @@ func runPlanDown(c *config.Config, el *envLoad, planName string, extraArgs []str
 	})
 }
 
-func runPlanStop(c *config.Config, el *envLoad, planName string, extraArgs []string) error {
+func runPlanStop(ctx context.Context, c *config.Config, el *envLoad, planName string, extraArgs []string) error {
 	flags, err := parsePlanFlags("stop", extraArgs)
 	if err != nil {
 		return err
@@ -539,7 +539,7 @@ func runPlanStop(c *config.Config, el *envLoad, planName string, extraArgs []str
 	if err != nil {
 		return err
 	}
-	return orch.Stop(context.Background(), lifecycle.StopOptions{
+	return orch.Stop(ctx, lifecycle.StopOptions{
 		DryRun: effectiveDryRun,
 		Names:  planEntryNames(plan),
 		Env:    plan.EnvironmentName,

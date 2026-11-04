@@ -348,6 +348,9 @@ func (o *Orchestrator) Stop(ctx context.Context, opts StopOptions) error {
 			stopErrs = append(stopErrs, fmt.Errorf("entry %q stop failed: %w", entry.Name, err))
 		}
 	}
+	if err := ctx.Err(); err != nil {
+		return errors.Join(errors.Join(stopErrs...), err)
+	}
 
 	return errors.Join(stopErrs...)
 }

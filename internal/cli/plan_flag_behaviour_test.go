@@ -90,7 +90,7 @@ func TestPlanStopDownRejectNoWait(t *testing.T) {
 		run  func(*config.Config, *config.Environment, []string) error
 	}{
 		{"stop", func(c *config.Config, e *config.Environment, a []string) error {
-			return runPlanStop(c, planEnv(e), "demo", a)
+			return runPlanStop(t.Context(), c, planEnv(e), "demo", a)
 		}},
 		{"down", func(c *config.Config, e *config.Environment, a []string) error {
 			return runPlanDown(c, planEnv(e), "demo", a)

@@ -49,7 +49,7 @@ func TestImportedPlanLifecycleParity(t *testing.T) {
 	if err := runPlanUp(t.Context(), root, planEnv(rootEnv), "child/dev", nil); err != nil {
 		t.Fatalf("second imported up: %v", err)
 	}
-	if err := runPlanStop(root, planEnv(rootEnv), "child/dev", nil); err != nil {
+	if err := runPlanStop(t.Context(), root, planEnv(rootEnv), "child/dev", nil); err != nil {
 		t.Fatalf("imported stop: %v", err)
 	}
 	if _, err := os.Stat(filepath.Join(child, "second-stop")); err != nil {

@@ -194,7 +194,7 @@ func TestPlanStopDryRunPrintsResolution(t *testing.T) {
 	e := planResolutionEnv(t, c)
 
 	_, stderr := captureStreams(t, func() {
-		if err := runPlanStop(c, planEnv(e), "p1", []string{"--dry-run"}); err != nil {
+		if err := runPlanStop(t.Context(), c, planEnv(e), "p1", []string{"--dry-run"}); err != nil {
 			t.Errorf("plan stop dry-run failed: %v", err)
 		}
 	})

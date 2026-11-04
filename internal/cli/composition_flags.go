@@ -399,7 +399,7 @@ func runCompositionDown(c *config.Config, el *envLoad, planName string, extraArg
 	return renderCompositionReport(report, runErr)
 }
 
-func runCompositionStop(c *config.Config, el *envLoad, planName string, extraArgs []string) error {
+func runCompositionStop(ctx context.Context, c *config.Config, el *envLoad, planName string, extraArgs []string) error {
 	comp, err := lifecycle.ResolveCompositionPlan(c, planName)
 	if err != nil {
 		return err
@@ -414,7 +414,7 @@ func runCompositionStop(c *config.Config, el *envLoad, planName string, extraArg
 	if err != nil {
 		return err
 	}
-	report, runErr := orch.Stop(context.Background())
+	report, runErr := orch.Stop(ctx)
 	return renderCompositionReport(report, runErr)
 }
 

@@ -104,9 +104,11 @@ See USAGE.md's "config validate" section for the full list of semantic checks.`,
 		}
 
 		// Semantic warnings (version, health checks, duplicate commands, etc.)
-		semanticWarnings := c.ValidateWarnings()
-		for _, w := range semanticWarnings {
-			_, _ = fmt.Fprintf(notice, "[warn] semantic: %s\n", w)
+		semanticDiagnostics := c.ValidateDiagnostics()
+		var semanticWarnings []string
+		for _, diagnostic := range semanticDiagnostics {
+			semanticWarnings = append(semanticWarnings, diagnostic.Message)
+			_, _ = fmt.Fprintf(notice, "[warn] semantic: %s\n", diagnostic.Message)
 		}
 		report.add("semantic", semanticWarnings...)
 
@@ -154,7 +156,7 @@ See USAGE.md's "config validate" section for the full list of semantic checks.`,
 			return err
 		}
 
-		if validateStrict && (len(driftWarnings) > 0 || hasActionableWarning(semanticWarnings) || len(collisionWarnings) > 0 || len(suppressed.overbroad) > 0) {
+		if validateStrict && (len(driftWarnings) > 0 || hasActionableWarning(semanticDiagnostics) || len(collisionWarnings) > 0 || len(suppressed.overbroad) > 0) {
 			return report.fail(fmt.Errorf("config warnings detected; review warnings above (optional AI help: am run dva-improve)"))
 		}
 
@@ -274,10 +276,7 @@ func init() {
 	configCmd.AddCommand(validateCmd)
 }
 
-// hasActionableWarning ignores "ℹ" hints: a config with no plans is the supported
-// bare lifecycle `dva init` writes, so advice about it must not fail --strict.
-func hasActionableWarning(warnings []string) bool {
-	return slices.ContainsFunc(warnings, func(warning string) bool {
-		return !strings.HasPrefix(warning, "ℹ")
-	})
+// hasActionableWarning uses producer-assigned severity, independent of rendering.
+func hasActionableWarning(diagnostics []config.ValidationDiagnostic) bool {
+	return slices.ContainsFunc(diagnostics, config.ValidationDiagnostic.Actionable)
 }

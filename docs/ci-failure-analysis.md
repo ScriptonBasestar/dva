@@ -37,6 +37,14 @@ deadline과 별도로 GNU `timeout`의 10분 제한과 30초 강제 종료 유�
 
 ## 검증 기록
 
+2026-11-04: DVA는 `.ce/task-runtime.yaml`에 보드 판정 runner만 선언하며,
+`integration-ci-verifier`는 선언하지 않는다. 따라서 hosted CI 성공을 CE 통합의 CI 증거로
+직접 수용하는 경로는 아직 없고, 현재 자동 통합은 독립 리뷰 증거를 사용한다.
+`tools/cilabels`는 Makefile–workflow 타깃, `tools/ciparity`는 docs 단계 도구의 정합성을
+검사하며 통합 CI 증거 검증기를 대신하지 않는다. 후속 도입 시에는 이 검사들과 필요한
+hosted job 집합을 대조해야 한다. 공통 증거 형식과 검증은 catalog ID `ce-agent-kit`의
+`docs/10-ce-cli/48-trunk-authorization.md`가 소유한다.
+
 2026-11-04: `TestRunDoctorCommandTimeoutTerminatesShellChildren`의 보고된 부하
 플레이크는 guarded 단독 테스트 20회에서 재현되지 않았다(패키지 합계 4.529초).
 현재 테스트는 PID 파일 미생성을 `read child pid`, 종료되지 않은 자식을

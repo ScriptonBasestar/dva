@@ -1,9 +1,34 @@
 package cli
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
+
+	"github.com/ScriptonBasestar/dva/internal/config"
 )
+
+func TestValidationDiagnosticNoPlansStrictOutputCompatibility(t *testing.T) {
+	path := writeValidateConfigForTest(t, "version: \"0.1.0\"\nstack:\n  task:\n    script:\n      up: \"true\"\n")
+	plain := runValidateCommandForTest(t, path, "validate", "--strict")
+	if plain.err != "" || !strings.Contains(plain.stdout, "[warn] semantic: ℹ No 'plans' defined") {
+		t.Fatalf("informational strict output changed: %+v", plain)
+	}
+	oldJSON := jsonOutput
+	jsonOutput = true
+	t.Cleanup(func() { jsonOutput = oldJSON })
+	result := runValidateCommandForTest(t, path, "validate", "--strict")
+	var report validateReport
+	if err := json.Unmarshal([]byte(result.stdout), &report); err != nil {
+		t.Fatalf("invalid JSON: %v: %s", err, result.stdout)
+	}
+	if result.err != "" || !report.Valid || len(report.Warnings) != 1 || report.Warnings[0].Category != "semantic" || report.Warnings[0].Message != "ℹ No 'plans' defined — consider adding execution plans for 'dva up <name>' support" {
+		t.Fatalf("informational JSON contract changed: result=%+v report=%+v", result, report)
+	}
+	if strings.Contains(result.stdout, `"severity"`) {
+		t.Fatalf("internal severity leaked into the JSON contract: %s", result.stdout)
+	}
+}
 
 // TestValidatePlanDriftWarningsRenderAndPromoteUnderStrict is the end-to-end coverage
 // TASK-244 criterion 4 asks for: D6 (duplicate plan declarations) and D7 (multiple
@@ -79,11 +104,19 @@ plans:
 }
 
 func TestStrictIgnoresInformationalHints(t *testing.T) {
-	if hasActionableWarning([]string{"ℹ No 'plans' defined"}) {
+	info := config.ValidationDiagnostic{Severity: config.SeverityInfo, Message: "No plans defined"}
+	warning := config.ValidationDiagnostic{Severity: config.SeverityWarning, Message: "ℹ Still an actionable warning"}
+	if hasActionableWarning([]config.ValidationDiagnostic{info}) {
 		t.Fatal("an informational hint must not fail --strict")
 	}
-	if !hasActionableWarning([]string{"ℹ hint", "⚠ deprecated"}) {
-		t.Fatal("a real warning must still fail --strict")
+	if !hasActionableWarning([]config.ValidationDiagnostic{info, warning}) {
+		t.Fatal("a warning must fail --strict even with an informational glyph")
+	}
+	if !hasActionableWarning([]config.ValidationDiagnostic{{Severity: config.DiagnosticSeverity(99), Message: "ℹ Unknown classification"}}) {
+		t.Fatal("an unknown severity must not bypass --strict")
+	}
+	if hasActionableWarning(nil) {
+		t.Fatal("no diagnostics must not fail --strict")
 	}
 }
 

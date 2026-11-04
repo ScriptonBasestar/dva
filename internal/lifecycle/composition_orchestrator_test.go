@@ -35,7 +35,8 @@ type fakeChildExecutor struct {
 
 	// onUp fires inside the named child's Up, before it returns — the seam a signal
 	// arriving mid-run occupies.
-	onUp map[string]func()
+	onUp   map[string]func()
+	onStop map[string]func()
 }
 
 func newFakeChildExecutor() *fakeChildExecutor {
@@ -47,6 +48,7 @@ func newFakeChildExecutor() *fakeChildExecutor {
 		live:     map[string]bool{},
 		liveErr:  map[string]error{},
 		onUp:     map[string]func(){},
+		onStop:   map[string]func(){},
 	}
 }
 
@@ -112,9 +114,18 @@ func (f *fakeChildExecutor) Down(ctx context.Context, child *ExecutionPlan, opts
 	return nil
 }
 
-func (f *fakeChildExecutor) Stop(_ context.Context, child *ExecutionPlan) error {
+func (f *fakeChildExecutor) Stop(ctx context.Context, child *ExecutionPlan) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	f.enter("stop:" + child.Name)
 	defer f.leave()
+	if hook := f.onStop[child.Name]; hook != nil {
+		hook()
+	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	return f.stopErr[child.Name]
 }
 
@@ -500,6 +511,79 @@ func TestCompositionDownIsLIFOAndReentrant(t *testing.T) {
 		"isup:c-plan", "stop:c-plan",
 		"isup:b-plan", "stop:b-plan",
 		"isup:a-plan", "stop:a-plan",
+	})
+}
+
+// TestCompositionStopHonorsCancellationWithoutStartingLaterChildren keeps cancellation
+// observable without retrying or silently progressing to another child.
+func TestCompositionStopHonorsCancellationWithoutStartingLaterChildren(t *testing.T) {
+	plan := resolveTestComposition(t)
+
+	t.Run("before execution", func(t *testing.T) {
+		exec := newFakeChildExecutor()
+		ctx, cancel := context.WithCancel(t.Context())
+		cancel()
+		report, err := newTestCompositionOrchestrator(t, plan, exec).Stop(ctx)
+		if !errors.Is(err, context.Canceled) {
+			t.Fatalf("Stop error = %v, want context.Canceled", err)
+		}
+		if report.Outcome != CompositionOutcomeFailed {
+			t.Fatalf("cancelled Stop report = %+v, err = %v; cancellation must not report success", report, err)
+		}
+		if got := exec.recorded(); len(got) != 0 {
+			t.Fatalf("cancelled Stop calls = %v, want no child state query or stop", got)
+		}
+	})
+
+	t.Run("during child stop", func(t *testing.T) {
+		exec := newFakeChildExecutor()
+		if _, err := newTestCompositionOrchestrator(t, plan, exec).Up(t.Context(), CompositionUpOptions{NoWait: true}); err != nil {
+			t.Fatalf("Up: %v", err)
+		}
+		exec.mu.Lock()
+		exec.calls = nil
+		exec.mu.Unlock()
+
+		ctx, cancel := context.WithCancel(t.Context())
+		defer cancel()
+		exec.onStop["c-plan"] = cancel
+		report, err := newTestCompositionOrchestrator(t, plan, exec).Stop(ctx)
+		if !errors.Is(err, context.Canceled) {
+			t.Fatalf("Stop error = %v, want context.Canceled", err)
+		}
+		requireCalls(t, exec.recorded(), []string{"isup:c-plan", "stop:c-plan"})
+		if report.Outcome != CompositionOutcomeFailed {
+			t.Fatalf("outcome = %q, want %q", report.Outcome, CompositionOutcomeFailed)
+		}
+		for _, child := range report.Children {
+			if child.Plan == "c-plan" && child.State != ChildStateRollbackFailed {
+				t.Fatalf("cancelled child state = %q, want %q", child.State, ChildStateRollbackFailed)
+			}
+		}
+	})
+
+	t.Run("after earlier failure", func(t *testing.T) {
+		exec := newFakeChildExecutor()
+		if _, err := newTestCompositionOrchestrator(t, plan, exec).Up(t.Context(), CompositionUpOptions{NoWait: true}); err != nil {
+			t.Fatalf("Up: %v", err)
+		}
+		exec.mu.Lock()
+		exec.calls = nil
+		exec.mu.Unlock()
+
+		prior := errors.New("c-plan stop failed")
+		exec.stopErr["c-plan"] = prior
+		ctx, cancel := context.WithCancel(t.Context())
+		defer cancel()
+		exec.onStop["b-plan"] = cancel
+		report, err := newTestCompositionOrchestrator(t, plan, exec).Stop(ctx)
+		if !errors.Is(err, prior) || !errors.Is(err, context.Canceled) {
+			t.Fatalf("Stop error = %v, want both prior failure and context.Canceled", err)
+		}
+		if !strings.Contains(report.Error, prior.Error()) || !strings.Contains(report.Error, context.Canceled.Error()) {
+			t.Fatalf("report error = %q, want prior failure and cancellation", report.Error)
+		}
+		requireCalls(t, exec.recorded(), []string{"isup:c-plan", "stop:c-plan", "isup:b-plan", "stop:b-plan"})
 	})
 }
 

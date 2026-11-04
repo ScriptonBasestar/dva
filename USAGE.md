@@ -449,6 +449,10 @@ dva up backend/local-dev
 | `dva logs [NAME] [ENTRY]` | 로그 보기 (엔트리 지정 가능) |
 | `dva build [NAME] [ENTRY]` | 빌드 수행 (엔트리 지정 가능) |
 
+`stop`은 전체 스택·단일 plan·composition 경로 모두 호출자 취소와
+SIGINT·SIGTERM·SIGHUP을 전달합니다. 취소되면 이후 대상을 중지하지 않고 실패로
+종료하며, 이미 중지한 대상을 다시 시작하지 않습니다.
+
 ```bash
 dva up local-dev
 dva down local-dev
@@ -832,6 +836,10 @@ dva config validate --strict         # drift 경고 시에도 검증 실패 처�
 dva config validate --show-ignored   # 억제된 항목을 하나씩 펼쳐 보기
 dva config validate --suggest-ignore # 현재 suggestion을 붙여 넣을 수 있는 블록으로 출력
 ```
+
+`--strict`는 진단이 선언한 심각도로 시맨틱 경고를 판정합니다. stack에 plan이 없다는
+정보 안내는 실패시키지 않으며, 메시지의 아이콘이나 문구가 판정을 바꾸지 않습니다.
+기존 경고 문구·순서와 JSON의 `semantic` category는 유지합니다.
 
 compose 파일에 대한 config drift 경고는 두 방향을 따로 검사합니다. 등록됐지만 디스크에
 없는 파일은 `compose file "..." is configured by dva.yml but does not exist`로 보고합니다.
