@@ -13,6 +13,67 @@ tag는 Release 없이 남았고 공개는 v0.4.1로 옮겼다([v0.4.1로 공개 
 이동하지 않는다. 변경 목록은 [CHANGELOG](CHANGELOG.md)의 0.4.4·0.4.3 섹션이, 그 뒤 새 변경은
 Unreleased가 소유한다. 이 문서의 작성이나 로컬 설치는 새 공개 릴리스가 아니다.
 
+### 다음 후보 범위 검토 — 2026-11-04
+
+검토 기준 소스는 `c8a06bc5a175d978ac7f70b18690d498fe99b23d`다. 아래는 후보 준비를
+위한 권고이며 버전 확정·후보 검증 완료·공개 승인을 뜻하지 않는다. 변경 목록의 정본은
+계속 CHANGELOG Unreleased이며, 여기에는 범위 선택과 업그레이드 판단만 둔다.
+
+| 선택안 | 포함·이월 | 판단 |
+|---|---|---|
+| **권장: 다음 0.4.x 유지보수 후보** | 기준 소스의 Unreleased 변경 포함. TASK-550의 legacy 제거는 v0.5.0으로 이월 | 실행 실패·취소 전달과 진단 개선을 기존 설정 모델을 유지하며 전달한다. 버전 확정 시 기본 patch 정책에 따른 후보는 v0.4.5다. |
+| v0.5.0 후보 | 위 변경에 TASK-550의 schema·CLI·문서 제거와 migration 검증 추가 | [승인된 제거 결정](decisions/501-modes-legacy-or-removed.md)을 실행한다. 제거 구현과 업그레이드 경로 검증이 추가로 필요하며 현재 소스를 그대로 공개할 수 없다. |
+
+권고 근거는 기존 설정을 쓰는 사용자가 실행 결과를 올바르게 받도록 하는 수정과,
+설정 모델 제거를 분리해 각 변경의 인수 기준을 명확하게 유지하는 것이다.
+`modes`/`default_mode` 제거 여부를 다시 결정하는 것은 아니다. 제거 버전은 이미 v0.5.0으로
+승인됐으며, [TASK-550](tasks/todo/550-remove-modes-v050.md)은 그 범위에서 실행한다.
+
+**0.4.x 후보에도 업그레이드 주의사항이 필요하다.** 설정 제거를 이월한다는 의미이며,
+행위 변화가 없는 교체판을 약속하지 않는다. 릴리스 노트에서 다음을 명시한다.
+
+- readiness timeout·준비 실패가 경고 후 성공 대신 비0으로 종료한다. 기존 자동화는
+  종료 코드를 무시하지 않고 실제 준비 실패를 처리해야 한다.
+- `up`·`restart`·`stop`·`status`의 취소는 실패로 전달되며, 이미 수행·조회한 부분 결과가
+  남을 수 있다. 취소가 서비스 전체의 원상 복구를 뜻하지 않는다. `down`의 기존
+  best-effort 정리 정책은 이번 범위에서 바꾸지 않는다.
+- 추가 진단으로 기존 설정의 `validate --strict`·`doctor --strict`가 실패할 수 있다.
+  일반 경고와 실행을 막는 입력 오류를 구분하고, 명시적 예외는 실제 의도가 있을 때만 선언한다.
+- `make install` 기본 목적지가 단일 경로 `~/.local/share/ce/bin`으로 바뀐다. 이전 경로의
+  실행 파일을 자동 제거하지 않으므로 PATH에서 실행되는 사본을 확인한다.
+- `fail_fast: false`는 명시적으로 선택할 때 독립 CI step을 계속 실행한다. 기본 fail-fast와
+  실패한 의존 step의 건너뛰기, 전체 실패 결과는 유지한다.
+
+v0.5.0 선택 시에는 여기에 `modes`·`default_mode`·`--mode` 제거와 plans 이관 안내를 더한다.
+`config migrate`는 모든 mode를 자동 변환하지 않는다. `internal/config/migrate_modes.go`의
+변환 가능 부분집합과 `migrate_report.go`의 `Left for you` 수동 분해 항목을 설명하고,
+legacy schema 거부 뒤에도 migrate가 원문을 읽는 회귀 검증을 요구한다.
+
+**TASK-575의 릴리스 처리 제안** — 아래는 수락된 예외가 아니다. 카드는 backlog에 유지하며,
+항목별 수정 또는 명시적 수락이 있어야 카드의 완료 기준을 충족한다.
+
+| 항목 | 기준 소스에서 확인한 사실 | 권장 처리 |
+|---|---|---|
+| doctor child env 검사 | `internal/cli/doctor.go`의 `runDoctorChecks`는 root의 EnvFile을 검사한다. | child owner·검사 범위·부분 실패 표기를 먼저 설계한 뒤 별도 수정. 현재 root 검사 범위를 공개 설명에 유지한다. |
+| restart 경고 | whole-stack·plan·composition restart 경로에는 up 경로의 unsealed 경고 호출이 없다. 입력 로드 오류의 실행 거부는 별도로 유지된다. | route fixture로 경고 출력 계약을 고정한 뒤 수정 후보로 채택한다. 누락 경고를 입력 오류 우회로 설명하지 않는다. |
+| 보간 path의 unseal hint | `config_env_select.go`는 선언 문자열과 정확히 매칭하고, `doctor_envsops.go`는 그 문자열로 명령을 만든다. env bridge는 선언 path를 직접 검사한다. | 단순히 확장 path로 바꾸지 않는다. shell 인용과 loader/bridge의 path 해석 차이를 fixture로 검증하기 전에는 올바른 복구 명령이라고 보증하지 않는다. |
+| unknown plan 앞 경고 | `compose.go`의 root-owned up 경로는 인자 거부 전에 unsealed 경고를 호출한다. | typo와 누락 env를 함께 둔 fixture로 stderr·비0 결과를 확인한 뒤 진단 순서 개선 여부를 결정한다. |
+
+실사용 장애나 이 네 항목의 새로운 실행 재현 증거는 이번 정적 검토에서 얻지 않았다.
+따라서 새 release blocker나 수정 완료로 분류하지 않는다.
+
+**이월과 후보 검증 순서**
+
+1. TASK-538은 Singlepageweb 파일럿 체크아웃에서 두 작업·두 사이트의 대상 선택과
+   소유권을 검증할 수 있을 때 재개한다. 이 장비에 파일럿이 없어 검증 완료로 처리하지 않는다.
+2. CI verifier·공통 evidence 강화·doctor 부하 플레이크는 별도 후보로 유지한다.
+   현재 실패가 재현됐다는 의미가 아니며 근거는 [CI 실패 분석](docs/ci-failure-analysis.md)에 둔다.
+3. 선택된 버전·포함/이월을 확정한 뒤 Version·CHANGELOG 후보 섹션·릴리스 노트를 함께 고정한다.
+4. 독립 리뷰 후 동일 후보의 `dva ci full`, hosted CI와 비게시 `make release-check` 결과를
+   연결한다. 기존 소스 CI 성공은 새 후보의 산출물·설치·공개 검증을 대신하지 않는다.
+5. 후보 검증과 공개 인가가 갖춰지면 [수동 공개 런북](docs/52-manual-release-runbook.md)의
+   preflight·공개·postflight를 따른다. 이 검토에서는 tag·Release를 만들지 않는다.
+
 ### 유한 OCI CI 단계 (v0.4.3 공개)
 
 - devenv ISSUE-091의 고정 fixture 실행을 위해 `ci` 안의 일회용 Docker/Linux cgroup-v2 단계를 구현했다.
