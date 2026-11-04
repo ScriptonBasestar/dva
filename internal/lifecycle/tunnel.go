@@ -151,10 +151,6 @@ func (m *tunnelManager) CloseStatus() {
 // authenticate runs the docs/68 §3 checks for the declared auth mode before
 // any cloudflared tunnel process is started. Output that may contain a JWT is
 // captured and discarded — it is never printed or logged.
-func (m *tunnelManager) authenticate(t *config.TunnelConfig) error {
-	return m.authenticateContext(context.Background(), t)
-}
-
 func (m *tunnelManager) authenticateContext(ctx context.Context, t *config.TunnelConfig) error {
 	if err := ctx.Err(); err != nil {
 		return err
@@ -197,10 +193,6 @@ func (m *tunnelManager) authenticateContext(ctx context.Context, t *config.Tunne
 // the JWT, so the writer counts bytes and retains none of them: the token is
 // never stored or logged, and whitespace is not trimmed. Authenticated means
 // the process succeeded and the count is greater than zero.
-func runCloudflaredDiscard(hostname string) error {
-	return runCloudflaredDiscardContext(context.Background(), hostname)
-}
-
 func runCloudflaredDiscardContext(ctx context.Context, hostname string) error {
 	cmd := exec.Command("cloudflared", "access", "token", "--app", "https://"+hostname)
 	var stdout stdoutByteCounter
@@ -225,10 +217,6 @@ func (c *stdoutByteCounter) Write(p []byte) (int, error) {
 
 // runCloudflaredLogin runs `cloudflared access login` in the foreground with
 // inherited stdio so the browser flow works.
-func runCloudflaredLogin(hostname string) error {
-	return runCloudflaredLoginContext(context.Background(), hostname)
-}
-
 func runCloudflaredLoginContext(ctx context.Context, hostname string) error {
 	cmd := exec.Command("cloudflared", "access", "login", "--quiet", "https://"+hostname)
 	cmd.Stdin = os.Stdin
@@ -272,10 +260,6 @@ func (m *tunnelManager) startCloudflared(t *config.TunnelConfig, env *config.Env
 // waitForTunnelReady polls the local listener until it accepts connections.
 // TCP alone is not readiness — the caller has already established the auth
 // condition before the process was started.
-func waitForTunnelReady(local string, timeout time.Duration, proc *tunnelProcess) error {
-	return waitForTunnelReadyContext(context.Background(), local, timeout, proc)
-}
-
 func waitForTunnelReadyContext(ctx context.Context, local string, timeout time.Duration, proc *tunnelProcess) error {
 	deadline := time.Now().Add(timeout)
 	for {

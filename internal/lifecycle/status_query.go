@@ -52,14 +52,14 @@ func runOwnedQuery(ctx context.Context, cmd *exec.Cmd) error {
 			_ = cmd.Process.Kill()
 		}
 		select {
-		case <-done:
+		case _ = <-done:
 		case <-time.After(statusQueryGrace):
 			if processGroupsSupported() {
 				_ = killProcessGroup(cmd.Process.Pid)
 			} else {
 				_ = cmd.Process.Kill()
 			}
-			<-done
+			_ = <-done
 		}
 		return ctx.Err()
 	}
