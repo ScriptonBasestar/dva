@@ -1,0 +1,44 @@
+{
+  "verdict": "PASS",
+  "reviewer-execution": "/root/doctor_flake_diagnosis",
+  "reviewer-grade": "strong",
+  "executor-execution": "/root",
+  "executor-grade": "strong",
+  "contributors": [
+    {
+      "execution": "/root/parent_compose_drift",
+      "grade": "standard"
+    },
+    {
+      "execution": "/root/config_missing_and_profiles",
+      "grade": "standard"
+    }
+  ],
+  "review-runtime-execution": "review-status-query-cancellation",
+  "reviewed-commit": "eec8cff31ecd5aa7a58dba8041aabd387acdf043",
+  "reviewed-at": "2026-11-04T12:19:42Z",
+  "recorded-at": "2026-11-04T12:24:43Z",
+  "checks": [
+    {
+      "command": "sh scripts/without-dva.sh go test -race -count=1 -v ./internal/cli ./internal/lifecycle -run 'Test(StatusCommandReceivesSignals|StatusHealth.*|StatusTunnelCleanup.*|BackendStatusQueriesCancelTheirProcessGroups|CloudflaredAuthCancellationTerminatesItsProcessGroup|StatusRoutesHonorCallerCancellation|PreCanceledStatusRoutesRenderWithoutQueries|EndpointCancellationRendersCompletedResultsOnly|OrchestratorStatusCancellationReturnsPartialResults|CompositionStatusCancellationPreservesPriorRows)$'",
+      "result": "PASS",
+      "exit-code": 0
+    },
+    {
+      "command": "sh scripts/without-dva.sh go test -count=1 -v ./internal/lifecycle -run 'Test(HealthCheckerCheckContextCancelsCommandProbe|WaitUntilReadyWithContextCancelsHTTPProbe|WaitUntilReadyWithContextCancelsDuringProbeBatch|WaitUntilReadyWithContextCancelsCommandProbe|CheckHTTPAndTCPAllowZeroTimeout|WaitUntilReadyWithContextDoesNotStartCancelledProbe)$'",
+      "result": "PASS",
+      "exit-code": 0
+    },
+    {
+      "command": "sh scripts/without-dva.sh go test -race -count=1 -v ./internal/lifecycle -run '^TestCompositionDownDoesNotTreatCancelledObservationAsRunning$'",
+      "result": "PASS",
+      "exit-code": 0
+    },
+    {
+      "command": "sh scripts/without-dva.sh go test -count=1 -v ./internal/cli ./internal/lifecycle -run 'Test(StatusPlanPathEmitsJSON|StatusAllReachesWholeStackPastDefaultPlan|StatusWithoutConfigStaysTolerant|StatusAcceptsKnownPlanName|CompositionStatusReportsFailedChild|CheckHTTPAndTCPAllowZeroTimeout|BackendStatusQueriesCancelTheirProcessGroups)$'",
+      "result": "PASS",
+      "exit-code": 0
+    }
+  ],
+  "raw-review": "tasks/done/evidence/status-query-review.txt"
+}

@@ -167,6 +167,8 @@ Lifecycle, interaction, agent discovery는 같은 effective config를 서로 다
 상태 조회는 CLI의 신호 취소 context를 orchestration, health·endpoint probe와 터널 준비에
 전달한다. 취소는 일반 조회 실패와 구분해 부분 결과와 함께 반환하며, 이후 조회를
 시작하지 않는다. 터널 manager는 조회가 연 접근 프로세스의 회수만 소유한다.
+Down의 best-effort 정리를 위한 내부 상태 관찰은 호출자 취소와 분리해, 취소된 조회를
+실행 중이라는 근거로 바꾸지 않는다. 사용자 `status` 명령과 같은 취소 정책이 아니다.
 
 ```text
 dva up/down/stop/status <name>

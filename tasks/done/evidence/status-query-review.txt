@@ -1,0 +1,48 @@
+# Formal card review: status query cancellation
+
+Reviewed candidate: `eec8cff31ecd5aa7a58dba8041aabd387acdf043`
+Source worktree: `/Users/archmagece/worktrees/misc/dva/codex__mbp__fix__status-query-cancellation`
+Reviewer: `/root/doctor_flake_diagnosis` (strong; independent of implementation)
+CE review runtime/purpose: `review-status-query-cancellation` / review (coordination worktree was not used as candidate source)
+Review time: 2026-11-04 12:19:42 UTC
+Prior formal review attempts: none.
+
+## Executors
+
+- `/root/parent_compose_drift` — standard; lifecycle and backend query implementation.
+- `/root/config_missing_and_profiles` — standard; CLI wiring and backend cancellation test table.
+- `/root` — strong; per-probe health behavior, real-signal coverage, and bounded cleanup/reaping integration.
+
+## Criterion 1 — Cancel runtime queries and HTTP/TCP/command probes
+
+Declared command actually run on the reviewed candidate:
+`sh scripts/without-dva.sh go test -race -count=1 -v ./internal/cli ./internal/lifecycle -run 'Test(StatusCommandReceivesSignals|StatusHealth.*|StatusTunnelCleanup.*|BackendStatusQueriesCancelTheirProcessGroups|CloudflaredAuthCancellationTerminatesItsProcessGroup|StatusRoutesHonorCallerCancellation|PreCanceledStatusRoutesRenderWithoutQueries|EndpointCancellationRendersCompletedResultsOnly|OrchestratorStatusCancellationReturnsPartialResults|CompositionStatusCancellationPreservesPriorRows)$'`
+
+Result: PASS (exit 0). Verbose output showed all named status-route cases for whole-stack, plan, and composition in text and JSON; all three pre-cancel routes in both formats; endpoint partial-result cancellation; actual INT/TERM/HUP signal helper cases; all eight backend query implementations; composition prior-row preservation; health completed-probe preservation and pre-cancel no-command behavior; orchestrator partial results; bounded owned-tunnel cleanup; and auth process-group cancellation. The race detector was enabled.
+
+Supplementary guarded test on the same candidate:
+`sh scripts/without-dva.sh go test -count=1 -v ./internal/lifecycle -run 'Test(HealthCheckerCheckContextCancelsCommandProbe|WaitUntilReadyWithContextCancelsHTTPProbe|WaitUntilReadyWithContextCancelsDuringProbeBatch|WaitUntilReadyWithContextCancelsCommandProbe|CheckHTTPAndTCPAllowZeroTimeout|WaitUntilReadyWithContextDoesNotStartCancelledProbe)$'`
+
+Result: PASS (exit 0); every named test executed, including the new status command health cancellation check and existing HTTP/TCP/readiness context compatibility checks.
+
+Source review confirmed status command contexts reach whole-stack, plan, and composition queries. All eight external status backends use the owned query runner for cancellable calls; its background path retains ordinary `exec.Cmd` semantics, and cancellation owns only the query process group with TERM/KILL escalation. Docker, Helm, and Multipass preserve their historical stopped fallback for ordinary failures while returning context cancellation. Health and endpoint APIs are additive; old wrappers preserve their prior behavior. Canceled in-flight health/endpoint probes are omitted rather than misreported as down, while completed results remain. Tunnel auth/readiness and status-only cleanup are cancellable and bounded; token stdout remains counted/discarded. Pre-canceled status runs query nothing, renders a status-shaped partial result, and returns a context error. No managed application lifecycle operation is started or stopped by the status paths.
+
+During integration review I found that the new cancellation error from an `IsUp` observation could be mistaken by composition `Down`'s historical unreadable-state fallback as proof that a child was up, causing a teardown attempt. The final candidate fixes this by using `context.WithoutCancel(ctx)` only for best-effort `IsUp` observations when `stopOnCancel` is false; the actual `Down` call retains the original context, and `Stop`/`Status` remain cancellable. The regression test below verifies the canceled observation does not cause teardown of known-down children. This finding and repair were reviewed before any formal verdict; it is not an outstanding blocker.
+
+Supplementary guarded regression check on the final candidate:
+`sh scripts/without-dva.sh go test -race -count=1 -v ./internal/lifecycle -run '^TestCompositionDownDoesNotTreatCancelledObservationAsRunning$'`
+
+Result: PASS (exit 0).
+
+## Criterion 2 — Preserve ordinary output and ordinary query failure tolerance
+
+Declared command actually run on the reviewed candidate:
+`sh scripts/without-dva.sh go test -count=1 -v ./internal/cli ./internal/lifecycle -run 'Test(StatusPlanPathEmitsJSON|StatusAllReachesWholeStackPastDefaultPlan|StatusWithoutConfigStaysTolerant|StatusAcceptsKnownPlanName|CompositionStatusReportsFailedChild|CheckHTTPAndTCPAllowZeroTimeout|BackendStatusQueriesCancelTheirProcessGroups)$'`
+
+Result: PASS (exit 0). Verbose output showed the plan JSON path, `--all` selection behavior, missing-config tolerance, known-plan text, failed composition status, HTTP/TCP zero-timeout behavior, and all eight backends' ordinary-failure behavior. Docker, Helm, and Multipass retain stopped/nil fallbacks; the other backend query errors remain errors.
+
+## Scope and limitations
+
+Both declared criteria were run against the exact reviewed commit, with `scripts/without-dva.sh`, `-count=1 -v`, and `-race` retained for criterion 1. Supplementary context/readiness and composition-Down regression tests also passed. I did not run the full suite or full CI gate. No blocking finding remains.
+
+VERDICT: PASS
