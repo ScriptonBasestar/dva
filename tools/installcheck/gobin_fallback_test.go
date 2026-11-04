@@ -8,6 +8,7 @@ import (
 
 // An explicitly empty GO_BIN_DIR restores the second copy, resolved from GOBIN first.
 func TestInstallerOnlyTargetFallsBackToGOBINWhenGoBinDirEmpty(t *testing.T) {
+	isolateInstallerPath(t)
 	repo := repositoryRoot(t)
 	fixture := t.TempDir()
 	source := fixtureDVA(t, fixture)

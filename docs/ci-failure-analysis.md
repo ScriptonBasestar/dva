@@ -37,6 +37,13 @@ deadline과 별도로 GNU `timeout`의 10분 제한과 30초 강제 종료 유�
 
 ## 검증 기록
 
+2026-11-04: `75a6efb6`에서 `sh scripts/without-dva.sh go test -count=1 ./...`는
+모든 Go 패키지가 통과한 뒤 exit 97로 종료됐다. 설치 테스트가 상속한 PATH를
+`install-binary`의 경고 검사에 전달하면서 가드의 `dva version`을 실행한 것이 원인이다.
+설치 테스트의 PATH는 필요한 도구만 연결한 임시 디렉터리로 격리하고, DVA shadow와
+실패 도구는 각 테스트의 fixture로 제공한다. 실제 설치기의 경고와 복구 가드는 유지한다.
+가드 하 설치 패키지 검사는 통과했으며, 이는 hosted CI 통과를 뜻하지 않는다.
+
 2026-10-14: 후보 `6c37f680`의 개별 test job 재실행은 지원되지 않았고,
 실패 job 범위 요청은 현재 인증으로 거부됐다. 요청 전후 attempt 1·동일 source·
 cancelled 상태를 확인했다. [후속 증거](hosted-candidate-followup.json)와

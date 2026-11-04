@@ -12,6 +12,7 @@ import (
 )
 
 func TestInstallerOnlyTargetWarnsAboutPathResolution(t *testing.T) {
+	isolateInstallerPath(t)
 	repo := repositoryRoot(t)
 	systemPath := os.Getenv("PATH")
 	install := func(t *testing.T, pathFor func(fixture, localDir, goDir string) string) string {
@@ -151,6 +152,7 @@ func TestInstallerOnlyTargetWarnsAboutPathResolution(t *testing.T) {
 }
 
 func TestInstallerOnlyTargetWarningNeverFailsAfterInstall(t *testing.T) {
+	isolateInstallerPath(t)
 	repo := repositoryRoot(t)
 	systemPath := os.Getenv("PATH")
 	prepare := func(t *testing.T, shadowBody string) (string, *exec.Cmd, context.CancelFunc) {

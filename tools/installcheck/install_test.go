@@ -11,6 +11,7 @@ import (
 )
 
 func TestInstallerOnlyTargetUsesVerifiedIsolatedDestinations(t *testing.T) {
+	isolateInstallerPath(t)
 	repo := repositoryRoot(t)
 	fixture := t.TempDir()
 	source := fixtureDVA(t, fixture)
@@ -34,6 +35,7 @@ func TestInstallerOnlyTargetUsesVerifiedIsolatedDestinations(t *testing.T) {
 }
 
 func TestInstallerOnlyTargetRespectsIsolatedHOMEAndGOBIN(t *testing.T) {
+	isolateInstallerPath(t)
 	repo := repositoryRoot(t)
 	fixture := t.TempDir()
 	source := fixtureDVA(t, fixture)
@@ -54,6 +56,7 @@ func TestInstallerOnlyTargetRespectsIsolatedHOMEAndGOBIN(t *testing.T) {
 }
 
 func TestInstallerOnlyTargetUsesFirstPOSIXGOPATHEntry(t *testing.T) {
+	isolateInstallerPath(t)
 	repo := repositoryRoot(t)
 	fixture := t.TempDir()
 	source := fixtureDVA(t, fixture)
@@ -77,6 +80,7 @@ func TestInstallerOnlyTargetUsesFirstPOSIXGOPATHEntry(t *testing.T) {
 }
 
 func TestInstallerOnlyTargetRejectsEmptyFirstPOSIXGOPATHEntry(t *testing.T) {
+	isolateInstallerPath(t)
 	repo := repositoryRoot(t)
 	fixture := t.TempDir()
 	source := fixtureDVA(t, fixture)
@@ -102,6 +106,7 @@ func TestInstallerOnlyTargetRejectsEmptyFirstPOSIXGOPATHEntry(t *testing.T) {
 }
 
 func TestInstallerOnlyTargetHandlesSameResolvedDestinationOnce(t *testing.T) {
+	isolateInstallerPath(t)
 	repo := repositoryRoot(t)
 	fixture := t.TempDir()
 	source := fixtureDVA(t, fixture)
@@ -118,6 +123,7 @@ func TestInstallerOnlyTargetHandlesSameResolvedDestinationOnce(t *testing.T) {
 }
 
 func TestInstallerOnlyTargetRejectsTargetDirectoriesBeforeReplacement(t *testing.T) {
+	isolateInstallerPath(t)
 	repo := repositoryRoot(t)
 	for _, targetShape := range []string{"directory", "symlink-to-directory"} {
 		t.Run(targetShape, func(t *testing.T) {
@@ -158,6 +164,7 @@ func TestInstallerOnlyTargetRejectsTargetDirectoriesBeforeReplacement(t *testing
 }
 
 func TestInstallerOnlyTargetRemovesRegisteredStageOnCopyFailure(t *testing.T) {
+	isolateInstallerPath(t)
 	repo := repositoryRoot(t)
 	fixture := t.TempDir()
 	source := fixtureDVA(t, fixture)
@@ -180,6 +187,7 @@ func TestInstallerOnlyTargetRemovesRegisteredStageOnCopyFailure(t *testing.T) {
 }
 
 func TestInstallerOnlyTargetPropagatesHasherFailure(t *testing.T) {
+	isolateInstallerPath(t)
 	repo := repositoryRoot(t)
 	fixture := t.TempDir()
 	source := fixtureDVA(t, fixture)
@@ -201,6 +209,7 @@ func TestInstallerOnlyTargetPropagatesHasherFailure(t *testing.T) {
 }
 
 func TestInstallerOnlyTargetReportsNoReplacementOnFirstRenameFailure(t *testing.T) {
+	isolateInstallerPath(t)
 	repo := repositoryRoot(t)
 	fixture := t.TempDir()
 	source := fixtureDVA(t, fixture)
@@ -232,6 +241,7 @@ func TestInstallerOnlyTargetReportsNoReplacementOnFirstRenameFailure(t *testing.
 }
 
 func TestInstallerOnlyTargetRollsBackEarlierReplacementAfterLaterRenameFailure(t *testing.T) {
+	isolateInstallerPath(t)
 	repo := repositoryRoot(t)
 	fixture := t.TempDir()
 	source := fixtureDVA(t, fixture)
@@ -271,6 +281,7 @@ func TestInstallerOnlyTargetRollsBackEarlierReplacementAfterLaterRenameFailure(t
 }
 
 func TestInstallerOnlyTargetRemovesNewEarlierDestinationOnRollback(t *testing.T) {
+	isolateInstallerPath(t)
 	repo := repositoryRoot(t)
 	fixture := t.TempDir()
 	source := fixtureDVA(t, fixture)
@@ -304,6 +315,7 @@ func TestInstallerOnlyTargetRemovesNewEarlierDestinationOnRollback(t *testing.T)
 }
 
 func TestInstallerOnlyTargetReportsRollbackFailureAndCleansBackup(t *testing.T) {
+	isolateInstallerPath(t)
 	repo := repositoryRoot(t)
 	fixture := t.TempDir()
 	source := fixtureDVA(t, fixture)
@@ -344,6 +356,7 @@ func TestInstallerOnlyTargetReportsRollbackFailureAndCleansBackup(t *testing.T) 
 }
 
 func TestInstallerOnlyTargetRollsBackAfterVerificationFailure(t *testing.T) {
+	isolateInstallerPath(t)
 	repo := repositoryRoot(t)
 	fixture := t.TempDir()
 	source := fixtureDVA(t, fixture)
@@ -381,6 +394,7 @@ func TestInstallerOnlyTargetRollsBackAfterVerificationFailure(t *testing.T) {
 }
 
 func TestInstallerOnlyTargetRollsBackAfterVersionVerificationFailure(t *testing.T) {
+	isolateInstallerPath(t)
 	repo := repositoryRoot(t)
 	fixture := t.TempDir()
 	source := fixtureDVA(t, fixture)
@@ -408,6 +422,7 @@ func TestInstallerOnlyTargetRollsBackAfterVersionVerificationFailure(t *testing.
 }
 
 func TestInstallerOnlyTargetDoesNotWriteCheckout(t *testing.T) {
+	isolateInstallerPath(t)
 	repo := repositoryRoot(t)
 	before := gitStatus(t, repo)
 	fixture := t.TempDir()
@@ -419,6 +434,7 @@ func TestInstallerOnlyTargetDoesNotWriteCheckout(t *testing.T) {
 }
 
 func TestMakeHelpDoesNotResolveGoBin(t *testing.T) {
+	isolateInstallerPath(t)
 	repo := repositoryRoot(t)
 	fixture := t.TempDir()
 	marker := filepath.Join(fixture, "go-was-called")
