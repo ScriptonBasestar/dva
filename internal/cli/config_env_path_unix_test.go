@@ -37,11 +37,16 @@ func TestConfigEnvSealReadsResolvedPlaintext(t *testing.T) {
 }
 
 func TestConfigEnvSealRejectsUnsafeResolvedTarget(t *testing.T) {
-	for _, tt := range []struct{ value, code string }{{"../private-escape", codePathEscapes}, {"/private-absolute", codeAbsolutePath}, {"secrets.env.enc", codeSourceIsTarget}, {"", ""}} {
+	for _, tt := range []struct{ value, code string }{{"../private-escape", codePathEscapes}, {"/private-absolute", codeAbsolutePath}, {"secrets.env.enc", codeSourceIsTarget}, {"", ""}, {"private-parent/.env", codePathComponentSymlnk}} {
 		t.Run(tt.value, func(t *testing.T) {
 			t.Setenv("DVA_585_TARGET", tt.value)
 			const declared = "${DVA_585_TARGET}"
 			f := newBridgeFixture(t, pathBridgeYAML(declared, "secrets.env.enc")+"env_bridge: {allow_seal: true}\n", map[string]string{".sops.yaml": sopsCreationRuleYAML, declared: "literal unchanged"})
+			if tt.code == codePathComponentSymlnk {
+				if err := os.Symlink(t.TempDir(), f.path("private-parent")); err != nil {
+					t.Fatal(err)
+				}
+			}
 			f.install(false)
 			err := runEnvSeal(declared, true)
 			if err == nil || errorCode(err) != tt.code || strings.Contains(err.Error(), "private-") {
