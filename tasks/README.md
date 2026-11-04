@@ -1,6 +1,16 @@
 # DVA Task Management Board
 
-## 현재 상태 (2026-10-23)
+## 현재 상태 (2026-11-04)
+
+리뷰가 완료된 done 카드 28장을 `tasks/_archive/2026-11/`로 보관했다.
+카드 본문과 기존 리뷰 영수증은 변경하지 않았으며, `tasks/done/`에는 증거만 남는다.
+이관 전 `done-finalize-all --dry-run`은 후보 28장·스킵 0장을 보고했고,
+이관 후 `make doc-check`가 카드 ID·링크·문서 검사를 통과했다.
+[독립 이관 검토](done/evidence/archive-2026-11-review.txt)는 원문 보존과 기존 완료 증거를 확인했다.
+현재 todo는 10장, backlog는 TASK-575 한 장이다. 실행 상태는 `ce task run-list`,
+제품·릴리스 상태는 [PRODUCT.md](../PRODUCT.md)와 [ROADMAP.md](../ROADMAP.md)를 따른다.
+
+### 2026-10-23 기록
 
 v0.4.1이 2026-10-23 공개됐다(v0.4.0 tag는 Release 없음). 기록은
 [ROADMAP.md](../ROADMAP.md#2026-10-23-v041-후보-검증과-공개)에 있다.

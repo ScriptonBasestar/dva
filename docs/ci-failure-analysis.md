@@ -42,7 +42,9 @@ deadline과 별도로 GNU `timeout`의 10분 제한과 30초 강제 종료 유�
 `install-binary`의 경고 검사에 전달하면서 가드의 `dva version`을 실행한 것이 원인이다.
 설치 테스트의 PATH는 필요한 도구만 연결한 임시 디렉터리로 격리하고, DVA shadow와
 실패 도구는 각 테스트의 fixture로 제공한다. 실제 설치기의 경고와 복구 가드는 유지한다.
-가드 하 설치 패키지 검사는 통과했으며, 이는 hosted CI 통과를 뜻하지 않는다.
+수정 커밋 `beb87b4a`는 로컬 `make recovery-check`와
+[hosted CI 전체 검사](https://github.com/ScriptonBasestar/dva/actions/runs/41779551516)를
+통과했다. `master` 통합 뒤 실행은 별도 결과로 확인한다.
 
 2026-10-14: 후보 `6c37f680`의 개별 test job 재실행은 지원되지 않았고,
 실패 job 범위 요청은 현재 인증으로 거부됐다. 요청 전후 attempt 1·동일 source·
