@@ -114,17 +114,24 @@ func (m *tunnelManager) acquireContext(ctx context.Context, entry *config.Lifecy
 		return err
 	}
 
+	// Preserve legacy cleanup for background lifecycle callers; only status
+	// owns the bounded query-cleanup policy.
+	terminate := proc.terminate
+	if ctx.Done() != nil {
+		terminate = proc.terminateStatus
+	}
+
 	timeout, err := t.ReadyTimeoutDuration()
 	if err != nil {
-		_ = proc.terminate()
+		_ = terminate()
 		return err
 	}
 	if err := waitForTunnelReadyContext(ctx, t.Local, timeout, proc); err != nil {
-		_ = proc.terminateStatus()
+		_ = terminate()
 		return err
 	}
 	if err := ctx.Err(); err != nil {
-		_ = proc.terminateStatus()
+		_ = terminate()
 		return err
 	}
 
