@@ -96,6 +96,22 @@ provision:
 # CI orchestration is native; Make aliases only enter these profiles.
 ci:
   profiles:
+    dev:
+      description: Fast edit-loop checks for changed Go packages and their reverse test dependencies
+      timeout: 5m
+      max_parallel: 1
+      steps:
+        - name: format
+          run: 'bad=$(gofmt -s -l .); test -z "$bad" || { printf "%s\n" "$bad"; exit 1; }'
+        - name: vet
+          run: go vet ./...
+          depends_on: [format]
+        - name: affected-test
+          run: 'set -eu; packages=$(go run ./tools/affectedtests --base "${DVA_BASE:?DVA_BASE=<source-ref> is required}"); test -n "$packages" || { printf "%s\n" "affectedtests selected no packages" >&2; exit 1; }; go test -timeout 2m $packages'
+          depends_on: [vet]
+        - name: build
+          run: go build -trimpath -o bin/dva ./cmd/dva
+          depends_on: [affected-test]
     commit:
       description: Local commit gates (all core checks, no platform matrix)
       warn_after: 5m
