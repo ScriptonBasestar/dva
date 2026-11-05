@@ -1,6 +1,9 @@
 package cli
 
 import (
+	"errors"
+	"io/fs"
+	"os"
 	"strings"
 	"testing"
 
@@ -171,5 +174,104 @@ plans:
 	}
 	if !strings.Contains(stderr, "[child: backend/deploy] env_file .env.child") || strings.Contains(stderr, ".env.root") {
 		t.Fatalf("stderr = %q, want only the child owner's target", stderr)
+	}
+}
+
+func TestRestartWarnsOnEveryRouteWhenTargetMissing(t *testing.T) {
+	body := simpleBridgeYAML(".env", "secrets.env.enc") + "stack:\n  svc: {default_runner: script, runners: {script: {up: 'true', stop: 'true'}}}\n"
+	plans := body + "plans:\n  one: {entries: [{name: svc}]}\n  both: {composes: [{plan: one}]}\n"
+	for _, tt := range []struct {
+		name, yaml string
+		args       []string
+	}{
+		{"whole stack", body, nil}, {"plan", plans, []string{"one"}}, {"composition", plans, []string{"both"}},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			f := newBridgeFixture(t, tt.yaml, map[string]string{"secrets.env.enc": "ENC"})
+			t.Chdir(f.dir)
+			withEnvPolicyGlobals(t, f.cfg, false)
+			dryRun = true
+			var err error
+			stderr := captureStderr(t, func() { err = restartCmd.RunE(restartCmd, tt.args) })
+			if err != nil {
+				t.Fatal(err)
+			}
+			if strings.Count(stderr, "declares sops_source") != 1 || !strings.Contains(stderr, "dva config env unseal .env") {
+				t.Fatalf("wrong warning: %q", stderr)
+			}
+		})
+	}
+}
+
+func TestRestartWarningsUseChildOwner(t *testing.T) {
+	for _, plan := range []string{"backend/deploy", "all"} {
+		t.Run(plan, func(t *testing.T) {
+			root := simpleBridgeYAML(".env.root", "root.enc") + "subprojects:\n  backend:\n    path: backend\n    import:\n      plans: [{name: deploy}]\nplans:\n  all: {composes: [{plan: backend/deploy}]}\n"
+			child := simpleBridgeYAML(".env.child", "child.enc") + "stack:\n  svc: {default_runner: script, runners: {script: {up: 'true', stop: 'true'}}}\nplans:\n  deploy: {entries: [{name: svc}]}\n"
+			f := newBridgeFixture(t, root, map[string]string{"backend/" + config.FileName: child})
+			t.Chdir(f.dir)
+			withEnvPolicyGlobals(t, f.cfg, false)
+			dryRun = true
+			var err error
+			stderr := captureStderr(t, func() { err = restartCmd.RunE(restartCmd, []string{plan}) })
+			if err != nil {
+				t.Fatal(err)
+			}
+			if strings.Count(stderr, "declares sops_source") != 1 || !strings.Contains(stderr, ".env.child") || strings.Contains(stderr, ".env.root") {
+				t.Fatalf("wrong owner: %q", stderr)
+			}
+		})
+	}
+}
+
+func TestUnsealedWarningsFollowTargetValidation(t *testing.T) {
+	for _, tt := range []struct {
+		verb string
+		args []string
+	}{
+		{"up", []string{"typo"}}, {"up", []string{"--unknown"}}, {"restart", []string{"typo"}}, {"restart", []string{"--unknown"}},
+	} {
+		t.Run(tt.verb+strings.Join(tt.args, "_"), func(t *testing.T) {
+			body := simpleBridgeYAML(".env", "secrets.env.enc") + "stack:\n  svc: {default_runner: script, runners: {script: {up: 'touch started', stop: 'touch stopped'}}}\nplans:\n  one: {entries: [{name: svc}]}\n"
+			f := newBridgeFixture(t, body, nil)
+			t.Chdir(f.dir)
+			withEnvPolicyGlobals(t, f.cfg, false)
+			var err error
+			stderr := captureStderr(t, func() {
+				if tt.verb == "up" {
+					err = upCmd.RunE(upCmd, tt.args)
+				} else {
+					err = restartCmd.RunE(restartCmd, tt.args)
+				}
+			})
+			if err == nil || strings.Contains(stderr, "declares sops_source") {
+				t.Fatalf("invalid invocation: %v, %q", err, stderr)
+			}
+			for _, marker := range []string{"started", "stopped"} {
+				if _, err := os.Stat(f.path(marker)); !errors.Is(err, fs.ErrNotExist) {
+					t.Fatalf("side effect %s: %v", marker, err)
+				}
+			}
+		})
+	}
+}
+
+func TestRootEnvFailureStillPrecedesUnknownTarget(t *testing.T) {
+	f := newBridgeFixture(t, "version: '0.1.45'\nenv_file: [{path: required.env, required: true}]\nplans:\n  one: {entries: []}\n", nil)
+	for _, verb := range []string{"up", "restart"} {
+		t.Run(verb, func(t *testing.T) {
+			withEnvPolicyGlobals(t, f.cfg, false)
+			var err error
+			captureStderr(t, func() {
+				if verb == "up" {
+					err = upCmd.RunE(upCmd, []string{"typo"})
+				} else {
+					err = restartCmd.RunE(restartCmd, []string{"typo"})
+				}
+			})
+			if err == nil || !strings.Contains(err.Error(), "required.env") || strings.Contains(err.Error(), "not found") {
+				t.Fatalf("env failure precedence changed: %v", err)
+			}
+		})
 	}
 }

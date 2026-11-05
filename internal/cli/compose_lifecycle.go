@@ -382,6 +382,7 @@ Whole-stack-path flags (rejected, not ignored, once a plan is named):
 			}
 		}
 
+		warnUnsealedEnv(c, el.report, "")
 		orch := lifecycle.NewOrchestrator(c, e)
 		return orch.Restart(ctx, lifecycle.UpOptions{
 			DryRun:      dryRun,

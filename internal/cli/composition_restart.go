@@ -35,6 +35,7 @@ func runCompositionRestart(ctx context.Context, c *config.Config, el *envLoad, p
 		return err
 	}
 
+	warnCompositionUnsealed(c, comp)
 	exec := newCompositionExecutor(c, el, scopedChildName(flags), flags.noWait)
 	report, runErr := restartCompositionChildren(ctx, comp, exec, flags.noWait)
 	return renderCompositionReport(report, runErr)

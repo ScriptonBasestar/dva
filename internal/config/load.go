@@ -17,6 +17,7 @@ type LoadOption func(*loadOptions)
 type loadOptions struct {
 	skipVersionCheck     bool
 	ciProfileOnly        bool
+	envInspectionOnly    bool
 	collectEntryProblems bool
 	explicitFile         string
 	hasExplicitFile      bool
@@ -54,6 +55,13 @@ func ForCI() LoadOption {
 	}
 }
 
+// ForEnvInspection loads effective environment declarations without importing
+// nested projects or validating unrelated execution/CI declarations. Modules,
+// overrides, version checks and env-source validation retain their normal rules.
+func ForEnvInspection() LoadOption {
+	return func(o *loadOptions) { o.envInspectionOnly = true }
+}
+
 // FromFile makes Load use path as its root config instead of discovery or
 // DVA_FILE. A relative path is resolved from workDir. The selected file follows
 // the ordinary Load path, including modules, overrides, finalization, and version
@@ -70,6 +78,9 @@ func Load(workDir string, opts ...LoadOption) (*Config, error) {
 	var o loadOptions
 	for _, opt := range opts {
 		opt(&o)
+	}
+	if o.ciProfileOnly && o.envInspectionOnly {
+		return nil, fmt.Errorf("CI loading and environment inspection are mutually exclusive")
 	}
 
 	filePath, err := loadFilePath(workDir, o)
@@ -134,14 +145,17 @@ func Load(workDir string, opts ...LoadOption) (*Config, error) {
 
 	applyConfigDefaults(cfg)
 
-	if len(cfg.Subprojects) > 0 && !o.ciProfileOnly {
+	if len(cfg.Subprojects) > 0 && !o.ciProfileOnly && !o.envInspectionOnly {
 		if err := resolveSubprojectImports(cfg, opts...); err != nil {
 			return nil, fmt.Errorf("resolving subprojects: %w", err)
 		}
 	}
 
 	var migrated []string
-	if o.ciProfileOnly {
+	if o.envInspectionOnly {
+		applyConfigDefaults(cfg)
+		err = validateEnvSourceDeclarations(cfg)
+	} else if o.ciProfileOnly {
 		err = finalizeCIConfig(cfg)
 	} else {
 		migrated, err = finalizeLoadedConfig(cfg)
@@ -156,7 +170,7 @@ func Load(workDir string, opts ...LoadOption) (*Config, error) {
 	// Reserved-command warnings belong to the root command surface. Imported
 	// children are finalized for execution but do not independently expose their
 	// whole interaction tree, so warning here avoids duplicate child warnings.
-	if !o.ciProfileOnly {
+	if !o.ciProfileOnly && !o.envInspectionOnly {
 		WarnReservedCommandConflicts(cfg.Interaction)
 	}
 

@@ -573,6 +573,7 @@ func runPlanRestart(ctx context.Context, c *config.Config, el *envLoad, planName
 	if err := runtime.report.Err(); err != nil {
 		return err
 	}
+	warnUnsealedEnv(runtime.config, runtime.report, "")
 	plan, c, e := runtime.plan, runtime.config, runtime.env
 	fmt.Fprintf(os.Stderr, "[plan: %s] environment=%s site=%s entries=%d\n", plan.Name, plan.EnvironmentName, plan.SiteName, len(plan.Entries))
 

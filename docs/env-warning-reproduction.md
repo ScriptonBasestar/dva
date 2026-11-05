@@ -40,7 +40,7 @@ loader의 `InspectEnvFiles`는 경로를 보간하고, bridge selector·경로 a
 
 ## 릴리스 처리
 
-v0.4.5 후보에서는 [알려진 제약](../release-notes/v0.4.5.md#알려진-제약)으로 공개할 내용을 준비했다.
+당시 v0.4.5 후보에서는 알려진 제약으로 공개할 내용을 준비했다.
 encrypted target에는 의도한 고정 상대 경로를 사용하도록 안내한다. TASK-575는 backlog에
 유지하고, 수정 또는 항목별 명시적 수락 없이는 완료로 옮기지 않는다.
 
@@ -50,3 +50,12 @@ encrypted target에는 의도한 고정 상대 경로를 사용하도록 안내�
 경로 해석을 loader와 공유하고 선언 selector·출력은 보존한다. 고정된 위 재현 결과와
 v0.4.5 준비 기준선의 제약을 소급해 바꾸지는 않는다. 현재 사용법은
 [env bridge](../USAGE.md#암호화된-소스-브리지-dva-config-env), 후보 이후 변경은 CHANGELOG Unreleased를 따른다.
+
+TASK-575의 후속 수정은 나머지 세 항목을 해결한다. `restart`는 whole-stack·plan·composition의
+실행 소유자별로 경고하고, `up`·`restart`의 잘못된 대상·플래그는 경고 전에 거부한다.
+root doctor는 직접 선언한 child의 effective encrypted env target을 검사한다. import 여부와
+무관하며 modules·override·child 환경 범위를 보존한다. 읽을 수 없는 child 설정과 암호화 env
+입력 실패는 진단 행으로 남기고 다른 child 검사를 계속한다. 일반 모드의 advisory와 `--strict`의
+실패 규칙을 따른다. 손자·child backend·사용자 doctor 명령과 일반 plaintext env 진단은 확장하지
+않는다. 회귀 검증은 `internal/cli/doctor_envsops_test.go`와
+`internal/cli/doctor_subproject_env_test.go`에 있다. 위의 과거 관찰 원문은 그대로 보존한다.

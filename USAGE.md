@@ -1653,10 +1653,14 @@ dva config env reseal                 # 기존 암호화 소스를 현재 키로
 ##### 복호화는 언제나 사용자가 시킬 때만
 
 - **lifecycle 커맨드는 복호화하지 않습니다.** `dva up`, `dva run`, `dva down`의 로딩은
-  `sops_source`에 영향받지 않습니다. `dva up`은 경고에만 이 값을 읽습니다. 평문 target이 없으면 그것은 `env_file`이 없는 상황일
+  `sops_source`에 영향받지 않습니다. `dva up`·`restart`는 경고에만 이 값을 읽습니다. 평문 target이 없으면 그것은 `env_file`이 없는 상황일
   뿐이고, 위 [환경 입력이 불완전할 때](#환경-입력이-불완전할-때) 규칙이 그대로
-  적용됩니다. 다만 `dva up`은 경고를, `dva doctor`는 실패 행을 냅니다. 그래서
-  `dva doctor --strict`는 이 경우 0이 아닌 코드로 끝납니다(doctor는 루트 설정만 봅니다). 필요한 복호화는
+  적용됩니다. 다만 유효한 실행 대상의 `dva up`·`restart`는 경고를, `dva doctor`는 실패 행을 냅니다. 그래서
+  `dva doctor --strict`는 이 경우 0이 아닌 코드로 끝납니다. 최신 소스의 doctor는 루트와
+  직접 선언된 child의 암호화 env target을 검사합니다. child의 modules·override와 자체 환경
+  범위를 사용하며, child 설정을 읽을 수 없으면 검사 불가 행을 냅니다. 이 행들도 기본 모드에서는
+  안내이며 `--strict`에서 실패합니다. 손자 프로젝트와 child의 backend·사용자 doctor 명령은
+  실행하지 않습니다. 필요한 복호화는
   `dva config env unseal`을 직접 실행해야 합니다.
 - **복호화된 값을 stdout에 출력하는 커맨드는 없습니다.** `unseal`이 쓰는 곳은 0600
   권한의 target 파일 하나뿐이고, sops가 만들어낸 평문은 DVA의 버퍼를 거치지 않고 그

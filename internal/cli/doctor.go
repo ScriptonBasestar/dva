@@ -125,6 +125,7 @@ func runDoctorChecks(c *config.Config) []DoctorResult {
 	// Built-in: sops in use but not declared on any env_file entry.
 	results = append(results, checkEnvSopsDeclaration(c)...)
 	results = append(results, checkEnvUnsealed(c, envReport)...)
+	results = append(results, checkSubprojectEncryptedEnv(c)...)
 
 	// Built-in: non-Compose stack entry files exist
 	results = append(results, checkStackFiles(c)...)

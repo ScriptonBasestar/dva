@@ -134,7 +134,6 @@ Plan-path flags (only when a plan is being run, e.g. 'dva up <plan>'):
 		}
 		// Root-owned route from here: no plan claimed the invocation, so the root's own
 		// env-input report governs and this fails closed before any hook or backend child.
-		warnUnsealedEnv(c, el.report, "")
 		if err := el.report.Err(); err != nil {
 			return err
 		}
@@ -262,6 +261,7 @@ Plan-path flags (only when a plan is being run, e.g. 'dva up <plan>'):
 		}
 
 		// Phase 1: Stack up (infrastructure)
+		warnUnsealedEnv(c, el.report, "")
 		orch := lifecycle.NewOrchestrator(c, e)
 		upErr := orch.Up(ctx, lifecycle.UpOptions{
 			DryRun:      dryRun,

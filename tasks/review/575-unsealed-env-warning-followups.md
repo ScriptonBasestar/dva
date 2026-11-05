@@ -4,7 +4,7 @@ title: "Unsealed env warning follow-ups"
 type: feature
 priority: P2
 exec-tier: standard
-status: backlog
+status: review
 created: 2026-11-02
 ---
 
@@ -30,9 +30,17 @@ Priority is raised to P2 because the interpolation case is an observed loader/wr
 mismatch, rather than only warning presentation. No real-use incident is claimed.
 
 TASK-585 implements the plaintext target resolution and selector-hint correction in source
-after the v0.4.5 preparation baseline. Child doctor scope, restart warning and unknown-plan
-warning order remain open; this backlog card is not complete.
+after the v0.4.5 preparation baseline. This execution addresses the other three items:
+owner-correct warnings on all restart routes, warnings after target/flag validation, and
+direct-child encrypted env diagnostics with explicit unavailable rows. Child inspection
+preserves modules/overrides, version checks and env ownership, without recursively resolving
+imports or running child backend/user checks. Regression coverage lives in
+`internal/cli/doctor_envsops_test.go` and `internal/cli/doctor_subproject_env_test.go`.
+
+The existing TASK-kind card was incorrectly placed in the BACKLOG-kind zone. The shared
+move/promote commands rejected that mismatch; placement was normalized through todo while
+preserving its identity and historical text, then moved to doing through the shared tool.
 
 ## Completion Criteria
 
-- [ ] Each gap is fixed or recorded as accepted | verify: human — review the four items at release planning
+- [ ] Each gap is fixed or recorded as accepted | verify: human — independent review of TASK-585 and this change against the four original gaps
