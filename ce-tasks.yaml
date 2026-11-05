@@ -1,4 +1,5 @@
 card-dialect:
   strict-status: true
 task-bindings:
+  schema-version: 1
   binding-timeout: 10m
