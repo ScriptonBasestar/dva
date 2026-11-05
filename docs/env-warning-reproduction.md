@@ -1,6 +1,6 @@
 # Env 경고 후속 항목 재현 — 2026-11-04
 
-[TASK-575](../tasks/backlog/575-unsealed-env-warning-followups.md)의 네 후보를
+[TASK-575](../tasks/done/575-unsealed-env-warning-followups.md)의 네 후보를
 `cdb85caba74dcbf5272d805dd86026eaff49a897`에서 조사했다. 현재 동작 관찰이며,
 수정·명시적 예외 수락·실사용 장애 보고를 뜻하지 않는다.
 
@@ -41,15 +41,16 @@ loader의 `InspectEnvFiles`는 경로를 보간하고, bridge selector·경로 a
 ## 릴리스 처리
 
 당시 v0.4.5 후보에서는 알려진 제약으로 공개할 내용을 준비했다.
-encrypted target에는 의도한 고정 상대 경로를 사용하도록 안내한다. TASK-575는 backlog에
-유지하고, 수정 또는 항목별 명시적 수락 없이는 완료로 옮기지 않는다.
+encrypted target에는 의도한 고정 상대 경로를 사용하도록 안내했고 TASK-575는 backlog에
+유지했다. 이 제약의 문서화만으로 완료로 처리하지 않았다. 아래의 후속 수정과 독립 리뷰 뒤
+v0.4.5 후보를 갱신하면서 네 항목을 포함했다.
 
 ## 후속 수정
 
-[TASK-585](../tasks/todo/585-env-bridge-target-resolution.md)는 최신 소스에서 평문 I/O의
+[TASK-585](../tasks/done/585-env-bridge-target-resolution.md)는 최신 소스에서 평문 I/O의
 경로 해석을 loader와 공유하고 선언 selector·출력은 보존한다. 고정된 위 재현 결과와
 v0.4.5 준비 기준선의 제약을 소급해 바꾸지는 않는다. 현재 사용법은
-[env bridge](../USAGE.md#암호화된-소스-브리지-dva-config-env), 후보 이후 변경은 CHANGELOG Unreleased를 따른다.
+[env bridge](../USAGE.md#암호화된-소스-브리지-dva-config-env), 갱신한 후보 변경 목록은 CHANGELOG의 0.4.5 섹션을 따른다.
 
 TASK-575의 후속 수정은 나머지 세 항목을 해결한다. `restart`는 whole-stack·plan·composition의
 실행 소유자별로 경고하고, `up`·`restart`의 잘못된 대상·플래그는 경고 전에 거부한다.

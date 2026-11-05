@@ -17,13 +17,15 @@ tag는 Release 없이 남았고 공개는 v0.4.1로 옮겼다([v0.4.1로 공개 
 
 ### v0.4.5 후보 준비
 
-통합된 준비 기준선은 `2e14bcc28646f12c003b880481849d957c0dcb4b`다. 이후 Unreleased 수정이
-이 후보에 자동으로 포함되는 것은 아니다. 공개 전 최종 범위·노트와 검증 SHA를 다시 고정한다.
+초기 준비 기준선은 `2e14bcc28646f12c003b880481849d957c0dcb4b`다. 2026-11-05 갱신은
+TASK-585·TASK-575가 통합된 `bc690677834c65639a349b583fbb551027944c13`을 바탕으로
+네 env 후속 수정을 후보에 포함한다. 최종 검증 SHA는 후보 동결 뒤 delivery 증거에 고정한다.
+초기 후보의 macOS 미실행 수락은 이번 갱신의 검증 증거로 재사용하지 않는다.
 
 - 범위: 기준 소스의 유지보수 변경과 진단·CI 선택 기능. 제거 결정을 실행하는 TASK-550은 제외한다.
 - 업그레이드 안내와 알려진 제약은 [후보 릴리스 노트](release-notes/v0.4.5.md)가 소유한다.
-- TASK-575의 재현 조사 결과는 [미완료 카드](tasks/backlog/575-unsealed-env-warning-followups.md)에서
-  증거로 연결한다. 제약의 문서화는 카드의 명시적 수락이나 수정 완료를 뜻하지 않는다.
+- TASK-575의 네 항목은 TASK-585와 [완료 리뷰](tasks/done/575-unsealed-env-warning-followups.md)로
+  해결됐다. 과거 재현과 현재 경계는 [재현 기록](docs/env-warning-reproduction.md)에서 연결한다.
 - 후보 검증은 독립 소스 리뷰 뒤 고정된 최종 SHA에서 전체 CI·hosted CI·비게시
   `make release-check`와 로컬 설치 확인으로 수행한다. 실행 receipt와 결과는 해당 delivery에 연결한다.
 - 공개 tag·Release는 이 작업의 범위 밖이며, 검토된 후보에 대한 별도 공개 인가 후 기존 런북을 따른다.
@@ -64,18 +66,11 @@ v0.5.0 선택 시에는 여기에 `modes`·`default_mode`·`--mode` 제거와 pl
 변환 가능 부분집합과 `migrate_report.go`의 `Left for you` 수동 분해 항목을 설명하고,
 legacy schema 거부 뒤에도 migrate가 원문을 읽는 회귀 검증을 요구한다.
 
-**TASK-575의 릴리스 처리 제안** — 아래는 수락된 예외가 아니다. 카드는 backlog에 유지하며,
-항목별 수정 또는 명시적 수락이 있어야 카드의 완료 기준을 충족한다.
+**TASK-575의 당시 검토와 후속 처리**
 
-| 항목 | 기준 소스에서 확인한 사실 | 권장 처리 |
-|---|---|---|
-| doctor child env 검사 | `internal/cli/doctor.go`의 `runDoctorChecks`는 root의 EnvFile을 검사한다. | child owner·검사 범위·부분 실패 표기를 먼저 설계한 뒤 별도 수정. 현재 root 검사 범위를 공개 설명에 유지한다. |
-| restart 경고 | whole-stack·plan·composition restart 경로에는 up 경로의 unsealed 경고 호출이 없다. 입력 로드 오류의 실행 거부는 별도로 유지된다. | route fixture로 경고 출력 계약을 고정한 뒤 수정 후보로 채택한다. 누락 경고를 입력 오류 우회로 설명하지 않는다. |
-| 보간 path의 unseal hint | `config_env_select.go`는 선언 문자열과 정확히 매칭하고, `doctor_envsops.go`는 그 문자열로 명령을 만든다. env bridge는 선언 path를 직접 검사한다. | 단순히 확장 path로 바꾸지 않는다. shell 인용과 loader/bridge의 path 해석 차이를 fixture로 검증하기 전에는 올바른 복구 명령이라고 보증하지 않는다. |
-| unknown plan 앞 경고 | `compose.go`의 root-owned up 경로는 인자 거부 전에 unsealed 경고를 호출한다. | typo와 누락 env를 함께 둔 fixture로 stderr·비0 결과를 확인한 뒤 진단 순서 개선 여부를 결정한다. |
-
-실사용 장애나 이 네 항목의 새로운 실행 재현 증거는 이번 정적 검토에서 얻지 않았다.
-따라서 새 release blocker나 수정 완료로 분류하지 않는다.
+당시 정적 검토는 네 항목을 미완료로 보았으며 수락된 예외가 아니었다. 이후 fixture 재현과
+TASK-585·TASK-575의 수정·독립 리뷰를 거쳐 위 갱신 범위에 포함했다. 당시 관찰과 증거는
+[env 경고 재현 기록](docs/env-warning-reproduction.md)이 소유한다.
 
 **이월과 후보 검증 순서**
 

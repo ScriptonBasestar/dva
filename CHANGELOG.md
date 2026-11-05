@@ -5,18 +5,6 @@ All notable changes to DVA are documented here.
 
 ## [Unreleased]
 
-### Fixed
-
-- `restart`의 whole-stack·plan·composition 경로가 실행 소유자의 누락 encrypted env target을
-  경고합니다. `up`·`restart`의 대상·플래그 오류는 경고 전에 거부합니다. `doctor`는 직접 선언된
-  child의 effective config로 암호화 env target을 검사하며, 읽지 못한 child 설정은 검사 불가로
-  표시합니다. 중첩 child나 child의 backend·사용자 doctor 명령은 실행하지 않습니다.
-
-- `config env unseal`과 `seal`의 평문 target은 env loader와 같은 변수·환경 범위로
-  경로를 해석합니다. selector·출력은 선언 문자열을 유지하며, 해석한 대상에 Git·경로·symlink·
-  source 충돌 검사를 적용합니다. 경고와 edit 안내는 selector를 셸에서 보존하도록 인용합니다.
-  `sops_source`와 source-only 명령의 의미는 바꾸지 않습니다.
-
 ## [0.4.5] - 2026-11-05
 
 미공개 릴리스 후보다. 날짜는 후보 정리일이며 공개일이 아니다. 범위와 검증 경계는
@@ -36,6 +24,16 @@ All notable changes to DVA are documented here.
   계속 실행합니다. 의존성이 막힌 step은 계속 건너뜁니다.
 
 ### Fixed
+
+- `restart`의 whole-stack·plan·composition 경로가 실행 소유자의 누락 encrypted env target을
+  경고합니다. `up`·`restart`의 대상·플래그 오류는 경고 전에 거부합니다. `doctor`는 직접 선언된
+  child의 effective config로 암호화 env target을 검사하며, 읽지 못한 child 설정은 검사 불가로
+  표시합니다. 중첩 child나 child의 backend·사용자 doctor 명령은 실행하지 않습니다.
+
+- `config env unseal`과 `seal`의 평문 target은 env loader와 같은 변수·환경 범위로
+  경로를 해석합니다. selector·출력은 선언 문자열을 유지하며, 해석한 대상에 Git·경로·symlink·
+  source 충돌 검사를 적용합니다. 경고와 edit 안내는 selector를 셸에서 보존하도록 인용합니다.
+  `sops_source`와 source-only 명령의 의미는 바꾸지 않습니다.
 
 - `status`의 전체 스택·plan·composition 조회와 health·endpoint probe, 터널 준비가
   호출자·신호 취소를 전달합니다. 취소 시 부분 결과를 보존하고 이후 조회를 중단하며

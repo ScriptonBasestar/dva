@@ -1644,7 +1644,7 @@ dva config env reseal                 # 기존 암호화 소스를 현재 키로
 
 `[TARGET]`은 dva.yml에 적힌 `path` 문자열 그대로입니다. `sops_source`를 선언한 엔트리가
 여럿이면 생략할 수 없습니다 — 하나를 골라 추측하지 않고 에러로 멈춥니다.
-최신 소스(Unreleased)의 `unseal`·`seal`은 선택 뒤 평문 파일 경로를 위의 env_file 범위로
+v0.4.5 후보의 `unseal`·`seal`은 선택 뒤 평문 파일 경로를 위의 env_file 범위로
 해석하고, 해석 결과에 경로·symlink·Git(unseal) 검사를 적용합니다. 다른 env_file 값은
 이 해석에 사용하지 않습니다. `$`·공백 등이 든 selector는 셸에서 인용해 선언 그대로 전달하세요.
 출력과 진단에는 보간 값을 넣지 않습니다. `sops_source`는 계속 literal이며, 평문 target을
@@ -1656,7 +1656,7 @@ dva config env reseal                 # 기존 암호화 소스를 현재 키로
   `sops_source`에 영향받지 않습니다. `dva up`·`restart`는 경고에만 이 값을 읽습니다. 평문 target이 없으면 그것은 `env_file`이 없는 상황일
   뿐이고, 위 [환경 입력이 불완전할 때](#환경-입력이-불완전할-때) 규칙이 그대로
   적용됩니다. 다만 유효한 실행 대상의 `dva up`·`restart`는 경고를, `dva doctor`는 실패 행을 냅니다. 그래서
-  `dva doctor --strict`는 이 경우 0이 아닌 코드로 끝납니다. 최신 소스의 doctor는 루트와
+  `dva doctor --strict`는 이 경우 0이 아닌 코드로 끝납니다. v0.4.5 후보의 doctor는 루트와
   직접 선언된 child의 암호화 env target을 검사합니다. child의 modules·override와 자체 환경
   범위를 사용하며, child 설정을 읽을 수 없으면 검사 불가 행을 냅니다. 이 행들도 기본 모드에서는
   안내이며 `--strict`에서 실패합니다. 손자 프로젝트와 child의 backend·사용자 doctor 명령은
