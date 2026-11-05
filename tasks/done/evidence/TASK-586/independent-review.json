@@ -1,0 +1,23 @@
+{
+  "verdict": "PASS",
+  "reviewer-execution": "/root/doctor_flake_diagnosis",
+  "reviewer-grade": "strong",
+  "executor-execution": "/root",
+  "executor-grade": "strong",
+  "review-runtime-execution": "review-refresh-v045-candidate",
+  "reviewed-commit": "2fa9686dee7093263d29eaa01a1f778cafd002d9",
+  "reviewed-at": "2026-11-05T01:32:41Z",
+  "raw-review": "tasks/done/evidence/TASK-586/source-review.txt",
+  "raw-review-sha256": "2e90d11eff310687c308b5f70fbc8857f4df2c278f22b4298a0ba142e4cd94b9",
+  "checks": [
+    {
+      "command": "Independent candidate consistency and preview archive evidence inspection",
+      "result": "PASS"
+    },
+    {
+      "command": "ce task validate review card; latest public release and tag observation",
+      "result": "PASS"
+    }
+  ],
+  "limitations": "Preparation review only. Exact final-head native full CI, hosted CI, release-check and install remain delivery requirements; earlier macOS waiver is not reused."
+}

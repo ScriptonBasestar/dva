@@ -1,0 +1,29 @@
+# Independent TASK-586 source and document review
+
+- Review purpose/runtime: `review-refresh-v045-candidate` (`review`).
+- Reviewed candidate: `2fa9686dee7093263d29eaa01a1f778cafd002d9` in `/Users/archmagece/worktrees/misc/dva/codex__mbp__docs__refresh-v045-candidate`; clean at inspection.
+- Review time: 2026-11-05 01:31 UTC.
+- Reviewer: independent strong `/root/doctor_flake_diagnosis`.
+- Executor: strong `/root`.
+- Prior formal review attempts: 0.
+- Scope: both TASK-586 completion criteria and the exact release-candidate claims in CHANGELOG, ROADMAP, USAGE, `docs/env-warning-reproduction.md`, and `release-notes/v0.4.5.md`, against the current source and accepted version decisions. No product source, task card, or evidence edits made by reviewer.
+
+## Criterion 1: candidate docs consistently include TASK-585/TASK-575 and do not claim publication or v0.5 removal
+
+**Pass.** The candidate is clearly labelled unpublished throughout. CHANGELOG dates the v0.4.5 section as candidate preparation, points to ROADMAP and release notes for scope, and has no new claims under Unreleased. ROADMAP says the latest published version is v0.4.4 and the candidate source baseline includes TASK-585 and TASK-575 at `bc690677834c65639a349b583fbb551027944c13`. It records that the earlier macOS waiver is not reused and that native full CI, hosted CI, preview archives and installation remain final gates. Release notes call v0.4.5 unpublished, keep the public installed version at v0.4.4, and explicitly say `modes`/`default_mode`/`--mode` are not removed in this candidate. The approved TASK-550 removal remains in v0.5.0 per ROADMAP and `decisions/501-modes-legacy-or-removed.md`.
+
+The earlier evidence is preserved as historical evidence: the reproduction record still records its four original observations, fake-SOPS/overlay boundaries and lack of a real-use incident; its follow-up now links the separately completed TASK-585 target-resolution fix and the TASK-575 owner-aware warnings/child doctor fix without rewriting the original observations. Candidate notes accurately scope direct-child doctor inspection, effective child configuration, advisory/strict behavior, restart route coverage, and target-validation-before-warning behavior.
+
+Release notes retain current platform and integration limits: Windows local background process/CI/tunnel execution, real Cloudflare Access application tunnel validation, and Skaffold live cluster status. Those remain consistent with the USAGE support table and are not described as newly supported by archive generation. The upgrade notes also keep the distinct `down` best-effort cleanup policy, preserve cancellation/partial-result caveats, and distinguish `fail_fast: false` from default fail-fast, blocked dependencies, profile timeout, cancellation, and checkpoint integrity failures.
+
+Current GitHub release listing confirms v0.4.4 is latest (published 2026-11-02) and the candidate has no v0.4.5 tag. `internal/config.Version` remains 0.4.5; the candidate does not bump it or publish anything. Evidence: `CHANGELOG.md`, `ROADMAP.md` candidate section and accepted TASK-550 discussion, `release-notes/v0.4.5.md`, `USAGE.md` version/support and env bridge sections, and `docs/env-warning-reproduction.md`.
+
+## Criterion 2: nonpublishing preview archives and binary contracts checked
+
+**Pass.** The immutable preview log `tasks/done/evidence/TASK-586/preview-release-check.log` has SHA-256 `a56e3ce52a8ba84831b4d69a45c5ae1b04fb5fc58159a26a30dafa83e6662f7e`, matching the card. It records `GOMAXPROCS=2 GOFLAGS=-p=2 make release-check` passing at preparation commit `a511b84cdd64477c79a49fa0ded5507b0fea391c`: release-check snapshot mode, no exact v0.4.5 tag, source version 0.4.5, full commit and UTC build-date stamps, six platform archives, and checksums. The preview explicitly skips announce, publish and validate. The review candidate differs from that preparation input only by the TASK-586 task-state/evidence metadata, not product source or release docs. This evidence satisfies the preview criterion; it is not final delivery evidence.
+
+## Candidate evidence and remaining delivery boundary
+
+`ce task validate tasks/review/586-refresh-v045-env-diagnostics.md` passed at CE `v0.11.0-30-g738b69877`. GitHub release listing and the local tag inventory show no v0.4.5 publication. Exact final native full CI, hosted CI, archives, and local installation remain required after metadata freeze and are not claimed as complete in this review. No prior macOS acceptance is reused.
+
+VERDICT: PASS
