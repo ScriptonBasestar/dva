@@ -6,7 +6,7 @@
 > 현재 권장 모델은 `stack`을 선언 저장소로 두고, 실제 실행은 `plans`의 이름을 대상으로 수행하는 구조입니다.
 > 빠른 시작은 [README.md](README.md), 설계 배경은 [docs/40-declarative-stack-and-plans.md](docs/40-declarative-stack-and-plans.md) 참조.
 
-반복 개발 검증은 `DVA_BASE=<source-ref> dva ci dev`를 사용합니다. 이 프로필은 변경된 Go 패키지와
+이 저장소의 반복 개발 검증은 `DVA_BASE=<source-ref> dva ci dev`를 사용합니다. 이 프로필은 변경된 Go 패키지와
 역방향 테스트 의존성, 형식·정적 검사·빌드만 실행하며 commit/full 검증을 대신하지 않습니다.
 선택기는 merge-base 이후 커밋·staged·unstaged·untracked 입력을 합칩니다. 삭제·이름 변경,
 공유 설정·Go 이외의 입력은 전체 Go 테스트로 넓힙니다. 선택 실패나 빈 입력은 실패로 보고합니다.

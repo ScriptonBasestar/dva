@@ -12,6 +12,10 @@ All notable changes to DVA are documented here.
 
 ### Changed
 
+- 이 저장소의 개발 반복 검증에 `DVA_BASE=<source-ref> dva ci dev` 프로필을 추가했습니다.
+  변경 Go 패키지와 역방향 테스트 의존성을 선택하며, 삭제·이름 변경·공유·불명확 입력은
+  전체 Go 테스트로 넓힙니다. 선택 오류·빈 입력은 실패하며 commit/full 검증을 대체하지 않습니다.
+
 - `make install` now installs one copy into `~/.local/share/ce/bin` (override with `LOCAL_BIN_DIR`). Existing `~/.local/bin/dva` and `~/go/bin/dva` copies are left in place; `GO_BIN_DIR=` restores the second GOBIN/GOPATH copy.
 
 - **명시적 validate 예외·연결**: literal interaction key가 declared subproject route를 의도적으로
