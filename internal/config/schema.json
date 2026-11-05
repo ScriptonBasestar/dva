@@ -1575,11 +1575,6 @@
         }
       }
     },
-    "default_mode": {
-      "type": "string",
-      "description": "Mode applied automatically when dva up/down/stop/restart is called without --mode/-M. Should reference a minimal infrastructure mode (e.g., 'infra') so that dva up starts only core services by default. Use 'dva up -M full-stack' for everything.",
-      "examples": ["infra", "dev"]
-    },
     "default_plan": {
       "type": "string",
       "description": "Plan applied automatically when dva up/down/stop/restart is called without naming a plan. References a plans entry. When exactly one plan is defined it is the default automatically; set this to choose the default among multiple plans (e.g. 'dev').",
@@ -1624,89 +1619,6 @@
       "items": { "type": "string" },
       "description": "Glob patterns for compose files that autodiscovery finds but no stack entry registers. Autodiscovery scans the dva.yml directory, the directory of every compose file a root stack entry registers, and every directory reached from those through 'include:' \u2014 so a file in a subdirectory is spelled with its path. Applies ONLY to that unregistered-file drift warning: a configured compose file that does not exist, and an interaction referencing a missing compose service, are states that break 'dva up' and no ignore suppresses them. Patterns match the path relative to dva.yml and do not cross directory separators; a pattern matching no discovered file is reported as stale.",
       "examples": [["compose.ci.yaml", "compose.*.experimental.yaml"]]
-    },
-    "modes": {
-      "type": "object",
-      "description": "Named operational modes for dva up (--mode/-M flag). Each mode defines which compose profiles/services to start, health checks to run, and environment overrides.",
-      "patternProperties": {
-        "^[\\w\\-.]+$": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "description": {
-              "type": "string",
-              "description": "Human-readable description of this mode"
-            },
-            "compose_profiles": {
-              "type": "array",
-              "items": { "type": "string" },
-              "description": "Docker Compose profiles to activate (passed as --profile flags)",
-              "examples": [["infra"], ["infra", "monitoring"]]
-            },
-            "compose_services": {
-              "type": "array",
-              "items": { "type": "string" },
-              "description": "Explicit list of compose services to start. Empty array = skip compose entirely (native mode). Omit = start all services.",
-              "examples": [["postgres", "redis"], []]
-            },
-            "health_checks": {
-              "type": "array",
-              "items": { "type": "string" },
-              "description": "Health check names to activate (from health_checks section). Omit = use all.",
-              "examples": [["app", "worker"]]
-            },
-            "endpoint_tags": {
-              "type": "array",
-              "items": { "type": "string" },
-              "description": "Show only endpoints matching these tags. Omit = show all endpoints.",
-              "examples": [["app"], ["app", "monitoring"]]
-            },
-            "environment": {
-              "$ref": "#/definitions/environment_vars"
-            },
-            "stack": {
-              "type": "array",
-              "items": { "type": "string" },
-              "description": "Stack entry names to include in this mode. Only these entries will be started.",
-              "examples": [["compose", "kubectl"]]
-            },
-            "provision": {
-              "type": "string",
-              "description": "Provision profile to suggest when services start for the first time",
-              "examples": ["setup", "reset"]
-            },
-            "build": {
-              "type": "string",
-              "description": "Build strategy for this mode: \"docker\" (compose build), \"native\" (run interaction.build.replace steps; errors if undefined), or a custom shell command. Read by the build runner (compose.go).",
-              "examples": ["native", "docker", "make build"]
-            },
-            "run": {
-              "type": "string",
-              "description": "Run strategy for this mode: \"docker\" (compose up), \"native\" (process via health_checks.start), or a custom shell command.",
-              "examples": ["native", "docker"]
-            }
-          }
-        }
-      },
-      "additionalProperties": false,
-      "examples": [{
-        "infra-only": {
-          "description": "Infrastructure only",
-          "compose_services": ["postgres", "redis"]
-        },
-        "hybrid": {
-          "description": "Infra in containers, app locally",
-          "compose_services": ["postgres", "redis"],
-          "health_checks": ["app"],
-          "endpoint_tags": ["app"],
-          "environment": { "DATABASE_URL": "postgres://localhost:5432/mydb" }
-        },
-        "native": {
-          "description": "Everything local, no Docker",
-          "compose_services": [],
-          "health_checks": ["postgres", "redis", "app"]
-        }
-      }]
     },
     "environments": {
       "type": "object",
@@ -1792,7 +1704,7 @@
             "tags": {
               "type": "array",
               "items": { "type": "string" },
-              "description": "Tags for filtering (used by modes.endpoint_tags). Inherited from service tags under stack.<entry>.runners.compose if omitted.",
+              "description": "Tags for filtering. Inherited from service tags under stack.<entry>.runners.compose if omitted.",
               "examples": [["app"], ["infra", "monitoring"]]
             },
             "paths": {

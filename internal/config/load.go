@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
@@ -141,6 +142,8 @@ func Load(workDir string, opts ...LoadOption) (*Config, error) {
 		}
 		cfg.setEnvFileOrigin(overCfg.EnvFile, EnvOriginOverride, overrideFile)
 		cfg.setEnvBridgeOrigin(overCfg.EnvBridge, EnvBridgeOriginOverride, overrideFile)
+	} else if !isAbsentOverrideFile(overrideFile, err) {
+		return nil, fmt.Errorf("loading override: %w", err)
 	}
 
 	applyConfigDefaults(cfg)
@@ -175,6 +178,18 @@ func Load(workDir string, opts ...LoadOption) (*Config, error) {
 	}
 
 	return cfg, nil
+}
+
+// isAbsentOverrideFile distinguishes a missing optional override from a
+// directory entry that cannot be read. In particular, os.ReadFile reports a
+// dangling symlink as fs.ErrNotExist even though silently skipping it would
+// hide a configured override from the user.
+func isAbsentOverrideFile(path string, loadErr error) bool {
+	if !errors.Is(loadErr, fs.ErrNotExist) {
+		return false
+	}
+	_, err := os.Lstat(path)
+	return errors.Is(err, fs.ErrNotExist)
 }
 
 // loadFilePath resolves the root-file choice before Load begins its common
@@ -364,6 +379,9 @@ func decodeConfig(data []byte) (*Config, error) {
 	if err := checkAnchorCycles(&doc); err != nil {
 		return nil, fmt.Errorf("parsing YAML: %w", err)
 	}
+	if err := rejectRemovedTopLevelKeys(&doc); err != nil {
+		return nil, fmt.Errorf("parsing YAML: %w", err)
+	}
 
 	cfg := &Config{}
 	if doc.IsZero() {
@@ -375,6 +393,65 @@ func decodeConfig(data []byte) (*Config, error) {
 	}
 
 	return cfg, nil
+}
+
+// rejectRemovedTopLevelKeys rejects legacy root keys before yaml.Node.Decode can
+// silently discard them after their Config fields are removed. YAML merge keys are
+// part of a mapping's effective key set, so aliases that inject either key are
+// rejected too; nested keys with the same spelling remain outside this root-only rule.
+func rejectRemovedTopLevelKeys(doc *yaml.Node) error {
+	if doc == nil || doc.Kind != yaml.DocumentNode || len(doc.Content) == 0 {
+		return nil
+	}
+	keys := make(map[string]bool)
+	collectEffectiveMappingKeys(doc.Content[0], keys, make(map[*yaml.Node]bool))
+	for _, key := range []string{"modes", "default_mode"} {
+		if keys[key] {
+			return fmt.Errorf("top-level %q was removed in v0.5.0; run 'dva config migrate'", key)
+		}
+	}
+	return nil
+}
+
+func collectEffectiveMappingKeys(node *yaml.Node, keys map[string]bool, visited map[*yaml.Node]bool) {
+	if node == nil || visited[node] {
+		return
+	}
+	visited[node] = true
+	if node.Kind == yaml.AliasNode {
+		collectEffectiveMappingKeys(node.Alias, keys, visited)
+		return
+	}
+	if node.Kind != yaml.MappingNode {
+		return
+	}
+	for i := 0; i+1 < len(node.Content); i += 2 {
+		key, value := node.Content[i], node.Content[i+1]
+		if key.ShortTag() == "!!merge" {
+			collectMergedMappingKeys(value, keys, visited)
+			continue
+		}
+		var name string
+		if err := key.Decode(&name); err != nil {
+			// The normal YAML decoder reports malformed keys with the surrounding
+			// document; do not replace that error with this presence-only guard.
+			continue
+		}
+		keys[name] = true
+	}
+}
+
+func collectMergedMappingKeys(node *yaml.Node, keys map[string]bool, visited map[*yaml.Node]bool) {
+	if node == nil {
+		return
+	}
+	if node.Kind == yaml.SequenceNode {
+		for _, item := range node.Content {
+			collectMergedMappingKeys(item, keys, visited)
+		}
+		return
+	}
+	collectEffectiveMappingKeys(node, keys, visited)
 }
 
 func loadFile(path string) (*Config, error) {

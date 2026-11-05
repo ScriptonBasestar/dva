@@ -24,7 +24,8 @@ var canonicalSectionOrder = []string{
 	// longer validates, so a file carrying it is rejected before this order check
 	// ever runs — listing it here would only describe where a key that cannot
 	// appear would have gone.
-	"checks", "default_mode", "suggestion_ignore", "suggestions", "drift_ignore", "modes",
+	// default_mode and modes were removed in v0.5.0 along with applications.
+	"checks", "suggestion_ignore", "suggestions", "drift_ignore",
 	"health_checks", "interaction", "provision", "modules", "subprojects",
 	"endpoints", "infra", "ssh", "devcontainer",
 }

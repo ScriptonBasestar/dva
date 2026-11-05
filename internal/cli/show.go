@@ -150,18 +150,6 @@ func showText(c *config.Config) error {
 		}
 	}
 
-	// Modes (--mode)
-	if len(c.Modes) > 0 {
-		fmt.Println()
-		fmt.Println("Modes (--mode/-M):")
-		names := sortedKeys(c.Modes)
-		maxLen := maxKeyLen(names)
-		for _, name := range names {
-			m := c.Modes[name]
-			fmt.Printf("  %-*s  %s\n", maxLen, name, m.Description)
-		}
-	}
-
 	// Environments (--env)
 	if len(c.Environments) > 0 {
 		fmt.Println()
@@ -371,14 +359,6 @@ func showJSON(c *config.Config) error {
 			}
 			data["compose"] = compose
 		}
-	}
-
-	if len(c.Modes) > 0 {
-		modes := make(map[string]string, len(c.Modes))
-		for k, v := range c.Modes {
-			modes[k] = v.Description
-		}
-		data["modes"] = modes
 	}
 
 	if len(c.Environments) > 0 {

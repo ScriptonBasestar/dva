@@ -34,7 +34,7 @@ Use this reference when creating, reviewing, or migrating `dva.yml` files. Keep 
 Use this order for readability and stable review diffs:
 
 ```text
-version -> vars -> environment -> env_file -> stack -> plans -> default_plan -> environments -> sites -> checks -> default_mode -> suggestion_ignore -> modes -> health_checks -> interaction -> provision -> modules -> subprojects -> endpoints -> infra -> ssh -> devcontainer
+version -> vars -> environment -> env_file -> stack -> plans -> default_plan -> environments -> sites -> checks -> suggestion_ignore -> health_checks -> interaction -> provision -> modules -> subprojects -> endpoints -> infra -> ssh -> devcontainer
 ```
 
 This mirrors `canonicalSectionOrder` (`internal/config/validate_warnings.go`) — that variable is the
@@ -89,10 +89,10 @@ or second database service. Binding metadata is generation context, not a `dva.y
 |---|---|
 | top-level `compose` | `stack.<entry>.runners.compose` |
 | `modes.<name>.compose_services` | `plans.<name>.entries[].services` |
-| `modes.<name>.compose_profiles` | runner config or plan-specific compose vars until profile override is supported |
+| `modes.<name>.compose_profiles` | plans.<name>.entries[].profiles |
 | `stack.*.order` | `plans.*.entries[].order` |
 | `applications.<name>` | `stack.<name>.runners.native/docker` |
-| `default_mode` | default plan naming plus docs; avoid relying on implicit all-service startup |
+| `default_mode` | default_plan; select a named plan explicitly |
 | `environments.*.stack` or `stack_overrides` | `plans.*.entries` and `sites.*.entry_overrides` |
 | `interaction.logs/build/clean` plain commands | lifecycle hooks with `replace`, or renamed commands such as `app-logs` |
 

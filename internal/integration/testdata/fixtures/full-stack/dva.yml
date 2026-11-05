@@ -13,14 +13,15 @@ stack:
         files: [compose.yml]
         project_name: fullstack-test
 
-modes:
+plans:
   docker:
-    description: Full Docker mode
-    compose_profiles: [web, worker]
+    description: Full Docker plan
+    entries:
+      - name: compose
+        profiles: [web, worker]
   native:
-    description: Native services only
-    compose_services: []
-    health_checks: [db, redis]
+    description: Empty native selection
+    entries: []
 
 environments:
   dev:

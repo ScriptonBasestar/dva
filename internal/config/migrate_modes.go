@@ -136,7 +136,7 @@ func migrateModeNode(name string, mode, stack, plans *yaml.Node) (*yaml.Node, st
 	}
 	if len(foreign) > 0 {
 		sort.Strings(foreign)
-		return nil, fmt.Sprintf("%s has no plan equivalent; see the field targets below", strings.Join(foreign, ", "))
+		return nil, fmt.Sprintf("%s requires manual mapping; see the field targets below", strings.Join(foreign, ", "))
 	}
 
 	stackSel := mapValue(mode, "stack")

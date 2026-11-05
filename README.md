@@ -193,7 +193,7 @@ dva down local-dev --purge
 
 ### 기타 설정
 
-- **Modes** (`--mode/-M`, legacy): 런타임 전략 프리셋 — compose profiles + 서비스 필터 + 환경변수 + stack 엔트리 필터. `dva config validate`가 `plans` + `environments` + `sites` 이관을 권고합니다 (`environments`의 `stg`/`prd`는 변수 세트 라벨일 뿐 운영 권한이 아닙니다 — [PRODUCT.md](PRODUCT.md))
+- **Legacy modes (v0.5.0 제거)**: 최신 소스는 `modes`·`default_mode`·`--mode/-M`를 거부합니다. 기존 설정은 `dva config migrate`로 변환하고 `plans`·`environments`·`sites`로 이관하세요.
 - **Environments** (`--env/-E`): 환경변수 프리셋 + stack 엔트리 필터
 - **Tags** (`--tags/-T`): 태그 기반 서비스/엔트리 그룹 필터링 (`--tag` 별칭 지원)
 - **Health Checks**: 비-compose 서비스 상태 확인 및 자동 시작

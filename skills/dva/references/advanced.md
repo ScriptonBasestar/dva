@@ -28,47 +28,11 @@ Run symmetrically with `dva up local-dev`, `dva stop local-dev`, and
 
 ## Modes (`--mode` / `-M`) — legacy migration reference
 
-Modes define the deprecated execution model. Preserve them only during migration;
-do not generate them for new configurations.
-
-```yaml
-modes:
-  backend:
-    description: "Backend services only"
-    compose_profiles: [backend]
-    compose_services: [api, postgres, redis]
-    health_checks: [api-server]
-    stack: [compose]              # run only these stack entries
-    environment:
-      LOG_LEVEL: debug
-  native:
-    description: "No compose, local services only"
-    compose_services: []          # empty array = skip compose entirely
-    health_checks: [local-api]
-```
-
-Mode properties:
-
-| Property | Description |
-|----------|-------------|
-| `compose_profiles` | Docker Compose profiles to activate |
-| `compose_services` | Specific services to include (empty = skip compose) |
-| `health_checks` | Health checks to run for this mode |
-| `stack` | Limit to specific stack entries |
-| `environment` | Mode-specific environment variables |
-| `provision` | Mode-specific provision profile |
-| `build` | Mode-specific build configuration |
-| `run` | Mode-specific run configuration |
-| `applications` | Mode-specific application settings |
-| `endpoint_tags` | Filter endpoints by tag |
-
-### Orthogonality with `--env`
-
-`--mode` and `--env` are **independent, orthogonal axes**:
-- `--mode` = infrastructure topology (native, docker, hybrid)
-- `--env` = environment configuration (dev, ci, staging)
-
-Combine freely: `dva up -M backend -E ci`. Never treat these as the same axis or merge them into a single flag.
+Removed in v0.5.0: modes/default_mode and the DVA --mode/-M selectors are rejected.
+Read old documents only as migration inputs. Preview `dva config migrate`, then use
+named plans, environments and sites. Partial previews exit nonzero; --write never
+replaces the source while removed fields remain. Stop mode-owned processes with the
+existing 0.4.x executable before upgrading; model startup as a native stack entry.
 
 ## Environments (`--env` / `-E`)
 
@@ -188,7 +152,6 @@ Top-level sections:
 | `env_file` | External env file reference |
 | `provision` | Provisioning profiles and steps |
 | `plans` | Current named execution plans |
-| `modes` | Legacy operational modes (`--mode` flag) |
 | `environments` | Environment presets (`--env` flag) |
 | `health_checks` | Non-compose service health checks |
 | `endpoints` | User-facing URL definitions |

@@ -32,9 +32,9 @@
 ## dva.yml Structure
 
 **Canonical section order** (omit unused sections, but keep this order):
-`version → vars → environment → env_file → stack → plans → default_plan → environments → sites → checks → default_mode → suggestion_ignore → modes → health_checks → interaction → provision → modules → subprojects → endpoints → infra → ssh → devcontainer`
+`version → vars → environment → env_file → stack → plans → default_plan → environments → sites → checks → suggestion_ignore → health_checks → interaction → provision → modules → subprojects → endpoints → infra → ssh → devcontainer`
 
-`checks`, `default_mode`, `suggestion_ignore`, and `modes` are legacy-compatible sections. Preserve them only when needed during migration; new configurations should use plans and stack runners.
+`modes` and `default_mode` were removed in v0.5.0. Read them only as raw migration inputs; current configurations use plans and stack runners.
 
 `applications:` was removed. Declare each app as a stack entry with a `native` runner (see
 `stack.api` below) and run `dva config migrate` to convert an existing file. A config that
@@ -181,20 +181,6 @@ provision:                      # Setup automation
 modules:                        # Module imports (.sb/dva/*.yml)
   - module-name
 
-modes:                          # Operational modes (--mode/-M flag)
-  {mode-name}:
-    description: "{human-readable description}"
-    compose_profiles: [profile1]  # Maps to docker compose --profile
-    compose_services: [svc1]      # nil=all, []=skip compose, [svcs]=only those
-    health_checks: [check1]       # Health checks to run in this mode
-    environment:                  # Extra env vars for this mode
-      VAR: value
-    stack: [entry1, entry2]       # Stack entries to include for this mode
-    provision: default            # Suggest provision profile on first run
-    # `applications:` was valid here too and went with the top-level section. A mode
-    # selects entries with `stack:` above; app entries are entries, so they are listed
-    # there like any other.
-
 environments:                   # Environment configs (--env/-E flag)
   {env-name}:
     description: "{human-readable description}"
@@ -330,22 +316,7 @@ plans:
 ```
 
 ### --mode/-M (Modes, legacy)
-Selects a named mode from `modes:` section. Determines HOW to run infrastructure.
-
-```bash
-dva up --mode native     # Skip compose, health checks only
-dva up -M docker         # Legacy mode with compose_profiles
-dva up -M hybrid         # Partial compose + health checks
-```
-
-**Mode resolution logic (evaluated in order):**
-1. If `stack: [entry1]` → run only listed stack entries (selects which stack entries to activate)
-2. If `compose_services` omitted (nil) → start all services in compose files
-3. If `compose_services: []` (empty list) → skip compose entirely, run health_checks only
-4. If `compose_services: [svc1, svc2]` → start only listed services
-5. If `compose_profiles: [prof1]` → pass `--profile prof1` to docker compose (legacy)
-6. If `environment:` present → merge into compose environment
-7. `compose_services` and `compose_profiles` can be combined (both apply independently)
+Removed in v0.5.0. Use config migrate for raw legacy input and run named plans.
 
 **Single stack + plans pattern (preferred):** Use ONE stack entry with all compose files and control service selection via `plans.*.entries[].services`:
 ```yaml
@@ -365,15 +336,7 @@ plans:
       - name: infra
         runner: compose
         services: [db, redis]
-default_mode: infra                      # dva up (no -M) → minimal infra only
-modes:
-  infra:
-    description: "Core infrastructure only (DB + cache)"
-    compose_services: [db, redis]       # Start only infra
-  full-stack:
-    description: "Full dev environment"  # Omit compose_services = start all
 ```
-**`default_mode` (required):** Specifies which mode is applied when `dva up` is called without `--mode/-M`. This ensures `dva up` starts only minimal infrastructure by default. Heavy services (monitoring, Kafka, Redis Sentinel/Cluster, HA setups) must be in explicit modes like `full-stack` or `full-stack-monitoring`. Users run `dva up -M full-stack` when they need everything.
 
 **Anti-pattern:** Do NOT create `compose` + `compose-full` as separate stack entries — this duplicates service definitions and compose file references.
 
@@ -390,24 +353,7 @@ suggestion_ignore:
 
 Interaction metadata can declare `intentional_shadow: true` only to acknowledge a local root literal `child:command` key shadowing a declared subproject route; stale declarations warn and reserved keys remain errors. `suggestion_aliases: {makefile: [target]}` links a runnable local interaction to a documented root Makefile target for suggestion coverage. It creates no runtime alias, cannot claim coverage through an imported child, and duplicate target ownership fails validation. Preserve these fields when rewriting config; see [validation reference](../../../USAGE.md#config-validate).
 
-**`compose_profiles` semantics (legacy `modes:` only):**
-- `compose_profiles: [rust]` → activate the "rust" profile
-- `compose_profiles: []` (empty) → no profiles activated (only default services start)
-- Omitted → no `--profile` flag passed (same as empty)
-
-**"All services" mode:** Omit `compose_services` entirely (nil = all). Do NOT use `compose_profiles: []` as a substitute — empty profiles ≠ all services. If a mode should start everything, simply omit both `compose_services` and `compose_profiles`.
-
-**Avoid redundant modes:** Each mode must have a distinct service set. If two modes would start identical services, merge them or differentiate by adding/removing specific services.
-
-**Common mode patterns:**
-| Mode Name | compose_services | compose_profiles | health_checks | Use Case |
-|-----------|-----------------|------------------|---------------|----------|
-| infra-only | [list of infra] | — | — | Infra only, app runs natively |
-| full-stack | (omitted = all) | — | — | Everything in Docker |
-| full-stack-tools | (omitted = all) | [tools] | — | Everything + dev tools profile |
-| hybrid | [list of infra] | — | [api, worker] | Infra in Docker, app natively |
-| native | [] (empty) | — | [api, worker] | No Docker, health checks only |
-| dev | [minimal infra] | — | [api] | Minimal infra for dev |
+Compose profile selection belongs to plans.<name>.entries[].profiles.
 
 ### --env/-E (Environments)
 Selects a named environment from `environments:` section. Determines WHAT settings to use.
@@ -421,61 +367,47 @@ dva up -M native -E stg  # Combined: native mode + staging env
 **Environment resolution logic:**
 1. Lookup name in `environments:` map
 2. Merge `environment:` vars into compose context
-3. Can combine with `--mode` (both flags applied independently)
+3. Named plans select their environment through plans.<name>.environment. --mode/-M was removed.
 
 ## Health Checks — Start & Hint Patterns
 
-When a service runs natively (not in Docker), use `start` and/or `start_hint` depending on the use case:
-
 ### Pattern 1: Auto-start only (most common)
 
-```yaml
-health_checks:
-  api:
-    type: http
-    url: "http://localhost:11100/health/live"
-    start: "cd my-app && cargo run -p api-server"  # DVA auto-starts this
-    timeout: 5
-    ready_timeout: 120
-```
+A native stack entry owns startup; entry health checks own readiness. Top-level
+health_checks.start/start_hint have no mode executor in v0.5.0.
 
-DVA runs the command in background, tracks PID, logs to `.sb/dva/logs/{name}.log`. `dva down` kills PID-tracked processes. When the service is starting, `dva status` shows the log path instead of a hint text. If you want a human-readable hint shown when the service is not ready, add `start_hint` with different text (Pattern 2).
+```yaml
+stack:
+  api:
+    default_runner: native
+    runners:
+      native:
+        command: uv run uvicorn app:app --port 8000
+    health_checks:
+      ready:
+        type: http
+        url: http://localhost:8000/health
+plans:
+  local-dev:
+    entries:
+      - name: api
+```
 
 ### Pattern 2: Auto-start with different hint text
 
-```yaml
-health_checks:
-  api:
-    type: http
-    url: "http://localhost:11100/health/live"
-    start: "cd my-app && cargo run -p api-server"
-    start_hint: "Run the API server from my-app/"  # Friendlier text for dva status
-    timeout: 5
-    ready_timeout: 120
-```
-
-Use this when you want `dva status` to show a human-friendly message that differs from the actual start command.
+Keep startup in the native runner command. A health-check hint is diagnostic
+metadata, never a second process owner.
 
 ### Pattern 3: Hint only (no auto-start)
 
-```yaml
-health_checks:
-  external-api:
-    type: http
-    url: "http://localhost:9090/health"
-    start_hint: "Start the external API manually: see docs/setup.md"
-    timeout: 5
-```
-
-No auto-start — DVA only displays the hint text when the service is not ready.
+For an external service, declare its readiness check on the owning stack entry
+or use a non-mutating doctor check. Do not add a top-level start command.
 
 ### Rules
 
-- `start` → DVA runs this in background, tracks PID, logs to `.sb/dva/logs/{name}.log`
-- `start_hint` → displayed by `dva status` when the service is not ready
-- If `start` is set without `start_hint`, no hint text is shown (only log path while starting)
-- Setting both to identical values is redundant and triggers a validation warning
-- `dva down` automatically kills PID-tracked processes
+- Stop existing mode-owned processes with 0.4.x before upgrading.
+- Migration previews with remaining modes fail and preserve the source.
+- Named plans keep the process and readiness declaration under one lifecycle owner.
 
 ## Interaction Patterns by Project Type
 
@@ -666,7 +598,7 @@ The following fields are NOT valid in dva.yml. Use the correct equivalents:
 | Invalid Field | Correct Equivalent | Notes |
 |-------------------|--------------------|---------|
 | `host_command: "cmd"` | `command: "cmd"` + `runner: local` | Host commands use `runner: local` |
-| `compose_up: { tags: [infra] }` | `modes:` section | Tag-based service selection belongs in modes. Resolve tags to explicit service names. |
+| `compose_up: { tags: [infra] }` | `plans.<name>.entries[].services` | Resolve service tags to explicit plan service names. |
 | `compose_logs: { services: [svc], follow: true }` | `command: "docker compose logs -f svc"` + `runner: local` | For reserved `logs` command, use `replace:` hook instead |
 | `endpoints: [...]` in interaction | Top-level `endpoints:` section | Use named-keys format: `{name}: { url: ..., label: ... }` |
 | `echo 'Run: ...'` as command | Actual command + `runner: local` | Always execute, never just echo instructions |

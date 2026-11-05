@@ -105,7 +105,6 @@ Stack flags:
   --no-wait                 Start services and return immediately without waiting
 
 Whole-stack-path flags (rejected, not ignored, once a plan is named):
-  --mode, -M MODE           Use a named mode from dva.yml modes section
   --env, -E ENV             Use a named environment from dva.yml environments section
   --tag, -T TAG[,TAG]       Include only lifecycle entries matching any of the given tags
   --exclude-tag TAG[,TAG]   Exclude lifecycle entries matching any of the given tags
@@ -121,6 +120,9 @@ Plan-path flags (only when a plan is being run, e.g. 'dva up <plan>'):
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if helpRequested(args) {
 			return cmd.Help()
+		}
+		if err := rejectRemovedModeFlags(args); err != nil {
+			return err
 		}
 		c := mustLoadConfig()
 		el := rootEnvLoad(c)
@@ -182,11 +184,10 @@ Plan-path flags (only when a plan is being run, e.g. 'dva up <plan>'):
 			return err
 		}
 
-		mode, envName, includeTags, excludeTags, args, err := parseDvaFlags(args)
+		envName, includeTags, excludeTags, args, err := parseDvaFlags(args)
 		if err != nil {
 			return err
 		}
-		mode, isDefault := applyDefaultMode(c, mode)
 
 		force := false
 		noWait := false
@@ -242,24 +243,6 @@ Plan-path flags (only when a plan is being run, e.g. 'dva up <plan>'):
 			return err
 		}
 
-		rm, err := resolveMode(c, mode)
-		if err != nil {
-			return err
-		}
-		if rm.Mode != nil {
-			if isDefault {
-				fmt.Fprintf(os.Stderr, "[mode: %s (default)] %s\n", mode, rm.Mode.Description)
-			} else {
-				fmt.Fprintf(os.Stderr, "[mode: %s] %s\n", mode, rm.Mode.Description)
-			}
-			if len(rm.Mode.Environment) > 0 {
-				e.MergeVars(rm.Mode.Environment)
-			}
-			if rm.Mode.Provision != "" {
-				suggestProvision(c, rm.Mode.Provision)
-			}
-		}
-
 		// Phase 1: Stack up (infrastructure)
 		warnUnsealedEnv(c, el.report, "")
 		orch := lifecycle.NewOrchestrator(c, e)
@@ -269,7 +252,6 @@ Plan-path flags (only when a plan is being run, e.g. 'dva up <plan>'):
 			Wait:        !noWait,
 			IncludeTags: includeTags,
 			ExcludeTags: excludeTags,
-			Mode:        mode,
 			Env:         envName,
 		})
 
@@ -286,11 +268,7 @@ Plan-path flags (only when a plan is being run, e.g. 'dva up <plan>'):
 		}
 		if len(c.Endpoints) > 0 {
 			allHC := checkEndpointHealth(c.Endpoints)
-			var epTags []string
-			if rm.Mode != nil {
-				epTags = rm.Mode.EndpointTags
-			}
-			printEndpointTable(c.Endpoints, epTags, allHC)
+			printEndpointTable(c.Endpoints, nil, allHC)
 		}
 
 		// Returned here rather than at the call site so the status and endpoint tables
@@ -306,9 +284,9 @@ Plan-path flags (only when a plan is being run, e.g. 'dva up <plan>'):
 	},
 }
 
-// teardownCommon resolves mode, applies env, and returns the parsed flags
+// teardownCommon applies env and returns the parsed flags
 // for both down and stop commands. verb is "down" or "stop" for error messages.
-func teardownCommon(args []string, verb string) (*config.Config, *config.Environment, string, []string, []string, error) {
+func teardownCommon(args []string, verb string) (*config.Config, *config.Environment, []string, []string, error) {
 	c := mustLoadConfig()
 	e, envReport := loadEnv(c)
 
@@ -317,14 +295,13 @@ func teardownCommon(args []string, verb string) (*config.Config, *config.Environ
 	// else's resources is worse than refusing to clean up at all (TASK-247 §4).
 	// This precedes every hook, marker removal and backend child below.
 	if err := envReport.Err(); err != nil {
-		return nil, nil, "", nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
-	mode, envName, includeTags, excludeTags, remaining, err := parseDvaFlags(args)
+	envName, includeTags, excludeTags, remaining, err := parseDvaFlags(args)
 	if err != nil {
-		return nil, nil, "", nil, nil, err
+		return nil, nil, nil, nil, err
 	}
-	mode, isDefault := applyDefaultMode(c, mode)
 
 	if len(remaining) > 0 {
 		// A leftover that starts with "-" is a flag, not a service name, and quoting it into
@@ -337,31 +314,16 @@ func teardownCommon(args []string, verb string) (*config.Config, *config.Environ
 		// here means it is not, so the message says what to name rather than quoting the word
 		// back — a plan name is not derivable from a service name.
 		if strings.HasPrefix(remaining[0], "-") {
-			return nil, nil, "", nil, nil, fmt.Errorf("unknown flag %q for \"dva %s\"\n       → 'dva %s' takes no service names or flags of its own; it %ss everything declared",
+			return nil, nil, nil, nil, fmt.Errorf("unknown flag %q for \"dva %s\"\n       → 'dva %s' takes no service names or flags of its own; it %ss everything declared",
 				remaining[0], verb, verb, verb)
 		}
-		return nil, nil, "", nil, nil, fmt.Errorf("'dva %s' %ss all declared entries. Name a plan instead — 'dva %s <plan>' %ss just that plan's entries, and 'dva ls' lists the plans this config declares",
+		return nil, nil, nil, nil, fmt.Errorf("'dva %s' %ss all declared entries. Name a plan instead — 'dva %s <plan>' %ss just that plan's entries, and 'dva ls' lists the plans this config declares",
 			verb, verb, verb, verb)
 	}
 
 	if err := applyEnv(e, c, envName); err != nil {
-		return nil, nil, "", nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
-	rm, err := resolveMode(c, mode)
-	if err != nil {
-		return nil, nil, "", nil, nil, err
-	}
-	if rm.Mode != nil {
-		if isDefault {
-			fmt.Fprintf(os.Stderr, "[mode: %s (default)]\n", mode)
-		} else {
-			fmt.Fprintf(os.Stderr, "[mode: %s]\n", mode)
-		}
-		if len(rm.Mode.Environment) > 0 {
-			e.MergeVars(rm.Mode.Environment)
-		}
-	}
-
-	return c, e, mode, includeTags, excludeTags, nil
+	return c, e, includeTags, excludeTags, nil
 }

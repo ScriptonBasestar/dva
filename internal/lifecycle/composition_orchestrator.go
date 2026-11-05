@@ -591,7 +591,7 @@ func (e *PlanChildExecutor) IsUp(ctx context.Context, child *ExecutionPlan) (boo
 // waitEntriesReady applies the shared entry readiness gate at composition wave
 // boundaries, before the next wave's children start (§4.5).
 func (o *Orchestrator) waitEntriesReady(ctx context.Context, names []string) error {
-	entries, err := o.filterEntries(names, nil, nil, "", "")
+	entries, err := o.filterEntries(names, nil, nil, "")
 	if err != nil {
 		return err
 	}
@@ -613,7 +613,7 @@ func (o *Orchestrator) waitEntriesReady(ctx context.Context, names []string) err
 const livenessPollInterval = 2 * time.Second
 
 // defaultReadyTimeout is the readiness ceiling a health check gets when it declares
-// no ready_timeout — the same ceiling the single-plan startModeProcesses wait applies.
+// no ready_timeout.
 const defaultReadyTimeout = 30 * time.Second
 
 // waitEntryReady gates one entry. Two bounds close the forever-polling window

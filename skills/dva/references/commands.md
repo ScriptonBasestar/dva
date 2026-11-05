@@ -88,8 +88,8 @@ Automatic skip: if all services are already running and healthy, `dva up` displa
 | `--var KEY=VAL` | | Override a plan variable |
 | `--dry-run` | | Preview without mutation |
 
-The `--mode`, `--env`, and tag filters remain available only for legacy
-configurations without named plans.
+The `--env` and tag filters remain available for configurations without named
+plans. `--mode/-M` was removed in v0.5.0; use `dva config migrate` and named plans.
 
 ### `dva down <PLAN>`
 

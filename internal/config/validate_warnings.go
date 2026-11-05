@@ -18,7 +18,6 @@ func (c *Config) ValidateDiagnostics() []ValidationDiagnostic {
 			diagnostics = append(diagnostics, ValidationDiagnostic{Severity: severity, Message: message})
 		}
 	}
-	add(SeverityWarning, c.warnLegacyModes())
 	add(SeverityWarning, c.warnLegacyStackOrder())
 	add(SeverityWarning, c.warnLegacyEnvironmentFields())
 	add(SeverityInfo, c.warnNoPlansHint())
@@ -27,8 +26,6 @@ func (c *Config) ValidateDiagnostics() []ValidationDiagnostic {
 	add(SeverityWarning, c.warnDuplicateParentSubcommand())
 	add(SeverityWarning, c.warnDuplicateStackOrder())
 	add(SeverityWarning, c.warnMultiStackComposeSplit())
-	add(SeverityWarning, c.warnMissingDefaultMode())
-	add(SeverityWarning, c.warnDefaultModeHeavyInfra())
 	add(SeverityWarning, c.warnChildOverridesParentCritical())
 	add(SeverityWarning, c.warnDeepSubcommandNesting())
 	add(SeverityWarning, c.warnLiteralKeyShadowsSubproject())
@@ -184,17 +181,6 @@ func sameStringSet(left, right map[string]bool) bool {
 		}
 	}
 	return true
-}
-
-// warnLegacyModes warns when legacy `modes` are present and suggests migration.
-func (c *Config) warnLegacyModes() []string {
-	if len(c.Modes) == 0 {
-		return nil
-	}
-
-	return []string{
-		fmt.Sprintf("⚠ 'modes' section detected — consider migrating to 'plans' + 'environments' + 'sites'\n  Migration guide: %s\n  Hint: modes are deprecated in favor of the new plans model and will be removed in v0.5.0", migrationGuideURL),
-	}
 }
 
 // warnLegacyStackOrder warns when `stack.*.order` is used and suggests moving order to plan entries.

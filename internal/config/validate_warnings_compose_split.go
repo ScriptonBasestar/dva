@@ -8,11 +8,6 @@ import (
 
 // warnDuplicateStackOrder warns when multiple stack entries share the same order value.
 //
-// Entries that modes keep apart are exempt: order only decides who starts first within
-// one invocation, so when no invocation ever holds two members of a group, there is no
-// sequence between them to control. Without this the warning tells users to order
-// entries that never meet.
-//
 // Entries a plan names are exempt too, and that exemption is the point of TASK-084. It used to be
 // `len(c.Plans) > 0` — any plan anywhere silenced everything — on the premise that "plan order owns
 // sequencing when plans exist". Too coarse in one direction: it hid entries no plan mentions. Too
@@ -45,13 +40,6 @@ func (c *Config) warnDuplicateStackOrder() []string {
 	for _, order := range orders {
 		names := orderMap[order]
 		if len(names) < 2 {
-			continue
-		}
-		group := make(map[string]bool, len(names))
-		for _, name := range names {
-			group[name] = true
-		}
-		if c.modesIsolateEntries(group) {
 			continue
 		}
 		// Report only the entries no plan names. Dropping the covered ones rather than the whole
@@ -170,7 +158,7 @@ func (c *Config) composeEntriesAreIsolated(entries map[string]bool) bool {
 	if len(c.Plans) > 0 {
 		return c.plansIsolateEntries(entries) || c.plansPartitionComposeServices(entries)
 	}
-	return c.modesIsolateEntries(entries)
+	return false
 }
 
 // plansPartitionComposeServices reports whether, in every plan that selects two or
@@ -204,10 +192,8 @@ func (c *Config) plansPartitionComposeServices(entries map[string]bool) bool {
 }
 
 // plansWouldPartitionComposeServices is plansPartitionComposeServices without the
-// default_plan gate, split out the same way plansWouldIsolateEntries is split from
-// plansIsolateEntries: the two functions answer the same "can these entries
-// co-occur" question that warnMissingDefaultMode's default_plan analogue also asks,
-// and repeating the gate inline here would just be a second voice on one problem.
+// default_plan gate, split out so callers can ask the same co-occurrence question
+// without repeating the gate inline.
 func (c *Config) plansWouldPartitionComposeServices(entries map[string]bool) bool {
 	if len(c.Plans) == 0 {
 		return false
@@ -349,63 +335,6 @@ func (c *Config) anyPlanSelectsEntries(entries map[string]bool) bool {
 	return false
 }
 
-// modesIsolateEntries reports whether every entry in the set is claimed by a mode and
-// no single mode pulls in two of them — the arrangement where at most one member of the
-// set is ever live, so no two of them can interact.
-//
-// Callers use this to answer "can these entries co-occur?", which is the question behind
-// several warnings: two compose entries only collide if both are up, and two entries only
-// race for startup order if both are in the same invocation.
-//
-// A mode with no stack: filter selects every entry (see Orchestrator.filterEntries),
-// so it disqualifies the whole arrangement. Configs that set no default_mode leave the
-// same unfiltered path reachable from a bare `dva up`; warnMissingDefaultMode already
-// says so, and repeating it here would just be a second voice on one problem.
-//
-// Looking only at Modes is sound even though environments.<name>.stack is a second,
-// independent entry filter (Orchestrator.filterEntries applies env and mode as separate
-// steps). The two narrow the set by intersection, and every command path resolves the mode
-// through applyDefaultMode first, so `dva up --env X` still gets the default mode's filter
-// on top of the environment's. Verified: with default_mode set, an environment listing two
-// same-order entries plans only the one its mode selects. Without default_mode the mode
-// filter drops out and both do run — which is the unfiltered path the paragraph above
-// defers to warnMissingDefaultMode.
-func (c *Config) modesIsolateEntries(entries map[string]bool) bool {
-	if len(c.Modes) == 0 {
-		return false
-	}
-	claimed := make(map[string]bool, len(entries))
-	for _, mode := range c.Modes {
-		selected := mode.StackEntries()
-		if len(selected) == 0 {
-			return false
-		}
-		hits := 0
-		for _, name := range selected {
-			if entries[name] {
-				hits++
-				claimed[name] = true
-			}
-		}
-		if hits > 1 {
-			return false
-		}
-	}
-	return len(claimed) == len(entries)
-}
-
-// warnMissingDefaultMode warns when modes are defined but no default_mode is set,
-// meaning dva up without -M will start all services from all compose files.
-// Note: invalid default_mode references are caught as hard errors in Validate().
-func (c *Config) warnMissingDefaultMode() []string {
-	if len(c.Modes) == 0 || c.DefaultMode != "" {
-		return nil
-	}
-	return []string{
-		"modes are defined but default_mode is not set — dva up without -M will start all services from all compose files; migrate to plans, because modes will be removed in v0.5.0",
-	}
-}
-
 // heavyInfraServiceNames lists well-known service names that should NOT
 // appear in the default (minimal) mode. These are non-core infrastructure
 // services that consume significant resources.
@@ -435,40 +364,6 @@ var heavyInfraTags = map[string]bool{
 	"kafka":      true,
 	"queue":      true,
 	"search":     true,
-}
-
-// warnDefaultModeHeavyInfra warns when the default mode includes heavy
-// infrastructure services (monitoring, event streaming, object storage, etc.)
-// that should be in separate modes to keep `dva up` fast and lightweight.
-func (c *Config) warnDefaultModeHeavyInfra() []string {
-	if c.DefaultMode == "" || len(c.Modes) == 0 {
-		return nil
-	}
-	mode, ok := c.Modes[c.DefaultMode]
-	if !ok || mode.ComposeServices == nil {
-		return nil
-	}
-
-	serviceTags := c.ComposeServices()
-
-	var heavy []string
-	for _, svc := range *mode.ComposeServices {
-		if isHeavyInfra(svc, serviceTags) {
-			heavy = append(heavy, svc)
-		}
-	}
-
-	if len(heavy) == 0 {
-		return nil
-	}
-
-	sort.Strings(heavy)
-	return []string{
-		fmt.Sprintf("default_mode %q includes non-core infrastructure services %v; "+
-			"consider moving them to a separate mode (e.g., full-stack, infra-full) — "+
-			"default mode should only include core data services (DB, cache)",
-			c.DefaultMode, heavy),
-	}
 }
 
 // isHeavyInfra checks whether a service is heavy infrastructure by its tags

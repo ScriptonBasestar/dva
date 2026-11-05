@@ -10,7 +10,7 @@
 
 - 기존 `stack` 엔트리는 최대한 유지
 - `order`, `tags`, `services` 같은 실행 계획 성격 필드는 plan 쪽으로 이동
-- `modes`는 v0.5.0에서 제거하므로 `plans` / `sites` / `environments`로 분해
+- `modes`는 v0.5.0 소스에서 제거됐으므로 `plans` / `sites` / `environments`로 분해
 - 기존 `applications`는 가능하면 `stack` 안의 runner 선언으로 통합
 
 ### 11-1. 기존 설정에서 사라지거나 이동하는 항목
@@ -19,7 +19,7 @@
 
 | 기존 개념/키 | 새 구조 상태 | 설명 |
 |---|---|---|
-| `modes` | v0.5.0 제거 예정 | 기존 `mode`의 책임을 `plans`, `environments`, `sites`로 분리 |
+| `modes` | v0.5.0 소스에서 제거 | 기존 `mode`의 책임을 `plans`, `environments`, `sites`로 분리 |
 | `applications` | 최상위 섹션 제거 | 앱 정의를 `stack` 내부 runner 선언으로 통합 |
 | `stack.*.order` | `plans.*.entries[].order` 로 이동 | 실행 순서는 선언이 아니라 실행 계획 책임 |
 | `stack.*.tags` | 축소 또는 선택적 메타데이터화 | 핵심 실행 제어 수단으로는 사용하지 않음 |
@@ -200,6 +200,11 @@ interactions:
 
 ### 12-5. 설정 변환기
 
+v0.5.0으로 올리기 전에 현재 0.4.x 실행 파일로 mode가 소유한 health-start 프로세스를
+중지한다. 이후 프로세스의 시작 명령은 `stack.<entry>.runners.native.command`, 준비 검사는
+`stack.<entry>.health_checks`로 이관한다. v0.5.0은 구버전 PID를 자동 종료하거나 정리하지 않는다.
+
+
 `dva config migrate`는 이전 선언을 `stack`/`plans` 형태로 옮기는 opt-in
 호환 레이어다.
 `dva config migrate`는 다음의 기계적으로 판단 가능한 변환만 수행한다.
@@ -209,7 +214,8 @@ interactions:
 - `stack.*.order`를 해당 선언을 참조하는 `plans.*.entries[].order`로 이동
 - stack 선택만 하는 mode를 같은 이름의 plan으로 이동
 
-불가능한 선언은 `Left for you` 아래에 남긴다. 그 밖의 `modes`는 사유와 대상 위치만 보고한다.
+불가능한 선언은 `Left for you` 아래에 남긴다. 제거된 modes/default_mode가 남으면
+preview는 부분 결과와 수동 안내를 출력하고 비0으로 끝난다. `--write`는 원본을 보존한다. 그 밖의 `modes`는 사유와 대상 위치만 보고한다.
 `stack.*.order`는 참조 plan entry가 없으면 삭제하지 않는다. plan 없는 설정에서는 이
 값이 기존 stack 실행 순서를 결정하므로, 사람이 named plan과 해당 entries를 선언한 뒤
 다시 `dva config migrate`를 실행해야 한다. 이는 수동 한계다. 이 경우
@@ -231,15 +237,5 @@ release 기록에 남긴다. 이 yes/no predicate가 두 번 연속 참이면 �
 
 ## 13. 결정 사항 요약
 
-- `stack`은 유지한다.
-- `stack`은 선언 저장소다.
-- `stack` 엔트리는 multi-runner logical unit이 될 수 있다.
-- 실행 명령의 대상은 named execution entry다.
-- 문서에서는 이를 `plans`로 부르지만, CLI에는 굳이 드러내지 않는다.
-- `profiles`는 도입하지 않는다.
-- `environments`는 환경 변수와 용도 차이 담당이다.
-- `sites`는 host 기준 실행 위치 담당이다.
-- `env_file`은 유지한다.
-- `compose`는 여러 파일과 여러 서비스를 함께 다루는 묶음 단위로 지원한다.
-- runner 다양성은 유지하되, 선언 레이어와 계획 레이어를 분리한다.
-- `subprojects`, `interactions`, `provision`은 유지하되 실행 모델과 분리된 보조 레이어로 취급한다.
+현재 선언·계획·환경·사이트의 책임은 [아키텍처](../ARCHITECTURE.md)와
+[선언 모델](40-declarative-stack-and-plans.md)이 소유한다. 이 문서는 호환·이관 규칙을 소유한다.

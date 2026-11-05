@@ -81,6 +81,8 @@ func LoadSubprojects(parentDir string, subs map[string]SubprojectConfig, opts ..
 				return nil, fmt.Errorf("merging subproject %q override: %w", name, err)
 			}
 			cfg.setEnvFileOrigin(overCfg.EnvFile, EnvOriginSubproject, overrideFile)
+		} else if !isAbsentOverrideFile(overrideFile, err) {
+			return nil, fmt.Errorf("loading subproject %q override: %w", name, err)
 		}
 
 		if err := validateEnvSourceDeclarations(cfg); err != nil {

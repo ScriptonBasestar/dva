@@ -36,24 +36,21 @@
 8. `environments:` (선택)
 9. `sites:` (선택)
 10. `checks:` (dva doctor)
-11. `default_mode:` (dva up 기본 모드 — legacy)
-12. `suggestion_ignore:` (선택)
-13. `modes:` (legacy — 마이그레이션 중에만 유지)
-14. `health_checks:` (DVA가 실행하지 않는 외부 서비스 전용)
-15. `interaction:` (organized by category)
-16. `provision:` (default, full, reset)
-17. `modules:` (선택)
-18. `subprojects:` (if devbox pattern)
-19. `endpoints:` (user-facing access URLs)
-20. `infra:` (선택)
-21. `ssh:` (선택)
-22. `devcontainer:` (선택)
+11. `suggestion_ignore:` (선택)
+12. `health_checks:` (DVA가 실행하지 않는 외부 서비스 전용)
+13. `interaction:` (organized by category)
+14. `provision:` (default, full, reset)
+15. `modules:` (선택)
+16. `subprojects:` (if devbox pattern)
+17. `endpoints:` (user-facing access URLs)
+18. `infra:` (선택)
+19. `ssh:` (선택)
+20. `devcontainer:` (선택)
 
 `applications:`는 제거됐습니다 (docs/43). 앱은 `stack.<name>.default_runner: native` +
 `runners.native`로 선언하고, 기존 파일은 `dva config migrate`로 변환하세요.
 
 ---
-
 ## Capability-driven named plans
 
 Generate plans from verified capabilities, not from a fixed list of popular containers.
@@ -153,53 +150,21 @@ endpoints:
 ### Modes
 
 ```yaml
-default_mode: hybrid    # dva up → infra Docker + apps native (most common dev workflow)
-
-modes:
-  # Pure native: no Docker at all (e.g., SQLite for local-only dev)
-  native:
-    description: "All natively, no Docker (SQLite/in-memory)"
-    stack: [api, worker]          # App entries only — no compose entry
-    environment:
-      DB_TYPE: sqlite
-      DATABASE_URL: "sqlite:./dev.db"
-
-  # Hybrid: infrastructure in Docker, app entries native (DEFAULT for most devbox)
-  hybrid:
-    description: "Infra in Docker, apps run natively"
-    stack: [compose, api, worker] # Docker infra + native app entries
-    compose_services: [postgres, redis]
-    environment:
-      DB_TYPE: postgres
-      DATABASE_URL: "postgresql://{user}:{pass}@localhost:{port}/{db}"
-      REDIS_URL: "redis://localhost:{port}"
-    provision: default
-
-  # Mixed: some entries native, some as compose services
-  hybrid-mixed:
-    description: "API in Docker, frontend natively"
-    stack: [compose, frontend]    # `api` is a compose service here, not an entry
-    compose_services: [postgres, redis, api]
-    environment:
-      API_URL: "http://localhost:{port}"
-
-  # All Docker: production-like environment
-  docker:
-    description: "All services in Docker"
-    stack: [compose]              # No native app entries selected
-    compose_profiles: [app]
-    provision: default
-
-  # Infrastructure only: for CI or shared infra testing
-  infra-only:
-    description: "Infrastructure only (DB, Redis)"
-    compose_services: [postgres, redis]
+plans:
+  local-dev:
+    entries:
+      - name: compose
+        services: [postgres, redis]
+      - name: api
+        depends_on: [compose]
+      - name: worker
+        depends_on: [compose]
+default_plan: local-dev
 ```
 
-> **Key pattern:** a mode's `stack:` is the whole selection. Modes used to carry a separate
-> `applications:` strategy field, which meant an app could be started by the mode's app
-> strategy *and* by a compose entry in the same run. App entries are stack entries now, so
-> one list decides everything and the double-owner shape cannot be written.
+> **Key pattern:** named plan entries select stack runners and services. Native startup
+> belongs to runners.native.command and readiness to the entry health checks.
+> Removed modes/default_mode are migration inputs only.
 >
 > **Environment switching:** Native entries connect via `localhost:{host_port}`.
 > Compose services use internal service names (e.g., `postgres:5432`).
@@ -488,23 +453,8 @@ Same structure as Rust section — use `stack.<entry>.runners.compose` -> `servi
 ### Key Differences
 
 ```yaml
-# Modes — container-first uses compose_profiles for overlays
-default_mode: infra    # dva up → minimal infra only
+# Named plans select services and Compose profiles; modes were removed in v0.5.0.
 
-modes:
-  infra:
-    description: "Dependencies only (DB, cache, auth)"
-    compose_services: [postgres, redis]
-  full-stack:
-    description: "Core app + infra"
-  full-stack-tools:
-    description: "Core + dev tools (adminer, redis-commander)"
-    compose_profiles: [tools]
-
-# Health checks — typically not needed (app is in Docker)
-# Use compose healthcheck: instead
-
-# Interaction — runs INSIDE container
 interaction:
   shell:
     description: "Open shell in app"

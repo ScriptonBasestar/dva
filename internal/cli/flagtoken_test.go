@@ -183,7 +183,6 @@ func TestParseDvaFlagValueShapes(t *testing.T) {
 	cases := []struct {
 		name         string
 		in           []string
-		mode         string
 		env          string
 		includeTags  []string
 		filtered     []string
@@ -192,11 +191,11 @@ func TestParseDvaFlagValueShapes(t *testing.T) {
 		wantFiltered string
 		wantErr      bool
 	}{
-		{name: "separate value", in: []string{"--mode", "native", "pg"}, mode: "native", wantFiltered: "pg"},
-		{name: "inline value", in: []string{"--mode=native", "pg"}, mode: "native", wantFiltered: "pg"},
-		{name: "short inline", in: []string{"-M=native", "-E=stg"}, mode: "native", env: "stg"},
+		{name: "separate value", in: []string{"--env", "stg", "pg"}, env: "stg", wantFiltered: "pg"},
+		{name: "inline value", in: []string{"--env=stg", "pg"}, env: "stg", wantFiltered: "pg"},
+		{name: "short inline", in: []string{"-E=stg"}, env: "stg"},
 		{name: "list value splits", in: []string{"--tag=a,b"}, includeTags: []string{"a", "b"}},
-		{name: "unknown leading-dash value is preserved", in: []string{"--mode", "-weird-but-real"}, mode: "-weird-but-real"},
+		{name: "unknown leading-dash value is preserved", in: []string{"--env", "-weird-but-real"}, env: "-weird-but-real"},
 		{name: "bare bool", in: []string{"--debug", "pg"}, wantDebug: true, wantFiltered: "pg"},
 		{name: "bool with value", in: []string{"--debug=true", "pg"}, wantDebug: true, wantFiltered: "pg"},
 		{name: "bool with false value", in: []string{"--debug=false", "pg"}, wantDebug: false, wantFiltered: "pg"},
@@ -206,8 +205,8 @@ func TestParseDvaFlagValueShapes(t *testing.T) {
 			// inside DVA and the callers that reject unknown flags have always rejected a
 			// stray `--`.
 			name:         "terminator stops the scan and is kept",
-			in:           []string{"--mode=native", "--", "--mode=other", "--debug"},
-			mode:         "native",
+			in:           []string{"--env=stg", "--", "--mode=other", "--debug"},
+			env:          "stg",
 			wantFiltered: "-- --mode=other --debug",
 		},
 		{
@@ -237,7 +236,7 @@ func TestParseDvaFlagValueShapes(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			debug, jsonOutput, dryRun = false, false, false
-			mode, env, includeTags, _, filtered, err := parseDvaFlags(tc.in)
+			env, includeTags, _, filtered, err := parseDvaFlags(tc.in)
 
 			if tc.wantErr {
 				if err == nil {
@@ -253,9 +252,6 @@ func TestParseDvaFlagValueShapes(t *testing.T) {
 				t.Fatalf("parseDvaFlags(%v) returned an unexpected error: %v", tc.in, err)
 			}
 
-			if mode != tc.mode {
-				t.Errorf("mode = %q, want %q", mode, tc.mode)
-			}
 			if env != tc.env {
 				t.Errorf("env = %q, want %q", env, tc.env)
 			}

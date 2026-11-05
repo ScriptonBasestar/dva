@@ -16,9 +16,6 @@ import (
 // --env resolve against those sections, and a fixture without them can only ever show them
 // failing.
 const taggedPlanStackConfig = `version: "0.1.0"
-modes:
-  native:
-    description: run natively
 environments:
   dev:
     description: development
@@ -49,9 +46,6 @@ plans:
 // taggedStackOnlyConfig is the same stack with no plans:, so every invocation takes the
 // whole-stack path and the four selectors are the only thing under test.
 const taggedStackOnlyConfig = `version: "0.1.0"
-modes:
-  native:
-    description: run natively
 environments:
   dev:
     description: development
@@ -79,8 +73,6 @@ var stackPathOnlyCases = []struct {
 	{"tag-inline", []string{"--tag=app"}},
 	{"tag-short", []string{"-T", "app"}},
 	{"exclude-tag", []string{"--exclude-tag", "infra"}},
-	{"mode", []string{"--mode", "native"}},
-	{"mode-short", []string{"-M", "native"}},
 	{"env", []string{"--env", "dev"}},
 	{"env-short", []string{"-E", "dev"}},
 
@@ -269,7 +261,7 @@ func TestSuppressedDefaultPlanKeepsWorkingSuggestions(t *testing.T) {
 func TestSuppressedDefaultPlanStripsOnlyTheSelectors(t *testing.T) {
 	useConfig(t, taggedPlanStackConfig)
 	withUserTypedDryRun(t, func() {
-		err := upCmd.RunE(upCmd, dryRunArgs("--tag", "app", "--no-wait", "--var", "K=V", "--mode=native"))
+		err := upCmd.RunE(upCmd, dryRunArgs("--tag", "app", "--no-wait", "--var", "K=V", "--env=dev"))
 		if err == nil {
 			t.Fatal("dva up with leading flags returned nil")
 		}
@@ -283,7 +275,7 @@ func TestSuppressedDefaultPlanStripsOnlyTheSelectors(t *testing.T) {
 		}
 		// Both removed names are reported, so the user learns which flags went and why —
 		// a suggestion that silently drops arguments is its own kind of dead end.
-		for _, name := range []string{"--tag", "--mode"} {
+		for _, name := range []string{"--tag", "--env"} {
 			if !strings.Contains(msg, name) {
 				t.Errorf("message does not name the removed flag %s: %q", name, msg)
 			}
@@ -351,7 +343,6 @@ func TestStackPathSelectorsNarrowAndResolve(t *testing.T) {
 		unknown []string
 		section string
 	}{
-		{"mode", []string{"--mode", "native"}, []string{"--mode", "nope"}, "mode"},
 		{"env", []string{"--env", "dev"}, []string{"--env", "nope"}, "env"},
 	} {
 		t.Run(tc.name+" resolves against its config section", func(t *testing.T) {
@@ -388,7 +379,7 @@ func TestManifestQualifiesStackPathOnlySelectors(t *testing.T) {
 		if !ok {
 			t.Fatalf("%q has no static_commands entry", command)
 		}
-		for _, opt := range []string{"mode", "env", "tag", "exclude-tag"} {
+		for _, opt := range []string{"env", "tag", "exclude-tag"} {
 			desc, present := entry.Options[opt]
 			if !present {
 				t.Errorf("static_commands[%q].options is missing %q", command, opt)
@@ -406,16 +397,8 @@ func TestManifestQualifiesStackPathOnlySelectors(t *testing.T) {
 			}
 		}
 	}
-	if checked != 16 {
-		t.Fatalf("checked %d option strings, want 16 (4 commands x 4 options)", checked)
-	}
-
-	build, ok := m.StaticCommands["build"]
-	if !ok {
-		t.Fatal("build has no static_commands entry")
-	}
-	if desc := build.Options["mode"]; strings.Contains(desc, optStackPathOnly) {
-		t.Errorf("build --mode is accepted on both paths, so the qualifier is false there: %q", desc)
+	if checked != 12 {
+		t.Fatalf("checked %d option strings, want 12 (4 commands x 3 options)", checked)
 	}
 }
 
@@ -431,7 +414,7 @@ func TestLongHelpAgreesWithTheManifest(t *testing.T) {
 				t.Fatalf("dva %s --help does not qualify the whole-stack-path flags", command)
 			}
 			section := long[i:]
-			for _, flag := range []string{"--mode", "--env", "--tag", "--exclude-tag"} {
+			for _, flag := range []string{"--env", "--tag", "--exclude-tag"} {
 				if !strings.Contains(section, flag) {
 					t.Errorf("%s is not listed under the qualified heading in 'dva %s --help'", flag, command)
 				}
@@ -499,7 +482,7 @@ func TestSuppressedDefaultPlanDefersMalformedSelectorsToTheParser(t *testing.T) 
 		{"flag as value", []string{"--tag", "-T", "web"}, "--tag requires a value, got the flag -T"},
 		{"inline empty", []string{"--tag="}, "--tag requires a non-empty value"},
 		{"empty next token", []string{"--tag", ""}, "--tag requires a non-empty value"},
-		{"blank next token", []string{"--mode", "  "}, "--mode requires a non-blank value"},
+		{"blank next token", []string{"--env", "  "}, "--env requires a non-blank value"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			useConfig(t, taggedPlanStackConfig)
@@ -597,7 +580,7 @@ func TestSuppressedDefaultPlanRefusesToSuggestWhatThePlanPathRejects(t *testing.
 	}{
 		{"up", upCmd, []string{"--tag", "app", "web"}},
 		{"restart", restartCmd, []string{"--tag", "app", "web"}},
-		{"down", downCmd, []string{"--mode", "native", "web"}},
+		{"down", downCmd, []string{"--env", "dev", "web"}},
 	} {
 		t.Run(tc.command, func(t *testing.T) {
 			useConfig(t, taggedPlanStackConfig)
@@ -714,7 +697,7 @@ func countToken(args []string, token string) int {
 // The guard is faithful to that behaviour — it echoes what build will act on — and repairing
 // the behaviour is what makes the echo worth reading.
 func TestSuppressedDefaultPlanOnBuildNeverSeesASelector(t *testing.T) {
-	_, _, _, _, remaining, err := parseDvaFlags([]string{"--tag", "app", "--no-cache"})
+	_, _, _, remaining, err := parseDvaFlags([]string{"--tag", "app", "--no-cache"})
 	if err != nil {
 		t.Fatalf("parseDvaFlags: %v", err)
 	}

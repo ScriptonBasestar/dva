@@ -134,7 +134,7 @@ func TestTeardownDoesNotAdviseRunningDvasOwnFlag(t *testing.T) {
 	t.Run("malformed bool is named, not suggested", func(t *testing.T) {
 		composePassthroughFixtureWith(t, buildFixtureYAML)
 
-		_, _, _, _, _, err := teardownCommon([]string{"--debug=notabool"}, "down")
+		_, _, _, _, err := teardownCommon([]string{"--debug=notabool"}, "down")
 		if err == nil {
 			t.Fatal("teardownCommon accepted a malformed boolean")
 		}
@@ -149,7 +149,7 @@ func TestTeardownDoesNotAdviseRunningDvasOwnFlag(t *testing.T) {
 	t.Run("an unknown flag is not called a service name", func(t *testing.T) {
 		composePassthroughFixtureWith(t, buildFixtureYAML)
 
-		_, _, _, _, _, err := teardownCommon([]string{"--bogus"}, "down")
+		_, _, _, _, err := teardownCommon([]string{"--bogus"}, "down")
 		if err == nil {
 			t.Fatal("teardownCommon accepted an unknown flag")
 		}
@@ -169,7 +169,7 @@ func TestTeardownDoesNotAdviseRunningDvasOwnFlag(t *testing.T) {
 		// go unnoticed and `dva stop --bogus` would advise a command the user did not run.
 		composePassthroughFixtureWith(t, buildFixtureYAML)
 
-		_, _, _, _, _, err := teardownCommon([]string{"--bogus"}, "stop")
+		_, _, _, _, err := teardownCommon([]string{"--bogus"}, "stop")
 		if err == nil {
 			t.Fatal("teardownCommon accepted an unknown flag for stop")
 		}
@@ -193,7 +193,7 @@ func TestTeardownDoesNotAdviseRunningDvasOwnFlag(t *testing.T) {
 		// names the *form* and points at `dva ls` for the names, and that is what is asserted.
 		composePassthroughFixtureWith(t, buildFixtureYAML)
 
-		_, _, _, _, _, err := teardownCommon([]string{"infra"}, "down")
+		_, _, _, _, err := teardownCommon([]string{"infra"}, "down")
 		if err == nil {
 			t.Fatal("teardownCommon accepted a service name for a whole-stack teardown")
 		}

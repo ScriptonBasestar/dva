@@ -81,35 +81,6 @@ func TestDoctorChecksParsing(t *testing.T) {
 	}
 }
 
-func TestModeProvisionField(t *testing.T) {
-	tmpDir := t.TempDir()
-	dvaYml := filepath.Join(tmpDir, FileName)
-
-	content := `modes:
-  full-stack:
-    description: "Everything"
-    provision: setup
-provision:
-  setup:
-    - step: Install deps
-      run: npm install
-`
-	os.WriteFile(dvaYml, []byte(content), 0644)
-
-	cfg, err := Load(tmpDir)
-	if err != nil {
-		t.Fatalf("Load error: %v", err)
-	}
-
-	m, ok := cfg.Modes["full-stack"]
-	if !ok {
-		t.Fatal("mode full-stack not found")
-	}
-	if m.Provision != "setup" {
-		t.Errorf("provision = %q, want setup", m.Provision)
-	}
-}
-
 func TestEndpointsParsing(t *testing.T) {
 	tmpDir := t.TempDir()
 	dvaYml := filepath.Join(tmpDir, FileName)
@@ -201,31 +172,6 @@ func TestEndpointsMergeOverride(t *testing.T) {
 	}
 	if cfg.Endpoints["admin"].URL != "http://localhost:3000" {
 		t.Errorf("admin should be added from override")
-	}
-}
-
-func TestModeEndpointTags(t *testing.T) {
-	tmpDir := t.TempDir()
-	dvaYml := filepath.Join(tmpDir, FileName)
-
-	content := `modes:
-  dev:
-    description: "Dev mode"
-    endpoint_tags: [app, monitoring]
-`
-	os.WriteFile(dvaYml, []byte(content), 0644)
-
-	cfg, err := Load(tmpDir)
-	if err != nil {
-		t.Fatalf("Load error: %v", err)
-	}
-
-	m := cfg.Modes["dev"]
-	if len(m.EndpointTags) != 2 {
-		t.Fatalf("expected 2 endpoint_tags, got %d", len(m.EndpointTags))
-	}
-	if m.EndpointTags[0] != "app" || m.EndpointTags[1] != "monitoring" {
-		t.Errorf("endpoint_tags = %v", m.EndpointTags)
 	}
 }
 
@@ -392,56 +338,5 @@ func TestResolveEndpoints_IntegrationWithLoad(t *testing.T) {
 	db := cfg.Endpoints["db"]
 	if db.URL != "localhost:15432" {
 		t.Errorf("db.URL = %q, want localhost:15432", db.URL)
-	}
-}
-
-func TestDefaultMode_ValidReference(t *testing.T) {
-	cfg := &Config{
-		DefaultMode: "dev",
-		Modes: map[string]ModeConfig{
-			"dev": {Description: "dev mode"},
-		},
-	}
-	// Valid reference — no error expected from semantic check
-	if _, ok := cfg.Modes[cfg.DefaultMode]; !ok {
-		t.Errorf("expected default_mode '%s' to exist in modes", cfg.DefaultMode)
-	}
-}
-
-func TestDefaultMode_InvalidReference(t *testing.T) {
-	cfg := &Config{
-		DefaultMode: "nonexistent",
-		Modes: map[string]ModeConfig{
-			"dev": {Description: "dev mode"},
-		},
-	}
-	if _, ok := cfg.Modes[cfg.DefaultMode]; ok {
-		t.Errorf("expected default_mode '%s' NOT to exist in modes", cfg.DefaultMode)
-	}
-}
-
-func TestDefaultMode_Empty(t *testing.T) {
-	// Validate() cross-checks default_mode against modes only when it is set
-	// (validate.go: `if c.DefaultMode != ""`). Omitting it must therefore pass
-	// even though "" is not a key in modes — drop that guard and this fails
-	// with `default_mode '' not found in modes`.
-	//
-	// Asserting through a real load is the point. The previous version built a
-	// Config literal and checked that the "" it had just assigned was still "",
-	// which held no matter what the validator did and left Modes written but
-	// never read — the unused write an analyzer eventually flagged.
-	cfg := loadConfigForSchemaTest(t, t.TempDir(), `version: "0.1.44"
-modes:
-  dev:
-    description: dev mode
-`)
-	if cfg.DefaultMode != "" {
-		t.Fatalf("fixture should omit default_mode, got %q", cfg.DefaultMode)
-	}
-	if len(cfg.Modes) != 1 {
-		t.Fatalf("fixture should define exactly 1 mode, got %d", len(cfg.Modes))
-	}
-	if err := cfg.Validate(); err != nil {
-		t.Errorf("empty default_mode should validate, got: %v", err)
 	}
 }

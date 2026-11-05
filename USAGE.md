@@ -15,7 +15,8 @@ root·공유 자원별 중복 실행 방지, 상태 조회는 [CI 프로필](doc
 
 ## 버전과 지원 범위
 
-2026-11-02 기준 공개 설치 버전은 **v0.4.4**다. v0.4.0 tag는 Release 없이 남았으므로
+2026-11-02 기준 공개 설치 버전은 **v0.4.4**다. 최신 개발 소스는 v0.5.0이며,
+v0.4.5 후보는 검증된 기존 commit으로 동결해 별도로 보존한다. v0.4.0 tag는 Release 없이 남았으므로
 v0.3.0 다음 공개판은 v0.4.1이고, v0.4.2~v0.4.4는 그 위의 patch다. 이 문서는 현재 소스의 사용법도
 포함하므로 아래에서 `미공개`인 기능은 v0.4.4 설치만으로 사용할 수 없다. 공개 기록은
 [v0.4.3·v0.4.4 공개](ROADMAP.md#2026-11-02-v043v044-공개)에 있다.
@@ -324,12 +325,15 @@ stack:                          stack:
 LF로 남습니다. LF/CRLF가 섞였거나 lone CR을 쓰는 파일은 이 보존 계약의 대상이 아니며,
 migrate는 변환 전에 원본을 그대로 두고 균일한 LF나 CRLF로 바꾸라는 사유를 보고합니다.
 
+v0.5.0에서 `modes`·`default_mode`는 일반 로딩에서 거부되며, 아래 예시는 변환기의 입력 전용입니다.
 `modes:` 중 `description` / `stack` / `compose_services` / `endpoint_tags`만 가진 mode는
 같은 이름의 plan으로 옮깁니다. `--mode <name>`이 하던 일을 `dva up <name>`이 그대로 하도록
 `stack`은 `entries[].name`이 되고, `compose_services`는 선택된 stack 안의 유일한 compose
 엔트리에 `services`로 붙습니다. `default_mode`가 변환된 mode를 가리키면 `default_plan`으로
 바뀝니다. 그 밖의 필드를 가진 mode, compose 엔트리가 둘 이상이어서 `services`를 붙일 곳이
 모호한 mode, 같은 이름의 plan이 이미 있는 mode는 `Left for you`에 사유와 함께 남습니다.
+제거된 키가 남은 preview는 부분 결과와 수동 안내를 출력하고 비0으로 종료합니다.
+`--write`는 이 경우 파일을 바꾸지 않습니다. 정상 설정인 다른 수동 이관 항목은 기존 안내를 유지합니다.
 
 ```yaml
 modes:                          plans:
@@ -563,7 +567,6 @@ force-recreate가 될 수 있습니다. 이것은 완전한 무인자 호출이 
 
 | Flag | Description |
 |---|---|
-| `--mode`, `-M MODE` | `modes` 섹션의 named mode 적용 (legacy — `dva validate`가 plans 이관을 권고) |
 | `--env`, `-E ENV` | `environments` 섹션의 named environment 적용 |
 | `--tag`, `--tags`, `-T TAG[,TAG]` | 해당 태그를 가진 lifecycle 엔트리만 포함 |
 | `--exclude-tag`, `--exclude-tags TAG[,TAG]` | 해당 태그를 가진 lifecycle 엔트리 제외 |
@@ -593,7 +596,7 @@ force-recreate가 될 수 있습니다. 이것은 완전한 무인자 호출이 
 (`--purge is only supported by down`). 데이터를 지우는 플래그가 조용히 무시되는 경우를
 없애기 위한 것으로, `dva up p --purge`는 성공하지 않습니다.
 
-환경/모드/태그는 plan 정의(`plans.<name>`)가 결정하므로, named plan 실행에는 `--mode`/`--env`/`--tag`를 쓸 수 없습니다(`dva up <plan> --env prod`는 `unsupported plan flag: --env`로 거부됩니다).
+환경/태그는 plan 정의(`plans.<name>`)가 결정하므로, named plan 실행에는 `--env`/`--tag`를 쓸 수 없습니다(`dva up <plan> --env prod`는 `unsupported plan flag: --env`로 거부됩니다).
 **"같은 plan을 다른 environment로 한 번만 실행"은 지금은 지원되지 않습니다** — `environment:`가
 다른 plan을 하나 더 선언해 복제하는 것이 유일한 방법입니다. plan 간 선언 중복을 alias/extends로
 줄이는 안은 TASK-307(설계 승인 대기, `docs/55-plan-alias-extends-design.md`)에서 검토 중입니다.
@@ -1022,11 +1025,9 @@ interaction:
 | `environments` | 환경 프리셋 (`dev/stg/prd`) |
 | `sites` | 실행 host 프리셋 (`local/remote/cloud`) |
 | `checks` | `dva doctor` 환경 사전조건 체크 |
-| `default_mode` | `--mode` 미지정 시 적용할 기본 `modes` 엔트리 (legacy `modes`와 함께만 의미가 있음) |
 | `suggestion_ignore` | config suggestion 경고에서 제외할 Makefile/package.json 타겟: legacy 문자열 패턴 또는 이유·범위를 적은 객체 규칙 |
 | `suggestions` | suggestion 소스 종류별 on/off (`makefile`, `package_json`) |
 | `drift_ignore` | 등록되지 않은 compose 파일 drift 경고에서 제외할 파일 glob 패턴 |
-| `modes` | 런타임 전략 프리셋 (`--mode`로 선택, legacy — `plans`+`environments`+`sites` 이관 권고) |
 | `health_checks` | 비-compose 서비스 헬스체크 |
 | `interaction` | 커맨드 정의 (command, command list, script, script_file, steps, subcommands 등) — 예약어/훅 규칙은 아래 [interaction](#interaction-예약어와-훅) 참조 |
 | `provision` | 프로비저닝 프로필 및 스텝 정의 |
@@ -1079,8 +1080,7 @@ sites:
 ```
 
 이 예시가 실제로 통과하는지는 확인한 것입니다. 이전 판의 예시는 순서만 보여주려고
-`modes:`를 넣었는데, `modes`는 `plans` + `environments` + `sites`로의 이전을 권고하는
-deprecation 경고를 냅니다 — 순서를 설명하는 예시가 그 자리에서 경고를 내면 읽는 쪽은
+`modes:`를 넣었지만 최신 v0.5.0 소스에서는 이 키가 거부됩니다 — 순서를 설명하는 예시가 그 자리에서 경고를 내면 읽는 쪽은
 어느 쪽을 따라야 할지 알 수 없습니다.
 
 예시를 옮겨 쓸 때 걸리는 곳들: `entries`는 `- name: api` 형태의 맵 목록이라
@@ -1452,23 +1452,9 @@ plans:
 
 ### default_mode
 
-`default_mode`는 `--mode`(`-M`)를 지정하지 않았을 때 적용할 `modes` 엔트리를 선택합니다.
-
-```yaml
-default_mode: infra
-
-modes:
-  infra:
-    ...
-  full:
-    ...
-```
-
-- 기본값이 없습니다. 설정하지 않으면 어떤 mode도 적용되지 않습니다. 실행 범위는 plan
-  선택 규칙을 따르며, plan이 없는 whole-stack 경로에서는 모든 stack 엔트리와 Compose의
-  profile 없는 서비스를 대상으로 합니다.
-- `modes`가 정의되어 있는데 `default_mode`가 비어 있으면 `dva validate`가 경고합니다. `modes`는 v0.5.0에서 제거되므로 `default_mode`를 추가하기보다 `plans`로 이관하세요.
-- `modes`에 없는 이름을 지정하면 경고가 아니라 검증 에러입니다.
+최신 v0.5.0 소스는 `modes`·`default_mode`·`--mode/-M`를 거부합니다. 이 항목은 구버전
+설정의 이관 안내입니다. `dva config migrate` preview를 확인하고, 완전히 변환된 결과만
+`--write`로 적용하세요. 기본 실행 대상은 `default_plan`으로 선언합니다.
 
 ### default_plan
 
@@ -2359,7 +2345,7 @@ endpoints:
 | `url` | 직접 명시하는 URL |
 | `source` | `"<이름>:<host_port>"` 표기. `url`이 비어 있으면 `http://localhost:{host_port}`로 조립됩니다(잘 알려진 비-HTTP 서비스 이름이면 스킴 없이 `localhost:{host_port}`). **compose 파일을 읽지 않습니다** — 포트는 이 문자열에 적힌 값을 그대로 쓰므로 compose의 포트 매핑과 자동으로 동기화되지 않고, 이름 조각은 스킴 선택에만 쓰입니다(`internal/config/config.go` `ResolveEndpoints`). `url`이 있으면 `source`는 무시됩니다 |
 | `label` | 표시용 이름 |
-| `tags` | 표시 대상을 좁히는 태그. **좁히는 주체는 설정뿐입니다** — `plans.<name>.endpoint_tags`(`internal/cli/plan_lifecycle.go`)와 `modes.<name>.endpoint_tags`(`internal/cli/compose.go`)만 이 값을 봅니다. CLI의 `--tag`/`--tags`와는 무관합니다(그 플래그는 lifecycle 엔트리를 거르지 endpoint를 거르지 않습니다). `dva status`는 아예 거르지 않고 전부 출력합니다 |
+| `tags` | 표시 대상을 좁히는 태그. **좁히는 주체는 설정뿐입니다** — `plans.<name>.endpoint_tags`(`internal/cli/plan_lifecycle.go`)만 이 값을 봅니다. `modes.<name>.endpoint_tags`는 제거된 구버전 입력이며 migrate로 plan에 옮깁니다. CLI의 `--tag`/`--tags`와는 무관합니다(그 플래그는 lifecycle 엔트리를 거르지 endpoint를 거르지 않습니다). `dva status`는 아예 거르지 않고 전부 출력합니다 |
 | `paths` | sub-path → 설명 맵 |
 
 **`url:`과 `source:`는 `${VAR}`/`${VAR:-default}`를 치환하지 않습니다** — 아래

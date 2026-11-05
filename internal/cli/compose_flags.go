@@ -8,12 +8,12 @@ import (
 	"github.com/ScriptonBasestar/dva/internal/config"
 )
 
-// parseDvaFlags extracts --mode/-M, --env/-E, --tags/-T, and --exclude-tags from args.
+// parseDvaFlags extracts --env/-E, --tags/-T, and --exclude-tags from args.
 // It also consumes root persistent --dry-run/--debug/--json because callers set
 // DisableFlagParsing and cobra therefore never parses them for them. --debug/--json
 // are also pre-parsed in PersistentPreRun for logger.Init; stripping them here
 // prevents them from being treated as entry/service names.
-func parseDvaFlags(args []string) (mode, env string, includeTags, excludeTags []string, filtered []string, err error) {
+func parseDvaFlags(args []string) (env string, includeTags, excludeTags []string, filtered []string, err error) {
 	// --dry-run is handled in the switch below, not by a consumeDryRunFlag pre-pass. The
 	// pre-pass was a second walk that did the same thing, and after TASK-145 it would have
 	// been a walk with its own idea of where the `--` terminator is.
@@ -66,34 +66,29 @@ func parseDvaFlags(args []string) (mode, env string, includeTags, excludeTags []
 	// present tense, in the very commit that made it one. TASK-211.
 	//
 	// Until then every case ignored ok=false, and a recognised flag is never appended to
-	// filtered, so the token vanished: `dva restart --mode` ran the whole stack and
+	// filtered, so the token vanished and a lifecycle command ran the whole stack rather than
 	// reported success — the widest possible result for someone who typed a narrowing
 	// flag. Same for --env, --tag and --exclude-tag.
 	//
 	// "Nothing to take" includes a flag sitting just before the terminator, because
-	// dvaFlagEnd puts end at the first `--`: in `--mode --` the flag is last as far as
+	// dvaFlagEnd puts end at the first `--`: a selector immediately before `--` is last as far as
 	// flagValue is concerned even though a token follows. Both spellings have to error or
 	// the fix closes one door and leaves its twin open — that pair is what TASK-207's
 	// review was looking at when it filed this.
 	// An empty value is refused here too, and for the same harm rather than for symmetry.
-	// `--mode=` reaches flagValue's hasValue branch, which reports ok=true because a value
-	// was supplied — so before TASK-213 mode was set to "", which is precisely what no
-	// --mode at all leaves behind, applyDefaultMode then filled in the default, and the
-	// narrowing flag produced the widest possible run at rc=0. `--tag=` is the mirror:
+	// An empty inline selector reaches flagValue's hasValue branch with ok=true. `--tag=` is
+	// the mirror:
 	// includeTags becomes [""], which matches nothing, so the run is empty and still
-	// reported as success. Both spellings of emptiness are covered — `--mode=` through the
-	// hasValue branch and `--mode ""` through the next-token branch — because a fix aimed
-	// at the `=` spelling alone leaves its twin open, the same way TASK-211 had to take
-	// `--mode --` along with `--mode`.
+	// reported as success. Both inline and next-token empty spellings are covered because a
+	// fix aimed at one spelling alone leaves its twin open.
 	//
 	// Distinct wording on purpose: the user did supply a value, so "requires a value" would
 	// describe a different mistake than the one they made. It also keeps the two branches
 	// separable by test.
 	//
-	// Returning ok=false without consuming n means the empty next token in `--mode ""` is
 	// The rejection paths return the token count they consumed, and the cases below advance
 	// by it whether or not the value was accepted. That is not symmetry either: a rejected
-	// `--mode ""` used to leave i where it was, so the loop re-read the empty token and
+	// an empty next token used to leave i where it was, so the loop re-read it and
 	// appended it to filtered — the value of a recognised flag reaching a passthrough
 	// command's argv. It was unreachable, because err is set and every non-test caller of
 	// parseDvaFlags (upCmd, teardownCommon, downCmd, stopCmd, restartCmd, buildCmd) checks it
@@ -174,12 +169,6 @@ func parseDvaFlags(args []string) (mode, env string, includeTags, excludeTags []
 		a := args[i]
 		name, value, hasValue := splitFlagToken(a)
 		switch name {
-		case "--mode", "-M":
-			v, n, ok := takeValue(name, value, hasValue, i)
-			i += n
-			if ok {
-				mode = v
-			}
 		case "--env", "-E":
 			v, n, ok := takeValue(name, value, hasValue, i)
 			i += n
@@ -219,8 +208,20 @@ func parseDvaFlags(args []string) (mode, env string, includeTags, excludeTags []
 	return
 }
 
+// rejectRemovedModeFlags refuses the v0.5.0-removed whole-stack selector before
+// hooks or a backend can observe it. Tokens after -- are backend or entry input.
+func rejectRemovedModeFlags(args []string) error {
+	for _, arg := range args[:dvaFlagEnd(args)] {
+		name, _, _ := splitFlagToken(arg)
+		if name == "--mode" || name == "-M" {
+			return fmt.Errorf("%s was removed in v0.5.0; declare a plan and run the lifecycle command with that plan instead", name)
+		}
+	}
+	return nil
+}
+
 // consumeDryRunFlag strips --dry-run and reports whether it was set. Callers that also need
-// --mode/--env/--tags use parseDvaFlags instead; this one exists for the paths that must
+// --env/--tags use parseDvaFlags instead; this one exists for the paths that must
 // leave every other flag where it is.
 //
 // It reports "not found" for an explicit `--dry-run=false` while still consuming the token.
@@ -270,60 +271,4 @@ func applyEnv(e *config.Environment, c *config.Config, envName string) error {
 		e.MergeVars(ec.Environment)
 	}
 	return nil
-}
-
-// resolvedMode holds the result of resolving a --mode flag against config modes.
-type resolvedMode struct {
-	Mode *config.ModeConfig
-}
-
-// applyDefaultMode returns the effective mode and whether it was applied from default_mode.
-// It does NOT print any output — callers decide how to log.
-func applyDefaultMode(c *config.Config, mode string) (string, bool) {
-	if mode != "" || c.DefaultMode == "" {
-		return mode, false
-	}
-	if _, ok := c.Modes[c.DefaultMode]; ok {
-		return c.DefaultMode, true
-	}
-	fmt.Fprintf(os.Stderr, "[warn] default_mode '%s' not found in modes — starting all services\n", c.DefaultMode)
-	return mode, false
-}
-
-// resolveMode looks up a mode name in config modes and returns resolved settings.
-func resolveMode(c *config.Config, mode string) (*resolvedMode, error) {
-	if mode == "" {
-		return &resolvedMode{}, nil
-	}
-
-	m, ok := c.Modes[mode]
-	if !ok {
-		available := make([]string, 0, len(c.Modes))
-		for k := range c.Modes {
-			available = append(available, k)
-		}
-		if len(available) == 0 {
-			return nil, fmt.Errorf("mode '%s' not found. No modes defined in dva.yml under 'modes:'", mode)
-		}
-		return nil, fmt.Errorf("mode '%s' not found. Available: %s", mode, strings.Join(available, ", "))
-	}
-
-	return &resolvedMode{
-		Mode: &m,
-	}, nil
-}
-
-// suggestProvision checks if a provision profile has been run before
-// (via marker file in .sb/dva/) and prints a suggestion if not.
-func suggestProvision(c *config.Config, provisionProfile string) {
-	if provisionMarkerExists(c.FileDir(), provisionProfile) {
-		return // already provisioned
-	}
-
-	if _, ok := c.Provision.Profiles[provisionProfile]; !ok {
-		return
-	}
-
-	fmt.Fprintf(os.Stderr, "\n[hint] Provision profile '%s' has not been run yet.\n", provisionProfile)
-	fmt.Fprintf(os.Stderr, "       Run: dva provision %s\n\n", provisionProfile)
 }

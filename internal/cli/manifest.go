@@ -91,10 +91,8 @@ type ManifestHealthCheck struct {
 	Start        string `json:"start,omitempty" yaml:"start,omitempty"`
 	StartHint    string `json:"start_hint,omitempty" yaml:"start_hint,omitempty"`
 	ReadyTimeout int    `json:"ready_timeout,omitempty" yaml:"ready_timeout,omitempty"`
-	// StartUnreachable is set when Start and/or StartHint is declared but no
-	// modes.*.health_checks entry names this check. Top-level start runs only
-	// through Orchestrator.startModeProcesses / signalModeProcesses, both gated
-	// on a mode list, so without a mode reference those fields never execute.
+	// StartUnreachable is set when Start and/or StartHint is declared. Plans do
+	// not run top-level health checks, so their start fields never execute.
 	// Presence of the field (true) is the signal — omitempty drops false so a
 	// consumer can detect dead start without reading description text. Start
 	// and StartHint stay published so the mark can be contrasted with what was
@@ -225,16 +223,6 @@ const (
 	// distinguishes them the same way.
 	optStackPathOnly = ". Whole-stack path only — rejected, not silently ignored, once a plan is named"
 
-	// optModeBuild is optMode without the qualifier, and build is the only command that uses
-	// it. build calls parseDvaFlags before detectPlanRoute, so --mode is consumed off the raw
-	// args and never reaches parsePlanFlags; `dva build <plan> --mode native` runs where
-	// `dva up <plan> --mode native` is rejected. Measured on both forms rather than inferred
-	// from the call order, which had already proved an unreliable guide for this command.
-	// Sharing one constant across five commands is only safe while the five behave alike;
-	// appending the qualifier to optMode itself would have published a false claim on build.
-	optModeBuild = "Use a named mode from the dva.yml modes section; takes a value (--mode MODE, -M MODE)"
-
-	optMode       = optModeBuild + optStackPathOnly
 	optEnv        = "Use a named environment from the dva.yml environments section; takes a value (--env ENV, -E ENV)" + optStackPathOnly
 	optTag        = "Include only lifecycle entries matching any of the given tags; takes a value (--tag TAG[,TAG], -T TAG[,TAG])" + optStackPathOnly
 	optExcludeTag = "Exclude lifecycle entries matching any of the given tags; takes a value (--exclude-tag TAG[,TAG])" + optStackPathOnly
@@ -412,7 +400,6 @@ func buildManifest(c *config.Config) *Manifest {
 				Options: map[string]string{
 					"force":       optForce,
 					"no-wait":     optNoWait,
-					"mode":        optMode,
 					"env":         optEnv,
 					"tag":         optTag,
 					"exclude-tag": optExcludeTag,
@@ -427,7 +414,6 @@ func buildManifest(c *config.Config) *Manifest {
 					// On down, --force only waives the --purge confirmation
 					// (plan_lifecycle.go) — it is not compose --force-recreate.
 					"force":       "Skip the --purge confirmation prompt",
-					"mode":        optMode,
 					"env":         optEnv,
 					"tag":         optTag,
 					"exclude-tag": optExcludeTag,
@@ -437,17 +423,13 @@ func buildManifest(c *config.Config) *Manifest {
 			"stop": {
 				Type: "compose_shortcut",
 				Options: map[string]string{
-					"mode":        optMode,
 					"env":         optEnv,
 					"tag":         optTag,
 					"exclude-tag": optExcludeTag,
 					"var":         optVar,
 				},
 			},
-			// build reads only the mode out of parseDvaFlags (compose.go:453); the tag and env
-			// results are discarded, so listing them here would advertise a filter that does
-			// nothing.
-			"build":     {Type: "compose_shortcut", Options: map[string]string{"mode": optModeBuild}},
+			"build":     {Type: "compose_shortcut"},
 			"provision": {Type: "lifecycle"},
 			// canonical_name: TASK-257 decided "dva config validate" is the documentation
 			// canonical route; this top-level entry is the visible, behavior-identical
@@ -465,7 +447,6 @@ func buildManifest(c *config.Config) *Manifest {
 				Type: "compose_shortcut",
 				Options: map[string]string{
 					"no-wait":     optNoWait,
-					"mode":        optMode,
 					"env":         optEnv,
 					"tag":         optTag,
 					"exclude-tag": optExcludeTag,
@@ -640,15 +621,6 @@ func buildManifest(c *config.Config) *Manifest {
 
 	// Build health checks section
 	if len(c.HealthChecks) > 0 {
-		// Which top-level health_checks names are listed by any mode — the only
-		// gate that lets start / start_hint run (see warnUnreachableHealthChecks).
-		referenced := make(map[string]bool)
-		for _, mode := range c.Modes {
-			for _, hcName := range mode.HealthChecks {
-				referenced[hcName] = true
-			}
-		}
-
 		m.HealthChecks = make(map[string]ManifestHealthCheck, len(c.HealthChecks))
 		for name, hc := range c.HealthChecks {
 			entry := ManifestHealthCheck{
@@ -665,7 +637,7 @@ func buildManifest(c *config.Config) *Manifest {
 			// start would hide what was configured; the mark makes the dead form
 			// detectable while keeping the declared command for diagnosis. Same
 			// shape as TASK-137's unroutable mark (presence is the signal).
-			if (hc.Start != "" || hc.StartHint != "") && !referenced[name] {
+			if hc.Start != "" || hc.StartHint != "" {
 				entry.StartUnreachable = true
 				entry.StartUnreachableReason = unreachableHealthCheckStartReason(name, hc)
 			}
@@ -676,10 +648,8 @@ func buildManifest(c *config.Config) *Manifest {
 	return m
 }
 
-// unreachableHealthCheckStartReason matches warnUnreachableHealthChecks' wording
-// so validate and manifest state one reason for the same config. Kept local to
-// the CLI package because the warning pass already owns the human path; the
-// shared fact is the referenced-by-modes gate, not a second exported API.
+// unreachableHealthCheckStartReason matches the config warning's wording so
+// validate and manifest state one reason for the same config.
 func unreachableHealthCheckStartReason(name string, hc config.HealthCheckConfig) string {
 	var fields []string
 	if hc.Start != "" {
@@ -689,7 +659,7 @@ func unreachableHealthCheckStartReason(name string, hc config.HealthCheckConfig)
 		fields = append(fields, "start_hint")
 	}
 	return fmt.Sprintf(
-		"health_checks.%s: declares %s but no modes.*.health_checks entry references it, so auto-start/hint will never run; add it to a mode's health_checks list, move the check under stack.<entry>.health_checks, or remove the field",
+		"health_checks.%s: declares %s but top-level health_checks are not run by plans; declare a native stack entry for startup and move the check under stack.<entry>.health_checks, or remove the field",
 		name, strings.Join(fields, " and "))
 }
 

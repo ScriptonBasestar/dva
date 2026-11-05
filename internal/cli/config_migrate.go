@@ -40,11 +40,11 @@ validate' asks for — unlike the conversions above, this is not a deprecation
 and will not be removed. Only known section names move; an unrecognized
 top-level key keeps its own position.
 
-Conversion is per declaration. Anything that cannot be converted mechanically
-is left exactly where it is and listed under "left for you" with what it did
-and where that behaviour now lives — 'modes' is always in that list, because
-one mode spreads across plans, environments and the entries' own runners and
-which plan it becomes is a naming decision rather than a derivation.
+Conversion is per declaration. Simple stack-selecting modes become named plans;
+anything that cannot be converted mechanically is listed under "left for you".
+Modes may require manual separation into plans, environments and stack runners.
+If removed fields remain, preview prints the partial result and exits nonzero;
+--write refuses to overwrite the original until the result is loadable.
 
 Prints the result by default and changes nothing; pass --write to apply. Only
 the migrated declarations are rewritten — every other line keeps its original
@@ -75,6 +75,16 @@ read.
 		if err != nil {
 			return err
 		}
+		// Verify even a no-op: an unconvertible modes-only document is not a
+		// successful v0.5 migration. Keep its manual guidance and preview available,
+		// but never overwrite the source with a result normal loading rejects.
+		if err := config.VerifyMigrated(out); err != nil {
+			if !configMigrateWrite {
+				fmt.Print(string(out))
+			}
+			printMigrationReport(os.Stderr, report)
+			return fmt.Errorf("migration produced a config DVA cannot load, so nothing was written; manual changes are required: %w", err)
+		}
 
 		// Changes and rewrites are the same event — every conversion that reports
 		// itself also edits the file — so the byte comparison decides which of the
@@ -91,13 +101,6 @@ read.
 			// not "nothing to do".
 			fmt.Println("Run 'dva validate' for the deprecations this command does not convert.")
 			return nil
-		}
-
-		// Migration is a file rewrite, so proving the result readable before
-		// touching the original is the difference between a safe tool and one
-		// that can leave a project unloadable.
-		if err := config.VerifyMigrated(out); err != nil {
-			return fmt.Errorf("migration produced a config DVA cannot load, so nothing was written: %w", err)
 		}
 
 		if !configMigrateWrite {

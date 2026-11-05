@@ -87,8 +87,8 @@ interaction = one-shot convenience commands
 provision = one-time setup procedures
 ```
 
-For new/rewrite configuration, use named plans; treat `modes` and
-`applications` as migration-only legacy sections. After editing, run:
+For current configuration use named plans. v0.5.0 rejects `modes` and `default_mode`;
+read them only as raw config-migrate inputs. After editing, run:
 
 ```bash
 dva config validate

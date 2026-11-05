@@ -182,55 +182,6 @@ func TestWriteNoteHandlesMultilineAndEmpty(t *testing.T) {
 	}
 }
 
-// TestNativeBuildLoopPrintsNote covers the third call site. TASK-086 wrote it against the copy of
-// the step loop that lived in compose.go; TASK-093 deleted that copy, so `build: native` renders
-// through runHookSteps like every other hook phase. TASK-141 routes the note through writeNote:
-// four-space indent (same as provision), still on stderr (hooks are a progress channel). The
-// name keeps "Loop" because two task files name it in their verify commands.
-//
-// DVA_HOOK_DEPTH=1 stays because it is the interesting invocation — the one that used to take the
-// second implementation. TestNativeBuildDelegatesToTheHookExecutor pins both to the same bytes.
-func TestNativeBuildLoopPrintsNote(t *testing.T) {
-	c := loadNoteFixture(t, `version: "0.1.44"
-modes:
-  nativemode:
-    build: native
-interaction:
-  build:
-    replace:
-      - step: "a note on the native build path"
-        note: "BUILD-NOTE-VISIBLE"
-      - step: "a sibling that actually builds"
-        run: "echo BUILD-CONTROL-RAN"
-`)
-	if ic := c.Interaction["build"]; ic == nil || len(ic.Replace) != 2 {
-		t.Fatal("fixture did not parse into interaction.build.replace")
-	}
-	t.Setenv(config.EnvHookDepthKey, "1")
-
-	stdout, stderr, err := captureValidateOutput(t, func() error {
-		return buildCmd.RunE(buildCmd, []string{"--mode", "nativemode"})
-	})
-	if err != nil {
-		t.Fatalf("dva build --mode nativemode: %v\nstderr: %s", err, stderr)
-	}
-
-	var wantNote strings.Builder
-	writeNote(&wantNote, "BUILD-NOTE-VISIBLE")
-	if !strings.Contains(stderr, wantNote.String()) {
-		t.Errorf("note block missing from the native build path (must match writeNote):\nwant %q\ngot:\n%s", wantNote.String(), stderr)
-	}
-	// Control: the steps ran. Without it a note printed by a path that had stopped
-	// building would read as a pass.
-	if !strings.Contains(stderr, "$ echo BUILD-CONTROL-RAN") {
-		t.Errorf("the native build path stopped running its commands:\n%s", stderr)
-	}
-	// And nothing renders it a second time on stdout, which is what the deleted copy did.
-	if strings.Contains(stdout, "BUILD-NOTE-VISIBLE") {
-		t.Errorf("the note reached stdout as well — a second renderer is back:\n%s", stdout)
-	}
-}
-
 // TestHooksNoteMatchesWriteNote pins the fourth (last) note renderer: hooks.go must not
 // re-grow an inline loop that drifts indent/stream from writeNote (TASK-141).
 func TestHooksNoteMatchesWriteNote(t *testing.T) {

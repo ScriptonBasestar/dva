@@ -235,24 +235,6 @@ func TestShowText_WithCompose(t *testing.T) {
 	}
 }
 
-func TestShowText_WithModes(t *testing.T) {
-	c := &config.Config{
-		Modes: map[string]config.ModeConfig{
-			"docker": {Description: "Full Docker mode"},
-			"native": {Description: "Native services"},
-		},
-	}
-	output := captureStdout(t, func() {
-		showText(c)
-	})
-	if !strings.Contains(output, "Modes (--mode/-M):") {
-		t.Error("showText should display Modes section")
-	}
-	if !strings.Contains(output, "docker") || !strings.Contains(output, "native") {
-		t.Error("showText should list all modes")
-	}
-}
-
 func TestShowText_WithEnvironments(t *testing.T) {
 	c := &config.Config{
 		Environments: map[string]config.EnvironmentProfile{
@@ -366,9 +348,6 @@ func TestShowJSON_FullConfig(t *testing.T) {
 				},
 			},
 		},
-		Modes: map[string]config.ModeConfig{
-			"docker": {Description: "Docker"},
-		},
 		Environments: map[string]config.EnvironmentProfile{
 			"dev": {Description: "Development"},
 		},
@@ -401,27 +380,10 @@ func TestShowJSON_FullConfig(t *testing.T) {
 	if err := json.Unmarshal([]byte(output), &decoded); err != nil {
 		t.Fatalf("showJSON did not emit valid JSON: %v", err)
 	}
-	for _, key := range []string{"compose", "modes", "environments", "interaction_commands", "provision", "health_checks", "infra"} {
+	for _, key := range []string{"compose", "environments", "interaction_commands", "provision", "health_checks", "infra"} {
 		if _, ok := decoded[key]; !ok {
 			t.Errorf("showJSON output missing %q section", key)
 		}
-	}
-}
-
-func TestShowJSON_WithModes(t *testing.T) {
-	c := &config.Config{
-		Modes: map[string]config.ModeConfig{
-			"docker": {Description: "Docker mode"},
-		},
-	}
-	output := captureStdout(t, func() {
-		showJSON(c)
-	})
-	if !strings.Contains(output, `"modes"`) {
-		t.Error("showJSON should contain modes key")
-	}
-	if !strings.Contains(output, "Docker mode") {
-		t.Error("showJSON should contain mode description")
 	}
 }
 

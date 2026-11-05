@@ -203,10 +203,10 @@ default_plan: dev
 		t.Fatalf("dynamic environment selection: want only sites.remote, got %v", w)
 	}
 
-	// modes-only configs reach environments through -E; stay quiet there.
+	// Configs without a plan reach environments through -E; stay quiet there.
 	legacy := &Config{Environments: map[string]EnvironmentProfile{"dev": {}}}
 	if w := legacy.warnUnreferencedEnvironmentsAndSites(); len(w) != 0 {
-		t.Fatalf("modes-only config must not warn, got %v", w)
+		t.Fatalf("config without a plan must not warn, got %v", w)
 	}
 }
 
@@ -301,10 +301,12 @@ func TestWarnOrphanHealthChecks(t *testing.T) {
 			"redis":  {URL: "http://localhost:6379"},
 			"hinted": {Start: "make up"}, // warnUnreachableHealthChecks owns this one
 		},
-		Modes: map[string]ModeConfig{"dev": {HealthChecks: []string{"pg"}}},
 	}
 	got := c.warnOrphanHealthChecks()
-	want := []string{"health_checks.redis: no modes.*.health_checks entry references it and plans do not read top-level health_checks, so it never runs; move it under stack.<entry>.health_checks or remove it"}
+	want := []string{
+		"health_checks.pg: top-level health_checks are not read by plans; move it under stack.<entry>.health_checks or remove it",
+		"health_checks.redis: top-level health_checks are not read by plans; move it under stack.<entry>.health_checks or remove it",
+	}
 	if !slices.Equal(got, want) {
 		t.Fatalf("got  %v\nwant %v", got, want)
 	}

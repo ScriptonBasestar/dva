@@ -218,11 +218,11 @@ func TestHandParsedOptionsAreDocumented(t *testing.T) {
 	// while the descriptions are not. TestManifestQualifiesStackPathOnlySelectors owns that
 	// half; this test stays a key-level contract. TASK-273.
 	want := map[string][]string{
-		"up":      {"force", "no-wait", "mode", "env", "tag", "exclude-tag", "var"},
-		"down":    {"volumes", "mode", "env", "tag", "exclude-tag", "var"},
-		"stop":    {"mode", "env", "tag", "exclude-tag", "var"},
-		"restart": {"no-wait", "mode", "env", "tag", "exclude-tag", "var"},
-		"build":   {"mode"},
+		"up":      {"force", "no-wait", "env", "tag", "exclude-tag", "var"},
+		"down":    {"volumes", "env", "tag", "exclude-tag", "var"},
+		"stop":    {"env", "tag", "exclude-tag", "var"},
+		"restart": {"no-wait", "env", "tag", "exclude-tag", "var"},
+		"build":   {},
 	}
 
 	rootCommandNames(t)

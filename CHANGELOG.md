@@ -5,6 +5,19 @@ All notable changes to DVA are documented here.
 
 ## [Unreleased]
 
+### Removed
+
+- v0.5.0 개발 소스에서 `modes`·`default_mode`·`--mode/-M`를 제거합니다. 기존 설정은
+  `dva config migrate`로 변환한 뒤 named plans로 실행하세요. 자동 변환할 수 없는 mode는
+  수동 안내를 확인해야 하며, 불완전한 preview는 비0으로 종료하고 `--write`는 원본을 보존합니다.
+- mode 전용 health-start 프로세스 실행·중지 경로를 제거합니다. 이를 사용 중인 경우 업그레이드
+  전에 현재 0.4.x 실행 파일로 해당 mode를 중지하고, 프로세스를 native stack entry로 이관하세요.
+
+### Fixed
+
+- 제거된 설정 키는 null·YAML alias/merge·인코딩된 키도 로딩 단계에서 거부합니다.
+  존재하지만 잘못된 root/child override는 조용히 건너뛰지 않고 오류로 보고합니다.
+
 ## [0.4.5] - 2026-11-05
 
 미공개 릴리스 후보다. 날짜는 후보 정리일이며 공개일이 아니다. 범위와 검증 경계는

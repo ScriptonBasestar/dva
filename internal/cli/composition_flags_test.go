@@ -114,7 +114,7 @@ func compositionFixtureConfigLoaded(t *testing.T) *config.Config {
 	return loadTestConfig(t, compositionFixtureConfig)
 }
 
-// TestCompositionRejectsWholeStackAndVarFlags proves --var, the tag selectors, --mode and
+// TestCompositionRejectsWholeStackAndVarFlags proves --var, the tag selectors, and
 // --env are rejected before any child starts, and that the errors name the plan (and, for
 // --var, point at CompositionEntry.Vars) per TASK-260 §4.4.
 func TestCompositionRejectsWholeStackAndVarFlags(t *testing.T) {
@@ -127,9 +127,6 @@ func TestCompositionRejectsWholeStackAndVarFlags(t *testing.T) {
 	}{
 		{"--var bare", []string{"--var", "KEY=VAL"}, true},
 		{"--var inline", []string{"--var=KEY=VAL"}, true},
-		{"--mode long", []string{"--mode", "dev"}, false},
-		{"--mode inline", []string{"--mode=dev"}, false},
-		{"-M short", []string{"-M", "dev"}, false},
 		{"--env long", []string{"--env", "dev"}, false},
 		{"-E short", []string{"-E", "dev"}, false},
 		{"--tag", []string{"--tag", "web"}, false},
@@ -424,7 +421,7 @@ func TestCompositionExitCodesStayFlat(t *testing.T) {
 	if err := runCompositionUp(context.Background(), c, el, "release", []string{"--tag", "x"}); err != nil {
 		errs = append(errs, err)
 	}
-	if err := runCompositionDown(c, el, "release", []string{"--mode", "dev"}); err != nil {
+	if err := runCompositionDown(c, el, "release", []string{"--env", "dev"}); err != nil {
 		errs = append(errs, err)
 	}
 

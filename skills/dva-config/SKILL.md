@@ -135,8 +135,8 @@ evidence:
 ### 4. Model Boundaries
 
 - Standardize Compose/ports/env prerequisites before DVA references them.
-- Use named plans for new/rewrite configuration. Preserve legacy modes/applications only until an
-  explicit, behavior-preserving migration is proven.
+- Use named plans for new/rewrite configuration. Treat modes/default_mode as rejected v0.5.0 inputs: preserve the original while diagnosing,
+  preview config migrate, and apply only an explicitly authorized, verified conversion.
 - Keep shared lifecycle at the devbox root; keep module-native commands in the owning active
   subproject.
 - Apply `references/devbox-apply.md` for `.gz-git.yaml` children, command migration, infra vs app

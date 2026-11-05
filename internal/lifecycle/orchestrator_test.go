@@ -13,9 +13,6 @@ import (
 func newTestConfig(entries map[string]*config.LifecycleEntry) *config.Config {
 	return &config.Config{
 		Stack: entries,
-		Modes: map[string]config.ModeConfig{
-			"lite": {Stack: []string{"db"}},
-		},
 	}
 }
 
@@ -54,7 +51,7 @@ func TestFilterEntries_ByIncludeTags(t *testing.T) {
 	}
 
 	orch := NewOrchestrator(newTestConfig(entries), newTestEnv())
-	filtered, _ := orch.filterEntries(nil, []string{"infra"}, nil, "", "")
+	filtered, _ := orch.filterEntries(nil, []string{"infra"}, nil, "")
 
 	if len(filtered) != 2 {
 		t.Fatalf("expected 2 entries with tag 'infra', got %d", len(filtered))
@@ -74,32 +71,13 @@ func TestFilterEntries_ByExcludeTags(t *testing.T) {
 	}
 
 	orch := NewOrchestrator(newTestConfig(entries), newTestEnv())
-	filtered, _ := orch.filterEntries(nil, nil, []string{"infra"}, "", "")
+	filtered, _ := orch.filterEntries(nil, nil, []string{"infra"}, "")
 
 	if len(filtered) != 1 {
 		t.Fatalf("expected 1 entry after excluding 'infra', got %d", len(filtered))
 	}
 	if filtered[0].Name != "app" {
 		t.Errorf("expected 'app', got %q", filtered[0].Name)
-	}
-}
-
-func TestFilterEntries_ByMode(t *testing.T) {
-	entries := map[string]*config.LifecycleEntry{
-		"db":    {Order: 1},
-		"app":   {Order: 2},
-		"cache": {Order: 3},
-	}
-
-	cfg := newTestConfig(entries)
-	orch := NewOrchestrator(cfg, newTestEnv())
-	filtered, _ := orch.filterEntries(nil, nil, nil, "lite", "")
-
-	if len(filtered) != 1 {
-		t.Fatalf("expected 1 entry in mode 'lite', got %d", len(filtered))
-	}
-	if filtered[0].Name != "db" {
-		t.Errorf("expected 'db', got %q", filtered[0].Name)
 	}
 }
 
@@ -110,35 +88,10 @@ func TestFilterEntries_NoFilters(t *testing.T) {
 	}
 
 	orch := NewOrchestrator(newTestConfig(entries), newTestEnv())
-	filtered, _ := orch.filterEntries(nil, nil, nil, "", "")
+	filtered, _ := orch.filterEntries(nil, nil, nil, "")
 
 	if len(filtered) != 2 {
 		t.Fatalf("expected 2 entries with no filters, got %d", len(filtered))
-	}
-}
-
-func TestFilterEntries_CombinedTagAndMode(t *testing.T) {
-	entries := map[string]*config.LifecycleEntry{
-		"db":  {Tags: []string{"infra"}},
-		"app": {Tags: []string{"app"}},
-	}
-
-	cfg := &config.Config{
-		Stack: entries,
-		Modes: map[string]config.ModeConfig{
-			"both": {Stack: []string{"db", "app"}},
-		},
-	}
-
-	orch := NewOrchestrator(cfg, newTestEnv())
-	// Mode "both" includes db+app, then exclude tag "app" → only db
-	filtered, _ := orch.filterEntries(nil, nil, []string{"app"}, "both", "")
-
-	if len(filtered) != 1 {
-		t.Fatalf("expected 1 entry, got %d", len(filtered))
-	}
-	if filtered[0].Name != "db" {
-		t.Errorf("expected 'db', got %q", filtered[0].Name)
 	}
 }
 
@@ -160,7 +113,7 @@ func TestFilterEntries_ByEnv(t *testing.T) {
 	orch := NewOrchestrator(cfg, newTestEnv())
 
 	// dev env → only compose
-	filtered, _ := orch.filterEntries(nil, nil, nil, "", "dev")
+	filtered, _ := orch.filterEntries(nil, nil, nil, "dev")
 	if len(filtered) != 1 {
 		t.Fatalf("expected 1 entry in env 'dev', got %d", len(filtered))
 	}
@@ -169,38 +122,9 @@ func TestFilterEntries_ByEnv(t *testing.T) {
 	}
 
 	// stg env → helm + kubectl
-	filtered, _ = orch.filterEntries(nil, nil, nil, "", "stg")
+	filtered, _ = orch.filterEntries(nil, nil, nil, "stg")
 	if len(filtered) != 2 {
 		t.Fatalf("expected 2 entries in env 'stg', got %d", len(filtered))
-	}
-}
-
-func TestFilterEntries_EnvAndModeCombined(t *testing.T) {
-	entries := map[string]*config.LifecycleEntry{
-		"compose": {Order: 1},
-		"helm":    {Order: 2},
-		"kubectl": {Order: 3},
-	}
-
-	cfg := &config.Config{
-		Stack: entries,
-		Environments: map[string]config.EnvironmentProfile{
-			"stg": {Stack: []string{"helm", "kubectl"}},
-		},
-		Modes: map[string]config.ModeConfig{
-			"deploy": {Stack: []string{"helm"}},
-		},
-	}
-
-	orch := NewOrchestrator(cfg, newTestEnv())
-
-	// env=stg (helm, kubectl) + mode=deploy (helm) → intersection → helm only
-	filtered, _ := orch.filterEntries(nil, nil, nil, "deploy", "stg")
-	if len(filtered) != 1 {
-		t.Fatalf("expected 1 entry for env+mode intersection, got %d", len(filtered))
-	}
-	if filtered[0].Name != "helm" {
-		t.Errorf("expected 'helm', got %q", filtered[0].Name)
 	}
 }
 
@@ -220,7 +144,7 @@ func TestFilterEntries_EnvWithoutStack(t *testing.T) {
 	orch := NewOrchestrator(cfg, newTestEnv())
 
 	// env without stack field → no filtering, all entries pass through
-	filtered, _ := orch.filterEntries(nil, nil, nil, "", "dev")
+	filtered, _ := orch.filterEntries(nil, nil, nil, "dev")
 	if len(filtered) != 2 {
 		t.Fatalf("expected 2 entries (env without stack = no filter), got %d", len(filtered))
 	}
@@ -519,7 +443,7 @@ func TestFilterEntries_WithStackOverrides(t *testing.T) {
 	}
 
 	orch := NewOrchestrator(cfg, newTestEnv())
-	filtered, err := orch.filterEntries(nil, nil, nil, "", "stg")
+	filtered, err := orch.filterEntries(nil, nil, nil, "stg")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -555,7 +479,7 @@ func TestFilterEntries_StackOverrides_ErrorOnPluginChange(t *testing.T) {
 	}
 
 	orch := NewOrchestrator(cfg, newTestEnv())
-	_, err := orch.filterEntries(nil, nil, nil, "", "stg")
+	_, err := orch.filterEntries(nil, nil, nil, "stg")
 	if err == nil {
 		t.Fatal("expected error when overriding plugin type, got nil")
 	}

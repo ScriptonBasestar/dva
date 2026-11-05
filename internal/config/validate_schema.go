@@ -57,8 +57,17 @@ const rootField = "(root)"
 var removedRootKeys = map[string]string{
 	"compose":   "removed from the root: declare it as a stack entry — stack.<name>.default_runner: compose + runners.compose",
 	"kubectl":   "removed from the root: declare it as a stack entry — stack.<name>.default_runner: kubectl + runners.kubectl",
-	"profiles":  "removed: renamed — use 'modes:'",
+	"profiles":  "removed: select compose profiles with plans.<plan>.entries[].profiles",
 	"lifecycle": "removed: renamed — use 'stack:'",
+}
+
+// removedRootValidationKeys are intentionally not part of removedRootKeys.
+// The latter is checked against generated user-facing corpus, which is updated
+// with the v0.5.0 documentation in its owning change. These keys still need
+// precise schema diagnostics as soon as the loader stops accepting them.
+var removedRootValidationKeys = map[string]string{
+	"modes":        "removed in v0.5.0: run `dva config migrate` to convert supported modes to plans; split remaining modes by hand",
+	"default_mode": "removed in v0.5.0: run `dva config migrate` to convert it to default_plan when its mode converts",
 }
 
 // removedInteractionKeys is path-scoped: the property name is still valid at the
@@ -135,6 +144,9 @@ func validateYAMLSchema(yamlBytes []byte) error {
 					guidance, removed := removedSchemaKeys[prop]
 					if !removed && desc.Field() == rootField {
 						guidance, removed = removedRootKeys[prop]
+						if !removed {
+							guidance, removed = removedRootValidationKeys[prop]
+						}
 					}
 					if !removed && isInteractionCommandField(desc.Field()) {
 						guidance, removed = removedInteractionKeys[prop]

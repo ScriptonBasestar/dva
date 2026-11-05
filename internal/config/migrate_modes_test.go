@@ -71,11 +71,37 @@ func TestMigrateModesStackSelect(t *testing.T) {
 
 	// The result is a config this version loads, and it loads as plans.
 	cfg := loadConfigForSchemaTest(t, t.TempDir(), got)
-	if cfg.DefaultPlanName != "full" || len(cfg.Plans) != 2 || len(cfg.Modes) != 0 {
-		t.Errorf("default_plan=%q plans=%d modes=%d", cfg.DefaultPlanName, len(cfg.Plans), len(cfg.Modes))
+	if cfg.DefaultPlanName != "full" || len(cfg.Plans) != 2 {
+		t.Errorf("default_plan=%q plans=%d", cfg.DefaultPlanName, len(cfg.Plans))
 	}
 	if entries := cfg.Plans["full"].Entries; len(entries) != 2 || entries[0].Name != "core" || entries[1].Name != "api" {
 		t.Errorf("plans.full.entries = %+v", entries)
+	}
+	if err := VerifyMigrated(out); err != nil {
+		t.Fatalf("VerifyMigrated(converted output): %v", err)
+	}
+}
+
+func TestVerifyMigratedRejectsPartialModeMigration(t *testing.T) {
+	out, report, err := MigrateModes([]byte(`stack:
+  core:
+    default_runner: compose
+    runners:
+      compose:
+        files: [compose.yml]
+modes:
+  profiled:
+    stack: [core]
+    compose_profiles: [debug]
+`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(report.Blocked) == 0 {
+		t.Fatal("partial migration unexpectedly had no blocked legacy mode")
+	}
+	if err := VerifyMigrated(out); err == nil || !strings.Contains(err.Error(), `top-level "modes" was removed`) {
+		t.Fatalf("VerifyMigrated(partial output) error = %v, want removed modes rejection", err)
 	}
 }
 
@@ -163,7 +189,7 @@ modes:
 		t.Errorf("default_mode must stay while its mode is unconverted:\n%s", got)
 	}
 	for _, want := range []string{
-		"modes.profiled: not converted — compose_profiles has no plan equivalent",
+		"modes.profiled: not converted — compose_profiles requires manual mapping",
 		"modes.ambiguous: not converted — compose_services could attach to any of core, extra",
 		"modes.taken: not converted — plans.taken already exists",
 		`modes.dangling: not converted — stack selects "nope", which is not declared under stack:`,

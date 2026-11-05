@@ -90,7 +90,7 @@ type compositionFlags struct {
 //
 //   - --no-wait, --no-rollback: propagate-to-all — accepted (verb-gated the same way the
 //     single-plan parser gates --no-wait) and carried through in the returned struct.
-//   - --var, --mode/-M, --env/-E, --tag/--tags/-T, --exclude-tag/--exclude-tags: reject. These
+//   - --var, --env/-E, --tag/--tags/-T, --exclude-tag/--exclude-tags: reject. These
 //     are whole-stack-path flags already rejected once a plan is named (compose.go's Long
 //     text); composition is a plan path too, so the same rule applies without a new one.
 //   - --force, --volumes/-v, --purge: require-explicit-scope. --project <child> must resolve to
@@ -100,6 +100,9 @@ type compositionFlags struct {
 // proceed and a caller that gets a non-nil one has started nothing.
 func validateCompositionFlagScope(comp *lifecycle.CompositionPlan, planName, verb string, args []string) (compositionFlags, error) {
 	var flags compositionFlags
+	if err := rejectRemovedModeFlags(args); err != nil {
+		return flags, err
+	}
 	var projectValue string
 	var hasProject bool
 
@@ -122,8 +125,6 @@ func validateCompositionFlagScope(comp *lifecycle.CompositionPlan, planName, ver
 			flags.noRollback = true
 		case "--var":
 			return flags, fmt.Errorf("composition plan %q does not accept --var: which composed child would it apply to is ambiguous; set composes[].vars for that child instead (config.CompositionEntry.Vars)", planName)
-		case "--mode", "-M":
-			return flags, fmt.Errorf("composition plan %q does not accept --mode: it is a whole-stack-path flag, already rejected once any plan is named", planName)
 		case "--env", "-E":
 			return flags, fmt.Errorf("composition plan %q does not accept --env: it is a whole-stack-path flag, already rejected once any plan is named", planName)
 		case "--tag", "--tags", "-T":

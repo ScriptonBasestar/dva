@@ -45,7 +45,7 @@ func TestRequirePlanSelection_AllowsLegacyOrNamedArgs(t *testing.T) {
 		"full-stack": {},
 		"infra":      {},
 	}}
-	for _, args := range [][]string{{"infra"}, {"--mode", "legacy"}} {
+	for _, args := range [][]string{{"infra"}} {
 		if err := requirePlanSelection(c, "up", args); err != nil {
 			t.Fatalf("args %v failed: %v", args, err)
 		}
@@ -303,7 +303,6 @@ func TestUpRejectsFlagsThatSuppressDefaultPlan(t *testing.T) {
 	for _, args := range [][]string{
 		{"--force"},
 		{"--no-wait"},
-		{"--mode", "dev"},
 		{"--var", "FOO=bare"},
 		// Deliberately not a real flag. The rows above read `--dev` and `--docker`
 		// until docs/43 removed them, and the fact that those rows kept passing after

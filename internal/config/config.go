@@ -29,11 +29,9 @@ type Config struct {
 	Subprojects      map[string]SubprojectConfig    `yaml:"subprojects"`
 	HealthChecks     map[string]HealthCheckConfig   `yaml:"health_checks"`
 	Endpoints        map[string]EndpointConfig      `yaml:"endpoints"`
-	DefaultMode      string                         `yaml:"default_mode"`
 	SuggestionIgnore []SuggestionIgnoreRule         `yaml:"suggestion_ignore"`
 	Suggestions      *SuggestionCategories          `yaml:"suggestions"`
 	DriftIgnore      []string                       `yaml:"drift_ignore"`
-	Modes            map[string]ModeConfig          `yaml:"modes"`
 	Environments     map[string]EnvironmentProfile  `yaml:"environments"`
 	Plans            map[string]*PlanConfig         `yaml:"plans"`
 	DefaultPlanName  string                         `yaml:"default_plan"`
@@ -204,25 +202,6 @@ func (e *SubprojectImportEntry) UnmarshalYAML(node *yaml.Node) error {
 		return fmt.Errorf("subproject import entry name is required")
 	}
 	return nil
-}
-
-// ModeConfig defines a named operational mode for dva up (--mode/-M flag).
-type ModeConfig struct {
-	Description     string            `yaml:"description"`
-	ComposeProfiles []string          `yaml:"compose_profiles"`
-	ComposeServices *[]string         `yaml:"compose_services"` // nil=all, empty=none, items=only those
-	HealthChecks    []string          `yaml:"health_checks"`
-	EndpointTags    []string          `yaml:"endpoint_tags"` // filter endpoints by tags (empty=show all)
-	Environment     map[string]string `yaml:"environment"`
-	Provision       string            `yaml:"provision"` // provision profile to suggest on first run
-	Stack           []string          `yaml:"stack"`     // stack entry names to include (empty=all)
-	Build           string            `yaml:"build"`     // build strategy: "docker" (compose build), "native" (run command), or custom shell command
-	Run             string            `yaml:"run"`       // run strategy: "docker" (compose up), "native" (process via health_checks.start), or custom shell command
-}
-
-// StackEntries returns the stack entry names for mode filtering.
-func (m *ModeConfig) StackEntries() []string {
-	return m.Stack
 }
 
 // EnvironmentProfile defines a named environment configuration for --env flag.

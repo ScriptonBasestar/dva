@@ -9,27 +9,8 @@ import (
 	"github.com/ScriptonBasestar/dva/internal/config"
 )
 
-func TestParseDvaFlags_ModeOnly(t *testing.T) {
-	mode, env, _, excludeTags, filtered, _ := parseDvaFlags([]string{"--mode", "native", "postgres"})
-	if mode != "native" {
-		t.Errorf("mode = %q, want %q", mode, "native")
-	}
-	if env != "" {
-		t.Errorf("env = %q, want empty", env)
-	}
-	if len(excludeTags) != 0 {
-		t.Errorf("excludeTags = %v, want empty", excludeTags)
-	}
-	if len(filtered) != 1 || filtered[0] != "postgres" {
-		t.Errorf("filtered = %v, want [postgres]", filtered)
-	}
-}
-
 func TestParseDvaFlags_EnvOnly(t *testing.T) {
-	mode, env, _, _, filtered, _ := parseDvaFlags([]string{"--env", "stg", "-d"})
-	if mode != "" {
-		t.Errorf("mode = %q, want empty", mode)
-	}
+	env, _, _, filtered, _ := parseDvaFlags([]string{"--env", "stg", "-d"})
 	if env != "stg" {
 		t.Errorf("env = %q, want %q", env, "stg")
 	}
@@ -38,24 +19,8 @@ func TestParseDvaFlags_EnvOnly(t *testing.T) {
 	}
 }
 
-func TestParseDvaFlags_BothFlags(t *testing.T) {
-	mode, env, _, _, filtered, _ := parseDvaFlags([]string{"-M", "docker", "-E", "prd", "--wait"})
-	if mode != "docker" {
-		t.Errorf("mode = %q, want %q", mode, "docker")
-	}
-	if env != "prd" {
-		t.Errorf("env = %q, want %q", env, "prd")
-	}
-	if len(filtered) != 1 || filtered[0] != "--wait" {
-		t.Errorf("filtered = %v, want [--wait]", filtered)
-	}
-}
-
 func TestParseDvaFlags_EqualsSyntax(t *testing.T) {
-	mode, env, _, _, filtered, _ := parseDvaFlags([]string{"--mode=hybrid", "--env=stg"})
-	if mode != "hybrid" {
-		t.Errorf("mode = %q, want %q", mode, "hybrid")
-	}
+	env, _, _, filtered, _ := parseDvaFlags([]string{"--env=stg"})
 	if env != "stg" {
 		t.Errorf("env = %q, want %q", env, "stg")
 	}
@@ -64,20 +29,10 @@ func TestParseDvaFlags_EqualsSyntax(t *testing.T) {
 	}
 }
 
-func TestParseDvaFlags_ShortEqualsSyntax(t *testing.T) {
-	mode, env, _, _, _, _ := parseDvaFlags([]string{"-M=native", "-E=prd"})
-	if mode != "native" {
-		t.Errorf("mode = %q, want %q", mode, "native")
-	}
-	if env != "prd" {
-		t.Errorf("env = %q, want %q", env, "prd")
-	}
-}
-
 func TestParseDvaFlags_Empty(t *testing.T) {
-	mode, env, _, excludeTags, filtered, _ := parseDvaFlags(nil)
-	if mode != "" || env != "" {
-		t.Errorf("got mode=%q env=%q, want both empty", mode, env)
+	env, _, excludeTags, filtered, _ := parseDvaFlags(nil)
+	if env != "" {
+		t.Errorf("got env=%q, want empty", env)
 	}
 	if excludeTags != nil {
 		t.Errorf("excludeTags = %v, want nil", excludeTags)
@@ -92,7 +47,7 @@ func TestParseDvaFlags_DryRun(t *testing.T) {
 	dryRun = false
 	t.Cleanup(func() { dryRun = oldDryRun })
 
-	_, _, _, _, filtered, _ := parseDvaFlags([]string{"--mode", "infra", "--dry-run"})
+	_, _, _, filtered, _ := parseDvaFlags([]string{"--dry-run"})
 	if !dryRun {
 		t.Fatal("--dry-run must enable dryRun for commands with flag parsing disabled")
 	}
@@ -116,7 +71,7 @@ func TestConsumeDryRunFlag(t *testing.T) {
 // half of. TASK-211.
 
 func TestParseDvaFlags_ExcludeTags(t *testing.T) {
-	_, _, _, excludeTags, filtered, _ := parseDvaFlags([]string{"--exclude-tags", "infra", "-d"})
+	_, _, excludeTags, filtered, _ := parseDvaFlags([]string{"--exclude-tags", "infra", "-d"})
 	if len(excludeTags) != 1 || excludeTags[0] != "infra" {
 		t.Errorf("excludeTags = %v, want [infra]", excludeTags)
 	}
@@ -126,7 +81,7 @@ func TestParseDvaFlags_ExcludeTags(t *testing.T) {
 }
 
 func TestParseDvaFlags_ExcludeTagsCommaSeparated(t *testing.T) {
-	_, _, _, excludeTags, _, _ := parseDvaFlags([]string{"--exclude-tags=infra,dev"})
+	_, _, excludeTags, _, _ := parseDvaFlags([]string{"--exclude-tags=infra,dev"})
 	if len(excludeTags) != 2 {
 		t.Fatalf("excludeTags = %v, want 2 items", excludeTags)
 	}
@@ -136,7 +91,7 @@ func TestParseDvaFlags_ExcludeTagsCommaSeparated(t *testing.T) {
 }
 
 func TestParseDvaFlags_IncludeTags(t *testing.T) {
-	_, _, includeTags, _, filtered, _ := parseDvaFlags([]string{"--tags", "backend", "-d"})
+	_, includeTags, _, filtered, _ := parseDvaFlags([]string{"--tags", "backend", "-d"})
 	if len(includeTags) != 1 || includeTags[0] != "backend" {
 		t.Errorf("includeTags = %v, want [backend]", includeTags)
 	}
@@ -146,64 +101,12 @@ func TestParseDvaFlags_IncludeTags(t *testing.T) {
 }
 
 func TestParseDvaFlags_IncludeTagsCommaSeparated(t *testing.T) {
-	_, _, includeTags, _, _, _ := parseDvaFlags([]string{"-T=backend,ui"})
+	_, includeTags, _, _, _ := parseDvaFlags([]string{"-T=backend,ui"})
 	if len(includeTags) != 2 {
 		t.Fatalf("includeTags = %v, want 2 items", includeTags)
 	}
 	if includeTags[0] != "backend" || includeTags[1] != "ui" {
 		t.Errorf("includeTags = %v, want [backend ui]", includeTags)
-	}
-}
-
-func TestResolveMode_Empty(t *testing.T) {
-	c := &config.Config{}
-	rm, err := resolveMode(c, "")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if rm.Mode != nil {
-		t.Error("Mode should be nil for empty mode")
-	}
-}
-
-func TestResolveMode_NotFound(t *testing.T) {
-	c := &config.Config{
-		Modes: map[string]config.ModeConfig{
-			"docker": {Description: "Docker mode"},
-		},
-	}
-	_, err := resolveMode(c, "nonexistent")
-	if err == nil {
-		t.Fatal("expected error for nonexistent mode")
-	}
-}
-
-func TestResolveMode_NoModesDefined(t *testing.T) {
-	c := &config.Config{}
-	_, err := resolveMode(c, "native")
-	if err == nil {
-		t.Fatal("expected error when no modes defined")
-	}
-}
-
-func TestResolveMode_Found(t *testing.T) {
-	c := &config.Config{
-		Modes: map[string]config.ModeConfig{
-			"native": {
-				Description: "Native mode",
-				Stack:       []string{"api", "worker"},
-			},
-		},
-	}
-	rm, err := resolveMode(c, "native")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if rm.Mode == nil {
-		t.Fatal("Mode should not be nil")
-	}
-	if rm.Mode.Description != "Native mode" {
-		t.Errorf("Description = %q, want %q", rm.Mode.Description, "Native mode")
 	}
 }
 
@@ -381,7 +284,7 @@ stack:
 }
 
 func TestParseDvaFlags_TagShortFlag(t *testing.T) {
-	_, _, includeTags, _, filtered, _ := parseDvaFlags([]string{"-T", "backend", "postgres"})
+	_, includeTags, _, filtered, _ := parseDvaFlags([]string{"-T", "backend", "postgres"})
 	if len(includeTags) != 1 || includeTags[0] != "backend" {
 		t.Errorf("includeTags = %v, want [backend]", includeTags)
 	}
@@ -391,28 +294,28 @@ func TestParseDvaFlags_TagShortFlag(t *testing.T) {
 }
 
 func TestParseDvaFlags_TagEqualsFormat(t *testing.T) {
-	_, _, includeTags, _, _, _ := parseDvaFlags([]string{"--tag=web"})
+	_, includeTags, _, _, _ := parseDvaFlags([]string{"--tag=web"})
 	if len(includeTags) != 1 || includeTags[0] != "web" {
 		t.Errorf("includeTags = %v, want [web]", includeTags)
 	}
 }
 
 func TestParseDvaFlags_TagsEqualsFormat(t *testing.T) {
-	_, _, includeTags, _, _, _ := parseDvaFlags([]string{"--tags=a,b"})
+	_, includeTags, _, _, _ := parseDvaFlags([]string{"--tags=a,b"})
 	if len(includeTags) != 2 {
 		t.Errorf("includeTags = %v, want 2 items", includeTags)
 	}
 }
 
 func TestParseDvaFlags_ExcludeTagEquals(t *testing.T) {
-	_, _, _, excludeTags, _, _ := parseDvaFlags([]string{"--exclude-tag=db"})
+	_, _, excludeTags, _, _ := parseDvaFlags([]string{"--exclude-tag=db"})
 	if len(excludeTags) != 1 || excludeTags[0] != "db" {
 		t.Errorf("excludeTags = %v, want [db]", excludeTags)
 	}
 }
 
 func TestParseDvaFlags_ExcludeTagsEquals(t *testing.T) {
-	_, _, _, excludeTags, _, _ := parseDvaFlags([]string{"--exclude-tags=db,cache"})
+	_, _, excludeTags, _, _ := parseDvaFlags([]string{"--exclude-tags=db,cache"})
 	if len(excludeTags) != 2 {
 		t.Errorf("excludeTags = %v, want 2 items", excludeTags)
 	}
@@ -488,76 +391,5 @@ stack:
 	}
 	if !strings.Contains(joined, "--project-name myapp") {
 		t.Errorf("args should contain interpolated project name, got: %s", joined)
-	}
-}
-
-// --- suggestProvision tests ---
-
-func TestSuggestProvision_AlreadyProvisioned(t *testing.T) {
-	c := loadTestConfig(t, `version: "0.1.22"
-provision:
-  setup:
-    - step: test
-      run: echo ok
-`)
-	// Create marker file
-	markerDir := filepath.Join(c.FileDir(), config.DotDirName)
-	os.MkdirAll(markerDir, 0755)
-	os.WriteFile(filepath.Join(markerDir, "provisioned-setup"), []byte(""), 0644)
-
-	// Should not print anything (already provisioned)
-	old := os.Stderr
-	r, w, _ := os.Pipe()
-	os.Stderr = w
-	suggestProvision(c, "setup")
-	w.Close()
-	os.Stderr = old
-
-	buf := make([]byte, 1024)
-	n, _ := r.Read(buf)
-	if n > 0 {
-		t.Errorf("expected no output for already-provisioned, got: %s", string(buf[:n]))
-	}
-}
-
-func TestSuggestProvision_NotProvisioned(t *testing.T) {
-	c := loadTestConfig(t, `version: "0.1.22"
-provision:
-  setup:
-    - step: test
-      run: echo ok
-`)
-
-	old := os.Stderr
-	r, w, _ := os.Pipe()
-	os.Stderr = w
-	suggestProvision(c, "setup")
-	w.Close()
-	os.Stderr = old
-
-	buf := make([]byte, 4096)
-	n, _ := r.Read(buf)
-	output := string(buf[:n])
-	if !strings.Contains(output, "hint") {
-		t.Errorf("expected hint message, got: %s", output)
-	}
-}
-
-func TestSuggestProvision_ProfileNotExists(t *testing.T) {
-	c := loadTestConfig(t, `version: "0.1.22"
-`)
-
-	// Should not print anything (profile doesn't exist)
-	old := os.Stderr
-	r, w, _ := os.Pipe()
-	os.Stderr = w
-	suggestProvision(c, "nonexistent")
-	w.Close()
-	os.Stderr = old
-
-	buf := make([]byte, 1024)
-	n, _ := r.Read(buf)
-	if n > 0 {
-		t.Errorf("expected no output for non-existent profile, got: %s", string(buf[:n]))
 	}
 }

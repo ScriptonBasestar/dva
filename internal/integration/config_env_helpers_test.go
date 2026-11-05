@@ -50,17 +50,9 @@ func dvaBinary(t *testing.T) string {
 			return
 		}
 		dvaBinaryPath = filepath.Join(dir, "dva")
-		// EnvBridgeIntroducedVersion (0.1.48) is above config.Version's compiled
-		// default (0.1.47 as of this writing), so any dva.yml that satisfies
-		// EnvBridgeVersionSatisfied would otherwise fail checkConfigVersion
-		// against this test binary before env_bridge is ever reached — the same
-		// deadlock TestConfigEnvGatedCommandsRealBinary's doc comment describes.
-		// Injecting a newer Version here, exactly the way the real release build
-		// injects Commit/BuildDate, unblocks that combination for tests without
-		// bumping the global compiled default or touching the Makefile's release
-		// build.
+		// Test the source's actual version. Feature fixtures declare their minimum
+		// supported reader, rather than replacing the binary with an older stamp.
 		cmd := exec.Command("go", "build",
-			"-ldflags", "-X github.com/ScriptonBasestar/dva/internal/config.Version=0.1.48",
 			"-o", dvaBinaryPath, "./cmd/dva")
 		cmd.Dir = repoRoot()
 		if out, err := cmd.CombinedOutput(); err != nil {

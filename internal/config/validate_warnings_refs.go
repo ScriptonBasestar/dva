@@ -274,7 +274,7 @@ func hasUnsupportedComposeProfileTag(node *yaml.Node) bool {
 //
 // On the plan path those two fields are the only way a profile is consulted, so
 // an unreferenced profile is dead config. The pass is skipped when no plans are
-// declared: a legacy (modes-only) config reaches environments through the -E
+// declared: an execution config can reach environments through the -E
 // flag, and warnNoPlansHint already covers that shape.
 func (c *Config) warnUnreferencedEnvironmentsAndSites() []string {
 	if len(c.Plans) == 0 {
@@ -482,27 +482,18 @@ func (c *Config) warnRemovedCLIReferences() []string {
 	return warnings
 }
 
-// warnOrphanHealthChecks warns when a top-level health_checks entry is referenced
-// by no modes.*.health_checks list. Top-level checks are consulted only through a
-// mode reference (see warnUnreachableHealthChecks); on a plan-based config with no
-// modes every top-level check is dead config, and the fix is to move it under the
-// stack entry it guards. Checks with start/start_hint are already reported by
-// warnUnreachableHealthChecks and are skipped here to avoid a duplicate line.
+// warnOrphanHealthChecks warns about a top-level health_checks entry with no start
+// guidance. Top-level checks are not consumed by plans; checks with start/start_hint
+// are reported by warnUnreachableHealthChecks to avoid a duplicate line.
 func (c *Config) warnOrphanHealthChecks() []string {
-	referenced := make(map[string]bool)
-	for _, mode := range c.Modes {
-		for _, name := range mode.HealthChecks {
-			referenced[name] = true
-		}
-	}
 	var warnings []string
 	for _, name := range sortedKeysOf(c.HealthChecks) {
 		hc := c.HealthChecks[name]
-		if referenced[name] || hc.Start != "" || hc.StartHint != "" {
+		if hc.Start != "" || hc.StartHint != "" {
 			continue
 		}
 		warnings = append(warnings, fmt.Sprintf(
-			"health_checks.%s: no modes.*.health_checks entry references it and plans do not read top-level health_checks, so it never runs; move it under stack.<entry>.health_checks or remove it", name))
+			"health_checks.%s: top-level health_checks are not read by plans; move it under stack.<entry>.health_checks or remove it", name))
 	}
 	return warnings
 }

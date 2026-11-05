@@ -200,39 +200,6 @@ func TestMergeInteractionCommandRestrictedRunner(t *testing.T) {
 	}
 }
 
-func TestMergeModeConfigEnvironmentMerge(t *testing.T) {
-	base := ModeConfig{
-		Description:     "dev mode",
-		ComposeProfiles: []string{"dev"},
-		Environment: map[string]string{
-			"DEBUG": "true",
-		},
-	}
-	other := ModeConfig{
-		ComposeProfiles: []string{"dev", "tools"},
-		Environment: map[string]string{
-			"LOG_LEVEL": "debug",
-		},
-	}
-
-	merged := mergeModeConfig(base, other)
-
-	if merged.Description != "dev mode" {
-		t.Errorf("description = %q, want preserved", merged.Description)
-	}
-	// List replace
-	if len(merged.ComposeProfiles) != 2 || merged.ComposeProfiles[1] != "tools" {
-		t.Errorf("compose_profiles = %v, want replaced", merged.ComposeProfiles)
-	}
-	// Map merge
-	if merged.Environment["DEBUG"] != "true" {
-		t.Errorf("env.DEBUG = %q, want preserved", merged.Environment["DEBUG"])
-	}
-	if merged.Environment["LOG_LEVEL"] != "debug" {
-		t.Errorf("env.LOG_LEVEL = %q, want added", merged.Environment["LOG_LEVEL"])
-	}
-}
-
 func TestMergeEnvironmentProfile(t *testing.T) {
 	base := EnvironmentProfile{
 		Description: "staging",
@@ -289,12 +256,6 @@ interaction:
     environment:
       TERM: xterm
 
-modes:
-  dev:
-    description: "Development mode"
-    compose_profiles: [dev]
-    environment:
-      DEBUG: "true"
 `), 0644)
 
 	os.WriteFile(filepath.Join(tmpDir, "dva.override.yml"), []byte(`
@@ -314,11 +275,6 @@ interaction:
     environment:
       SHELL: /bin/zsh
 
-modes:
-  dev:
-    compose_profiles: [dev, tools]
-    environment:
-      LOG_LEVEL: debug
 `), 0644)
 
 	cfg, err := Load(tmpDir)
@@ -375,20 +331,6 @@ modes:
 		t.Errorf("shell.env.SHELL = %q, want added", shell.Environment["SHELL"])
 	}
 
-	// Modes: dev deep merged
-	dev := cfg.Modes["dev"]
-	if dev.Description != "Development mode" {
-		t.Errorf("modes.dev.description = %q, want preserved", dev.Description)
-	}
-	if len(dev.ComposeProfiles) != 2 || dev.ComposeProfiles[1] != "tools" {
-		t.Errorf("modes.dev.compose_profiles = %v, want [dev tools]", dev.ComposeProfiles)
-	}
-	if dev.Environment["DEBUG"] != "true" {
-		t.Errorf("modes.dev.env.DEBUG = %q, want preserved", dev.Environment["DEBUG"])
-	}
-	if dev.Environment["LOG_LEVEL"] != "debug" {
-		t.Errorf("modes.dev.env.LOG_LEVEL = %q, want added", dev.Environment["LOG_LEVEL"])
-	}
 }
 
 func TestLoadRestrictedFieldError(t *testing.T) {

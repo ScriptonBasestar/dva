@@ -25,6 +25,9 @@ func wrapWithHooks(cmdName string, cmd *cobra.Command) {
 		if helpRequested(args) {
 			return original(cmd, args)
 		}
+		if err := rejectRemovedModeFlags(args); err != nil {
+			return err
+		}
 
 		var foundDryRun bool
 		args, foundDryRun = consumeDryRunFlag(args)
@@ -184,7 +187,7 @@ func reportSkippedHookSteps(phase, cmdName string, skipped []string) {
 func hookPlanRoutingArgs(cmdName string, args []string) ([]string, error) {
 	switch cmdName {
 	case "build":
-		_, _, _, _, filtered, err := parseDvaFlags(args)
+		_, _, _, filtered, err := parseDvaFlags(args)
 		if err != nil {
 			return nil, err
 		}

@@ -23,7 +23,6 @@ type UpOptions struct {
 	Names                          []string // specific stack entry names (empty = all)
 	IncludeTags                    []string
 	ExcludeTags                    []string
-	Mode                           string
 	Env                            string
 }
 
@@ -36,7 +35,6 @@ type DownOptions struct {
 	Names        []string // specific stack entry names (empty = all)
 	IncludeTags  []string
 	ExcludeTags  []string
-	Mode         string
 	Env          string
 }
 
@@ -46,7 +44,6 @@ type StopOptions struct {
 	Names       []string // specific stack entry names (empty = all)
 	IncludeTags []string
 	ExcludeTags []string
-	Mode        string
 	Env         string
 }
 
@@ -79,7 +76,7 @@ func (o *Orchestrator) Up(ctx context.Context, opts UpOptions) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	filtered, err := o.filterEntries(opts.Names, opts.IncludeTags, opts.ExcludeTags, opts.Mode, opts.Env)
+	filtered, err := o.filterEntries(opts.Names, opts.IncludeTags, opts.ExcludeTags, opts.Env)
 	if err != nil {
 		return err
 	}
@@ -104,16 +101,6 @@ func (o *Orchestrator) Up(ctx context.Context, opts UpOptions) error {
 	// Clone env so exports accumulate without mutating the original
 	envClone := o.env.Clone()
 
-	// Resolve mode-derived compose hints
-	var modeProfiles []string
-	var modeServices *[]string
-	if opts.Mode != "" {
-		if m, ok := o.cfg.Modes[opts.Mode]; ok {
-			modeProfiles = m.ComposeProfiles
-			modeServices = m.ComposeServices
-		}
-	}
-
 	for _, entry := range filtered {
 		if err := ctx.Err(); err != nil {
 			return err
@@ -124,18 +111,13 @@ func (o *Orchestrator) Up(ctx context.Context, opts UpOptions) error {
 			return fmt.Errorf("entry %q: %w", entry.Name, err)
 		}
 
-		entryComposeServices := modeServices
+		var entryComposeServices *[]string
 		if services, ok := o.composeServices[entry.Name]; ok {
 			selected := append([]string(nil), services...)
 			entryComposeServices = &selected
 		}
 
-		// A plan entry's profiles: replaces the mode-derived list rather than adding to
-		// it. --mode and plans are two generations of the same selection mechanism (see
-		// migrate_report.go), never combined in one config that a migration produced, and
-		// a union would make the effective profile set depend on a flag the plan cannot
-		// see. Replacement keeps the plan's declaration readable as written.
-		entryComposeProfiles := modeProfiles
+		var entryComposeProfiles []string
 		if profiles, ok := o.composeProfiles[entry.Name]; ok {
 			entryComposeProfiles = append([]string(nil), profiles...)
 		}
@@ -188,21 +170,13 @@ func (o *Orchestrator) Up(ctx context.Context, opts UpOptions) error {
 		}
 	}
 
-	// Start native processes defined in mode health_checks with start commands
-	if err := o.startModeProcesses(ctx, opts, envClone); err != nil {
-		return err
-	}
-
 	return nil
 }
 
 // Down stops all matching lifecycle entries in reverse order.
 func (o *Orchestrator) Down(ctx context.Context, opts DownOptions) error {
-	filtered, err := o.filterEntries(opts.Names, opts.IncludeTags, opts.ExcludeTags, opts.Mode, opts.Env)
+	filtered, err := o.filterEntries(opts.Names, opts.IncludeTags, opts.ExcludeTags, opts.Env)
 	if err != nil {
-		return err
-	}
-	if err := o.stopModeProcesses(ctx, opts.Mode, opts.DryRun); err != nil {
 		return err
 	}
 
@@ -281,11 +255,8 @@ func (o *Orchestrator) Stop(ctx context.Context, opts StopOptions) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	filtered, err := o.filterEntries(opts.Names, opts.IncludeTags, opts.ExcludeTags, opts.Mode, opts.Env)
+	filtered, err := o.filterEntries(opts.Names, opts.IncludeTags, opts.ExcludeTags, opts.Env)
 	if err != nil {
-		return err
-	}
-	if err := o.haltModeProcesses(ctx, opts.Mode, opts.DryRun); err != nil {
 		return err
 	}
 
@@ -362,7 +333,6 @@ func (o *Orchestrator) Restart(ctx context.Context, opts UpOptions) error {
 		Names:       opts.Names,
 		IncludeTags: opts.IncludeTags,
 		ExcludeTags: opts.ExcludeTags,
-		Mode:        opts.Mode,
 		Env:         opts.Env,
 	}
 	if err := o.Stop(ctx, stopOpts); err != nil {

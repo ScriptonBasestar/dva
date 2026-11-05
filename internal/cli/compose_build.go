@@ -29,7 +29,7 @@ arguments. With more than one entry to build there is nothing to pass them to,
 so name the entry first.
 
 Without plans, or when the first argument is not a plan name, this stays a
-mode-aware compose passthrough: 'dva build api' still means the 'api' service.`,
+compose passthrough: 'dva build api' still means the 'api' service.`,
 	Example: `  dva build                # Build default_plan, or the only plan, or every declared entry
   dva build local-dev      # Build every entry of a named plan that has something to build
   dva build local-dev api  # Build one entry of a plan
@@ -39,13 +39,16 @@ mode-aware compose passthrough: 'dva build api' still means the 'api' service.`,
 		if helpRequested(args) {
 			return cmd.Help()
 		}
+		if err := rejectRemovedModeFlags(args); err != nil {
+			return err
+		}
 		c := mustLoadConfig()
 		el := rootEnvLoad(c)
 
 		// remaining is docker's argv from here on — `dva build --no-cache` has to reach
 		// docker, so nothing downstream can tell a malformed DVA flag from a valid docker
 		// one. parseDvaFlags is the last code that can, and now does. TASK-172.
-		mode, envName, includeTags, excludeTags, remaining, err := parseDvaFlags(args)
+		envName, includeTags, excludeTags, remaining, err := parseDvaFlags(args)
 		if err != nil {
 			return err
 		}
@@ -55,20 +58,20 @@ mode-aware compose passthrough: 'dva build api' still means the 'api' service.`,
 		// `dva build --env prod` against a config with no environments: both answered exit 0
 		// having done nothing with what they parsed — silence in both directions where the
 		// stack path's `dva up --env prod` fails with "env 'prod' not found" (TASK-279 §3).
-		// build's mode-aware compose shortcut has no notion of an environment or a tag filter
+		// build's compose shortcut has no notion of an environment or a tag filter
 		// to apply them to, so binding the values only to fail on them (rather than pretending
 		// to honour a filter this route cannot act on) is the fix: the flag is rejected here
 		// instead of being silently absorbed, matching how the plan path already answers an
 		// unsupported plan flag.
 		if bad := unsupportedBuildSelectors(envName, includeTags, excludeTags); bad != "" {
-			return fmt.Errorf("'dva build' does not support %s — it selects among dva.yml's modes via --mode only; docker's own flags and service names still reach it unchanged", bad)
+			return fmt.Errorf("'dva build' does not support %s; docker's own flags and service names still reach it unchanged", bad)
 		}
 		// Consume build's own leading separator before plan detection. The shared helper below
 		// deliberately consumes only the plan-name slot; a second terminator remains backend
 		// argv, so `build -- -- --` still reaches compose as `build -- --`.
 		remaining = dropLeadingTerminator(remaining)
 
-		// Plan routing reads what parseDvaFlags left, so --dry-run and --mode are already
+		// Plan routing reads what parseDvaFlags left, so --dry-run is already
 		// claimed and the plan-name slot holds a name or a tool's flag. logsCmd calls
 		// consumeRootPersistentFlags at this point instead; here parseDvaFlags has done that
 		// job and more, and calling both would walk the same argv twice.
@@ -92,53 +95,6 @@ mode-aware compose passthrough: 'dva build api' still means the 'api' service.`,
 		}
 		// No rejectUnknownPlanArg, as in logs: `dva build api` naming a compose service
 		// predates plans and is still what most of that argument's uses mean.
-
-		mode, _ = applyDefaultMode(c, mode)
-
-		// Check mode build strategy
-		if mode != "" {
-			if m, ok := c.Modes[mode]; ok && m.Build != "" {
-				switch m.Build {
-				case "docker":
-					return execComposePassthrough(e, c, append([]string{"build"}, remaining...))
-				case "native":
-					// One executor, not two. This branch and wrapWithHooks fire on the same
-					// len(ic.Replace) > 0 condition and the wrapper always wins, so the only way
-					// in is DVA_HOOK_DEPTH>0 — `dva build` invoked from inside another hook step,
-					// where the wrapper defers to the original RunE. The second copy that used to
-					// live here rendered the same steps differently (stdout instead of stderr,
-					// four-space instead of two, note before the commands instead of after) and,
-					// because it never consulted dryRun, `dva build --dry-run --mode <native>`
-					// executed for real once nested. Delegating settles all of it, and brings the
-					// compose keys — which the copy did not implement — to the nested path.
-					// TASK-093.
-					//
-					// The plan filter is applied against "" and not against a routed name,
-					// which is exact rather than a simplification: detectPlanRoute above
-					// already returned ok=false, so nothing routed on this path by
-					// construction. A `plans:`-filtered step therefore never runs here, and
-					// the branch below distinguishes that from "no replace declared" — the
-					// original message would otherwise send its reader looking for a
-					// declaration that is present and filtered out. TASK-331.
-					if ic, ok := c.Interaction["build"]; ok && len(ic.Replace) > 0 {
-						replace, skipped := config.StepsForPlan(ic.Replace, "")
-						reportSkippedHookSteps("replace", "build", skipped)
-						if len(replace) > 0 {
-							return runHookSteps(e, c, "replace", "build", replace)
-						}
-						return fmt.Errorf("mode %q build=native but every interaction.build.replace step is "+
-							"filtered out by its 'plans:' — no plan routed this invocation, and a filter never "+
-							"matches that. Run 'dva build <plan>', or drop the filter from a step that must "+
-							"always run", mode)
-					}
-					return fmt.Errorf("mode %q build=native but no interaction.build.replace defined", mode)
-				default:
-					// Custom build command
-					fmt.Printf("  $ %s\n", m.Build)
-					return runShellCommand(e, m.Build)
-				}
-			}
-		}
 
 		return execComposePassthrough(e, c, append([]string{"build"}, remaining...))
 	},
@@ -207,8 +163,7 @@ compose passthrough: 'dva logs api' still means the 'api' service.`,
 
 // unsupportedBuildSelectors names which of --env/--tag/--exclude-tag buildCmd was given, in a
 // stable order, for the error that stops it discarding them at the parse call (TASK-279 §3).
-// build reads only --mode out of parseDvaFlags' return; empty here means none were passed and
-// the (undocumented, but harmless) all-empty case that build already handled correctly.
+// An empty result means no unsupported selector was supplied.
 func unsupportedBuildSelectors(envName string, includeTags, excludeTags []string) string {
 	var bad []string
 	if envName != "" {

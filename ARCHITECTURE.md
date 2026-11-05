@@ -129,7 +129,6 @@ CLI는 설정 타입을 runtime 입력으로 변환하고 명시적인 `--with-s
 | `plans` | 사용자가 실행하는 이름과 entry 선택 | runner 원본 설정의 중복 |
 | `environments` | 용도별(개발·테스트·유지보수 등) 변수 세트 선택 — `stg`/`prd` 같은 이름도 변수 세트 라벨일 뿐이다 (경계는 PRODUCT.md) | 실행 host 선택, 해당 환경의 운영 권한 |
 | `sites` | local/office/remote/cloud 같은 host 차이 | 애플리케이션 환경 의미 |
-| `modes`/`default_mode` | `dva up --mode`의 named 운영 모드 선택 축 (legacy — validate가 plans 이관을 권고) | environment/site가 소유한 의미 |
 | `subprojects` | import된 이름의 parent namespace 노출 | 실행 소유권 (child effective config에 남음) |
 | `interaction` | 반복 가능한 단발성 프로젝트 명령 | 서비스 수명 주기 |
 | `provision` | 한 번 수행하는 준비·초기화 | 계획을 대신하는 반복 startup |

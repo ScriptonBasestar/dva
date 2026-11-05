@@ -217,6 +217,9 @@ func parsePlanFlags(verb string, args []string) (planRunFlags, error) {
 		cliVars: map[string]string{},
 		wait:    true,
 	}
+	if err := rejectRemovedModeFlags(args); err != nil {
+		return flags, err
+	}
 
 	for i := 0; i < len(args); i++ {
 		a := args[i]

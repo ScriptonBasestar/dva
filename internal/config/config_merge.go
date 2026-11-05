@@ -156,28 +156,9 @@ func (c *Config) mergeFrom(other *Config) error {
 		maps.Copy(c.Infra, other.Infra)
 	}
 
-	// default_mode: scalar replace
-	if other.DefaultMode != "" {
-		c.DefaultMode = other.DefaultMode
-	}
-
 	// default_plan: scalar replace
 	if other.DefaultPlanName != "" {
 		c.DefaultPlanName = other.DefaultPlanName
-	}
-
-	// modes: deep merge per entry
-	if other.Modes != nil {
-		if c.Modes == nil {
-			c.Modes = make(map[string]ModeConfig)
-		}
-		for k, v := range other.Modes {
-			if existing, ok := c.Modes[k]; ok {
-				c.Modes[k] = mergeModeConfig(existing, v)
-			} else {
-				c.Modes[k] = v
-			}
-		}
 	}
 
 	// environments: deep merge per entry

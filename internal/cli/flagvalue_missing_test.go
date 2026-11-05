@@ -29,9 +29,6 @@ func TestParseDvaFlagsRejectsAMissingValue(t *testing.T) {
 		args     []string
 		wantFlag string
 	}{
-		{"a trailing --mode", []string{"--mode"}, "--mode"},
-		{"--mode before the terminator", []string{"--mode", "--"}, "--mode"},
-		{"the short form -M", []string{"-M"}, "-M"},
 		{"a repeatable --tag", []string{"--tag"}, "--tag"},
 		{"--tag before the terminator", []string{"--tag", "--"}, "--tag"},
 		{"--env", []string{"--env"}, "--env"},
@@ -90,7 +87,6 @@ func TestParseDvaFlagsRejectsAFlagAsValue(t *testing.T) {
 		want    string
 		gotFlag string
 	}{
-		{"mode then env", []string{"--mode", "--env=dev"}, "--mode", "--env=dev"},
 		{"env then tag", []string{"--env", "--tag=web"}, "--env", "--tag=web"},
 		{"tag then excluded tag", []string{"--tag", "--exclude-tag=db"}, "--tag", "--exclude-tag=db"},
 		{"excluded tag then tag", []string{"--exclude-tag", "--tag=web"}, "--exclude-tag", "--tag=web"},
@@ -134,12 +130,9 @@ func TestParseDvaFlagsRejectsAnEmptyValue(t *testing.T) {
 		args     []string
 		wantFlag string
 	}{
-		{"--mode=", []string{"--mode="}, "--mode"},
-		{"the short form -M=", []string{"-M="}, "-M"},
 		{"--env=", []string{"--env="}, "--env"},
 		{"--tag=", []string{"--tag="}, "--tag"},
 		{"--exclude-tag=", []string{"--exclude-tag="}, "--exclude-tag"},
-		{"--mode with an empty next token", []string{"--mode", ""}, "--mode"},
 		{"--tag with an empty next token", []string{"--tag", ""}, "--tag"},
 		// Every spelling parseDvaFlags recognises, not a representative sample. The four
 		// below were missing until an adversarial review guarded takeValue with `&& name !=
@@ -241,11 +234,10 @@ func TestParseDvaFlagsRejectsADegenerateValue(t *testing.T) {
 		// Blank: non-empty by len, empty by content. --mode and --env already failed loudly
 		// downstream ("mode ' ' not found"); these rows move the refusal to the argument
 		// layer so all four flags answer the same way rather than three by accident.
-		{"a blank --mode", []string{"--mode= "}, "--mode", "requires a non-blank value"},
 		{"a blank --env", []string{"--env= "}, "--env", "requires a non-blank value"},
 		{"a blank --tag", []string{"--tag= "}, "--tag", "requires a non-blank value"},
 		{"a tab as --exclude-tag", []string{"--exclude-tag=\t"}, "--exclude-tag", "requires a non-blank value"},
-		{"a blank next token", []string{"--mode", " "}, "--mode", "requires a non-blank value"},
+		{"a blank next token", []string{"--env", " "}, "--env", "requires a non-blank value"},
 		// A lone separator. Every list spelling, for the reason the empty table lists every
 		// alias: the split happens in the case arms, so a fix written into one arm leaves
 		// the other open.
@@ -314,21 +306,6 @@ func TestParseDvaFlagsRejectsADegenerateValue(t *testing.T) {
 // above go through restartCmd.RunE, so a refusal that came from somewhere else on that
 // path would still satisfy them.
 
-func TestParseDvaFlags_MissingValue(t *testing.T) {
-	mode, _, _, _, filtered, err := parseDvaFlags([]string{"--mode"})
-	if err == nil {
-		t.Fatal("parseDvaFlags([--mode]) returned no error, want a missing-value error")
-	}
-	if mode != "" {
-		t.Errorf("mode = %q, want empty (no value provided)", mode)
-	}
-	// Worth asserting apart from the error: a recognised flag is never appended to
-	// filtered, so the token reaches no passthrough caller's argv either.
-	if len(filtered) != 0 {
-		t.Errorf("filtered = %v, want empty", filtered)
-	}
-}
-
 // TestParseDvaFlags_RejectedValueIsStillConsumed pins the invariant the comment in
 // TestParseDvaFlags_MissingValue calls worth asserting, for the one spelling that used to
 // violate it. `--mode ""` was rejected without advancing i, so the loop re-read the empty
@@ -354,14 +331,13 @@ func TestParseDvaFlags_RejectedValueIsStillConsumed(t *testing.T) {
 		name string
 		flag string
 	}{
-		{"--mode", "--mode"},
 		{"--env", "--env"},
 		{"--tag", "--tag"},
 		{"--exclude-tag", "--exclude-tag"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			args := []string{tc.flag, "", "s1"}
-			_, _, _, _, filtered, err := parseDvaFlags(args)
+			_, _, _, filtered, err := parseDvaFlags(args)
 			if err == nil {
 				t.Errorf("parseDvaFlags(%q) returned no error, want an empty-value error", args)
 			}
@@ -387,13 +363,13 @@ func TestParseDvaFlags_RejectedValueIsStillConsumed(t *testing.T) {
 func TestParseDvaFlags_FirstBadFlagIsReported(t *testing.T) {
 	// Two different flags, two different rules (blank value vs empty-after-splitting), so
 	// the two messages cannot be confused for one another.
-	args := []string{"--mode=", "--tag=,"}
-	_, _, _, _, _, err := parseDvaFlags(args)
+	args := []string{"--env=", "--tag=,"}
+	_, _, _, _, err := parseDvaFlags(args)
 	if err == nil {
 		t.Fatalf("parseDvaFlags(%q) returned no error, want the first flag's error", args)
 	}
-	if !strings.Contains(err.Error(), "--mode") {
-		t.Errorf("parseDvaFlags(%q): err = %v, want the FIRST bad flag (--mode) named, not the last", args, err)
+	if !strings.Contains(err.Error(), "--env") {
+		t.Errorf("parseDvaFlags(%q): err = %v, want the FIRST bad flag (--env) named, not the last", args, err)
 	}
 	if strings.Contains(err.Error(), "--tag") {
 		t.Errorf("parseDvaFlags(%q): err = %v, names --tag; the later flag overwrote the first error", args, err)
@@ -401,7 +377,7 @@ func TestParseDvaFlags_FirstBadFlagIsReported(t *testing.T) {
 }
 
 func TestParseDvaFlags_MissingEnvValue(t *testing.T) {
-	_, env, _, _, _, err := parseDvaFlags([]string{"--env"})
+	env, _, _, _, err := parseDvaFlags([]string{"--env"})
 	if err == nil {
 		t.Fatal("parseDvaFlags([--env]) returned no error, want a missing-value error")
 	}
@@ -411,7 +387,7 @@ func TestParseDvaFlags_MissingEnvValue(t *testing.T) {
 }
 
 func TestParseDvaFlags_MissingTagValue(t *testing.T) {
-	_, _, includeTags, _, _, err := parseDvaFlags([]string{"--tag"})
+	_, includeTags, _, _, err := parseDvaFlags([]string{"--tag"})
 	if err == nil {
 		t.Fatal("parseDvaFlags([--tag]) returned no error, want a missing-value error")
 	}
@@ -421,7 +397,7 @@ func TestParseDvaFlags_MissingTagValue(t *testing.T) {
 }
 
 func TestParseDvaFlags_MissingExcludeTagValue(t *testing.T) {
-	_, _, _, excludeTags, _, err := parseDvaFlags([]string{"--exclude-tag"})
+	_, _, excludeTags, _, err := parseDvaFlags([]string{"--exclude-tag"})
 	if err == nil {
 		t.Fatal("parseDvaFlags([--exclude-tag]) returned no error, want a missing-value error")
 	}

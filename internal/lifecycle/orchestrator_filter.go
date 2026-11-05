@@ -47,9 +47,9 @@ func serviceLooksRunning(state string) bool {
 	}
 }
 
-// filterEntries returns lifecycle entries matching the given name, tag, mode, and env filters.
+// filterEntries returns lifecycle entries matching the given name, tag, and env filters.
 // It also applies StackOverrides for the given environment if configured.
-func (o *Orchestrator) filterEntries(names, includeTags, excludeTags []string, mode, env string) ([]config.LifecycleEntry, error) {
+func (o *Orchestrator) filterEntries(names, includeTags, excludeTags []string, env string) ([]config.LifecycleEntry, error) {
 	if err := validateDeclaredTags(o.entries, includeTags); err != nil {
 		return nil, err
 	}
@@ -68,13 +68,6 @@ func (o *Orchestrator) filterEntries(names, includeTags, excludeTags []string, m
 	if env != "" {
 		if ep, ok := o.cfg.Environments[env]; ok && len(ep.StackEntries()) > 0 {
 			entries = filterByNames(entries, ep.StackEntries())
-		}
-	}
-
-	// Filter by mode (stack entry names) — narrows further if both env and mode specify
-	if mode != "" {
-		if m, ok := o.cfg.Modes[mode]; ok && len(m.StackEntries()) > 0 {
-			entries = filterByNames(entries, m.StackEntries())
 		}
 	}
 

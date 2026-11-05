@@ -94,8 +94,8 @@ not close a status bug if DVA still reports an unrelated process as healthy.
 
 - Default to preserve for useful existing configuration. Require explicit scope
   for rewrite.
-- Use named plans for new or rewritten configuration; retain modes and
-  applications only as migration inputs until equivalent behavior is proven.
+- Use named plans for new or rewritten configuration; treat modes/default_mode and
+  applications as migration inputs; never emit removed fields as current configuration.
 - Keep one lifecycle owner for every Compose service, native process, check, and
   provision action. Compose declares its services; stack runners expose reusable
   declarations; plans select executable combinations; interactions remain

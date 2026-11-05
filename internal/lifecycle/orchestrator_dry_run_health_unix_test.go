@@ -3,13 +3,35 @@
 package lifecycle
 
 import (
+	"bytes"
 	"context"
+	"io"
+	"os"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/ScriptonBasestar/dva/internal/config"
 )
+
+// captureStderr runs fn with os.Stderr redirected to a pipe.
+// Do not use t.Parallel in callers: stderr is process-global.
+func captureStderr(t *testing.T, fn func() error) (string, error) {
+	t.Helper()
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("stderr pipe: %v", err)
+	}
+	old := os.Stderr
+	os.Stderr = w
+	runErr := fn()
+	_ = w.Close()
+	os.Stderr = old
+	var buf bytes.Buffer
+	_, _ = io.Copy(&buf, r)
+	_ = r.Close()
+	return buf.String(), runErr
+}
 
 // TestUpDryRunSkipsEntryHealthWait covers the entry-level health wait in Orchestrator.Up.
 //

@@ -1,2 +1,4 @@
 card-dialect:
   strict-status: true
+task-bindings:
+  binding-timeout: 10m

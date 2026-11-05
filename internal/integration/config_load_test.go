@@ -38,21 +38,21 @@ func TestLoadBasicFixture(t *testing.T) {
 func TestLoadFullStackFixture(t *testing.T) {
 	c := loadFixtureConfig(t, "full-stack")
 
-	// Modes
-	if len(c.Modes) != 2 {
-		t.Fatalf("Modes count = %d, want 2", len(c.Modes))
+	// Named plans replace the retired modes fixture.
+	if len(c.Plans) != 2 {
+		t.Fatalf("Plans count = %d, want 2", len(c.Plans))
 	}
-	docker := c.Modes["docker"]
-	if docker.Description != "Full Docker mode" {
+	docker := c.Plans["docker"]
+	if docker.Description != "Full Docker plan" {
 		t.Errorf("docker.Description = %q", docker.Description)
 	}
-	if len(docker.ComposeProfiles) != 2 {
-		t.Errorf("docker.ComposeProfiles = %v, want 2 items", docker.ComposeProfiles)
+	if len(docker.Entries) != 1 || len(docker.Entries[0].Profiles) != 2 {
+		t.Errorf("docker.Entries = %v, want compose with 2 profiles", docker.Entries)
 	}
 
-	native := c.Modes["native"]
-	if native.ComposeServices == nil || len(*native.ComposeServices) != 0 {
-		t.Error("native mode should have empty compose_services (not nil)")
+	native := c.Plans["native"]
+	if len(native.Entries) != 0 {
+		t.Error("native plan should have no entries")
 	}
 
 	// Environments

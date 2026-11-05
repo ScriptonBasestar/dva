@@ -148,24 +148,25 @@ stack:
 }
 
 func TestValidateBlocksDetectsSemanticWarnings(t *testing.T) {
-	// modes: triggers deprecation warning
-	yamlWithModes := `version: "0.1"
-modes:
-  dev:
-    compose_services: [api]
+	// A top-level check without a plan owner remains a semantic warning.
+	yamlWithOrphanCheck := `version: "0.1"
+health_checks:
+  db:
+    type: tcp
+    address: localhost:5432
 `
 	blocks := []ExampleBlock{
 		{
 			FilePath:  "USAGE.md",
 			StartLine: 50,
 			EndLine:   60,
-			Content:   yamlWithModes,
+			Content:   yamlWithOrphanCheck,
 		},
 	}
 
 	res := ValidateBlocks(blocks)
 	if len(res.Warnings) == 0 {
-		t.Fatalf("expected semantic warning for deprecated 'modes', got none")
+		t.Fatalf("expected semantic warning for orphan top-level health check, got none")
 	}
 }
 

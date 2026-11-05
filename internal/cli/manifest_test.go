@@ -146,7 +146,7 @@ func TestBuildManifest_MarksUnreachableHealthCheckStart(t *testing.T) {
 	if api.Start != "make run-api" {
 		t.Errorf("api: start = %q, want published so the mark can be contrasted", api.Start)
 	}
-	if !strings.Contains(api.StartUnreachableReason, "no modes.*.health_checks") {
+	if !strings.Contains(api.StartUnreachableReason, "top-level health_checks are not run by plans") {
 		t.Errorf("api: start_unreachable_reason = %q, want validate-shaped reason", api.StartUnreachableReason)
 	}
 	if !strings.Contains(api.StartUnreachableReason, "health_checks.api") {
@@ -173,27 +173,22 @@ func TestBuildManifest_MarksUnreachableHealthCheckStart(t *testing.T) {
 	}
 }
 
-// TestBuildManifest_ReachableHealthCheckStartUnmarked is the negative control:
-// when a mode lists the check, start is live and the mark must stay absent.
-func TestBuildManifest_ReachableHealthCheckStartUnmarked(t *testing.T) {
+func TestBuildManifest_TopLevelHealthCheckStartIsAlwaysUnreachable(t *testing.T) {
 	c := &config.Config{
 		HealthChecks: map[string]config.HealthCheckConfig{
 			"api":    {Type: "http", Start: "make run-api"},
 			"worker": {Type: "http", Start: "make run-worker"},
-		},
-		Modes: map[string]config.ModeConfig{
-			"dev": {HealthChecks: []string{"api"}},
 		},
 	}
 
 	m := buildManifest(c)
 
 	api := m.HealthChecks["api"]
-	if api.StartUnreachable {
-		t.Errorf("api is referenced by modes.dev — must not mark: %+v", api)
+	if !api.StartUnreachable {
+		t.Errorf("api top-level start must be marked unreachable: %+v", api)
 	}
-	if api.StartUnreachableReason != "" {
-		t.Errorf("api reason = %q, want empty", api.StartUnreachableReason)
+	if !strings.Contains(api.StartUnreachableReason, "top-level health_checks are not run by plans") {
+		t.Errorf("api reason = %q, want plan-start explanation", api.StartUnreachableReason)
 	}
 	if api.Start != "make run-api" {
 		t.Errorf("api start = %q, want make run-api", api.Start)

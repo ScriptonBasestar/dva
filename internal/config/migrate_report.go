@@ -180,7 +180,7 @@ var modeFieldTargets = []struct{ key, target string }{
 	{"description", "plans.<name>.description"},
 	{"stack", "plans.<name>.entries[].name — the declarations this mode selected"},
 	{"compose_services", "plans.<name>.entries[<compose entry>].services"},
-	{"compose_profiles", "stack.<entry>.runners.compose.up_options, as <profiles>"},
+	{"compose_profiles", "plans.<plan>.entries[<compose entry>].profiles (choose the compose entry; original flags: <profiles>)"},
 	{"health_checks", "stack.<entry>.health_checks"},
 	{"endpoint_tags", "plans.<name>.endpoint_tags"},
 	{"environment", "environments.<name>.environment, selected by plans.<name>.environment"},

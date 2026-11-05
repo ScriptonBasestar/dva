@@ -80,6 +80,79 @@ stack:
 	}
 }
 
+func TestConfigMigrateConvertsModes(t *testing.T) {
+	const source = "version: '0.1.44'\nstack:\n  api:\n    default_runner: script\n    runners:\n      script: {command: 'true'}\nmodes:\n  dev: {stack: [api]}\ndefault_mode: dev\n"
+	for _, write := range []bool{false, true} {
+		t.Run(map[bool]string{false: "preview", true: "write"}[write], func(t *testing.T) {
+			dir := t.TempDir()
+			writeConfigMigrateFixture(t, dir, source)
+			if _, err := config.Load(dir); err == nil {
+				t.Fatal("legacy input unexpectedly loaded before migration")
+			}
+			previous := configMigrateWrite
+			configMigrateWrite = write
+			t.Cleanup(func() { configMigrateWrite = previous })
+			var runErr error
+			stdout, _ := captureStreams(t, func() {
+				runErr = configMigrateCmd.RunE(configMigrateCmd, []string{dir})
+			})
+			if runErr != nil {
+				t.Fatalf("raw legacy migration failed: %v", runErr)
+			}
+			loadDir := dir
+			if !write {
+				original, err := os.ReadFile(filepath.Join(dir, config.FileName))
+				if err != nil || string(original) != source {
+					t.Fatalf("preview modified source: %v", err)
+				}
+				loadDir = t.TempDir()
+				writeConfigMigrateFixture(t, loadDir, stdout)
+			}
+			cfg, err := config.Load(loadDir)
+			if err != nil || cfg.DefaultPlanName != "dev" || cfg.Plans["dev"] == nil || len(cfg.Plans["dev"].Entries) != 1 || cfg.Plans["dev"].Entries[0].Name != "api" {
+				t.Fatalf("migrated output is not a working named plan: config=%+v err=%v", cfg, err)
+			}
+		})
+	}
+}
+
+func TestConfigMigratePartialModesPreservesSourceAndGuidance(t *testing.T) {
+	for _, rewrite := range []bool{false, true} {
+		for _, write := range []bool{false, true} {
+			name := map[bool]string{false: "unchanged", true: "partially-converted"}[rewrite] + "/" + map[bool]string{false: "preview", true: "write"}[write]
+			t.Run(name, func(t *testing.T) {
+				dir := t.TempDir()
+				stack := "stack:\n  core:\n    default_runner: compose\n    runners:\n      compose: {files: [compose.yml]}\n"
+				if rewrite {
+					stack = "stack:\n  core: {plugin: compose, files: [compose.yml]}\n"
+				}
+				source := "version: '0.1.44'\n" + stack + "modes:\n  dev: {stack: [core], compose_profiles: [debug]}\n"
+				writeConfigMigrateFixture(t, dir, source)
+				previous := configMigrateWrite
+				configMigrateWrite = write
+				t.Cleanup(func() { configMigrateWrite = previous })
+				var runErr error
+				stdout, stderr := captureStreams(t, func() {
+					runErr = configMigrateCmd.RunE(configMigrateCmd, []string{dir})
+				})
+				if runErr == nil || !strings.Contains(runErr.Error(), "nothing was written") || !strings.Contains(stderr, "modes.dev") || !strings.Contains(stderr, "compose_profiles") {
+					t.Fatalf("incomplete migration lost failure or guidance: err=%v stderr=%q", runErr, stderr)
+				}
+				if write && stdout != "" {
+					t.Fatalf("refused write emitted a success/config stream: %q", stdout)
+				}
+				if !write && !strings.Contains(stdout, "modes:") {
+					t.Fatal("incomplete preview was not provided")
+				}
+				original, err := os.ReadFile(filepath.Join(dir, config.FileName))
+				if err != nil || string(original) != source {
+					t.Fatalf("incomplete migration changed original: %v", err)
+				}
+			})
+		}
+	}
+}
+
 // TestConfigMigrateNoOpStillReportsWhatNeedsHands.
 //
 // A mode carrying a field a plan cannot express (compose_profiles here) has no mechanical
@@ -107,9 +180,16 @@ modes:
     compose_profiles: [debug]
 `)
 
-	output := runConfigMigrate(t, tmpDir)
+	var runErr error
+	stdout, stderr := captureStreams(t, func() {
+		runErr = configMigrateCmd.RunE(configMigrateCmd, []string{tmpDir})
+	})
+	if runErr == nil || !strings.Contains(runErr.Error(), "nothing was written") {
+		t.Fatalf("unconvertible modes must require manual changes: %v", runErr)
+	}
+	output := stdout + stderr
 
-	for _, want := range []string{"modes.dev: not converted", "compose_profiles has no plan equivalent", "modes.dev: split by hand", "plans.dev", "entries[<compose entry>].services"} {
+	for _, want := range []string{"modes.dev: not converted", "compose_profiles requires manual mapping", "modes.dev: split by hand", "plans.dev", "entries[<compose entry>].services"} {
 		if !strings.Contains(output, want) {
 			t.Errorf("the mode's split must be spelled out; missing %q in: %q", want, output)
 		}

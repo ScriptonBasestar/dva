@@ -180,44 +180,6 @@ func mergeInteractionCommand(base, other *InteractionCommand) (*InteractionComma
 	return base, nil
 }
 
-// mergeModeConfig deep-merges other into base.
-func mergeModeConfig(base, other ModeConfig) ModeConfig {
-	if other.Description != "" {
-		base.Description = other.Description
-	}
-	if other.Build != "" {
-		base.Build = other.Build
-	}
-	if other.Run != "" {
-		base.Run = other.Run
-	}
-	if other.Provision != "" {
-		base.Provision = other.Provision
-	}
-
-	// List replace
-	if other.ComposeProfiles != nil {
-		base.ComposeProfiles = other.ComposeProfiles
-	}
-	if other.ComposeServices != nil {
-		base.ComposeServices = other.ComposeServices
-	}
-	if other.HealthChecks != nil {
-		base.HealthChecks = other.HealthChecks
-	}
-	if other.EndpointTags != nil {
-		base.EndpointTags = other.EndpointTags
-	}
-	if other.Stack != nil {
-		base.Stack = other.Stack
-	}
-
-	// Map merge
-	base.Environment = mergeStringMap(base.Environment, other.Environment)
-
-	return base
-}
-
 // mergeEnvironmentProfile deep-merges other into base.
 func mergeEnvironmentProfile(base, other EnvironmentProfile) EnvironmentProfile {
 	if other.Description != "" {

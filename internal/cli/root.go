@@ -352,7 +352,7 @@ func applyRootPersistentFlagsFromArgs(args []string) {
 // two removed, so DVA's own flags do not become the plugin's.
 //
 // It exists separately from parseDvaFlags because the raw passthroughs cannot use that one.
-// parseDvaFlags also consumes --mode, --env and the tag flags; for `dva compose` and
+// parseDvaFlags also consumes --env and the tag flags; for `dva compose` and
 // `dva logs` those belong to docker, and eating them would break the passthrough this is
 // meant to protect. --dry-run is left in place for the same reason, which
 // applyRootPersistentFlagsFromArgs already documents: compose has its own.

@@ -2,8 +2,6 @@ package cli
 
 import (
 	"context"
-	"fmt"
-	"os"
 	"slices"
 
 	"github.com/spf13/cobra"
@@ -35,7 +33,6 @@ Plan usage:
   --dry-run               Print the variable resolution and the actions, without executing
 
 Whole-stack-path flags (rejected, not ignored, once a plan is named):
-  --mode, -M MODE           Use a named mode from dva.yml modes section
   --env, -E ENV             Use a named environment from dva.yml environments section
   --tag, -T TAG[,TAG]       Include only lifecycle entries matching any of the given tags
   --exclude-tag TAG[,TAG]   Exclude lifecycle entries matching any of the given tags
@@ -53,6 +50,9 @@ Plan-path flags (only when a plan is being run, e.g. 'dva down <plan>'):
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if helpRequested(args) {
 			return cmd.Help()
+		}
+		if err := rejectRemovedModeFlags(args); err != nil {
+			return err
 		}
 		c := mustLoadConfig()
 		el := rootEnvLoad(c)
@@ -79,11 +79,11 @@ Plan-path flags (only when a plan is being run, e.g. 'dva down <plan>'):
 			return err
 		}
 
-		c, e, mode, includeTags, excludeTags, err := teardownCommon(args, "down")
+		c, e, includeTags, excludeTags, err := teardownCommon(args, "down")
 		if err != nil {
 			return err
 		}
-		_, envName, _, _, _, err := parseDvaFlags(args)
+		envName, _, _, _, err := parseDvaFlags(args)
 		if err != nil {
 			return err
 		}
@@ -93,7 +93,6 @@ Plan-path flags (only when a plan is being run, e.g. 'dva down <plan>'):
 			DryRun:      dryRun,
 			IncludeTags: includeTags,
 			ExcludeTags: excludeTags,
-			Mode:        mode,
 			Env:         envName,
 		})
 	},
@@ -120,7 +119,6 @@ Plan usage:
   --dry-run               Print the variable resolution and the actions, without executing
 
 Whole-stack-path flags (rejected, not ignored, once a plan is named):
-  --mode, -M MODE           Use a named mode from dva.yml modes section
   --env, -E ENV             Use a named environment from dva.yml environments section
   --tag, -T TAG[,TAG]       Include only lifecycle entries matching any of the given tags
   --exclude-tag TAG[,TAG]   Exclude lifecycle entries matching any of the given tags
@@ -134,6 +132,9 @@ Plan-path flags (only when a plan is being run, e.g. 'dva stop <plan>'):
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if helpRequested(args) {
 			return cmd.Help()
+		}
+		if err := rejectRemovedModeFlags(args); err != nil {
+			return err
 		}
 		ctx, stop := lifecycleCommandContext(cmd)
 		defer stop()
@@ -156,11 +157,11 @@ Plan-path flags (only when a plan is being run, e.g. 'dva stop <plan>'):
 			return err
 		}
 
-		c, e, mode, includeTags, excludeTags, err := teardownCommon(args, "stop")
+		c, e, includeTags, excludeTags, err := teardownCommon(args, "stop")
 		if err != nil {
 			return err
 		}
-		_, envName, _, _, _, err := parseDvaFlags(args)
+		envName, _, _, _, err := parseDvaFlags(args)
 		if err != nil {
 			return err
 		}
@@ -170,7 +171,6 @@ Plan-path flags (only when a plan is being run, e.g. 'dva stop <plan>'):
 			DryRun:      dryRun,
 			IncludeTags: includeTags,
 			ExcludeTags: excludeTags,
-			Mode:        mode,
 			Env:         envName,
 		})
 	},
@@ -219,7 +219,6 @@ as one — was the last exception, and TASK-210 removed it: the terminator is a
 separator, so what follows it is classified, never the separator itself.
 
 Whole-stack-path flags (rejected, not ignored, once a plan is named):
-  --mode, -M MODE           Use a named mode from dva.yml modes section
   --env, -E ENV             Use a named environment from dva.yml environments section
   --tag, -T TAG[,TAG]       Include only lifecycle entries matching any of the given tags
   --exclude-tag TAG[,TAG]   Exclude lifecycle entries matching any of the given tags`,
@@ -231,6 +230,9 @@ Whole-stack-path flags (rejected, not ignored, once a plan is named):
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if helpRequested(args) {
 			return cmd.Help()
+		}
+		if err := rejectRemovedModeFlags(args); err != nil {
+			return err
 		}
 		c := mustLoadConfig()
 		el := rootEnvLoad(c)
@@ -255,7 +257,7 @@ Whole-stack-path flags (rejected, not ignored, once a plan is named):
 			return err
 		}
 
-		mode, envName, includeTags, excludeTags, names, err := parseDvaFlags(args)
+		envName, includeTags, excludeTags, names, err := parseDvaFlags(args)
 		if err != nil {
 			return err
 		}
@@ -332,8 +334,7 @@ Whole-stack-path flags (rejected, not ignored, once a plan is named):
 		// gated on `len(names) == 0` alone and refused all of them — measured, `restart --tag
 		// web` went from rc=0 bouncing s1 on master to rc=1 "multiple plans configured", while
 		// `up --tag web` and `stop --tag web` kept working, making restart the one lifecycle
-		// verb whose tag filter needs a plan name. `restart --mode dev` stopped reporting the
-		// unknown mode and reported the plan gate instead. The raw-args gate above has already
+		// verb whose tag filter needs a plan name. The raw-args gate above has already
 		// ruled on flag-only invocations — any surviving token means "do not ask for a plan" —
 		// and that ruling stands. Only an invocation whose every token was the terminator means
 		// "no names given", so that is what this asks: strip --debug/--json exactly as the gate
@@ -361,25 +362,8 @@ Whole-stack-path flags (rejected, not ignored, once a plan is named):
 		if err := rejectUnknownEntryNames("restart", "stack entry", names, declared); err != nil {
 			return err
 		}
-		mode, isDefault := applyDefaultMode(c, mode)
-
 		if err := applyEnv(e, c, envName); err != nil {
 			return err
-		}
-
-		rm, err := resolveMode(c, mode)
-		if err != nil {
-			return err
-		}
-		if rm.Mode != nil {
-			if isDefault {
-				fmt.Fprintf(os.Stderr, "[mode: %s (default)]\n", mode)
-			} else {
-				fmt.Fprintf(os.Stderr, "[mode: %s]\n", mode)
-			}
-			if len(rm.Mode.Environment) > 0 {
-				e.MergeVars(rm.Mode.Environment)
-			}
 		}
 
 		warnUnsealedEnv(c, el.report, "")
@@ -391,7 +375,6 @@ Whole-stack-path flags (rejected, not ignored, once a plan is named):
 			Names:       names,
 			IncludeTags: includeTags,
 			ExcludeTags: excludeTags,
-			Mode:        mode,
 			Env:         envName,
 		})
 	},

@@ -33,7 +33,7 @@ import (
 //
 //	--debug        → ("--debug", "",     false)
 //	--debug=true   → ("--debug", "true", true)
-//	-M=dev         → ("-M",      "dev",  true)
+//	-E=dev         → ("-E",      "dev",  true)
 //	--tag=a,b      → ("--tag",   "a,b",  true)
 //	infra          → ("infra",   "",     false)
 //	KEY=value      → ("KEY=value", "",   false)
@@ -142,12 +142,12 @@ func flagBoolValue(value string, hasValue bool) (v, ok bool) {
 
 // flagValue returns a value-taking flag's value and how many extra tokens it consumed.
 //
-// `--mode=dev` consumes none, `--mode dev` consumes one. ok is false when a bare flag ends
-// the run of DVA flags with nothing to take — `dva up --mode`, and also `dva up --mode --`,
+// `--env=dev` consumes none, `--env dev` consumes one. ok is false when a bare flag ends
+// the run of DVA flags with nothing to take — `dva up --env`, and also `dva up --env --`,
 // since dvaFlagEnd puts end at the terminator.
 //
 // ok=false is a report about the token run, not a verdict: this helper is not told the
-// flag's name and has no error to return, so it cannot say "--mode requires a value". Its
+// flag's name and has no error to return, so it cannot say "--env requires a value". Its
 // caller decides.
 //
 // There are two callers and neither is silent about ok=false. parseDvaFlags' takeValue

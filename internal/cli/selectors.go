@@ -36,7 +36,7 @@ var stackSelectorFlags = append(
 // A guard that told the user to drop --dry-run when naming a plan would be inventing a
 // restriction that does not exist. TASK-273.
 var stackPathOnlySelectorFlags = []string{
-	"--mode", "-M", "--env", "-E", "--tag", "--tags", "-T",
+	"--env", "-E", "--tag", "--tags", "-T",
 	"--exclude-tag", "--exclude-tags",
 }
 
