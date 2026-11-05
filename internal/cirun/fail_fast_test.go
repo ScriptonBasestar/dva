@@ -135,15 +135,22 @@ func TestFailFastFalseExternalCancellationStopsRunningStep(t *testing.T) {
 func TestFailFastFalseProfileDeadlineStopsRunningStep(t *testing.T) {
 	root, state := t.TempDir(), t.TempDir()
 	started := filepath.Join(root, "started")
-	p := profile(config.CIStep{Name: "slow", Run: "touch " + shellQuote(started) + "; sleep 5"})
-	p.Timeout = "40ms"
+	// The profile deadline includes locking and attestation before shell startup.
+	// Give that setup a realistic budget while keeping natural completion well
+	// outside the deadline; the marker still proves this covers a running step.
+	p := profile(config.CIStep{Name: "slow", Run: "touch " + shellQuote(started) + "; sleep 30"})
+	p.Timeout = "2s"
 	p.FailFast = new(false)
+	begin := time.Now()
 	r, err := Run(context.Background(), Options{Root: root, ProfileName: "running-deadline", StateDir: state, lockDirectory: state, Env: os.Environ(), Profile: p})
 	if err == nil || r.Status != "timed_out" || r.Steps[0].Status != "timed_out" {
 		t.Fatalf("report=%#v err=%v, want timed-out running step", r, err)
 	}
 	if _, err := os.Stat(started); err != nil {
 		t.Fatalf("deadline test never started its step: %v", err)
+	}
+	if elapsed := time.Since(begin); elapsed > 5*time.Second {
+		t.Fatalf("profile deadline did not stop its running step promptly: %s", elapsed)
 	}
 }
 

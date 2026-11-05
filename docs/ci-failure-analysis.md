@@ -37,6 +37,16 @@ deadline과 별도로 GNU `timeout`의 10분 제한과 30초 강제 종료 유�
 
 ## 검증 기록
 
+2026-11-05: TASK-575의 고정 후보 `7da534ae`에서 native full 실행
+`6718eaa06559cf7162e74707a7370e73`의 `TestFailFastFalseProfileDeadlineStopsRunningStep`가
+시작 marker 부재로 실패했다. guarded race 단독 10회에서도 8회 재현됐다.
+profile deadline은 잠금·증거 기록 등 셸 시작 전 준비 시간도 포함하므로 40ms 안에
+셸이 시작된다는 테스트 가정이 잘못됐다. 제품 timeout은 변경하지 않고 fixture에 2초의
+profile 준비·실행 예산과 30초의 작업을 설정한다. marker 및 run/step `timed_out` 검사를
+유지하고 5초 내 반환도 확인해, 시작하지 않은 작업이나 자연 종료를 성공으로 세지 않는다.
+이는 별도 doctor 부하 플레이크의 해결 증거가 아니다. 수정 후 결과는 delivery의 새 CI
+실행으로 판정하며 이 실패 실행은 보존한다.
+
 2026-11-04: DVA는 `.ce/task-runtime.yaml`에 보드 판정 runner만 선언하며,
 `integration-ci-verifier`는 선언하지 않는다. 따라서 hosted CI 성공을 CE 통합의 CI 증거로
 직접 수용하는 경로는 아직 없고, 현재 자동 통합은 독립 리뷰 증거를 사용한다.
