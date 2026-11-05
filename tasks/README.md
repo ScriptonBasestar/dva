@@ -1,18 +1,28 @@
 # DVA Task Management Board
 
-## 현재 상태 (2026-11-04)
+## 현재 상태 (2026-11-05)
+
+리뷰가 끝난 done 카드 15장(TASK-557~562, 564, 579~586)을
+`tasks/_archive/2026-11/`로 보관했다. 카드 본문과 기존 리뷰 영수증은 바꾸지 않았다.
+기계 검증 바인딩과 `make test`를 다시 실행해 통과를 확인했고, 사람 검증 기준은
+현재 ROADMAP·CHANGELOG와 기존 미리보기 증거로 다시 대조했다.
+`done-finalize-all --dry-run`은 후보 16장, 스킵 2장(TASK-575는 ROADMAP 경로 참조,
+TASK-585는 재현 기록 경로 참조)이었다. 그 명령은 카드를 지우므로 실행하지 않았다.
+TASK-550, TASK-563, TASK-575는 `tasks/done/`에 남긴다. 저장소 루트를 가리키는
+상대 링크가 한 단계 더 깊은 월별 경로에서 깨지고, 봉인된 카드 본문은 고치지 않는다.
+[이관 기록](done/evidence/archive-2026-11-05-review.txt)에 명령별 결과를 남겼다.
+현재 카드 목록과 상태는 `ce task list`, 실행 상태는 `ce task run-list`로 확인한다.
+
+### 2026-11-04 기록
 
 리뷰가 완료된 done 카드 28장을 `tasks/_archive/2026-11/`로 보관했다.
 보관 당시 카드 본문과 기존 리뷰 영수증은 변경하지 않았다.
 이관 전 `done-finalize-all --dry-run`은 후보 28장·스킵 0장을 보고했고,
 이관 후 `make doc-check`가 카드 ID·링크·문서 검사를 통과했다.
 [독립 이관 검토](done/evidence/archive-2026-11-review.txt)는 원문 보존과 기존 완료 증거를 확인했다.
-후속 진단·설정 개선 TASK-557~564 여덟 장은 독립 리뷰를 거쳐 `tasks/done/`에 있다.
-TASK-558~561의 [최종 독립 리뷰 원문](done/evidence/explicit-suppression-final-review.txt)은
-검토 종료 시점의 실행자·검토자 신원과 명령별 결과를 보존한다.
-TASK-579~581의 stop 취소·진단 심각도·번들 해시 격리도 [독립 리뷰](done/evidence/stop-warning-bundle-review.txt)를 거쳐 완료했다.
-TASK-582의 status 취소 전파도 [독립 리뷰](done/evidence/status-query-review.txt)를 거쳐 완료했다.
-현재 카드 목록과 상태는 `ce task list`, 실행 상태는 `ce task run-list`로 확인한다.
+TASK-558~561의 [최종 독립 리뷰 원문](done/evidence/explicit-suppression-final-review.txt),
+TASK-579~581의 [독립 리뷰](done/evidence/stop-warning-bundle-review.txt),
+TASK-582의 [독립 리뷰](done/evidence/status-query-review.txt)는 검토 종료 시점의 기록을 보존한다.
 제품·릴리스 상태는 [PRODUCT.md](../PRODUCT.md)와 [ROADMAP.md](../ROADMAP.md)를 따른다.
 
 ### 2026-10-23 기록

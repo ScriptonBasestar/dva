@@ -47,7 +47,7 @@ v0.4.5 후보를 갱신하면서 네 항목을 포함했다.
 
 ## 후속 수정
 
-[TASK-585](../tasks/done/585-env-bridge-target-resolution.md)는 최신 소스에서 평문 I/O의
+[TASK-585](../tasks/_archive/2026-11/585-env-bridge-target-resolution.md)는 최신 소스에서 평문 I/O의
 경로 해석을 loader와 공유하고 선언 selector·출력은 보존한다. 고정된 위 재현 결과와
 v0.4.5 준비 기준선의 제약을 소급해 바꾸지는 않는다. 현재 사용법은
 [env bridge](../USAGE.md#암호화된-소스-브리지-dva-config-env), 갱신한 후보 변경 목록은 CHANGELOG의 0.4.5 섹션을 따른다.

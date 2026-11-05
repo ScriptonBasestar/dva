@@ -1,0 +1,36 @@
+이관 검토: PASS, 보관 15장. 카드 3장은 상대 링크 때문에 tasks/done에 남겼다.
+
+2026-11-05에 리뷰가 끝난 done 카드 중 15장을 tasks/_archive/2026-11/로 옮겼다.
+TASK-550, TASK-563, TASK-575는 남겼다. 본문의 ../../decisions 또는 ../../docs 가
+tasks/_archive/2026-11/에서는 tasks/decisions, tasks/docs 로 풀려 make doc-check 가
+깨진 링크로 실패했다. 봉인된 카드 바이트는 고치지 않았다.
+카드 바이트와 기존 quality-review 영수증은 수정하지 않았다. 18장 모두 이미
+quality-review: pass 이고, 영수증 파일명의 digest와 본문 reviewed-card-sha256이 일치했다.
+ce task validate --all 은 이관 전 634 valid, 0 invalid 였다.
+
+다시 실행한 기계 바인딩은 모두 exit 0 이다.
+
+- TASK-550: schema grep, warnMissingDefaultMode grep, CHANGELOG grep, TestSchemaRejectsModes, TestConfigMigrateConvertsModes, make test
+- TASK-557: missing subproject config tests
+- TASK-558: intentional shadow tests
+- TASK-559: fail_fast false tests
+- TASK-560: suggestion ignore tests
+- TASK-561: TestSuggestionAliasCoverage
+- TASK-562: compose profiles plan-entry guidance test
+- TASK-563: TestCIWithoutGitRefusesBeforeExecutingSteps
+- TASK-564: parent-owned compose drift tests
+- TASK-579: stop cancellation tests
+- TASK-580: validation severity tests
+- TASK-581: operation-local bundle digest tests
+- TASK-582: status cancellation and normal status tests
+
+make test 는 go test -timeout 5m -race -cover ./... 이고 exit 0 이다.
+
+사람 검증 기준은 현재 문서로 다시 보았다.
+
+- TASK-575: ROADMAP이 네 간격을 TASK-585와 TASK-575로 해결됐다고 적는다.
+- TASK-583: ROADMAP 2026-11-04 검토가 유지보수 후보와 v0.5.0 이월, 업그레이드 위험, TASK-575 후속, 검증 한계를 남긴다.
+- TASK-584, TASK-586: CHANGELOG 0.4.5는 미공개 후보라고 적고 공개를 주장하지 않는다. v0.5.0 modes 제거는 Unreleased에 있다.
+- TASK-586 preview-release-check.log SHA-256 a56e3ce52a8ba84831b4d69a45c5ae1b04fb5fc58159a26a30dafa83e6662f7e 가 카드에 적힌 값과 같다.
+
+done-finalize-all --dry-run 은 후보 16장, 스킵 2장이다. TASK-575는 ROADMAP.md 경로 참조, TASK-585는 docs/env-warning-reproduction.md 경로 참조로 스킵됐다. done-finalize는 카드를 삭제하므로 실행하지 않았다. TASK-585는 리뷰가 pass 이고 루트 상대 링크가 없어 월별 보관으로 옮겼다. 재현 기록의 카드 링크만 새 경로로 고쳤다. 영수증은 고치지 않았다.
