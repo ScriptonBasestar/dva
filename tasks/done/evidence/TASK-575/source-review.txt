@@ -1,0 +1,35 @@
+# Independent TASK-575 source review
+
+- Review purpose: `review-task-575` (CE review runtime; source worktree remained the delivery candidate).
+- Reviewed candidate: `5a12a23fd918e96d49b56497da67c97d1fb10e7f` in `/Users/archmagece/worktrees/misc/dva/codex__mbp__fix__task-575`; tree clean at inspection.
+- Review time: 2026-11-05 01:10 UTC.
+- Reviewer: independent strong `/root/doctor_flake_diagnosis`.
+- Executor: strong `/root`.
+- Review attempts before this invocation: 0.
+- Scope: TASK-575's single completion criterion, all four original gaps, source/docs/tests against SOUL, PRODUCT, and config/ownership contracts. No implementation or card changes made by reviewer.
+
+## Criterion: all four original gaps fixed or explicitly accepted
+
+**Pass — direct-child encrypted env diagnostics.** `runDoctorChecks` now calls `checkSubprojectEncryptedEnv` after root env checks. The implementation iterates declared direct children in stable name order, resolves each config only within its declared directory using `ConfigFileInDir`, and supplies `FromFile` plus `ForEnvInspection` so `DVA_FILE` or ancestor discovery cannot silently load the root. The inspection loader keeps modules, overrides, version checks, defaults, and env-source validation; it skips recursive subproject imports and unrelated runtime validation. It filters input failures to encrypted entries, reports missing encrypted targets through `checkEnvUnsealed`, and prefixes child ownership. Unavailable/malformed/future-version child configs produce content-free failure rows and do not prevent inspection of later children. It does not run child backends, child user doctor checks, or recursively inspect grandchildren. Tests cover imported/unimported children, effective child variables, module and override declarations, strict/advisory behavior, DVA_FILE isolation, `dva.yaml`, unavailable children, continuation, nonrecursive scope, secret/path privacy, and encrypted-input errors. Evidence: `internal/cli/doctor_subproject_env.go:12-71`, `internal/config/load.go:58-63, 77-84, 145-164`, `internal/cli/doctor_subproject_env_test.go`.
+
+**Pass — restart warnings on all routes and with the correct owner.** Whole-stack restart warns from the root config after argument, mode, and env validation; named-plan restart warns from `runtime.config` after resolution and required-input failure checks; composition restart warns each effective child owner via `warnCompositionUnsealed`. This preserves imported-child environment ownership. Focused tests exercise whole-stack, plan, and composition restart and verify child-owned targets for imported plans and compositions. Evidence: `internal/cli/compose_lifecycle.go:385-386`, `internal/cli/plan_lifecycle.go:566-577`, `internal/cli/composition_restart.go:27-40`, `internal/cli/doctor_envsops.go:78-89`, and the restart tests in `internal/cli/doctor_envsops_test.go`.
+
+**Pass — interpolated encrypted target mismatch.** This gap is already addressed by TASK-585 in the reviewed baseline: plaintext bridge I/O resolves env paths using the loader's effective scope while preserving the declared selector and content-free diagnostics. I previously independently reviewed TASK-585; its source review and receipt are in `tasks/done/evidence/TASK-585/`. TASK-575's reproduction record preserves the original raw observation and limits rather than rewriting history. This invocation did not rerun TASK-585's fake-SOPS path suite. Evidence: current TASK-585 source/tests and `tasks/done/585-env-bridge-target-resolution.md`; historical raw facts in `docs/env-warning-reproduction.md`.
+
+**Pass — reject unknown targets before unsealed warnings.** The root stack `up` warning now runs immediately before orchestration, after env, target, flag, and mode validation. Plan/composition routes resolve and validate before their warning points; restart routes follow the same ordering. Tests assert unknown plan/flag invocations fail without emitting an unsealed warning or creating runner side effects. A separate test confirms required env failure still precedes an unknown-target error. Evidence: `internal/cli/compose.go:135-139, 174-187, 234-265`; `internal/cli/doctor_envsops_test.go`.
+
+## Verification observed
+
+Reviewer-run, guarded, named tests (all passed):
+
+- `sh scripts/without-dva.sh go test -count=1 -v ./internal/cli -run 'TestDoctorInspectsDirectChildEncryptedTargets|TestDoctorChildInspectionUsesEffectiveOwner|TestDoctorChildInspectionReportsUnavailableAndContinues|TestDoctorChildInspectionStaysWithinEncryptedDirectScope|TestDoctorChildEncryptedInputFailuresAreVisible|TestRestartWarnsOnEveryRouteWhenTargetMissing|TestRestartWarningsUseChildOwner|TestUnsealedWarningsFollowTargetValidation|TestRootEnvFailureStillPrecedesUnknownTarget|TestUpWarnsOnEveryRouteWhenTargetMissing|TestCompositionWarnsForChildOwner'` — PASS; named tests executed, CLI package 0.424s.
+- `sh scripts/without-dva.sh go test -count=1 -v ./internal/config -run 'TestLoadForEnvInspectionRetainsDeclarationValidation|TestLoadRejectsConflictingInspectionModes|TestLoadFromFileTakesPrecedenceOverDVAFILE|TestLoadFromFileMissingDoesNotFallBack|TestLoadFromFileKeepsVersionValidation'` — PASS; named tests executed, config package 0.215s.
+- `ce task validate tasks/review/575-unsealed-env-warning-followups.md` — PASS, current CE `v0.11.0-30-g738b69877`.
+
+Executor evidence inspected directly (not independently rerun): `tmp/diagnostics-race.log` records guarded `-race` CLI/config packages PASS (51.780s / 7.629s); `tmp/diagnostics-doc-check.log` records `doc-check: OK`. `tmp/diagnostics-tests.log` is not treated as proof for its config line because it says `[no tests to run]`; the reviewer-run config command above covers the new loader-mode tests.
+
+## Limitations
+
+The v0.4.5 preparation evidence and earlier TASK-585-specific fake-SOPS tests were not repeated in this review. No full native CI or hosted matrix result is claimed here; those are final integration gates, separate from this source/card criterion review.
+
+VERDICT: PASS

@@ -4,8 +4,12 @@ title: "Unsealed env warning follow-ups"
 type: feature
 priority: P2
 exec-tier: standard
-status: review
+status: done
 created: 2026-11-02
+quality-review: pass
+quality-reviewed-at: 2026-11-05T01:12:07Z
+quality-review-evidence: tasks/done/evidence/TASK-575/independent-review.json
+quality-review-receipt: tasks/done/evidence/TASK-575/done-review-2a94889d94e4559ed72cd78ea1b3f6b424ae2f520f34f6bb0a22c65f93bc812a.json
 ---
 
 # TASK-575: Unsealed env warning follow-ups
@@ -43,4 +47,8 @@ preserving its identity and historical text, then moved to doing through the sha
 
 ## Completion Criteria
 
-- [ ] Each gap is fixed or recorded as accepted | verify: human — independent review of TASK-585 and this change against the four original gaps
+- [x] Each gap is fixed or recorded as accepted | verify: human — independent review of TASK-585 and this change against the four original gaps
+
+## Review Attempts
+
+- 2026-11-05T01:12:07Z — first formal review: independent strong `/root/doctor_flake_diagnosis`, executor strong `/root`. All four gaps pass at `5a12a23fd918e96d49b56497da67c97d1fb10e7f`; named guarded CLI/config tests and review-card validation passed. Evidence: `tasks/done/evidence/TASK-575/independent-review.json`. No repair cycle. Next transition: done. Final full CI and installation remain delivery gates.
