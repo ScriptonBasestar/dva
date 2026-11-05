@@ -1,0 +1,5 @@
+Validation tool: CE v0.11.0-30-g738b69877 (738b698775b51f2d2d05388c4ecff33d91ff5cd6)
+Criterion tree: current tree /Users/archmagece/worktrees/misc/dva/codex__mbp__refactor__task-550 (HEAD 438a71f628c5b99a67e51f4f0f28de97c135577c; mutable working tree)
+Validating: tasks/review/550-remove-modes-v050.md
+  Criterion admission: not-applicable; 0 eligible, 0 examined, 0 already passing, 0 compound unexecuted, 0 unsupported, 0 unavailable
+  ✅ Valid (no errors or warnings)

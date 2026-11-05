@@ -1,0 +1,35 @@
+# TASK-550 Independent Quality Review
+
+- Reviewed source: `438a71f628c5b99a67e51f4f0f28de97c135577c`
+- Reviewed at: `2026-11-05 03:36 UTC`
+- Review runtime purpose: `review-task-550` (`review`)
+- Reviewer: `/root/doctor_flake_diagnosis` — strong, independent, no implementation
+- Executors: `/root` — strong (cross-cutting/version/docs/CLI migration/integration tests); `/root/config_missing_and_profiles` — standard (config); `/root/parent_compose_drift` — standard (lifecycle and CLI). Work was performed in sequential sole-writer phases.
+- Prior formal review attempts: none.
+- Source tree: clean at reviewed SHA.
+
+## Criterion results
+
+1. **Schema rejects `modes` and `default_mode`: PASS.** The schema omits both top-level properties. `rejectRemovedTopLevelKeys` checks the raw YAML node before typed decode, including aliases and merge keys. Ordinary, module, override, imported-child, `ForCI`, and `ForEnvInspection` paths are covered by focused tests; lazy subprojects remain unevaluated. The declared criterion command is covered by `TestSchemaRejectsModes`.
+
+2. **Removed warning is gone: PASS.** `warnMissingDefaultMode` has no references under `internal`; `warnLegacyModes` and the mode-only heavy-default warning were removed. Top-level health start fields now warn that plans do not run them and point users to native stack entries and entry-scoped health checks.
+
+3. **CHANGELOG upgrade instructions: PASS.** The declared grep criterion succeeds. The Removed section directs users to `dva config migrate`, named plans, manual mapping for unsupported modes, and explains that incomplete previews fail nonzero and `--write` preserves the original.
+
+4. **Legacy config rejection regression: PASS.** On the reviewed SHA, ran `sh scripts/without-dva.sh go test -v -run '^TestSchemaRejectsModes$' ./internal/config`; output showed `--- PASS: TestSchemaRejectsModes`, package exit 0 (cached for this exact source). Durable log: `tasks/done/evidence/TASK-550/schema-test.log`, SHA-256 `78578b676a7579b9c3d2423f61576074902fd862af59cee75048f599713717df`. Additional focused tests cover load layers, YAML merge/alias injection, and override errors.
+
+5. **Migration regression: PASS.** On the reviewed SHA, ran `sh scripts/without-dva.sh go test -v -run '^TestConfigMigrateConvertsModes$' ./internal/cli`; output showed both `preview` and `write` subtests passing, package exit 0 (cached for this exact source). Durable log: `tasks/done/evidence/TASK-550/migrate-test.log`, SHA-256 `31eacdc449d1325cbcb084640ba94a2ac16fb40a62f5e5e9d8ce1c17bafe781c`. The raw migration decoder remains independent of normal loading. `VerifyMigrated` rejects residual removed keys; previews retain partial output and guidance, while `--write` refuses an unloadable result and leaves the input unchanged.
+
+6. **Full test regression guard: PASS.** Host ran `GOMAXPROCS=2 GOFLAGS=-p=2 sh scripts/without-dva.sh make test` on this exact clean SHA; exit 0 with race and coverage enabled. Durable log: `tasks/done/evidence/TASK-550/make-test.log`, SHA-256 `2b920f954c41b0504b56d1a955ac228aa5e8cb94a7769da1dab9b0ed9290b211`.
+
+## Additional source and documentation review
+
+The removal is consistent across schema/model, config merge and validation, lifecycle orchestration, CLI parsing/help/manifest, show output, generated references, and migration documentation. `--mode` is rejected before hooks/backend execution on supported lifecycle/build routes, while tokens after `--` remain passthrough input. Environment, tags, named plans, dry-run, and signal paths remain in the non-mode code. Migration converts supported stack-selecting modes, preserves manual guidance for unsupported fields/conflicts, and does not overwrite legacy input when the result is still rejected.
+
+`make doc-check` passed on the reviewed source; log SHA-256: `f515b0bc5e7ce9d3a42da027d4dc2bcaa23aab19acf627d5e152a5c1ccf69f6b` (`tmp/task550-doc-reviewed.log`). CE card validation reported no errors or warnings; log SHA-256: `a9d9397b20be4c625015776d6705da1980bec10e9a04d3de545e251f1cd6ec1d` (`tmp/task550-card-validation.txt`).
+
+## Limits and outcome
+
+This is the per-card source review. The final native `dva ci full`, hosted platform matrix, release/archive checks, and local install/update remain separate delivery checks after review metadata is frozen. They are not claimed as completed here. No public tag or Release is part of this task.
+
+VERDICT: PASS

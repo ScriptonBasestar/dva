@@ -1,0 +1,39 @@
+{
+  "verdict": "PASS",
+  "reviewer-execution": "/root/doctor_flake_diagnosis",
+  "reviewer-grade": "strong",
+  "executor-execution": "/root",
+  "executor-grade": "strong",
+  "review-runtime-execution": "review-task-550",
+  "reviewed-commit": "438a71f628c5b99a67e51f4f0f28de97c135577c",
+  "reviewed-at": "2026-11-05T03:37:39Z",
+  "raw-review": "tasks/done/evidence/TASK-550/source-review.txt",
+  "raw-review-sha256": "a3bed20316b1bc2aac475c1cf44fb329acb6c20be6990672977e35c31940eaa4",
+  "checks": [
+    {
+      "criterion": 1,
+      "result": "PASS"
+    },
+    {
+      "criterion": 2,
+      "result": "PASS"
+    },
+    {
+      "criterion": 3,
+      "result": "PASS"
+    },
+    {
+      "criterion": 4,
+      "result": "PASS"
+    },
+    {
+      "criterion": 5,
+      "result": "PASS"
+    },
+    {
+      "criterion": 6,
+      "result": "PASS"
+    }
+  ],
+  "limits": "Source/card review only. Exact final-head full CI, hosted matrix, archive checks and install remain delivery requirements. No public publication."
+}

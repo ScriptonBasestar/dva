@@ -1,0 +1,4 @@
+=== RUN   TestSchemaRejectsModes
+--- PASS: TestSchemaRejectsModes (0.00s)
+PASS
+ok  	github.com/ScriptonBasestar/dva/internal/config	0.330s

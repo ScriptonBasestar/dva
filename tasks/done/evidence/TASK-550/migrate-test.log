@@ -1,0 +1,8 @@
+=== RUN   TestConfigMigrateConvertsModes
+=== RUN   TestConfigMigrateConvertsModes/preview
+=== RUN   TestConfigMigrateConvertsModes/write
+--- PASS: TestConfigMigrateConvertsModes (0.00s)
+    --- PASS: TestConfigMigrateConvertsModes/preview (0.00s)
+    --- PASS: TestConfigMigrateConvertsModes/write (0.00s)
+PASS
+ok  	github.com/ScriptonBasestar/dva/internal/cli	0.340s

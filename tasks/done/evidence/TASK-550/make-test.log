@@ -1,0 +1,37 @@
+go test -timeout 5m -race -cover  ./...
+	github.com/ScriptonBasestar/dva/cmd/dva		coverage: 0.0% of statements
+ok  	github.com/ScriptonBasestar/dva/internal/agentdeny	1.553s	coverage: 75.4% of statements
+ok  	github.com/ScriptonBasestar/dva/internal/cirun	28.158s	coverage: 84.3% of statements
+ok  	github.com/ScriptonBasestar/dva/internal/cirun/ociexec	8.954s	coverage: 81.3% of statements
+ok  	github.com/ScriptonBasestar/dva/internal/cli	49.635s	coverage: 84.3% of statements
+ok  	github.com/ScriptonBasestar/dva/internal/config	6.571s	coverage: 78.8% of statements
+ok  	github.com/ScriptonBasestar/dva/internal/exec	1.404s	coverage: 65.8% of statements
+ok  	github.com/ScriptonBasestar/dva/internal/jobrun	1.959s	coverage: 62.6% of statements
+ok  	github.com/ScriptonBasestar/dva/internal/lifecycle	22.039s	coverage: 75.9% of statements
+	github.com/ScriptonBasestar/dva/internal/logger		coverage: 0.0% of statements
+ok  	github.com/ScriptonBasestar/dva/internal/ociverify	(cached)	coverage: 74.5% of statements
+ok  	github.com/ScriptonBasestar/dva/internal/output	(cached)	coverage: 100.0% of statements
+ok  	github.com/ScriptonBasestar/dva/internal/remotetarget	1.371s	coverage: 81.0% of statements
+ok  	github.com/ScriptonBasestar/dva/internal/runner	7.446s	coverage: 78.3% of statements
+ok  	github.com/ScriptonBasestar/dva/internal/secretpush	3.831s	coverage: 75.9% of statements
+ok  	github.com/ScriptonBasestar/dva/internal/skillclaim	(cached)	coverage: 72.8% of statements
+ok  	github.com/ScriptonBasestar/dva/internal/skillinstall	(cached)	coverage: 71.1% of statements
+?   	github.com/ScriptonBasestar/dva/skills	[no test files]
+ok  	github.com/ScriptonBasestar/dva/tools/affectedtests	(cached)	coverage: 79.3% of statements
+	github.com/ScriptonBasestar/dva/tools/agentdenygen		coverage: 0.0% of statements
+ok  	github.com/ScriptonBasestar/dva/tools/archcheck	(cached)	coverage: 58.3% of statements
+ok  	github.com/ScriptonBasestar/dva/tools/changelogcheck	(cached)	coverage: 63.0% of statements
+ok  	github.com/ScriptonBasestar/dva/tools/cilabels	(cached)	coverage: 31.2% of statements
+ok  	github.com/ScriptonBasestar/dva/tools/ciparity	1.558s	coverage: 41.2% of statements
+ok  	github.com/ScriptonBasestar/dva/tools/commitcheck	1.655s	coverage: 51.7% of statements
+ok  	github.com/ScriptonBasestar/dva/tools/doccheck	30.851s	coverage: 89.7% of statements
+ok  	github.com/ScriptonBasestar/dva/tools/flowcheck	1.354s	coverage: 82.4% of statements
+ok  	github.com/ScriptonBasestar/dva/tools/flowgen	(cached)	coverage: 48.2% of statements
+ok  	github.com/ScriptonBasestar/dva/tools/installcheck	13.035s	coverage: [no statements]
+	github.com/ScriptonBasestar/dva/tools/libgen		coverage: 0.0% of statements
+ok  	github.com/ScriptonBasestar/dva/tools/planprogress	(cached)	coverage: 79.8% of statements
+ok  	github.com/ScriptonBasestar/dva/tools/releasecheck	(cached)	coverage: 58.7% of statements
+ok  	github.com/ScriptonBasestar/dva/tools/releaseworkflow	6.746s	coverage: 72.7% of statements
+ok  	github.com/ScriptonBasestar/dva/tools/skilldogfood	1.399s	coverage: 31.3% of statements
+ok  	github.com/ScriptonBasestar/dva/tools/skillgen	(cached)	coverage: 18.3% of statements
+ok  	github.com/ScriptonBasestar/dva/tools/yamlcheck	1.389s	coverage: 59.4% of statements
