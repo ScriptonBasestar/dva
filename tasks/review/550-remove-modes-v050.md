@@ -4,7 +4,7 @@ title: "Remove modes and default_mode in v0.5.0"
 type: refactor
 priority: P2
 exec-tier: strong
-status: doing
+status: review
 created: 2026-11-01
 ---
 

@@ -7,8 +7,7 @@ All notable changes to DVA are documented here.
 
 ### Removed
 
-- v0.5.0 개발 소스에서 `modes`·`default_mode`·`--mode/-M`를 제거합니다. 기존 설정은
-  `dva config migrate`로 변환한 뒤 named plans로 실행하세요. 자동 변환할 수 없는 mode는
+- v0.5.0 개발 소스에서 `modes`·`default_mode`·`--mode/-M`를 제거합니다. 기존 설정은 `dva config migrate`로 변환한 뒤 named plans로 실행하세요. 자동 변환할 수 없는 mode는
   수동 안내를 확인해야 하며, 불완전한 preview는 비0으로 종료하고 `--write`는 원본을 보존합니다.
 - mode 전용 health-start 프로세스 실행·중지 경로를 제거합니다. 이를 사용 중인 경우 업그레이드
   전에 현재 0.4.x 실행 파일로 해당 mode를 중지하고, 프로세스를 native stack entry로 이관하세요.
