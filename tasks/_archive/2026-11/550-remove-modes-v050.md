@@ -14,7 +14,7 @@ created: 2026-11-01
 
 ## Summary
 
-[결정 501](../../decisions/501-modes-legacy-or-removed.md)은 `modes`/`default_mode`를 v0.5.0에서 제거하기로 했다. 스키마는 두 키를 거부하고, 사용자는 `dva config migrate`로 이관한다. 이 카드는 v0.5.0 범위에서만 실행한다.
+[결정 501](../../../decisions/501-modes-legacy-or-removed.md)은 `modes`/`default_mode`를 v0.5.0에서 제거하기로 했다. 스키마는 두 키를 거부하고, 사용자는 `dva config migrate`로 이관한다. 이 카드는 v0.5.0 범위에서만 실행한다.
 
 ## Scope
 
@@ -51,3 +51,5 @@ checks and local installation are separate delivery checks after metadata freeze
 ## Review Attempts
 
 - 2026-11-05T03:37:39Z — first formal review: independent strong `/root/doctor_flake_diagnosis` in review-purpose execution `review-task-550`; executor strong `/root`, sequential standard config and lifecycle/CLI workers. All six criteria pass; guarded full race/coverage suite, named regressions, source/doc consistency and immutable logs inspected. Evidence: `tasks/done/evidence/TASK-550/independent-review.json`. No formal repair cycle. Next transition: done. Exact final-head delivery checks remain required.
+
+보관 경로 `tasks/_archive/2026-11/`에 맞추어 결정 문서 링크를 `../../../`로 고쳤다. 기존 리뷰 영수증은 고치기 전 카드 바이트를 고정하므로 바꾸지 않았다.

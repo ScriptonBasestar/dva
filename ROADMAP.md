@@ -31,7 +31,7 @@ TASK-585·TASK-575가 통합된 `bc690677834c65639a349b583fbb551027944c13`을 �
 
 - 범위: 기준 소스의 유지보수 변경과 진단·CI 선택 기능. 제거 결정을 실행하는 TASK-550은 제외한다.
 - 업그레이드 안내와 알려진 제약은 [후보 릴리스 노트](release-notes/v0.4.5.md)가 소유한다.
-- TASK-575의 네 항목은 TASK-585와 [완료 리뷰](tasks/done/575-unsealed-env-warning-followups.md)로
+- TASK-575의 네 항목은 TASK-585와 [완료 리뷰](tasks/_archive/2026-11/575-unsealed-env-warning-followups.md)로
   해결됐다. 과거 재현과 현재 경계는 [재현 기록](docs/env-warning-reproduction.md)에서 연결한다.
 - 후보 검증은 독립 소스 리뷰 뒤 고정된 최종 SHA에서 전체 CI·hosted CI·비게시
   `make release-check`와 로컬 설치 확인으로 수행한다. 실행 receipt와 결과는 해당 delivery에 연결한다.
@@ -51,7 +51,7 @@ TASK-585·TASK-575가 통합된 `bc690677834c65639a349b583fbb551027944c13`을 �
 권고 근거는 기존 설정을 쓰는 사용자가 실행 결과를 올바르게 받도록 하는 수정과,
 설정 모델 제거를 분리해 각 변경의 인수 기준을 명확하게 유지하는 것이다.
 `modes`/`default_mode` 제거 여부를 다시 결정하는 것은 아니다. 제거 버전은 이미 v0.5.0으로
-승인됐으며, [TASK-550](tasks/todo/550-remove-modes-v050.md)은 그 범위에서 실행한다.
+승인됐으며, [TASK-550](tasks/_archive/2026-11/550-remove-modes-v050.md)은 그 범위에서 실행한다.
 
 **0.4.x 후보에도 업그레이드 주의사항이 필요하다.** 설정 제거를 이월한다는 의미이며,
 행위 변화가 없는 교체판을 약속하지 않는다. 릴리스 노트에서 다음을 명시한다.

@@ -1,0 +1,12 @@
+링크 보정 후 보관. 세 카드는 blocks: 가 없어 digest 봉인 대상이 아니다.
+
+TASK-550, TASK-563, TASK-575를 tasks/_archive/2026-11/로 옮겼다.
+tasks/done 에서는 ../../ 가 저장소 루트이고, 월별 보관 경로에서는 한 단계 더 깊다.
+각 카드의 루트 상대 링크 한 곳을 ../../../ 로 고쳤다.
+
+- TASK-550: decisions/501-modes-legacy-or-removed.md
+- TASK-563: docs/72-ci-receipt-attestation.md
+- TASK-575: docs/env-warning-reproduction.md
+
+기존 quality-review-receipt 파일은 고치지 않았다. 그 digest는 링크를 고치기 전 카드 바이트를 고정한다.
+quality-review 와 quality-review-evidence 포인터도 그대로 두었다.

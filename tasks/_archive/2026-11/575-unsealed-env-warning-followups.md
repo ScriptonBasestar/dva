@@ -28,7 +28,7 @@ Gaps left after TASK-573, none seen in real use yet. Review at the next release.
 2026-11-04: disposable overlay fixtures reproduced the four cases at source
 `cdb85caba74dcbf5272d805dd86026eaff49a897`. In particular, an interpolated declaration
 loaded the expanded file but fake-SOPS unseal created a literal target. Durable facts,
-raw evidence and limits are in [the reproduction record](../../docs/env-warning-reproduction.md).
+raw evidence and limits are in [the reproduction record](../../../docs/env-warning-reproduction.md).
 The v0.4.5 candidate documents these limits; this is not an accepted exception or completion.
 Priority is raised to P2 because the interpolation case is an observed loader/write-target
 mismatch, rather than only warning presentation. No real-use incident is claimed.
@@ -52,3 +52,5 @@ preserving its identity and historical text, then moved to doing through the sha
 ## Review Attempts
 
 - 2026-11-05T01:12:07Z — first formal review: independent strong `/root/doctor_flake_diagnosis`, executor strong `/root`. All four gaps pass at `5a12a23fd918e96d49b56497da67c97d1fb10e7f`; named guarded CLI/config tests and review-card validation passed. Evidence: `tasks/done/evidence/TASK-575/independent-review.json`. No repair cycle. Next transition: done. Final full CI and installation remain delivery gates.
+
+보관 경로 `tasks/_archive/2026-11/`에 맞추어 재현 기록 링크를 `../../../`로 고쳤다. 기존 리뷰 영수증은 고치기 전 카드 바이트를 고정하므로 바꾸지 않았다.

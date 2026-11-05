@@ -1,6 +1,6 @@
 # Env 경고 후속 항목 재현 — 2026-11-04
 
-[TASK-575](../tasks/done/575-unsealed-env-warning-followups.md)의 네 후보를
+[TASK-575](../tasks/_archive/2026-11/575-unsealed-env-warning-followups.md)의 네 후보를
 `cdb85caba74dcbf5272d805dd86026eaff49a897`에서 조사했다. 현재 동작 관찰이며,
 수정·명시적 예외 수락·실사용 장애 보고를 뜻하지 않는다.
 

@@ -8,9 +8,11 @@
 현재 ROADMAP·CHANGELOG와 기존 미리보기 증거로 다시 대조했다.
 `done-finalize-all --dry-run`은 후보 16장, 스킵 2장(TASK-575는 ROADMAP 경로 참조,
 TASK-585는 재현 기록 경로 참조)이었다. 그 명령은 카드를 지우므로 실행하지 않았다.
-TASK-550, TASK-563, TASK-575는 `tasks/done/`에 남긴다. 저장소 루트를 가리키는
-상대 링크가 한 단계 더 깊은 월별 경로에서 깨지고, 봉인된 카드 본문은 고치지 않는다.
-[이관 기록](done/evidence/archive-2026-11-05-review.txt)에 명령별 결과를 남겼다.
+이어서 TASK-550, TASK-563, TASK-575도 같은 달 보관으로 옮겼다. 세 장의
+루트 상대 링크만 `../../../`로 고쳤고, 기존 리뷰 영수증 파일은 바꾸지 않았다.
+[이관 기록](done/evidence/archive-2026-11-05-review.txt)과
+[링크 보정](done/evidence/archive-2026-11-05-link-depth.txt)에 남겼다.
+`tasks/done/`의 깊이 1 카드는 0장이고 `evidence/`만 남는다.
 현재 카드 목록과 상태는 `ce task list`, 실행 상태는 `ce task run-list`로 확인한다.
 
 ### 2026-11-04 기록
