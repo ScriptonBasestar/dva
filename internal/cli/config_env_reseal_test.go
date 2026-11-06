@@ -7,8 +7,16 @@ import (
 	"testing"
 )
 
+// resealFixture is defaultFixture plus a root .sops.yaml: reseal re-applies
+// creation rules, so with none it refuses before sops runs.
+func resealFixture(t *testing.T) *bridgeFixture {
+	t.Helper()
+	return newBridgeFixture(t, simpleBridgeYAML(".env", "secrets.env.enc"),
+		map[string]string{"secrets.env.enc": "ENC", ".sops.yaml": testRules})
+}
+
 func TestConfigEnvResealReplacesSourceAndLeavesTargetUntouched(t *testing.T) {
-	f := defaultFixture(t)
+	f := resealFixture(t)
 	f.install(false)
 	if err := os.WriteFile(f.path(".env"), []byte("KEEP=1\n"), 0o600); err != nil {
 		t.Fatal(err)
@@ -66,7 +74,7 @@ func TestConfigEnvResealRefusesAMissingSourceWithoutCallingSops(t *testing.T) {
 }
 
 func TestConfigEnvResealLeavesSourceUnchangedWhenDecryptFails(t *testing.T) {
-	f := defaultFixture(t)
+	f := resealFixture(t)
 	f.install(false)
 	f.sops.decrypt = func(string, *os.File) error { return errors.New("key") }
 

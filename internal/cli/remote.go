@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 
@@ -127,7 +128,14 @@ func secretOptions(c *config.Config, name string) (secretpush.Options, error) {
 	if target.Provider == "kubernetes" {
 		kind = "kubernetes"
 	}
-	return secretpush.Options{Root: c.FileDir(), Name: name, DryRun: dryRun, Target: secretpush.Target{
+	// Same rules-file choice as the env bridge, so `secret push` and
+	// `config env` never disagree about which .sops.yaml governs a file.
+	// Push only decrypts, so "none applies" is not an error here.
+	sopsConfig, err := config.ResolveSopsConfig(c.FileDir(), c.Sops, filepath.Join(c.FileDir(), source.Sops))
+	if err != nil && !errors.Is(err, config.ErrNoSopsConfig) {
+		return secretpush.Options{}, fmt.Errorf("secret source %q: %w", target.Source, err)
+	}
+	return secretpush.Options{Root: c.FileDir(), Name: name, DryRun: dryRun, SopsConfig: sopsConfig, Target: secretpush.Target{
 		Kind:        kind,
 		Source:      source.Sops,
 		Repository:  target.Repository,

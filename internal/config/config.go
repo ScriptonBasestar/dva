@@ -20,6 +20,7 @@ type Config struct {
 	EnvBridge        *EnvBridgeConfig               `yaml:"env_bridge"`
 	Interaction      map[string]*InteractionCommand `yaml:"interaction"`
 	Secrets          *SecretsConfig                 `yaml:"secrets,omitempty" json:"secrets,omitempty"`
+	Sops             *SopsConfig                    `yaml:"sops,omitempty" json:"sops,omitempty"`
 	Jobs             map[string]JobConfig           `yaml:"jobs,omitempty" json:"jobs,omitempty"`
 	CI               *CIConfig                      `yaml:"ci" json:"ci"`
 	Provision        ProvisionConfig                `yaml:"provision"`

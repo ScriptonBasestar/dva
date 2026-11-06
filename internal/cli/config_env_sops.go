@@ -6,6 +6,8 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/ScriptonBasestar/dva/internal/config"
 )
 
 // sopsRunner is the injectable child-process seam. The fault matrix drives every
@@ -14,11 +16,16 @@ import (
 type sopsRunner interface {
 	// Available reports whether the binary can be found at all.
 	Available() bool
+	// Every method takes sopsConfig, the .sops.yaml resolved by
+	// resolveBridgeSopsConfig. It is passed to sops as --config so the rules
+	// file never depends on the working directory; empty means none applies,
+	// which only a decrypting call accepts.
+	//
 	// Decrypt writes plaintext dotenv into out and returns an error on any
 	// non-zero exit. The caller owns out; the runner never creates a file.
-	Decrypt(source string, out *os.File) error
+	Decrypt(source, sopsConfig string, out *os.File) error
 	// Edit runs an interactive editing session on the encrypted source.
-	Edit(source string) error
+	Edit(source, sopsConfig string) error
 	// Encrypt reads plaintext dotenv from in and writes encrypted dotenv to out.
 	// destination is the source path as dva.yml declares it — never opened by
 	// this call — passed only so sops' `.sops.yaml` creation-rule matching
@@ -26,7 +33,37 @@ type sopsRunner interface {
 	// errSopsCreationRuleMismatch when sops' own diagnostic identifies a missing
 	// or non-matching creation rule (seal §3-3 folds this into the same code as
 	// a missing `.sops.yaml`, since DVA does not reimplement rule matching).
-	Encrypt(destination string, in *os.File, out *os.File) error
+	Encrypt(destination, sopsConfig string, in *os.File, out *os.File) error
+}
+
+// sopsArgs prefixes a sops subcommand with the global --config flag. sops
+// rejects --config after the subcommand, so the order is not cosmetic.
+func sopsArgs(sopsConfig string, rest ...string) []string {
+	if sopsConfig == "" {
+		return rest
+	}
+	return append([]string{"--config", sopsConfig}, rest...)
+}
+
+// resolveBridgeSopsConfig picks the .sops.yaml a bridge command hands to sops.
+// encrypting callers need creation rules, so "none applies" is a refusal under
+// the existing sops_creation_rule_missing code; the other callers act on a
+// source that already exists, whose keys sops reads from the file's own
+// metadata, so they proceed with no --config. A declared rules file that is
+// broken (missing, symlinked) refuses either way: it is a dva.yml error, not an
+// absence.
+func resolveBridgeSopsConfig(c *config.Config, root *envRoot, source string, encrypting bool) (string, error) {
+	path, err := config.ResolveSopsConfig(root.dir, c.Sops, root.abs(source))
+	switch {
+	case err == nil:
+		return path, nil
+	case errors.Is(err, config.ErrNoSopsConfig) && !encrypting:
+		return "", nil
+	case encrypting:
+		return "", bridgeErr(codeSopsCreationRuleMissing, "cannot choose sops creation rules for %s: %v", source, err)
+	default:
+		return "", bridgeErr(codeDecryptFailed, "cannot choose sops config for %s: %v", source, err)
+	}
 }
 
 // errSopsCreationRuleMismatch is a sentinel a sopsRunner.Encrypt implementation
@@ -56,8 +93,8 @@ func (realSops) Available() bool {
 // child straight into the 0600 temp descriptor without passing through this
 // process. That is what makes "no secret in DVA output" a property of the
 // data path and not of careful logging.
-func (realSops) Decrypt(source string, out *os.File) error {
-	cmd := exec.Command("sops", "decrypt", "--input-type", "dotenv", "--output-type", "dotenv", source)
+func (realSops) Decrypt(source, sopsConfig string, out *os.File) error {
+	cmd := exec.Command("sops", sopsArgs(sopsConfig, "decrypt", "--input-type", "dotenv", "--output-type", "dotenv", source)...)
 	cmd.Stdout = out
 	var stderr bytes.Buffer
 	cmd.Stderr = &limitedWriter{w: &stderr, remaining: sopsStderrLimit}
@@ -68,8 +105,8 @@ func (realSops) Decrypt(source string, out *os.File) error {
 // Edit is pure passthrough: sops owns the editor session, so stdin, stdout and
 // stderr are the terminal's. DVA neither reads the plaintext nor writes a target
 // here — `unseal` is the only writer.
-func (realSops) Edit(source string) error {
-	cmd := exec.Command("sops", "edit", "--input-type", "dotenv", "--output-type", "dotenv", source)
+func (realSops) Edit(source, sopsConfig string) error {
+	cmd := exec.Command("sops", sopsArgs(sopsConfig, "edit", "--input-type", "dotenv", "--output-type", "dotenv", source)...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -88,9 +125,9 @@ func (realSops) Edit(source string) error {
 // recognized only by pattern-matching sops' own diagnostic text — a heuristic,
 // not a re-derivation, and the reason a false negative here still fails closed
 // as codeEncryptFailed rather than silently succeeding.
-func (realSops) Encrypt(destination string, in *os.File, out *os.File) error {
-	cmd := exec.Command("sops", "encrypt", "--input-type", "dotenv", "--output-type", "dotenv",
-		"--filename-override", destination, "/dev/stdin")
+func (realSops) Encrypt(destination, sopsConfig string, in *os.File, out *os.File) error {
+	cmd := exec.Command("sops", sopsArgs(sopsConfig, "encrypt", "--input-type", "dotenv", "--output-type", "dotenv",
+		"--filename-override", destination, "/dev/stdin")...)
 	cmd.Stdin = in
 	cmd.Stdout = out
 	var stderr bytes.Buffer

@@ -62,6 +62,10 @@ type Options struct {
 	Root, Name, StateDir string
 	Target               Target
 	DryRun               bool
+	// SopsConfig is the .sops.yaml passed to sops as --config, resolved by the
+	// caller from dva.yml's sops: section. Empty means none applies; decrypt
+	// then reads the key from the source's own metadata.
+	SopsConfig string
 }
 
 // KeyReport deliberately contains declaration metadata only; never a value,
@@ -111,7 +115,7 @@ func Push(ctx context.Context, opts Options) (Report, error) {
 	if _, err := exec.LookPath("gh"); err != nil {
 		return report, codeError("gh_unavailable")
 	}
-	plaintext, err := decryptSOPS(ctx, root, source, "dotenv", "dotenv")
+	plaintext, err := decryptSOPS(ctx, root, opts.SopsConfig, source, "dotenv", "dotenv")
 	if err != nil {
 		return report, err
 	}
@@ -277,10 +281,10 @@ func validateMappings(keys map[string]string) (mappingSet, error) {
 // decryptSOPS runs one decrypt pass with explicit input and output formats:
 // dotenv sources round-trip as dotenv; Kubernetes Secret sources are decrypted
 // to JSON so parsing never needs a YAML dependency.
-func decryptSOPS(ctx context.Context, root, source, inputType, outputType string) ([]byte, error) {
+func decryptSOPS(ctx context.Context, root, sopsConfig, source, inputType, outputType string) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(ctx, sopsTimeout)
 	defer cancel()
-	cmd := exec.CommandContext(ctx, "sops", "--decrypt", "--input-type", inputType, "--output-type", outputType, source)
+	cmd := exec.CommandContext(ctx, "sops", decryptArgs(sopsConfig, source, inputType, outputType)...)
 	cmd.WaitDelay = time.Second
 	cmd.Dir = root
 	cmd.Env = withoutGHRouting(os.Environ())
@@ -294,6 +298,16 @@ func decryptSOPS(ctx context.Context, root, source, inputType, outputType string
 		return nil, codeError("sops_decrypt_failed")
 	}
 	return stdout.take(), nil
+}
+
+// decryptArgs builds the sops argv. --config is a global flag and sops rejects
+// it after the subcommand, so it leads.
+func decryptArgs(sopsConfig, source, inputType, outputType string) []string {
+	args := []string{"--decrypt", "--input-type", inputType, "--output-type", outputType, source}
+	if sopsConfig == "" {
+		return args
+	}
+	return append([]string{"--config", sopsConfig}, args...)
 }
 
 var errNotInvoked = errors.New("secret command not invoked")

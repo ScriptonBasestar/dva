@@ -121,6 +121,9 @@ func Load(workDir string, opts ...LoadOption) (*Config, error) {
 			if len(modCfg.Modules) > 0 {
 				return nil, fmt.Errorf("nested modules are not supported")
 			}
+			if modCfg.Sops != nil {
+				return nil, fmt.Errorf("module %q: sops: is valid only in the root dva.yml", mod)
+			}
 			if err := cfg.mergeFrom(modCfg); err != nil {
 				return nil, fmt.Errorf("merging module %q: %w", mod, err)
 			}
@@ -136,6 +139,9 @@ func Load(workDir string, opts ...LoadOption) (*Config, error) {
 			if err := checkConfigVersion(overCfg); err != nil {
 				return nil, fmt.Errorf("loading override: %w", err)
 			}
+		}
+		if overCfg.Sops != nil {
+			return nil, fmt.Errorf("override: sops: is valid only in the root dva.yml")
 		}
 		if err := cfg.mergeFrom(overCfg); err != nil {
 			return nil, fmt.Errorf("merging override: %w", err)

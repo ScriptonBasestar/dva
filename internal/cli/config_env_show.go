@@ -121,7 +121,11 @@ func runEnvShow(target string) error {
 	// 6: decrypt straight to the terminal descriptor. Same shape as unseal's
 	// write — the child's stdout is the destination file, so the plaintext
 	// never exists as a string inside this process.
-	if err := bridgeSops.Decrypt(root.abs(entry.SopsSource), tty); err != nil {
+	sopsConfig, err := resolveBridgeSopsConfig(c, root, entry.SopsSource, false)
+	if err != nil {
+		return err
+	}
+	if err := bridgeSops.Decrypt(root.abs(entry.SopsSource), sopsConfig, tty); err != nil {
 		return bridgeErr(codeDecryptFailed, "decryption failed for %s", entry.SopsSource)
 	}
 	return nil

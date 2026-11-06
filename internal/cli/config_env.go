@@ -299,6 +299,11 @@ func runEnvUnseal(target string, force bool) (runErr error) {
 		return bridgeErr(codeSopsNotFound, "sops is not installed or not on PATH")
 	}
 
+	sopsConfig, err := resolveBridgeSopsConfig(c, resolved.root, resolved.entry.SopsSource, false)
+	if err != nil {
+		return err
+	}
+
 	// 12. decrypt into a temp we own, validate, then replace.
 	w, err := resolved.anchor.newTemp()
 	if err != nil {
@@ -309,7 +314,7 @@ func runEnvUnseal(target string, force bool) (runErr error) {
 	}
 	defer w.Abort()
 
-	if err := bridgeSops.Decrypt(resolved.root.abs(resolved.entry.SopsSource), w.File()); err != nil {
+	if err := bridgeSops.Decrypt(resolved.root.abs(resolved.entry.SopsSource), sopsConfig, w.File()); err != nil {
 		// The child's exit status is deliberately not propagated: sops exits 128
 		// on a key failure, and letting that through would make DVA's exit
 		// contract a restatement of sops' (§7-3). Its stderr is not echoed
@@ -446,7 +451,13 @@ func runEnvEdit(target string) error {
 	// message is worded for all three: real sops exits 200 on "File has not
 	// changed", which is a cancellation and not a decryption failure, so calling
 	// it one would tell the user to go looking at their keys.
-	if err := bridgeSops.Edit(root.abs(entry.SopsSource)); err != nil {
+	// The source exists, so sops re-encrypts with the keys in its metadata;
+	// --config still decides which rules file is consulted, never the cwd.
+	sopsConfig, err := resolveBridgeSopsConfig(c, root, entry.SopsSource, false)
+	if err != nil {
+		return err
+	}
+	if err := bridgeSops.Edit(root.abs(entry.SopsSource), sopsConfig); err != nil {
 		return bridgeErr(codeDecryptFailed, "sops did not complete the editing session for %s; "+
 			"the source is unchanged", entry.SopsSource)
 	}

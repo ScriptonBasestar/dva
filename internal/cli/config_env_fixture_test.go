@@ -50,12 +50,22 @@ type fakeSops struct {
 	// races under -race would report on the harness instead of on the code.
 	mu    sync.Mutex
 	calls []string
+	// configs is the --config each call received, index-aligned with calls,
+	// so a test can assert the rules file without changing what calls reads.
+	configs []string
 }
 
-func (f *fakeSops) record(call string) {
+func (f *fakeSops) record(call, sopsConfig string) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.calls = append(f.calls, call)
+	f.configs = append(f.configs, sopsConfig)
+}
+
+func (f *fakeSops) configsUsed() []string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return append([]string(nil), f.configs...)
 }
 
 // callsMade returns a copy so a caller can read it while writers are still
@@ -68,8 +78,8 @@ func (f *fakeSops) callsMade() []string {
 
 func (f *fakeSops) Available() bool { return f.available }
 
-func (f *fakeSops) Decrypt(source string, out *os.File) error {
-	f.record("decrypt " + source)
+func (f *fakeSops) Decrypt(source, sopsConfig string, out *os.File) error {
+	f.record("decrypt "+source, sopsConfig)
 	if f.decrypt != nil {
 		return f.decrypt(source, out)
 	}
@@ -77,16 +87,16 @@ func (f *fakeSops) Decrypt(source string, out *os.File) error {
 	return err
 }
 
-func (f *fakeSops) Edit(source string) error {
-	f.record("edit " + source)
+func (f *fakeSops) Edit(source, sopsConfig string) error {
+	f.record("edit "+source, sopsConfig)
 	if f.edit != nil {
 		return f.edit(source)
 	}
 	return nil
 }
 
-func (f *fakeSops) Encrypt(destination string, in, out *os.File) error {
-	f.record("encrypt " + destination)
+func (f *fakeSops) Encrypt(destination, sopsConfig string, in, out *os.File) error {
+	f.record("encrypt "+destination, sopsConfig)
 	if f.encrypt != nil {
 		return f.encrypt(destination, in, out)
 	}

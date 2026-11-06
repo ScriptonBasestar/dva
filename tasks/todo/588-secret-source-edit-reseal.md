@@ -37,8 +37,8 @@ dva secret reseal <source> [--project <child>]
 
 - **명령**: `edit`은 sops 편집 세션을 연다. `reseal`은 현재 creation rule로 같은 경로에 원자적으로 다시 암호화한다. 둘 다 평문을 stdout에 출력하지 않고, 평문 파일을 만들거나 읽지 않는다. `edit`은 `--json`을 거부한다. 이는 `config env edit`과 같은 이유다. sops 자식의 stderr와 종료 코드는 그대로 전달하지 않는다. 이는 `config env`의 §7-3 원칙을 따른다.
 - **`format`**: `dotenv`, `yaml`, `json`, `ini`, `binary`만 받는다. 이 값을 sops의 `--input-type`과 `--output-type`으로 넘긴다. 생략하면 `dotenv`다. 단, `provider: kubernetes` 대상이 참조하는 source에서 생략하면 `yaml`로 추론한다. 이렇게 하면 기존 설정을 고치지 않고도 지금의 push 동작이 유지된다. kubernetes 대상이 `yaml` 외의 형식을 명시한 source를 참조하면 validate 에러다. github-actions 대상이 `dotenv` 외의 형식을 참조해도 validate 에러다. `secretpush`는 provider 대신 이 해석 결과를 읽는다.
-- **`project`**: 값은 같은 설정의 `subprojects:`에 선언된 이름이어야 한다. `sops` 경로는 그 subproject 디렉터리 기준으로 해석한다. 절대 경로, 탈출 경로, symlink 경로 성분 검사도 그 디렉터리를 루트로 한다. sops는 그 디렉터리를 cwd로 실행한다. 따라서 child의 `.sops.yaml`이 적용된다. `project`가 없으면 기준점과 cwd는 설정 파일 디렉터리다.
-- **`--project` 플래그와의 조합**: `--project <child>`를 주면 child의 dva.yml이 소유자가 된다. 이는 `push`, `status`와 같은 `remoteOwner` 경로다. 이때 부모의 sources는 보이지 않는다. child의 source가 `project:`를 선언하면 거부한다. 손자 프로젝트는 다루지 않는다. 이는 doctor가 손자를 실행하지 않는 것과 같다. 부모의 `project: api` source와 child 자신의 source가 같은 파일을 가리키는 것은 허용한다. 두 경우 모두 같은 디렉터리를 cwd로 sops를 실행하므로 같은 creation rule이 적용되기 때문이다.
+- **`project`**: 값은 같은 설정의 `subprojects:`에 선언된 이름이어야 한다. `sops` 경로는 그 subproject 디렉터리 기준으로 해석한다. 절대 경로, 탈출 경로, symlink 경로 성분 검사도 그 디렉터리를 루트로 한다. `project`가 없으면 기준점은 설정 파일 디렉터리다. 규칙 파일은 cwd로 정하지 않는다. 소유 설정의 `sops:` 해석(기본 nearest: 암호화 파일 디렉터리에서 설정 루트까지 가장 가까운 `.sops.yaml`, `lookup: root`, `config: <경로>`)으로 고른 파일을 sops에 `--config`로 넘긴다. 이 해석은 `config env`와 `secret push`가 이미 쓰는 `config.ResolveSopsConfig`다. 기본값에서는 child 디렉터리의 `.sops.yaml`이 가장 가까우므로 child 규칙이 적용된다.
+- **`--project` 플래그와의 조합**: `--project <child>`를 주면 child의 dva.yml이 소유자가 된다. 이는 `push`, `status`와 같은 `remoteOwner` 경로다. 이때 부모의 sources는 보이지 않는다. child의 source가 `project:`를 선언하면 거부한다. 손자 프로젝트는 다루지 않는다. 이는 doctor가 손자를 실행하지 않는 것과 같다. 부모의 `project: api` source와 child 자신의 source가 같은 파일을 가리키는 것은 허용한다. 둘 다 기본 nearest이면 같은 `.sops.yaml`이 골라지므로 같은 creation rule이 적용된다. 어느 한쪽이 `sops: {lookup: root}`나 `config:`를 선언하면 각 설정이 선언한 규칙을 따른다.
 - **유지하는 것**: `config env edit/unseal/reseal/seal/show`의 selector, 코드, 출력은 바꾸지 않는다. `env_file`과 `secrets.sources`를 연결하는 기능은 이 카드의 범위가 아니다.
 
 ## 확인한 sops 동작
@@ -47,7 +47,8 @@ dva secret reseal <source> [--project <child>]
 
 - `.sops.yaml`은 대상 파일 위치가 아니라 **cwd에서 위로** 찾는다. cwd가 부모 루트이고 대상이 `child/secret.env`이면 child의 `.sops.yaml`은 무시되고 루트 규칙이 적용된다. cwd 위쪽에 설정이 없으면 대상 파일 옆에 `.sops.yaml`이 있어도 "config file not found"로 실패한다. 이는 `--filename-override`를 써도 같다.
 - `path_regex`는 **찾아낸 `.sops.yaml`의 디렉터리 기준 상대경로**로 매칭된다. 절대경로를 넘겨도, cwd가 하위 디렉터리여도 결과는 같다.
-- 따라서 위 `project` 계약의 "sops를 subproject 디렉터리에서 실행한다"는 child의 `.sops.yaml`을 적용하기 위한 필수 조건이다. 부모 디렉터리에서 실행하면 부모 규칙(부모의 `path_regex` 포함)이 적용된다.
+- 전역 `--config <file>`은 서브커맨드 **앞에** 와야 한다(`sops --config X encrypt ...`). 주면 재귀 탐색을 끄고 `SOPS_CONFIG`보다 우선한다. 복호화는 `--config`와 무관하게 파일 메타데이터의 키로 동작한다.
+- 이 cwd 의존 때문에 `config env reseal`이 실행한 하위 디렉터리에 따라 다른 키로 재암호화하는 결함이 재현됐다. 수정(브랜치 `dev/claude/mst/fix/sops-config-resolution`)은 cwd 대신 위 `--config` 해석을 쓴다. 이 카드도 같은 해석을 따른다.
 - 구현자는 `secretpush`가 이미 `cmd.Dir = root`로 실행하는 방식(`internal/secretpush/secretpush.go:285`)을 따른다.
 
 ## 구현 전에 확인할 것
@@ -59,8 +60,8 @@ dva secret reseal <source> [--project <child>]
 
 아래 기준 1~4의 테스트 이름은 구현자가 추가해야 하는 테스트다. 구현 시 해당 테스트를 추가한 뒤 binding을 command 형식으로 바꾼다.
 
-- [ ] dva secret edit <source>와 dva secret reseal <source>가 secrets.sources 이름으로 소스를 고르고, 평문을 출력하거나 파일로 쓰지 않는다 | verify: human — `go test ./internal/cli -run TestSecretSourceEditReseal -count=1` 추가 후 command binding으로 교체
-- [ ] secrets.sources.<name>.format은 dotenv, yaml, json, ini, binary만 받는다. 생략하면 dotenv이고, kubernetes 대상이 참조하는 생략 source는 yaml로 추론한다 | verify: human — `go test ./internal/config -run TestSecretSourceFormat -count=1` 추가 후 command binding으로 교체
-- [ ] secrets.sources.<name>.project는 선언된 subproject 디렉터리를 경로 기준점과 sops cwd로 쓰고, 미선언 이름과 탈출 경로와 symlink 경로 성분을 거부한다 | verify: human — `go test ./internal/cli ./internal/config -run TestSecretSourceProject -count=1` 추가 후 command binding으로 교체
-- [ ] --project 플래그와 project: 필드를 함께 쓸 때의 해석 규칙이 구현되고 USAGE.md에 같은 규칙으로 적힌다 | verify: human — `go test ./internal/cli -run TestSecretSourceProjectFlagCombination -count=1` 추가 후 command binding으로 교체, USAGE.md 대조
+- [ ] dva secret edit <source>와 dva secret reseal <source>가 secrets.sources 이름으로 소스를 고르고, 평문을 출력하거나 파일로 쓰지 않는다 | verify: human — 테스트 TestSecretSourceEditReseal (./internal/cli) 추가 후 command binding으로 교체
+- [ ] secrets.sources.<name>.format은 dotenv, yaml, json, ini, binary만 받는다. 생략하면 dotenv이고, kubernetes 대상이 참조하는 생략 source는 yaml로 추론한다 | verify: human — 테스트 TestSecretSourceFormat (./internal/config) 추가 후 command binding으로 교체
+- [ ] secrets.sources.<name>.project는 선언된 subproject 디렉터리를 경로 기준점으로 쓰고, 미선언 이름과 탈출 경로와 symlink 경로 성분을 거부한다. 규칙 파일은 cwd가 아니라 `sops:` 해석으로 고른다 | verify: human — 테스트 TestSecretSourceProject (./internal/cli ./internal/config) 추가 후 command binding으로 교체
+- [ ] --project 플래그와 project: 필드를 함께 쓸 때의 해석 규칙이 구현되고 USAGE.md에 같은 규칙으로 적힌다 | verify: human — 테스트 TestSecretSourceProjectFlagCombination (./internal/cli) 추가 후 command binding으로 교체, USAGE.md 대조
 - [ ] 기존 secret push/status와 config env edit/unseal/reseal 동작이 바뀌지 않는다 | verify: `make test`

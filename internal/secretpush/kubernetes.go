@@ -46,7 +46,7 @@ func pushKubernetes(ctx context.Context, opts Options) (Report, error) {
 	if err != nil {
 		return report, err
 	}
-	plaintext, err := decryptSOPS(ctx, root, source, "yaml", "json")
+	plaintext, err := decryptSOPS(ctx, root, opts.SopsConfig, source, "yaml", "json")
 	if err != nil {
 		return report, err
 	}

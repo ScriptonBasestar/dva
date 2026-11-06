@@ -89,6 +89,13 @@ func runEnvReseal(target string) error {
 	defer anchor.Close()
 	anchor.dir.reclaimStaleTemps(time.Now())
 
+	// Resolved before any temp exists: reseal re-applies creation rules, so a
+	// project with none refuses without touching the directory.
+	sopsConfig, err := resolveBridgeSopsConfig(c, root, entry.SopsSource, true)
+	if err != nil {
+		return err
+	}
+
 	plain, err := anchor.newTemp()
 	if err != nil {
 		if errors.Is(err, fs.ErrPermission) {
@@ -99,7 +106,7 @@ func runEnvReseal(target string) error {
 	defer plain.Abort()
 
 	sourcePath := root.abs(entry.SopsSource)
-	if err := bridgeSops.Decrypt(sourcePath, plain.File()); err != nil {
+	if err := bridgeSops.Decrypt(sourcePath, sopsConfig, plain.File()); err != nil {
 		return bridgeErr(codeDecryptFailed, "decryption failed for %s", entry.SopsSource)
 	}
 	if err := plain.File().Sync(); err != nil {
@@ -124,7 +131,7 @@ func runEnvReseal(target string) error {
 	}
 	defer cipher.Abort()
 
-	if err := bridgeSops.Encrypt(sourcePath, in, cipher.File()); err != nil {
+	if err := bridgeSops.Encrypt(sourcePath, sopsConfig, in, cipher.File()); err != nil {
 		if errors.Is(err, errSopsCreationRuleMismatch) {
 			return bridgeErr(codeSopsCreationRuleMissing,
 				"no .sops.yaml creation rule matches %s", entry.SopsSource)

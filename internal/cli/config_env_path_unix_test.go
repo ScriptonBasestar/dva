@@ -71,7 +71,7 @@ func TestConfigEnvSourceOnlyOperationsKeepLiteralMetadata(t *testing.T) {
 	}
 	for _, verb := range []string{"edit", "reseal"} {
 		t.Run(verb, func(t *testing.T) {
-			f := newBridgeFixture(t, pathBridgeYAML(declared, "secrets.env.enc"), map[string]string{"secrets.env.enc": "ENC", declared: "literal unchanged"})
+			f := newBridgeFixture(t, pathBridgeYAML(declared, "secrets.env.enc"), map[string]string{"secrets.env.enc": "ENC", declared: "literal unchanged", ".sops.yaml": testRules})
 			f.install(false)
 			captureStreams(t, func() {
 				var err error

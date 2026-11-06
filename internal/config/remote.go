@@ -82,6 +82,9 @@ func (c *Config) ValidateRemoteDeclarations() error {
 }
 
 func (c *Config) validateRemoteDeclarations() error {
+	if err := validateSopsConfig(c.Sops); err != nil {
+		return err
+	}
 	if c.Secrets != nil {
 		if err := validateSecrets(c.Secrets); err != nil {
 			return err

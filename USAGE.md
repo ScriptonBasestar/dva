@@ -1019,6 +1019,7 @@ interaction:
 | `vars` | 글로벌 환경변수 |
 | `environment` | 환경변수 체인의 최하위 레이어 — `env_file`보다 먼저 적용되고 이후 덮어써짐 (`environment:` < `env_file` < OS 환경 변수). 복수형 `environments`(환경 프리셋)와는 다른 키 |
 | `env_file` | .env 파일 로딩 (엔트리별 `sops_source`로 암호화 출처 선언) |
+| `sops` | (루트 전용) sops에 넘길 `.sops.yaml` 선택 — `lookup: nearest\|root` 또는 `config: <경로>`. [어떤 .sops.yaml을 쓰는가](#어떤-sopsyaml을-쓰는가) 참조 |
 | `stack` | 재사용 가능한 실행 대상 선언 |
 | `plans` | 실제 실행 가능한 이름 |
 | `default_plan` | 플랜 이름 미지정 시 적용할 기본 `plans` 엔트리 (여러 plan 중 기본 선택) |
@@ -1659,6 +1660,37 @@ v0.4.5 후보의 `unseal`·`seal`은 선택 뒤 평문 파일 경로를 위의 e
 - **DVA는 키를 소유하지 않습니다.** age/KMS 키 해석은 전적으로 sops가 하며, DVA는
   암호화 파일을 만들어주지도 않습니다. 최초 `.env.enc`는 `sops encrypt`로 직접
   만듭니다.
+
+##### 어떤 .sops.yaml을 쓰는가
+
+sops는 혼자 실행되면 `.sops.yaml`을 **작업 디렉토리에서 위로** 찾습니다. 암호화 파일의
+위치가 아닙니다. DVA도 dva.yml을 작업 디렉토리에서 위로 찾기 때문에, 그대로 두면 같은
+`reseal`이 어느 하위 디렉토리에서 입력했느냐에 따라 다른 creation rule(다른 키)로 다시
+암호화합니다. 그래서 `config env`의 모든 동사와 `dva secret push`는 규칙 파일을 DVA가
+직접 고르고 sops에 `--config`로 넘깁니다. 작업 디렉토리는 결과에 영향이 없습니다.
+
+| 설정 | 고르는 파일 |
+|------|-------------|
+| 생략, 또는 `sops: {lookup: nearest}` | 암호화 파일의 디렉토리에서 설정 루트까지 올라가며 처음 만나는 `.sops.yaml` |
+| `sops: {lookup: root}` | 설정 루트의 `.sops.yaml`만. 하위 디렉토리의 `.sops.yaml`은 무시 |
+| `sops: {config: ops/sops.yaml}` | 지정한 파일 하나 (설정 루트 기준 상대 경로) |
+
+```yaml
+sops:
+  lookup: root            # 또는 config: ops/sops.yaml (둘은 함께 쓸 수 없음)
+```
+
+- 설정 루트 **위**의 `.sops.yaml`과 `SOPS_CONFIG` 환경 변수는 적용되지 않습니다. 둘 다
+  이 프로젝트가 선언한 것이 아니기 때문입니다.
+- 이름은 `.sops.yaml`만 찾습니다. sops 3.x는 `.sops.yml`을 경고와 함께 무시합니다.
+- 규칙 파일이 심볼릭 링크면 따라가지 않고 거절합니다.
+- `sops:`는 루트 dva.yml에만 둘 수 있습니다. 모듈이나 `dva.override.yml`에 있으면 로딩이
+  실패합니다 — 프로젝트의 비밀을 어떤 키로 암호화할지를 루트가 보여주지 않는 파일이
+  바꾸게 두지 않기 위해서입니다.
+- 적용되는 규칙 파일이 없을 때: 다시 암호화하는 `reseal`·`seal`은 sops를 실행하기 전에
+  `sops_creation_rule_missing`으로 거절합니다. `unseal`·`show`·`edit`·`secret push`는
+  기존 파일 메타데이터의 키를 쓰므로 `--config` 없이 진행합니다. 단 `config:`로 지정한
+  파일이 없으면 이는 dva.yml 오류이므로 어느 동사든 거절합니다.
 
 ##### 쓰기 전에 확인하는 것
 

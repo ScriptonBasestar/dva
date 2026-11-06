@@ -794,6 +794,16 @@
   },
   "properties": {
     "secrets": { "$ref": "#/definitions/remote_secrets" },
+    "sops": {
+      "type": "object",
+      "description": "Chooses which .sops.yaml DVA passes to sops with --config. Default: the .sops.yaml nearest the encrypted file, searched from its directory up to the config root. 'lookup: root' uses only the root .sops.yaml; 'config' names one rules file relative to the config root. A .sops.yaml above the config root and SOPS_CONFIG never apply. Valid only in the root dva.yml. See USAGE.md, 'config env'.",
+      "additionalProperties": false,
+      "properties": {
+        "lookup": { "type": "string", "enum": ["nearest", "root"] },
+        "config": { "type": "string", "minLength": 1 }
+      },
+      "not": { "required": ["lookup", "config"] }
+    },
     "jobs": { "type": "object", "additionalProperties": { "$ref": "#/definitions/remote_job" } },
     "version": {
       "type": "string",

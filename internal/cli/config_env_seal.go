@@ -57,6 +57,8 @@ type sealResolvedEntry struct {
 	anchor     *targetAnchor // anchored on the source's own directory, not the target's
 	keyNames   []string
 	targetPath string
+	// sopsConfig is the rules file row 23 resolved; it goes to sops as --config.
+	sopsConfig string
 }
 
 // sealPreflight runs TASK-281 §3-3-1 rows 6-23 in order and stops at the first
@@ -167,39 +169,18 @@ func sealPreflight(c *config.Config, target string) (*sealResolvedEntry, error) 
 	}()
 
 	// 23: .sops.yaml creation-rule fail-closed check, before sops is ever run.
-	if !hasSopsCreationRuleAncestor(root, anchor.rel) {
-		return nil, bridgeErr(codeSopsCreationRuleMissing,
-			"no .sops.yaml reachable from %s declares a creation rule", entry.SopsSource)
+	// The same resolution picks the file sops is told to read, so the check
+	// and the encrypt can never consult different rules. It only establishes
+	// that a rules file applies; matching its creation_rules against the
+	// destination stays sops' job (§3-3), translated by Encrypt via
+	// errSopsCreationRuleMismatch.
+	sopsConfig, err := resolveBridgeSopsConfig(c, root, entry.SopsSource, true)
+	if err != nil {
+		return nil, err
 	}
 
 	ok = true
-	return &sealResolvedEntry{entry: entry, root: root, anchor: anchor, keyNames: names, targetPath: targetPath}, nil
-}
-
-// hasSopsCreationRuleAncestor walks from dir (the source's own directory,
-// relative to the config root) up through its ancestors to "." inclusive,
-// looking for a .sops.yaml. It never walks above the config root: that
-// boundary is already what os.Root structurally enforces, and TASK-281 §3-3
-// draws the search exactly there ("config root부터 containment 경계까지").
-//
-// This only checks existence. It does not parse .sops.yaml or evaluate its
-// creation_rules against the destination path — DVA does not reimplement
-// sops' rule matching (§3-3); that half of row 27 is sops' own failure,
-// translated by Encrypt via errSopsCreationRuleMismatch.
-func hasSopsCreationRuleAncestor(root *envRoot, dir string) bool {
-	for {
-		candidate := ".sops.yaml"
-		if dir != "." {
-			candidate = filepath.Join(dir, ".sops.yaml")
-		}
-		if info, err := root.root.Lstat(candidate); err == nil && !info.IsDir() {
-			return true
-		}
-		if dir == "." {
-			return false
-		}
-		dir = filepath.Dir(dir)
-	}
+	return &sealResolvedEntry{entry: entry, root: root, anchor: anchor, keyNames: names, targetPath: targetPath, sopsConfig: sopsConfig}, nil
 }
 
 func runEnvSeal(target string, yes bool) (runErr error) {
@@ -265,7 +246,7 @@ func runEnvSeal(target string, yes bool) (runErr error) {
 
 	// 27: encrypt. destination is the declared source path, never opened here —
 	// it exists only so .sops.yaml's creation_rules match against it.
-	if err := bridgeSops.Encrypt(resolved.root.abs(resolved.entry.SopsSource), plaintext, w.File()); err != nil {
+	if err := bridgeSops.Encrypt(resolved.root.abs(resolved.entry.SopsSource), resolved.sopsConfig, plaintext, w.File()); err != nil {
 		if errors.Is(err, errSopsCreationRuleMismatch) {
 			return bridgeErr(codeSopsCreationRuleMissing,
 				"no .sops.yaml creation rule matches %s", resolved.entry.SopsSource)
