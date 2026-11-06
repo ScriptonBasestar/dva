@@ -299,6 +299,23 @@ ISSUE-534(`ci --subproject`의 무관한 import 해석)는 고쳐지지 않아 �
   `go install …/cmd/dva@v0.4.2`는 `commit: unknown (module v0.4.2)`와 `commit_source: module`,
   `module_version: v0.4.2`를 보고한다. 다른 OS archive는 실행하지 않았다.
 
+## 비교안 동시 실행 채택 — 2026-11-06
+
+사용자가 A/B/C/D 비교안을 격리해 동시에 실행하는 기능을 채택했다. 설계와 결정 기록은
+[비교안 동시 실행 설계](docs/75-variant-comparison-design.md)가 소유한다. 아직 구현되지 않았고,
+동결된 v0.4.5 후보 범위에 넣지 않는다. 공개 버전 배정은 다음 후보 범위 검토에서 정한다.
+
+| 순서 | 카드 | 인수 기준 요지 |
+|---|---|---|
+| 1 | TASK-589 | `compare` 선언 검증: 엔트리 분할, 포트 목록 길이, 고정 `project_name:` 충돌을 실행 전에 거부 |
+| 2 | TASK-590 | 실행 기록과 snapshot 생성·회수: detached 생성, dirty 회수 거부, stale 기록 보고 |
+| 3 | TASK-591 | snapshot 모드 `up`·`status`·`down`: 일부 실패 보존, 재호출 안전, 기계 출력 |
+| 4 | TASK-592 | worktree 모드: provider ID로 기존 worktree 선택, 생성·삭제 안 함, 미리보기 워크플로우 파일럿 |
+| 5 | TASK-593 | config 모드: 비교안별 pid·compose 이름 분리, 체크아웃 내 빌드 상태 충돌 거부 |
+
+각 카드는 독립 리뷰와 해당 모듈 검사를 통과해야 완료한다. 지원 표시는 USAGE.md에
+구현과 회귀 검증이 들어간 뒤에만 한다.
+
 ## 선택적 후속 후보
 
 아래는 다음 릴리스의 필수 신규 기능이 아니다. 사용자 요구와 지원 비용을 검토해
