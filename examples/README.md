@@ -84,6 +84,13 @@ If you're new to DVA, start with [`basic.yml`](basic.yml) - it contains the esse
   - Use when: The compose file gates optional service groups behind `profiles:`
   - Guide: [`../docs/40-declarative-stack-and-plans.md`](../docs/40-declarative-stack-and-plans.md) §5-1
 
+### 🔀 Variant Comparison (declaration only)
+
+- **[variant-compare.yml](variant-compare.yml)** - `compare:` splits one plan into shared and per-variant entries
+  - `dva validate` rejects overlap, uncovered entries, short port lists and a fixed `project_name` on a per-variant entry
+  - The `dva compare` command is not implemented yet
+  - Guide: [`../docs/75-variant-comparison-design.md`](../docs/75-variant-comparison-design.md)
+
 ### 📦 Provision Profiles
 
 - **[provision-profiles.yml](provision-profiles.yml)** - Comprehensive provision examples

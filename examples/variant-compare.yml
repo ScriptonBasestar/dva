@@ -1,0 +1,52 @@
+# TASK-589: declare a concurrent variant comparison (docs/75-variant-comparison-design.md).
+# Only the declaration and its pre-run validation exist today; the `dva compare` command
+# that starts variants is not implemented yet. `dva validate` and `dva config show` read it.
+#
+# `shared` entries start once from the calling checkout; `per_variant` entries start once per
+# variant checkout. Together they must list every entry of the plan, without overlap.
+version: "0.1.0"
+
+stack:
+  db:
+    default_runner: compose
+    runners:
+      compose:
+        files: [docker-compose.db.yml]
+  api:
+    default_runner: native
+    runners:
+      native:
+        dir: apps/api
+        run: go run ./cmd/api
+  web:
+    # No project_name: each variant's compose project is named after its checkout
+    # directory. A fixed project_name here would be rejected for a per_variant entry.
+    default_runner: native
+    runners:
+      native:
+        dir: apps/web
+        run: pnpm dev --port ${WEB_PORT}
+
+plans:
+  web-dev:
+    vars:
+      WEB_PORT: "3000"
+    entries:
+      - name: db
+      - name: api
+        depends_on: [db]
+      - name: web
+        depends_on: [api]
+
+compare:
+  web-layout:
+    plan: web-dev
+    shared: [api, db]
+    per_variant: [web]
+    ports:
+      # Variant i receives the i-th port. Fewer ports than variants fails before start.
+      WEB_PORT: [3001, 3002, 3003, 3004]
+    # Optional default set used when `dva compare up web-layout` names no variants.
+    variants:
+      a: main
+      b: feat/layout-a

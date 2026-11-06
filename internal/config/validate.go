@@ -160,6 +160,7 @@ func (c *Config) Validate() error {
 	if err := c.validatePlanAliasExtends(); err != nil {
 		errs = append(errs, err)
 	}
+	errs = append(errs, c.validateCompare()...)
 
 	return joinValidationErrors(errs)
 }

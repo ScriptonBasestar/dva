@@ -1590,6 +1590,32 @@
       "description": "Plan applied automatically when dva up/down/stop/restart is called without naming a plan. References a plans entry. When exactly one plan is defined it is the default automatically; set this to choose the default among multiple plans (e.g. 'dev').",
       "examples": ["dev", "local-dev"]
     },
+    "compare": {
+      "type": "object",
+      "description": "Concurrent variant comparisons (docs/75). Each entry splits one plan's entries into shared (started once from the calling checkout) and per_variant (started once per variant checkout). Declaration and pre-run validation only; the dva compare command is not implemented yet.",
+      "propertyNames": { "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$" },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["plan"],
+        "properties": {
+          "plan": { "type": "string", "minLength": 1, "description": "Plan whose entries are split. Must not be a composition plan." },
+          "shared": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Plan entries started once from the calling checkout." },
+          "per_variant": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Plan entries started once per variant checkout. Entries must not set a fixed compose project_name." },
+          "ports": {
+            "type": "object",
+            "description": "Plan var name to port list; variant i receives the i-th port of each list.",
+            "additionalProperties": { "type": "array", "items": { "type": "integer", "minimum": 1, "maximum": 65535 } }
+          },
+          "variants": {
+            "type": "object",
+            "description": "Default variant set used when none are named: variant name to source (a ref or a provider work ID).",
+            "additionalProperties": { "type": "string" }
+          }
+        }
+      },
+      "examples": [{ "web-layout": { "plan": "web-dev", "shared": ["api", "db"], "per_variant": ["web"], "ports": { "WEB_PORT": [3001, 3002] }, "variants": { "a": "main", "b": "feat/layout-a" } } }]
+    },
     "suggestion_ignore": {
       "type": "array",
       "items": {

@@ -39,3 +39,37 @@ func TestConfigSchemaViewUsesYAMLFieldNames(t *testing.T) {
 		t.Fatal("schema view missing setup profile")
 	}
 }
+
+// TestConfigSchemaViewShowsCompare: `dva config show` renders a compare declaration under its
+// yaml key with yaml field names (TASK-589).
+func TestConfigSchemaViewShowsCompare(t *testing.T) {
+	c := &config.Config{
+		Compare: map[string]*config.CompareConfig{
+			"web-layout": {
+				Plan:       "web-dev",
+				Shared:     []string{"api", "db"},
+				PerVariant: []string{"web"},
+				Ports:      map[string][]int{"WEB_PORT": {3001, 3002}},
+				Variants:   map[string]string{"a": "main"},
+			},
+		},
+	}
+	view, err := configSchemaView(c)
+	if err != nil {
+		t.Fatalf("configSchemaView error: %v", err)
+	}
+	root := view.(map[string]any)
+	compare, ok := root["compare"].(map[string]any)
+	if !ok {
+		t.Fatalf("compare type = %T, want map[string]any", root["compare"])
+	}
+	entry, ok := compare["web-layout"].(map[string]any)
+	if !ok {
+		t.Fatalf("compare.web-layout type = %T", compare["web-layout"])
+	}
+	for _, key := range []string{"plan", "shared", "per_variant", "ports", "variants"} {
+		if _, exists := entry[key]; !exists {
+			t.Errorf("compare.web-layout missing %q: %v", key, entry)
+		}
+	}
+}

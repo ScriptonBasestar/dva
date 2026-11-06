@@ -36,6 +36,7 @@ type Config struct {
 	Environments     map[string]EnvironmentProfile  `yaml:"environments"`
 	Plans            map[string]*PlanConfig         `yaml:"plans"`
 	DefaultPlanName  string                         `yaml:"default_plan"`
+	Compare          map[string]*CompareConfig      `yaml:"compare,omitempty"`
 	Sites            map[string]*SiteConfig         `yaml:"sites"`
 	Ssh              SshConfig                      `yaml:"ssh"`
 	DoctorChecks     []DoctorCheck                  `yaml:"checks"`

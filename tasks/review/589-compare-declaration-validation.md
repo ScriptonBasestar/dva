@@ -5,7 +5,7 @@ type: feature
 priority: P2
 effort: M
 exec-tier: standard
-status: todo
+status: review
 created: 2026-11-06
 allowed-paths: [internal/config/, internal/cli/config_dump.go, internal/cli/config_dump_test.go, examples/]
 ---
@@ -36,5 +36,5 @@ allowed-paths: [internal/config/, internal/cli/config_dump.go, internal/cli/conf
 
 ## Completion Criteria
 
-- [ ] compare 선언의 파싱과 네 가지 검증이 단위 테스트로 고정되고 전체 테스트가 통과한다 | verify: human — 구현 카드가 추가한 테스트 이름을 이 줄의 go test -run 바인딩으로 바꾸고 make test 통과를 확인한다
-- [ ] 예시 dva.yml의 compare 섹션이 config show 출력에 나타나고, 겹치는 shared·per_variant 선언은 실행 전 오류가 된다 | verify: human — examples/에 compare 예시를 두고 dva config show 출력과 잘못된 선언의 오류 문구를 확인한다
+- [x] compare 선언의 파싱과 네 가지 검증이 단위 테스트로 고정되고 전체 테스트가 통과한다 | verify: `go test ./internal/config -run '^(TestCompareParsesDeclaration|TestCompareFollowsAliasAndExtends|TestCompareRejectsInvalidDeclarations|TestCompareRejectsCompositionPlan|TestCheckPortCapacity|TestCompareMergeReplacesWholeEntry)$'` (observed: 2026-11-06 — exit 0; validateCompare 호출을 지우면 RejectsInvalidDeclarations 7건 실패 확인; make test exit 0)
+- [x] 예시 dva.yml의 compare 섹션이 config show 출력에 나타나고, 겹치는 shared·per_variant 선언은 실행 전 오류가 된다 | verify: human — examples/에 compare 예시를 두고 dva config show 출력과 잘못된 선언의 오류 문구를 확인한다 (observed: 2026-11-06 — examples/variant-compare.yml을 dva.yml로 둔 dva config show에 compare.web-layout의 plan·shared·per_variant·ports·variants가 나오고, shared에 web을 더한 사본은 dva validate가 `compare.web-layout: entry "web" is in both shared and per_variant`로 exit 1; 회귀는 go test ./internal/cli -run '^TestConfigSchemaViewShowsCompare$')

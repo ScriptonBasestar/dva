@@ -161,6 +161,16 @@ func (c *Config) mergeFrom(other *Config) error {
 		c.DefaultPlanName = other.DefaultPlanName
 	}
 
+	// compare: key-level replace. A comparison is valid only as a whole (its split must
+	// cover the plan and its port lists must line up), so field-level mixing across files
+	// could produce a declaration no file wrote.
+	if other.Compare != nil {
+		if c.Compare == nil {
+			c.Compare = make(map[string]*CompareConfig)
+		}
+		maps.Copy(c.Compare, other.Compare)
+	}
+
 	// environments: deep merge per entry
 	if other.Environments != nil {
 		if c.Environments == nil {

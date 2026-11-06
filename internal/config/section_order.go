@@ -18,7 +18,7 @@ const migrationGuideURL = "https://github.com/ScriptonBasestar/dva/blob/master/d
 // canonicalSectionOrder defines the recommended top-level key order for dva.yml.
 var canonicalSectionOrder = []string{
 	"version", "vars", "environment", "env_file", "stack", "plans",
-	"default_plan", "environments", "sites",
+	"default_plan", "compare", "environments", "sites",
 	// Legacy sections retain a deterministic position during migration.
 	// `applications` is absent by removal, not by oversight (docs/43): the key no
 	// longer validates, so a file carrying it is rejected before this order check
