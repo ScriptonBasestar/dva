@@ -11,12 +11,12 @@ created: 2026-11-06
 
 ## Summary
 
-`dva config env edit`과 `reseal`은 루트 설정 계열(root, module, override)의 `env_file` 중 `sops_source`가 있는 엔트리만 다룬다. 엔트리는 선언된 `path` 문자열로 고르고, sops는 언제나 dotenv로 호출한다(`internal/cli/config_env_sops.go:60`, `:72`, `:92`). 그래서 다음 두 경우의 SOPS 파일은 DVA로 편집하거나 다시 암호화할 수 없다.
+`dva config env edit`과 `reseal`은 루트 설정 계열(root, module, override)의 `env_file` 중 `sops_source`가 있는 엔트리만 다룬다. 엔트리는 선언된 `path` 문자열로 고르고, sops는 언제나 dotenv로 호출한다(`internal/cli/config_env_sops.go:97`, `:109`, `:129`). 그래서 다음 두 경우의 SOPS 파일은 DVA로 편집하거나 다시 암호화할 수 없다.
 
-1. subproject의 하위 경로에 있는 파일. origin이 `subproject`인 선언은 TASK-245 §5-1에 따라 쓰기가 거부된다(`internal/config/envsource.go:44`).
+1. subproject의 하위 경로에 있는 파일. origin이 `subproject`인 선언은 TASK-245 §5-1에 따라 쓰기가 거부된다(`internal/config/envsource.go:43`).
 2. dotenv가 아닌 파일. k8s Secret YAML처럼 평문 target이 없는 파일은 `env_file` 엔트리에 연결할 수 없다.
 
-이 카드는 이미 "이름 → SOPS 파일" 레지스트리 역할을 하는 `secrets.sources`(`internal/config/remote.go:14`)를 alias의 정본으로 쓴다. 이미 있는 `dva secret` 그룹(`push`, `status`)에 `edit`과 `reseal`을 추가한다. 2026-11-06 사용자 결정에 따라 subproject 연결은 `project:` 필드와 기존 `--project` 플래그를 모두 지원하고, 형식은 `format:` 필드(기본 dotenv)로 선언한다.
+이 카드는 이미 "이름 → SOPS 파일" 레지스트리 역할을 하는 `secrets.sources`(`internal/config/remote.go:18`)를 alias의 정본으로 쓴다. 이미 있는 `dva secret` 그룹(`push`, `status`)에 `edit`과 `reseal`을 추가한다. 2026-11-06 사용자 결정에 따라 subproject 연결은 `project:` 필드와 기존 `--project` 플래그를 모두 지원하고, 형식은 `format:` 필드(기본 dotenv)로 선언한다.
 
 ## 채택한 계약
 
@@ -48,8 +48,8 @@ dva secret reseal <source> [--project <child>]
 - `.sops.yaml`은 대상 파일 위치가 아니라 **cwd에서 위로** 찾는다. cwd가 부모 루트이고 대상이 `child/secret.env`이면 child의 `.sops.yaml`은 무시되고 루트 규칙이 적용된다. cwd 위쪽에 설정이 없으면 대상 파일 옆에 `.sops.yaml`이 있어도 "config file not found"로 실패한다. 이는 `--filename-override`를 써도 같다.
 - `path_regex`는 **찾아낸 `.sops.yaml`의 디렉터리 기준 상대경로**로 매칭된다. 절대경로를 넘겨도, cwd가 하위 디렉터리여도 결과는 같다.
 - 전역 `--config <file>`은 서브커맨드 **앞에** 와야 한다(`sops --config X encrypt ...`). 주면 재귀 탐색을 끄고 `SOPS_CONFIG`보다 우선한다. 복호화는 `--config`와 무관하게 파일 메타데이터의 키로 동작한다.
-- 이 cwd 의존 때문에 `config env reseal`이 실행한 하위 디렉터리에 따라 다른 키로 재암호화하는 결함이 재현됐다. 수정(브랜치 `dev/claude/mst/fix/sops-config-resolution`)은 cwd 대신 위 `--config` 해석을 쓴다. 이 카드도 같은 해석을 따른다.
-- 구현자는 `secretpush`가 이미 `cmd.Dir = root`로 실행하는 방식(`internal/secretpush/secretpush.go:285`)을 따른다.
+- 이 cwd 의존 때문에 `config env reseal`이 실행한 하위 디렉터리에 따라 다른 키로 재암호화하는 결함이 재현됐다. 수정(커밋 `f442368e`, master 통합)은 cwd 대신 위 `--config` 해석을 쓴다. 이 카드도 같은 해석을 따른다.
+- 구현자는 `secretpush`가 이미 `cmd.Dir = root`로 실행하는 방식(`internal/secretpush/secretpush.go:289`)을 따른다.
 
 ## 구현 전에 확인할 것
 
@@ -64,4 +64,4 @@ dva secret reseal <source> [--project <child>]
 - [ ] secrets.sources.<name>.format은 dotenv, yaml, json, ini, binary만 받는다. 생략하면 dotenv이고, kubernetes 대상이 참조하는 생략 source는 yaml로 추론한다 | verify: human — 테스트 TestSecretSourceFormat (./internal/config) 추가 후 command binding으로 교체
 - [ ] secrets.sources.<name>.project는 선언된 subproject 디렉터리를 경로 기준점으로 쓰고, 미선언 이름과 탈출 경로와 symlink 경로 성분을 거부한다. 규칙 파일은 cwd가 아니라 `sops:` 해석으로 고른다 | verify: human — 테스트 TestSecretSourceProject (./internal/cli ./internal/config) 추가 후 command binding으로 교체
 - [ ] --project 플래그와 project: 필드를 함께 쓸 때의 해석 규칙이 구현되고 USAGE.md에 같은 규칙으로 적힌다 | verify: human — 테스트 TestSecretSourceProjectFlagCombination (./internal/cli) 추가 후 command binding으로 교체, USAGE.md 대조
-- [ ] 기존 secret push/status와 config env edit/unseal/reseal 동작이 바뀌지 않는다 | verify: `make test`
+- [ ] 기존 secret push/status와 config env edit/unseal/reseal 동작이 바뀌지 않는다 | verify: `make test` (regression-guard)

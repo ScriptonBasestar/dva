@@ -31,6 +31,8 @@ dva status local-dev
 
 여기서 `local-dev`는 `plans.<name>`에 해당하는 논리적 실행 이름입니다.
 
+체크아웃 루트는 plan 이름과 다른 축이며, 대상 선택 계약은 [USAGE.md](../USAGE.md)가 소유한다.
+
 ## 3. 입력 모델
 
 실행 계획 해석에 사용되는 주요 입력은 아래와 같습니다.

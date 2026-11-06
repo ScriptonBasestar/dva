@@ -185,6 +185,12 @@ CLI와 orchestrator는 같은 child config directory를 runner 파일, process s
 endpoint와 readiness의 기준으로 사용한다. Parent의 같은 이름 선언은 imported plan에
 섞이지 않으며 CLI `--var`처럼 문서화된 호출 입력만 추가된다.
 
+작업 워크트리를 실행 대상으로 고르는 `dva target`은 채택한 계약이며 아직 구현되지 않았다.
+DVA는 provider 인터페이스와 실패 계약만 소유하고 체크아웃을 만들거나 경로를 추정하지 않는다.
+후보 조회는 CE를 DVA의 필수 의존성으로 만들지 않는다.
+프로세스 신원은 선택된 설정 디렉터리의 `.sb/dva/pids/`에 남긴다.
+명령 형태와 실패 규칙은 [USAGE.md](USAGE.md)가 소유한다.
+
 ### Composed lifecycle
 
 ```text

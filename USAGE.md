@@ -1,5 +1,5 @@
 # DVA 사용 가이드
-<!-- size-limit: exempt, ceiling: 143360 bytes, 1600 lines (lines = 펜스 밖 비지 않은 줄: awk '/^```/{f=!f;next} !f&&NF{n++} END{print n}' USAGE.md, 2026-10-31 1271, decisions/503) -- 이 저장소의 canonical 사용법 문서는 한 파일이라는 것이 의도된 설계다 (TASK-356). 쪼개면 CLAUDE.md/AGENTS.md가 SOUL/PRODUCT/ARCHITECTURE로 나눠 놓은 소유권 경계에 "사용법"이라는 네 번째 축을 새로 만들어야 하고, tools/doccheck의 검사와 여러 카드의 verify 바인딩이 이 경로를 직접 가리킨다. ceiling은 현재치(122KB/1326 prose lines)에 증설 여지를 더한 실제 상한이며, 여기에 닿으면 그때는 분할 근거가 생긴 것이다. -->
+<!-- size-limit: exempt, ceiling: 168000 bytes, 1600 lines (판정 기준은 lines이고 bytes는 그에 맞춘 보조값이다. 2026-11-06 줄 기준 1367에서 바이트 143360을 넘어 decisions/503에 따라 bytes만 올렸다. lines = 펜스 밖 비지 않은 줄: awk '/^```/{f=!f;next} !f&&NF{n++} END{print n}' USAGE.md, 2026-10-31 1271, decisions/503) -- 이 저장소의 canonical 사용법 문서는 한 파일이라는 것이 의도된 설계다 (TASK-356). 쪼개면 CLAUDE.md/AGENTS.md가 SOUL/PRODUCT/ARCHITECTURE로 나눠 놓은 소유권 경계에 "사용법"이라는 네 번째 축을 새로 만들어야 하고, tools/doccheck의 검사와 여러 카드의 verify 바인딩이 이 경로를 직접 가리킨다. ceiling은 현재치(122KB/1326 prose lines)에 증설 여지를 더한 실제 상한이며, 여기에 닿으면 그때는 분할 근거가 생긴 것이다. -->
 
 > 일관된 개발 환경 구성과 암호화된 입력으로 가상환경·네이티브 실행과 테스트를
 > 연결하는 DVA CLI 레퍼런스. 제품 범위는 [PRODUCT.md](PRODUCT.md#product-boundaries)를 따른다.
@@ -136,6 +136,7 @@ Linux에서도 같은 절차로 해당 archive를 선택하고 `sha256sum -c`를
 | `dva down <NAME>` | named execution entry teardown |
 | `dva stop <NAME>` | named execution entry 중지 |
 | `dva status [NAME]` | 실행 상태 표시 |
+| `dva target <target-id> up\|down\|status\|stop <plan>` | **미구현(채택한 계약)**: provider가 알려주는 작업 워크트리에서 수명주기 실행. [작업 워크트리 대상](#작업-워크트리-대상-미구현) 참조 |
 | `dva version` | 버전 표시 |
 | `dva skill install/status/uninstall/backup` | 내장 AI 스킬 설치 상태 관리 |
 | `dva agent-deny install/status/uninstall` | 에이전트 런타임 deny 규칙 배포 (secret 노출 명령 차단) |
@@ -530,6 +531,14 @@ rc=1입니다 — 후자의 `--`는 그 목록의 첫 `--`이지만 맨 앞이 �
 이름 목록에서 첫 `--`를 위치와 무관하게 끊으므로 `dva restart s1 -- s2`는 rc=0이고,
 `dva restart -- -- s1`은 `unknown stack entry "--"`입니다. `build`는 반대 방향으로
 갈리며 (`--` 형태가 맨 형태보다 **더** 합니다) 그것은 TASK-217이 다룹니다.
+
+#### 작업 워크트리 대상 (미구현)
+
+채택한 계약이며 **아직 구현되지 않았습니다**(TASK-538). 플래그 없는 `dva up`, `dva down`, `dva status`, `dva stop`은 작업 디렉터리에서 설정을 찾는다.
+`dva target <target-id> up|down|status|stop <plan>`은 provider가 정의한 ID(CE는 작업 ID,
+worktrunk는 branch)로 고른 체크아웃에서 기존 수명주기를 호출합니다. ID 없이 호출하면 후보만
+보여줍니다. ID를 알 수 없거나 모호하거나 조회가 실패하면 시작하지 않고 실패하며, 기본 체크아웃으로
+돌아가지 않습니다. 선택은 저장하지 않고 `status`·`stop`마다 다시 조회합니다.
 
 #### 무인자 lifecycle 선택
 

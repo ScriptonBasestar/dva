@@ -7,7 +7,7 @@ effort: S
 exec-tier: standard
 allowed-paths: [USAGE.md, ARCHITECTURE.md, docs/31-execution-plan-resolution.md]
 decomposable: false
-status: todo
+status: review
 created: 2026-11-05
 ---
 
@@ -70,12 +70,12 @@ TASK-538의 네 번째 완료 기준은 그대로 둔다. Singlepageweb 체크�
 
 ## Completion Criteria
 
-- [ ] USAGE.md가 명령 이름 dva target을 적는다 | verify: `/usr/bin/grep -F -q 'dva target' USAGE.md`
-- [ ] USAGE.md가 플래그 없는 수명주기 명령의 작업 디렉터리 해석을 적는다 | verify: `/usr/bin/grep -F -q '작업 디렉터리에서 설정을 찾는다' USAGE.md`
-- [ ] ARCHITECTURE.md가 후보 조회를 CE 필수 의존성으로 만들지 않는다고 적는다 | verify: `/usr/bin/grep -F -q 'CE를 DVA의 필수 의존성으로 만들지 않는다' ARCHITECTURE.md`
-- [ ] ARCHITECTURE.md가 선택된 설정 디렉터리의 pid 경로를 적는다 | verify: `/usr/bin/grep -F -q '.sb/dva/pids' ARCHITECTURE.md`
-- [ ] docs/31이 체크아웃 루트를 plan 이름과 다른 축으로 적는다 | verify: `/usr/bin/grep -F -q '체크아웃 루트' docs/31-execution-plan-resolution.md`
-- [ ] 추가 문장이 아직 없는 명령의 계약으로 읽히고 문서 게이트를 통과한다 | verify: human — 세 문서의 추가를 읽고 dva target이 이미 구현됐거나 지금 실행된다고 말하지 않는지 확인하고, make doc-check가 통과하며 docs/31은 문장 하나와 링크 하나만 더해 500줄과 10240바이트를 넘지 않는지 확인한다
+- [x] USAGE.md가 명령 이름 dva target을 적는다 | verify: `/usr/bin/grep -F -q 'dva target' USAGE.md` (observed: 2026-11-06 — exit 0)
+- [x] USAGE.md가 플래그 없는 수명주기 명령의 작업 디렉터리 해석을 적는다 | verify: `/usr/bin/grep -F -q '작업 디렉터리에서 설정을 찾는다' USAGE.md` (observed: 2026-11-06 — exit 0)
+- [x] ARCHITECTURE.md가 후보 조회를 CE 필수 의존성으로 만들지 않는다고 적는다 | verify: `/usr/bin/grep -F -q 'CE를 DVA의 필수 의존성으로 만들지 않는다' ARCHITECTURE.md` (observed: 2026-11-06 — exit 0)
+- [x] ARCHITECTURE.md가 선택된 설정 디렉터리의 pid 경로를 적는다 | verify: `/usr/bin/grep -F -q '.sb/dva/pids' ARCHITECTURE.md` (observed: 2026-11-06 — exit 0)
+- [x] docs/31이 체크아웃 루트를 plan 이름과 다른 축으로 적는다 | verify: `/usr/bin/grep -F -q '체크아웃 루트' docs/31-execution-plan-resolution.md` (observed: 2026-11-06 — exit 0)
+- [x] 추가 문장이 아직 없는 명령의 계약으로 읽히고 문서 게이트를 통과한다 | verify: human — 세 문서의 추가를 읽고 dva target이 이미 구현됐거나 지금 실행된다고 말하지 않는지 확인하고, make doc-check가 통과하며 docs/31은 문장 하나와 링크 하나만 더해 500줄과 10240바이트를 넘지 않는지 확인한다 (observed: 2026-11-06 — 독립 리뷰 PASS, ID 문구 결함 1건 수정, make doc-check OK, docs/31 369줄·9418바이트)
 
 ## References
 
