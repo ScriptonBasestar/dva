@@ -41,9 +41,17 @@ dva secret reseal <source> [--project <child>]
 - **`--project` 플래그와의 조합**: `--project <child>`를 주면 child의 dva.yml이 소유자가 된다. 이는 `push`, `status`와 같은 `remoteOwner` 경로다. 이때 부모의 sources는 보이지 않는다. child의 source가 `project:`를 선언하면 거부한다. 손자 프로젝트는 다루지 않는다. 이는 doctor가 손자를 실행하지 않는 것과 같다. 부모의 `project: api` source와 child 자신의 source가 같은 파일을 가리키는 것은 허용한다. 두 경우 모두 같은 디렉터리를 cwd로 sops를 실행하므로 같은 creation rule이 적용되기 때문이다.
 - **유지하는 것**: `config env edit/unseal/reseal/seal/show`의 selector, 코드, 출력은 바꾸지 않는다. `env_file`과 `secrets.sources`를 연결하는 기능은 이 카드의 범위가 아니다.
 
+## 확인한 sops 동작
+
+2026-11-06에 sops 3.13.3과 age 임시 키 두 개로 실험했다. 실험 대상은 `encrypt`이고, `--filename-override`로 stdin을 넘기는 경로도 포함했다.
+
+- `.sops.yaml`은 대상 파일 위치가 아니라 **cwd에서 위로** 찾는다. cwd가 부모 루트이고 대상이 `child/secret.env`이면 child의 `.sops.yaml`은 무시되고 루트 규칙이 적용된다. cwd 위쪽에 설정이 없으면 대상 파일 옆에 `.sops.yaml`이 있어도 "config file not found"로 실패한다. 이는 `--filename-override`를 써도 같다.
+- `path_regex`는 **찾아낸 `.sops.yaml`의 디렉터리 기준 상대경로**로 매칭된다. 절대경로를 넘겨도, cwd가 하위 디렉터리여도 결과는 같다.
+- 따라서 위 `project` 계약의 "sops를 subproject 디렉터리에서 실행한다"는 child의 `.sops.yaml`을 적용하기 위한 필수 조건이다. 부모 디렉터리에서 실행하면 부모 규칙(부모의 `path_regex` 포함)이 적용된다.
+- 구현자는 `secretpush`가 이미 `cmd.Dir = root`로 실행하는 방식(`internal/secretpush/secretpush.go:285`)을 따른다.
+
 ## 구현 전에 확인할 것
 
-- sops가 `.sops.yaml`을 cwd에서 위로 찾는지, 아니면 대상 파일 위치에서 찾는지 확인한다. 이는 설치된 sops 버전 기준이다. `--filename-override`를 쓰는 encrypt 경로도 포함한다. 결과가 위 cwd 계약과 다르면 구현 전에 계약을 고친다.
 - `binary` 형식의 `edit` 세션 동작과 `reseal` 원자 교체가 기존 safewrite 경로를 재사용할 수 있는지 확인한다.
 - 새 에러 코드가 필요하면 `config env`의 고정 코드 집합과 섞지 않고 `secret` 그룹 쪽에 정의한다.
 
