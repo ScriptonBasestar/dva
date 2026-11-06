@@ -96,6 +96,56 @@ func TestCompareFollowsAliasAndExtends(t *testing.T) {
 	}
 }
 
+// TestCompareExtendsMatchesLifecycleDepth: lifecycle's MergePlanExtends merges a plan with its
+// immediate parent only, so a grandparent's entries do not run. The split must match the
+// entries that actually start; if lifecycle starts inheriting the whole chain, this test and
+// comparePlanEntries change together.
+func TestCompareExtendsMatchesLifecycleDepth(t *testing.T) {
+	const tail = `  gp:
+    entries: [{name: api}]
+  p:
+    extends: gp
+    entries: [{name: db}]
+  ch:
+    extends: p
+    entries: [{name: web}]
+`
+	load := func(compare string) error {
+		dir := t.TempDir()
+		body := strings.Replace(compareBase, "plans:\n", "plans:\n"+tail, 1) + compare
+		if err := os.WriteFile(filepath.Join(dir, FileName), []byte(body), 0o644); err != nil {
+			t.Fatalf("write config: %v", err)
+		}
+		cfg, err := Load(dir)
+		if err != nil {
+			t.Fatalf("load: %v", err)
+		}
+		return cfg.Validate()
+	}
+	if err := load("compare:\n  c:\n    plan: ch\n    shared: [db]\n    per_variant: [web]\n"); err != nil {
+		t.Fatalf("split matching the running entries rejected: %v", err)
+	}
+	err := load("compare:\n  c:\n    plan: ch\n    shared: [api, db]\n    per_variant: [web]\n")
+	if err == nil || !strings.Contains(err.Error(), `entry "api" is not an entry of plan "ch"`) {
+		t.Fatalf("grandparent entry accepted: %v", err)
+	}
+}
+
+// TestCompareImportedPlanUsesOwnerStack: an imported plan runs its subproject's stack, so the
+// project_name check reads the child's entry, not a same-named root entry.
+func TestCompareImportedPlanUsesOwnerStack(t *testing.T) {
+	child := "version: \"0.1.0\"\nstack:\n  web:\n    default_runner: compose\n    runners:\n      compose:\n        files: [web.yml]\n        project_name: fixed-web\nplans:\n  dev:\n    entries: [{name: web}]\n"
+	parent := "version: \"0.1.0\"\nstack:\n  web:\n    default_runner: compose\n    runners:\n      compose:\n        files: [web.yml]\nsubprojects:\n  child:\n    path: child\n    import:\n      plans: [dev]\ncompare:\n  x:\n    plan: child/dev\n    per_variant: [web]\n"
+	cfg, err := Load(writeSubprojectFixture(t, parent, "child", child))
+	if err != nil {
+		t.Fatalf("load: %v", err)
+	}
+	err = cfg.Validate()
+	if err == nil || !strings.Contains(err.Error(), `stack entry "web" sets project_name "fixed-web"`) {
+		t.Fatalf("child's fixed project_name not detected: %v", err)
+	}
+}
+
 func TestCompareRejectsInvalidDeclarations(t *testing.T) {
 	cases := []struct {
 		name    string
@@ -116,6 +166,16 @@ func TestCompareRejectsInvalidDeclarations(t *testing.T) {
 			`compare.c.variants: 2 variants need 2 ports per list, but WEB_PORT has 1`},
 		{"duplicate port", "    plan: web-dev\n    shared: [api, db]\n    per_variant: [web]\n    ports: { API_PORT: [3001], WEB_PORT: [3001] }\n",
 			`compare.c.ports.WEB_PORT: port 3001 is already assigned under ports.API_PORT`},
+		{"duplicate port in one list", "    plan: web-dev\n    shared: [api, db]\n    per_variant: [web]\n    ports: { WEB_PORT: [3001, 3001] }\n",
+			`compare.c.ports.WEB_PORT: port 3001 is already assigned under ports.WEB_PORT`},
+		{"port out of range", "    plan: web-dev\n    shared: [api, db]\n    per_variant: [web]\n    ports: { WEB_PORT: [70000] }\n",
+			`port 70000 is outside 1-65535`},
+		{"invalid port var", "    plan: web-dev\n    shared: [api, db]\n    per_variant: [web]\n    ports: { web-port: [3001] }\n",
+			`compare.c.ports.web-port: var name must match`},
+		{"invalid variant name", "    plan: web-dev\n    shared: [api, db]\n    per_variant: [web]\n    variants: { a/b: main }\n",
+			`compare.c.variants.a/b: name must match`},
+		{"empty variant source", "    plan: web-dev\n    shared: [api, db]\n    per_variant: [web]\n    variants: { a: \"\" }\n",
+			`compare.c.variants.a: source is empty`},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

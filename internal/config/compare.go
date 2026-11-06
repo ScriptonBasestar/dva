@@ -68,7 +68,7 @@ func (c *Config) validateCompareEntry(name string, cmp *CompareConfig) []error {
 		return append(errs, fmt.Errorf("%s.plan: plan %q not found", prefix, cmp.Plan))
 	}
 
-	entries, ok := c.comparePlanEntryNames(cmp.Plan)
+	entries, owner, ok := c.comparePlanEntries(cmp.Plan)
 	if !ok {
 		// A broken alias/extends chain or a composition plan. Composition is rejected here;
 		// chain errors are already reported by validatePlanAliasExtends.
@@ -80,8 +80,10 @@ func (c *Config) validateCompareEntry(name string, cmp *CompareConfig) []error {
 
 	errs = append(errs, validateCompareSplit(prefix, cmp, entries)...)
 
+	// Entries resolve against the plan's owner: an imported plan runs its subproject's stack,
+	// not the root's (lifecycle.ResolvePlan uses the same owner).
 	for _, entryName := range cmp.PerVariant {
-		if cc := c.Stack[entryName].ComposeConfig(); cc != nil && cc.ProjectName != "" {
+		if cc := owner.Stack[entryName].ComposeConfig(); cc != nil && cc.ProjectName != "" {
 			errs = append(errs, fmt.Errorf(
 				"%s.per_variant: stack entry %q sets project_name %q, so every variant would share one compose project; remove project_name or move the entry to shared",
 				prefix, entryName, cc.ProjectName))
@@ -207,39 +209,55 @@ func (cmp *CompareConfig) CheckPortCapacity(variants int) error {
 	return nil
 }
 
-// comparePlanEntryNames returns the sorted entry names a plan runs after following its alias
-// chain and unioning its extends chain. It reports false when the chain is broken or cyclic,
-// or the plan is a composition, because those plans have no single entry set to split.
-func (c *Config) comparePlanEntryNames(name string) ([]string, bool) {
-	const maxDepth = 16
+// comparePlanEntries returns the sorted entry names a plan runs and the config that owns their
+// stack declarations. It mirrors lifecycle.ResolvePlan, because the split must match what
+// actually starts: aliases are followed to a concrete plan, and extends merges only that plan
+// with its immediate parent (MergePlanExtends clones the parent and merges the child; entries
+// further up the chain do not run). The clone carries the parent's owner, so with extends the
+// parent's owner supplies the stack. It reports false for a missing, cyclic or composition
+// plan, which has no single entry set to split.
+func (c *Config) comparePlanEntries(name string) ([]string, *Config, bool) {
+	concrete, ok := c.resolveCompareAlias(name)
+	if !ok {
+		return nil, nil, false
+	}
+	set := map[string]bool{}
+	ownerPlan := concrete
+	if concrete.Extends != "" {
+		parent, ok := c.resolveCompareAlias(concrete.Extends)
+		if !ok {
+			return nil, nil, false
+		}
+		for _, e := range parent.Entries {
+			set[e.Name] = true
+		}
+		ownerPlan = parent
+	}
+	for _, e := range concrete.Entries {
+		set[e.Name] = true
+	}
+	names := make([]string, 0, len(set))
+	for n := range set {
+		names = append(names, n)
+	}
+	sort.Strings(names)
+	return names, ownerPlan.OwnerConfig(c), true
+}
+
+// resolveCompareAlias follows an alias chain to a concrete, non-composition plan.
+func (c *Config) resolveCompareAlias(name string) (*PlanConfig, bool) {
 	current := name
 	visited := map[string]bool{}
-	set := map[string]bool{}
-	for range maxDepth {
-		if visited[current] {
-			return nil, false
-		}
+	for !visited[current] {
 		visited[current] = true
 		plan, ok := c.Plans[current]
 		if !ok || plan == nil || len(plan.Composes) > 0 {
 			return nil, false
 		}
-		if plan.Alias != "" {
-			current = plan.Alias
-			continue
+		if plan.Alias == "" {
+			return plan, true
 		}
-		for _, e := range plan.Entries {
-			set[e.Name] = true
-		}
-		if plan.Extends == "" {
-			names := make([]string, 0, len(set))
-			for n := range set {
-				names = append(names, n)
-			}
-			sort.Strings(names)
-			return names, true
-		}
-		current = plan.Extends
+		current = plan.Alias
 	}
 	return nil, false
 }
