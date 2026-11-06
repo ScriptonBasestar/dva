@@ -40,6 +40,7 @@ type CIConfig struct {
 
 // CIProfile declares the ordered gates and shared budget for a CI invocation.
 type CIProfile struct {
+	Fresh       bool     `yaml:"fresh,omitempty" json:"fresh,omitempty"`
 	Description string   `yaml:"description" json:"description"`
 	Timeout     string   `yaml:"timeout" json:"timeout"`
 	WarnAfter   string   `yaml:"warn_after" json:"warn_after"`
@@ -59,6 +60,7 @@ func (p CIProfile) FailFastEnabled() bool {
 
 // CIStep is one named CI gate.
 type CIStep struct {
+	Reuse       *CIReuse          `yaml:"reuse,omitempty" json:"reuse,omitempty"`
 	ChildCI     string            `yaml:"child_ci,omitempty" json:"child_ci,omitempty"`
 	Name        string            `yaml:"name" json:"name"`
 	Run         string            `yaml:"run" json:"run"`
@@ -190,6 +192,9 @@ func validateCIProfile(name string, profile CIProfile) error {
 		if step.ChildCI != "" && step.OCI != nil {
 			return fmt.Errorf("ci profile %q step %q: child_ci is only supported by native run steps", name, step.Name)
 		}
+		if err := validateCIReuse(step); err != nil {
+			return fmt.Errorf("ci profile %q step %q: %w", name, step.Name, err)
+		}
 		if step.OCI != nil {
 			if strings.TrimSpace(step.Run) != "" || step.Workdir != "" || step.Environment != nil {
 				return fmt.Errorf("ci profile %q step %q: oci is exclusive with run, workdir, and environment", name, step.Name)
@@ -201,7 +206,7 @@ func validateCIProfile(name string, profile CIProfile) error {
 				return err
 			}
 		}
-		for _, key := range []string{CIParentRunEnv, CISubprojectEnv, CICompositionEnv} {
+		for _, key := range []string{CIParentRunEnv, CISubprojectEnv, CICompositionEnv, CIFreshEnv} {
 			if _, reserved := step.Environment[key]; reserved {
 				return fmt.Errorf("ci profile %q step %q: environment must not set reserved %s", name, step.Name, key)
 			}
@@ -282,6 +287,8 @@ func hasCIStepCycle(steps map[string]CIStep) bool {
 }
 
 func mergeCIProfile(base, other CIProfile) CIProfile {
+	// A fresh profile cannot accidentally regain cached execution in an overlay.
+	base.Fresh = base.Fresh || other.Fresh
 	if other.Description != "" {
 		base.Description = other.Description
 	}

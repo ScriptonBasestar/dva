@@ -5,6 +5,12 @@ All notable changes to DVA are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- native CI step에 명시적 입력·도구·환경·산출물 기반 `reuse`를 추가합니다.
+  `fresh: true`와 `dva ci --fresh`는 결과 재사용을 우회하며 프로젝트에
+  `DVA_CI_FRESH`를 전달해 언어 테스트 결과 캐시도 우회할 수 있습니다.
+
 ### Removed
 
 - v0.5.0 개발 소스에서 `modes`·`default_mode`·`--mode/-M`를 제거합니다. 기존 설정은 `dva config migrate`로 변환한 뒤 named plans로 실행하세요. 자동 변환할 수 없는 mode는

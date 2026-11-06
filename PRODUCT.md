@@ -62,7 +62,7 @@ DVA는 프로젝트의 의존 서비스, 실행 방식, 환경 변수와 암호�
 
 ## Current Status
 
-핵심 실행 모델은 구현되어 있다. v0.4.5 후보는 검증된 기준선으로 보존하고, v0.5.0 개발 소스의 legacy 제거는 CHANGELOG Unreleased가 기록한다.
+핵심 실행 모델은 구현되어 있다. v0.4.5 후보는 검증된 기준선으로 보존하고, v0.5.1 개발 소스의 legacy 제거와 CI 재사용은 CHANGELOG Unreleased가 기록한다.
 공개판·최신 소스·플랫폼별 지원 차이는 [버전과 지원 범위](USAGE.md#버전과-지원-범위)가
 소유한다. 성숙도는 **Active development**다.
 

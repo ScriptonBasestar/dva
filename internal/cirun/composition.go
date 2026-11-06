@@ -25,6 +25,7 @@ type compositionGrant struct {
 	Deadline       string             `json:"deadline"`
 	JobsLimit      int                `json:"jobs_limit"`
 	LockState      string             `json:"lock_state"`
+	Fresh          bool               `json:"fresh,omitempty"`
 	WorkerDefaults map[string]string  `json:"worker_defaults,omitempty"`
 }
 

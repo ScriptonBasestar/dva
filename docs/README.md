@@ -32,6 +32,7 @@
 ## CI와 증거
 
 - [CI 프로필](53-ci-profiles.md)
+- [CI 결과 재사용과 전체 재실행](75-ci-result-reuse.md)
 - [subproject 범위 CI](71-ci-subproject-scope.md)
 - [CI receipt attestation](72-ci-receipt-attestation.md)
 - [유한 OCI 단계](ci-oci-steps.md)

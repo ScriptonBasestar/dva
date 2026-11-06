@@ -43,7 +43,9 @@ type Options struct {
 	// receipt, so the receipt names the scope the steps actually received.
 	Subproject string
 	Profile    config.CIProfile
-	Env        []string
+	// Fresh bypasses declared step result caches. The profile may also require it.
+	Fresh bool
+	Env   []string
 	// WorkerEnvironment marks root-owned Cargo/Rust declarations. They remain
 	// explicit even when numerically equal to an inherited runtime default.
 	WorkerEnvironment map[string]bool
@@ -52,6 +54,7 @@ type Options struct {
 }
 
 type StepReport struct {
+	Reuse             *ReuseReport       `json:"reuse,omitempty"`
 	CompositionBudget *CompositionBudget `json:"composition_budget,omitempty"`
 	OCI               *ociexec.Report    `json:"oci,omitempty"`
 	Name              string             `json:"name"`
@@ -61,6 +64,16 @@ type StepReport struct {
 	FinishedAt        time.Time          `json:"finished_at"`
 	Duration          time.Duration      `json:"duration"`
 	WorkerBudget      *WorkerBudget      `json:"worker_budget,omitempty"`
+}
+
+// ReuseReport distinguishes a command that ran from a valid prior PASS. A
+// reused step remains succeeded so dependency handling stays unchanged.
+type ReuseReport struct {
+	Key           string    `json:"key,omitempty"`
+	Disposition   string    `json:"disposition"`
+	OriginalRunID string    `json:"original_run_id,omitempty"`
+	FinishedAt    time.Time `json:"finished_at,omitzero"`
+	Reason        string    `json:"reason,omitempty"`
 }
 
 type CompositionBudget struct {
@@ -110,6 +123,7 @@ type Report struct {
 	Conflict                           *Conflict
 	Parent                             *CompositionParent
 	CompositionDepth                   int
+	Fresh                              bool
 }
 
 func (r Report) MarshalJSON() ([]byte, error) {
@@ -129,8 +143,9 @@ func (r Report) MarshalJSON() ([]byte, error) {
 		Conflict         *Conflict          `json:"conflict,omitempty"`
 		Parent           *CompositionParent `json:"parent,omitempty"`
 		CompositionDepth int                `json:"composition_depth,omitempty"`
+		Fresh            bool               `json:"fresh,omitempty"`
 	}
-	return json.Marshal(wire{r.ID, r.Root, r.Profile, r.Subproject, r.Status, r.LogPath, r.Error, r.StartedAt, r.FinishedAt, r.Duration.String(), r.Steps, r.Attestation, r.Conflict, r.Parent, r.CompositionDepth})
+	return json.Marshal(wire{r.ID, r.Root, r.Profile, r.Subproject, r.Status, r.LogPath, r.Error, r.StartedAt, r.FinishedAt, r.Duration.String(), r.Steps, r.Attestation, r.Conflict, r.Parent, r.CompositionDepth, r.Fresh})
 }
 
 func (r *Report) UnmarshalJSON(data []byte) error {
@@ -150,6 +165,7 @@ func (r *Report) UnmarshalJSON(data []byte) error {
 		Conflict         *Conflict          `json:"conflict,omitempty"`
 		Parent           *CompositionParent `json:"parent,omitempty"`
 		CompositionDepth int                `json:"composition_depth,omitempty"`
+		Fresh            bool               `json:"fresh,omitempty"`
 	}
 	var in wire
 	if err := json.Unmarshal(data, &in); err != nil {
@@ -159,7 +175,7 @@ func (r *Report) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
-	*r = Report{ID: in.ID, Root: in.Root, Profile: in.Profile, Subproject: in.Subproject, Status: in.Status, LogPath: in.LogPath, Error: in.Error, StartedAt: in.StartedAt, FinishedAt: in.FinishedAt, Duration: d, Steps: in.Steps, Attestation: in.Attestation, Conflict: in.Conflict, Parent: in.Parent, CompositionDepth: in.CompositionDepth}
+	*r = Report{ID: in.ID, Root: in.Root, Profile: in.Profile, Subproject: in.Subproject, Status: in.Status, LogPath: in.LogPath, Error: in.Error, StartedAt: in.StartedAt, FinishedAt: in.FinishedAt, Duration: d, Steps: in.Steps, Attestation: in.Attestation, Conflict: in.Conflict, Parent: in.Parent, CompositionDepth: in.CompositionDepth, Fresh: in.Fresh}
 	return nil
 }
 

@@ -135,7 +135,7 @@ ci:
           depends_on: [vet]
         - &ci-test
           name: test
-          run: go test -timeout 5m -race -cover ./...
+          run: 'fresh=; if [ "$DVA_CI_FRESH" = 1 ]; then fresh=-count=1; fi; go test $fresh -timeout 5m -race -cover ./...'
           environment:
             GOMAXPROCS: "2"
             GOFLAGS: "-p=2"
@@ -149,7 +149,7 @@ ci:
       timeout: 30m
       warn_after: 15m
       max_parallel: 2
-      steps:
+      steps: &full-steps
         - *ci-format
         - *ci-docs
         - *ci-vet
@@ -157,11 +157,18 @@ ci:
         - *ci-test
         - *ci-build
         - name: integration
-          run: go test -tags=integration -race -timeout 10m ./internal/integration/...
+          run: 'fresh=; if [ "$DVA_CI_FRESH" = 1 ]; then fresh=-count=1; fi; go test $fresh -tags=integration -race -timeout 10m ./internal/integration/...'
           depends_on: [build]
         - name: skill-dogfood
-          run: 'DVA_DOGFOOD_BIN="$PWD/bin/dva" go test -run "^TestBuiltExecutableDogfood$" ./tools/skilldogfood'
+          run: 'fresh=; if [ "$DVA_CI_FRESH" = 1 ]; then fresh=-count=1; fi; DVA_DOGFOOD_BIN="$PWD/bin/dva" go test $fresh -run "^TestBuiltExecutableDogfood$" ./tools/skilldogfood'
           depends_on: [integration]
         - name: commit-subjects
           run: go run ./tools/commitcheck
           depends_on: [skill-dogfood]
+    audit:
+      description: Full checks with successful result reuse disabled
+      timeout: 30m
+      warn_after: 15m
+      max_parallel: 2
+      fresh: true
+      steps: *full-steps

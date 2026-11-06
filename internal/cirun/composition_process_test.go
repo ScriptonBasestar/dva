@@ -247,6 +247,46 @@ func TestCompositionRunProcessesSuccessAndDefaults(t *testing.T) {
 	}
 }
 
+func TestCompositionFreshGrantBypassesChildReuse(t *testing.T) {
+	state := compositionTestDir(t)
+	child := compositionTestDir(t)
+	if err := runGit(child, "init"); err != nil {
+		t.Skipf("git unavailable: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(child, "input"), []byte("source"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(child, ".gitignore"), []byte("artifact\nfresh\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	commitAll(t, child)
+	childProfile := compositionProcessProfile(`printf "$DVA_CI_FRESH" > fresh; printf x >> artifact`, "")
+	childProfile.Steps[0].Reuse = &config.CIReuse{
+		Inputs: []string{"input"}, Tools: []string{"sh"}, Outputs: []string{"artifact"}, MaxAge: "1h",
+		// The seed execution is non-fresh and passes this probe. A child that
+		// merely inherited the prior PASS would avoid the command; a child that
+		// failed to inherit Fresh would fail this probe before lookup.
+		Probes: []string{`test "$DVA_CI_FRESH" = 0`},
+	}
+	writeCompositionProfile(t, child, childProfile)
+	seed, err := Run(context.Background(), Options{Root: child, ProfileName: "full", Profile: childProfile, Env: os.Environ(), StateDir: state, lockDirectory: state})
+	if err != nil || len(seed.Steps) != 1 || seed.Steps[0].Reuse == nil || seed.Steps[0].Reuse.Disposition != "executed" {
+		t.Fatalf("seed cache=%+v err=%v", seed.Steps, err)
+	}
+	parent := compositionTestDir(t)
+	parentProfile := compositionProcessProfile(compositionProcessCommand(child), config.CIChildIndependentRoot)
+	parentProfile.Fresh = true
+	r, err := runCompositionProcessParent(t, parent, state, parentProfile)
+	if err != nil || !r.Fresh || len(r.Steps) != 1 || r.Steps[0].Status != "succeeded" {
+		t.Fatalf("fresh grant did not bypass child reuse: report=%+v err=%v", r, err)
+	}
+	artifact, artifactErr := os.ReadFile(filepath.Join(child, "artifact"))
+	fresh, freshErr := os.ReadFile(filepath.Join(child, "fresh"))
+	if artifactErr != nil || freshErr != nil || string(artifact) != "xx" || string(fresh) != "1" {
+		t.Fatalf("child reused cached PASS or missed fresh environment: artifact=%q err=%v fresh=%q err=%v", artifact, artifactErr, fresh, freshErr)
+	}
+}
+
 func TestCompositionRunProcessesGrandchildAndCycles(t *testing.T) {
 	for _, cycle := range []bool{false, true} {
 		t.Run(map[bool]string{false: "three roots", true: "indirect cycle"}[cycle], func(t *testing.T) {

@@ -15,6 +15,7 @@ import (
 )
 
 var ciProject, ciSubproject string
+var ciFresh bool
 
 var ciCmd = &cobra.Command{
 	Use:   "ci [profile]",
@@ -47,12 +48,13 @@ var ciCmd = &cobra.Command{
 		}
 		// The preview prints the Options Run would receive, so the dry-run test
 		// also covers the flag-to-Options wiring.
-		opts := cirun.Options{Root: c.FileDir(), ProfileName: name, Subproject: ciSubproject, Profile: profile, Env: owned.env.EnvSlice()}
+		opts := cirun.Options{Root: c.FileDir(), ProfileName: name, Subproject: ciSubproject, Profile: profile, Env: owned.env.EnvSlice(), Fresh: ciFresh || profile.Fresh}
 		opts.WorkerEnvironment = map[string]bool{}
 		for _, key := range []string{"CARGO_BUILD_JOBS", "RUST_TEST_THREADS"} {
 			_, opts.WorkerEnvironment[key] = owned.env.Vars[key]
 		}
 		if dryRun {
+			profile.Fresh = opts.Fresh
 			workers, err := cirun.PreviewWorkers(opts)
 			if err != nil {
 				return err
@@ -117,6 +119,7 @@ func ciOwner(c *config.Config, project string) (*config.Config, error) {
 
 func init() {
 	ciCmd.GroupID = "core"
+	ciCmd.Flags().BoolVar(&ciFresh, "fresh", false, "Execute all steps without result reuse; exports DVA_CI_FRESH=1 for project-owned test caches")
 	ciCmd.Flags().StringVar(&ciProject, "project", "", "Run a declared subproject's own CI profile")
 	ciCmd.Flags().StringVar(&ciSubproject, "subproject", "", "Run this root's CI profile with a declared subproject's name exported as "+config.CISubprojectEnv)
 	ciCmd.AddCommand(&cobra.Command{

@@ -14,6 +14,13 @@ when a technical verification method is needed.
 
 ## Discover and execute
 
+For opt-in native step PASS reuse and fresh runs, follow
+[the reuse contract](../../docs/75-ci-result-reuse.md). `full` evaluates the complete
+declared scope and may reuse valid PASS evidence; a declared `audit` profile uses
+`fresh: true` and the same scope. `--fresh` bypasses result reuse and exports
+`DVA_CI_FRESH=1`; project commands must also bypass their language test-result caches.
+Never treat a reused result or an unrun external check as a new execution.
+
 1. Run `dva version` and `dva manifest -f json`. Select an entry from
    `ci_profiles`; do not infer a profile from a Make target name. Older DVA
    versions without `ci` need an upgrade before these guarantees apply.

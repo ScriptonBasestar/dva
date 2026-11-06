@@ -83,7 +83,8 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 	if err != nil {
 		return report, err
 	}
-	report = Report{ID: id, Root: root, Profile: opts.ProfileName, Subproject: opts.Subproject, Status: "running", StartedAt: time.Now(), LogPath: filepath.Join(state, "logs", id+".log")}
+	fresh := opts.Fresh || opts.Profile.Fresh
+	report = Report{ID: id, Root: root, Profile: opts.ProfileName, Subproject: opts.Subproject, Status: "running", StartedAt: time.Now(), LogPath: filepath.Join(state, "logs", id+".log"), Fresh: fresh}
 	if err := os.MkdirAll(filepath.Dir(report.LogPath), 0o700); err != nil {
 		return report, err
 	}
@@ -142,6 +143,9 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 		}
 		return report, err
 	}
+	if grant != nil && grant.Fresh {
+		fresh, report.Fresh = true, true
+	}
 	stopMonitor := func() {}
 	if grant != nil {
 		last := grant.Ancestry[len(grant.Ancestry)-1]
@@ -193,12 +197,18 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 			return report, marshalErr
 		}
 		env := append(subprojectEnv(opts.Env, opts.Subproject), parentRunEnv+"="+string(parentInfo))
+		freshValue := "0"
+		if fresh {
+			freshValue = "1"
+		}
+		env = setCIEnvironment(env, config.CIFreshEnv, freshValue)
 		checkpoint := func(steps []StepReport) error {
 			report.Steps = append([]StepReport(nil), steps...)
 			return writeReport(state, report)
 		}
 		executionCtx := context.WithValue(ctx, ociScopeKey{}, ociScope{state: state, runID: id})
-		runtime := compositionRuntime{id: id, root: root, state: lockState, workers: boundedWorkers}
+		executionCtx = context.WithValue(executionCtx, reuseRuntimeKey{}, reuseRuntime{runID: id, fresh: fresh})
+		runtime := compositionRuntime{id: id, root: root, state: lockState, workers: boundedWorkers, fresh: fresh}
 		if grant != nil {
 			runtime.ancestry = append([]compositionFrame(nil), grant.Ancestry...)
 		}

@@ -17,6 +17,7 @@ type compositionRuntime struct {
 	id, root, state string
 	ancestry        []compositionFrame
 	workers         *compositionWorkers
+	fresh           bool
 }
 
 func (s compositionScope) createGrant(grant compositionGrant) error {
