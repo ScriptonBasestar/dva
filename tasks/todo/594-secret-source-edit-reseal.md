@@ -1,5 +1,5 @@
 ---
-id: TASK-588
+id: TASK-594
 title: "secrets.sources 이름으로 SOPS 소스를 편집·재암호화"
 type: feature
 priority: P2
