@@ -2,6 +2,7 @@ package cirun
 
 import (
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -140,5 +141,30 @@ func TestReuseProbeCountsAgainstStepTimeout(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(root, "should-not-run")); !os.IsNotExist(err) {
 		t.Fatalf("dependent ran after probe timeout: %v", err)
+	}
+}
+
+// A reuse input or probe command killed by the step timeout returns only "signal: killed",
+// without wrapping the context error. Under load the deadline can fire there instead of in the
+// step command, and the step must still report timed_out, not failed.
+func TestReusePreparationFailureUsesStepContext(t *testing.T) {
+	killed := errors.New("signal: killed")
+	expired, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
+	defer cancel()
+	canceled, stop := context.WithCancel(context.Background())
+	stop()
+	for _, tc := range []struct {
+		name string
+		ctx  context.Context
+		want string
+	}{
+		{"deadline", expired, "timed_out"},
+		{"canceled", canceled, "canceled"},
+		{"live", context.Background(), "failed"},
+	} {
+		r, err := reusePreparationFailure(tc.ctx, StepReport{Name: "unit", StartedAt: time.Now()}, killed)
+		if r.Status != tc.want || !errors.Is(err, killed) || r.Error != killed.Error() {
+			t.Errorf("%s: status=%q error=%q err=%v, want %s", tc.name, r.Status, r.Error, err, tc.want)
+		}
 	}
 }
