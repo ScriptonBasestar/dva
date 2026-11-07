@@ -14,16 +14,18 @@ import (
 func captureStdout(t *testing.T, fn func()) string {
 	t.Helper()
 	old := os.Stdout
-	r, w, _ := os.Pipe()
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
 	os.Stdout = w
-
+	defer func() { os.Stdout = old; _ = w.Close(); _ = r.Close() }()
+	done := make(chan string, 1)
+	go func() { out, _ := io.ReadAll(r); done <- string(out) }()
 	fn()
-
-	w.Close()
+	_ = w.Close()
 	os.Stdout = old
-
-	out, _ := io.ReadAll(r)
-	return string(out)
+	return <-done
 }
 
 // stackShapedConfig covers each shape a runner declaration takes, plus the equal-order pair the

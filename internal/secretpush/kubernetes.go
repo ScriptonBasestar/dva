@@ -46,7 +46,14 @@ func pushKubernetes(ctx context.Context, opts Options) (Report, error) {
 	if err != nil {
 		return report, err
 	}
-	plaintext, err := decryptSOPS(ctx, root, opts.SopsConfig, source, "yaml", "json")
+	format := opts.SourceFormat
+	if format == "" {
+		format = "yaml"
+	}
+	if format != "yaml" {
+		return report, codeError("invalid_source_format")
+	}
+	plaintext, err := decryptSOPS(ctx, sourceWorkingDir(root, opts), opts.SopsConfig, source, format, "json")
 	if err != nil {
 		return report, err
 	}
@@ -173,7 +180,7 @@ func prepareKubernetes(opts Options) (Report, string, string, error) {
 	if err != nil {
 		return report, "", "", err
 	}
-	source, err := safeSource(root, opts.Target.Source)
+	source, err := optionSource(root, opts)
 	if err != nil {
 		return report, "", "", err
 	}

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"strings"
 	"syscall"
 
@@ -19,8 +18,8 @@ import (
 )
 
 var secretCmd = &cobra.Command{
-	Use: "secret", Short: "Transfer declared secrets without printing plaintext", GroupID: "integration",
-	Long: "Transfer explicitly selected keys from declared SOPS sources to a declared destination: this checkout's GitHub Actions secrets, or one named Kubernetes Secret in an explicitly declared dev cluster. Use 'dva secret push <target> --dry-run' to inspect the destination and key names before sending values.",
+	Use: "secret", Short: "Edit, re-encrypt and transfer declared SOPS sources", GroupID: "integration",
+	Long: "Edit or re-encrypt named secrets.sources locally. Transfer explicitly selected keys from declared SOPS sources to a declared destination: this checkout's GitHub Actions secrets, or one named Kubernetes Secret in an explicitly declared dev cluster. Use 'dva secret push <target> --dry-run' to inspect the destination and key names before sending values.",
 }
 var jobCmd = &cobra.Command{
 	Use: "job", Short: "Run and verify repository-owned artifact jobs", GroupID: "integration",
@@ -109,6 +108,13 @@ func remoteOwner(cmd *cobra.Command) (*config.Config, error) {
 		return nil, err
 	}
 	child := children[project]
+	if child.Secrets != nil {
+		for name, source := range child.Secrets.Sources {
+			if source.Project != "" {
+				return nil, fmt.Errorf("secret source %q: project cannot be combined with --project", name)
+			}
+		}
+	}
 	return child, child.ValidateRemoteDeclarations()
 }
 
@@ -131,11 +137,16 @@ func secretOptions(c *config.Config, name string) (secretpush.Options, error) {
 	// Same rules-file choice as the env bridge, so `secret push` and
 	// `config env` never disagree about which .sops.yaml governs a file.
 	// Push only decrypts, so "none applies" is not an error here.
-	sopsConfig, err := config.ResolveSopsConfig(c.FileDir(), c.Sops, filepath.Join(c.FileDir(), source.Sops))
-	if err != nil && !errors.Is(err, config.ErrNoSopsConfig) {
+	root, err := openSecretSourceRoot(c, source)
+	if err != nil {
+		return secretpush.Options{}, err
+	}
+	defer root.Close()
+	sopsConfig, err := secretRules(c, root, source, false)
+	if err != nil {
 		return secretpush.Options{}, fmt.Errorf("secret source %q: %w", target.Source, err)
 	}
-	return secretpush.Options{Root: c.FileDir(), Name: name, DryRun: dryRun, SopsConfig: sopsConfig, Target: secretpush.Target{
+	return secretpush.Options{Root: c.FileDir(), SourceRoot: root.dir, SourceFormat: c.SecretSourceFormat(target.Source), Name: name, DryRun: dryRun, SopsConfig: sopsConfig, Target: secretpush.Target{
 		Kind:        kind,
 		Source:      source.Sops,
 		Repository:  target.Repository,

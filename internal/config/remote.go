@@ -16,7 +16,24 @@ type SecretsConfig struct {
 }
 
 type SecretSource struct {
-	Sops string `yaml:"sops" json:"sops"`
+	Sops    string `yaml:"sops" json:"sops"`
+	Format  string `yaml:"format,omitempty" json:"format,omitempty"`
+	Project string `yaml:"project,omitempty" json:"project,omitempty"`
+}
+
+// SecretSourceFormat resolves the source's format once for local editing and
+// remote transfer. Legacy Kubernetes sources retain their YAML interpretation.
+func (c *Config) SecretSourceFormat(name string) string {
+	source := c.Secrets.Sources[name]
+	if source.Format != "" {
+		return source.Format
+	}
+	for _, target := range c.Secrets.Targets {
+		if target.Source == name && target.Provider == "kubernetes" {
+			return "yaml"
+		}
+	}
+	return "dotenv"
 }
 
 type SecretTarget struct {
@@ -89,6 +106,14 @@ func (c *Config) validateRemoteDeclarations() error {
 		if err := validateSecrets(c.Secrets); err != nil {
 			return err
 		}
+		for _, name := range sortedKeysOf(c.Secrets.Sources) {
+			source := c.Secrets.Sources[name]
+			if source.Project != "" {
+				if _, ok := c.Subprojects[source.Project]; !ok {
+					return fmt.Errorf("secrets source %q: unknown project %q", name, source.Project)
+				}
+			}
+		}
 	}
 	for _, name := range sortedKeysOf(c.Jobs) {
 		job := c.Jobs[name]
@@ -119,6 +144,11 @@ func (c *Config) validateRemoteDeclarations() error {
 func validateSecrets(c *SecretsConfig) error {
 	for _, name := range sortedKeysOf(c.Sources) {
 		source := c.Sources[name]
+		switch source.Format {
+		case "", "dotenv", "yaml", "json", "ini", "binary":
+		default:
+			return fmt.Errorf("secrets source %q: format must be dotenv, yaml, json, ini or binary", name)
+		}
 		clean := filepath.Clean(source.Sops)
 		if !validCIName(name) || source.Sops == "" || filepath.IsAbs(source.Sops) || clean == "." || clean == ".." || strings.HasPrefix(clean, ".."+string(filepath.Separator)) || strings.ContainsAny(source.Sops, "\\\x00\r\n") {
 			return fmt.Errorf("secrets source %q: sops must be a contained relative file", name)
@@ -137,10 +167,16 @@ func validateSecrets(c *SecretsConfig) error {
 		}
 		switch target.Provider {
 		case "github-actions":
+			if (&Config{Secrets: c}).SecretSourceFormat(target.Source) != "dotenv" {
+				return fmt.Errorf("secrets target %q: github-actions requires a dotenv source", name)
+			}
 			if err := validateGitHubSecretTarget(target); err != nil {
 				return fmt.Errorf("secrets target %q: %w", name, err)
 			}
 		case "kubernetes":
+			if (&Config{Secrets: c}).SecretSourceFormat(target.Source) != "yaml" {
+				return fmt.Errorf("secrets target %q: kubernetes requires a yaml source", name)
+			}
 			if err := validateKubernetesSecretTarget(target); err != nil {
 				return fmt.Errorf("secrets target %q: %w", name, err)
 			}

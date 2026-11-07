@@ -66,6 +66,9 @@ type Options struct {
 	// caller from dva.yml's sops: section. Empty means none applies; decrypt
 	// then reads the key from the source's own metadata.
 	SopsConfig string
+	// SourceRoot anchors a project-linked source without changing destination ownership.
+	SourceRoot   string
+	SourceFormat string
 }
 
 // KeyReport deliberately contains declaration metadata only; never a value,
@@ -115,7 +118,14 @@ func Push(ctx context.Context, opts Options) (Report, error) {
 	if _, err := exec.LookPath("gh"); err != nil {
 		return report, codeError("gh_unavailable")
 	}
-	plaintext, err := decryptSOPS(ctx, root, opts.SopsConfig, source, "dotenv", "dotenv")
+	format := opts.SourceFormat
+	if format == "" {
+		format = "dotenv"
+	}
+	if format != "dotenv" {
+		return report, codeError("invalid_source_format")
+	}
+	plaintext, err := decryptSOPS(ctx, sourceWorkingDir(root, opts), opts.SopsConfig, source, format, "dotenv")
 	if err != nil {
 		return report, err
 	}
@@ -191,7 +201,7 @@ func prepare(ctx context.Context, opts Options) (string, string, mappingSet, Rep
 	if err != nil {
 		return "", "", mappingSet{}, report, err
 	}
-	source, err := safeSource(root, opts.Target.Source)
+	source, err := optionSource(root, opts)
 	if err != nil {
 		return "", "", mappingSet{}, report, err
 	}
@@ -235,6 +245,24 @@ func canonicalRoot(root string) (string, error) {
 		return "", codeError("root_invalid")
 	}
 	return root, nil
+}
+
+func sourceWorkingDir(root string, opts Options) string {
+	if opts.SourceRoot != "" {
+		return opts.SourceRoot
+	}
+	return root
+}
+
+func optionSource(root string, opts Options) (string, error) {
+	if opts.SourceRoot != "" {
+		var err error
+		root, err = canonicalRoot(opts.SourceRoot)
+		if err != nil {
+			return "", err
+		}
+	}
+	return safeSource(root, opts.Target.Source)
 }
 
 func safeSource(root, source string) (string, error) {

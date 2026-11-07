@@ -7,6 +7,9 @@ All notable changes to DVA are documented here.
 
 ### Added
 
+- `dva secret edit/reseal <source>`로 이름 붙인 SOPS source를 편집하거나 현재 규칙으로
+  재암호화합니다. `format:`과 `project:`로 파일 형식과 하위 프로젝트를 선택하며,
+  기존 `--project`로 child가 소유한 source도 선택할 수 있습니다.
 - native CI step에 명시적 입력·도구·환경·산출물 기반 `reuse`를 추가합니다.
   `fresh: true`와 `dva ci --fresh`는 결과 재사용을 우회하며 프로젝트에
   `DVA_CI_FRESH`를 전달해 언어 테스트 결과 캐시도 우회할 수 있습니다.

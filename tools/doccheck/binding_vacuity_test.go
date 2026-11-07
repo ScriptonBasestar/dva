@@ -103,17 +103,21 @@ func captureStdout(t *testing.T, fn func()) string {
 		t.Fatal(err)
 	}
 	os.Stdout = w
+	defer func() { os.Stdout = previous; _ = w.Close(); _ = r.Close() }()
+	type captured struct {
+		data []byte
+		err  error
+	}
+	done := make(chan captured, 1)
+	go func() { data, err := io.ReadAll(r); done <- captured{data, err} }()
 	fn()
 	if err := w.Close(); err != nil {
 		t.Fatal(err)
 	}
 	os.Stdout = previous
-	data, err := io.ReadAll(r)
-	if err != nil {
-		t.Fatal(err)
+	out := <-done
+	if out.err != nil {
+		t.Fatal(out.err)
 	}
-	if err := r.Close(); err != nil {
-		t.Fatal(err)
-	}
-	return string(data)
+	return string(out.data)
 }

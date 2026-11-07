@@ -122,6 +122,8 @@ Linux에서도 같은 절차로 해당 archive를 선택하고 `sha256sum -c`를
 | `dva config init` | 현재 디렉토리에 `dva.yml` 생성 (`dva init` alias 지원) |
 | `dva config docs` | 프로젝트 AI 파트너용 CLAUDE.md/AGENTS.md 생성/갱신 |
 | `dva config migrate` | legacy compose 선언을 `runners` 형태로 재작성 |
+| `dva secret edit <source>` | 선언된 SOPS source를 sops 편집 세션으로 열기 |
+| `dva secret reseal <source>` | 선언된 SOPS source를 현재 규칙으로 재암호화 |
 | `dva secret push <target>` | 선언된 SOPS 키를 GitHub Actions Secrets 또는 dev 클러스터 Kubernetes Secret에 전송 |
 | `dva secret status <target>` | kubernetes 대상 Secret의 존재 여부와 키 이름 대조 보고 (값 미포함) |
 | `dva job run <name>` | 저장소 소유 산출물 작업 실행·대기·검증 |
@@ -1675,7 +1677,7 @@ v0.4.5 후보의 `unseal`·`seal`은 선택 뒤 평문 파일 경로를 위의 e
 sops는 혼자 실행되면 `.sops.yaml`을 **작업 디렉토리에서 위로** 찾습니다. 암호화 파일의
 위치가 아닙니다. DVA도 dva.yml을 작업 디렉토리에서 위로 찾기 때문에, 그대로 두면 같은
 `reseal`이 어느 하위 디렉토리에서 입력했느냐에 따라 다른 creation rule(다른 키)로 다시
-암호화합니다. 그래서 `config env`의 모든 동사와 `dva secret push`는 규칙 파일을 DVA가
+암호화합니다. 그래서 `config env`의 모든 동사와 `dva secret edit/reseal/push`는 규칙 파일을 DVA가
 직접 고르고 sops에 `--config`로 넘깁니다. 작업 디렉토리는 결과에 영향이 없습니다.
 
 | 설정 | 고르는 파일 |
@@ -1697,7 +1699,7 @@ sops:
   실패합니다 — 프로젝트의 비밀을 어떤 키로 암호화할지를 루트가 보여주지 않는 파일이
   바꾸게 두지 않기 위해서입니다.
 - 적용되는 규칙 파일이 없을 때: 다시 암호화하는 `reseal`·`seal`은 sops를 실행하기 전에
-  `sops_creation_rule_missing`으로 거절합니다. `unseal`·`show`·`edit`·`secret push`는
+  거절합니다 (`config env`에서는 `sops_creation_rule_missing`). `unseal`·`show`·`edit`·`secret push`는
   기존 파일 메타데이터의 키를 쓰므로 `--config` 없이 진행합니다. 단 `config:`로 지정한
   파일이 없으면 이는 dva.yml 오류이므로 어느 동사든 거절합니다.
 
@@ -2558,6 +2560,53 @@ dva validate
 
 `secrets`는 암호화 출처와 전송 대상, `jobs`는 종료하는 원격 산출물 작업을 선언합니다.
 명령·설정·실패 및 재개 규약은 [원격 산출물 작업](docs/62-remote-artifact-jobs.md)을 따릅니다.
+
+### 이름으로 SOPS source 편집
+
+`secrets.sources`에 선언한 이름으로 암호화 파일을 직접 편집하거나 현재 creation rule로
+재암호화할 수 있습니다. 평문 `env_file` target이나 원격 `targets` 선언은 필요하지 않습니다.
+
+```yaml
+subprojects:
+  api: {path: services/api}
+secrets:
+  sources:
+    app: {sops: .env.enc}                         # 기본 format: dotenv
+    cluster: {sops: deploy/secret.yaml, format: yaml}
+    api: {sops: .env.enc, project: api}           # services/api/.env.enc
+```
+
+```bash
+dva secret edit app
+dva secret reseal cluster
+dva secret edit api
+dva secret edit local --project api               # api의 dva.yml에 선언된 local
+```
+
+`format`은 `dotenv`, `yaml`, `json`, `ini`, `binary` 중 하나입니다. 생략하면 `dotenv`이며,
+Kubernetes 전송 대상이 참조하는 source는 기존 설정과 호환되도록 `yaml`로 추론합니다.
+GitHub Actions 대상은 `dotenv`, Kubernetes 대상은 `yaml` source만 허용합니다.
+
+`project:`는 같은 설정의 `subprojects` 이름을 가리키며 `sops` 경로의 기준을 그 하위
+프로젝트 디렉토리로 바꿉니다. 절대 경로, 기준 디렉토리 밖으로 나가는 경로와 symlink
+경로 성분은 거부합니다. `--project api`는 이와 달리 api의 `dva.yml`을 소유 설정으로
+선택하므로 부모가 선언한 source는 보이지 않습니다. 이때 선택된 child source의 `project:`는
+거부하며 손자 프로젝트는 선택하지 않습니다.
+
+규칙 파일은 소유 설정의 `sops:`에 따라 고릅니다. 기본값은 암호화 파일에서 소유 설정
+루트까지 가장 가까운 `.sops.yaml`이며, `lookup: root` 또는 `config:`로 바꿀 수 있습니다.
+부모의 `project: api` source와 child 자신의 source가 같은 파일을 가리킬 수 있지만,
+각 설정이 별도의 규칙을 선언하면 그 설정의 규칙을 따릅니다. 부모 루트 밖에 선언된
+subproject는 기본 `nearest` 탐색의 경계 밖이므로 거부합니다. 이 경우 child의
+`--project` 소유 설정을 사용하거나 부모의 `lookup: root`·`config:`를 명시합니다.
+[규칙 파일 선택](#어떤-sopsyaml을-쓰는가)을 참고하세요.
+
+`edit`은 sops 편집 세션을 열며 `--json`을 지원하지 않습니다. 대화형 편집 화면은
+제어 터미널로 연결하고 DVA의 stdout·stderr에는 자식 출력을 전달하지 않습니다.
+제어 터미널이 없을 때는 화면 출력을 버리므로 자동 편집기를 사용할 수 있습니다. 편집기와 sops가 사용하는
+임시 평문 파일의 수명은 해당 도구가 관리합니다. `reseal`은 평문을 DVA의 파일로 저장하지
+않고 프로세스 사이로 전달하며, 새 암호문이 준비되면 원래 암호문을 원자적으로 교체합니다.
+이 명령은 `config env`의 `env_file` 선택이나 평문 target을 변경하지 않습니다.
 
 전송 대상은 두 가지입니다. `provider: github-actions`는 SOPS dotenv source를 현재
 체크아웃의 GitHub Actions Secrets로 보내고, `provider: kubernetes`는 SOPS로 암호화한
