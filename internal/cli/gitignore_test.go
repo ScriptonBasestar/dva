@@ -538,6 +538,8 @@ func TestDvaTransientProbesCoverEveryWriter(t *testing.T) {
 		{"pid files", path.Join(config.DotDirName, config.PidsDirName, "probe.pid")},
 		{"log files", path.Join(config.DotDirName, config.LogsDirName, "probe.log")},
 		{"git source clones", path.Join(config.DotDirName, config.SourcesDirName, "probe")},
+		{"compare run records", path.Join(config.DotDirName, config.CompareDirName, "probe.json")},
+		{"compare snapshot checkouts", path.Join(config.DotDirName, config.VariantsDirName, "probe")},
 		{"provision markers", path.Join(config.DotDirName, provisionMarkerName("probe"))},
 	}
 

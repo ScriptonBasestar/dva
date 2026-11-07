@@ -47,9 +47,9 @@ var gitCheckIgnoreTimeout = 2 * time.Second
 // cross `/`, so `!.sb/dva/*.yml` re-includes modules at the one level DVA puts them and nothing
 // deeper — a `.yml` inside a cloned source stays ignored.
 //
-// Nothing DVA writes at runtime is re-included by that negation: the four classes are
-// `pids/*.pid`, `logs/*.log`, `sources/<entry>` and `provisioned-<profile>.marker`, none of them a
-// `.yml` at this level. dvaTransientProbes is the list, and the test over it is what keeps that
+// Nothing DVA writes at runtime is re-included by that negation: the classes are `pids/*.pid`,
+// `logs/*.log`, `sources/<entry>`, `compare/<name>.json`, `variants/<compare>/<variant>` and
+// `provisioned-<profile>.marker`, none of them a `.yml` at this level. dvaTransientProbes is the list, and the test over it is what keeps that
 // claim true as writers come and go.
 func defaultIgnoreRules() []string {
 	dir := config.DotDirName
@@ -128,9 +128,10 @@ func ensureGitignore(configDir string) (bool, error) {
 }
 
 // dvaTransientProbes lists one representative path per class of file DVA writes under its dot
-// directory, relative to the config directory. These four are the whole set: pid files, log
-// files, clones of git sources, and provision markers. Nothing else writes there — the modules
-// DVA reads are authored by hand and belong in the commit.
+// directory, relative to the config directory. These six are the whole set: pid files, log
+// files, clones of git sources, compare run records, compare snapshot checkouts, and provision
+// markers. Nothing else writes there — the modules DVA reads are authored by hand and belong
+// in the commit.
 //
 // Every element is built from the constant its writer uses, so renaming a directory moves the
 // probe with it. Spelled as literals they would keep passing while asking about a path nothing
@@ -157,6 +158,8 @@ func dvaTransientProbes() []string {
 		path.Join(config.DotDirName, config.PidsDirName, "probe.pid"),
 		path.Join(config.DotDirName, config.LogsDirName, "probe.log"),
 		path.Join(config.DotDirName, config.SourcesDirName, "probe"),
+		path.Join(config.DotDirName, config.CompareDirName, "probe.json"),
+		path.Join(config.DotDirName, config.VariantsDirName, "probe"),
 		path.Join(config.DotDirName, provisionMarkerName("probe")),
 	}
 }
@@ -296,7 +299,7 @@ func dvaTransientsIgnored(configDir string) (ignored bool, decided bool) {
 	return dvaTransientsCovered(configDir, false)
 }
 
-// dvaTransientClasses names the same four classes dvaTransientProbes stands in for, spelled as
+// dvaTransientClasses names the same classes dvaTransientProbes stands in for, spelled as
 // pathspecs git can match against the index instead of as probe paths.
 //
 // The two lists exist for two different questions and cannot be one list. A probe is a path that
@@ -365,6 +368,8 @@ func dvaTransientClasses() []transientClass {
 		{name: path.Join(config.DotDirName, config.PidsDirName)},
 		{name: path.Join(config.DotDirName, config.LogsDirName)},
 		{name: path.Join(config.DotDirName, config.SourcesDirName)},
+		{name: path.Join(config.DotDirName, config.CompareDirName)},
+		{name: path.Join(config.DotDirName, config.VariantsDirName)},
 		{
 			// The prefix, not provisionMarkerName("*"): that would spell `provisioned-*.marker`
 			// and stop finding the extensionless markers this check exists to find. Markers

@@ -92,6 +92,16 @@ CLI는 설정 타입을 runtime 입력으로 변환하고 명시적인 `--with-s
 세 실행 패키지는 lifecycle·runner·cirun을 호출하지 않는다. 설정·결과 계약은
 [원격 산출물 작업](docs/62-remote-artifact-jobs.md)이 소유한다.
 
+### Variant comparison
+
+`internal/compare/`는 비교 실행 기록(`.sb/dva/compare/<name>.json`)과 DVA가 만든 snapshot
+체크아웃(`.sb/dva/variants/<compare>/<variant>/`)을 소유한다. snapshot은 ref를 커밋으로
+고정한 detached worktree다. 회수는 기록된 경로만, force 없이, 깨끗할 때만 한다. 기록은
+pid를 담지 않는다. 읽을 때마다 경로, `git worktree list`, 커밋과 각 체크아웃의
+`.sb/dva/pids/`로 다시 검증하고, 어긋난 비교안은 stale로 보고만 한다. 이 패키지는
+config의 상수와 lifecycle의 프로세스 생존 확인만 쓰며, plan을 시작하지 않는다. 계약은
+[비교안 동시 실행 설계](docs/75-variant-comparison-design.md)가 소유한다.
+
 ### Skill distribution
 
 - `internal/skillinstall/`은 번들된 DVA 스킬의 설치·상태·제거·백업을 담당한다
