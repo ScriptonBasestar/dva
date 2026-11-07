@@ -5,7 +5,7 @@ type: feature
 priority: P2
 effort: L
 exec-tier: strong
-status: todo
+status: review
 created: 2026-11-06
 depends-on: [TASK-589]
 allowed-paths: [internal/compare/, internal/config/constants.go, internal/exec/, tools/archcheck/main.go, internal/cli/gitignore.go, internal/cli/gitignore_test.go, ARCHITECTURE.md]
@@ -37,7 +37,7 @@ allowed-paths: [internal/compare/, internal/config/constants.go, internal/exec/,
 
 ## Completion Criteria
 
-- [x] 실행 기록의 쓰기·읽기와 stale 판정, snapshot 생성·재사용·회수 거부가 임시 Git 저장소 테스트로 고정되고 전체 테스트가 통과한다 | verify: `go test ./internal/compare -run '^(TestRecordRoundTrip|TestSnapshotCreateReuseAndRefuse|TestSnapshotRefusesUnignoredPath|TestSnapshotConfigDirBelowRepoRoot|TestRemoveSnapshot|TestCheckReportsStaleWithoutRepair)$'` (observed: 2026-11-08 — exit 0; ignore 검사·dirty 검사·출처 귀속 검사·pid 생존 검사·HEAD 불일치 검사를 각각 되돌리면 해당 테스트가 실패하고 복원 후 통과. make lint·doc-check exit 0, make generate 후 추가 diff 없음. make test는 exit 2: internal/cirun의 TestReuseProbeCountsAgainstStepTimeout 하나가 실패하며, 같은 실패가 이 변경 없는 master b67ff5de에서도 재현된다. 나머지 패키지는 모두 ok)
+- [x] 실행 기록의 쓰기·읽기와 stale 판정, snapshot 생성·재사용·회수 거부가 임시 Git 저장소 테스트로 고정되고 전체 테스트가 통과한다 | verify: `go test ./internal/compare -run '^(TestRecordRoundTrip|TestSnapshotCreateReuseAndRefuse|TestSnapshotRefusesUnignoredPath|TestSnapshotConfigDirBelowRepoRoot|TestRemoveSnapshot|TestCheckReportsStaleWithoutRepair)$'` (observed: 2026-11-08 — exit 0; ignore 검사·dirty 검사·출처 귀속 검사·pid 생존 검사·HEAD 불일치 검사를 각각 되돌리면 해당 테스트가 실패하고 복원 후 통과. make lint·doc-check exit 0, make generate 후 추가 diff 없음. make test는 cirun 타임아웃 분류 수정(6730c1a0) 위로 rebase한 뒤 exit 0)
 - [x] dirty snapshot과 기록에 없는 경로의 회수가 거부되고 아무 파일도 지워지지 않는다 | verify: human — 테스트 저장소에서 snapshot을 만들고 파일을 고친 뒤 회수를 호출해 거부 메시지와 경로 보존을 확인한다 (observed: 2026-11-08 — TestRemoveSnapshot이 임시 저장소에서 기록에 없는 variant, dirty snapshot, 기록 경로가 snapshot 경로와 다른 경우, snapshot이 아닌 모드, 등록되지 않은 경로의 회수를 각각 거부 문구로 확인하고 dirty 체크아웃의 파일이 남아 있음을 os.Stat으로 확인)
 
 ## Scope Notes
