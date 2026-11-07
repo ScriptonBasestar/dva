@@ -1,0 +1,35 @@
+{
+  "verdict": "PASS",
+  "reviewer-execution": "claude-code-subagent/a8c1c75b423796948",
+  "reviewer-grade": "strong",
+  "executor-execution": "claude-code-session/0479d29b-718c-480f-84a2-b12d94024f92",
+  "executor-grade": "strong",
+  "review-runtime-execution": "read-only on primary checkout master",
+  "reviewed-commit": "b67ff5de20c35ba721f6b42748f4c1ff169b913e",
+  "reviewed-at": "2026-11-07T15:35:25Z",
+  "raw-review": "tasks/done/evidence/TASK-589/done-review.txt",
+  "raw-review-sha256": "697f1272284aac0339a10ba204374dcc651a4909af634e09d8624e7b8e81f807",
+  "checks": [
+    {
+      "command": "go test ./internal/config -run '^(TestCompareParsesDeclaration|TestCompareFollowsAliasAndExtends|TestCompareExtendsMatchesLifecycleDepth|TestCompareImportedPlanUsesOwnerStack|TestCompareRejectsInvalidDeclarations|TestCompareRejectsCompositionPlan|TestCheckPortCapacity|TestCompareMergeReplacesWholeEntry)$'",
+      "result": "PASS"
+    },
+    {
+      "command": "human criterion: dva config show and dva validate on examples/variant-compare.yml and an overlapping copy",
+      "result": "PASS"
+    },
+    {
+      "command": "make test",
+      "result": "FAIL (internal/cli 5m timeout under load)"
+    },
+    {
+      "command": "go test -count=1 -timeout 10m -race -cover ./internal/cli",
+      "result": "PASS"
+    },
+    {
+      "command": "ce task validate; make doc-check",
+      "result": "PASS"
+    }
+  ],
+  "limitations": "Raw review covers TASK-587 and TASK-589 together. The full make test hit the Makefile 5-minute timeout in internal/cli while other runs shared the machine; the package alone passed in 82s. Timeout cause is inferred, not proven."
+}

@@ -1,0 +1,27 @@
+{
+  "verdict": "PASS",
+  "reviewer-execution": "claude-code-subagent/a8c1c75b423796948",
+  "reviewer-grade": "strong",
+  "executor-execution": "claude-code-session/0479d29b-718c-480f-84a2-b12d94024f92",
+  "executor-grade": "strong",
+  "review-runtime-execution": "read-only on primary checkout master",
+  "reviewed-commit": "b67ff5de20c35ba721f6b42748f4c1ff169b913e",
+  "reviewed-at": "2026-11-07T15:35:25Z",
+  "raw-review": "tasks/done/evidence/TASK-587/done-review.txt",
+  "raw-review-sha256": "697f1272284aac0339a10ba204374dcc651a4909af634e09d8624e7b8e81f807",
+  "checks": [
+    {
+      "command": "five grep -F -q criterion bindings on USAGE.md, ARCHITECTURE.md, docs/31-execution-plan-resolution.md",
+      "result": "PASS"
+    },
+    {
+      "command": "human criterion: 0b649876 diff inspection, unimplemented markers, docs/31 size",
+      "result": "PASS"
+    },
+    {
+      "command": "ce task validate; make doc-check",
+      "result": "PASS"
+    }
+  ],
+  "limitations": "Raw review covers TASK-587 and TASK-589 together. Commit 0b649876 also edited the 588 and 592 card files outside allowed-paths; non-blocking."
+}

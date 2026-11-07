@@ -17,7 +17,7 @@ allowed-paths: [internal/compare/, internal/cli/, USAGE.md, docs/75-variant-comp
 
 ## Scope
 
-- provider 인터페이스는 [TASK-538](538-worktree-development-targets.md)·[TASK-587](../review/587-record-worktree-target-contract.md) 계약을 따른다. 이 카드는 최소 provider 하나(`git worktree list` 기반, 대상 ID는 branch)를 구현한다. worktrunk(`wt list --format=json`)와 CE provider는 같은 인터페이스로 이후에 붙인다.
+- provider 인터페이스는 [TASK-538](538-worktree-development-targets.md)·[TASK-587](../done/587-record-worktree-target-contract.md) 계약을 따른다. 이 카드는 최소 provider 하나(`git worktree list` 기반, 대상 ID는 branch)를 구현한다. worktrunk(`wt list --format=json`)와 CE provider는 같은 인터페이스로 이후에 붙인다.
 - 조회 실패, 알 수 없는 ID, 후보 여럿은 프로세스를 시작하지 않고 실패한다. 기본 체크아웃으로 돌아가지 않는다.
 - `status`와 `down`은 provider를 다시 조회하고, 경로·브랜치가 바뀐 비교안을 stale로 보고한다.
 - `down`은 worktree 비교안의 프로세스만 내리고 worktree는 남긴다.

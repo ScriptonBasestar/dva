@@ -1,0 +1,101 @@
+DVA done-review — TASK-587 and TASK-589
+Reviewer: independent (did not implement either card)
+Tree: /Users/archmagece/mywork/scripton/dva, master b67ff5de20c35ba721f6b42748f4c1ff169b913e (= origin/master), read-only
+
+======================================================================
+TASK-587  tasks/review/587-record-worktree-target-contract.md  (docs)
+======================================================================
+C1 PASS  `/usr/bin/grep -F -q 'dva target' USAGE.md` -> exit 0
+C2 PASS  `/usr/bin/grep -F -q '작업 디렉터리에서 설정을 찾는다' USAGE.md` -> exit 0
+C3 PASS  `/usr/bin/grep -F -q 'CE를 DVA의 필수 의존성으로 만들지 않는다' ARCHITECTURE.md` -> exit 0
+C4 PASS  `/usr/bin/grep -F -q '.sb/dva/pids' ARCHITECTURE.md` -> exit 0
+C5 PASS  `/usr/bin/grep -F -q '체크아웃 루트' docs/31-execution-plan-resolution.md` -> exit 0
+C6 PASS  (human) Read the 0b649876 diff of the three docs:
+         - USAGE.md:139 Quick Reference row is labelled "**미구현(채택한 계약)**"; USAGE.md:535
+           subsection "#### 작업 워크트리 대상 (미구현)" sits under "### Lifecycle" (line 410) and
+           states "아직 구현되지 않았습니다(TASK-538)". Its anchor is linked from the table row.
+         - ARCHITECTURE.md:188-192, one paragraph under "### Named lifecycle" (line 164), says
+           "채택한 계약이며 아직 구현되지 않았다", does not copy the command list, and links USAGE.md.
+         - docs/31: one added sentence + one link (../USAGE.md) at the end of "## 2. 실행 대상",
+           before "## 3."; no new section.
+         - All four required sentences are present verbatim in the specified files.
+         - `make doc-check` exit 0; docs/31 = 369 lines / 9418 bytes (<500 / <10240), matching
+           the observed note.
+         - None of the three docs has changed since 0b649876.
+ce task validate: exit 0, "Valid (no errors or warnings)"
+Accuracy findings (minor, non-blocking):
+  - Commit 0b649876 also touched tasks/todo/588-secret-source-edit-reseal.md and
+    tasks/todo/592-compare-worktree-mode.md, which are outside allowed-paths. The commit message
+    explains this (doc-check repair); the card's own claims are unaffected.
+  - Links checked: ../todo/538-worktree-development-targets.md exists and has 4 criteria (the 4th
+    is the Singlepageweb pilot, as the card says); docs/75 "## 결정 기록" anchor exists.
+Card verdict: pass
+
+======================================================================
+TASK-589  tasks/review/589-compare-declaration-validation.md  (feature)
+======================================================================
+C1 PASS  `go test ./internal/config -run '^(TestCompareParsesDeclaration|TestCompareFollowsAliasAndExtends|TestCompareExtendsMatchesLifecycleDepth|TestCompareImportedPlanUsesOwnerStack|TestCompareRejectsInvalidDeclarations|TestCompareRejectsCompositionPlan|TestCheckPortCapacity|TestCompareMergeReplacesWholeEntry)$'`
+         (run with -count=1 -v) -> exit 0; all 8 named tests exist and PASS.
+         `go test ./internal/cli -run '^TestConfigSchemaViewShowsCompare$'` -> PASS
+         (internal/cli/config_dump_test.go:45).
+         Criterion text also claims "전체 테스트가 통과한다": see Limitations (make test timeout).
+C2 PASS  (human) Built via `make build BUILD_DIR=<scratch>/bin` (tree stayed clean).
+         - examples/variant-compare.yml copied as dva.yml: `dva config show` exit 0 and output
+           contains compare.web-layout with plan, shared, per_variant, ports (WEB_PORT 3001-3004),
+           variants (a: main, b: feat/layout-a). `dva validate` exit 0.
+         - Copy with `shared: [api, db, web]`: `dva validate` exit 1 with
+           `ERROR: compare.web-layout: entry "web" is in both shared and per_variant`
+           — matches the observed note verbatim.
+ce task validate: exit 0, "Valid (no errors or warnings)"
+Scope checks:
+  - Field names plan/shared/per_variant/ports/variants match docs/75 lines 48-52.
+  - Fixed project_name rejection tested (compare_test.go:144, :163-164).
+  - Port check is `func (cmp *CompareConfig) CheckPortCapacity(variants int) error`
+    (compare.go:193) — takes the variant count as argument, as scope requires.
+  - config_merge.go only adds a compare case; existing plans:/stack:/modules: rules unchanged.
+  - examples/README.md:89 lists variant-compare.yml.
+Accuracy findings (minor, non-blocking):
+  - a661ae76 also changed agent-mesh-flows/*.yaml, agent-mesh-flows/shared/library/
+    shared-guardrails.md and internal/cli/library_reference.txt (outside allowed-paths). These
+    are only regenerated section-order lists with `compare` inserted after `default_plan`, a
+    direct consequence of the section_order.go change.
+Card verdict: pass
+
+======================================================================
+Shared gate
+======================================================================
+make doc-check at master: exit 0 (changelogcheck OK, ciparity OK, yaml_example_warnings 0)
+
+======================================================================
+Limitations
+======================================================================
+- `make test` (go test -timeout 5m -race -cover ./...) at master exited 2:
+  internal/cli FAIL 300.501s with `panic: test timed out after 5m0s`, while
+  TestEnsureGitignoreWritesWhatACloneWouldLack had been running for 1s. All other packages ok.
+  Rerun of the package alone, `go test -count=1 -timeout 10m -race -cover ./internal/cli`,
+  exited 0 in 82.368s (coverage 84.3%). Interpretation (inferred, not proven): the package
+  wall-clock exceeds the Makefile's 5m timeout under full-suite concurrent load; it is not a
+  TASK-589 assertion failure. The card's "make test exit 0" observation (2026-11-06) could not
+  be reproduced today in the full-suite form; re-running make test on a quieter host would
+  confirm.
+- Human criteria were judged by reading the diffs and by running the scratch-built binary; no
+  live lifecycle (dva up) was exercised, which neither card requires.
+- I built one binary into scratch; `make build` also runs `make generate`, which left the tree
+  clean (git status --short empty).
+
+======================================================================
+Commands run
+======================================================================
+git rev-parse HEAD origin/master; git status --short
+git show --stat / diff for 0b649876, a661ae76, 05b92bd3; git log 0b649876..HEAD -- <3 docs>
+five TASK-587 grep bindings; wc -lc docs/31-execution-plan-resolution.md; heading/link greps
+TASK-589 go test binding (-count=1 -v); go test ./internal/cli -run '^TestConfigSchemaViewShowsCompare$'
+make build BUILD_DIR=<scratch>/bin; dva config show / dva validate on good and bad copies
+ce task validate tasks/review/587-record-worktree-target-contract.md
+ce task validate tasks/review/589-compare-declaration-validation.md
+make doc-check
+make test (exit 2, timeout); go test -count=1 -timeout 10m -race -cover ./internal/cli (exit 0)
+
+TASK-587: VERDICT: PASS
+TASK-589: VERDICT: PASS
+VERDICT: PASS
