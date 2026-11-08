@@ -362,8 +362,9 @@ stack:
 // captureStd runs fn with os.Stdout and os.Stderr replaced by pipes and returns
 // what each received. Both are restored before returning.
 //
-// The writers are closed before the reads so a read cannot block waiting for
-// more; the payloads here are one line each, well under the pipe buffer.
+// Both pipes are drained while fn runs. Reading only after fn returns relies on the
+// output fitting the pipe buffer, which is not a fixed size: Darwin hands out 512-byte
+// buffers once kernel pipe memory runs short, and then the writer blocks for good.
 func captureStd(t *testing.T, fn func()) (stdout, stderr string) {
 	t.Helper()
 
@@ -382,6 +383,17 @@ func captureStd(t *testing.T, fn func()) (stdout, stderr string) {
 		os.Stdout, os.Stderr = origOut, origErr
 	}()
 
+	type drained struct {
+		data []byte
+		err  error
+	}
+	drain := func(r *os.File) <-chan drained {
+		done := make(chan drained, 1)
+		go func() { data, err := io.ReadAll(r); done <- drained{data, err} }()
+		return done
+	}
+	outDone, errDone := drain(outR), drain(errR)
+
 	fn()
 
 	if err := outW.Close(); err != nil {
@@ -391,15 +403,14 @@ func captureStd(t *testing.T, fn func()) (stdout, stderr string) {
 		t.Fatalf("close stderr writer: %v", err)
 	}
 
-	outB, err := io.ReadAll(outR)
-	if err != nil {
-		t.Fatalf("read stdout: %v", err)
+	out, errOut := <-outDone, <-errDone
+	if out.err != nil {
+		t.Fatalf("read stdout: %v", out.err)
 	}
-	errB, err := io.ReadAll(errR)
-	if err != nil {
-		t.Fatalf("read stderr: %v", err)
+	if errOut.err != nil {
+		t.Fatalf("read stderr: %v", errOut.err)
 	}
-	return string(outB), string(errB)
+	return string(out.data), string(errOut.data)
 }
 
 // TestStackOverrideConflictWarnsOnStderrNotStdout pins TASK-116.

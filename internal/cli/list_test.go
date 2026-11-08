@@ -64,20 +64,12 @@ func TestPrintTable_Basic(t *testing.T) {
 	}
 	keys := []string{"test"}
 
-	old := os.Stdout
-	r, w, _ := os.Pipe()
-	os.Stdout = w
-
-	if err := printTable(&config.Config{}, commands, keys); err != nil {
+	finish := startCapture(t, &os.Stdout)
+	err := printTable(&config.Config{}, commands, keys)
+	output := finish()
+	if err != nil {
 		t.Fatalf("printTable error: %v", err)
 	}
-
-	w.Close()
-	os.Stdout = old
-
-	buf := make([]byte, 4096)
-	n, _ := r.Read(buf)
-	output := string(buf[:n])
 	if !strings.Contains(output, "test") {
 		t.Errorf("output should contain command name, got: %s", output)
 	}

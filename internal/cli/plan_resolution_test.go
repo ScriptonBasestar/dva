@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"bytes"
 	"context"
 	"os"
 	"strings"
@@ -34,34 +33,12 @@ plans:
 // so merging them would assert nothing.
 func captureStreams(t *testing.T, fn func()) (stdout, stderr string) {
 	t.Helper()
-
-	oldStdout, oldStderr := os.Stdout, os.Stderr
-	rOut, wOut, err := os.Pipe()
-	if err != nil {
-		t.Fatalf("os.Pipe: %v", err)
-	}
-	rErr, wErr, err := os.Pipe()
-	if err != nil {
-		t.Fatalf("os.Pipe: %v", err)
-	}
-	os.Stdout, os.Stderr = wOut, wErr
-
-	done := make(chan struct{})
-	var outBuf, errBuf bytes.Buffer
-	go func() {
-		outBuf.ReadFrom(rOut)
-		errBuf.ReadFrom(rErr)
-		close(done)
-	}()
-
+	// One drain per stream: a single reader that finishes stdout before starting stderr
+	// leaves stderr undrained and blocks its writer once that pipe fills.
+	finishOut := startCapture(t, &os.Stdout)
+	finishErr := startCapture(t, &os.Stderr)
 	fn()
-
-	wOut.Close()
-	wErr.Close()
-	os.Stdout, os.Stderr = oldStdout, oldStderr
-	<-done
-
-	return outBuf.String(), errBuf.String()
+	return finishOut(), finishErr()
 }
 
 func planResolutionEnv(t *testing.T, c *config.Config) *config.Environment {

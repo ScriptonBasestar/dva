@@ -1,8 +1,6 @@
 package cli
 
 import (
-	"bytes"
-	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -42,23 +40,16 @@ const dryRunHaltConfig = `stack:
 // variable each time, while the "dry-run" line is pctx.Logger and does not.
 func captureCommandStderr(t *testing.T, fn func() error) (string, error) {
 	t.Helper()
-	r, w, err := os.Pipe()
-	if err != nil {
-		t.Fatalf("stderr pipe: %v", err)
-	}
-	oldErr, oldLog, oldDefault := os.Stderr, logger.Log, slog.Default()
-	os.Stderr = w
-	logger.Init(false, false)
+	oldLog, oldDefault := logger.Log, slog.Default()
+	finish := startCapture(t, &os.Stderr)
+	logger.Init(false, false) // after the redirect: the logger binds os.Stderr when built
 
 	runErr := fn()
 
-	_ = w.Close()
-	os.Stderr, logger.Log = oldErr, oldLog
+	out := finish()
+	logger.Log = oldLog
 	slog.SetDefault(oldDefault)
-	var buf bytes.Buffer
-	_, _ = io.Copy(&buf, r)
-	_ = r.Close()
-	return buf.String(), runErr
+	return out, runErr
 }
 
 // standInStack writes the config in a temp cwd and returns it.

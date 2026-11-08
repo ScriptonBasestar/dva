@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -71,22 +70,16 @@ func TestRunHookSteps_DryRun(t *testing.T) {
 		{Step: "Run tests", Run: "make test"},
 	}
 
-	old := os.Stderr
-	r, w, _ := os.Pipe()
-	os.Stderr = w
+	finish := startCapture(t, &os.Stderr)
 
 	err := runHookSteps(e, c, "before", "up", steps)
 
-	w.Close()
-	os.Stderr = old
+	output := finish()
 
 	if err != nil {
 		t.Fatalf("runHookSteps error: %v", err)
 	}
 
-	var buf bytes.Buffer
-	buf.ReadFrom(r)
-	output := buf.String()
 	if !strings.Contains(output, "[dry-run]") {
 		t.Error("should show dry-run prefix")
 	}
@@ -107,22 +100,16 @@ func TestRunHookSteps_DryRun_ComposeUp(t *testing.T) {
 		{Step: "Start DB", ComposeUp: []string{"postgres"}},
 	}
 
-	old := os.Stderr
-	r, w, _ := os.Pipe()
-	os.Stderr = w
+	finish := startCapture(t, &os.Stderr)
 
 	err := runHookSteps(e, c, "before", "up", steps)
 
-	w.Close()
-	os.Stderr = old
+	output := finish()
 
 	if err != nil {
 		t.Fatalf("runHookSteps error: %v", err)
 	}
 
-	var buf bytes.Buffer
-	buf.ReadFrom(r)
-	output := buf.String()
 	if !strings.Contains(output, "[dry-run]") {
 		t.Error("should show dry-run prefix")
 	}
@@ -140,22 +127,17 @@ func TestRunHookSteps_DryRun_ComposeExec(t *testing.T) {
 		{Step: "Run migration", ComposeExec: "web rails db:migrate"},
 	}
 
-	old := os.Stderr
-	r, w, _ := os.Pipe()
-	os.Stderr = w
+	finish := startCapture(t, &os.Stderr)
 
 	err := runHookSteps(e, c, "after", "up", steps)
 
-	w.Close()
-	os.Stderr = old
+	out := finish()
 
 	if err != nil {
 		t.Fatalf("runHookSteps error: %v", err)
 	}
 
-	var buf bytes.Buffer
-	buf.ReadFrom(r)
-	if !strings.Contains(buf.String(), "[dry-run]") {
+	if !strings.Contains(out, "[dry-run]") {
 		t.Error("should show dry-run prefix for compose exec")
 	}
 }
@@ -172,22 +154,17 @@ func TestRunHookSteps_DryRun_ComposeRun(t *testing.T) {
 		{Step: "Seed DB", ComposeRun: "web rails db:seed"},
 	}
 
-	old := os.Stderr
-	r, w, _ := os.Pipe()
-	os.Stderr = w
+	finish := startCapture(t, &os.Stderr)
 
 	err := runHookSteps(e, c, "replace", "up", steps)
 
-	w.Close()
-	os.Stderr = old
+	out := finish()
 
 	if err != nil {
 		t.Fatalf("runHookSteps error: %v", err)
 	}
 
-	var buf bytes.Buffer
-	buf.ReadFrom(r)
-	if !strings.Contains(buf.String(), "[dry-run]") {
+	if !strings.Contains(out, "[dry-run]") {
 		t.Error("should show dry-run prefix for compose run")
 	}
 }
@@ -204,18 +181,13 @@ func TestRunHookSteps_WithNote(t *testing.T) {
 		{Step: "Info", Note: "Remember to check logs"},
 	}
 
-	old := os.Stderr
-	r, w, _ := os.Pipe()
-	os.Stderr = w
+	finish := startCapture(t, &os.Stderr)
 
 	runHookSteps(e, c, "after", "up", steps)
 
-	w.Close()
-	os.Stderr = old
+	out := finish()
 
-	var buf bytes.Buffer
-	buf.ReadFrom(r)
-	if !strings.Contains(buf.String(), "Remember to check logs") {
+	if !strings.Contains(out, "Remember to check logs") {
 		t.Error("should display note text")
 	}
 }
@@ -228,22 +200,16 @@ func TestRunHookSteps_RealExecution(t *testing.T) {
 		{Step: "Echo test", Run: "echo hello"},
 	}
 
-	old := os.Stderr
-	r, w, _ := os.Pipe()
-	os.Stderr = w
+	finish := startCapture(t, &os.Stderr)
 
 	err := runHookSteps(e, c, "before", "up", steps)
 
-	w.Close()
-	os.Stderr = old
-
-	var buf bytes.Buffer
-	buf.ReadFrom(r)
+	out := finish()
 
 	if err != nil {
 		t.Fatalf("runHookSteps error: %v", err)
 	}
-	if !strings.Contains(buf.String(), "hook:before:up") {
+	if !strings.Contains(out, "hook:before:up") {
 		t.Error("should show hook phase and command name")
 	}
 }
@@ -256,15 +222,11 @@ func TestRunHookSteps_FailingCommand(t *testing.T) {
 		{Step: "Fail", Run: "false"},
 	}
 
-	old := os.Stderr
-	_, w, _ := os.Pipe()
-	os.Stderr = w
+	finish := startCapture(t, &os.Stderr)
 
 	err := runHookSteps(e, c, "before", "up", steps)
 
-	w.Close()
-	os.Stderr = old
-
+	finish()
 	if err == nil {
 		t.Fatal("expected error from failing command")
 	}
@@ -285,18 +247,13 @@ func TestRunHookSteps_DefaultStepLabel(t *testing.T) {
 		{Run: "echo test"},
 	}
 
-	old := os.Stderr
-	r, w, _ := os.Pipe()
-	os.Stderr = w
+	finish := startCapture(t, &os.Stderr)
 
 	runHookSteps(e, c, "before", "up", steps)
 
-	w.Close()
-	os.Stderr = old
+	out := finish()
 
-	var buf bytes.Buffer
-	buf.ReadFrom(r)
-	if !strings.Contains(buf.String(), "step 1") {
+	if !strings.Contains(out, "step 1") {
 		t.Error("should use default 'step N' label when Step is empty")
 	}
 }

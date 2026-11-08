@@ -22,16 +22,25 @@ func captureStdout(t *testing.T, fn func()) string {
 	os.Stdout = w
 	defer func() { os.Stdout = old }()
 
+	// Drain while fn writes: once the pipe buffer fills (512 bytes on a Darwin host short of
+	// pipe memory), an unread pipe blocks the writer and the test hangs.
+	type result struct {
+		out []byte
+		err error
+	}
+	done := make(chan result, 1)
+	go func() { out, err := io.ReadAll(r); done <- result{out, err} }()
+
 	fn()
 
 	if err := w.Close(); err != nil {
 		t.Fatalf("close pipe: %v", err)
 	}
-	out, err := io.ReadAll(r)
-	if err != nil {
-		t.Fatalf("read pipe: %v", err)
+	res := <-done
+	if res.err != nil {
+		t.Fatalf("read pipe: %v", res.err)
 	}
-	return string(out)
+	return string(res.out)
 }
 
 // TestStepWithoutRunIsReported covers TASK-083: a hook or provision item written as

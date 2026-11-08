@@ -19,24 +19,9 @@ import (
 // DVA can read.)
 func captureOutput(t *testing.T, fn func()) string {
 	t.Helper()
-
-	oldStdout, oldStderr := os.Stdout, os.Stderr
-	r, w, err := os.Pipe()
-	if err != nil {
-		t.Fatalf("os.Pipe: %v", err)
-	}
-	os.Stdout = w
-	os.Stderr = w
-
+	finish := startCapture(t, &os.Stdout, &os.Stderr)
 	fn()
-
-	w.Close()
-	os.Stdout = oldStdout
-	os.Stderr = oldStderr
-
-	var buf bytes.Buffer
-	buf.ReadFrom(r)
-	return buf.String()
+	return finish()
 }
 
 func writeConfigMigrateFixture(t *testing.T, dir, content string) {

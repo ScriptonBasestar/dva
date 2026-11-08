@@ -24,13 +24,19 @@ func captureStderr(t *testing.T, fn func() error) (string, error) {
 	}
 	old := os.Stderr
 	os.Stderr = w
+	// Drain while fn writes: once the pipe buffer fills (512 bytes on a Darwin host short of
+	// pipe memory), an unread pipe blocks the writer and the test hangs.
+	done := make(chan string, 1)
+	go func() {
+		var buf bytes.Buffer
+		_, _ = io.Copy(&buf, r)
+		_ = r.Close()
+		done <- buf.String()
+	}()
 	runErr := fn()
 	_ = w.Close()
 	os.Stderr = old
-	var buf bytes.Buffer
-	_, _ = io.Copy(&buf, r)
-	_ = r.Close()
-	return buf.String(), runErr
+	return <-done, runErr
 }
 
 // TestUpDryRunSkipsEntryHealthWait covers the entry-level health wait in Orchestrator.Up.

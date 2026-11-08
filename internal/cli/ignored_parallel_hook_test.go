@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"bytes"
 	"os"
 	"strings"
 	"testing"
@@ -42,17 +41,11 @@ func TestHookStepsAnnounceIgnoredParallel(t *testing.T) {
 		{"no parallel step, no notice", plain, 0},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			old := os.Stderr
-			r, w, _ := os.Pipe()
-			os.Stderr = w
+			finish := startCapture(t, &os.Stderr)
 
 			err := runHookSteps(e, c, "before", "up", tc.steps)
 
-			w.Close()
-			os.Stderr = old
-			var buf bytes.Buffer
-			buf.ReadFrom(r)
-			out := buf.String()
+			out := finish()
 
 			if err != nil {
 				t.Fatalf("runHookSteps: %v", err)

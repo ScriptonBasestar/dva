@@ -291,18 +291,9 @@ func TestPrintProvisionTable(t *testing.T) {
 	}
 	keys := []string{"reset", "setup"}
 
-	old := os.Stdout
-	r, w, _ := os.Pipe()
-	os.Stdout = w
-
+	finish := startCapture(t, &os.Stdout)
 	printProvisionTable(provision, "setup", keys)
-
-	w.Close()
-	os.Stdout = old
-
-	buf := make([]byte, 4096)
-	n, _ := r.Read(buf)
-	output := string(buf[:n])
+	output := finish()
 
 	if !strings.Contains(output, "PROFILE") {
 		t.Errorf("output should contain header, got: %s", output)
@@ -321,18 +312,9 @@ func TestPrintProvisionJSON(t *testing.T) {
 	}
 	keys := []string{"setup"}
 
-	old := os.Stdout
-	r, w, _ := os.Pipe()
-	os.Stdout = w
-
+	finish := startCapture(t, &os.Stdout)
 	printProvisionJSON(nil, provision, "setup", keys)
-
-	w.Close()
-	os.Stdout = old
-
-	buf := make([]byte, 4096)
-	n, _ := r.Read(buf)
-	output := string(buf[:n])
+	output := finish()
 
 	if !strings.Contains(output, "profiles") {
 		t.Errorf("JSON output should contain profiles key, got: %s", output)

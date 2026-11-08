@@ -11,15 +11,19 @@ func captureStdout(fn func()) string {
 	old := os.Stdout
 	r, w, _ := os.Pipe()
 	os.Stdout = w
+	// Drain while fn writes; see captureStderr in orchestrator_dry_run_health_unix_test.go.
+	done := make(chan string, 1)
+	go func() {
+		var buf bytes.Buffer
+		buf.ReadFrom(r)
+		done <- buf.String()
+	}()
 
 	fn()
 
 	w.Close()
 	os.Stdout = old
-
-	var buf bytes.Buffer
-	buf.ReadFrom(r)
-	return buf.String()
+	return <-done
 }
 
 func TestStatusExitError_AllHealthy(t *testing.T) {
