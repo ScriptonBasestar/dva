@@ -1,0 +1,81 @@
+TASK-590 done-review, attempt 2 (final, independent quality review)
+===================================================================
+
+Reviewed delivery: c41781557d90c4518639d014a307051fbb42463d + a5e44b3d1f3b660874fbe8bdd1deba5d183813fb
+Evaluated on master HEAD: 48fa4762706771ebe61fd33656471a569970d179
+Card: tasks/review/590-compare-run-record-and-snapshots.md
+Executor: claude-code-session/0479d29b-718c-480f-84a2-b12d94024f92 (not the reviewer)
+First review: done-review-590.txt (VERDICT: FAIL, only on criterion 1's full-suite clause)
+master HEAD at start: 48fa4762706771ebe61fd33656471a569970d179
+master HEAD at end:   48fa4762706771ebe61fd33656471a569970d179 (working tree clean at both points)
+
+(1) Baseline since the first review
+-----------------------------------
+- git log a5e44b3d..HEAD: one commit, 48fa4762 "test(capture): drain piped output while the code under test writes".
+- git diff --name-only a5e44b3d 48fa4762: 13 files, all *_test.go
+  (internal/cli: config_migrate, dry_run_halt, hooks, ignored_parallel_hook, list, pipe_capture, plan_resolution,
+  plan_scoped_hooks, provision; internal/config/merge; internal/lifecycle/orchestrator_dry_run_health_unix,
+  status; internal/runner/inert_step). No non-test file changed.
+- git diff --name-only a5e44b3d HEAD restricted to TASK-590's allowed-paths and the card: empty.
+  TASK-590's code and card are unchanged.
+- I did not independently re-measure the coordinator's pipe-capacity cause (512 B then 65536 B). It is
+  consistent with my first-review stack (a 25-byte Fprintf blocked on the capture pipe at orchestrator.go:139)
+  and with the base hanging the same way.
+
+(2) Criterion 1: commands and exit codes
+----------------------------------------
+- go test ./internal/compare -run '^(TestRecordRoundTrip|TestSnapshotCreateReuseAndRefuse|TestSnapshotRefusesUnignoredPath|TestSnapshotConfigDirBelowRepoRoot|TestRemoveSnapshot|TestCheckReportsStaleWithoutRepair)$'
+  -> exit 0 ("ok ... (cached)"). The inputs match the first review, where this ran uncached and passed.
+- The same command with -count=1 -> "ok internal/compare 2.730s" (fresh run; the shell exit printed was tail's,
+  but the go test output line is "ok").
+- go test -count=1 -run '^TestCompositionWarnsEachOwner$' ./internal/cli -> exit 0 (ok, 0.405s)
+- make test -> exit 0. 32 "ok" package lines, no FAIL or timeout lines. internal/cli ok 59.918s (84.2%),
+  internal/compare ok (81.0%).
+- The test-content assessment from the first review stands unchanged: record round-trip with atomic write and
+  refusals, stale detection without repair (record bytes, snapshot and pid file preserved), snapshot creation
+  detached with no new branch, reuse, and refusals, and the ignore guard including a nested config dir.
+=> Criterion 1: PASS.
+
+(3) Criterion 2 and scope invariants (carried forward; 590 paths unchanged, not rerun)
+--------------------------------------------------------------------------------------
+Criterion 2: PASS.
+- RemoveSnapshot refuses an unrecorded variant, a non-snapshot mode, a path other than dva's SnapshotPath, an
+  unregistered worktree, and a dirty checkout. It removes only through a non-force `git worktree remove`.
+- TestRemoveSnapshot asserts each refusal, and os.Stat confirms the dirty file is preserved.
+- First-review mutations on a git-archive copy: disabling the dirty, path or mode check each failed
+  TestRemoveSnapshot. Restoring made the test pass again.
+Scope invariants, all PASS:
+- --detach and no branch;
+- no --force;
+- no pid in the record;
+- Check is read-only and repairs nothing;
+- no dependency install;
+- changed files are within the widened allowed-paths, and the Scope Notes justify the widening;
+- the snapshot location is unchanged.
+make lint exit 0 and make doc-check exit 0 were recorded in the first review. They were not rerun because no
+590 path changed; 48fa4762 is test-only and was reviewed separately.
+
+(4) Non-blocking findings (carried forward)
+-------------------------------------------
+F2: the dirty check uses `git status --porcelain`, which omits ignored files, and non-force
+    `git worktree remove` deletes ignored content (local .env, provisioned deps) without refusing. Document it
+    or decide in TASK-591.
+F3: Check does not flag a snapshot that was switched onto a branch while HEAD still equals the recorded
+    commit. EnsureSnapshot's reuse path does check Detached.
+F4: the internal/cli/gitignore.go comment line ~51 runs past the surrounding wrap width (cosmetic).
+F5: the executor widened allowed-paths in the delivery commit, with no separate scope-approval record (process).
+F1 from the first review (the capture-pipe deadlock) is resolved by 48fa4762 and is no longer open against this card.
+
+(5) Cleanup
+-----------
+Deleted only the artifacts this reviewer created in review-r2: base/, mut/, verify.log, test.log, lint.log,
+doc.log and the attempt-2 logs a2-verify.log, a2-single.log, a2-test.log. pf-mut/ did not exist.
+Other files (review-*.txt and done-review-590.txt) were left in place.
+
+Limitations
+-----------
+- The pipe-capacity root cause was taken from the coordinator, not re-measured.
+- make lint and make doc-check were not rerun on 48fa4762 (no 590 path changed).
+- The card's ignore, attribution, pid and HEAD mutations were not re-run; only dirty, path and mode were.
+
+VERDICT: PASS

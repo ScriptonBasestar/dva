@@ -1,0 +1,45 @@
+{
+  "verdict": "PASS",
+  "reviewer-execution": "claude-code-subagent/a0067aacc1fd13c8e",
+  "reviewer-grade": "strong",
+  "executor-execution": "claude-code-session/0479d29b-718c-480f-84a2-b12d94024f92",
+  "executor-grade": "strong",
+  "review-runtime-execution": "read-only on primary checkout master",
+  "reviewed-commit": "48fa4762706771ebe61fd33656471a569970d179",
+  "reviewed-at": "2026-11-08T17:10:54Z",
+  "raw-review": "tasks/done/evidence/TASK-590/done-review.txt",
+  "raw-review-sha256": "529dd9cdc55aef2153e97d3c40f3b4df0f6b0b98afc9becbd66b24ca96507ddc",
+  "checks": [
+    {
+      "command": "criterion 1 verify: go test ./internal/compare -run '^(TestRecordRoundTrip|TestSnapshotCreateReuseAndRefuse|TestSnapshotRefusesUnignoredPath|TestSnapshotConfigDirBelowRepoRoot|TestRemoveSnapshot|TestCheckReportsStaleWithoutRepair)$' (also -count=1)",
+      "result": "PASS"
+    },
+    {
+      "command": "make test",
+      "result": "PASS"
+    },
+    {
+      "command": "go test -count=1 -run '^TestCompositionWarnsEachOwner$' ./internal/cli",
+      "result": "PASS"
+    },
+    {
+      "command": "human criterion 2: TestRemoveSnapshot inspection plus dirty/path/mode mutations on a git archive copy (attempt 1, carried forward; no 590 path changed)",
+      "result": "PASS"
+    },
+    {
+      "command": "make lint; make doc-check (attempt 1 on a5e44b3d)",
+      "result": "PASS"
+    }
+  ],
+  "prior-attempts": [
+    {
+      "verdict": "FAIL",
+      "reviewed-commit": "a5e44b3d1f3b660874fbe8bdd1deba5d183813fb",
+      "reviewed-at": "2026-11-08T13:52:39Z",
+      "raw-review": "tasks/done/evidence/TASK-590/done-review-attempt1.txt",
+      "raw-review-sha256": "083217421a158b6f60b81a65aef7199aea01f738dfe80dd161b425d70d45f9a8",
+      "cause": "make test exit 2: internal/cli TestCompositionWarnsEachOwner hung to the 5m timeout, also on base 6730c1a0; test capture helpers read the pipe only after the function returned while host pipe capacity was 512 bytes. Repaired outside 590 by 48fa4762."
+    }
+  ],
+  "limitations": "Criterion 2 and scope invariants were not re-run in attempt 2 because no TASK-590 path changed between a5e44b3d and 48fa4762. make lint and make doc-check were not re-run on 48fa4762."
+}

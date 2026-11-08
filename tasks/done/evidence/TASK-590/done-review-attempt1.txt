@@ -1,0 +1,107 @@
+TASK-590 done-review (independent quality review)
+===================================================
+
+Reviewed commits: c41781557d90c4518639d014a307051fbb42463d (feat), a5e44b3d1f3b660874fbe8bdd1deba5d183813fb (card move)
+Base: 6730c1a0
+Card: tasks/review/590-compare-run-record-and-snapshots.md
+Executor: claude-code-session/0479d29b-718c-480f-84a2-b12d94024f92 (not the reviewer)
+master HEAD at start: a5e44b3d1f3b660874fbe8bdd1deba5d183813fb
+master HEAD at end:   a5e44b3d1f3b660874fbe8bdd1deba5d183813fb (working tree clean at both points)
+
+Commands run (primary checkout, read-only)
+------------------------------------------
+1. go test ./internal/compare -run '^(TestRecordRoundTrip|TestSnapshotCreateReuseAndRefuse|TestSnapshotRefusesUnignoredPath|TestSnapshotConfigDirBelowRepoRoot|TestRemoveSnapshot|TestCheckReportsStaleWithoutRepair)$'
+   -> exit 0 (also run with -v -count=1: all 6 PASS)
+2. make test -> exit 2
+   Only failure: internal/cli, "panic: test timed out after 5m0s", running test
+   TestCompositionWarnsEachOwner (4m53s). internal/compare ok. No other FAIL lines.
+3. make lint -> exit 0 (gofmt 0 unformatted, archcheck 0 violations, ci-lint 0 issues)
+4. make doc-check -> exit 0 (ciparity OK)
+5. go test -race -count=1 -timeout 5m -run '^TestCompositionWarnsEachOwner$' ./internal/cli (HEAD) -> FAIL, timed out at 300s
+6. Same test on base 6730c1a0, exported with git archive to scratchpad/review-r2/base, -timeout 4m -> FAIL, timed out, same stack
+   (orchestrator.go:139 Fprintf to os.Stderr blocked, under captureStderr in plan_scoped_hooks_test.go)
+7. Mutation checks on a git-archive copy of c4178155 (scratchpad/review-r2/mut), running go test -run '^TestRemoveSnapshot$':
+   a. dirty check disabled (`if false && status != ""`) -> FAIL (test expected "has uncommitted or untracked changes";
+      git's non-force `worktree remove` refused on its own, so nothing was deleted either way)
+   b. recorded-path check disabled -> FAIL
+   c. mode check disabled -> FAIL
+   After restoring, the copy matched the c4178155 snapshot.go byte for byte, and go test ./internal/compare -> ok.
+
+Per-criterion verdicts
+----------------------
+Criterion 1 (record round-trip, stale detection, snapshot create/reuse/refuse pinned by temp-repo tests, AND full test suite passes)
+  - verify binding: exit 0. PASS for the bound command.
+  - Test content checked against the claim:
+    * TestRecordRoundTrip: write/read, no leftover temp file (atomic rename), version mismatch,
+      name mismatch, path-traversal names refused. Pins the round-trip.
+    * TestCheckReportsStaleWithoutRepair: commit mismatch, dead pid, deleted checkout each stale with reasons;
+      live pid not stale; record bytes unchanged, stale snapshot and pid file still present. Pins "no silent repair".
+    * TestSnapshotCreateReuseAndRefuse: detached HEAD (symbolic-ref fails), branch list unchanged, reuse with
+      matching prev, refusal without/with mismatched attribution, refusal when ref moved, bad ref,
+      non-worktree dir refused and its file preserved.
+    * TestSnapshotRefusesUnignoredPath / TestSnapshotConfigDirBelowRepoRoot: ignore guard (including the nested
+      config dir case) and ConfigDir derivation.
+  - "전체 테스트가 통과한다": NOT reproduced. make test exit 2 (internal/cli timeout).
+    Attribution: the same test hangs on base 6730c1a0 in this environment (command 6), and the hanging code path
+    (lifecycle orchestrator + cli captureStderr) is not touched by this delivery. The failure is pre-existing and
+    environment-dependent, not caused by TASK-590. The card's "make test exit 0" observation does not reproduce here.
+  => Verdict: FAIL/blocked on the full-suite clause (required evidence missing in the reviewer's environment);
+     the delivery's own tests pass.
+
+Criterion 2 (human: dirty snapshot and unrecorded path refused, nothing deleted)
+  - snapshot.go RemoveSnapshot refuses, in order: variant not in record; mode != snapshot; recorded path not
+    equal to dva's SnapshotPath; path not a registered worktree; non-empty `git status --porcelain`. It removes
+    only through `git worktree remove -- <path>`, without --force.
+  - TestRemoveSnapshot asserts each refusal message, and os.Stat confirms the dirty file survives. A clean
+    snapshot is removed and deregistered, and a second removal is refused.
+  - Mutations a-c above each make the test fail, so the test really pins those checks.
+  => Verdict: PASS.
+
+Scope invariants
+----------------
+- No branch creation: `git worktree add --detach -- <path> <commit>` (snapshot.go). The test asserts detached
+  HEAD and an unchanged branch list. PASS.
+- No force removal: no --force/-f anywhere in internal/compare (grep). PASS.
+- No pid in record: the Record/Variant structs have no pid field. Check reads <ConfigDir>/.sb/dva/pids/*.pid. PASS.
+- No silent stale repair: Check only reads, and the test asserts record bytes and files are unchanged. PASS.
+- No dependency installation: none in the package (grep "install" empty). PASS.
+- Changed files (6730c1a0..a5e44b3d): ARCHITECTURE.md, internal/cli/gitignore.go, internal/cli/gitignore_test.go,
+  internal/compare/{compare_test,git,record,snapshot,state}.go, internal/config/constants.go,
+  tools/archcheck/main.go, and the card itself. All are within the widened allowed-paths. PASS.
+- Scope Notes justify the widening: archcheck needs a declared import set for every internal package, and
+  TestDvaTransientProbesCoverEveryWriter needs a probe/class per .sb/dva writer. Both are mechanical. The
+  ARCHITECTURE.md entry is a one-paragraph ownership note. Acceptable. Note: the widening was written into the
+  card frontmatter by the executor in the same feature commit; the original allowed-paths were
+  [internal/compare/, internal/config/constants.go, internal/exec/]. The card does not record a separate approval.
+- Snapshot location boundary: unchanged (.sb/dva/variants/). Scope Notes state no watcher/runner case was found. PASS.
+
+Findings
+--------
+F1 (blocking for this criterion gate; not a defect of this delivery): make test exits 2 in the reviewer
+   environment because internal/cli TestCompositionWarnsEachOwner deadlocks. The same hang reproduces on base 6730c1a0.
+   Cause (inferred from stack): captureStderr (internal/cli/plan_scoped_hooks_test.go:334-352) reads the pipe only
+   after fn returns, so once the stderr output exceeds the pipe buffer the writer blocks forever
+   (orchestrator.go:139 Fprintf blocked). Why this environment produces that much stderr is not established.
+   Lead only: SOPS_AGE_KEY_FILE is set in this shell, and the test exercises sops_source warnings. Not verified.
+   This should go to findings, separate from TASK-590.
+F2 (non-blocking): the "dirty" check uses `git status --porcelain`, which omits ignored files, and non-force
+   `git worktree remove` deletes ignored files. Ignored content inside a snapshot (for example a local .env or
+   provisioned dependencies) is removed without a refusal. This is consistent with git's own definition of a
+   clean worktree, but neither the card nor the RemoveSnapshot doc spells it out. TASK-591 should decide whether
+   to surface it.
+F3 (non-blocking): Check does not flag a snapshot that is no longer detached (someone ran `git switch` inside it)
+   when HEAD still equals the recorded commit. EnsureSnapshot's reuse path does check Detached. Minor asymmetry.
+F4 (non-blocking, cosmetic): internal/cli/gitignore.go comment line ~51 runs past the surrounding wrap width.
+F5 (process, non-blocking): the allowed-paths widening was made by the executor in the delivery commit. It is
+   justified by the Scope Notes, but there is no separate scope-approval record.
+
+Limitations
+-----------
+- Mutations were run on a git-archive copy, not the primary checkout. The ignore, attribution, pid and HEAD
+  mutations claimed on the card were not re-run; only dirty, path and mode were.
+- The root cause of F1 in this environment was not isolated (no debug instrumentation, read-only mandate).
+- make test was run once; part of it overlapped with the mutation-copy test runs. The isolated reruns
+  (commands 5 and 6) confirm the hang does not depend on that load.
+- make generate was not re-run.
+
+VERDICT: FAIL

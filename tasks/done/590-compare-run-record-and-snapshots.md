@@ -5,7 +5,11 @@ type: feature
 priority: P2
 effort: L
 exec-tier: strong
-status: review
+status: done
+quality-review: pass
+quality-reviewed-at: 2026-11-08T17:10:54Z
+quality-review-evidence: tasks/done/evidence/TASK-590/independent-review.json
+quality-review-receipt: tasks/done/evidence/TASK-590/done-review-fb7dda8bcf8b5ded5b152644abdf8a6dbe48e624df2903bc51cfe6c50c2a82bd.json
 created: 2026-11-06
 depends-on: [TASK-589]
 allowed-paths: [internal/compare/, internal/config/constants.go, internal/exec/, tools/archcheck/main.go, internal/cli/gitignore.go, internal/cli/gitignore_test.go, ARCHITECTURE.md]
@@ -49,3 +53,13 @@ allowed-paths: [internal/compare/, internal/config/constants.go, internal/exec/,
 - `ARCHITECTURE.md`: 새 패키지의 소유 경계를 한 단락으로 기록했다.
 
 snapshot 위치 결정 경계: Go 도구는 점(`.`) 디렉터리를 건너뛰므로 `./...`은 `.sb/dva/variants/`의 중첩 체크아웃을 읽지 않는다. 다른 감시기·러너 사례는 확인하지 못했다. 위치는 바꾸지 않았다.
+
+## Review Attempts
+
+- 2026-11-08T13:52:39Z — first formal done-review: independent strong `claude-code-subagent/a0067aacc1fd13c8e`, executor strong `claude-code-session/0479d29b-718c-480f-84a2-b12d94024f92`. Verdict FAIL at master `a5e44b3d1f3b660874fbe8bdd1deba5d183813fb`. Criterion 1's verify command and criterion 2 pass, and every scope invariant holds. `make test` exited 2, though: internal/cli `TestCompositionWarnsEachOwner` hung until the 5m timeout. The same failure occurs on base `6730c1a0` without this change. Cause: the test capture helpers read the pipe only after the function returned, and host pipe capacity was down to 512 bytes. Evidence: `tasks/done/evidence/TASK-590/done-review-attempt1.txt`. Repair approach: a test-helper-only fix outside this card's paths, integrated as `48fa4762`. No TASK-590 path changed. Next transition: second review.
+- 2026-11-08T17:10:54Z — second and final done-review: the same independent reviewer and executor. Verdict PASS at master `48fa4762706771ebe61fd33656471a569970d179`. The criterion 1 verify command (also with `-count=1`), `TestCompositionWarnsEachOwner` and `make test` exit 0. Criterion 2 and the scope invariants carry forward from the first review, since no TASK-590 path changed. Non-blocking findings:
+  - The dirty check skips ignored files, which `git worktree remove` deletes.
+  - `Check` does not report a snapshot switched onto a branch at the recorded commit.
+  - allowed-paths were widened inside the feature commit.
+
+  Evidence: `tasks/done/evidence/TASK-590/independent-review.json`. Next transition: done.
