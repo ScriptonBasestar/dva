@@ -751,8 +751,8 @@ provision 마커는 plan이 아니라 provision 프로파일 단위라서, `--pu
 
 같은 plan을 여러 ref에서 동시에 띄워 나란히 보고 내립니다. 설계는
 [docs/75-variant-comparison-design.md](docs/75-variant-comparison-design.md)입니다.
-이 빌드는 **snapshot 모드**(ref를 detached 체크아웃으로 만듦)만 시작합니다.
-`worktree:` 같은 provider 대상은 `up` 전에 거부됩니다.
+이 빌드는 **snapshot 모드**(ref를 detached 체크아웃으로 만듦)와 **worktree 모드**(이미 있는 작업
+worktree를 `worktree:<branch>`로 지정)를 시작합니다. 한 `up` 안에서 섞어 쓸 수 있습니다.
 
 ```yaml
 compare:
@@ -767,6 +767,7 @@ compare:
 
 ```bash
 dva compare up layout a=main b=feat/layout-a   # 시작 (인자 생략 시 variants:)
+dva compare up layout a=main b=worktree:feat/x # b는 feat/x가 체크아웃된 기존 작업 worktree
 dva compare up layout --dry-run                # 해석 결과만 표시, 생성·시작 없음
 dva compare status layout --json               # 읽기 전용: 출처·커밋·포트·URL·pid·로그 경로·stale·drift
 dva compare down layout b                      # b만 내림 (shared는 남음)
@@ -780,8 +781,14 @@ dva compare down layout                        # 전부 내림, 마지막에 sha
 - 일부 실패 시 시작된 비교안은 그대로 두고 종료 코드 1로 끝나며, 실패한 비교안·시도하지 않은 비교안과
   되돌릴 정확한 `dva compare down …` 명령(`next`)을 출력합니다. 자동 되돌리기는 없습니다.
   같은 `up`을 다시 부르면 실행 중이 아닌 비교안만 시작합니다.
-- `down`은 비교안의 `per_variant`를 먼저 멈춘 뒤 체크아웃을 지웁니다. 커밋하지 않은 변경이나 추적 안 되는
-  파일이 있는 체크아웃은 지우지 않고 알립니다(entries는 이미 멈춘 상태). 마지막 비교안이 내려가야 `shared`를 멈춥니다.
+- `worktree:<branch>`는 `git worktree list`에서 그 브랜치가 체크아웃된 worktree를 찾습니다(provider가
+  정한 대상 ID. 지금은 git provider뿐). dva는 그 worktree를 만들거나 지우지 않고 그 설정 디렉터리에서
+  프로세스만 시작·중지합니다. 모르는 브랜치, 여러 후보, 조회 실패는 **아무것도 시작하지 않고** 실패하며
+  호출한 체크아웃으로 대신하지 않습니다. `status`는 provider를 다시 조회해 경로가 바뀌었거나 사라진 worktree를
+  stale로 알립니다. 작업 중 새 커밋이 생겨도 stale이나 drift가 아닙니다.
+- `down`은 비교안의 `per_variant`를 먼저 멈춘 뒤 snapshot 체크아웃을 지웁니다. worktree 비교안은 프로세스만
+  멈추고 worktree와 브랜치는 그대로 둡니다. 커밋하지 않은 변경이나 추적 안 되는
+  파일이 있는 snapshot은 지우지 않고 알립니다(entries는 이미 멈춘 상태). 마지막 비교안이 내려가야 `shared`를 멈춥니다.
 - `--json`: 성공은 `{action, compare, plan, shared, variants[], next}` 한 문서입니다. 실패는 기존 실패 envelope에
   `error.code`(`compare_preflight_failed` 시작 전 실패, `compare_partial_failure` 일부 시작 후 실패,
   `compare_down_failed` 정리 미완료)와 같은 형태의 `error.result`가 붙습니다. 비교안 결과는

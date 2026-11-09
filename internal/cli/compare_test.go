@@ -297,7 +297,8 @@ func TestCompareUpPreflightCreatesNothing(t *testing.T) {
 		{"short port list", nil, []string{"a=main", "b=other", "c=main", "d=other"}, "ports"},
 		{"env override", func(t *testing.T, ports []int) { t.Setenv("WEB_PORT", "1") }, []string{"a=main"}, "environment sets WEB_PORT"},
 		{"bad ref", nil, []string{"a=no-such-ref"}, "no-such-ref"},
-		{"provider target", nil, []string{"a=worktree:TASK-1"}, "provider target"},
+		{"unknown worktree target", nil, []string{"a=worktree:TASK-1"}, `no worktree has branch "TASK-1"`},
+		{"unknown provider", nil, []string{"a=ce:TASK-1"}, "provider target dva does not know"},
 		{"bad name", nil, []string{"../x=main"}, "must start with a letter"},
 		{"duplicate", nil, []string{"a=main", "a=other"}, "given twice"},
 	}

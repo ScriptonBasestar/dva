@@ -29,6 +29,11 @@ detached snapshot under .sb/dva/variants/ and starts the declaration's per_varia
 there, with the variant's own ports. The shared entries start once, from this checkout.
 Without pairs, up uses the declaration's variants:.
 
+A variant source of worktree:<branch> uses the existing work worktree that has that branch
+checked out. dva never creates or removes it: up starts the per_variant entries there and down
+stops them, leaving the worktree and branch in place. An unknown branch, several candidates or a
+failed lookup start nothing.
+
 up never moves a busy port and never rolls back: a variant that fails is reported with the
 commands to continue or undo, and what already started keeps running. Run up again to start
 only the variants that are missing. down removes a snapshot only when it is clean.
@@ -58,7 +63,7 @@ var compareStatusCmd = &cobra.Command{
 var compareDownCmd = &cobra.Command{
 	Use:   "down <name> [variant ...]",
 	Short: "Stop variants and reclaim their snapshot checkouts",
-	Long:  "Stop each variant\x27s per_variant entries, then remove its snapshot checkout. A snapshot with\nuncommitted or untracked changes is kept and reported. With no variant names it takes every\nvariant down and then stops the shared entries.",
+	Long:  "Stop each variant\x27s per_variant entries, then remove its snapshot checkout. A worktree:\nvariant only has its entries stopped; its worktree stays. A snapshot with\nuncommitted or untracked changes is kept and reported. With no variant names it takes every\nvariant down and then stops the shared entries.",
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runCompareDown(compareContext(cmd), mustLoadConfig(), args[0], args[1:])
@@ -136,9 +141,11 @@ func parseVariantSpecs(compareName string, cmp *config.CompareConfig, args []str
 			return nil, fmt.Errorf("variant name %q must start with a letter or digit and use only letters, digits, - and _", s.Name)
 		case seen[s.Name]:
 			return nil, fmt.Errorf("variant %q is given twice", s.Name)
-		case strings.Contains(s.Source, ":"):
+		case compare.IsTargetSource(s.Source):
 			// A git ref cannot contain ":", so this is a provider target such as worktree:ID.
-			return nil, fmt.Errorf("variant %s: source %q names a provider target; this build starts snapshot variants from a git ref only", s.Name, s.Source)
+			if _, err := compare.TargetID(s.Source); err != nil {
+				return nil, fmt.Errorf("variant %s: %w", s.Name, err)
+			}
 		}
 		seen[s.Name] = true
 	}

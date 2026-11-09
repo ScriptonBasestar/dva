@@ -46,7 +46,11 @@ func Check(ctx context.Context, configDir string, rec *Record, perVariant []stri
 		case !info.IsDir():
 			reasons = append(reasons, fmt.Sprintf("checkout %s is not a directory", v.Path))
 		}
-		if wt := findWorktree(list, v.Path); wt == nil {
+		if v.Mode == ModeWorktree {
+			// The provider is asked again: a work worktree is not dva's, so its path or branch
+			// may have changed since up.
+			reasons = append(reasons, targetDrift(ctx, configDir, v)...)
+		} else if wt := findWorktree(list, v.Path); wt == nil {
 			reasons = append(reasons, fmt.Sprintf("%s is not a git worktree of this repository", v.Path))
 		} else if wt.Head != v.Commit {
 			reasons = append(reasons, fmt.Sprintf("checkout is at %s, record says %s", wt.Head, v.Commit))

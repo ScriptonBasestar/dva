@@ -50,10 +50,12 @@ func runCompareStatus(ctx context.Context, c *config.Config, name string) error 
 		if s, ok := stale[v.Name]; ok {
 			row.Stale, row.Reasons = s.Stale, s.Reasons
 		}
-		if now, err := compare.ResolveRef(ctx, dir, v.Source); err != nil {
-			row.Drift = &compareDrift{Error: err.Error()}
-		} else if now != v.Commit {
-			row.Drift = &compareDrift{Commit: now}
+		if v.Mode == compare.ModeSnapshot {
+			if now, err := compare.ResolveRef(ctx, dir, v.Source); err != nil {
+				row.Drift = &compareDrift{Error: err.Error()}
+			} else if now != v.Commit {
+				row.Drift = &compareDrift{Commit: now}
+			}
 		}
 		if len(cmp.PerVariant) > 0 && pathExists(v.ConfigDir) {
 			if obs, err := compareHost.Status(ctx, v.ConfigDir, cmp.Plan, varsOf(v.Ports), cmp.PerVariant); err != nil {

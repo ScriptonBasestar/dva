@@ -19,6 +19,8 @@ type upVariant struct {
 	spec   variantSpec
 	commit string
 	ports  map[string]int
+	// target is the worktree a worktree: source resolved to; nil for a snapshot variant.
+	target *compare.Variant
 	// skip is set when the record shows this variant running from the same source and commit.
 	skip bool
 }
@@ -86,16 +88,27 @@ func resolveUp(ctx context.Context, dir, name string, cmp *config.CompareConfig,
 	var problems, fresh []string
 	var variants []*upVariant
 	for _, s := range specs {
-		commit, err := compare.ResolveRef(ctx, dir, s.Source)
-		if err != nil {
-			problems = append(problems, fmt.Sprintf("variant %s: %v", s.Name, err))
-			continue
+		v := &upVariant{spec: s}
+		mode := compare.ModeSnapshot
+		if compare.IsTargetSource(s.Source) {
+			t, err := compare.ResolveTarget(ctx, dir, s.Source)
+			if err != nil {
+				problems = append(problems, fmt.Sprintf("variant %s: %v", s.Name, err))
+				continue
+			}
+			mode, v.commit, v.target = compare.ModeWorktree, t.Commit, &t
+		} else {
+			commit, err := compare.ResolveRef(ctx, dir, s.Source)
+			if err != nil {
+				problems = append(problems, fmt.Sprintf("variant %s: %v", s.Name, err))
+				continue
+			}
+			v.commit = commit
 		}
-		v := &upVariant{spec: s, commit: commit}
 		if prev := rec.Variant(s.Name); prev != nil {
-			if prev.Mode != compare.ModeSnapshot || prev.Source != s.Source || prev.Commit != commit {
+			if changedSource(prev, v, mode) {
 				problems = append(problems, fmt.Sprintf("variant %s is already started from %s at %s, not %s at %s; run `%s` first",
-					s.Name, prev.Source, shortCommit(prev.Commit), s.Source, shortCommit(commit), downCommand(name, []string{s.Name})))
+					s.Name, prev.Source, shortCommit(prev.Commit), s.Source, shortCommit(v.commit), downCommand(name, []string{s.Name})))
 				continue
 			}
 			v.ports = prev.Ports
@@ -114,9 +127,15 @@ func resolveUp(ctx context.Context, dir, name string, cmp *config.CompareConfig,
 		if p, ok := assigned[v.spec.Name]; ok {
 			v.ports = p
 		}
-		path, _ := compare.SnapshotPath(dir, name, v.spec.Name)
+		path, mode := "", compare.ModeWorktree
+		if v.target != nil {
+			path = v.target.Path
+		} else {
+			path, _ = compare.SnapshotPath(dir, name, v.spec.Name)
+			mode = compare.ModeSnapshot
+		}
 		row := compareVariantResult{
-			Name: v.spec.Name, Mode: compare.ModeSnapshot, Source: v.spec.Source,
+			Name: v.spec.Name, Mode: mode, Source: v.spec.Source,
 			Commit: v.commit, Path: path, Ports: v.ports, Outcome: outcomePlanned,
 		}
 		if v.skip {
@@ -229,9 +248,17 @@ func startUp(ctx context.Context, dir, name string, cmp *config.CompareConfig, r
 // The record is written before the entries start, so a variant whose start fails is still
 // something `down` can reclaim.
 func startVariant(ctx context.Context, dir, name string, cmp *config.CompareConfig, rec *compare.Record, v *upVariant, row *compareVariantResult, wait bool) error {
-	snap, _, err := compare.EnsureSnapshot(ctx, dir, name, v.spec.Name, v.spec.Source, rec.Variant(v.spec.Name))
-	if err != nil {
-		return err
+	var snap compare.Variant
+	if v.target != nil {
+		// A work worktree already exists and is not dva's to create.
+		snap = *v.target
+		snap.Name = v.spec.Name
+	} else {
+		var err error
+		snap, _, err = compare.EnsureSnapshot(ctx, dir, name, v.spec.Name, v.spec.Source, rec.Variant(v.spec.Name))
+		if err != nil {
+			return err
+		}
 	}
 	snap.Ports = v.ports
 	row.Path, row.ConfigDir = snap.Path, snap.ConfigDir
@@ -343,4 +370,17 @@ func variantRunning(ctx context.Context, cmp *config.CompareConfig, v *compare.V
 		}
 	}
 	return true
+}
+
+// changedSource reports whether the recorded variant prev was started from something other than
+// what v now resolves to. A snapshot is pinned to a commit, so a moved ref is a change; a work
+// worktree is edited and committed to, so only its identity (mode, source, path) counts.
+func changedSource(prev *compare.Variant, v *upVariant, mode string) bool {
+	if prev.Mode != mode || prev.Source != v.spec.Source {
+		return true
+	}
+	if v.target != nil {
+		return prev.Path != v.target.Path
+	}
+	return prev.Commit != v.commit
 }

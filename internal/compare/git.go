@@ -32,6 +32,9 @@ type worktree struct {
 	Path     string
 	Head     string
 	Detached bool
+	// Branch is the short branch name checked out there; empty when detached.
+	Branch string
+	Bare   bool
 }
 
 // listWorktrees returns every worktree of the repository dir belongs to, the main one included.
@@ -51,6 +54,10 @@ func listWorktrees(ctx context.Context, dir string) ([]worktree, error) {
 				wt.Head = strings.TrimPrefix(line, "HEAD ")
 			case line == "detached":
 				wt.Detached = true
+			case line == "bare":
+				wt.Bare = true
+			case strings.HasPrefix(line, "branch refs/heads/"):
+				wt.Branch = strings.TrimPrefix(line, "branch refs/heads/")
 			}
 		}
 		if wt.Path != "" {

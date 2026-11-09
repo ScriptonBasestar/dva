@@ -128,6 +128,9 @@ func downVariant(ctx context.Context, dir string, cmp *config.CompareConfig, rec
 			return fmt.Errorf("stop entries: %w", err)
 		}
 	}
+	if v.Mode == compare.ModeWorktree {
+		return nil // a work worktree is the provider's; only its processes were dva's
+	}
 	if !pathExists(v.Path) {
 		return nil // already gone; only the record is left to drop
 	}
