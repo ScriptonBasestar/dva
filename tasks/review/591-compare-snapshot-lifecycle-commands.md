@@ -5,7 +5,7 @@ type: feature
 priority: P2
 effort: L
 exec-tier: strong
-status: todo
+status: review
 created: 2026-11-06
 depends-on: [TASK-590]
 allowed-paths: [internal/cli/, internal/compare/, USAGE.md, docs/75-variant-comparison-design.md]
