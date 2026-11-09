@@ -35,6 +35,9 @@ func errorCode(err error) string {
 	if be, ok := errors.AsType[*envBridgeError](err); ok {
 		return be.code
 	}
+	if ce, ok := errors.AsType[*compareError](err); ok {
+		return ce.code
+	}
 	return ""
 }
 

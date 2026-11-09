@@ -459,6 +459,11 @@ func emitFailureJSONFor(err error) {
 	if code := errorCode(err); code != "" {
 		envelope["code"] = code
 	}
+	// A compare failure carries the whole per-variant result: what started, what did not, and
+	// the commands to continue or undo. It is one more optional key under error.
+	if ce, ok := errors.AsType[*compareError](err); ok && ce.result != nil {
+		envelope["result"] = ce.result
+	}
 	_ = output.PrintJSON(map[string]any{"error": envelope})
 }
 

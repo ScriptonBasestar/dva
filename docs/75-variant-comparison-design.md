@@ -1,7 +1,10 @@
 # 비교안 동시 실행 설계
 
-상태: **채택(2026-11-06), 미구현**. [ROADMAP.md](../ROADMAP.md)가 채택했고 실행 카드로 나눴다.
-이 문서는 명령이나 설정 필드가 지금 동작한다고 선언하지 않는다.
+상태: **채택(2026-11-06), 부분 구현**. [ROADMAP.md](../ROADMAP.md)가 채택했고 실행 카드로 나눴다.
+구현된 범위: `compare:` 선언 검증(TASK-589), 기록·snapshot 체크아웃·stale 검증(TASK-590),
+snapshot 모드 `dva compare up|status|down`(TASK-591, 사용법은 [USAGE.md](../USAGE.md)).
+아직 동작하지 않는 범위: worktree 모드(TASK-592)와 config 모드(TASK-593). 아래 설계 중
+그 두 모드를 말하는 부분은 선언일 뿐 이 빌드가 실행하지 않는다.
 
 ## 문제
 

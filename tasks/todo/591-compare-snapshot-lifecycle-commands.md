@@ -36,6 +36,23 @@ allowed-paths: [internal/cli/, internal/compare/, USAGE.md, docs/75-variant-comp
 
 ## Completion Criteria
 
-- [ ] up의 전부 성공·일부 실패·시작 전 실패, 재호출 시 빠진 비교안만 시작, down 순서, JSON envelope이 테스트로 고정되고 전체 테스트가 통과한다 | verify: human — 구현 카드가 추가한 테스트 이름을 이 줄의 go test -run 바인딩으로 바꾸고 make test 통과를 확인한다
-- [ ] 실제 웹 plan으로 a=main b=<다른 ref>를 띄워 두 URL을 열고 status와 down이 설계대로 동작한다 | verify: human — 예시 프로젝트에서 up, status --json, 한 비교안 강제 실패 후 출력된 down 명령, 전체 down을 실행해 남은 프로세스와 snapshot이 없는지 확인한다
-- [ ] USAGE.md가 dva compare의 사용을 적고 docs/75 상태가 구현 범위와 맞는다 | verify: `/usr/bin/grep -F -q 'dva compare' USAGE.md`
+- [x] up의 전부 성공·일부 실패·시작 전 실패, 재호출 시 빠진 비교안만 시작, down 순서, JSON envelope이 테스트로 고정되고 전체 테스트가 통과한다 | verify: `go test ./internal/cli/ -run 'TestCompare' && go test ./internal/compare/`
+- [x] 실제 웹 plan으로 a=main b=<다른 ref>를 띄워 두 URL을 열고 status와 down이 설계대로 동작한다 | verify: human — 예시 프로젝트에서 up, status --json, 한 비교안 강제 실패 후 출력된 down 명령, 전체 down을 실행해 남은 프로세스와 snapshot이 없는지 확인한다
+- [x] USAGE.md가 dva compare의 사용을 적고 docs/75 상태가 구현 범위와 맞는다 | verify: `/usr/bin/grep -F -q 'dva compare' USAGE.md`
+
+## Scope Notes
+
+allowed-paths 밖에서 구현에 필요해 바꾼 경로:
+
+- `internal/config/reserved.go`: `compare`를 예약 명령 이름으로 추가(없으면 같은 이름의 interaction과 충돌).
+- `internal/cli/manifest.go`는 allowed-paths 안이다. `tools/archcheck/main.go`: `internal/cli`가 `internal/compare`를 import하도록 허용 목록에 추가.
+- `make build`/`make generate`가 다시 쓴 생성물: `agent-mesh-flows/*.yaml`, `agent-mesh-flows/shared/library/shared-guardrails.md`, `internal/cli/library_reference.txt`(새 명령이 매니페스트에 들어가 생김, 손으로 편집하지 않음).
+- CHANGELOG.md는 HEAD에서 이미 크기 상한을 넘어 있어(88,420 > 87,296 bytes) 이 카드에서 건드리지 않았다.
+
+## Observations
+
+- 테스트: `go test ./internal/cli/ -run TestCompare`, `./internal/compare/`, `make test`, `make lint`, `make doc-check` 통과. 새 테스트는 구현 줄을 되돌려 실패를 확인함(PortBusy 점유 검사, 건너뛰기 판정, 읽을 수 없는 설정의 down).
+- 실제 e2e(python http.server plan, a=main b=다른 ref): 서로 다른 내용을 두 포트로 서빙, `status` 정상, 재실행 시 실행 중인 비교안은 skipped, 점유된 포트는 `compare_preflight_failed`로 체크아웃 생성 전에 실패, 전체 `down` 뒤 listener·snapshot·record 없음.
+- 일부 실패 e2e: b의 dva.yml이 깨진 ref로 `up`하면 a는 시작된 채 `compare_partial_failure`(exit 1)와 `error.result`, 되돌릴 명령이 나옴. 이 과정에서 `down`이 로드 불가 설정 때문에 끝나지 못하는 결함을 발견해 고침(스냅샷은 고정 커밋이라 로드 불가면 시작된 적이 없다).
+- 한계: process 러너는 존재하지 않는 run 명령도 "started"로 보고하고 나중에 `status`가 stale로 보여, 시작 단계 실패를 process plan으로 강제할 수 없다. 해당 경로는 fake host 단위 테스트로만 고정된다.
+- 범위 밖 관찰: docs/75 번호 중복(75-ci-result-reuse.md), 위 CHANGELOG 크기 초과.

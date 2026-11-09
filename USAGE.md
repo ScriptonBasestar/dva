@@ -747,6 +747,46 @@ provision 마커는 plan이 아니라 provision 프로파일 단위라서, `--pu
 - 기본은 `plans.<name>` 안에 `environment`, `site`를 정의
 - 추가 일회성 조정이 필요하면 `--var KEY=VALUE` 같은 명시적 override 사용
 
+### 비교안 동시 실행 (`dva compare`)
+
+같은 plan을 여러 ref에서 동시에 띄워 나란히 보고 내립니다. 설계는
+[docs/75-variant-comparison-design.md](docs/75-variant-comparison-design.md)입니다.
+이 빌드는 **snapshot 모드**(ref를 detached 체크아웃으로 만듦)만 시작합니다.
+`worktree:` 같은 provider 대상은 `up` 전에 거부됩니다.
+
+```yaml
+compare:
+  layout:
+    plan: web-dev
+    shared: [api, db]        # 호출한 체크아웃에서 한 번만 시작
+    per_variant: [web]       # 비교안마다 자기 체크아웃에서 시작
+    ports:
+      WEB_PORT: [3001, 3002, 3003]   # i번째 비교안이 i번째 값을 받는다
+    variants: { a: main, b: feat/layout-a }   # 인자를 생략할 때의 기본값
+```
+
+```bash
+dva compare up layout a=main b=feat/layout-a   # 시작 (인자 생략 시 variants:)
+dva compare up layout --dry-run                # 해석 결과만 표시, 생성·시작 없음
+dva compare status layout --json               # 읽기 전용: 출처·커밋·포트·URL·stale·drift
+dva compare down layout b                      # b만 내림 (shared는 남음)
+dva compare down layout                        # 전부 내림, 마지막에 shared
+```
+
+- 체크아웃은 `.sb/dva/variants/<이름>/<비교안>/`, 기록은 `.sb/dva/compare/<이름>.json`에 둡니다.
+  기록에는 pid가 없고, `status`가 매번 파일시스템·Git·프로세스로 다시 검증합니다.
+- 포트는 목록 순서대로 배정되고 한번 받은 비교안은 재호출해도 유지됩니다. 점유된 포트,
+  짧은 목록, 환경변수가 포트 변수를 덮어쓰는 경우는 **아무것도 만들기 전에** 실패합니다. dva는 포트를 옮기지 않습니다.
+- 일부 실패 시 시작된 비교안은 그대로 두고 종료 코드 1로 끝나며, 실패한 비교안·시도하지 않은 비교안과
+  되돌릴 정확한 `dva compare down …` 명령(`next`)을 출력합니다. 자동 되돌리기는 없습니다.
+  같은 `up`을 다시 부르면 실행 중이 아닌 비교안만 시작합니다.
+- `down`은 비교안의 `per_variant`를 먼저 멈춘 뒤 체크아웃을 지웁니다. 커밋하지 않은 변경이나 추적 안 되는
+  파일이 있는 체크아웃은 지우지 않고 알립니다(entries는 이미 멈춘 상태). 마지막 비교안이 내려가야 `shared`를 멈춥니다.
+- `--json`: 성공은 `{action, compare, plan, shared, variants[], next}` 한 문서입니다. 실패는 기존 실패 envelope에
+  `error.code`(`compare_preflight_failed` 시작 전 실패, `compare_partial_failure` 일부 시작 후 실패,
+  `compare_down_failed` 정리 미완료)와 같은 형태의 `error.result`가 붙습니다. 비교안 결과는
+  `started`/`skipped`/`failed`/`not_attempted`/`stopped`/`observed`/`planned` 중 하나입니다.
+
 ### Integration Tools
 
 | Command | Description |

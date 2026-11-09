@@ -25,7 +25,7 @@ var allowedImports = map[string][]string{
 	"internal/cirun":         {"internal/cirun/ociexec", "internal/config"},
 	"internal/cirun/ociexec": {"internal/config"},
 	"internal/cli": {
-		"internal/agentdeny", "internal/cirun", "internal/config", "internal/exec",
+		"internal/agentdeny", "internal/cirun", "internal/compare", "internal/config", "internal/exec",
 		"internal/jobrun", "internal/lifecycle", "internal/logger", "internal/output",
 		"internal/remotetarget", "internal/runner", "internal/secretpush", "internal/skillinstall",
 	},

@@ -389,6 +389,11 @@ func buildManifest(c *config.Config) *Manifest {
 				"resume": {Type: "query", Effects: []string{"remote_read", "local_write:receipt"}},
 				"verify": {Type: "query", Effects: []string{"remote_read", "local_write:receipt"}},
 			}},
+			"compare": {Type: "config", Subcommands: map[string]ManifestCmd{
+				"up":     {Type: "mutation", Effects: []string{"local_write:snapshot_checkout", "local_write:compare_record", "process_start"}},
+				"status": {Type: "query"},
+				"down":   {Type: "mutation", Effects: []string{"local_write:snapshot_checkout", "local_write:compare_record", "process_stop"}},
+			}},
 			"ci": {Type: "config", Subcommands: map[string]ManifestCmd{
 				"status": {Type: "query"},
 				"logs":   {Type: "query"},
