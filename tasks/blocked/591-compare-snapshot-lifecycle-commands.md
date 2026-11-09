@@ -5,7 +5,12 @@ type: feature
 priority: P2
 effort: L
 exec-tier: strong
-status: review
+status: blocked
+blocked-at: 2026-11-09
+last-executed-at: 2026-11-09
+blocked-owner: user
+retry-condition: "사용자가 F1 수정 후 세 번째 독립 리뷰를 허용하거나 waive를 결정(observed: 2차 리뷰 fix-needed, 차단 F1)"
+retry-at: 2026-11-09
 created: 2026-11-06
 depends-on: [TASK-590]
 allowed-paths: [internal/cli/, internal/compare/, USAGE.md, docs/75-variant-comparison-design.md]
@@ -71,3 +76,11 @@ allowed-paths 밖에서 구현에 필요해 바꾼 경로:
   - H1 동시 `compare up` 시 기록 유실·포트 중복 배정(record 읽기-쓰기 사이 잠금 없음): 이 카드에서 고치지 않고 후속 작업으로 넘김. 설계(docs/75)가 정한 동시성 정책이 없어 잠금 방식(파일 잠금, stale 잠금 회수)은 결정이 필요하다.
   - N1 이미 떠 있던 shared가 "started"로 표시, N2 shared 결과의 per_variant endpoint 미치환: 범위 밖 저위험, 후속.
 - 수리 접근: 위 세 결함을 같은 worktree의 새 커밋으로 수정, 두 번째 독립 리뷰어에게 재검토 요청.
+
+### 2. 2026-11-09 — reviewer: claude-code-subagent (opus, 독립, 1차와 다른 에이전트), executor: claude-sonnet-5-5
+
+- 대상 HEAD: 138a14d756b16178347f6dd0083437dfaf3450ca. 판정: fix-needed (차단 1건). 1차 B1·H2·M1 수리는 e2e와 돌연변이로 확인됨.
+- F1 (차단, 수리가 만든 회귀): 첫 `up`에서 shared Up이 실패하면 `next`에 `down`이 없다. 기록은 써졌고 비교안은 0개인데, 이때 bare `dva compare down <name>`이 정확한 되돌리기 명령이다(수리 전에는 나왔음). 수정안: `touched`와 `rec.Variants`가 모두 비면 bare down을 제안하고 이 경로의 테스트를 추가.
+- 비차단: `startVariant`의 annotate를 지켜주는 테스트 없음, 사람용 status 표에 pid·로그·readiness 열 없음과 skipped 행에 pids 없음, USAGE status 설명에 pid·로그 누락, Status 호출 실패 시 pids·logs 생략, H1·N1·N2의 후속 카드 미작성.
+- H1 보류는 완료 기준상 수용 가능하다는 의견(조건: 후속 카드로 실제 기록).
+- 다음 전환: 두 번째 비성공 판정이므로 quality-review 규칙에 따라 더 이상 리뷰하지 않고 blocked/로 보낸다. 사람 결정 필요: F1 수정 후 세 번째 리뷰 허용 또는 waive.
