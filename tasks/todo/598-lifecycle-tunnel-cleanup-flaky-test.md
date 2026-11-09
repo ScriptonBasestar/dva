@@ -11,7 +11,7 @@ created: 2026-11-09
 
 ## Summary
 
-<!-- One paragraph: what changes and why. -->
+`internal/lifecycle`의 `TestStatusTunnelCleanupEscalatesOnlyItsOwnedProcessGroup`가 `-count=50`에서 `kill process group …: operation not permitted`(`status_owned_tunnel_unix_test.go:25`)로 간헐 실패한다. 원인을 찾아 테스트 또는 정리 로직을 고친다. TASK-592 리뷰 중 재현했다.
 
 ## Completion Criteria
 

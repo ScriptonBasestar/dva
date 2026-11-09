@@ -11,7 +11,7 @@ created: 2026-11-09
 
 ## Summary
 
-<!-- One paragraph: what changes and why. -->
+`compare up`은 이미 떠 있던 shared 항목도 `started`로 보고하고, 인자 없는 `compare down`은 다른 비교가 쓰는 shared 항목까지 내릴 수 있다(`compare_down.go`). shared `up`·`status`는 vars를 넘기지 않아 shared 결과의 per_variant endpoint URL도 비교안별 값으로 치환되지 않는다. TASK-592 리뷰 중 발견했다.
 
 ## Completion Criteria
 

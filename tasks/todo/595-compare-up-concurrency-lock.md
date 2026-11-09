@@ -11,7 +11,7 @@ created: 2026-11-09
 
 ## Summary
 
-<!-- One paragraph: what changes and why. -->
+같은 이름의 `dva compare up`을 동시에 실행하면 둘 다 기록(`.sb/dva/compare/<name>.json`)과 프로세스를 쓰려 해 서로 덮어쓴다. `internal/cli`와 `internal/compare`에는 락이 없다. 비교 이름 단위의 락을 잡고, 이미 잡혀 있으면 아무것도 시작하기 전에 실패한다. TASK-592 리뷰 중 발견했다.
 
 ## Completion Criteria
 
