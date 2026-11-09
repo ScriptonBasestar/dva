@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 
 	"github.com/ScriptonBasestar/dva/internal/config"
 	"github.com/ScriptonBasestar/dva/internal/lifecycle"
@@ -115,4 +117,25 @@ func observe(ctx context.Context, runtime *planRuntime, orch *lifecycle.Orchestr
 func pathExists(p string) bool {
 	_, err := os.Stat(p)
 	return err == nil
+}
+
+// annotateProcesses adds the pid and log file dva keeps for each native entry of the checkout
+// in configDir. The lifecycle status carries neither, and the files are where `dva logs` and
+// the stop path read them, so this reads the same files. Entries without a pid file (compose
+// and the like) simply have nothing to add.
+func annotateProcesses(row *compareVariantResult, configDir string, entries []string) {
+	for _, e := range entries {
+		base := filepath.Join(configDir, config.DotDirName)
+		if data, err := os.ReadFile(filepath.Join(base, config.PidsDirName, e+".pid")); err == nil {
+			if pid, err := strconv.Atoi(strings.TrimSpace(string(data))); err == nil && pid > 0 {
+				if row.Pids == nil {
+					row.Pids = map[string]int{}
+				}
+				row.Pids[e] = pid
+			}
+		}
+		if log := filepath.Join(base, config.LogsDirName, e+".log"); pathExists(log) {
+			row.LogPaths = append(row.LogPaths, log)
+		}
+	}
 }

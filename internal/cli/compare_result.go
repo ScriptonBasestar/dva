@@ -74,6 +74,7 @@ type compareVariantResult struct {
 	Stale     bool           `json:"stale,omitempty"`
 	Reasons   []string       `json:"stale_reasons,omitempty"`
 	Drift     *compareDrift  `json:"drift,omitempty"`
+	Pids      map[string]int `json:"pids,omitempty"`
 	LogPaths  []string       `json:"logs,omitempty"`
 	compareObserved
 }

@@ -56,3 +56,18 @@ allowed-paths 밖에서 구현에 필요해 바꾼 경로:
 - 일부 실패 e2e: b의 dva.yml이 깨진 ref로 `up`하면 a는 시작된 채 `compare_partial_failure`(exit 1)와 `error.result`, 되돌릴 명령이 나옴. 이 과정에서 `down`이 로드 불가 설정 때문에 끝나지 못하는 결함을 발견해 고침(스냅샷은 고정 커밋이라 로드 불가면 시작된 적이 없다).
 - 한계: process 러너는 존재하지 않는 run 명령도 "started"로 보고하고 나중에 `status`가 stale로 보여, 시작 단계 실패를 process plan으로 강제할 수 없다. 해당 경로는 fake host 단위 테스트로만 고정된다.
 - 범위 밖 관찰: docs/75 번호 중복(75-ci-result-reuse.md), 위 CHANGELOG 크기 초과.
+
+## Review Attempts
+
+### 1. 2026-11-09 — reviewer: claude-code-subagent (opus, 독립), executor: claude-sonnet-5-5 (strong 요구 카드)
+
+- 대상 HEAD: 08ee025a03a27c1ab5df05af4f136a11f012e7a7. 판정: fix-needed.
+- 실행한 검증: `go test ./internal/cli/ -run TestCompare`, `./internal/compare/`, `go vet`, 복사본에서 돌연변이 M1~M10, scratch 저장소 e2e(재실행, kill 후 stale, 깨진 ref, 동시 up).
+- 발견과 처리:
+  - B1 status에 pid·로그 경로 없음(Scope 미충족): 수정. `annotateProcesses`가 pid 파일과 로그 파일을 읽어 `pids`·`logs`로 낸다.
+  - H2 일부 실패 시 `next.down`이 이번 호출이 시작하지 않은 비교안까지 내림: 수정. 이번 호출이 건드린 비교안이 없으면 `down`을 제안하지 않는다.
+  - M1 설정을 읽을 수 없는 비교안의 down이 "entries stopped"라고 거짓 보고: 수정. 멈추지 못했고 계속 실행 중일 수 있다고 말한다.
+  - M9·M10 돌연변이를 잡는 테스트 없음: 테스트 추가. 각 구현 줄을 되돌려 실패를 확인함.
+  - H1 동시 `compare up` 시 기록 유실·포트 중복 배정(record 읽기-쓰기 사이 잠금 없음): 이 카드에서 고치지 않고 후속 작업으로 넘김. 설계(docs/75)가 정한 동시성 정책이 없어 잠금 방식(파일 잠금, stale 잠금 회수)은 결정이 필요하다.
+  - N1 이미 떠 있던 shared가 "started"로 표시, N2 shared 결과의 per_variant endpoint 미치환: 범위 밖 저위험, 후속.
+- 수리 접근: 위 세 결함을 같은 worktree의 새 커밋으로 수정, 두 번째 독립 리뷰어에게 재검토 요청.

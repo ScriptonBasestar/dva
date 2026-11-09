@@ -118,8 +118,13 @@ func downTargets(rec *compare.Record, names []string) ([]compare.Variant, error)
 // nothing is left there to stop) and then removes the snapshot. A dirty snapshot is refused by
 // RemoveSnapshot; the entries are already stopped by then, and the error says the checkout stays.
 func downVariant(ctx context.Context, dir string, cmp *config.CompareConfig, rec *compare.Record, v compare.Variant) error {
+	unverified := false
 	if len(cmp.PerVariant) > 0 && pathExists(v.ConfigDir) {
-		if err := compareHost.Down(ctx, v.ConfigDir, cmp.Plan, varsOf(v.Ports), cmp.PerVariant); err != nil && !errors.Is(err, errVariantConfigUnreadable) {
+		err := compareHost.Down(ctx, v.ConfigDir, cmp.Plan, varsOf(v.Ports), cmp.PerVariant)
+		switch {
+		case errors.Is(err, errVariantConfigUnreadable):
+			unverified = true
+		case err != nil:
 			return fmt.Errorf("stop entries: %w", err)
 		}
 	}
@@ -127,6 +132,9 @@ func downVariant(ctx context.Context, dir string, cmp *config.CompareConfig, rec
 		return nil // already gone; only the record is left to drop
 	}
 	if err := compare.RemoveSnapshot(ctx, dir, rec, v.Name); err != nil {
+		if unverified {
+			return fmt.Errorf("dva.yml in the checkout cannot be loaded, so its entries were not stopped by dva and may still run; checkout kept: %w", err)
+		}
 		return fmt.Errorf("entries stopped, checkout kept: %w", err)
 	}
 	return nil

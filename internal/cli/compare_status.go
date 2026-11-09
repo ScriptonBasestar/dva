@@ -60,6 +60,7 @@ func runCompareStatus(ctx context.Context, c *config.Config, name string) error 
 				row.Error = "status unavailable: " + err.Error()
 			} else {
 				row.compareObserved = *obs
+				annotateProcesses(&row, v.ConfigDir, cmp.PerVariant)
 			}
 		}
 		result.Variants = append(result.Variants, row)

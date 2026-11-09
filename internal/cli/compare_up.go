@@ -249,6 +249,7 @@ func startVariant(ctx context.Context, dir, name string, cmp *config.CompareConf
 	}
 	row.Outcome = outcomeStarted
 	row.compareObserved = *obs
+	annotateProcesses(row, snap.ConfigDir, cmp.PerVariant)
 	return nil
 }
 
@@ -300,7 +301,13 @@ func upNext(name string, rec *compare.Record, variants []*upVariant, result *com
 	if !failed {
 		return map[string]string{"status": "dva compare status " + shellWord(name), "down": downCommand(name, nil)}
 	}
-	return map[string]string{"retry": strings.Join(retry, " "), "down": downCommand(name, touched)}
+	next := map[string]string{"retry": strings.Join(retry, " "), "status": "dva compare status " + shellWord(name)}
+	// A bare `down` takes every variant of the comparison, including ones this call did not
+	// touch. With nothing of this call to undo there is no down to suggest.
+	if len(touched) > 0 {
+		next["down"] = downCommand(name, touched)
+	}
+	return next
 }
 
 // variantRunning reports whether every per_variant entry of a recorded variant is up. A record
