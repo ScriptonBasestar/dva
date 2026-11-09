@@ -61,7 +61,7 @@ allowed-paths 밖에서 구현에 필요해 바꾼 경로:
 
 ### 1. 2026-11-09 — reviewer: claude-code-subagent (opus, 독립), executor: claude-sonnet-5-5 (strong 요구 카드)
 
-- 대상 HEAD: 08ee025a03a27c1ab5df05af4f136a11f012e7a7. 판정: fix-needed.
+- 대상: 1차 리뷰 시점의 task 브랜치 head(구현 커밋 + review 이동 커밋). 판정: fix-needed.
 - 실행한 검증: `go test ./internal/cli/ -run TestCompare`, `./internal/compare/`, `go vet`, 복사본에서 돌연변이 M1~M10, scratch 저장소 e2e(재실행, kill 후 stale, 깨진 ref, 동시 up).
 - 발견과 처리:
   - B1 status에 pid·로그 경로 없음(Scope 미충족): 수정. `annotateProcesses`가 pid 파일과 로그 파일을 읽어 `pids`·`logs`로 낸다.
@@ -74,7 +74,7 @@ allowed-paths 밖에서 구현에 필요해 바꾼 경로:
 
 ### 2. 2026-11-09 — reviewer: claude-code-subagent (opus, 독립, 1차와 다른 에이전트), executor: claude-sonnet-5-5
 
-- 대상 HEAD: 138a14d756b16178347f6dd0083437dfaf3450ca. 판정: fix-needed (차단 1건). 1차 B1·H2·M1 수리는 e2e와 돌연변이로 확인됨.
+- 대상: 2차 리뷰 시점의 task 브랜치 head(1차 수리 커밋). 판정: fix-needed (차단 1건). 1차 B1·H2·M1 수리는 e2e와 돌연변이로 확인됨.
 - F1 (차단, 수리가 만든 회귀): 첫 `up`에서 shared Up이 실패하면 `next`에 `down`이 없다. 기록은 써졌고 비교안은 0개인데, 이때 bare `dva compare down <name>`이 정확한 되돌리기 명령이다(수리 전에는 나왔음). 수정안: `touched`와 `rec.Variants`가 모두 비면 bare down을 제안하고 이 경로의 테스트를 추가.
 - 비차단: `startVariant`의 annotate를 지켜주는 테스트 없음, 사람용 status 표에 pid·로그·readiness 열 없음과 skipped 행에 pids 없음, USAGE status 설명에 pid·로그 누락, Status 호출 실패 시 pids·logs 생략, H1·N1·N2의 후속 카드 미작성.
 - H1 보류는 완료 기준상 수용 가능하다는 의견(조건: 후속 카드로 실제 기록).
