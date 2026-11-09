@@ -5,12 +5,7 @@ type: feature
 priority: P2
 effort: L
 exec-tier: strong
-status: blocked
-blocked-at: 2026-11-09
-last-executed-at: 2026-11-09
-blocked-owner: user
-retry-condition: "사용자가 F1 수정 후 세 번째 독립 리뷰를 허용하거나 waive를 결정(observed: 2차 리뷰 fix-needed, 차단 F1)"
-retry-at: 2026-11-09
+status: review
 created: 2026-11-06
 depends-on: [TASK-590]
 allowed-paths: [internal/cli/, internal/compare/, USAGE.md, docs/75-variant-comparison-design.md]
@@ -84,3 +79,9 @@ allowed-paths 밖에서 구현에 필요해 바꾼 경로:
 - 비차단: `startVariant`의 annotate를 지켜주는 테스트 없음, 사람용 status 표에 pid·로그·readiness 열 없음과 skipped 행에 pids 없음, USAGE status 설명에 pid·로그 누락, Status 호출 실패 시 pids·logs 생략, H1·N1·N2의 후속 카드 미작성.
 - H1 보류는 완료 기준상 수용 가능하다는 의견(조건: 후속 카드로 실제 기록).
 - 다음 전환: 두 번째 비성공 판정이므로 quality-review 규칙에 따라 더 이상 리뷰하지 않고 blocked/로 보낸다. 사람 결정 필요: F1 수정 후 세 번째 리뷰 허용 또는 waive.
+
+### 3 (수리). 2026-11-09 — 사용자 허용("1로 진행")으로 blocked에서 재개
+
+- F1 수정: 건드린 비교안도 기록된 비교안도 없으면 bare `dva compare down <name>`을 제안한다. 테스트 추가, 구현 줄을 되돌려 실패 확인.
+- 2차 비차단 중 처리: `startVariant`의 pid·로그 annotate 테스트 추가(줄을 지우면 실패 확인), USAGE status 설명에 pid·로그 경로 추가.
+- 미처리(후속): 사람용 status 표의 pid·로그 열, skipped 행의 pids, Status 실패 시 pids 생략, H1 동시 up 잠금, N1·N2.

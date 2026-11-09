@@ -155,3 +155,37 @@ func asCompareError(t *testing.T, err error) *compareError {
 	}
 	return ce
 }
+
+// A first up whose shared entries fail leaves a record with no variant. The bare down is the
+// way back there, and the failure must name it.
+func TestCompareUpSharedFailureOnFreshComparisonSuggestsBareDown(t *testing.T) {
+	c, host, _ := compareFixture(t)
+	host.failUp["shared"] = true
+	_, upErr := captureJSON(t, func() error {
+		return runCompareUp(context.Background(), c, "layout", []string{"a=main", "b=other"}, false)
+	})
+	ce := asCompareError(t, upErr)
+	if ce.result.Next["down"] != "dva compare down layout" {
+		t.Errorf("next = %v", ce.result.Next)
+	}
+}
+
+// up reports the pid and log of a variant it just started, like status does.
+func TestCompareUpReportsPidAndLogPathsOfStartedVariant(t *testing.T) {
+	c, host, _ := compareFixture(t)
+	host.onUp = func(dir string) {
+		base := filepath.Join(dir, config.DotDirName)
+		_ = os.MkdirAll(filepath.Join(base, config.PidsDirName), 0o755)
+		_ = os.WriteFile(filepath.Join(base, config.PidsDirName, "web.pid"), []byte("4242\n"), 0o644)
+	}
+	doc, err := captureJSON(t, func() error {
+		return runCompareUp(context.Background(), c, "layout", []string{"a=main"}, false)
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	row := doc["variants"].([]any)[0].(map[string]any)
+	if pids, _ := row["pids"].(map[string]any); pids["web"] != float64(4242) {
+		t.Errorf("row = %v", row)
+	}
+}

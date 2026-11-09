@@ -23,9 +23,10 @@ import (
 // up marks the (dir, entry) pair running, so a later Status sees what Up started.
 type fakeHost struct {
 	calls      []string
-	failUp     map[string]bool // dir base name → Up fails
-	unreadable map[string]bool // dir base name → Down finds no loadable dva.yml
-	running    map[string]bool // "dir|entry"
+	failUp     map[string]bool  // dir base name → Up fails
+	unreadable map[string]bool  // dir base name → Down finds no loadable dva.yml
+	onUp       func(dir string) // runs when an Up succeeds, to leave files a real start would
+	running    map[string]bool  // "dir|entry"
 	vars       map[string]map[string]string
 }
 
@@ -48,6 +49,9 @@ func (f *fakeHost) Up(_ context.Context, dir, _ string, vars map[string]string, 
 	}
 	for _, n := range names {
 		f.running[dir+"|"+n] = true
+	}
+	if f.onUp != nil {
+		f.onUp(dir)
 	}
 	return f.observe(dir, names), nil
 }

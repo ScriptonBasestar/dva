@@ -304,8 +304,13 @@ func upNext(name string, rec *compare.Record, variants []*upVariant, result *com
 	next := map[string]string{"retry": strings.Join(retry, " "), "status": "dva compare status " + shellWord(name)}
 	// A bare `down` takes every variant of the comparison, including ones this call did not
 	// touch. With nothing of this call to undo there is no down to suggest.
-	if len(touched) > 0 {
+	switch {
+	case len(touched) > 0:
 		next["down"] = downCommand(name, touched)
+	case len(rec.Variants) == 0:
+		// Nothing is recorded, so everything up there is what this call started (the shared
+		// entries); a bare down is exactly the way back.
+		next["down"] = downCommand(name, nil)
 	}
 	return next
 }
