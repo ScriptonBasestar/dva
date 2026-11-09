@@ -23,8 +23,8 @@
       "result": "PASS"
     },
     {
-      "command": "human criterion 2: real e2e on a temp git repo with a python3 http.server plan (up, status, rerun, kill/stale, failing shared entry, down), by the reviewer",
-      "result": "PASS"
+      "command": "human criterion 2: real e2e on a temp git repo with a python3 http.server plan (up, status, rerun, kill/stale, failing shared entry, down), by the reviewer; the raw review classes this verify: human criterion as NEEDS_HUMAN",
+      "result": "NEEDS_HUMAN: reviewer and executor e2e observations accepted by the user on 2026-11-09 (AskUserQuestion answer: e2e 결과 수용)"
     },
     {
       "command": "criterion 3: /usr/bin/grep -F -q 'dva compare' USAGE.md; docs/75 status read against the implemented scope",

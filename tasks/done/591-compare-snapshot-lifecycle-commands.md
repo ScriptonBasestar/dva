@@ -9,7 +9,7 @@ status: done
 quality-review: pass
 quality-reviewed-at: 2026-11-09T12:32:15Z
 quality-review-evidence: tasks/done/evidence/TASK-591/independent-review.json
-quality-review-receipt: tasks/done/evidence/TASK-591/done-review-7c1750e804dc6b98ff053db27fa5b69e9123ed200ea9c130bd1dad2d3ef5baef.json
+quality-review-receipt: tasks/done/evidence/TASK-591/done-review-de7a46730a6918420a053a94fbf80ef8fed8613f37e5aca924e8939b7792940e.json
 created: 2026-11-06
 depends-on: [TASK-590]
 allowed-paths: [internal/cli/, internal/compare/, USAGE.md, docs/75-variant-comparison-design.md]
@@ -92,7 +92,7 @@ allowed-paths 밖에서 구현에 필요해 바꾼 경로:
 
 ### 4. 2026-11-09 — reviewer: claude-code-subagent (opus, 독립, 앞선 리뷰어와 다른 에이전트), executor: claude-sonnet-5-5
 
-- 대상: 3차 리뷰 시점의 task 브랜치 head(F1 수리). 판정: pass. 완료 기준 1·3 PASS, 기준 2(실제 웹 plan e2e)는 human 검증이라 리뷰어가 실제 e2e를 돌려 설계대로 동작함을 확인했다.
+- 대상: 3차 리뷰 시점의 task 브랜치 head(F1 수리). 판정: pass. 완료 기준 1·3 PASS, 기준 2(실제 웹 plan e2e)는 verify: human이라 리뷰어는 NEEDS_HUMAN으로 판정했다. 리뷰어와 실행자가 임시 저장소에서 실제 e2e를 돌려 설계대로 동작함을 확인했고, 사용자가 2026-11-09에 이 e2e 결과를 수용했다(사람 확인으로 기록).
 - 실행한 검증: `TestCompare`, `internal/compare`, `go vet`, `go test ./...`, 복사본 돌연변이 2건(둘 다 새 테스트가 실패), 임시 저장소 e2e(shared 실패 → bare down 제안 → down 후 기록·snapshot 제거).
 - 비차단(보류, 후속): shared를 비교 간에 공유할 때 제안된 down이 다른 비교가 띄운 shared까지 멈출 수 있음(N1과 같은 설계 공백), `down --json`·`status --json`이 비교안 0개일 때 `"variants": null`, H1·N2, 사람용 status 표의 pid·로그 열.
 - 리베이스 후 재확인: task 브랜치를 갱신된 source tip 위로 리베이스한 뒤 별도 리뷰어가 코드·문서 diff가 바이트 단위로 같음을 확인(range-diff 기존 커밋 모두 동일), 테스트 통과. 다음 전환: done/.
