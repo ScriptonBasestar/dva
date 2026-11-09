@@ -1,0 +1,37 @@
+TASK-591 리뷰 3차 (독립 리뷰어, read-only) — 원문 (호스트가 전사)
+
+판정: pass. F1은 실제로 고쳐졌고, 차단 결함은 새로 나오지 않았다. HEAD는 시작과 끝 모두 bfee19d50e41166626e663c66a0fbadce5aa4134, worktree는 건드리지 않았다.
+
+완료 기준별 판정
+1. up·down·JSON 동작이 테스트로 고정되고 전체 테스트 통과: PASS. go test ./internal/cli/ -run TestCompare -count=1 ok, go test ./internal/compare/ -count=1 ok, go vet 문제 없음, go test ./... -count=1 exit 0이고 FAIL 줄 없음.
+2. 실제 웹 plan e2e (human 검증 항목): NEEDS_HUMAN. 검증 방식이 human으로 정해져 있다. 리뷰어가 돌린 실제 e2e는 설계대로 동작했다.
+3. USAGE.md와 docs/75 정합: PASS. grep 검증 통과, docs/75 상태가 "부분 구현"이고 구현 범위와 남은 범위(TASK-592, TASK-593)를 맞게 적고 있다.
+
+F1 수정 확인
+- 실제 e2e: 임시 git 저장소, python3 http.server plan, shared api는 dir: no-such-dir라서 시작에 실패한다. 첫 compare up layout a=main b=other --json은 exit 1, compare_partial_failure, a와 b는 not_attempted, next.down = "dva compare down layout". 그 명령을 실행하면 exit 0, shared stopped, 기록과 snapshot이 지워진다.
+- 돌연변이(복사본): case len(rec.Variants) == 0 를 끄면 TestCompareUpSharedFailureOnFreshComparisonSuggestsBareDown 실패. startVariant의 annotateProcesses 호출을 지우면 TestCompareUpReportsPidAndLogPathsOfStartedVariant 실패. 둘 다 컴파일되는 상태였고 원복을 diff로 확인했다.
+
+len(rec.Variants) == 0 규칙 적대적 검토
+- 비차단, 재현됨: 이미 떠 있던 shared까지 내린다. 비교 x(shared [db])와 y(shared [db, api], api 실패)가 db를 공유할 때, x가 띄운 db가 y의 제안 down(dva compare down y)으로 멈춘다. 주석 "everything up there is what this call started"는 이 경우 틀리다. 비교 간 shared 소유권은 docs/75에 정의돼 있지 않아 N1과 같은 계열의 설계 공백으로 판단, 차단으로 분류하지 않았다. N1 후속 카드에 이 재현을 적을 것을 권한다.
+- 문제없음(코드로 확인, e2e 미실행): 기록된 비교안이 있는 상태에서 새 비교안 추가 중 shared 실패는 down을 제안하지 않는다(보수적). shared 일부 성공 후 재시도, 이전 down의 shared 실패로 남은 0개짜리 기록, 새 비교에서 shared 성공 후 첫 비교안이 기록 전에 실패하는 경우 모두 bare down이 맞다.
+
+diff 704cc603..HEAD의 새 결함
+- 비차단, 재현됨: 기록된 비교안이 0개일 때 down --json과 status --json이 "variants": null을 낸다(internal/cli/compare_result.go:90, nil 슬라이스 직렬화). USAGE가 약속한 형태는 variants[].
+- 차단 결함 없음. 카드에 보류로 적힌 H1, N1, N2, 사람용 표의 pid·로그 열, skipped 행의 pids는 설명된 범위보다 나쁘지 않아 다시 다루지 않았다.
+
+실행/정리: 위 go test·vet을 worktree에서, rsync 복사본에서 make build·e2e·돌연변이. 끝난 뒤 포트 18760-18772 listener 없음, 기록한 PID 없음, 스크래치 삭제.
+
+VERDICT: PASS
+
+
+======== 리베이스 후속 검증 (같은 독립 리뷰어, 새 head 48d82194) ========
+
+TASK-591 리베이스 후속 검증 (독립 리뷰어, read-only) — 원문 (호스트가 전사)
+
+판정: pass. 리베이스 뒤 코드·문서 변경은 앞서 리뷰한 내용과 바이트 단위로 같고, 테스트와 SHA 확인도 통과했다. HEAD는 시작과 끝 모두 48d82194ccc4c1cd0ba89dc16e2546c7e6c09c93, worktree 변경 없음.
+
+1. diff 비교: base 44ea6327은 HEAD의 조상. git diff bfee19d5..HEAD --stat은 go.mod, go.sum(pflag v1.0.9 -> v1.1.0, master 변경)과 카드 파일 4줄뿐. `git diff 704cc603..bfee19d5 -- . ':!tasks'`와 `git diff 44ea6327..HEAD -- . ':!tasks'`를 cmp로 비교하니 동일. git range-diff: 기존 커밋 5개 모두 '=', 새 커밋은 카드 문구 커밋 48d82194 하나.
+2. 테스트: TestCompare ok, internal/compare ok, go vet 문제 없음. go test ./... -count=1 1회차는 internal/lifecycle의 TestStatusTunnelCleanupEscalatesOnlyItsOwnedProcessGroup 한 건("kill process group ...: operation not permitted")으로 exit 1, 2회차 exit 0 FAIL 없음. 이 테스트는 변경과 무관(git diff 44ea6327..HEAD -- internal/lifecycle 비어 있음, 단독 -count=10 통과). 프로세스 그룹 kill 타이밍에 따른 간헐 실패로 추정(조사하지 않음).
+3. 고아 SHA: 카드와 커밋 메시지에 7~40자리 16진 SHA 0건.
+
+VERDICT: PASS

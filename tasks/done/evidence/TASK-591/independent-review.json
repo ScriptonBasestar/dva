@@ -1,0 +1,47 @@
+{
+  "verdict": "PASS",
+  "reviewer-execution": "claude-code-subagent/aeeb875688dd2d699",
+  "reviewer-grade": "strong",
+  "executor-execution": "claude-code-session/0479d29b-718c-480f-84a2-b12d94024f92",
+  "executor-grade": "strong",
+  "review-runtime-execution": "read-only on the task worktree and rsync copies; re-attested on the rebased head",
+  "reviewed-commit": "48d82194ccc4c1cd0ba89dc16e2546c7e6c09c93",
+  "reviewed-at": "2026-11-09T12:20:00Z",
+  "raw-review": "tasks/done/evidence/TASK-591/done-review.txt",
+  "raw-review-sha256": "b56f2cf44ea59f8f799febc3b4a721b89b9940e1b4c62ffbede22121b6b5c1b2",
+  "checks": [
+    {
+      "command": "criterion 1 verify: go test ./internal/cli/ -run TestCompare -count=1 && go test ./internal/compare/ -count=1; go vet ./internal/cli/ ./internal/compare/",
+      "result": "PASS"
+    },
+    {
+      "command": "go test ./... -count=1 (first run: one unrelated flaky lifecycle test, TestStatusTunnelCleanupEscalatesOnlyItsOwnedProcessGroup; second run exit 0)",
+      "result": "PASS"
+    },
+    {
+      "command": "mutation of the F1 rule and of the startVariant annotate call on an rsync copy; both new tests fail",
+      "result": "PASS"
+    },
+    {
+      "command": "human criterion 2: real e2e on a temp git repo with a python3 http.server plan (up, status, rerun, kill/stale, failing shared entry, down), by the reviewer",
+      "result": "PASS"
+    },
+    {
+      "command": "criterion 3: /usr/bin/grep -F -q 'dva compare' USAGE.md; docs/75 status read against the implemented scope",
+      "result": "PASS"
+    }
+  ],
+  "prior-attempts": [
+    {
+      "verdict": "FAIL",
+      "reviewed-at": "2026-11-09",
+      "cause": "attempt 1 (fix-needed): status lacked pid and log paths, a failed up suggested a bare down that took untouched variants, down claimed 'entries stopped' for an unloadable config. Repaired. Findings and repair are in the card's Review Attempts; the raw report was not saved as a file."
+    },
+    {
+      "verdict": "FAIL",
+      "reviewed-at": "2026-11-09",
+      "cause": "attempt 2 (fix-needed): the repair removed the down suggestion after a first up whose shared entries failed. Repaired by suggesting a bare down when nothing is recorded; the user allowed the third review (card was blocked in between). The raw report was not saved as a file."
+    }
+  ],
+  "limitations": "Deferred and not fixed in this card: concurrent `compare up` has no lock (record loss, duplicate ports); a shared entry already running from another comparison is reported as started and a down suggested after a failed up of a second comparison can stop it; the human status table has no pid/log/readiness columns; skipped rows carry no pids; `down --json` and `status --json` print variants:null for an empty record. The 1st and 2nd raw review reports are summarized in the card, not stored as files."
+}
