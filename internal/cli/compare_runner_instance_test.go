@@ -77,11 +77,33 @@ plans:
 	if _, err := os.Stat(filepath.Join(dir, ".sb/dva/pids/web.pid")); err == nil {
 		t.Error("an instance wrote the ordinary pid file")
 	}
+	// Status reads each instance's own pid file: both are running while up.
+	running := func(inst string) bool {
+		t.Helper()
+		obs, err := r.Status(ctx, dir, inst, "p", nil, []string{"web"})
+		if err != nil {
+			t.Fatalf("Status %s: %v", inst, err)
+		}
+		for _, e := range obs.Status.Entries {
+			for _, svc := range e.Services {
+				if svc.State == "running" {
+					return true
+				}
+			}
+		}
+		return false
+	}
+	if !running("a") || !running("b") {
+		t.Fatalf("status before down: a=%v b=%v, want both running", running("a"), running("b"))
+	}
 	if err := r.Down(ctx, dir, "a", "p", nil, []string{"web"}); err != nil {
 		t.Fatalf("Down a: %v", err)
 	}
 	if lifecycle.IsProcessRunning(pa) || !lifecycle.IsProcessRunning(pb) {
 		t.Errorf("after Down a: a running=%v, b running=%v; want false, true", lifecycle.IsProcessRunning(pa), lifecycle.IsProcessRunning(pb))
+	}
+	if running("a") || !running("b") {
+		t.Errorf("status after Down a: a=%v b=%v; want false, true", running("a"), running("b"))
 	}
 	if err := r.Down(ctx, dir, "b", "p", nil, []string{"web"}); err != nil {
 		t.Fatalf("Down b: %v", err)

@@ -414,10 +414,27 @@ func instanceComposeConfig(pctx *PluginContext, cfg *config.ComposePluginConfig)
 	if cfg != nil {
 		out = *cfg
 	}
-	base := pctx.Env.Interpolate(out.ProjectName)
-	if base == "" {
-		base = strings.ToLower(filepath.Base(pctx.ConfigDir))
-	}
-	out.ProjectName = base + "-" + pctx.Instance
+	out.ProjectName = instanceProjectName(pctx, out.ProjectName)
 	return &out
+}
+
+// instanceProjectName is the compose project of an instance: the declared name (or the
+// directory's base name) with the instance appended, normalized the way compose requires an
+// explicit project name to be (lowercase letters, digits, - and _, starting with a letter or
+// digit). Compose only normalizes a name it derives itself, so "my.app-A" would be rejected.
+func instanceProjectName(pctx *PluginContext, declared string) string {
+	base := pctx.Env.Interpolate(declared)
+	if base == "" {
+		base = filepath.Base(pctx.ConfigDir)
+	}
+	name := strings.Map(func(r rune) rune {
+		switch {
+		case r >= 'a' && r <= 'z', r >= '0' && r <= '9', r == '-', r == '_':
+			return r
+		case r >= 'A' && r <= 'Z':
+			return r + ('a' - 'A')
+		}
+		return '-'
+	}, base+"-"+pctx.Instance)
+	return strings.TrimLeft(name, "-_")
 }

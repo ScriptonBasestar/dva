@@ -166,3 +166,57 @@ func TestCompareUpConfigVariantAcceptsSplitBuildState(t *testing.T) {
 		t.Errorf("calls = %v", host.calls)
 	}
 }
+
+// An OS DVA_VARIANT outranks every variant's own value, which would put the variants back on one
+// build state while the preflight still passes; it is refused like a port var set in the OS.
+func TestCompareUpConfigVariantRefusesOSVariantVar(t *testing.T) {
+	c, host, _ := compareFixture(t)
+	t.Setenv(variantVar, "outer")
+	_, err := upConfig(t, c, "a=config", "b=config")
+	if err == nil || errorCode(err) != codeComparePreflight || !strings.Contains(err.Error(), "environment sets "+variantVar+"=outer") {
+		t.Fatalf("err = %v", err)
+	}
+	if len(host.calls) != 0 {
+		t.Errorf("a preflight failure must start nothing: %v", host.calls)
+	}
+	// Snapshot variants never get the var, so the OS value is no conflict there.
+	if _, err := upConfig(t, c, "a=main", "b=other"); err != nil {
+		t.Errorf("snapshot variants must not be refused: %v", err)
+	}
+}
+
+// "A" and "a" are one directory on a case-insensitive filesystem, so they cannot be two variants.
+func TestParseVariantSpecsRejectsNamesDifferingByCase(t *testing.T) {
+	_, err := parseVariantSpecs("layout", &config.CompareConfig{}, []string{"A=config", "a=config"})
+	if err == nil || !strings.Contains(err.Error(), "twice") {
+		t.Fatalf("err = %v", err)
+	}
+}
+
+// The pids and log paths in the up/status JSON come from the variant's own instance directory.
+func TestAnnotateProcessesReadsTheInstanceDirectory(t *testing.T) {
+	dir := t.TempDir()
+	write := func(path, content string) {
+		t.Helper()
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write(filepath.Join(dir, ".sb/dva/pids/a/web.pid"), "111\n")
+	write(filepath.Join(dir, ".sb/dva/logs/a/web.log"), "x")
+	write(filepath.Join(dir, ".sb/dva/pids/web.pid"), "999\n")
+
+	var row compareVariantResult
+	annotateProcesses(&row, dir, "a", []string{"web"})
+	if row.Pids["web"] != 111 || len(row.LogPaths) != 1 || row.LogPaths[0] != filepath.Join(dir, ".sb/dva/logs/a/web.log") {
+		t.Errorf("instance row = pids %v logs %v", row.Pids, row.LogPaths)
+	}
+	var plain compareVariantResult
+	annotateProcesses(&plain, dir, "", []string{"web"})
+	if plain.Pids["web"] != 999 || len(plain.LogPaths) != 0 {
+		t.Errorf("ordinary row = pids %v logs %v", plain.Pids, plain.LogPaths)
+	}
+}

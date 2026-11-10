@@ -142,11 +142,13 @@ func parseVariantSpecs(compareName string, cmp *config.CompareConfig, args []str
 	}
 	seen := map[string]bool{}
 	for _, s := range specs {
+		key := strings.ToLower(s.Name)
 		switch {
 		case !compare.ValidName(s.Name):
 			return nil, fmt.Errorf("variant name %q must start with a letter or digit and use only letters, digits, - and _", s.Name)
-		case seen[s.Name]:
-			return nil, fmt.Errorf("variant %q is given twice", s.Name)
+		case seen[key]:
+			// Names that differ only by case are one directory on a case-insensitive filesystem.
+			return nil, fmt.Errorf("variant %q is given twice (names are compared ignoring case)", s.Name)
 		case s.Source == compare.SourceConfig:
 			// config mode: no ref to resolve.
 		case compare.IsTargetSource(s.Source):
@@ -155,7 +157,7 @@ func parseVariantSpecs(compareName string, cmp *config.CompareConfig, args []str
 				return nil, fmt.Errorf("variant %s: %w", s.Name, err)
 			}
 		}
-		seen[s.Name] = true
+		seen[key] = true
 	}
 	return specs, nil
 }

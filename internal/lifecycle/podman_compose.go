@@ -89,7 +89,10 @@ func (p *PodmanComposePlugin) buildArgs(pctx *PluginContext, extraArgs []string)
 		args = append(args, "-f", f)
 	}
 
-	if cfg.ProjectName != "" {
+	switch {
+	case pctx.Instance != "":
+		args = append(args, "--project-name", instanceProjectName(pctx, cfg.ProjectName))
+	case cfg.ProjectName != "":
 		args = append(args, "--project-name", pctx.Env.Interpolate(cfg.ProjectName))
 	}
 

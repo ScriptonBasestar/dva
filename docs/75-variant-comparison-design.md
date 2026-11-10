@@ -75,9 +75,11 @@ dva compare down web-layout
   디렉터리의 `.sb/dva/pids/`에 남긴다. 새 레지스트리를 만들지 않는다.
 - **config 모드의 인스턴스**(TASK-593): 비교안이 호출한 체크아웃을 공유하므로 DVA가 비교안
   이름을 인스턴스로 삼아 `per_variant` 엔트리의 pid·로그를 `.sb/dva/{pids,logs}/<비교안>/`로
-  나누고, compose 프로젝트 이름은 (선언된 `project_name:` 또는 디렉터리 이름)`-<비교안>`로
-  나눈다. 선언된 이름은 충돌이 아니라 접두사로 쓴다. 인스턴스 없는 일반 `dva up`의 경로와
-  이름은 바뀌지 않는다. 비교안 이름은 plan var `DVA_VARIANT`로도 전달된다.
+  나누고, compose·podman-compose 프로젝트 이름은 `<디렉터리 이름>-<비교안>`을 compose가 요구하는
+  형식(소문자·숫자·`-`·`_`)으로 정규화해 쓴다. `per_variant` compose 항목의 `project_name:`은 검증이
+  거부하므로 접두사가 될 수 없다. 대소문자만 다른 비교안 이름은 한 디렉터리로 겹치므로 거부한다. 인스턴스 없는 일반 `dva up`의 경로와
+  이름은 바뀌지 않는다. 비교안 이름은 plan var `DVA_VARIANT`로도 전달된다. OS 환경에 `DVA_VARIANT`가 이미 있으면 그 값이 모든
+  비교안을 덮어쓰므로 포트 var와 같이 실행 전에 거부한다.
 - **config 모드의 빌드 상태**: DVA가 알고 있는 도구(`next`, `nuxt`, `nuxi`, `astro`,
   `gatsby`)를 `per_variant` 엔트리가 실행하는데 그 명령·dir·env가 `DVA_VARIANT`를 쓰지 않으면
   실행 전에 실패한다. 임의 명령이 체크아웃에 쓰는 것은 DVA가 볼 수 없으므로 이 목록은

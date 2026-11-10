@@ -790,8 +790,8 @@ dva compare down layout                        # 전부 내림, 마지막에 sha
   stale로 알립니다. 작업 중 새 커밋이 생겨도 stale이나 drift가 아닙니다.
 - `config` 비교안은 호출한 체크아웃을 그대로 쓰고 아무것도 만들지 않습니다. 대신 비교안 이름이
   인스턴스가 되어 `per_variant` 엔트리의 pid·로그가 `.sb/dva/{pids,logs}/<비교안>/`로 나뉘고, compose
-  프로젝트 이름은 `<project_name 또는 디렉터리 이름>-<비교안>`이 됩니다(일반 `dva up`은 그대로).
-  비교안 이름은 plan var `DVA_VARIANT`로도 들어갑니다. `.next`처럼 빌드 상태를 체크아웃에 쓰는 도구
+  프로젝트 이름은 `<디렉터리 이름>-<비교안>`(소문자·숫자·`-`·`_`로 정규화)이 됩니다(일반 `dva up`은 그대로).
+  비교안 이름은 plan var `DVA_VARIANT`로도 들어갑니다(OS 환경에 `DVA_VARIANT`가 있으면 시작 전에 거부). `.next`처럼 빌드 상태를 체크아웃에 쓰는 도구
   (`next`, `nuxt`, `nuxi`, `astro`, `gatsby`)를 `per_variant` 엔트리가 실행하는데 그 명령·dir·env가
   `$DVA_VARIANT`를 쓰지 않으면 **아무것도 시작하지 않고** 실패합니다(예: `NEXT_DIST_DIR=.next-$DVA_VARIANT`).
   목록에 없는 도구가 공유 경로에 쓰는지는 dva가 볼 수 없습니다. 소스 브랜치 이름이 `config`면

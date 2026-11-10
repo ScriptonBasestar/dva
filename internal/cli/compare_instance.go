@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"slices"
 	"strings"
@@ -49,11 +50,16 @@ func configModeProblems(c *config.Config, cmp *config.CompareConfig, variants []
 	if len(names) == 0 || len(cmp.PerVariant) == 0 {
 		return nil
 	}
+	var problems []string
+	if ev, ok := os.LookupEnv(variantVar); ok {
+		// The OS environment has the highest var priority, so it would replace every variant's
+		// own name and put the variants back on one build state. Same refusal as a port var.
+		problems = append(problems, fmt.Sprintf("config variants %s: environment sets %s=%s, which would override each variant's own value; unset it", strings.Join(names, ","), variantVar, ev))
+	}
 	plan, err := lifecycle.ResolvePlan(c, cmp.Plan, nil)
 	if err != nil {
 		return []string{fmt.Sprintf("config variants %s: cannot inspect plan %q for shared build state: %v", strings.Join(names, ","), cmp.Plan, err)}
 	}
-	var problems []string
 	for _, e := range plan.Entries {
 		if !slices.Contains(cmp.PerVariant, e.Name) {
 			continue
