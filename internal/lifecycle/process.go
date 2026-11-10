@@ -89,7 +89,7 @@ func (p *ProcessPlugin) Up(ctx context.Context, pctx *PluginContext) (*Result, e
 	dir := EntryDir(pctx.ConfigDir, cfg.Dir)
 
 	// Check if already running
-	pidFile := filepath.Join(pctx.ConfigDir, config.DotDirName, config.PidsDirName, name+".pid")
+	pidFile := pctx.PidFile(name)
 	if data, err := os.ReadFile(pidFile); err == nil {
 		pid, _ := strconv.Atoi(strings.TrimSpace(string(data)))
 		if pid > 0 && IsProcessRunning(pid) {
@@ -138,7 +138,7 @@ func (p *ProcessPlugin) Stop(ctx context.Context, pctx *PluginContext) error {
 
 func (p *ProcessPlugin) Status(ctx context.Context, pctx *PluginContext) ([]ServiceStatus, error) {
 	name := pctx.Entry.Name
-	pidFile := filepath.Join(pctx.ConfigDir, config.DotDirName, config.PidsDirName, name+".pid")
+	pidFile := pctx.PidFile(name)
 
 	data, err := os.ReadFile(pidFile)
 	if err != nil {
@@ -158,7 +158,7 @@ func (p *ProcessPlugin) Status(ctx context.Context, pctx *PluginContext) ([]Serv
 // through Up's "already running" PID-file check and mistakenly skips starting a replacement.
 func (p *ProcessPlugin) haltProcess(ctx context.Context, pctx *PluginContext) error {
 	name := pctx.Entry.Name
-	pidFile := filepath.Join(pctx.ConfigDir, config.DotDirName, config.PidsDirName, name+".pid")
+	pidFile := pctx.PidFile(name)
 
 	data, err := os.ReadFile(pidFile)
 	if err != nil {
@@ -202,8 +202,8 @@ func (p *ProcessPlugin) haltProcess(ctx context.Context, pctx *PluginContext) er
 // untracked process from being started a second time.
 func (p *ProcessPlugin) removeProcess(ctx context.Context, pctx *PluginContext) error {
 	name := pctx.Entry.Name
-	pidFile := filepath.Join(pctx.ConfigDir, config.DotDirName, config.PidsDirName, name+".pid")
-	logFile := filepath.Join(pctx.ConfigDir, config.DotDirName, config.LogsDirName, name+".log")
+	pidFile := pctx.PidFile(name)
+	logFile := pctx.LogFile(name)
 
 	data, err := os.ReadFile(pidFile)
 	if err != nil {
@@ -246,8 +246,8 @@ func startLocalProcess(name, command, dir string, pctx *PluginContext) error {
 		return fmt.Errorf("local background process %q: %w", name, err)
 	}
 
-	pidDir := filepath.Join(pctx.ConfigDir, config.DotDirName, config.PidsDirName)
-	logDir := filepath.Join(pctx.ConfigDir, config.DotDirName, config.LogsDirName)
+	pidDir := pctx.StateDir(config.PidsDirName)
+	logDir := pctx.StateDir(config.LogsDirName)
 
 	if err := os.MkdirAll(pidDir, 0755); err != nil {
 		return fmt.Errorf("create pid dir: %w", err)

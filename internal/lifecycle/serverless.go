@@ -8,8 +8,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-
-	"github.com/ScriptonBasestar/dva/internal/config"
 )
 
 // ServerlessPlugin manages serverless-offline services as background processes.
@@ -48,7 +46,7 @@ func (p *ServerlessPlugin) Up(ctx context.Context, pctx *PluginContext) (*Result
 	}
 
 	// Check if already running
-	pidFile := filepath.Join(pctx.ConfigDir, config.DotDirName, config.PidsDirName, name+".pid")
+	pidFile := pctx.PidFile(name)
 	if data, err := os.ReadFile(pidFile); err == nil {
 		pid, _ := strconv.Atoi(strings.TrimSpace(string(data)))
 		if pid > 0 && IsProcessRunning(pid) {
@@ -100,7 +98,7 @@ func (p *ServerlessPlugin) Stop(ctx context.Context, pctx *PluginContext) error 
 
 func (p *ServerlessPlugin) Status(ctx context.Context, pctx *PluginContext) ([]ServiceStatus, error) {
 	name := pctx.Entry.Name
-	pidFile := filepath.Join(pctx.ConfigDir, config.DotDirName, config.PidsDirName, name+".pid")
+	pidFile := pctx.PidFile(name)
 
 	data, err := os.ReadFile(pidFile)
 	if err != nil {
@@ -113,7 +111,7 @@ func (p *ServerlessPlugin) Status(ctx context.Context, pctx *PluginContext) ([]S
 
 func (p *ServerlessPlugin) stopProcess(pctx *PluginContext) error {
 	name := pctx.Entry.Name
-	pidFile := filepath.Join(pctx.ConfigDir, config.DotDirName, config.PidsDirName, name+".pid")
+	pidFile := pctx.PidFile(name)
 	data, err := os.ReadFile(pidFile)
 	if err != nil {
 		return nil

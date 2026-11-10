@@ -194,7 +194,7 @@ func (p *ComposePlugin) buildArgs(pctx *PluginContext, extraArgs []string) (stri
 		baseDir = wd
 	}
 
-	cmd, args, err := dvaexec.ComposeArgv(pctx.Env, cfg, baseDir)
+	cmd, args, err := dvaexec.ComposeArgv(pctx.Env, instanceComposeConfig(pctx, cfg), baseDir)
 	if err != nil {
 		return "", nil, fmt.Errorf("entry %q: %w", pctx.Entry.Name, err)
 	}
@@ -400,4 +400,24 @@ func parseComposeServicesJSON(out []byte) ([]ServiceStatus, error) {
 	}
 
 	return services, nil
+}
+
+// instanceComposeConfig gives an instance its own compose project: the declared (or, failing
+// that, the directory-derived) project name with the instance appended. Without it, two
+// instances in one config directory would be the same compose project and the second `up`
+// would recreate the first one's containers. The ordinary run (no instance) is returned as is.
+func instanceComposeConfig(pctx *PluginContext, cfg *config.ComposePluginConfig) *config.ComposePluginConfig {
+	if pctx.Instance == "" {
+		return cfg
+	}
+	var out config.ComposePluginConfig
+	if cfg != nil {
+		out = *cfg
+	}
+	base := pctx.Env.Interpolate(out.ProjectName)
+	if base == "" {
+		base = strings.ToLower(filepath.Base(pctx.ConfigDir))
+	}
+	out.ProjectName = base + "-" + pctx.Instance
+	return &out
 }

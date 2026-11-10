@@ -46,7 +46,7 @@ func runCompareUp(ctx context.Context, c *config.Config, name string, args []str
 	variants, result, problems := resolveUp(ctx, dir, name, cmp, rec, specs)
 	result.DryRun = dryRun
 	if len(problems) == 0 {
-		problems = checkPorts(variants)
+		problems = append(configModeProblems(c, cmp, variants), checkPorts(variants)...)
 	}
 	if len(problems) > 0 {
 		return comparePreflight(result, "compare %s: nothing was started:\n  %s", name, strings.Join(problems, "\n  "))
@@ -90,7 +90,10 @@ func resolveUp(ctx context.Context, dir, name string, cmp *config.CompareConfig,
 	for _, s := range specs {
 		v := &upVariant{spec: s}
 		mode := compare.ModeSnapshot
-		if compare.IsTargetSource(s.Source) {
+		if s.Source == compare.SourceConfig {
+			cv := compare.ConfigVariant(s.Name, dir)
+			mode, v.target = compare.ModeConfig, &cv
+		} else if compare.IsTargetSource(s.Source) {
 			t, err := compare.ResolveTarget(ctx, dir, s.Source)
 			if err != nil {
 				problems = append(problems, fmt.Sprintf("variant %s: %v", s.Name, err))
@@ -127,12 +130,11 @@ func resolveUp(ctx context.Context, dir, name string, cmp *config.CompareConfig,
 		if p, ok := assigned[v.spec.Name]; ok {
 			v.ports = p
 		}
-		path, mode := "", compare.ModeWorktree
+		path, mode := "", compare.ModeSnapshot
 		if v.target != nil {
-			path = v.target.Path
+			path, mode = v.target.Path, v.target.Mode
 		} else {
 			path, _ = compare.SnapshotPath(dir, name, v.spec.Name)
-			mode = compare.ModeSnapshot
 		}
 		row := compareVariantResult{
 			Name: v.spec.Name, Mode: mode, Source: v.spec.Source,
@@ -209,7 +211,7 @@ func startUp(ctx context.Context, dir, name string, cmp *config.CompareConfig, r
 	}
 
 	if result.Shared != nil && pending > 0 {
-		obs, err := compareHost.Up(ctx, dir, cmp.Plan, nil, cmp.Shared, wait)
+		obs, err := compareHost.Up(ctx, dir, "", cmp.Plan, nil, cmp.Shared, wait)
 		if err != nil {
 			result.Shared.Outcome, result.Shared.Error = outcomeFailed, err.Error()
 			failure = fmt.Sprintf("shared entries %s failed to start: %v", strings.Join(cmp.Shared, ","), err)
@@ -250,7 +252,8 @@ func startUp(ctx context.Context, dir, name string, cmp *config.CompareConfig, r
 func startVariant(ctx context.Context, dir, name string, cmp *config.CompareConfig, rec *compare.Record, v *upVariant, row *compareVariantResult, wait bool) error {
 	var snap compare.Variant
 	if v.target != nil {
-		// A work worktree already exists and is not dva's to create.
+		// A work worktree (or the calling checkout, in config mode) already exists and is not
+		// dva's to create.
 		snap = *v.target
 		snap.Name = v.spec.Name
 	} else {
@@ -270,13 +273,13 @@ func startVariant(ctx context.Context, dir, name string, cmp *config.CompareConf
 		row.Outcome = outcomeStarted
 		return nil
 	}
-	obs, err := compareHost.Up(ctx, snap.ConfigDir, cmp.Plan, varsOf(v.ports), cmp.PerVariant, wait)
+	obs, err := compareHost.Up(ctx, snap.ConfigDir, snap.Instance, cmp.Plan, variantVars(&snap), cmp.PerVariant, wait)
 	if err != nil {
 		return err
 	}
 	row.Outcome = outcomeStarted
 	row.compareObserved = *obs
-	annotateProcesses(row, snap.ConfigDir, cmp.PerVariant)
+	annotateProcesses(row, snap.ConfigDir, snap.Instance, cmp.PerVariant)
 	return nil
 }
 
@@ -288,7 +291,7 @@ func observeSkipped(ctx context.Context, cmp *config.CompareConfig, rec *compare
 		return
 	}
 	row.Path, row.ConfigDir = v.Path, v.ConfigDir
-	obs, err := compareHost.Status(ctx, v.ConfigDir, cmp.Plan, varsOf(v.Ports), cmp.PerVariant)
+	obs, err := compareHost.Status(ctx, v.ConfigDir, v.Instance, cmp.Plan, variantVars(v), cmp.PerVariant)
 	if err != nil {
 		row.Error = "status unavailable: " + err.Error()
 		return
@@ -351,7 +354,7 @@ func variantRunning(ctx context.Context, cmp *config.CompareConfig, v *compare.V
 	if len(cmp.PerVariant) == 0 {
 		return true // nothing runs per variant; the checkout is the whole variant
 	}
-	obs, err := compareHost.Status(ctx, v.ConfigDir, cmp.Plan, varsOf(v.Ports), cmp.PerVariant)
+	obs, err := compareHost.Status(ctx, v.ConfigDir, v.Instance, cmp.Plan, variantVars(v), cmp.PerVariant)
 	if err != nil || obs.Status == nil {
 		return false
 	}

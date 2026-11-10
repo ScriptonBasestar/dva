@@ -13,14 +13,16 @@ import (
 	"github.com/ScriptonBasestar/dva/internal/lifecycle"
 )
 
-// compareRunner runs a named subset of a plan's entries in one config directory. It is the
+// compareRunner runs a named subset of a plan's entries in one config directory. A non-empty
+// instance runs them as that instance (config mode: separate pid files, logs and compose
+// project in a directory another variant also uses); empty is the ordinary run. It is the
 // seam between `dva compare` and the named lifecycle: compare decides which checkout, which
 // entries and which vars, and the runner applies the same plan resolution `dva up <plan>` does.
 // Tests replace compareHost with a fake; production uses lifecycleRunner.
 type compareRunner interface {
-	Up(ctx context.Context, dir, plan string, vars map[string]string, names []string, wait bool) (*compareObserved, error)
-	Down(ctx context.Context, dir, plan string, vars map[string]string, names []string) error
-	Status(ctx context.Context, dir, plan string, vars map[string]string, names []string) (*compareObserved, error)
+	Up(ctx context.Context, dir, instance, plan string, vars map[string]string, names []string, wait bool) (*compareObserved, error)
+	Down(ctx context.Context, dir, instance, plan string, vars map[string]string, names []string) error
+	Status(ctx context.Context, dir, instance, plan string, vars map[string]string, names []string) (*compareObserved, error)
 }
 
 var compareHost compareRunner = lifecycleRunner{}
@@ -29,7 +31,7 @@ type lifecycleRunner struct{}
 
 // open resolves planName for the config in dir exactly as the plan verbs do: the plan's owner
 // decides the environment, and a failed env_file input stops the call before any entry starts.
-func (lifecycleRunner) open(dir, planName string, vars map[string]string) (*planRuntime, *lifecycle.Orchestrator, error) {
+func (lifecycleRunner) open(dir, instance, planName string, vars map[string]string) (*planRuntime, *lifecycle.Orchestrator, error) {
 	c, load, err := compareConfigAt(dir)
 	if err != nil {
 		return nil, nil, err
@@ -47,6 +49,7 @@ func (lifecycleRunner) open(dir, planName string, vars map[string]string) (*plan
 	if err != nil {
 		return nil, nil, err
 	}
+	orch.SetInstance(instance)
 	return runtime, orch, nil
 }
 
@@ -69,8 +72,8 @@ func compareConfigAt(dir string) (*config.Config, *envLoad, error) {
 	return c, newConfigEnvironmentAt(c, c.FileDir()), nil
 }
 
-func (r lifecycleRunner) Up(ctx context.Context, dir, plan string, vars map[string]string, names []string, wait bool) (*compareObserved, error) {
-	runtime, orch, err := r.open(dir, plan, vars)
+func (r lifecycleRunner) Up(ctx context.Context, dir, instance, plan string, vars map[string]string, names []string, wait bool) (*compareObserved, error) {
+	runtime, orch, err := r.open(dir, instance, plan, vars)
 	if err != nil {
 		return nil, err
 	}
@@ -80,16 +83,16 @@ func (r lifecycleRunner) Up(ctx context.Context, dir, plan string, vars map[stri
 	return observe(ctx, runtime, orch, names)
 }
 
-func (r lifecycleRunner) Down(ctx context.Context, dir, plan string, vars map[string]string, names []string) error {
-	runtime, orch, err := r.open(dir, plan, vars)
+func (r lifecycleRunner) Down(ctx context.Context, dir, instance, plan string, vars map[string]string, names []string) error {
+	runtime, orch, err := r.open(dir, instance, plan, vars)
 	if err != nil {
 		return err
 	}
 	return orch.Down(ctx, lifecycle.DownOptions{Names: names, Env: runtime.plan.EnvironmentName})
 }
 
-func (r lifecycleRunner) Status(ctx context.Context, dir, plan string, vars map[string]string, names []string) (*compareObserved, error) {
-	runtime, orch, err := r.open(dir, plan, vars)
+func (r lifecycleRunner) Status(ctx context.Context, dir, instance, plan string, vars map[string]string, names []string) (*compareObserved, error) {
+	runtime, orch, err := r.open(dir, instance, plan, vars)
 	if err != nil {
 		return nil, err
 	}
@@ -123,10 +126,10 @@ func pathExists(p string) bool {
 // in configDir. The lifecycle status carries neither, and the files are where `dva logs` and
 // the stop path read them, so this reads the same files. Entries without a pid file (compose
 // and the like) simply have nothing to add.
-func annotateProcesses(row *compareVariantResult, configDir string, entries []string) {
+func annotateProcesses(row *compareVariantResult, configDir, instance string, entries []string) {
+	pctx := &lifecycle.PluginContext{ConfigDir: configDir, Instance: instance}
 	for _, e := range entries {
-		base := filepath.Join(configDir, config.DotDirName)
-		if data, err := os.ReadFile(filepath.Join(base, config.PidsDirName, e+".pid")); err == nil {
+		if data, err := os.ReadFile(pctx.PidFile(e)); err == nil {
 			if pid, err := strconv.Atoi(strings.TrimSpace(string(data))); err == nil && pid > 0 {
 				if row.Pids == nil {
 					row.Pids = map[string]int{}
@@ -134,7 +137,7 @@ func annotateProcesses(row *compareVariantResult, configDir string, entries []st
 				row.Pids[e] = pid
 			}
 		}
-		if log := filepath.Join(base, config.LogsDirName, e+".log"); pathExists(log) {
+		if log := pctx.LogFile(e); pathExists(log) {
 			row.LogPaths = append(row.LogPaths, log)
 		}
 	}

@@ -15,9 +15,17 @@ import (
 	"github.com/ScriptonBasestar/dva/internal/config"
 )
 
-// ModeSnapshot is a variant checked out by DVA from a ref pinned to a commit. The worktree and
-// config modes (TASK-592, TASK-593) add their own values.
+// ModeSnapshot is a variant checked out by DVA from a ref pinned to a commit. ModeWorktree
+// (provider.go) and ModeConfig name the other two ways a variant gets its files.
 const ModeSnapshot = "snapshot"
+
+// ModeConfig is a variant that shares the calling checkout: no second copy of the files, only a
+// separate instance (pid files, logs, compose project) and its own vars.
+const ModeConfig = "config"
+
+// SourceConfig is the variant source that selects config mode. A git branch literally named
+// "config" is reached as refs/heads/config.
+const SourceConfig = "config"
 
 // recordVersion is the schema version written into every record, so a later reader can refuse
 // a shape it does not know instead of misreading it.
@@ -53,7 +61,20 @@ type Variant struct {
 	// differs from Path when the calling dva.yml sits below its repository root.
 	ConfigDir string         `json:"config_dir"`
 	Ports     map[string]int `json:"ports,omitempty"`
+	// Instance names the run of a config-mode variant: it splits the pid/log directories and
+	// the compose project of the entries in the shared ConfigDir. Empty for the modes that have
+	// a checkout of their own.
+	Instance string `json:"instance,omitempty"`
 }
+
+// ConfigVariant is the variant a `config` source starts: the calling checkout itself, run as
+// the instance named after the variant.
+func ConfigVariant(name, configDir string) Variant {
+	return Variant{Name: name, Mode: ModeConfig, Source: SourceConfig, Path: configDir, ConfigDir: configDir, Instance: name}
+}
+
+// OwnsCheckout reports whether dva created the variant's checkout, so down may remove it.
+func (v Variant) OwnsCheckout() bool { return v.Mode == ModeSnapshot }
 
 // Variant returns the named variant, or nil.
 func (r *Record) Variant(name string) *Variant {

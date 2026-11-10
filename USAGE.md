@@ -751,8 +751,9 @@ provision 마커는 plan이 아니라 provision 프로파일 단위라서, `--pu
 
 같은 plan을 여러 ref에서 동시에 띄워 나란히 보고 내립니다. 설계는
 [docs/75-variant-comparison-design.md](docs/75-variant-comparison-design.md)입니다.
-이 빌드는 **snapshot 모드**(ref를 detached 체크아웃으로 만듦)와 **worktree 모드**(이미 있는 작업
-worktree를 `worktree:<branch>`로 지정)를 시작합니다. 한 `up` 안에서 섞어 쓸 수 있습니다.
+이 빌드는 **snapshot 모드**(ref를 detached 체크아웃으로 만듦), **worktree 모드**(이미 있는 작업
+worktree를 `worktree:<branch>`로 지정), **config 모드**(`config`: 체크아웃은 하나, 비교안마다 vars와
+인스턴스만 다름)를 시작합니다. 한 `up` 안에서 섞어 쓸 수 있습니다.
 
 ```yaml
 compare:
@@ -768,6 +769,7 @@ compare:
 ```bash
 dva compare up layout a=main b=feat/layout-a   # 시작 (인자 생략 시 variants:)
 dva compare up layout a=main b=worktree:feat/x # b는 feat/x가 체크아웃된 기존 작업 worktree
+dva compare up layout a=config b=config        # 같은 체크아웃에서 포트·vars만 다른 두 인스턴스
 dva compare up layout --dry-run                # 해석 결과만 표시, 생성·시작 없음
 dva compare status layout --json               # 읽기 전용: 출처·커밋·포트·URL·pid·로그 경로·stale·drift
 dva compare down layout b                      # b만 내림 (shared는 남음)
@@ -786,8 +788,16 @@ dva compare down layout                        # 전부 내림, 마지막에 sha
   프로세스만 시작·중지합니다. 모르는 브랜치, 여러 후보, 조회 실패는 **아무것도 시작하지 않고** 실패하며
   호출한 체크아웃으로 대신하지 않습니다. `status`는 provider를 다시 조회해 경로가 바뀌었거나 사라진 worktree를
   stale로 알립니다. 작업 중 새 커밋이 생겨도 stale이나 drift가 아닙니다.
-- `down`은 비교안의 `per_variant`를 먼저 멈춘 뒤 snapshot 체크아웃을 지웁니다. worktree 비교안은 프로세스만
-  멈추고 worktree와 브랜치는 그대로 둡니다. 커밋하지 않은 변경이나 추적 안 되는
+- `config` 비교안은 호출한 체크아웃을 그대로 쓰고 아무것도 만들지 않습니다. 대신 비교안 이름이
+  인스턴스가 되어 `per_variant` 엔트리의 pid·로그가 `.sb/dva/{pids,logs}/<비교안>/`로 나뉘고, compose
+  프로젝트 이름은 `<project_name 또는 디렉터리 이름>-<비교안>`이 됩니다(일반 `dva up`은 그대로).
+  비교안 이름은 plan var `DVA_VARIANT`로도 들어갑니다. `.next`처럼 빌드 상태를 체크아웃에 쓰는 도구
+  (`next`, `nuxt`, `nuxi`, `astro`, `gatsby`)를 `per_variant` 엔트리가 실행하는데 그 명령·dir·env가
+  `$DVA_VARIANT`를 쓰지 않으면 **아무것도 시작하지 않고** 실패합니다(예: `NEXT_DIST_DIR=.next-$DVA_VARIANT`).
+  목록에 없는 도구가 공유 경로에 쓰는지는 dva가 볼 수 없습니다. 소스 브랜치 이름이 `config`면
+  `refs/heads/config`로 씁니다.
+- `down`은 비교안의 `per_variant`를 먼저 멈춘 뒤 snapshot 체크아웃을 지웁니다. worktree·config 비교안은 프로세스만
+  멈추고 체크아웃(worktree와 브랜치, 호출한 체크아웃)은 그대로 둡니다. 커밋하지 않은 변경이나 추적 안 되는
   파일이 있는 snapshot은 지우지 않고 알립니다(entries는 이미 멈춘 상태). 마지막 비교안이 내려가야 `shared`를 멈춥니다.
 - `--json`: 성공은 `{action, compare, plan, shared, variants[], next}` 한 문서입니다. 실패는 기존 실패 envelope에
   `error.code`(`compare_preflight_failed` 시작 전 실패, `compare_partial_failure` 일부 시작 후 실패,

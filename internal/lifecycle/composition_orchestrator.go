@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
@@ -657,7 +656,7 @@ func (o *Orchestrator) waitEntryReady(ctx context.Context, entry config.Lifecycl
 		case <-ticker.C:
 			if pid, known := o.entryPid(entry); known && !IsProcessRunning(pid) {
 				return fmt.Errorf("entry %q native process (pid %d) exited before becoming ready — see %s",
-					entry.Name, pid, entryLogPath(o.cfg.FileDir(), entry.Name))
+					entry.Name, pid, o.entryLogPath(entry.Name))
 			}
 		}
 	}
@@ -686,7 +685,7 @@ func (o *Orchestrator) entryPid(entry config.LifecycleEntry) (int, bool) {
 	if entry.Process == nil {
 		return 0, false
 	}
-	data, err := os.ReadFile(entryPidPath(o.cfg.FileDir(), entry.Name))
+	data, err := os.ReadFile(o.entryPidPath(entry.Name))
 	if err != nil {
 		return 0, false
 	}
@@ -697,12 +696,12 @@ func (o *Orchestrator) entryPid(entry config.LifecycleEntry) (int, bool) {
 	return pid, true
 }
 
-func entryPidPath(cfgDir, name string) string {
-	return filepath.Join(cfgDir, config.DotDirName, config.PidsDirName, name+".pid")
+func (o *Orchestrator) entryPidPath(name string) string {
+	return (&PluginContext{ConfigDir: o.cfg.FileDir(), Instance: o.instance}).PidFile(name)
 }
 
-func entryLogPath(cfgDir, name string) string {
-	return filepath.Join(cfgDir, config.DotDirName, config.LogsDirName, name+".log")
+func (o *Orchestrator) entryLogPath(name string) string {
+	return (&PluginContext{ConfigDir: o.cfg.FileDir(), Instance: o.instance}).LogFile(name)
 }
 
 func executionPlanEntryNames(plan *ExecutionPlan) []string {
@@ -714,4 +713,13 @@ func executionPlanEntryNames(plan *ExecutionPlan) []string {
 		names = append(names, entry.Name)
 	}
 	return names
+}
+
+// entryPidPath and entryLogPath are the paths of the ordinary (instance-less) run of cfgDir.
+func entryPidPath(cfgDir, name string) string {
+	return (&PluginContext{ConfigDir: cfgDir}).PidFile(name)
+}
+
+func entryLogPath(cfgDir, name string) string {
+	return (&PluginContext{ConfigDir: cfgDir}).LogFile(name)
 }

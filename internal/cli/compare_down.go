@@ -70,7 +70,7 @@ func runCompareDown(ctx context.Context, c *config.Config, name string, variantA
 	if result.Shared != nil {
 		if len(failures) > 0 {
 			result.Shared.Outcome = outcomeNotAttempted
-		} else if err := compareHost.Down(ctx, dir, cmp.Plan, nil, cmp.Shared); err != nil {
+		} else if err := compareHost.Down(ctx, dir, "", cmp.Plan, nil, cmp.Shared); err != nil {
 			result.Shared.Outcome, result.Shared.Error = outcomeFailed, err.Error()
 			failures = append(failures, fmt.Sprintf("shared entries %s: %v", strings.Join(cmp.Shared, ","), err))
 		} else {
@@ -120,7 +120,7 @@ func downTargets(rec *compare.Record, names []string) ([]compare.Variant, error)
 func downVariant(ctx context.Context, dir string, cmp *config.CompareConfig, rec *compare.Record, v compare.Variant) error {
 	unverified := false
 	if len(cmp.PerVariant) > 0 && pathExists(v.ConfigDir) {
-		err := compareHost.Down(ctx, v.ConfigDir, cmp.Plan, varsOf(v.Ports), cmp.PerVariant)
+		err := compareHost.Down(ctx, v.ConfigDir, v.Instance, cmp.Plan, variantVars(&v), cmp.PerVariant)
 		switch {
 		case errors.Is(err, errVariantConfigUnreadable):
 			unverified = true
@@ -128,8 +128,8 @@ func downVariant(ctx context.Context, dir string, cmp *config.CompareConfig, rec
 			return fmt.Errorf("stop entries: %w", err)
 		}
 	}
-	if v.Mode == compare.ModeWorktree {
-		return nil // a work worktree is the provider's; only its processes were dva's
+	if !v.OwnsCheckout() {
+		return nil // a work worktree is the provider's and the config-mode checkout is the caller's; only the processes were dva's
 	}
 	if !pathExists(v.Path) {
 		return nil // already gone; only the record is left to drop

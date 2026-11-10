@@ -29,6 +29,12 @@ detached snapshot under .sb/dva/variants/ and starts the declaration's per_varia
 there, with the variant's own ports. The shared entries start once, from this checkout.
 Without pairs, up uses the declaration's variants:.
 
+A variant source of config runs the variant in this checkout as its own instance: separate
+pid files, logs and compose project, the variant name in $DVA_VARIANT. Nothing is created, and
+a per_variant entry that runs a tool known to keep build state in the checkout (next, nuxt,
+nuxi, astro, gatsby) without using $DVA_VARIANT stops the up before anything starts. A branch
+named config is written refs/heads/config.
+
 A variant source of worktree:<branch> uses the existing work worktree that has that branch
 checked out. dva never creates or removes it: up starts the per_variant entries there and down
 stops them, leaving the worktree and branch in place. An unknown branch, several candidates or a
@@ -43,7 +49,7 @@ only the variants that are missing. down removes a snapshot only when it is clea
 var compareUpCmd = &cobra.Command{
 	Use:   "up <name> [variant=ref ...]",
 	Short: "Start the variants of a comparison",
-	Long:  "Start compare.<name>: the shared entries once from this checkout, then each variant=ref as a\ndetached snapshot with its own ports. Pass name=ref pairs, or none to use the declaration\x27s variants.\nA busy port, an unknown ref or a short port list fails before anything is created. A variant that\nfails to start leaves the others running; run the printed down command to undo or up again to\nstart only what is missing.",
+	Long:  "Start compare.<name>: the shared entries once from this checkout, then each variant=ref as a\ndetached snapshot, a worktree:<branch> work worktree, or the config source (this checkout, run as its\nown instance), each with its own ports. Pass name=ref pairs, or none to use the declaration\x27s variants.\nA busy port, an unknown ref or a short port list fails before anything is created. A variant that\nfails to start leaves the others running; run the printed down command to undo or up again to\nstart only what is missing.",
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runCompareUp(compareContext(cmd), mustLoadConfig(), args[0], args[1:], compareWait)
@@ -63,7 +69,7 @@ var compareStatusCmd = &cobra.Command{
 var compareDownCmd = &cobra.Command{
 	Use:   "down <name> [variant ...]",
 	Short: "Stop variants and reclaim their snapshot checkouts",
-	Long:  "Stop each variant\x27s per_variant entries, then remove its snapshot checkout. A worktree:\nvariant only has its entries stopped; its worktree stays. A snapshot with\nuncommitted or untracked changes is kept and reported. With no variant names it takes every\nvariant down and then stops the shared entries.",
+	Long:  "Stop each variant\x27s per_variant entries, then remove its snapshot checkout. A worktree:\nor config variant only has its entries stopped; its checkout stays. A snapshot with\nuncommitted or untracked changes is kept and reported. With no variant names it takes every\nvariant down and then stops the shared entries.",
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runCompareDown(compareContext(cmd), mustLoadConfig(), args[0], args[1:])
@@ -141,6 +147,8 @@ func parseVariantSpecs(compareName string, cmp *config.CompareConfig, args []str
 			return nil, fmt.Errorf("variant name %q must start with a letter or digit and use only letters, digits, - and _", s.Name)
 		case seen[s.Name]:
 			return nil, fmt.Errorf("variant %q is given twice", s.Name)
+		case s.Source == compare.SourceConfig:
+			// config mode: no ref to resolve.
 		case compare.IsTargetSource(s.Source):
 			// A git ref cannot contain ":", so this is a provider target such as worktree:ID.
 			if _, err := compare.TargetID(s.Source); err != nil {

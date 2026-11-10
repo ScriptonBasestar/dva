@@ -29,7 +29,7 @@ func runCompareStatus(ctx context.Context, c *config.Config, name string) error 
 	result := &compareResult{Action: "status", Compare: name, Plan: cmp.Plan, Next: map[string]string{}}
 	if len(cmp.Shared) > 0 {
 		result.Shared = &compareSharedResult{Entries: cmp.Shared, Outcome: outcomeObserved}
-		if obs, err := compareHost.Status(ctx, dir, cmp.Plan, nil, cmp.Shared); err != nil {
+		if obs, err := compareHost.Status(ctx, dir, "", cmp.Plan, nil, cmp.Shared); err != nil {
 			result.Shared.Error = "status unavailable: " + err.Error()
 		} else {
 			result.Shared.compareObserved = *obs
@@ -58,11 +58,11 @@ func runCompareStatus(ctx context.Context, c *config.Config, name string) error 
 			}
 		}
 		if len(cmp.PerVariant) > 0 && pathExists(v.ConfigDir) {
-			if obs, err := compareHost.Status(ctx, v.ConfigDir, cmp.Plan, varsOf(v.Ports), cmp.PerVariant); err != nil {
+			if obs, err := compareHost.Status(ctx, v.ConfigDir, v.Instance, cmp.Plan, variantVars(&v), cmp.PerVariant); err != nil {
 				row.Error = "status unavailable: " + err.Error()
 			} else {
 				row.compareObserved = *obs
-				annotateProcesses(&row, v.ConfigDir, cmp.PerVariant)
+				annotateProcesses(&row, v.ConfigDir, v.Instance, cmp.PerVariant)
 			}
 		}
 		result.Variants = append(result.Variants, row)

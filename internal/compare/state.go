@@ -6,11 +6,9 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 
-	"github.com/ScriptonBasestar/dva/internal/config"
 	"github.com/ScriptonBasestar/dva/internal/lifecycle"
 )
 
@@ -46,7 +44,10 @@ func Check(ctx context.Context, configDir string, rec *Record, perVariant []stri
 		case !info.IsDir():
 			reasons = append(reasons, fmt.Sprintf("checkout %s is not a directory", v.Path))
 		}
-		if v.Mode == ModeWorktree {
+		if v.Mode == ModeConfig {
+			// The calling checkout is not a worktree dva registered and has no pinned commit:
+			// only its existence (checked above) says anything.
+		} else if v.Mode == ModeWorktree {
 			// The provider is asked again: a work worktree is not dva's, so its path or branch
 			// may have changed since up.
 			reasons = append(reasons, targetDrift(ctx, configDir, v)...)
@@ -55,7 +56,7 @@ func Check(ctx context.Context, configDir string, rec *Record, perVariant []stri
 		} else if wt.Head != v.Commit {
 			reasons = append(reasons, fmt.Sprintf("checkout is at %s, record says %s", wt.Head, v.Commit))
 		}
-		reasons = append(reasons, deadPids(v.ConfigDir, perVariant)...)
+		reasons = append(reasons, deadPids(v.ConfigDir, v.Instance, perVariant)...)
 		states = append(states, VariantState{Name: v.Name, Stale: len(reasons) > 0, Reasons: reasons})
 	}
 	return states, nil
@@ -63,10 +64,11 @@ func Check(ctx context.Context, configDir string, rec *Record, perVariant []stri
 
 // deadPids reports each entry whose pid file names a process that is not running, or cannot be
 // read as a pid.
-func deadPids(configDir string, entries []string) []string {
+func deadPids(configDir, instance string, entries []string) []string {
 	var reasons []string
+	pctx := &lifecycle.PluginContext{ConfigDir: configDir, Instance: instance}
 	for _, entry := range entries {
-		pidFile := filepath.Join(configDir, config.DotDirName, config.PidsDirName, entry+".pid")
+		pidFile := pctx.PidFile(entry)
 		data, err := os.ReadFile(pidFile)
 		if errors.Is(err, fs.ErrNotExist) {
 			continue

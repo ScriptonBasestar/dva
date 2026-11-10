@@ -34,48 +34,54 @@ func newFakeHost() *fakeHost {
 	return &fakeHost{failUp: map[string]bool{}, running: map[string]bool{}, vars: map[string]map[string]string{}}
 }
 
-func (f *fakeHost) tag(dir string) string {
-	if filepath.Base(dir) == "repo" {
-		return "shared"
+// tag names a (dir, instance) pair in calls and failure maps. An instance of the calling
+// checkout reads "shared#<instance>", so config variants are told apart from the shared entries.
+func (f *fakeHost) tag(dir, instance string) string {
+	t := filepath.Base(dir)
+	if t == "repo" {
+		t = "shared"
 	}
-	return filepath.Base(dir)
+	if instance != "" {
+		t += "#" + instance
+	}
+	return t
 }
 
-func (f *fakeHost) Up(_ context.Context, dir, _ string, vars map[string]string, names []string, _ bool) (*compareObserved, error) {
-	f.calls = append(f.calls, "up:"+f.tag(dir)+":"+strings.Join(names, ","))
-	f.vars[f.tag(dir)] = vars
-	if f.failUp[f.tag(dir)] {
+func (f *fakeHost) Up(_ context.Context, dir, inst, _ string, vars map[string]string, names []string, _ bool) (*compareObserved, error) {
+	f.calls = append(f.calls, "up:"+f.tag(dir, inst)+":"+strings.Join(names, ","))
+	f.vars[f.tag(dir, inst)] = vars
+	if f.failUp[f.tag(dir, inst)] {
 		return nil, errors.New("simulated start failure")
 	}
 	for _, n := range names {
-		f.running[dir+"|"+n] = true
+		f.running[dir+"|"+inst+"|"+n] = true
 	}
 	if f.onUp != nil {
 		f.onUp(dir)
 	}
-	return f.observe(dir, names), nil
+	return f.observe(dir, inst, names), nil
 }
 
-func (f *fakeHost) Down(_ context.Context, dir, _ string, _ map[string]string, names []string) error {
-	f.calls = append(f.calls, "down:"+f.tag(dir)+":"+strings.Join(names, ","))
-	if f.unreadable[f.tag(dir)] {
+func (f *fakeHost) Down(_ context.Context, dir, inst, _ string, _ map[string]string, names []string) error {
+	f.calls = append(f.calls, "down:"+f.tag(dir, inst)+":"+strings.Join(names, ","))
+	if f.unreadable[f.tag(dir, inst)] {
 		return fmt.Errorf("load %s: %w", dir, errVariantConfigUnreadable)
 	}
 	for _, n := range names {
-		delete(f.running, dir+"|"+n)
+		delete(f.running, dir+"|"+inst+"|"+n)
 	}
 	return nil
 }
 
-func (f *fakeHost) Status(_ context.Context, dir, _ string, _ map[string]string, names []string) (*compareObserved, error) {
-	return f.observe(dir, names), nil
+func (f *fakeHost) Status(_ context.Context, dir, inst, _ string, _ map[string]string, names []string) (*compareObserved, error) {
+	return f.observe(dir, inst, names), nil
 }
 
-func (f *fakeHost) observe(dir string, names []string) *compareObserved {
+func (f *fakeHost) observe(dir, inst string, names []string) *compareObserved {
 	st := &lifecycle.AggregatedStatus{}
 	for _, n := range names {
 		state := "stopped"
-		if f.running[dir+"|"+n] {
+		if f.running[dir+"|"+inst+"|"+n] {
 			state = "running"
 		}
 		st.Entries = append(st.Entries, lifecycle.EntryStatus{Name: n, Services: []lifecycle.ServiceStatus{{Name: n, State: state}}})
