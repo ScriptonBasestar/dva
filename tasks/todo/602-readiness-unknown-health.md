@@ -13,4 +13,4 @@ TASK-597의 `readinessText`는 서비스 state가 `running`이 아니거나 heal
 
 ## Completion Criteria
 
-- [ ] kubectl·vagrant·helm 등 health를 unknown으로 내는 플러그인의 실행 중 서비스가 not ready가 아닌 값으로 표시된다 | verify: human — 구현 카드가 go test -run 바인딩으로 바꾼다
+- [ ] health·state가 `unknown`이거나 helm `deployed`처럼 판단할 수 없는 서비스는 not ready가 아니라 `-`로 표시되고, 확실히 나쁜 신호가 함께 있으면 not ready로 남는다 | verify: go test ./internal/cli/ -run '^(TestReadinessTextUnjudgeableServices|TestReadinessTextSummarizesHealth|TestCompareTableRowShowsDerivedReadiness)$' -count=1

@@ -255,15 +255,20 @@ func outcomeText(v compareVariantResult) string {
 }
 
 // readinessText summarizes whether the variant is ready to use. It never claims "ready" unless
-// every service in the status is running and healthy (or running with no health check), and
-// every health check passes: a starting, unhealthy, stopped or exited service, or a failing
-// check, is "not ready". "error" means an entry could not be queried; "-" means nothing was
-// observed (no status, or no services and no health checks to judge).
+// every observed service is judged running and healthy (or running with no health check), and
+// every health check passes. A definitely-bad signal wins: a service whose state is clearly not
+// running (stopped, exited, starting, restarting, created, paused, failed, pending, ...), whose
+// health is unhealthy or starting, or a failing check, is "not ready". "error" means an entry
+// could not be queried. "-" means nothing can be judged: no status, no services and no checks,
+// or no bad signal but at least one service the plugin cannot judge, because its health is
+// "unknown" (kubectl, vagrant, helm, skaffold) or its state is "unknown" (skaffold, an
+// unparseable helm/multipass/docker answer) or helm's "deployed" (the release is installed, its
+// pods are not observed). Such a service is never reported "ready" or "not ready".
 func readinessText(st *lifecycle.AggregatedStatus) string {
 	if st == nil {
 		return "-"
 	}
-	seen, bad, broken := false, false, false
+	seen, unjudged, bad, broken := false, false, false, false
 	for _, e := range st.Entries {
 		if e.Error != "" {
 			broken = true
@@ -274,8 +279,11 @@ func readinessText(st *lifecycle.AggregatedStatus) string {
 		}
 		for _, s := range e.Services {
 			seen = true
-			if s.State != "running" || (s.Health != "" && s.Health != "healthy") {
+			switch serviceReadiness(s) {
+			case readinessBad:
 				bad = true
+			case readinessUnjudged:
+				unjudged = true
 			}
 		}
 	}
@@ -284,10 +292,41 @@ func readinessText(st *lifecycle.AggregatedStatus) string {
 		return "not ready"
 	case broken:
 		return "error"
+	case unjudged:
+		return "-"
 	case seen:
 		return "ready"
 	}
 	return "-"
+}
+
+type serviceJudgement int
+
+const (
+	readinessOK serviceJudgement = iota
+	readinessUnjudged
+	readinessBad
+)
+
+// serviceReadiness judges one service from the values plugins actually emit. State is compared
+// case-insensitively because multipass reports its VM state as "Running".
+func serviceReadiness(s lifecycle.ServiceStatus) serviceJudgement {
+	state, health := strings.ToLower(s.State), strings.ToLower(s.Health)
+	stateJ := readinessBad
+	switch state {
+	case "running":
+		stateJ = readinessOK
+	case "unknown", "deployed":
+		stateJ = readinessUnjudged
+	}
+	healthJ := readinessBad
+	switch health {
+	case "", "healthy":
+		healthJ = readinessOK
+	case "unknown":
+		healthJ = readinessUnjudged
+	}
+	return max(stateJ, healthJ)
 }
 
 func pidsText(pids map[string]int) string {
