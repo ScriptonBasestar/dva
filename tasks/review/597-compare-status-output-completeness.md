@@ -25,3 +25,20 @@ created: 2026-11-09
 - readiness 열은 새 필드 없이 이미 있는 Status에서 요약한다(`readinessText`). `ready`는 Status의 모든 서비스가 `running`이고 health가 비었거나(health check 없음) `healthy`이며 모든 health check가 통과할 때만 낸다(`entriesRunning`이 `State == "running"`으로 보는 것과 같은 기준). `starting`·`unhealthy`·중지·exited 서비스나 실패한 check가 하나라도 있으면 `not ready`다(리뷰에서 starting·exited를 ready로 낸 결함을 고침). 조회 불가 엔트리가 있으면 `error`, 서비스도 check도 없어 판단할 것이 없으면 `-`. health check 없이 running인 서비스는 `ready`다. JSON 스키마는 바뀌지 않는다.
 - `variants` 빈 배열: 결과를 만드는 세 곳(up·status·down)에서 `Variants`를 빈 슬라이스로 초기화한다. 구조체 태그나 사용자 정의 마샬러를 늘리지 않는 가장 작은 방법이다. 기록이 있고 비교안이 0개인 경우(기록 직접 편집 등)에 해당한다.
 - 표에 열이 늘어 up·down 표도 같은 열을 낸다(같은 `printCompareTable`).
+
+## Review Attempts
+
+### 1. 2026-11-11 — reviewer: claude-code-subagent (opus, 독립), executor: claude-sonnet-5-5
+
+- 대상: head c93dc7a0. 판정: pass, 중간 심각도 발견 1건. 기준 1·2 PASS. 발견: `readinessText`가 서비스가 starting이거나 중지(exited·stopped)여도 `ready`를 냈다(db healthy + web starting → ready).
+- 수리: a04310b1. 모든 서비스가 running이고 health가 비었거나 healthy일 때만 `ready`, starting·중지·실패 check는 `not ready`. 표 행의 READY 셀 테스트와 starting·exited 사례를 추가했다.
+
+### 2. 2026-11-11 — reviewer: claude-code-subagent (opus, 독립, 앞선 리뷰어와 다른 에이전트), executor: claude-sonnet-5-5
+
+- 대상: head a04310b1. 판정: fail. 제품 코드는 맞다고 확인했다. 기준 2의 테스트 `TestCompareJSONVariantsIsEmptyArrayNotNull`이 약 20%(40회 중 8회) 불안정했다: map 순회로 down이 먼저 돌면 기록이 지워져 status가 "not started — no record of an up"으로 실패한다. 테스트만의 결함이다.
+- 비차단(후속): kubectl·vagrant·helm·skaffold 플러그인이 내는 health `unknown`은 `not ready`로 읽힌다. 카드 사양(healthy 또는 health 없음만 ready)과 일치하며 후속으로 남긴다.
+
+### 사용자 결정 (2026-11-11)
+
+- 위험을 수용하고 테스트 순서만 고정(status를 down보다 먼저, 순서 있는 슬라이스)했다. 세 번째 리뷰 없이 통합한다.
+- 검증: `-count=60` 실패 0회. `[]` 초기화를 status·down에서 각각 지운 돌연변이는 5회 모두 실패했다.

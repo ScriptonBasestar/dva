@@ -711,17 +711,21 @@ func TestCompareJSONVariantsIsEmptyArrayNotNull(t *testing.T) {
 	old := jsonOutput
 	jsonOutput = true
 	t.Cleanup(func() { jsonOutput = old })
-	for name, run := range map[string]func() error{
-		"status": func() error { return runCompareStatus(context.Background(), c, "layout") },
-		"down":   func() error { return runCompareDown(context.Background(), c, "layout", nil) },
+	// Ordered: down deletes the (now empty) record, so status must run before it.
+	for _, tc := range []struct {
+		name string
+		run  func() error
+	}{
+		{"status", func() error { return runCompareStatus(context.Background(), c, "layout") }},
+		{"down", func() error { return runCompareDown(context.Background(), c, "layout", nil) }},
 	} {
 		out := captureStdout(t, func() {
-			if err := run(); err != nil {
-				t.Errorf("%s: %v", name, err)
+			if err := tc.run(); err != nil {
+				t.Errorf("%s: %v", tc.name, err)
 			}
 		})
 		if !strings.Contains(out, `"variants": []`) {
-			t.Errorf("%s output lacks \"variants\": []:\n%s", name, out)
+			t.Errorf("%s output lacks \"variants\": []:\n%s", tc.name, out)
 		}
 		output.ResetStdoutDocument()
 	}
