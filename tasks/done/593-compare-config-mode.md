@@ -5,7 +5,11 @@ type: feature
 priority: P2
 effort: M
 exec-tier: strong
-status: review
+status: done
+quality-review: waived
+quality-reviewed-at: 2026-11-11T09:50:00Z
+quality-review-evidence: tasks/done/evidence/TASK-593/waiver.json
+quality-review-receipt: tasks/done/evidence/TASK-593/done-review-79a1ca36714b2983ea5b518895dd09f938420b051e34bc0880aa2afe0be84dc4.json
 created: 2026-11-06
 depends-on: [TASK-591]
 allowed-paths: [internal/compare/, internal/cli/, internal/lifecycle/, internal/runner/, USAGE.md, docs/75-variant-comparison-design.md]
@@ -33,7 +37,7 @@ allowed-paths: [internal/compare/, internal/cli/, internal/lifecycle/, internal/
 ## Completion Criteria
 
 - [x] 같은 체크아웃의 두 비교안이 서로 다른 pid 경로와 compose 이름을 쓰고, 나누지 않은 빌드 상태 경로는 실행 전 실패가 되며, 기존 dva up의 경로는 그대로임이 테스트로 고정되고 전체 테스트가 통과한다 | verify: `go test ./internal/lifecycle/ -run 'TestPluginContextInstancePaths|TestProcessPluginInstancesDoNotShareState|TestInstanceComposeProjectName|TestInstanceProjectNameIsNormalized|TestComposePluginsRunInstanceProject|TestOrchestratorReadsInstancePidFile|TestInstanceProjectFollowsComposeDerivation' -count=1 && go test ./internal/cli/ -run 'TestCompare(UpConfigVariant|DownConfigVariant|UpMixesConfig|StatusConfigVariant)|TestLifecycleRunnerRunsInstances|TestParseVariantSpecsRejectsNamesDifferingByCase|TestAnnotateProcessesReadsTheInstanceDirectory|TestCompareUpRefusesNameDifferingByCaseFromRecordedVariant|TestCompareUpConfigVariantRefusesOSVariantVar|TestConfigModeProblemsKeepsEnvProblemWhenPlanIsUnreadable' -count=1`
-- [ ] config 모드 두 비교안이 동시에 뜨고 각각 down된다 | verify: human — 예시 프로젝트에서 a=config b=config로 서로 다른 포트를 띄워 두 URL과 status를 확인하고 하나씩 down한다
+- [x] config 모드 두 비교안이 동시에 뜨고 각각 down된다 | verify: human — 예시 프로젝트에서 a=config b=config로 서로 다른 포트를 띄워 두 URL과 status를 확인하고 하나씩 down한다
 
 ## Scope Notes
 
@@ -87,3 +91,10 @@ allowed-paths: [internal/compare/, internal/cli/, internal/lifecycle/, internal/
   - F13 F8 수리가 항목 이름을 프로젝트에 넣어, 일반 실행에서 한 프로젝트(한 네트워크)이던 같은 디렉터리의 compose 항목들이 비교안에서는 갈라짐: 수정. 프로젝트를 compose가 일반 실행에서 정하는 이름(첫 파일의 최상위 `name:`, 없으면 그 디렉터리 이름)에 `-<인스턴스>`를 붙여 만든다. 항목 이름 접미사와 그로 인한 F10 하이픈 경계 모호성도 사라졌다. 돌연변이 3건(name 읽기, 디렉터리 기준, 항목 이름 접미사)이 모두 테스트에 잡힌다.
 - 한도: 카드당 2회 판정 한도를 이미 넘었다(3차는 사용자 수용). 4차 리뷰는 새 사용자 결정이 필요하다.
 - 사용자 결정(2026-11-11): 4차 리뷰 없이 F13 수리(63fb7642)의 위험을 수용하고 통합한다("위험 수용 후 통합"). 수리의 근거는 테스트와 돌연변이 3건뿐이며 독립 리뷰는 받지 않았다. 기준 2(사람 확인)는 여전히 열려 있어 카드는 review/에 남는다.
+
+### 4 (마감). 2026-11-11 — 사용자 권한으로 waived 마감, 최종 PASS 판정 없음
+
+- 최종 코드(F13 수리 63fb7642)에 대한 독립 리뷰 PASS 판정은 없다. 3차까지 모두 fix-needed였고 3차 수리는 리뷰받지 않았다(사용자가 위험을 수용했다고 위 3차 항목에 기록됨).
+- 사용자 허용(2026-11-11): "권장안대로 진행해". AI가 기준 2를 직접 실행해 근거로 삼고 마감하자는 제안에 대한 답이다. 제안은 "waived"를 이름 붙이지 않았다. 이 범위 해석은 마감 리뷰어가 판단한다.
+- 기준 2 확인: AI 세션이 실행했고 사람이 한 것이 아니다. 임시 저장소에서 `a=config b=config`(포트 38101·38102) 동시 기동과 응답, status, 하나씩 down을 확인했다(`tasks/done/evidence/TASK-593/config-mode-run.txt`). 원 출력은 파일로 저장하지 않았다. 실제 웹 프레임워크·compose·shared 항목은 확인하지 않았다.
+- 근거 없는 부분: 1~3차 리뷰 원문과 사용자 결정의 원문은 저장되지 않았다. 근거: `tasks/done/evidence/TASK-593/waiver.json`. 다음 전환: done/ (waived).

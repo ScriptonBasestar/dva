@@ -1,0 +1,18 @@
+Criterion 2 check (verify: human), run by the coordinating AI session (claude-sonnet-5-5), not by a human, on 2026-11-11.
+Binary: ./bin/dva built by `make build` from master 1d5d4fef6a454c78b159aed3874e22a280531faa (includes the TASK-593 code).
+Project: throwaway git repo in the session scratchpad; stack web = native runner `python3 -m http.server ${WEB_PORT} --bind 127.0.0.1`,
+plan p (one entry), compare c { plan: p, shared: [], per_variant: [web], ports: WEB_PORT: [38101, 38102] }. The repo is not kept.
+The lines below are the observed results written from the session output; the raw terminal output was not saved as a file.
+
+1. dva compare up c a=config b=config
+   a  config  WEB_PORT=38101  started  ready  pid web=41712
+   b  config  WEB_PORT=38102  started  ready  pid web=41727
+   curl 127.0.0.1:38101/ -> main-page ; curl 127.0.0.1:38102/ -> main-page
+2. dva compare status c
+   both variants observed, ready, same pids as above. The URL column was empty (no URL is declared in this project; the two ports were curled instead).
+3. dva compare down c a
+   a stopped (pid 41712 removed). curl a -> 000 (connection refused), b -> 200. status then listed only b.
+4. dva compare down c b
+   b stopped. Both ports refused. No http.server process left. .sb/dva held only compare/, logs/, pids/.
+
+Not covered: real web framework, compose entries, shared entries, a project with declared URLs.

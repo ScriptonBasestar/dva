@@ -1,0 +1,48 @@
+{
+  "task": "TASK-593",
+  "disposition": "waived",
+  "final-pass-verdict": "none — no independent reviewer returned PASS for the final code (F13 repair 63fb7642)",
+  "authority": "user (host owner)",
+  "authorized-on": "2026-11-11",
+  "authorization-quote": "권장안대로 진행해",
+  "authorization-scope-note": "Given in reply to the coordinator proposing to close TASK-593 with the AI-run check as the criterion 2 evidence. The proposal did not itself name \"waived\"; the earlier user decision below accepted the unreviewed repair. The reviewer of this closure should judge whether that covers a waived closure.",
+  "earlier-user-decision": {
+    "date": "2026-11-11",
+    "text": "card Review Attempts #3: no 4th review, accept the risk of the F13 repair (63fb7642) and integrate (\"위험 수용 후 통합\")",
+    "user-quote-saved": false
+  },
+  "recorded-at": "2026-11-11T09:50:00Z",
+  "recorded-by": "claude-sonnet-5-5 (closure recorder; not a reviewer)",
+  "review-history": [
+    {
+      "attempt": 1,
+      "reviewed-commit": "d452226d",
+      "verdict": "fail (F1-F7)",
+      "raw-review-text": "not saved; as recorded in the card"
+    },
+    {
+      "attempt": 2,
+      "reviewed-commit": "bf9d8735",
+      "verdict": "fail (F8-F12)",
+      "raw-review-text": "not saved; as recorded in the card"
+    },
+    {
+      "attempt": 3,
+      "reviewed-commit": "5952c196",
+      "verdict": "fail (F13)",
+      "raw-review-text": "not saved; as recorded in the card"
+    }
+  ],
+  "unreviewed-repair": {
+    "commit": "63fb7642",
+    "independently-reviewed": false,
+    "basis": "tests and 3 mutations, as recorded in the card by the implementer"
+  },
+  "criterion-2-evidence": "tasks/done/evidence/TASK-593/config-mode-run.txt",
+  "criterion-2-note": "run by an AI session, not a human; a human may repeat it",
+  "unbacked": [
+    "Raw text of the three reviews was not saved; their verdicts are as recorded in the card.",
+    "The earlier user decision has no saved user quote.",
+    "The criterion 2 run output is transcribed in config-mode-run.txt, not saved raw."
+  ]
+}
