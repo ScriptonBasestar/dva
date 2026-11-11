@@ -259,12 +259,14 @@ func outcomeText(v compareVariantResult) string {
 // every health check passes. A definitely-bad signal wins: a service whose state is clearly not
 // running (stopped, exited, starting, restarting, created, paused, failed, pending, ...), whose
 // health is anything other than empty, "healthy" or "unknown" (unhealthy, starting), or a
-// failing check, is "not ready". Otherwise "error" means an entry could not be queried. "-" means nothing can be judged: no status, no services and no checks,
-// or no bad signal but at least one service the plugin cannot judge, because its health is
-// "unknown" (kubectl, vagrant, helm, skaffold), its state is empty (a kubectl/kustomize resource
-// with no status.phase, such as a Deployment, Service or ConfigMap), "unknown" (skaffold, an
-// unparseable helm/multipass/docker answer) or helm's "deployed" (the release is installed, its
-// pods are not observed). Such a service is never reported "ready" or "not ready".
+// failing check, is "not ready". Otherwise "error" means an entry could not be queried. "-" means
+// nothing can be judged: no status, or no bad signal but at least one entry with no services, no
+// checks and no error (a stopped compose project whose `compose ps` is empty, a script entry, a
+// status query that failed without marking the entry broken), or at least one service the plugin
+// cannot judge, because its health is "unknown" (kubectl, vagrant, helm, skaffold), its state is
+// empty (a kubectl/kustomize resource with no status.phase, such as a Deployment, Service or
+// ConfigMap), "unknown" (skaffold, an unparseable helm/multipass/docker answer) or helm's
+// "deployed" (the release is installed, its pods are not observed). Such an entry or service is never reported "ready" or "not ready".
 func readinessText(st *lifecycle.AggregatedStatus) string {
 	if st == nil {
 		return "-"
@@ -273,6 +275,8 @@ func readinessText(st *lifecycle.AggregatedStatus) string {
 	for _, e := range st.Entries {
 		if e.Error != "" {
 			broken = true
+		} else if len(e.Services) == 0 && len(e.Health) == 0 {
+			unjudged = true
 		}
 		for _, h := range e.Health {
 			seen = true

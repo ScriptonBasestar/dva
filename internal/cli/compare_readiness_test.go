@@ -43,3 +43,31 @@ func TestReadinessTextUnjudgeableServices(t *testing.T) {
 		}
 	}
 }
+
+// An entry with no services, no checks and no error (a stopped compose project whose
+// `compose ps` is []) cannot be judged: it keeps the cell from reading "ready", while a
+// definitely-bad signal or a broken entry elsewhere still wins.
+func TestReadinessTextEmptyEntry(t *testing.T) {
+	empty := lifecycle.EntryStatus{Name: "stopped-compose", Plugin: "compose"}
+	ready := lifecycle.EntryStatus{Name: "api", Services: []lifecycle.ServiceStatus{{Name: "api", State: "running", Health: "healthy"}}}
+	ready2 := lifecycle.EntryStatus{Name: "db", Health: []lifecycle.HealthCheckResult{{Name: "db", Ready: true}}}
+	notReady := lifecycle.EntryStatus{Name: "web", Services: []lifecycle.ServiceStatus{{Name: "web", State: "exited"}}}
+	broken := lifecycle.EntryStatus{Name: "bad", Error: "boom"}
+	agg := func(es ...lifecycle.EntryStatus) *lifecycle.AggregatedStatus {
+		return &lifecycle.AggregatedStatus{Entries: es}
+	}
+	for name, tc := range map[string]struct {
+		st   *lifecycle.AggregatedStatus
+		want string
+	}{
+		"empty and ready":     {agg(empty, ready), "-"},
+		"empty and not ready": {agg(empty, notReady), "not ready"},
+		"empty alone":         {agg(empty), "-"},
+		"empty and error":     {agg(empty, broken), "error"},
+		"two ready":           {agg(ready, ready2), "ready"},
+	} {
+		if got := readinessText(tc.st); got != tc.want {
+			t.Errorf("%s: readinessText = %q, want %q", name, got, tc.want)
+		}
+	}
+}

@@ -13,4 +13,4 @@ created: 2026-11-11
 
 ## Completion Criteria
 
-- [ ] 서비스와 health 검사가 없는 항목은 다른 항목이 ready여도 정해진 값(- 또는 not ready)으로 readiness에 반영된다 | verify: human — 구현 카드가 go test -run 바인딩으로 바꾼다
+- [ ] 서비스·health 검사·오류가 모두 없는 항목은 판단 불가로 보아 다른 항목이 ready여도 readiness가 `-`이고, 다른 항목의 not ready·error는 그대로 우선한다 | verify: `go test ./internal/cli/ -run 'TestReadinessTextEmptyEntry|TestReadinessTextUnjudgeableServices' -count=1`
