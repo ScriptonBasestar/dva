@@ -648,12 +648,15 @@ func TestReadinessTextSummarizesHealth(t *testing.T) {
 		st   *lifecycle.AggregatedStatus
 		want string
 	}{
-		"not observed":   {nil, "-"},
-		"no checks":      {entry(lifecycle.EntryStatus{Services: []lifecycle.ServiceStatus{{Name: "web", State: "running"}}}), "-"},
-		"check passes":   {entry(lifecycle.EntryStatus{Health: []lifecycle.HealthCheckResult{{Name: "h", Ready: true}}}), "ready"},
-		"check fails":    {entry(lifecycle.EntryStatus{Health: []lifecycle.HealthCheckResult{{Name: "h", Ready: true}, {Name: "g"}}}), "not ready"},
-		"unhealthy":      {entry(lifecycle.EntryStatus{Services: []lifecycle.ServiceStatus{{Name: "web", Health: "unhealthy"}}}), "not ready"},
-		"entry unusable": {entry(lifecycle.EntryStatus{Error: "boom"}), "error"},
+		"not observed":     {nil, "-"},
+		"no services":      {entry(lifecycle.EntryStatus{Name: "web"}), "-"},
+		"running no check": {entry(lifecycle.EntryStatus{Services: []lifecycle.ServiceStatus{{Name: "web", State: "running"}}}), "ready"},
+		"starting":         {entry(lifecycle.EntryStatus{Services: []lifecycle.ServiceStatus{{Name: "db", State: "running", Health: "healthy"}, {Name: "web", State: "running", Health: "starting"}}}), "not ready"},
+		"exited":           {entry(lifecycle.EntryStatus{Services: []lifecycle.ServiceStatus{{Name: "db", State: "running", Health: "healthy"}, {Name: "web", State: "exited"}}}), "not ready"},
+		"check passes":     {entry(lifecycle.EntryStatus{Health: []lifecycle.HealthCheckResult{{Name: "h", Ready: true}}}), "ready"},
+		"check fails":      {entry(lifecycle.EntryStatus{Health: []lifecycle.HealthCheckResult{{Name: "h", Ready: true}, {Name: "g"}}}), "not ready"},
+		"unhealthy":        {entry(lifecycle.EntryStatus{Services: []lifecycle.ServiceStatus{{Name: "web", Health: "unhealthy"}}}), "not ready"},
+		"entry unusable":   {entry(lifecycle.EntryStatus{Error: "boom"}), "error"},
 	} {
 		if got := readinessText(tc.st); got != tc.want {
 			t.Errorf("%s: readinessText = %q, want %q", name, got, tc.want)
@@ -705,20 +708,45 @@ func TestCompareJSONVariantsIsEmptyArrayNotNull(t *testing.T) {
 	if err := compare.WriteRecord(c.FileDir(), rec); err != nil {
 		t.Fatal(err)
 	}
+	old := jsonOutput
+	jsonOutput = true
+	t.Cleanup(func() { jsonOutput = old })
 	for name, run := range map[string]func() error{
 		"status": func() error { return runCompareStatus(context.Background(), c, "layout") },
 		"down":   func() error { return runCompareDown(context.Background(), c, "layout", nil) },
 	} {
-		jsonOutput = true
 		out := captureStdout(t, func() {
 			if err := run(); err != nil {
 				t.Errorf("%s: %v", name, err)
 			}
 		})
-		jsonOutput = false
 		if !strings.Contains(out, `"variants": []`) {
 			t.Errorf("%s output lacks \"variants\": []:\n%s", name, out)
 		}
 		output.ResetStdoutDocument()
+	}
+}
+
+// The READY cell of a table row shows the value readinessText derives from the status.
+func TestCompareTableRowShowsDerivedReadiness(t *testing.T) {
+	r := &compareResult{Action: "status", Compare: "layout", Plan: "p", Variants: []compareVariantResult{
+		{Name: "a", Outcome: outcomeObserved, compareObserved: compareObserved{Status: &lifecycle.AggregatedStatus{
+			Entries: []lifecycle.EntryStatus{{Name: "web", Services: []lifecycle.ServiceStatus{{Name: "web", State: "running", Health: "starting"}}}}}}},
+		{Name: "b", Outcome: outcomeObserved, compareObserved: compareObserved{Status: &lifecycle.AggregatedStatus{
+			Entries: []lifecycle.EntryStatus{{Name: "web", Services: []lifecycle.ServiceStatus{{Name: "web", State: "running", Health: "healthy"}}}}}}},
+	}}
+	var buf bytes.Buffer
+	printCompareTable(&buf, r)
+	rows := map[string]string{}
+	for _, l := range strings.Split(buf.String(), "\n") {
+		if f := strings.Fields(l); len(f) > 0 && (f[0] == "a" || f[0] == "b") {
+			rows[f[0]] = l
+		}
+	}
+	if !strings.Contains(rows["a"], "not ready") || strings.Contains(rows["a"], "  ready") {
+		t.Errorf("row a = %q, want not ready", rows["a"])
+	}
+	if !strings.Contains(rows["b"], "  ready") || strings.Contains(rows["b"], "not ready") {
+		t.Errorf("row b = %q, want ready", rows["b"])
 	}
 }

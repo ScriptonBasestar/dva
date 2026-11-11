@@ -254,10 +254,11 @@ func outcomeText(v compareVariantResult) string {
 	return v.Outcome
 }
 
-// readinessText summarizes what the status read says about whether the variant is ready to
-// use: "not ready" when any health check or service health fails, "error" when an entry could
-// not be queried, "ready" when at least one check passed and none failed, and "-" when nothing
-// was observed or nothing reports readiness (an entry without health checks).
+// readinessText summarizes whether the variant is ready to use. It never claims "ready" unless
+// every service in the status is running and healthy (or running with no health check), and
+// every health check passes: a starting, unhealthy, stopped or exited service, or a failing
+// check, is "not ready". "error" means an entry could not be queried; "-" means nothing was
+// observed (no status, or no services and no health checks to judge).
 func readinessText(st *lifecycle.AggregatedStatus) string {
 	if st == nil {
 		return "-"
@@ -272,11 +273,9 @@ func readinessText(st *lifecycle.AggregatedStatus) string {
 			bad = bad || !h.Ready
 		}
 		for _, s := range e.Services {
-			switch s.Health {
-			case "healthy":
-				seen = true
-			case "unhealthy":
-				seen, bad = true, true
+			seen = true
+			if s.State != "running" || (s.Health != "" && s.Health != "healthy") {
+				bad = true
 			}
 		}
 	}
