@@ -261,7 +261,7 @@ func outcomeText(v compareVariantResult) string {
 // health is anything other than empty, "healthy" or "unknown" (unhealthy, starting), or a
 // failing check, is "not ready". Otherwise "error" means an entry could not be queried. "-" means
 // nothing can be judged: no status, or no bad signal but at least one entry with no services, no
-// checks and no error (a stopped compose project whose `compose ps` is empty, a script entry, a
+// checks and no error (a compose project with no containers, e.g. after down, a script entry, a
 // status query that failed without marking the entry broken), or at least one service the plugin
 // cannot judge, because its health is "unknown" (kubectl, vagrant, helm, skaffold), its state is
 // empty (a kubectl/kustomize resource with no status.phase, such as a Deployment, Service or

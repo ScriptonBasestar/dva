@@ -107,6 +107,11 @@ func (p *PodmanComposePlugin) runSubprocess(pctx *PluginContext, args []string) 
 	return dvaexec.ExecSubprocess(pctx.Env, cmd, cmdArgs, false)
 }
 
+// statusQueryArgs is the full podman-compose ps command line of a status query.
+func (p *PodmanComposePlugin) statusQueryArgs(pctx *PluginContext) (string, []string) {
+	return p.buildArgs(pctx, composePsArgs(podmanComposePsAllFlag))
+}
+
 // queryServices runs podman-compose ps and returns parsed service statuses.
 func (p *PodmanComposePlugin) queryServices(pctx *PluginContext) ([]ServiceStatus, error) {
 	return p.queryServicesContext(context.Background(), pctx)
@@ -116,7 +121,7 @@ func (p *PodmanComposePlugin) queryServicesContext(ctx context.Context, pctx *Pl
 		return nil, nil
 	}
 
-	cmd, cmdArgs := p.buildArgs(pctx, []string{"ps", "--format", "json"})
+	cmd, cmdArgs := p.statusQueryArgs(pctx)
 	out, err := runStatusQuery(ctx, exec.Command(cmd, cmdArgs...))
 	if err != nil {
 		return nil, fmt.Errorf("podman-compose ps: %w", err)

@@ -328,6 +328,7 @@ type composeServiceInfo struct {
 	Name       string             `json:"Name"`
 	Service    string             `json:"Service"`
 	State      string             `json:"State"`
+	ExitCode   int                `json:"ExitCode"`
 	Health     string             `json:"Health"`
 	Publishers []composePublisher `json:"Publishers"`
 }
@@ -335,6 +336,32 @@ type composeServiceInfo struct {
 type composePublisher struct {
 	TargetPort    int `json:"TargetPort"`
 	PublishedPort int `json:"PublishedPort"`
+}
+
+// Status queries list every container of the project, stopped ones included: a project whose
+// containers all exited or crashed must report those services (and so read "not ready"), not an
+// empty list that reads as "nothing to judge". docker compose ps hides stopped containers
+// unless given -a. podman-compose ps already passes -a to `podman ps` itself and its argument
+// parser has no -a (podman-compose 1.6.0 compose_ps_parse), so passing one there would make
+// every podman-compose status query fail.
+const (
+	dockerComposePsAllFlag = "-a"
+	podmanComposePsAllFlag = ""
+)
+
+// composePsArgs builds the `ps` arguments both compose plugins use for status queries: the
+// tool's include-stopped flag (empty when the tool always includes them) and JSON output.
+func composePsArgs(allFlag string) []string {
+	args := []string{"ps"}
+	if allFlag != "" {
+		args = append(args, allFlag)
+	}
+	return append(args, "--format", "json")
+}
+
+// statusQueryArgs is the full docker compose ps command line of a status query.
+func (p *ComposePlugin) statusQueryArgs(pctx *PluginContext) (string, []string, error) {
+	return p.buildArgs(pctx, composePsArgs(dockerComposePsAllFlag))
 }
 
 // queryServices runs docker compose ps and returns parsed service statuses.
@@ -346,7 +373,7 @@ func (p *ComposePlugin) queryServicesContext(ctx context.Context, pctx *PluginCo
 		return nil, nil
 	}
 
-	cmd, cmdArgs, err := p.buildArgs(pctx, []string{"ps", "--format", "json"})
+	cmd, cmdArgs, err := p.statusQueryArgs(pctx)
 	if err != nil {
 		return nil, err
 	}
@@ -385,8 +412,21 @@ func parseComposeServicesJSON(out []byte) ([]ServiceStatus, error) {
 		}
 	}
 
+	// A container that exited with code 0 while another container of the project still runs is
+	// a one-shot that completed (an init or migration job). The query lists stopped containers,
+	// but such a job is left out, as it was before the query asked for them, so it neither reads
+	// as a stopped service nor turns a healthy project "not ready". When nothing runs, every
+	// container is kept: an exited project is reported as one. A non-zero exit is always kept.
+	anyRunning := false
+	for _, info := range infos {
+		anyRunning = anyRunning || serviceLooksRunning(info.State)
+	}
+
 	services := make([]ServiceStatus, 0, len(infos))
 	for _, info := range infos {
+		if anyRunning && info.ExitCode == 0 && strings.EqualFold(strings.TrimSpace(info.State), "exited") {
+			continue
+		}
 		ports := make(map[int]int)
 		for _, pub := range info.Publishers {
 			if pub.PublishedPort > 0 {
