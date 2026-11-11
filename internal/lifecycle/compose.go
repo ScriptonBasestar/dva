@@ -10,6 +10,8 @@ import (
 	"slices"
 	"strings"
 
+	"gopkg.in/yaml.v3"
+
 	"github.com/ScriptonBasestar/dva/internal/config"
 	dvaexec "github.com/ScriptonBasestar/dva/internal/exec"
 )
@@ -194,7 +196,7 @@ func (p *ComposePlugin) buildArgs(pctx *PluginContext, extraArgs []string) (stri
 		baseDir = wd
 	}
 
-	cmd, args, err := dvaexec.ComposeArgv(pctx.Env, instanceComposeConfig(pctx, cfg), baseDir)
+	cmd, args, err := dvaexec.ComposeArgv(pctx.Env, instanceComposeConfig(pctx, cfg, baseDir), baseDir)
 	if err != nil {
 		return "", nil, fmt.Errorf("entry %q: %w", pctx.Entry.Name, err)
 	}
@@ -402,11 +404,11 @@ func parseComposeServicesJSON(out []byte) ([]ServiceStatus, error) {
 	return services, nil
 }
 
-// instanceComposeConfig gives an instance its own compose project: the declared (or, failing
-// that, the directory-derived) project name with the instance appended. Without it, two
-// instances in one config directory would be the same compose project and the second `up`
-// would recreate the first one's containers. The ordinary run (no instance) is returned as is.
-func instanceComposeConfig(pctx *PluginContext, cfg *config.ComposePluginConfig) *config.ComposePluginConfig {
+// instanceComposeConfig gives an instance its own compose project: what compose would have
+// named the ordinary run's project, with the instance appended. Without it, two instances in one
+// config directory would be the same compose project and the second `up` would recreate the
+// first one's containers. The ordinary run (no instance) is returned as is.
+func instanceComposeConfig(pctx *PluginContext, cfg *config.ComposePluginConfig, baseDir string) *config.ComposePluginConfig {
 	if pctx.Instance == "" {
 		return cfg
 	}
@@ -414,24 +416,24 @@ func instanceComposeConfig(pctx *PluginContext, cfg *config.ComposePluginConfig)
 	if cfg != nil {
 		out = *cfg
 	}
-	out.ProjectName = instanceProjectName(pctx, out.ProjectName)
+	out.ProjectName = instanceProjectName(pctx, out.ProjectName, out.Files, baseDir)
 	return &out
 }
 
-// instanceProjectName is the compose project of one entry of an instance: the declared name (or
-// the directory's base name), the entry's name and the instance, joined with "-" and normalized
-// the way compose requires an explicit project name to be (lowercase letters, digits, - and _,
-// starting with a letter or digit). Compose only normalizes a name it derives itself, so
-// "my.app-A" would be rejected. The entry's name is part of it because a plain run names each
-// entry's project after its own compose file: two entries must stay two projects, or one's
-// `ps` and `down --remove-orphans` would reach the other's containers.
-func instanceProjectName(pctx *PluginContext, declared string) string {
+// instanceProjectName is the compose project of an instance: the project the ordinary run would
+// get, then "-" and the instance, normalized the way compose requires an explicit project name
+// to be (lowercase letters, digits, - and _, starting with a letter or digit). Compose only
+// normalizes a name it derives itself, so "my.app-A" would be rejected.
+//
+// The ordinary run's project is the declared project_name, else the top-level `name:` of the
+// first compose file, else the base name of that file's directory (baseDir when there is no
+// file). Following compose here, not inventing a scheme, keeps entries that share a project in
+// a plain run (two files in one directory share a network) sharing one per instance, and
+// entries that were separate projects separate.
+func instanceProjectName(pctx *PluginContext, declared string, files []string, baseDir string) string {
 	base := pctx.Env.Interpolate(declared)
 	if base == "" {
-		base = filepath.Base(pctx.ConfigDir)
-	}
-	if pctx.Entry != nil && pctx.Entry.Name != "" {
-		base += "-" + pctx.Entry.Name
+		base = composeDerivedProject(pctx, files, baseDir)
 	}
 	name := strings.Map(func(r rune) rune {
 		switch {
@@ -443,4 +445,26 @@ func instanceProjectName(pctx *PluginContext, declared string) string {
 		return '-'
 	}, base+"-"+pctx.Instance)
 	return strings.TrimLeft(name, "-_")
+}
+
+// composeDerivedProject is the project name compose derives when none is given: the first
+// file's top-level `name:` if it has one, else the base name of the file's directory.
+func composeDerivedProject(pctx *PluginContext, files []string, baseDir string) string {
+	dir := baseDir
+	if len(files) > 0 {
+		first := pctx.Env.Interpolate(files[0])
+		if !filepath.IsAbs(first) {
+			first = filepath.Join(baseDir, first)
+		}
+		dir = filepath.Dir(first)
+		if data, err := os.ReadFile(first); err == nil {
+			var doc struct {
+				Name string `yaml:"name"`
+			}
+			if yaml.Unmarshal(data, &doc) == nil && doc.Name != "" && !strings.Contains(doc.Name, "$") {
+				return doc.Name
+			}
+		}
+	}
+	return filepath.Base(dir)
 }

@@ -32,12 +32,12 @@ allowed-paths: [internal/compare/, internal/cli/, internal/lifecycle/, internal/
 
 ## Completion Criteria
 
-- [x] 같은 체크아웃의 두 비교안이 서로 다른 pid 경로와 compose 이름을 쓰고, 나누지 않은 빌드 상태 경로는 실행 전 실패가 되며, 기존 dva up의 경로는 그대로임이 테스트로 고정되고 전체 테스트가 통과한다 | verify: `go test ./internal/lifecycle/ -run 'TestPluginContextInstancePaths|TestProcessPluginInstancesDoNotShareState|TestInstanceComposeProjectName|TestInstanceProjectNameIsNormalized|TestComposePluginsRunInstanceProject|TestOrchestratorReadsInstancePidFile|TestInstanceProjectNamesDifferPerEntry' -count=1 && go test ./internal/cli/ -run 'TestCompare(UpConfigVariant|DownConfigVariant|UpMixesConfig|StatusConfigVariant)|TestLifecycleRunnerRunsInstances|TestParseVariantSpecsRejectsNamesDifferingByCase|TestAnnotateProcessesReadsTheInstanceDirectory|TestCompareUpRefusesNameDifferingByCaseFromRecordedVariant|TestCompareUpConfigVariantRefusesOSVariantVar|TestConfigModeProblemsKeepsEnvProblemWhenPlanIsUnreadable' -count=1`
+- [x] 같은 체크아웃의 두 비교안이 서로 다른 pid 경로와 compose 이름을 쓰고, 나누지 않은 빌드 상태 경로는 실행 전 실패가 되며, 기존 dva up의 경로는 그대로임이 테스트로 고정되고 전체 테스트가 통과한다 | verify: `go test ./internal/lifecycle/ -run 'TestPluginContextInstancePaths|TestProcessPluginInstancesDoNotShareState|TestInstanceComposeProjectName|TestInstanceProjectNameIsNormalized|TestComposePluginsRunInstanceProject|TestOrchestratorReadsInstancePidFile|TestInstanceProjectFollowsComposeDerivation' -count=1 && go test ./internal/cli/ -run 'TestCompare(UpConfigVariant|DownConfigVariant|UpMixesConfig|StatusConfigVariant)|TestLifecycleRunnerRunsInstances|TestParseVariantSpecsRejectsNamesDifferingByCase|TestAnnotateProcessesReadsTheInstanceDirectory|TestCompareUpRefusesNameDifferingByCaseFromRecordedVariant|TestCompareUpConfigVariantRefusesOSVariantVar|TestConfigModeProblemsKeepsEnvProblemWhenPlanIsUnreadable' -count=1`
 - [ ] config 모드 두 비교안이 동시에 뜨고 각각 down된다 | verify: human — 예시 프로젝트에서 a=config b=config로 서로 다른 포트를 띄워 두 URL과 status를 확인하고 하나씩 down한다
 
 ## Scope Notes
 
-- 격리의 단위는 "인스턴스"다. `PluginContext.Instance`가 비면 일반 실행이고 경로·이름은 그대로다(`TestPluginContextInstancePaths`가 고정). 값이 있으면 pid·로그가 `.sb/dva/{pids,logs}/<인스턴스>/`로, compose·podman-compose 프로젝트는 항목마다 `<디렉터리 이름>-<항목 이름>-<인스턴스>`로 나뉘며 compose가 명시 이름에 요구하는 형식(소문자·숫자·`-`·`_`)으로 정규화한다. per_variant compose 항목의 `project_name:`은 기존 검증이 거부하므로 접두사 경로는 없다.
+- 격리의 단위는 "인스턴스"다. `PluginContext.Instance`가 비면 일반 실행이고 경로·이름은 그대로다(`TestPluginContextInstancePaths`가 고정). 값이 있으면 pid·로그가 `.sb/dva/{pids,logs}/<인스턴스>/`로, compose·podman-compose 프로젝트는 일반 실행에서 compose가 정하는 이름(첫 파일의 `name:` 또는 그 디렉터리 이름)에 `-<인스턴스>`를 붙여 나뉘며 compose가 명시 이름에 요구하는 형식(소문자·숫자·`-`·`_`)으로 정규화한다. per_variant compose 항목의 `project_name:`은 기존 검증이 거부하므로 접두사 경로는 없다.
 - process·serverless·tilt·sam 플러그인과 composition orchestrator의 pid/log 경로 조립을 `PluginContext.PidFile/LogFile/StateDir` 하나로 모았다. 경로 계산이 한곳에 있어 인스턴스를 놓친 곳이 없다.
 - 대소문자만 다른 비교안 이름(`A`와 `a`)은 대소문자를 구분하지 않는 파일시스템에서 한 디렉터리가 되므로 거부한다. 한 명령 안의 중복뿐 아니라 이미 기록된 비교안과의 충돌도 거부하며, 이 검사는 snapshot·worktree 이름에도 적용된다(snapshot 디렉터리 `.sb/dva/variants/<이름>`도 같은 문제를 갖는다). OS 환경에 `DVA_VARIANT`가 있으면 모든 비교안의 값을 덮어쓰므로 포트 var처럼 실행 전에 거부한다.
 - 출처 표기 `config`는 호출한 체크아웃 자체를 가리키며 기록에 `mode: config`, `instance: <비교안>`으로 남는다. 동일성은 모드+출처+경로로 본다. 브랜치 이름이 `config`인 경우는 `refs/heads/config`로 쓴다.
@@ -79,3 +79,10 @@ allowed-paths: [internal/compare/, internal/cli/, internal/lifecycle/, internal/
   - F11 대소문자 검사가 snapshot·worktree에도 적용: 의도한 동작으로 Scope Notes에 기록.
   - F12 plan을 읽지 못할 때 환경 변수 문제 소실: 수정.
 - 사용자 결정(2026-11-11): 카드당 2회 판정 한도를 넘는 3차 리뷰를 수용(591의 선례). 수리 후 새 독립 리뷰어가 3차 리뷰를 한다.
+
+### 3. 2026-11-11 — reviewer: claude-code-subagent (opus, 독립), executor: claude-sonnet-5-5
+
+- 대상: head 5952c196. 판정: fix-needed(VERDICT: FAIL). 2차 수리(F8·F9·F12)는 확인됨.
+- 새 발견과 처리:
+  - F13 F8 수리가 항목 이름을 프로젝트에 넣어, 일반 실행에서 한 프로젝트(한 네트워크)이던 같은 디렉터리의 compose 항목들이 비교안에서는 갈라짐: 수정. 프로젝트를 compose가 일반 실행에서 정하는 이름(첫 파일의 최상위 `name:`, 없으면 그 디렉터리 이름)에 `-<인스턴스>`를 붙여 만든다. 항목 이름 접미사와 그로 인한 F10 하이픈 경계 모호성도 사라졌다. 돌연변이 3건(name 읽기, 디렉터리 기준, 항목 이름 접미사)이 모두 테스트에 잡힌다.
+- 한도: 카드당 2회 판정 한도를 이미 넘었다(3차는 사용자 수용). 4차 리뷰는 새 사용자 결정이 필요하다.

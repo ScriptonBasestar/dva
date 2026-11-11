@@ -93,19 +93,19 @@ func TestInstanceComposeProjectName(t *testing.T) {
 	declared := &config.ComposePluginConfig{ProjectName: "${PROJ}"}
 
 	plain := &PluginContext{ConfigDir: dir, Env: env}
-	if got := instanceComposeConfig(plain, declared); got != declared {
+	if got := instanceComposeConfig(plain, declared, dir); got != declared {
 		t.Error("the ordinary run must keep its compose config untouched")
 	}
-	if got := instanceComposeConfig(&PluginContext{ConfigDir: dir, Env: env, Instance: "a"}, declared); got.ProjectName != "shop-a" {
+	if got := instanceComposeConfig(&PluginContext{ConfigDir: dir, Env: env, Instance: "a"}, declared, dir); got.ProjectName != "shop-a" {
 		t.Errorf("declared project = %q, want shop-a", got.ProjectName)
 	}
 	if declared.ProjectName != "${PROJ}" {
 		t.Errorf("the declaration was modified: %q", declared.ProjectName)
 	}
-	if got := instanceComposeConfig(&PluginContext{ConfigDir: dir, Env: env, Instance: "b"}, &config.ComposePluginConfig{}); got.ProjectName != "myapp-b" {
+	if got := instanceComposeConfig(&PluginContext{ConfigDir: dir, Env: env, Instance: "b"}, &config.ComposePluginConfig{}, dir); got.ProjectName != "myapp-b" {
 		t.Errorf("derived project = %q, want myapp-b", got.ProjectName)
 	}
-	if got := instanceComposeConfig(&PluginContext{ConfigDir: dir, Env: env, Instance: "b"}, nil); got.ProjectName != "myapp-b" {
+	if got := instanceComposeConfig(&PluginContext{ConfigDir: dir, Env: env, Instance: "b"}, nil, dir); got.ProjectName != "myapp-b" {
 		t.Errorf("nil config project = %q, want myapp-b", got.ProjectName)
 	}
 }
@@ -122,7 +122,7 @@ func TestInstanceProjectNameIsNormalized(t *testing.T) {
 		{".hidden", "v", "hidden-v"},
 	} {
 		pctx := &PluginContext{ConfigDir: filepath.Join("/w", tc.dir), Env: env, Instance: tc.instance}
-		if got := instanceProjectName(pctx, ""); got != tc.want {
+		if got := instanceProjectName(pctx, "", nil, pctx.ConfigDir); got != tc.want {
 			t.Errorf("dir %q instance %q = %q, want %q", tc.dir, tc.instance, got, tc.want)
 		}
 	}
@@ -158,7 +158,7 @@ func TestComposePluginsRunInstanceProject(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !hasProject(args, "myapp-db-a") {
+	if !hasProject(args, "myapp-a") {
 		t.Errorf("docker compose argv has no instance project: %v", args)
 	}
 	_, plain, err := (&ComposePlugin{}).buildArgs(mk("", docker), []string{"up"})
@@ -172,7 +172,7 @@ func TestComposePluginsRunInstanceProject(t *testing.T) {
 	podman := &config.LifecycleEntry{Name: "db", PodmanCompose: &config.PodmanComposePluginConfig{Files: []string{"compose.yml"}}}
 	_, pargs := (&PodmanComposePlugin{}).buildArgs(mk("a", podman), []string{"up"})
 	_, pargsB := (&PodmanComposePlugin{}).buildArgs(mk("b", podman), []string{"up"})
-	if !hasProject(pargs, "myapp-db-a") || !hasProject(pargsB, "myapp-db-b") {
+	if !hasProject(pargs, "myapp-a") || !hasProject(pargsB, "myapp-b") {
 		t.Errorf("podman-compose argv has no instance project: %v / %v", pargs, pargsB)
 	}
 	_, pplain := (&PodmanComposePlugin{}).buildArgs(mk("", podman), []string{"up"})
@@ -213,22 +213,42 @@ func TestOrchestratorReadsInstancePidFile(t *testing.T) {
 	}
 }
 
-// Two compose entries of one instance stay two projects, as they are in a plain run (where each
-// is named after its own compose file); one shared project would let one entry's `ps` and
-// `down --remove-orphans` reach the other's containers.
-func TestInstanceProjectNamesDifferPerEntry(t *testing.T) {
-	env := config.NewEnvironment(nil, "", "")
-	dir := filepath.Join("/w", "myapp")
-	name := func(entry, instance string) string {
-		return instanceProjectName(&PluginContext{Entry: &config.LifecycleEntry{Name: entry}, ConfigDir: dir, Env: env, Instance: instance}, "")
+// An instance's project is what compose derives for the plain run plus the instance: entries whose
+// compose files share a directory share one project (one network), as they do in a plain run;
+// entries in different directories stay separate; a top-level `name:` wins over the directory.
+func TestInstanceProjectFollowsComposeDerivation(t *testing.T) {
+	root := t.TempDir()
+	write := func(rel, body string) {
+		t.Helper()
+		full := filepath.Join(root, rel)
+		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(full, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
 	}
-	if name("db", "a") == name("cache", "a") {
-		t.Errorf("entries db and cache share project %q", name("db", "a"))
+	write("infra/db.yml", "services: {}\n")
+	write("infra/cache.yml", "services: {}\n")
+	write("other/web.yml", "services: {}\n")
+	write("named/c.yml", "name: Fancy.Shop\nservices: {}\n")
+	env := config.NewEnvironment(nil, root, root)
+	name := func(instance string, files ...string) string {
+		return instanceProjectName(&PluginContext{ConfigDir: root, Env: env, Instance: instance}, "", files, root)
 	}
-	if name("db", "a") == name("db", "b") {
-		t.Errorf("instances a and b share project %q", name("db", "a"))
+	if a, b := name("a", "infra/db.yml"), name("a", "infra/cache.yml"); a != b || a != "infra-a" {
+		t.Errorf("entries in one directory: %q vs %q, want both infra-a", a, b)
 	}
-	if got := name("db", "a"); got != "myapp-db-a" {
-		t.Errorf("project = %q, want myapp-db-a", got)
+	if name("a", "infra/db.yml") == name("a", "other/web.yml") {
+		t.Error("entries in different directories share a project")
+	}
+	if name("a", "infra/db.yml") == name("b", "infra/db.yml") {
+		t.Error("instances a and b share a project")
+	}
+	if got := name("a", "named/c.yml"); got != "fancy-shop-a" {
+		t.Errorf("top-level name: project = %q, want fancy-shop-a", got)
+	}
+	if got := instanceProjectName(&PluginContext{Env: env, Instance: "a"}, "", nil, "/w/Plain"); got != "plain-a" {
+		t.Errorf("no files: project = %q, want plain-a", got)
 	}
 }
