@@ -7,6 +7,8 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
+	"sort"
 	"strings"
 
 	"github.com/ScriptonBasestar/dva/internal/compare"
@@ -16,7 +18,8 @@ import (
 // runCompareDown stops variants and reclaims their snapshot checkouts. Per variant it stops the
 // per_variant entries first and removes the checkout second, because RemoveSnapshot does not
 // look for running processes. The shared entries stop last, and only when no variant of the
-// comparison remains. A failure on one variant does not stop the others; whatever is left is
+// comparison remains, and then only those no other recorded comparison also declares shared:
+// those are kept and named in the result. A failure on one variant does not stop the others; whatever is left is
 // named in the result with the command to finish it.
 func runCompareDown(ctx context.Context, c *config.Config, name string, variantArgs []string) error {
 	cmp, err := compareDeclaration(c, name)
@@ -44,8 +47,15 @@ func runCompareDown(ctx context.Context, c *config.Config, name string, variantA
 		})
 	}
 	takesShared := len(targets) == len(rec.Variants) && len(cmp.Shared) > 0
+	var stopShared []string
 	if takesShared {
 		result.Shared = &compareSharedResult{Entries: cmp.Shared, Outcome: outcomePlanned}
+		result.Shared.Kept = sharedInUse(c, dir, name, cmp.Shared)
+		for _, e := range cmp.Shared {
+			if _, kept := result.Shared.Kept[e]; !kept {
+				stopShared = append(stopShared, e)
+			}
+		}
 	}
 	if dryRun {
 		return emitCompareResult(result, false)
@@ -70,9 +80,11 @@ func runCompareDown(ctx context.Context, c *config.Config, name string, variantA
 	if result.Shared != nil {
 		if len(failures) > 0 {
 			result.Shared.Outcome = outcomeNotAttempted
-		} else if err := compareHost.Down(ctx, dir, "", cmp.Plan, nil, cmp.Shared); err != nil {
+		} else if len(stopShared) == 0 {
+			result.Shared.Outcome = outcomeKept
+		} else if err := compareHost.Down(ctx, dir, "", cmp.Plan, nil, stopShared); err != nil {
 			result.Shared.Outcome, result.Shared.Error = outcomeFailed, err.Error()
-			failures = append(failures, fmt.Sprintf("shared entries %s: %v", strings.Join(cmp.Shared, ","), err))
+			failures = append(failures, fmt.Sprintf("shared entries %s: %v", strings.Join(stopShared, ","), err))
 		} else {
 			result.Shared.Outcome = outcomeStopped
 		}
@@ -90,6 +102,40 @@ func runCompareDown(ctx context.Context, c *config.Config, name string, variantA
 		return compareFailure(codeCompareDown, result, "compare %s: down did not finish:\n  %s", name, strings.Join(failures, "\n  "))
 	}
 	return emitCompareResult(result, false)
+}
+
+// sharedInUse maps each of entries to the other comparisons declared in c whose shared entries
+// include it and that still have a record in dir: they started it from this checkout too, and
+// their own down stops it last. A record that exists but cannot be read counts as in use, so an
+// unreadable record never lets this down stop what another comparison may still need. The
+// result is nil when nothing else uses the entries.
+func sharedInUse(c *config.Config, dir, name string, entries []string) map[string][]string {
+	others := make([]string, 0, len(c.Compare))
+	for other := range c.Compare {
+		if other != name {
+			others = append(others, other)
+		}
+	}
+	sort.Strings(others)
+	var kept map[string][]string
+	for _, other := range others {
+		decl := c.Compare[other]
+		if decl == nil {
+			continue
+		}
+		if _, err := compare.ReadRecord(dir, other); errors.Is(err, fs.ErrNotExist) {
+			continue
+		}
+		for _, e := range entries {
+			if slices.Contains(decl.Shared, e) {
+				if kept == nil {
+					kept = map[string][]string{}
+				}
+				kept[e] = append(kept[e], other)
+			}
+		}
+	}
+	return kept
 }
 
 // downTargets picks the variants to take down: those named, or all of the record. A name the

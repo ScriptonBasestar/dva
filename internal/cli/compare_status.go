@@ -33,6 +33,9 @@ func runCompareStatus(ctx context.Context, c *config.Config, name string) error 
 			result.Shared.Error = "status unavailable: " + err.Error()
 		} else {
 			result.Shared.compareObserved = *obs
+			if err := fanOutSharedEndpoints(ctx, dir, cmp.Plan, result.Shared, rec.Variants); err != nil {
+				result.Shared.Error = "per-variant endpoints unavailable: " + err.Error()
+			}
 		}
 	}
 

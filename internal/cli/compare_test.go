@@ -59,7 +59,17 @@ func (f *fakeHost) Up(_ context.Context, dir, inst, _ string, vars map[string]st
 	if f.onUp != nil {
 		f.onUp(dir)
 	}
-	return f.observe(dir, inst, names), nil
+	return f.observe(dir, inst, names, vars), nil
+}
+
+// Endpoints mimics the plan's two endpoints: api at a fixed URL and web at ${WEB_PORT}, which
+// stays unsubstituted without the var just as the real interpolation leaves it.
+func (f *fakeHost) Endpoints(_ context.Context, _, _ string, vars map[string]string) ([]planEndpointOutput, error) {
+	web := "http://localhost:${WEB_PORT}"
+	if p, ok := vars["WEB_PORT"]; ok {
+		web = "http://localhost:" + p
+	}
+	return []planEndpointOutput{{Name: "api", URL: "http://localhost:8080"}, {Name: "web", URL: web}}, nil
 }
 
 func (f *fakeHost) Down(_ context.Context, dir, inst, _ string, _ map[string]string, names []string) error {
@@ -73,11 +83,12 @@ func (f *fakeHost) Down(_ context.Context, dir, inst, _ string, _ map[string]str
 	return nil
 }
 
-func (f *fakeHost) Status(_ context.Context, dir, inst, _ string, _ map[string]string, names []string) (*compareObserved, error) {
-	return f.observe(dir, inst, names), nil
+func (f *fakeHost) Status(_ context.Context, dir, inst, _ string, vars map[string]string, names []string) (*compareObserved, error) {
+	return f.observe(dir, inst, names, vars), nil
 }
 
-func (f *fakeHost) observe(dir, inst string, names []string) *compareObserved {
+func (f *fakeHost) observe(dir, inst string, names []string, vars map[string]string) *compareObserved {
+	eps, _ := f.Endpoints(context.Background(), dir, "", vars)
 	st := &lifecycle.AggregatedStatus{}
 	for _, n := range names {
 		state := "stopped"
@@ -86,7 +97,7 @@ func (f *fakeHost) observe(dir, inst string, names []string) *compareObserved {
 		}
 		st.Entries = append(st.Entries, lifecycle.EntryStatus{Name: n, Services: []lifecycle.ServiceStatus{{Name: n, State: state}}})
 	}
-	return &compareObserved{Status: st}
+	return &compareObserved{Status: st, Endpoints: eps}
 }
 
 func (f *fakeHost) count(prefix string) int {

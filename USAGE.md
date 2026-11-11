@@ -799,10 +799,16 @@ dva compare down layout                        # 전부 내림, 마지막에 sha
 - `down`은 비교안의 `per_variant`를 먼저 멈춘 뒤 snapshot 체크아웃을 지웁니다. worktree·config 비교안은 프로세스만
   멈추고 체크아웃(worktree와 브랜치, 호출한 체크아웃)은 그대로 둡니다. 커밋하지 않은 변경이나 추적 안 되는
   파일이 있는 snapshot은 지우지 않고 알립니다(entries는 이미 멈춘 상태). 마지막 비교안이 내려가야 `shared`를 멈춥니다.
+  같은 `dva.yml`의 다른 비교가 같은 `shared` 엔트리를 선언했고 그 기록(`.sb/dva/compare/<다른 이름>.json`)이 남아 있으면
+  그 엔트리는 멈추지 않고 `kept`로 보고합니다(`shared.kept`: 엔트리 → 쓰고 있는 비교 이름, 표에는 `shared api kept: in use by comparison board`).
+  읽을 수 없는 기록도 쓰는 중으로 봅니다. 그 비교의 마지막 `down`이 멈춥니다.
+- `up`은 시작 전에 `shared` 상태를 읽어 모두 이미 실행 중이면 다시 시작하지 않고 `skipped`로 보고합니다(다른 비교가 띄운 경우 포함).
+- `shared` 결과의 엔드포인트 중 비교안의 vars(포트, `DVA_VARIANT`)에 따라 URL이 달라지는 것은 비교안마다 한 번씩,
+  그 비교안의 값으로 치환되어 `variant` 필드와 함께 나옵니다. 비교안과 무관한 엔드포인트는 한 번만 나옵니다.
 - `--json`: 성공은 `{action, compare, plan, shared, variants[], next}` 한 문서입니다. 실패는 기존 실패 envelope에
   `error.code`(`compare_preflight_failed` 시작 전 실패(같은 이름의 `compare up`이 이미 돌고 있을 때 포함), `compare_partial_failure` 일부 시작 후 실패,
   `compare_down_failed` 정리 미완료)와 같은 형태의 `error.result`가 붙습니다. 비교안 결과는
-  `started`/`skipped`/`failed`/`not_attempted`/`stopped`/`observed`/`planned` 중 하나입니다.
+  `started`/`skipped`/`failed`/`not_attempted`/`stopped`/`observed`/`planned` 중 하나이고, `shared`는 `down`에서 `kept`도 될 수 있습니다.
 
 ### Integration Tools
 

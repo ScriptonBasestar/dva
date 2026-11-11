@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -8,6 +9,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/ScriptonBasestar/dva/internal/compare"
 	"github.com/ScriptonBasestar/dva/internal/lifecycle"
 	"github.com/ScriptonBasestar/dva/internal/output"
 )
@@ -17,11 +19,12 @@ import (
 const (
 	outcomePlanned      = "planned"       // --dry-run: resolved, nothing created or started
 	outcomeStarted      = "started"       // up started it in this call
-	outcomeSkipped      = "skipped"       // up found it already running from the same source and commit
+	outcomeSkipped      = "skipped"       // up found it already running (a variant: from the same source and commit)
 	outcomeFailed       = "failed"        // up or down tried it and it did not finish
 	outcomeNotAttempted = "not_attempted" // an earlier failure stopped the run before this variant
 	outcomeStopped      = "stopped"       // down stopped it and reclaimed its checkout
 	outcomeObserved     = "observed"      // status read it
+	outcomeKept         = "kept"          // down left the shared entries running: another comparison uses them
 )
 
 // Error codes of the compare commands. They ride on the existing failure envelope's optional
@@ -44,12 +47,64 @@ type compareObserved struct {
 }
 
 // compareSharedResult is the shared entries' part of a result: started once from the calling
-// checkout.
+// checkout. Kept, on a down, maps each shared entry left running to the other comparisons
+// whose records still use it.
 type compareSharedResult struct {
-	Entries []string `json:"entries"`
-	Outcome string   `json:"outcome"`
-	Error   string   `json:"error,omitempty"`
+	Entries []string            `json:"entries"`
+	Outcome string              `json:"outcome"`
+	Error   string              `json:"error,omitempty"`
+	Kept    map[string][]string `json:"kept,omitempty"`
 	compareObserved
+}
+
+// fanOutSharedEndpoints replaces each endpoint of the shared result whose URL depends on a
+// variant's vars with one copy per variant, interpolated with that variant's vars and named by
+// it. The shared entries run without the variants' vars, so such an endpoint (one that names a
+// per_variant port) has no single value: reported once, it would show an unsubstituted or
+// default URL. Endpoints that read the same for every variant stay as they are.
+func fanOutSharedEndpoints(ctx context.Context, dir, plan string, shared *compareSharedResult, variants []compare.Variant) error {
+	if shared == nil || len(shared.Endpoints) == 0 || len(variants) == 0 {
+		return nil
+	}
+	per := make([]map[string]string, len(variants)) // variant i → endpoint name → URL
+	for i := range variants {
+		eps, err := compareHost.Endpoints(ctx, dir, plan, variantVars(&variants[i]))
+		if err != nil {
+			return fmt.Errorf("variant %s: %w", variants[i].Name, err)
+		}
+		per[i] = make(map[string]string, len(eps))
+		for _, e := range eps {
+			per[i][e.Name] = e.URL
+		}
+	}
+	varies := map[string]bool{}
+	for _, e := range shared.Endpoints {
+		for i := range variants {
+			if u, ok := per[i][e.Name]; ok && u != e.URL {
+				varies[e.Name] = true
+			}
+		}
+	}
+	if len(varies) == 0 {
+		return nil
+	}
+	out := make([]planEndpointOutput, 0, len(shared.Endpoints))
+	for _, e := range shared.Endpoints {
+		if !varies[e.Name] {
+			out = append(out, e)
+			continue
+		}
+		for i, v := range variants {
+			copied := e
+			copied.Variant = v.Name
+			if u, ok := per[i][e.Name]; ok {
+				copied.URL = u
+			}
+			out = append(out, copied)
+		}
+	}
+	shared.Endpoints = out
+	return nil
 }
 
 // compareDrift reports that a variant's source now names another commit than the one the
@@ -151,6 +206,14 @@ func printCompareTable(w io.Writer, r *compareResult) {
 			_, _ = fmt.Fprintf(w, " — %s", r.Shared.Error)
 		}
 		_, _ = fmt.Fprintln(w)
+		kept := make([]string, 0, len(r.Shared.Kept))
+		for e := range r.Shared.Kept {
+			kept = append(kept, e)
+		}
+		sort.Strings(kept)
+		for _, e := range kept {
+			_, _ = fmt.Fprintf(w, "  shared %s kept: in use by comparison %s\n", e, strings.Join(r.Shared.Kept[e], ","))
+		}
 	}
 	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
 	_, _ = fmt.Fprintln(tw, "VARIANT\tSOURCE\tCOMMIT\tPORTS\tOUTCOME\tURL")

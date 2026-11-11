@@ -44,6 +44,9 @@ type planEndpointOutput struct {
 	Label string            `json:"label"`
 	URL   string            `json:"url"`
 	Paths map[string]string `json:"paths,omitempty"`
+	// Variant names the comparison variant whose vars this URL was interpolated with. Only
+	// `dva compare` sets it, on a shared result's endpoint that differs per variant.
+	Variant string `json:"variant,omitempty"`
 }
 
 type planUpOutput struct {

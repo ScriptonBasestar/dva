@@ -228,8 +228,13 @@ func startUp(ctx context.Context, dir, name string, cmp *config.CompareConfig, r
 	}
 
 	if result.Shared != nil && pending > 0 {
-		obs, err := compareHost.Up(ctx, dir, "", cmp.Plan, nil, cmp.Shared, wait)
-		if err != nil {
+		// Shared entries another comparison (or an earlier up of this one) left running are
+		// reported as such, not as started by this call. A status that cannot be read falls
+		// through to Up, which is idempotent.
+		if obs, err := compareHost.Status(ctx, dir, "", cmp.Plan, nil, cmp.Shared); err == nil && entriesRunning(obs, cmp.Shared) {
+			result.Shared.Outcome = outcomeSkipped
+			result.Shared.compareObserved = *obs
+		} else if obs, err := compareHost.Up(ctx, dir, "", cmp.Plan, nil, cmp.Shared, wait); err != nil {
 			result.Shared.Outcome, result.Shared.Error = outcomeFailed, err.Error()
 			failure = fmt.Sprintf("shared entries %s failed to start: %v", strings.Join(cmp.Shared, ","), err)
 		} else {
@@ -252,6 +257,19 @@ func startUp(ctx context.Context, dir, name string, cmp *config.CompareConfig, r
 				row.Outcome, row.Error = outcomeFailed, err.Error()
 				failure = fmt.Sprintf("variant %s failed to start: %v", v.spec.Name, err)
 			}
+		}
+	}
+
+	if result.Shared != nil {
+		var live []compare.Variant
+		for _, v := range variants {
+			row := result.variant(v.spec.Name)
+			if rv := rec.Variant(v.spec.Name); rv != nil && (row.Outcome == outcomeStarted || row.Outcome == outcomeSkipped) {
+				live = append(live, *rv)
+			}
+		}
+		if err := fanOutSharedEndpoints(ctx, dir, cmp.Plan, result.Shared, live); err != nil && result.Shared.Error == "" {
+			result.Shared.Error = "per-variant endpoints unavailable: " + err.Error()
 		}
 	}
 
@@ -372,10 +390,16 @@ func variantRunning(ctx context.Context, cmp *config.CompareConfig, v *compare.V
 		return true // nothing runs per variant; the checkout is the whole variant
 	}
 	obs, err := compareHost.Status(ctx, v.ConfigDir, v.Instance, cmp.Plan, variantVars(v), cmp.PerVariant)
-	if err != nil || obs.Status == nil {
+	return err == nil && entriesRunning(obs, cmp.PerVariant)
+}
+
+// entriesRunning reports whether obs shows every one of names with a running service and no
+// entry error. A missing status counts as not running.
+func entriesRunning(obs *compareObserved, names []string) bool {
+	if obs == nil || obs.Status == nil {
 		return false
 	}
-	for _, name := range cmp.PerVariant {
+	for _, name := range names {
 		up := false
 		for _, e := range obs.Status.Entries {
 			if e.Name != name || e.Error != "" {

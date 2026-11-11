@@ -23,6 +23,9 @@ type compareRunner interface {
 	Up(ctx context.Context, dir, instance, plan string, vars map[string]string, names []string, wait bool) (*compareObserved, error)
 	Down(ctx context.Context, dir, instance, plan string, vars map[string]string, names []string) error
 	Status(ctx context.Context, dir, instance, plan string, vars map[string]string, names []string) (*compareObserved, error)
+	// Endpoints returns the plan's endpoints in dir interpolated with vars, as observe would
+	// report them for an entry run with those vars. It starts and reads nothing.
+	Endpoints(ctx context.Context, dir, plan string, vars map[string]string) ([]planEndpointOutput, error)
 }
 
 var compareHost compareRunner = lifecycleRunner{}
@@ -99,6 +102,30 @@ func (r lifecycleRunner) Status(ctx context.Context, dir, instance, plan string,
 	return observe(ctx, runtime, orch, names)
 }
 
+func (lifecycleRunner) Endpoints(_ context.Context, dir, plan string, vars map[string]string) ([]planEndpointOutput, error) {
+	c, load, err := compareConfigAt(dir)
+	if err != nil {
+		return nil, err
+	}
+	// resolvePlanRuntime merges the vars into the environment it is given. The calling
+	// checkout's environment is the command's own, which the shared entries' calls read, so
+	// one variant's vars are merged into a copy and never into it.
+	load = &envLoad{env: load.env.Clone(), report: load.report}
+	runtime, err := resolvePlanRuntime(c, load, plan, vars)
+	if err != nil {
+		return nil, err
+	}
+	return interpolatedEndpoints(runtime), nil
+}
+
+func interpolatedEndpoints(runtime *planRuntime) []planEndpointOutput {
+	endpoints := planEndpointOutputs(filterEndpoints(runtime.config.Endpoints, runtime.plan.EndpointTags))
+	for i := range endpoints {
+		endpoints[i].URL = runtime.env.Interpolate(endpoints[i].URL)
+	}
+	return endpoints
+}
+
 // observe reads the status of names and the plan's endpoints. An endpoint URL is interpolated
 // with the environment the entries ran in, so a variant's URL carries the port it was given.
 // A status read that fails is an error, not an empty observation: compare reports facts and
@@ -108,11 +135,7 @@ func observe(ctx context.Context, runtime *planRuntime, orch *lifecycle.Orchestr
 	if err != nil {
 		return nil, fmt.Errorf("read status: %w", err)
 	}
-	endpoints := planEndpointOutputs(filterEndpoints(runtime.config.Endpoints, runtime.plan.EndpointTags))
-	for i := range endpoints {
-		endpoints[i].URL = runtime.env.Interpolate(endpoints[i].URL)
-	}
-	return &compareObserved{Status: filterStatusByNames(status, names), Endpoints: endpoints}, nil
+	return &compareObserved{Status: filterStatusByNames(status, names), Endpoints: interpolatedEndpoints(runtime)}, nil
 }
 
 // pathExists reports whether p exists. Used to skip stopping entries in a checkout that is
