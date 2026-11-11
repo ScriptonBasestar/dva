@@ -23,7 +23,8 @@
 - [원격 산출물 작업](62-remote-artifact-jobs.md)
 - [원격 리소스 접근 터널](68-remote-access-tunnel.md)
 - [kubernetes Secret 목적지](69-kubernetes-secret-target.md)
-- [비교안 동시 실행 (채택, 미구현)](75-variant-comparison-design.md)
+- 비교안 동시 실행: [설계](75-variant-comparison-design.md),
+  [config 모드 규칙·결정 기록](75-variant-comparison-details.md)
 - Capability-driven init: [설계](58-capability-driven-init-design.md),
   [검증](59-capability-driven-init-verification.md),
   [인벤토리](60-capability-driven-init-label-inventory.md),
