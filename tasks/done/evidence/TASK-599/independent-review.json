@@ -1,0 +1,22 @@
+{
+  "verdict": "PASS",
+  "reviewer-execution": "claude-code-subagent/a563d54bfcf9055a2",
+  "reviewer-grade": "strong",
+  "executor-execution": "claude-code-session/0479d29b-718c-480f-84a2-b12d94024f92",
+  "executor-grade": "standard",
+  "review-runtime-execution": "read-only on the task worktree; no repository writes by the reviewer",
+  "reviewed-commit": "0d11293f411e32001ad62827dbf45ed3da47d9ed",
+  "reviewed-at": "2026-11-11T05:00:00Z",
+  "raw-review": "tasks/done/evidence/TASK-599/done-review.txt",
+  "raw-review-sha256": "6d76e8964f48028b15155565499439476c2f86b4446a9e90c2d6194ce6da6aaa",
+  "checks": [
+    {
+      "command": "criterion verify: go test -run bindings (injected-kill unit test and 1500-round zombie-only group test)",
+      "result": "PASS"
+    },
+    {
+      "command": "mutation (EPERM tolerance removed) on a temp copy; go vet; GOOS=windows go vet; go test compare, cli, lifecycle -count=3",
+      "result": "PASS"
+    }
+  ]
+}

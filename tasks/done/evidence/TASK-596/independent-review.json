@@ -1,0 +1,22 @@
+{
+  "verdict": "PASS",
+  "reviewer-execution": "claude-code-subagent/a925197e8ff40a04d",
+  "reviewer-grade": "strong",
+  "executor-execution": "claude-code-session/0479d29b-718c-480f-84a2-b12d94024f92",
+  "executor-grade": "standard",
+  "review-runtime-execution": "read-only on the task worktree; no repository writes by the reviewer",
+  "reviewed-commit": "a8fe5541bbb9593788d22a66f9ceebd9eda4ae34",
+  "reviewed-at": "2026-11-11T05:00:00Z",
+  "raw-review": "tasks/done/evidence/TASK-596/done-review.txt",
+  "raw-review-sha256": "f85264bf9a60366a410bdb82eac2ad56f3d34c6f15963318ffe739d53579baf1",
+  "checks": [
+    {
+      "command": "criterion verify commands run verbatim: five go test -run bindings",
+      "result": "PASS"
+    },
+    {
+      "command": "mutation per criterion on a temp copy (status pre-check, in-use check, fan-out, env clone); go vet; GOOS=windows go vet; go test compare, cli, lifecycle",
+      "result": "PASS"
+    }
+  ]
+}

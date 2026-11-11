@@ -5,7 +5,11 @@ type: bug
 priority: P3
 effort: S
 exec-tier: standard
-status: review
+status: done
+quality-review: pass
+quality-reviewed-at: 2026-11-11T05:00:00Z
+quality-review-evidence: tasks/done/evidence/TASK-599/independent-review.json
+quality-review-receipt: tasks/done/evidence/TASK-599/done-review-abb3b7afbce412fb348d61946e170c49424a42e3879ce46ff93cdb39406b0f68.json
 created: 2026-11-11
 ---
 
@@ -23,3 +27,10 @@ created: 2026-11-11
 - 수리: `killLeftoverProcessGroup`이 `killGroupTolerantly`(kill 함수를 주입받는다)를 거쳐 `ESRCH`와 `EPERM`을 "그룹이 이미 없음"으로 취급한다. `internal/lifecycle`의 `killProcessGroupInCleanup`과 같은 정책이며 `pid<=1`·자기 그룹 가드는 그대로다. 한계도 같다: 다른 uid의 살아 있는 그룹에 대한 진짜 권한 문제는 이 helper가 못 잡는다(pid가 우리 자식에서 오므로 감수).
 - 바인딩: 주입 kill 함수로 오류별 허용·보고를 고정하는 `TestKillGroupTolerantlyToleratesOnlyGroupAlreadyGone`와, 실제 좀비 그룹 1500회를 도는 `TestKillGroupTolerantlyAcceptsZombieOnlyGroups`(0.65% 확률이라 1500회에서 놓칠 확률 약 0.006%; `-short`는 200회라 약 27% 확률로 놓칠 수 있어 약함).
 - 돌연변이: EPERM 허용을 지운 복사본에서 두 테스트 모두 실패했다(후자는 `kill process group …: operation not permitted` 7건). 복원 후 통과.
+
+## Review Attempts
+
+### 1. 2026-11-11 — reviewer: claude-code-subagent (opus, 독립), executor: claude-sonnet-5-5
+
+- 대상: head 263fd4e5 및 델타 0d11293f(카드 600 바인딩 한 줄). 판정: pass. 주입식 테스트가 정책을 결정적으로 고정하고, 실제 좀비 그룹 테스트는 EPERM 허용을 제거하면 실패한다. 부하 속 `-count=3`에서도 통과했고 잔류 프로세스는 없다.
+- 비차단: 코드 주석과 카드가 EPERM 비율을 약 0.65%로 적었으나 리뷰어 실측은 `-short` 200회 8~27%, 1500회 약 10~12%, 부하 시 약 40%였다(후속 TASK-601). 확률적 테스트 설계는 수용 가능(정상 코드에서 오탐 경로가 없음). Linux에서는 신호가 없을 것으로 추정된다. 다음 전환: done/.

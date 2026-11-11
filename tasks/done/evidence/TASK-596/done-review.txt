@@ -1,0 +1,5 @@
+Independent review (claude-code-subagent opus, read-only, different agent from the implementer) of TASK-596, head a8fe5541bbb9593788d22a66f9ceebd9eda4ae34 (HEAD identical at start and end, tree clean).
+Criteria 1, 2, 3: PASS. Card verify commands run verbatim, go vet, GOOS=windows go vet, go test compare/cli/lifecycle all pass. Mutation per criterion (on a temp copy) was caught by the tests.
+Findings (non-blocking, Low): config-mode env accumulation is pre-existing and not worsened (single config variant with a stale record may not fan out per-variant endpoints); up --wait skips waiting for a running-but-unhealthy shared entry (same as variants); down failure leaves a Kept note beside not_attempted; USAGE omits up/status fan-out difference and that the table hides shared endpoints. Info: record written before Up makes a zero-variant failed comparison count as using shared (conservative).
+VERDICT: PASS
+

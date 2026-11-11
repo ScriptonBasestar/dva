@@ -1,0 +1,9 @@
+Independent review (claude-code-subagent opus, read-only, different agent from the implementer) of TASK-599 and TASK-600, head 263fd4e55887dd46c94d716f9af47d0935aeaa4e (HEAD identical at start and end, tree clean).
+All criterion verify commands pass verbatim; go vet, GOOS=windows go vet, make build, go test compare/cli/lifecycle -count=3 pass. Mutations caught: 599 EPERM tolerance removal; 600 no-op lock, removed defer release, dry-run locking.
+Findings (non-blocking): F1 lock-before-ReadRecord order and F2 no-lock-file-for-undeclared-name not pinned by tests (mutations survive); F3 compare up refusal text still says "another compare up" though down can hold the lock; F4 non-unix builds fail non-dry-run down as unsupported (same as up); F5 the EPERM rate in the 599 comment/card (0.65%) is inaccurate, measured 8-40% depending on load; F6 per-name lock does not stop cross-name shared interactions (design limit since 595).
+VERDICT: PASS
+
+Independent review (claude-code-subagent opus, read-only) of TASK-599 and TASK-600, head 0d11293f411e32001ad62827dbf45ed3da47d9ed (tree clean, HEAD identical at start and end).
+Prior full review of 263fd4e5 passed (all criteria, mutations caught); the delta 263fd4e5..0d11293f changes only the TASK-600 criterion 2 binding line to /usr/bin/grep -F -q (required by tools/doccheck TestBindingToolSweepsRealCorpus). Binding exits 0, ce task validate --base 34793490 Valid for both cards, doccheck test passes.
+VERDICT: PASS
+
