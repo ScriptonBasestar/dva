@@ -1,0 +1,22 @@
+{
+  "verdict": "PASS",
+  "reviewer-execution": "claude-code-subagent/afc993a25b02dc98a",
+  "reviewer-grade": "strong",
+  "executor-execution": "claude-code-session/0479d29b-718c-480f-84a2-b12d94024f92",
+  "executor-grade": "standard",
+  "review-runtime-execution": "read-only on the task worktree; no repository writes by the reviewer",
+  "reviewed-commit": "92857574a212da42c690414a60cea05c355322cf",
+  "reviewed-at": "2026-11-11T11:30:00Z",
+  "raw-review": "tasks/done/evidence/TASK-604/done-review.txt",
+  "raw-review-sha256": "b22d4522fc29360b49a9812e62d78c41eeaa91e2d3d953436c15abbfde62e77f",
+  "checks": [
+    {
+      "command": "make doc-check (criterion 1 binding)",
+      "result": "PASS"
+    },
+    {
+      "command": "byte-for-byte comparison of moved text, anchor and link resolution (criterion 2, human check done by the independent reviewer)",
+      "result": "PASS"
+    }
+  ]
+}

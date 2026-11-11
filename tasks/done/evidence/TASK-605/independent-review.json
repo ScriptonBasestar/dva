@@ -1,0 +1,22 @@
+{
+  "verdict": "PASS",
+  "reviewer-execution": "claude-code-subagent/a8a78deadf48845ca",
+  "reviewer-grade": "strong",
+  "executor-execution": "claude-code-subagent/abc2c8991cdcbcceb (opus 5.5)",
+  "executor-grade": "strong",
+  "review-runtime-execution": "read-only on the task worktree; no repository writes by the reviewer",
+  "reviewed-commit": "fbc801f1be93f3afa8be8c6494c29b58e9b6c48e",
+  "reviewed-at": "2026-11-11T11:30:00Z",
+  "raw-review": "tasks/done/evidence/TASK-605/done-review.txt",
+  "raw-review-sha256": "600eb4569b6c701c9c536fc945c63d6daffb37573b35b37a207c18ee497eb910",
+  "checks": [
+    {
+      "command": "go test ./internal/lifecycle/ -run 'TestComposePsIncludesStopped' -count=1; go test ./internal/lifecycle/ -count=1; go vet; go test ./internal/cli/; make doc-check",
+      "result": "PASS"
+    },
+    {
+      "command": "mutations in a scratch copy: -a removed, one-shot filter off, ExitCode check removed, anyRunning forced",
+      "result": "each fails a named subtest"
+    }
+  ]
+}

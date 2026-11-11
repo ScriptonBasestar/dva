@@ -1,0 +1,9 @@
+Reviewer: claude-opus-5-5 (subagent afc993a25b02dc98a), read-only. Reviewed head 92857574a212da42c690414a60cea05c355322cf (HEAD and clean tree verified at start and end).
+
+1. Nothing lost: the 33 removed lines of docs/75-variant-comparison-design.md match details.md:7-18 (instance and build-state bullets) and details.md:22-42 (three 2026-11-06 decisions) exactly.
+2. No duplication: only the stubs at design.md:76 and :131 remain in the original.
+3. Links: anchors #config-모드-격리-규칙 (details.md:5) and #결정-기록 (details.md:20) resolve; all relative links exist; inbound tasks/done/587...:30 -> design.md#결정-기록 still resolves through the stub (one extra hop). No inbound #격리-규칙 references.
+4. design.md:41 "config 모드는 결정 기록을 따른다." still makes sense. Non-blocking nit: link it straight to details.md#결정-기록.
+5. make doc-check exit 0, no ERROR lines; design.md now HEADROOM warning only (8269 bytes). docs/README.md dropped the stale "(채택, 미구현)" label, not a regression.
+
+VERDICT: PASS

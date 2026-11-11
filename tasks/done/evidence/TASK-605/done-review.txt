@@ -1,0 +1,8 @@
+Reviewer: claude-opus-5-5 (subagent a8a78deadf48845ca), read-only. Reviewed head fbc801f1be93f3afa8be8c6494c29b58e9b6c48e (HEAD and clean tree verified at start and end).
+Checks exit 0: card verify bindings (TestComposePsIncludesStopped 4 subtests; go test ./internal/lifecycle/), go vet lifecycle+cli, go test ./internal/cli/, make doc-check.
+Mutations in scratch copy: "-a" removed, one-shot filter disabled, ExitCode==0 check removed, anyRunning forced true; each fails a named subtest.
+Podman claim verified from upstream v1.6.0 source (compose_ps hardcodes -a; compose_ps_parse only -q; parse_args rejects unknown). Rejection itself inferred from argparse, not run.
+One-shot filter judged in scope; callers checked, none worse.
+Non-blocking: (a) missing ExitCode read as 0; (b) cleanly stopped service hidden beside running ones, as before; (c) -a lists stopped one-off compose run containers (provision compose_run lacks --rm); (d) USAGE.md READY bullet omits the one-shot exclusion, no CHANGELOG entry (precedent 0b6d4a84); (e) no end-to-end readinessText test for all-exited project.
+
+VERDICT: PASS
