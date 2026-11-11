@@ -1,0 +1,22 @@
+{
+  "verdict": "PASS",
+  "reviewer-execution": "claude-code-subagent/ad8e4a2cb2c8a2f0c",
+  "reviewer-grade": "strong",
+  "executor-execution": "claude-code-subagent/af82638b7178502b4",
+  "executor-grade": "strong",
+  "review-runtime-execution": "read-only on the task worktree; no repository writes by the reviewer",
+  "reviewed-commit": "9e565d2c41bcabf85ed63265d5220924d84a0312",
+  "reviewed-at": "2026-11-11T09:00:00Z",
+  "raw-review": "tasks/done/evidence/TASK-602/done-review.txt",
+  "raw-review-sha256": "b2e6590f9cba36c0254a70ce195c717428d6053d6a04deb963624da1dc8b7ecd",
+  "checks": [
+    {
+      "command": "criterion verify binding; mutations (revert, remove \"\", disable unjudged branch, ToLower, ordering)",
+      "result": "PASS"
+    },
+    {
+      "command": "go vet; windows vet; go test cli",
+      "result": "PASS"
+    }
+  ]
+}

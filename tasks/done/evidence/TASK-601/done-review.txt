@@ -1,0 +1,3 @@
+Independent read-only review of TASK-601 at 11a96804 by subagent aca28682937b809de. Criterion 1 (lock-before-ReadRecord order test + up refusal wording correct for down holder) PASS: verify binding passed; mutation moving the lock after ReadRecord failed the new test; reverting the wording failed the up test. Summary item 3 (0.65% EPERM comment corrected to 8-40%) PASS; done card 599 untouched. go vet, GOOS=windows go vet, go test cli+compare -count=2 PASS. Non-blocking: no test with a real down holding the lock against up; two comment lines slightly over wrap.
+
+VERDICT: PASS

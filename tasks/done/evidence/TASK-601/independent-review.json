@@ -1,0 +1,22 @@
+{
+  "verdict": "PASS",
+  "reviewer-execution": "claude-code-subagent/aca28682937b809de",
+  "reviewer-grade": "strong",
+  "executor-execution": "claude-code-subagent/a120ad401c5c23e28",
+  "executor-grade": "strong",
+  "review-runtime-execution": "read-only on the task worktree; no repository writes by the reviewer",
+  "reviewed-commit": "11a96804c7fe707a6dff1fd6cb434c8b8e72067a",
+  "reviewed-at": "2026-11-11T09:00:00Z",
+  "raw-review": "tasks/done/evidence/TASK-601/done-review.txt",
+  "raw-review-sha256": "bad3625265a8a3d15b26185b68e037cdcbba6b7b8c9e3478fbeed1dcd03fccd5",
+  "checks": [
+    {
+      "command": "criterion 1 verify binding; mutation moving the lock after ReadRecord; mutation reverting the up refusal wording",
+      "result": "PASS"
+    },
+    {
+      "command": "go vet; GOOS=windows go vet; go test cli and compare -count=2",
+      "result": "PASS"
+    }
+  ]
+}
