@@ -16,7 +16,7 @@ TASK-595는 `compare up`만 이름 단위로 잠근다. `compare down`도 같은
 ## Completion Criteria
 
 - [ ] compare down이 같은 이름의 compare up이 도는 동안 아무것도 멈추기 전에 명확한 오류로 실패한다 | verify: `go test ./internal/cli/ -run TestCompareDownRefusesWhileAnotherRunHoldsTheLock -count=1 && go test ./internal/cli/ -run TestCompareDownReleasesTheLock -count=1 && go test ./internal/cli/ -run TestCompareDownDryRunIgnoresTheLock -count=1`
-- [ ] internal/config/constants.go의 compare 디렉터리 주석이 <이름>.lock을 언급한다 | verify: `grep -q '<name>.lock' internal/config/constants.go`
+- [ ] internal/config/constants.go의 compare 디렉터리 주석이 <이름>.lock을 언급한다 | verify: `/usr/bin/grep -F -q '<name>.lock' internal/config/constants.go`
 
 ## Scope Notes
 
