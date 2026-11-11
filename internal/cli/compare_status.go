@@ -26,7 +26,7 @@ func runCompareStatus(ctx context.Context, c *config.Config, name string) error 
 		return comparePreflight(nil, "compare %s: %v", name, err)
 	}
 
-	result := &compareResult{Action: "status", Compare: name, Plan: cmp.Plan, Next: map[string]string{}}
+	result := &compareResult{Action: "status", Compare: name, Plan: cmp.Plan, Variants: []compareVariantResult{}, Next: map[string]string{}}
 	if len(cmp.Shared) > 0 {
 		result.Shared = &compareSharedResult{Entries: cmp.Shared, Outcome: outcomeObserved}
 		if obs, err := compareHost.Status(ctx, dir, "", cmp.Plan, nil, cmp.Shared); err != nil {
@@ -61,11 +61,13 @@ func runCompareStatus(ctx context.Context, c *config.Config, name string) error 
 			}
 		}
 		if len(cmp.PerVariant) > 0 && pathExists(v.ConfigDir) {
+			// pid and log come from files in the recorded checkout, so they are read
+			// whether or not the status call below succeeds.
+			annotateProcesses(&row, v.ConfigDir, v.Instance, cmp.PerVariant)
 			if obs, err := compareHost.Status(ctx, v.ConfigDir, v.Instance, cmp.Plan, variantVars(&v), cmp.PerVariant); err != nil {
 				row.Error = "status unavailable: " + err.Error()
 			} else {
 				row.compareObserved = *obs
-				annotateProcesses(&row, v.ConfigDir, v.Instance, cmp.PerVariant)
 			}
 		}
 		result.Variants = append(result.Variants, row)

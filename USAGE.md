@@ -771,7 +771,7 @@ dva compare up layout a=main b=feat/layout-a   # 시작 (인자 생략 시 varia
 dva compare up layout a=main b=worktree:feat/x # b는 feat/x가 체크아웃된 기존 작업 worktree
 dva compare up layout a=config b=config        # 같은 체크아웃에서 포트·vars만 다른 두 인스턴스
 dva compare up layout --dry-run                # 해석 결과만 표시, 생성·시작 없음
-dva compare status layout --json               # 읽기 전용: 출처·커밋·포트·URL·pid·로그 경로·stale·drift
+dva compare status layout --json               # 읽기 전용: 출처·커밋·포트·URL·pid·로그 경로·readiness·stale·drift
 dva compare down layout b                      # b만 내림 (shared는 남음)
 dva compare down layout                        # 전부 내림, 마지막에 shared
 ```

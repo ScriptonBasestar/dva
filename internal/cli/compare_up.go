@@ -94,7 +94,7 @@ func loadRecordOrNew(dir, name string) (rec *compare.Record, recorded bool, err 
 // ports. It creates nothing. problems lists every reason the request cannot run, so one report
 // names them all.
 func resolveUp(ctx context.Context, dir, name string, cmp *config.CompareConfig, rec *compare.Record, specs []variantSpec) ([]*upVariant, *compareResult, []string) {
-	result := &compareResult{Action: "up", Compare: name, Plan: cmp.Plan, Next: map[string]string{}}
+	result := &compareResult{Action: "up", Compare: name, Plan: cmp.Plan, Variants: []compareVariantResult{}, Next: map[string]string{}}
 	states := staleStates(ctx, dir, rec, cmp)
 
 	var problems, fresh []string
@@ -326,6 +326,9 @@ func observeSkipped(ctx context.Context, cmp *config.CompareConfig, rec *compare
 		return
 	}
 	row.Path, row.ConfigDir = v.Path, v.ConfigDir
+	if pathExists(v.ConfigDir) {
+		annotateProcesses(row, v.ConfigDir, v.Instance, cmp.PerVariant)
+	}
 	obs, err := compareHost.Status(ctx, v.ConfigDir, v.Instance, cmp.Plan, variantVars(v), cmp.PerVariant)
 	if err != nil {
 		row.Error = "status unavailable: " + err.Error()

@@ -24,6 +24,7 @@ import (
 type fakeHost struct {
 	calls      []string
 	failUp     map[string]bool  // dir base name → Up fails
+	failStatus map[string]bool  // dir base name → Status fails
 	unreadable map[string]bool  // dir base name → Down finds no loadable dva.yml
 	onUp       func(dir string) // runs when an Up succeeds, to leave files a real start would
 	running    map[string]bool  // "dir|entry"
@@ -31,7 +32,7 @@ type fakeHost struct {
 }
 
 func newFakeHost() *fakeHost {
-	return &fakeHost{failUp: map[string]bool{}, running: map[string]bool{}, vars: map[string]map[string]string{}}
+	return &fakeHost{failUp: map[string]bool{}, failStatus: map[string]bool{}, running: map[string]bool{}, vars: map[string]map[string]string{}}
 }
 
 // tag names a (dir, instance) pair in calls and failure maps. An instance of the calling
@@ -84,6 +85,9 @@ func (f *fakeHost) Down(_ context.Context, dir, inst, _ string, _ map[string]str
 }
 
 func (f *fakeHost) Status(_ context.Context, dir, inst, _ string, vars map[string]string, names []string) (*compareObserved, error) {
+	if f.failStatus[f.tag(dir, inst)] {
+		return nil, errors.New("simulated status failure")
+	}
 	return f.observe(dir, inst, names, vars), nil
 }
 
@@ -563,5 +567,158 @@ func TestCompareDownReclaimsVariantWhoseConfigCannotLoad(t *testing.T) {
 	rec, err := compare.ReadRecord(c.FileDir(), "layout")
 	if err != nil || rec.Variant("b") != nil {
 		t.Errorf("b still recorded: %+v, %v", rec, err)
+	}
+}
+
+// writeProcessFiles leaves the pid and log file a native start would, for entry web in dir. The
+// pid is the test's own, so the variant is not reported stale for a dead process.
+func writeProcessFiles(t *testing.T, dir string) {
+	t.Helper()
+	for path, body := range map[string]string{
+		filepath.Join(dir, ".sb/dva/pids/web.pid"): fmt.Sprintf("%d\n", os.Getpid()),
+		filepath.Join(dir, ".sb/dva/logs/web.log"): "x",
+	} {
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+// startedVariantFixture runs `up a=main` with a fake start that leaves the web pid and log
+// files in the variant's checkout.
+func startedVariantFixture(t *testing.T) (*config.Config, *fakeHost) {
+	t.Helper()
+	c, host, _ := compareFixture(t)
+	host.onUp = func(dir string) {
+		if dir != c.FileDir() {
+			writeProcessFiles(t, dir)
+		}
+	}
+	if _, err := captureJSON(t, func() error {
+		return runCompareUp(context.Background(), c, "layout", []string{"a=main"}, false)
+	}); err != nil {
+		t.Fatal(err)
+	}
+	return c, host
+}
+
+func wantProcessColumns(t *testing.T, row map[string]any) {
+	t.Helper()
+	if pids, _ := row["pids"].(map[string]any); pids["web"] != float64(os.Getpid()) {
+		t.Errorf("pids = %v, want web=<test pid> in %v", row["pids"], row)
+	}
+	if logs, _ := row["logs"].([]any); len(logs) != 1 || !strings.HasSuffix(logs[0].(string), "web.log") {
+		t.Errorf("logs = %v in %v", row["logs"], row)
+	}
+}
+
+// The human status table has pid, log and readiness columns.
+func TestCompareStatusTableHasPidLogAndReadinessColumns(t *testing.T) {
+	c, _ := startedVariantFixture(t)
+	out := captureStdout(t, func() {
+		if err := runCompareStatus(context.Background(), c, "layout"); err != nil {
+			t.Fatal(err)
+		}
+	})
+	lines := strings.Split(out, "\n")
+	var header, row string
+	for i, l := range lines {
+		if strings.HasPrefix(l, "VARIANT") && i+1 < len(lines) {
+			header, row = l, lines[i+1]
+		}
+	}
+	for _, col := range []string{"READY", "PID", "LOG"} {
+		if !strings.Contains(header, col) {
+			t.Errorf("header %q lacks %s", header, col)
+		}
+	}
+	if !strings.Contains(row, fmt.Sprintf("web=%d", os.Getpid())) || !strings.Contains(row, "web.log") {
+		t.Errorf("row %q lacks the pid and log", row)
+	}
+}
+
+func TestReadinessTextSummarizesHealth(t *testing.T) {
+	entry := func(e lifecycle.EntryStatus) *lifecycle.AggregatedStatus {
+		return &lifecycle.AggregatedStatus{Entries: []lifecycle.EntryStatus{e}}
+	}
+	for name, tc := range map[string]struct {
+		st   *lifecycle.AggregatedStatus
+		want string
+	}{
+		"not observed":   {nil, "-"},
+		"no checks":      {entry(lifecycle.EntryStatus{Services: []lifecycle.ServiceStatus{{Name: "web", State: "running"}}}), "-"},
+		"check passes":   {entry(lifecycle.EntryStatus{Health: []lifecycle.HealthCheckResult{{Name: "h", Ready: true}}}), "ready"},
+		"check fails":    {entry(lifecycle.EntryStatus{Health: []lifecycle.HealthCheckResult{{Name: "h", Ready: true}, {Name: "g"}}}), "not ready"},
+		"unhealthy":      {entry(lifecycle.EntryStatus{Services: []lifecycle.ServiceStatus{{Name: "web", Health: "unhealthy"}}}), "not ready"},
+		"entry unusable": {entry(lifecycle.EntryStatus{Error: "boom"}), "error"},
+	} {
+		if got := readinessText(tc.st); got != tc.want {
+			t.Errorf("%s: readinessText = %q, want %q", name, got, tc.want)
+		}
+	}
+}
+
+// A row whose Status call failed still carries pid and log: they come from the recorded
+// variant's checkout, not from the status call.
+func TestCompareStatusFailedStatusRowKeepsPidAndLog(t *testing.T) {
+	c, host := startedVariantFixture(t)
+	host.failStatus["a"] = true
+	doc, err := captureJSON(t, func() error { return runCompareStatus(context.Background(), c, "layout") })
+	if err != nil {
+		t.Fatal(err)
+	}
+	row := doc["variants"].([]any)[0].(map[string]any)
+	if !strings.Contains(row["error"].(string), "status unavailable") {
+		t.Fatalf("expected a failed status call, row = %v", row)
+	}
+	wantProcessColumns(t, row)
+}
+
+// A skipped row of up (already running) carries pid and log too.
+func TestCompareUpSkippedRowCarriesPidAndLog(t *testing.T) {
+	c, _ := startedVariantFixture(t)
+	doc, err := captureJSON(t, func() error {
+		return runCompareUp(context.Background(), c, "layout", []string{"a=main"}, false)
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	row := doc["variants"].([]any)[0].(map[string]any)
+	if row["outcome"] != outcomeSkipped {
+		t.Fatalf("outcome = %v, want skipped", row["outcome"])
+	}
+	wantProcessColumns(t, row)
+}
+
+// With no variant recorded to report, the JSON still says `"variants": []`, not null.
+func TestCompareJSONVariantsIsEmptyArrayNotNull(t *testing.T) {
+	c, _ := startedVariantFixture(t)
+	// Dropping the only variant from the record leaves a record with none.
+	rec, err := compare.ReadRecord(c.FileDir(), "layout")
+	if err != nil {
+		t.Fatal(err)
+	}
+	rec.Variants = nil
+	if err := compare.WriteRecord(c.FileDir(), rec); err != nil {
+		t.Fatal(err)
+	}
+	for name, run := range map[string]func() error{
+		"status": func() error { return runCompareStatus(context.Background(), c, "layout") },
+		"down":   func() error { return runCompareDown(context.Background(), c, "layout", nil) },
+	} {
+		jsonOutput = true
+		out := captureStdout(t, func() {
+			if err := run(); err != nil {
+				t.Errorf("%s: %v", name, err)
+			}
+		})
+		jsonOutput = false
+		if !strings.Contains(out, `"variants": []`) {
+			t.Errorf("%s output lacks \"variants\": []:\n%s", name, out)
+		}
+		output.ResetStdoutDocument()
 	}
 }

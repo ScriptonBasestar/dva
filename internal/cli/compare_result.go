@@ -216,10 +216,11 @@ func printCompareTable(w io.Writer, r *compareResult) {
 		}
 	}
 	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
-	_, _ = fmt.Fprintln(tw, "VARIANT\tSOURCE\tCOMMIT\tPORTS\tOUTCOME\tURL")
+	_, _ = fmt.Fprintln(tw, "VARIANT\tSOURCE\tCOMMIT\tPORTS\tOUTCOME\tREADY\tPID\tLOG\tURL")
 	for _, v := range r.Variants {
-		_, _ = fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%s\n", v.Name, v.Source, shortCommit(v.Commit),
-			portsText(v.Ports), outcomeText(v), firstURL(v.Endpoints))
+		_, _ = fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", v.Name, v.Source, shortCommit(v.Commit),
+			portsText(v.Ports), outcomeText(v), readinessText(v.Status), pidsText(v.Pids),
+			dashIfEmpty(strings.Join(v.LogPaths, ",")), firstURL(v.Endpoints))
 	}
 	_ = tw.Flush()
 	for _, v := range r.Variants {
@@ -251,6 +252,63 @@ func outcomeText(v compareVariantResult) string {
 		return v.Outcome + " (drift)"
 	}
 	return v.Outcome
+}
+
+// readinessText summarizes what the status read says about whether the variant is ready to
+// use: "not ready" when any health check or service health fails, "error" when an entry could
+// not be queried, "ready" when at least one check passed and none failed, and "-" when nothing
+// was observed or nothing reports readiness (an entry without health checks).
+func readinessText(st *lifecycle.AggregatedStatus) string {
+	if st == nil {
+		return "-"
+	}
+	seen, bad, broken := false, false, false
+	for _, e := range st.Entries {
+		if e.Error != "" {
+			broken = true
+		}
+		for _, h := range e.Health {
+			seen = true
+			bad = bad || !h.Ready
+		}
+		for _, s := range e.Services {
+			switch s.Health {
+			case "healthy":
+				seen = true
+			case "unhealthy":
+				seen, bad = true, true
+			}
+		}
+	}
+	switch {
+	case bad:
+		return "not ready"
+	case broken:
+		return "error"
+	case seen:
+		return "ready"
+	}
+	return "-"
+}
+
+func pidsText(pids map[string]int) string {
+	keys := make([]string, 0, len(pids))
+	for k := range pids {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	parts := make([]string, 0, len(keys))
+	for _, k := range keys {
+		parts = append(parts, fmt.Sprintf("%s=%d", k, pids[k]))
+	}
+	return dashIfEmpty(strings.Join(parts, ","))
+}
+
+func dashIfEmpty(s string) string {
+	if s == "" {
+		return "-"
+	}
+	return s
 }
 
 func driftText(d *compareDrift) string {

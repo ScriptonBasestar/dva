@@ -39,7 +39,7 @@ func runCompareDown(ctx context.Context, c *config.Config, name string, variantA
 	if err != nil {
 		return comparePreflight(nil, "compare %s: %v", name, err)
 	}
-	result := &compareResult{Action: "down", Compare: name, Plan: cmp.Plan, DryRun: dryRun, Next: map[string]string{}}
+	result := &compareResult{Action: "down", Compare: name, Plan: cmp.Plan, DryRun: dryRun, Variants: []compareVariantResult{}, Next: map[string]string{}}
 	for _, v := range targets {
 		result.Variants = append(result.Variants, compareVariantResult{
 			Name: v.Name, Mode: v.Mode, Source: v.Source, Commit: v.Commit,
