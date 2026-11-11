@@ -9,7 +9,7 @@ status: done
 quality-review: pass
 quality-reviewed-at: 2026-11-11T05:00:00Z
 quality-review-evidence: tasks/done/evidence/TASK-599/independent-review.json
-quality-review-receipt: tasks/done/evidence/TASK-599/done-review-1455f94cc376d013eed9d070ceca7e9b1214bf8385b6ac4967c386a21f4a260f.json
+quality-review-receipt: tasks/done/evidence/TASK-599/done-review-7873403a0b4dee1848cc46908f8f2c440e5c3071201ce3229c9b3905b02ff85e.json
 created: 2026-11-11
 ---
 
@@ -33,4 +33,4 @@ created: 2026-11-11
 ### 1. 2026-11-11 — reviewer: claude-code-subagent (opus, 독립), executor: claude-sonnet-5-5
 
 - 대상: head 263fd4e5 및 델타 0d11293f(카드 600 바인딩 한 줄). 판정: pass. 기준 검증 명령이 통과했고 EPERM 허용을 제거한 변이를 테스트가 잡았다. `go test compare, cli, lifecycle -count=3`이 통과했다.
-- 비차단: 코드 주석과 카드가 EPERM 비율을 약 0.65%로 적었으나 리뷰어 실측은 부하에 따라 8~40%였다(후속 TASK-601). 확률적 실제-그룹 테스트 설계는 수용 가능으로 판정됐다. 다음 전환: done/.
+- 비차단: 코드 주석과 카드가 EPERM 비율을 약 0.65%로 적었으나 리뷰어 실측은 부하에 따라 8~40%였다(후속 TASK-601). 다음 전환: done/.
