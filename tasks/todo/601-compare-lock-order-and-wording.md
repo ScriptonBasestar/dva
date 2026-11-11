@@ -13,4 +13,4 @@ TASK-600 리뷰에서 나온 낮은 심각도 후속이다. (1) `compare down`�
 
 ## Completion Criteria
 
-- [ ] 락을 기록 읽기보다 먼저 잡는 순서를 고정하는 테스트가 있고 compare up의 거절 문구가 down이 락을 쥔 경우에도 맞다 | verify: human — 구현 카드가 go test -run 바인딩으로 바꾼다
+- [ ] 락을 기록 읽기보다 먼저 잡는 순서를 고정하는 테스트가 있고 compare up의 거절 문구가 down이 락을 쥔 경우에도 맞다 | verify: `go test ./internal/cli/ -run '^TestCompare(DownTakesTheLockBeforeReadingTheRecord|UpRefusesWhileAnotherUpHoldsTheLock)$' -count=1`

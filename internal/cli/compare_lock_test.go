@@ -19,7 +19,7 @@ func TestCompareUpRefusesWhileAnotherUpHoldsTheLock(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, err = upConfig(t, c, "a=config")
-	if err == nil || errorCode(err) != codeComparePreflight || !strings.Contains(err.Error(), "another `dva compare up layout` is running") {
+	if err == nil || errorCode(err) != codeComparePreflight || !strings.Contains(err.Error(), "another `dva compare up` or `dva compare down` of layout is running") {
 		t.Fatalf("err = %v", err)
 	}
 	if len(host.calls) != 0 {
@@ -108,5 +108,24 @@ func TestCompareDownDryRunIgnoresTheLock(t *testing.T) {
 	}
 	if len(host.calls) != 0 {
 		t.Errorf("dry run stopped something: %v", host.calls)
+	}
+}
+
+// The lock comes before the record is read. With the lock held and no record yet (an up that
+// has taken the lock but not written its record), down must report the lock, not "no record of
+// an up": a down that read the record first would act on a state the up is still changing.
+func TestCompareDownTakesTheLockBeforeReadingTheRecord(t *testing.T) {
+	c, host, _ := compareFixture(t)
+	release, err := compare.Lock(c.FileDir(), "layout")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer release()
+	_, err = captureJSON(t, func() error { return runCompareDown(context.Background(), c, "layout", nil) })
+	if err == nil || errorCode(err) != codeComparePreflight || !strings.Contains(err.Error(), "nothing was stopped: another `dva compare` of layout is running") {
+		t.Fatalf("down read the record before taking the lock: err = %v", err)
+	}
+	if len(host.calls) != 0 {
+		t.Errorf("a locked down must stop nothing: %v", host.calls)
 	}
 }

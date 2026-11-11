@@ -39,11 +39,11 @@ func runCompareUp(ctx context.Context, c *config.Config, name string, args []str
 	}
 	dir := c.FileDir()
 	if !dryRun {
-		// Held until this up ends, so a second up of the same comparison cannot read the record
-		// we are about to write or start the processes we are starting. A dry run writes nothing.
+		// Held until this up ends, so neither a second up nor a down of the same comparison can
+		// read the record we are about to write or touch the processes we are starting. A dry run writes nothing.
 		release, err := compare.Lock(dir, name)
 		if errors.Is(err, compare.ErrLocked) {
-			return comparePreflight(nil, "compare %s: nothing was started: another `dva compare up %s` is running (%v)", name, name, err)
+			return comparePreflight(nil, "compare %s: nothing was started: another `dva compare up` or `dva compare down` of %s is running (%v)", name, name, err)
 		}
 		if err != nil {
 			return comparePreflight(nil, "compare %s: %v", name, err)

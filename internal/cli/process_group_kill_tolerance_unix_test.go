@@ -34,7 +34,8 @@ func TestKillGroupTolerantlyToleratesOnlyGroupAlreadyGone(t *testing.T) {
 }
 
 // Against real zombie-only groups: a leader killed but not yet reaped, then the helper's own
-// kill. On macOS the second kill answers EPERM in about 0.65% of rounds (TASK-599), so the
+// kill. On macOS the second kill answers EPERM in 8–40% of rounds
+// depending on load (measured in the TASK-599 review), so the
 // rounds are many; with the helper tolerating only ESRCH this test fails there.
 func TestKillGroupTolerantlyAcceptsZombieOnlyGroups(t *testing.T) {
 	rounds := 1500
