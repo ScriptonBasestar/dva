@@ -1,0 +1,59 @@
+{
+  "task": "TASK-597",
+  "disposition": "waived",
+  "final-pass-verdict": "none — no independent reviewer returned PASS for the final code",
+  "authority": "user (host owner), explicit",
+  "authorized-on": "2026-11-11",
+  "authorization-quote": "597은 A로 마감하고 603 진행해줘",
+  "authorized-option": "A",
+  "authorized-option-text": "close with the user's authority, evidence stating plainly: no final PASS verdict, risk accepted; test order already fixed",
+  "recorded-at": "2026-11-11T07:00:08Z",
+  "recorded-by": "claude-opus-5-5 (closure recorder; not a reviewer)",
+  "review-history": [
+    {
+      "attempt": 1,
+      "reviewed-commit": "c93dc7a0da5e965e52397122698cd723d97b0171",
+      "verdict": "pass, with one medium finding (readinessText reported ready for starting/stopped services)",
+      "repair": "a04310b16b61c36ca212d6f69b740149035beb8c",
+      "raw-review-text": "not saved; verdict as recorded in the card by commit 34793490"
+    },
+    {
+      "attempt": 2,
+      "reviewed-commit": "a04310b16b61c36ca212d6f69b740149035beb8c",
+      "verdict": "fail",
+      "cause": "TestCompareJSONVariantsIsEmptyArrayNotNull flaked (8 of 40 runs per the card): map iteration could run down before status, deleting the record. Test-only defect; product code judged correct by the reviewer.",
+      "raw-review-text": "not saved; verdict as recorded in the card by commit 34793490",
+      "flake-observation": "tasks/done/evidence/TASK-597/flake-runs.txt",
+      "flake-observation-result": "2 of 8 runs failed this test (inferred head a04310b1)"
+    }
+  ],
+  "test-order-fix": {
+    "commit": "34793490a435fc30403d8dbfca2ee1bf3abcbec1",
+    "subject": "test(compare): run status before down in the empty-variants test",
+    "on-master": "ancestor of origin/master ac8bb41b64aa00693f60474124501b7cce7caca0",
+    "independently-reviewed": false
+  },
+  "checks-at-closure": {
+    "commit": "ac8bb41b64aa00693f60474124501b7cce7caca0",
+    "results": [
+      {
+        "command": "criterion 1 verify binding (four go test runs)",
+        "result": "PASS"
+      },
+      {
+        "command": "go test ./internal/cli/ -run TestCompareJSONVariantsIsEmptyArrayNotNull -count=1",
+        "result": "PASS"
+      },
+      {
+        "command": "go test ./internal/cli/ -run '^TestCompareJSONVariantsIsEmptyArrayNotNull$' -count=60",
+        "result": "PASS (0 failures)"
+      }
+    ],
+    "note": "Run by the closure recorder; these are not a review verdict."
+  },
+  "unbacked": [
+    "Raw text of review 1 and review 2 was not saved anywhere found (tasks/, scratchpad).",
+    "The card's earlier '사용자 결정' entry (risk accepted, no third review) has no saved user quote; only this closure's quote is recorded.",
+    "The card's '-count=60 0 failures' and mutation (5 of 5 failed) claims from 34793490 have no saved output; the -count=60 run above re-checks the first at ac8bb41b."
+  ]
+}

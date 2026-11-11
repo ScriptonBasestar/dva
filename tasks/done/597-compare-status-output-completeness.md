@@ -5,7 +5,11 @@ type: bug
 priority: P3
 effort: S
 exec-tier: standard
-status: review
+status: done
+quality-review: waived
+quality-reviewed-at: 2026-11-11T07:00:08Z
+quality-review-evidence: tasks/done/evidence/TASK-597/waiver.json
+quality-review-receipt: tasks/done/evidence/TASK-597/done-review-3ce4c1c02325af0b5700b06295e66a8c571b7b619e35750a054bd291b7ad3e27.json
 created: 2026-11-09
 ---
 
@@ -42,3 +46,10 @@ created: 2026-11-09
 
 - 위험을 수용하고 테스트 순서만 고정(status를 down보다 먼저, 순서 있는 슬라이스)했다. 세 번째 리뷰 없이 통합한다.
 - 검증: `-count=60` 실패 0회. `[]` 초기화를 status·down에서 각각 지운 돌연변이는 5회 모두 실패했다.
+
+### 3 (마감). 2026-11-11 — 사용자 권한으로 waived 마감, 최종 PASS 판정 없음
+
+- 최종 코드에 대한 독립 리뷰 PASS 판정은 없다. 1차는 c93dc7a0에서 pass(중간 발견 1건, a04310b1에서 수리), 2차는 a04310b1에서 fail(테스트 순서 불안정)이었고, 테스트 순서 수정 34793490은 리뷰받지 않았다.
+- 사용자 허용(2026-11-11): "597은 A로 마감하고 603 진행해줘" — 선택지 A: 위험 수용, 최종 PASS 판정 없음을 그대로 적고 사용자 권한으로 마감한다.
+- 마감 시 확인(ac8bb41b, 리뷰 판정 아님): 기준 1·2의 verify 바인딩 통과, 불안정했던 테스트 `-count=60` 실패 0회. 테스트 순서 수정 전의 실패 기록은 `tasks/done/evidence/TASK-597/flake-runs.txt`(8회 중 2회 실패, 실행 head는 시각으로 추정한 a04310b1).
+- 근거 없는 부분: 1·2차 리뷰 원문은 저장되지 않았다. 위 '사용자 결정' 항목의 사용자 원문, 그리고 그 항목의 `-count=60`·돌연변이 결과 출력도 남아 있지 않다. 근거: `tasks/done/evidence/TASK-597/waiver.json`. 다음 전환: done/ (waived).

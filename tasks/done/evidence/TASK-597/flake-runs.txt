@@ -1,0 +1,50 @@
+Source: scratchpad mut597b/runs/head-1.txt .. head-8.txt, written 2026-11-11 11:57-12:03 +0900.
+The files do not record the commit they ran at. By time they fall between a04310b1
+(11:55:19 +0900) and 34793490 (12:31:06 +0900), so the head is inferred to be a04310b1.
+Below: every package result line and every failing-test line of each run, verbatim.
+
+== head-1.txt
+ok  	github.com/ScriptonBasestar/dva/internal/compare	2.718s
+ok  	github.com/ScriptonBasestar/dva/internal/cli	45.269s
+ok  	github.com/ScriptonBasestar/dva/internal/lifecycle	20.528s
+
+== head-2.txt
+ok  	github.com/ScriptonBasestar/dva/internal/compare	2.890s
+ok  	github.com/ScriptonBasestar/dva/internal/cli	46.929s
+ok  	github.com/ScriptonBasestar/dva/internal/lifecycle	20.639s
+
+== head-3.txt
+ok  	github.com/ScriptonBasestar/dva/internal/compare	2.966s
+ok  	github.com/ScriptonBasestar/dva/internal/cli	50.675s
+ok  	github.com/ScriptonBasestar/dva/internal/lifecycle	20.513s
+
+== head-4.txt
+ok  	github.com/ScriptonBasestar/dva/internal/compare	3.082s
+ok  	github.com/ScriptonBasestar/dva/internal/cli	48.682s
+ok  	github.com/ScriptonBasestar/dva/internal/lifecycle	20.706s
+
+== head-5.txt
+ok  	github.com/ScriptonBasestar/dva/internal/compare	3.073s
+ok  	github.com/ScriptonBasestar/dva/internal/cli	49.082s
+ok  	github.com/ScriptonBasestar/dva/internal/lifecycle	21.607s
+
+== head-6.txt
+ok  	github.com/ScriptonBasestar/dva/internal/compare	2.728s
+FAIL	github.com/ScriptonBasestar/dva/internal/cli	45.132s
+ok  	github.com/ScriptonBasestar/dva/internal/lifecycle	20.503s
+--- FAIL: TestCompareJSONVariantsIsEmptyArrayNotNull (0.30s)
+    compare_test.go:720: status: compare layout: not started — no record of an up
+    compare_test.go:724: status output lacks "variants": []:
+
+== head-7.txt
+ok  	github.com/ScriptonBasestar/dva/internal/compare	2.687s
+FAIL	github.com/ScriptonBasestar/dva/internal/cli	46.634s
+ok  	github.com/ScriptonBasestar/dva/internal/lifecycle	20.382s
+--- FAIL: TestCompareJSONVariantsIsEmptyArrayNotNull (0.29s)
+    compare_test.go:720: status: compare layout: not started — no record of an up
+    compare_test.go:724: status output lacks "variants": []:
+
+== head-8.txt
+ok  	github.com/ScriptonBasestar/dva/internal/compare	2.848s
+ok  	github.com/ScriptonBasestar/dva/internal/cli	48.636s
+ok  	github.com/ScriptonBasestar/dva/internal/lifecycle	20.601s
