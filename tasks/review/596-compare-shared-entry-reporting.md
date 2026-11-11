@@ -5,7 +5,7 @@ type: bug
 priority: P2
 effort: M
 exec-tier: strong
-status: todo
+status: review
 created: 2026-11-09
 ---
 
