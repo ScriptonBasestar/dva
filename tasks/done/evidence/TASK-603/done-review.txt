@@ -1,0 +1,21 @@
+Reviewer model: claude-opus-5-5 (subagent a299967e12076714c)
+Reviewed head: 2171e75c2a623c5c9fff79c22aec9b13b9078d64 (HEAD unchanged at start and end; no repository writes by the reviewer)
+Note: this is the reviewer's final report as delivered to the coordinator. The branch was later rebased onto master (a676a009); the code diff versus the reviewed head is empty (only tasks/done TASK-597 closure files differ).
+
+1. verify binding: `go test ./internal/cli/ -run 'TestReadinessTextEmptyEntry|TestReadinessTextUnjudgeableServices' -count=1` run verbatim, PASS.
+2. Mutation: removing the new branch, or reverting compare_result.go to the master version, makes the tests fail ("empty and ready" yields "ready", expected "-"). Only the "empty and ready" case catches this regression; "empty alone" passes via the final default "-" even without the branch. Temp copy removed.
+3. Entries changing from "ready" to "-": orchestrator.go only logs plugin Status errors and does not mark the entry as error, so these become zero-service entries and now show "-": script (Status always nil,nil); compose (empty ps, failed ps, no config); kubectl/kustomize/vagrant (query failure, no config); docker (no config). They were never actually judged, so "-" is the honest value; before, they were silently skipped and READY could wrongly say "ready". process/sam/serverless/tilt/multipass/helm/skaffold and plan-selected compose services always return service state and are unaffected. The READY column stays useful: examples/ has compose 25, native 11, kubectl 3, script 0 runners; examples/variant-compare.yml (native + compose) is unaffected.
+
+Non-blocking: crashed compose project (ps without -a) shows "-" instead of "not ready"; "empty alone" case is not discriminating; one long comment line.
+
+VERDICT: PASS
+
+Reviewer model: claude-opus-5-5 (subagent a305152985832f691)
+Reviewed head: 0b6d4a840ada0599cfdb3f8bc4c318f571e0016a (HEAD and clean tree verified at start and end; nothing written by the reviewer)
+
+(1) Rebase delta: `git diff 2171e75c HEAD -- . ':!tasks'` is empty. The tasks/ delta is only the TASK-597 closure (card moved to done/, done-review json, flake-runs.txt, waiver.json).
+(2) Checks: card verify binding run verbatim (`go test ./internal/cli/ -run 'TestReadinessTextEmptyEntry|TestReadinessTextUnjudgeableServices' -count=1`) ok, both tests ran (-v); `go vet ./internal/cli/` exit 0.
+(3) Criterion vs git diff a676a009 HEAD: readinessText sets unjudged for an entry with no error, no services and no health checks; switch order unchanged (bad -> "not ready", broken -> "error", unjudged -> "-", seen -> "ready"). Entry with Error but no services counts as broken. Tests cover empty+ready -> "-", empty+notReady -> "not ready", empty alone -> "-", empty+error -> "error", two ready entries -> "ready". Doc comment and USAGE.md updated. Mutation inferred from logic, not executed at this head (the earlier reviewer ran it at 2171e75c). "empty alone" already returned "-" before the change.
+Findings: no defects.
+
+VERDICT: PASS

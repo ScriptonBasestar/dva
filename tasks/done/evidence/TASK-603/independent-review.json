@@ -1,0 +1,22 @@
+{
+  "verdict": "PASS",
+  "reviewer-execution": "claude-code-subagent/a305152985832f691",
+  "reviewer-grade": "strong",
+  "executor-execution": "claude-code-session/0479d29b-718c-480f-84a2-b12d94024f92",
+  "executor-grade": "standard",
+  "review-runtime-execution": "read-only on the task worktree; no repository writes by the reviewer",
+  "reviewed-commit": "0b6d4a840ada0599cfdb3f8bc4c318f571e0016a",
+  "reviewed-at": "2026-11-11T09:30:00Z",
+  "raw-review": "tasks/done/evidence/TASK-603/done-review.txt",
+  "raw-review-sha256": "19ed4a102183e3fde7af768dd3c2e12199e5630ff49ee8f21d8b9cd03edb3ec6",
+  "checks": [
+    {
+      "command": "criterion verify binding (go test -run TestReadinessTextEmptyEntry|TestReadinessTextUnjudgeableServices); mutation at 2171e75c by first reviewer a299967e12076714c",
+      "result": "PASS"
+    },
+    {
+      "command": "go vet ./internal/cli/; rebase delta 2171e75c..0b6d4a84 outside tasks/ is empty",
+      "result": "PASS"
+    }
+  ]
+}
