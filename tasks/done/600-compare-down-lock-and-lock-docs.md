@@ -9,7 +9,7 @@ status: done
 quality-review: pass
 quality-reviewed-at: 2026-11-11T05:00:00Z
 quality-review-evidence: tasks/done/evidence/TASK-600/independent-review.json
-quality-review-receipt: tasks/done/evidence/TASK-600/done-review-675b9df2233b78dfbd8e8910ab972cb05e2188615e6104e6246e1cbf9f5b956a.json
+quality-review-receipt: tasks/done/evidence/TASK-600/done-review-75f42938afc4ff5af84a7b3ff50c48b892b8c7935048a40723e6196c6f49576f.json
 created: 2026-11-11
 ---
 
@@ -19,8 +19,8 @@ TASK-595는 `compare up`만 이름 단위로 잠근다. `compare down`도 같은
 
 ## Completion Criteria
 
-- [ ] compare down이 같은 이름의 compare up이 도는 동안 아무것도 멈추기 전에 명확한 오류로 실패한다 | verify: `go test ./internal/cli/ -run TestCompareDownRefusesWhileAnotherRunHoldsTheLock -count=1 && go test ./internal/cli/ -run TestCompareDownReleasesTheLock -count=1 && go test ./internal/cli/ -run TestCompareDownDryRunIgnoresTheLock -count=1`
-- [ ] internal/config/constants.go의 compare 디렉터리 주석이 <이름>.lock을 언급한다 | verify: `/usr/bin/grep -F -q '<name>.lock' internal/config/constants.go`
+- [x] compare down이 같은 이름의 compare up이 도는 동안 아무것도 멈추기 전에 명확한 오류로 실패한다 | verify: `go test ./internal/cli/ -run TestCompareDownRefusesWhileAnotherRunHoldsTheLock -count=1 && go test ./internal/cli/ -run TestCompareDownReleasesTheLock -count=1 && go test ./internal/cli/ -run TestCompareDownDryRunIgnoresTheLock -count=1`
+- [x] internal/config/constants.go의 compare 디렉터리 주석이 <이름>.lock을 언급한다 | verify: `/usr/bin/grep -F -q '<name>.lock' internal/config/constants.go`
 
 ## Scope Notes
 
@@ -34,5 +34,5 @@ TASK-595는 `compare up`만 이름 단위로 잠근다. `compare down`도 같은
 
 ### 1. 2026-11-11 — reviewer: claude-code-subagent (opus, 독립), executor: claude-sonnet-5-5
 
-- 대상: head 263fd4e5, 이후 병합 게이트가 맨 `grep` 바인딩을 거부해 `/usr/bin/grep -F -q`로 고친 델타 0d11293f를 같은 리뷰어가 재확인. 판정: pass. 기준 1·2 PASS. 락 무력화·`defer release()` 제거·dry-run 락 변이를 테스트가 잡았다. 락은 선언 확인 뒤 기록 읽기 전에 잡히고 모든 반환 경로에서 풀린다.
+- 대상: head 263fd4e5, 이후 병합 게이트가 맨 `grep` 바인딩을 거부해 `/usr/bin/grep -F -q`로 고친 델타 0d11293f를 재확인(카드 바인딩 한 줄만 바뀜). 판정: pass. 기준 1·2 PASS. 락 무력화·`defer release()` 제거·dry-run 락 변이를 테스트가 잡았다.
 - 비차단(후속 TASK-601): 락을 `ReadRecord` 뒤로 옮기거나 선언 확인 앞으로 옮기는 변이는 살아남는다(순서 미고정). `compare up`의 거절 문구가 down이 락을 쥔 경우에도 "another compare up"이라 틀리다. 비 unix 빌드에서는 dry-run이 아닌 down이 항상 unsupported로 실패한다(up은 TASK-595부터 같음). 이름 단위 락은 서로 다른 이름 사이를 막지 않는다(TASK-595부터의 설계 한계). 다음 전환: done/.

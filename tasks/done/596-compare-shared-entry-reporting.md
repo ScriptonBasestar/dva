@@ -9,7 +9,7 @@ status: done
 quality-review: pass
 quality-reviewed-at: 2026-11-11T05:00:00Z
 quality-review-evidence: tasks/done/evidence/TASK-596/independent-review.json
-quality-review-receipt: tasks/done/evidence/TASK-596/done-review-7f65df213b1b8e3eb849ce1d1ce0568551c54f14347f21c60c18d9272890858c.json
+quality-review-receipt: tasks/done/evidence/TASK-596/done-review-be60579f8313398f3e99c1fcca349a57d33eed1d135dcfb70669cfb85c10c1e3.json
 created: 2026-11-09
 ---
 
@@ -34,5 +34,5 @@ created: 2026-11-09
 
 ### 1. 2026-11-11 — reviewer: claude-code-subagent (opus, 독립), executor: claude-opus-5-5
 
-- 대상: head a8fe5541. 판정: pass. 기준 1·2·3 PASS. 기준별 변이(상태 사전 점검 끄기, 사용 중 점검 제거, 비교안별 펼치기 끄기, env 복제 제거)를 테스트가 모두 잡았다.
+- 대상: head a8fe5541. 판정: pass. 기준 1·2·3 PASS. 기준별로 넣은 변이를 테스트가 모두 잡았다(변이 목록은 independent-review.json의 checks).
 - 비차단: config 모드 env 누적은 기존 버그이며 이번 변경으로 나빠지지 않았다(비교안이 하나뿐이고 기록만 남은 경우 펼치기가 일어나지 않을 수 있음). `up --wait`는 running이지만 아직 healthy가 아닌 shared를 기다리지 않는다(비교안 skip과 같은 방식). down이 실패하면 `not_attempted`와 `Kept`가 함께 표시된다. USAGE가 up/status 펼치기 차이와 표가 shared endpoint를 숨기는 점을 적지 않는다. 다음 전환: done/.
