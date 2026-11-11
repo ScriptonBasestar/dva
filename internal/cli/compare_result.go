@@ -258,10 +258,11 @@ func outcomeText(v compareVariantResult) string {
 // every observed service is judged running and healthy (or running with no health check), and
 // every health check passes. A definitely-bad signal wins: a service whose state is clearly not
 // running (stopped, exited, starting, restarting, created, paused, failed, pending, ...), whose
-// health is unhealthy or starting, or a failing check, is "not ready". "error" means an entry
-// could not be queried. "-" means nothing can be judged: no status, no services and no checks,
+// health is anything other than empty, "healthy" or "unknown" (unhealthy, starting), or a
+// failing check, is "not ready". Otherwise "error" means an entry could not be queried. "-" means nothing can be judged: no status, no services and no checks,
 // or no bad signal but at least one service the plugin cannot judge, because its health is
-// "unknown" (kubectl, vagrant, helm, skaffold) or its state is "unknown" (skaffold, an
+// "unknown" (kubectl, vagrant, helm, skaffold), its state is empty (a kubectl/kustomize resource
+// with no status.phase, such as a Deployment, Service or ConfigMap), "unknown" (skaffold, an
 // unparseable helm/multipass/docker answer) or helm's "deployed" (the release is installed, its
 // pods are not observed). Such a service is never reported "ready" or "not ready".
 func readinessText(st *lifecycle.AggregatedStatus) string {
@@ -316,7 +317,7 @@ func serviceReadiness(s lifecycle.ServiceStatus) serviceJudgement {
 	switch state {
 	case "running":
 		stateJ = readinessOK
-	case "unknown", "deployed":
+	case "", "unknown", "deployed":
 		stateJ = readinessUnjudged
 	}
 	healthJ := readinessBad

@@ -804,9 +804,8 @@ dva compare down layout                        # 전부 내림, 마지막에 sha
   읽을 수 없는 기록도 쓰는 중으로 봅니다. 그 비교의 마지막 `down`이 멈춥니다.
 - 같은 이름의 `up`과 `down`은 `.sb/dva/compare/<이름>.lock`을 비차단으로 잡습니다. 이미 다른 `up`/`down`이 잡고 있으면 **아무것도 시작하거나 멈추기 전에** `compare_preflight_failed`로 실패합니다(`--dry-run`은 잠그지 않음). 프로세스가 죽으면 OS가 락을 풀므로 남은 `.lock` 파일은 아무것도 잠그지 않습니다.
 - `up`은 시작 전에 `shared` 상태를 읽어 모두 이미 실행 중이면 다시 시작하지 않고 `skipped`로 보고합니다(다른 비교가 띄운 경우 포함).
-- 표의 READY: 확실히 실행 중이 아니거나(stopped·exited·pending·failed 등) health가 `unhealthy`/`starting`인 서비스나 실패한 check가 있으면 `not ready`, 조회 못 한 엔트리가 있으면 `error`, 판단할 수 없는 서비스(health·state `unknown`, helm `deployed`)가 있으면 `-`, 모두 실행 중·healthy일 때만 `ready`입니다(JSON은 원본 `status`).
-- `shared` 결과의 엔드포인트 중 비교안의 vars(포트, `DVA_VARIANT`)에 따라 URL이 달라지는 것은 비교안마다 한 번씩,
-  그 비교안의 값으로 치환되어 `variant` 필드와 함께 나옵니다. 비교안과 무관한 엔드포인트는 한 번만 나옵니다.
+- 표의 READY: 확실히 실행 중이 아니거나(stopped·exited·pending·failed 등) health가 비어 있지도 `healthy`/`unknown`도 아닌(`unhealthy`·`starting` 등) 서비스나 실패한 check가 있으면 `not ready`(`error`보다 우선), 그 밖에 조회 못 한 엔트리가 있으면 `error`, 판단할 수 없는 서비스(health·state `unknown`, phase 없는 kubectl 리소스의 빈 state, helm `deployed`)가 있으면 `-`, 모두 실행 중·healthy일 때만 `ready`입니다(JSON은 원본 `status`).
+- `shared` 결과의 엔드포인트 중 비교안의 vars(포트, `DVA_VARIANT`)에 따라 URL이 달라지는 것은 비교안마다 한 번씩, 그 비교안의 값으로 치환되어 `variant` 필드와 함께 나옵니다. 비교안과 무관한 엔드포인트는 한 번만 나옵니다.
 - `--json`: 성공은 `{action, compare, plan, shared, variants[], next}` 한 문서입니다. 실패는 기존 실패 envelope에
   `error.code`(`compare_preflight_failed` 시작 전 실패(같은 이름의 `compare up`이 이미 돌고 있을 때 포함), `compare_partial_failure` 일부 시작 후 실패,
   `compare_down_failed` 정리 미완료)와 같은 형태의 `error.result`가 붙습니다. 비교안 결과는
