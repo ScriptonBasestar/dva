@@ -1,0 +1,11 @@
+Independent review of TASK-598, head 724e418d7cef18aef332fe640e6507ace3f4451b (HEAD identical at start and end, tree clean). Reviewer: claude-code-subagent (opus), read-only.
+
+Criterion: TestStatusTunnelCleanupEscalatesOnlyItsOwnedProcessGroup passes under -count=50: PASS (run at -count=100: ok 26.8s; go vet clean).
+
+1. Info (verified): the cause is reproduced in isolation: after killing the group and Wait()ing the leader, the next Kill(-pgid, SIGKILL) returned EPERM in 7 of 200 runs and ESRCH otherwise. The card note saying "not reproduced in isolation" understates the evidence.
+2. Info (verified): swallowing EPERM does not hide the guarded cases; the pid<=1 / own-group guard still runs first. Blind spot (inferred): a live group member under another uid would go unreported; no caller starts such processes.
+3. Info (verified by reading): production tunnel.go discards these errors; not affected.
+4. Low, out of scope (inferred): internal/cli/process_group_kill_unix_test.go:22 killLeftoverProcessGroup accepts only ESRCH and could hit the same flake.
+
+VERDICT: PASS
+

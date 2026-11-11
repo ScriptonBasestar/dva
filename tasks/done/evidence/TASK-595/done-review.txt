@@ -1,0 +1,19 @@
+Independent review of TASK-595, head 23298ca5eeee6a32bc7a07cddee30cb13f321a56 (HEAD identical at start and end, tree clean). Reviewer: claude-code-subagent (opus), read-only.
+
+Criterion 1 (second compare up fails before starting anything): PASS. Bound tests pass; a mutation removing the lock block fails TestCompareUpRefusesWhileAnotherUpHoldsTheLock.
+Criterion 2 (lock does not outlive a dead process): PASS. TestLockDoesNotSurviveItsProcess passes; a separate repro showed a long-lived child started like process.go does not inherit the lock fd (Go opens O_CLOEXEC; no ExtraFiles/ForkExec in lifecycle or exec).
+
+Other checks (verified): lock taken before any disk state read; released on every return path by defer; name validated before path use; GOOS=windows go vet passes; compare/cli/lifecycle tests and vet pass; no code lists the compare directory.
+
+Findings: all Info. (1) non-unix OS: non-dry-run compare up always fails, as intended and like jobrun. (2) stale .lock files are never removed, harmless. (3) internal/config/constants.go:19 comment now omits <name>.lock. (4) compare down takes no lock; out of card scope.
+
+VERDICT: PASS
+
+Independent re-review of TASK-595 after rebase onto origin/master (TASK-598), head 44db5f1870e1b7fa0b8328f1e5f1af08af346da3 (HEAD identical at start and end, tree clean). Reviewer: claude-code-subagent (opus), read-only. Executor: claude-sonnet-5-5.
+
+The earlier independent review passed pre-rebase head 23298ca5 (both criteria). Rebase equivalence (verified): git range-diff reports both commits as "=" (same patch); `git diff 23298ca5~2 23298ca5` and `git diff origin/master...HEAD` are identical across 9 files. The upstream commit touches only internal/lifecycle/process_group_kill_unix_test.go and the 598 card; no overlap.
+
+Checks (verified, all PASS): criterion 1 tests (TestLockExcludesSecondHolderOfSameComparison, TestCompareUpRefusesWhileAnotherUpHoldsTheLock), criterion 2 test (TestLockDoesNotSurviveItsProcess), go vet, and go test for compare, cli, lifecycle. No behavior change.
+
+VERDICT: PASS
+

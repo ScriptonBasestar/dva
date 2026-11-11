@@ -1,0 +1,22 @@
+{
+  "verdict": "PASS",
+  "reviewer-execution": "claude-code-subagent/a04e573fc75c7b2d4",
+  "reviewer-grade": "strong",
+  "executor-execution": "claude-code-session/0479d29b-718c-480f-84a2-b12d94024f92",
+  "executor-grade": "standard",
+  "review-runtime-execution": "read-only on the task worktree; no repository writes by the reviewer",
+  "reviewed-commit": "724e418d7cef18aef332fe640e6507ace3f4451b",
+  "reviewed-at": "2026-11-11T02:00:00Z",
+  "raw-review": "tasks/done/evidence/TASK-598/done-review.txt",
+  "raw-review-sha256": "1b036b24781823c9c5b7965189878563bc1813b39ac86545096caeb348da54f1",
+  "checks": [
+    {
+      "command": "criterion verify: go test ./internal/lifecycle/ -run TestStatusTunnelCleanupEscalatesOnlyItsOwnedProcessGroup -count=100 (stricter than the card's 50)",
+      "result": "PASS"
+    },
+    {
+      "command": "isolated repro of the cause: after killing the group and reaping the leader, the next kill(-pgid) returned EPERM in 7 of 200 runs; go vet",
+      "result": "PASS"
+    }
+  ]
+}
