@@ -27,6 +27,19 @@ func runCompareDown(ctx context.Context, c *config.Config, name string, variantA
 		return err
 	}
 	dir := c.FileDir()
+	if !dryRun {
+		// The same per-name lock `compare up` takes, held until this down ends and taken before
+		// the record is read: a down that slipped in while an up runs would read a half-written
+		// record and stop what the up is starting. A dry run writes and stops nothing.
+		release, err := compare.Lock(dir, name)
+		if errors.Is(err, compare.ErrLocked) {
+			return comparePreflight(nil, "compare %s: nothing was stopped: another `dva compare` of %s is running (%v)", name, name, err)
+		}
+		if err != nil {
+			return comparePreflight(nil, "compare %s: %v", name, err)
+		}
+		defer release()
+	}
 	rec, err := compare.ReadRecord(dir, name)
 	if errors.Is(err, fs.ErrNotExist) {
 		return comparePreflight(nil, "compare %s: nothing to take down — no record of an up", name)

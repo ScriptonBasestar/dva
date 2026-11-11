@@ -16,10 +16,11 @@ const (
 	// four transient classes by name: spelled inline, a rename here would leave that check
 	// asking about a directory nothing writes any more, and it would keep passing.
 	SourcesDirName = "sources"
-	// CompareDirName holds one run record per comparison (`<name>.json`), and VariantsDirName
-	// holds the detached snapshot checkouts `variants/<compare>/<variant>/`. Both are
-	// transient classes for the same reason as the three above, so the gitignore probes
-	// name them through these constants.
+	// CompareDirName holds one run record per comparison (`<name>.json`) and its lock file
+	// (`<name>.lock`, taken by `compare up` and `compare down`), and VariantsDirName holds the
+	// detached snapshot checkouts `variants/<compare>/<variant>/`. Both are transient classes
+	// for the same reason as the three above, so the gitignore probes name them through these
+	// constants.
 	CompareDirName  = "compare"
 	VariantsDirName = "variants"
 

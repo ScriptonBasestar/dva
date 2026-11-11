@@ -802,6 +802,7 @@ dva compare down layout                        # 전부 내림, 마지막에 sha
   같은 `dva.yml`의 다른 비교가 같은 `shared` 엔트리를 선언했고 그 기록(`.sb/dva/compare/<다른 이름>.json`)이 남아 있으면
   그 엔트리는 멈추지 않고 `kept`로 보고합니다(`shared.kept`: 엔트리 → 쓰고 있는 비교 이름, 표에는 `shared api kept: in use by comparison board`).
   읽을 수 없는 기록도 쓰는 중으로 봅니다. 그 비교의 마지막 `down`이 멈춥니다.
+- 같은 이름의 `up`과 `down`은 `.sb/dva/compare/<이름>.lock`을 비차단으로 잡습니다. 이미 다른 `up`/`down`이 잡고 있으면 **아무것도 시작하거나 멈추기 전에** `compare_preflight_failed`로 실패합니다(`--dry-run`은 잠그지 않음). 프로세스가 죽으면 OS가 락을 풀므로 남은 `.lock` 파일은 아무것도 잠그지 않습니다.
 - `up`은 시작 전에 `shared` 상태를 읽어 모두 이미 실행 중이면 다시 시작하지 않고 `skipped`로 보고합니다(다른 비교가 띄운 경우 포함).
 - `shared` 결과의 엔드포인트 중 비교안의 vars(포트, `DVA_VARIANT`)에 따라 URL이 달라지는 것은 비교안마다 한 번씩,
   그 비교안의 값으로 치환되어 `variant` 필드와 함께 나옵니다. 비교안과 무관한 엔드포인트는 한 번만 나옵니다.
