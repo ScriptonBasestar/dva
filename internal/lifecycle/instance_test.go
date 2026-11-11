@@ -158,7 +158,7 @@ func TestComposePluginsRunInstanceProject(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !hasProject(args, "myapp-a") {
+	if !hasProject(args, "myapp-db-a") {
 		t.Errorf("docker compose argv has no instance project: %v", args)
 	}
 	_, plain, err := (&ComposePlugin{}).buildArgs(mk("", docker), []string{"up"})
@@ -172,7 +172,7 @@ func TestComposePluginsRunInstanceProject(t *testing.T) {
 	podman := &config.LifecycleEntry{Name: "db", PodmanCompose: &config.PodmanComposePluginConfig{Files: []string{"compose.yml"}}}
 	_, pargs := (&PodmanComposePlugin{}).buildArgs(mk("a", podman), []string{"up"})
 	_, pargsB := (&PodmanComposePlugin{}).buildArgs(mk("b", podman), []string{"up"})
-	if !hasProject(pargs, "myapp-a") || !hasProject(pargsB, "myapp-b") {
+	if !hasProject(pargs, "myapp-db-a") || !hasProject(pargsB, "myapp-db-b") {
 		t.Errorf("podman-compose argv has no instance project: %v / %v", pargs, pargsB)
 	}
 	_, pplain := (&PodmanComposePlugin{}).buildArgs(mk("", podman), []string{"up"})
@@ -210,5 +210,25 @@ func TestOrchestratorReadsInstancePidFile(t *testing.T) {
 	}
 	if got, want := o.entryLogPath("web"), pctx.LogFile("web"); got != want {
 		t.Errorf("instance log path = %s, want %s", got, want)
+	}
+}
+
+// Two compose entries of one instance stay two projects, as they are in a plain run (where each
+// is named after its own compose file); one shared project would let one entry's `ps` and
+// `down --remove-orphans` reach the other's containers.
+func TestInstanceProjectNamesDifferPerEntry(t *testing.T) {
+	env := config.NewEnvironment(nil, "", "")
+	dir := filepath.Join("/w", "myapp")
+	name := func(entry, instance string) string {
+		return instanceProjectName(&PluginContext{Entry: &config.LifecycleEntry{Name: entry}, ConfigDir: dir, Env: env, Instance: instance}, "")
+	}
+	if name("db", "a") == name("cache", "a") {
+		t.Errorf("entries db and cache share project %q", name("db", "a"))
+	}
+	if name("db", "a") == name("db", "b") {
+		t.Errorf("instances a and b share project %q", name("db", "a"))
+	}
+	if got := name("db", "a"); got != "myapp-db-a" {
+		t.Errorf("project = %q, want myapp-db-a", got)
 	}
 }

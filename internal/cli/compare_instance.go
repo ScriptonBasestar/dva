@@ -58,7 +58,7 @@ func configModeProblems(c *config.Config, cmp *config.CompareConfig, variants []
 	}
 	plan, err := lifecycle.ResolvePlan(c, cmp.Plan, nil)
 	if err != nil {
-		return []string{fmt.Sprintf("config variants %s: cannot inspect plan %q for shared build state: %v", strings.Join(names, ","), cmp.Plan, err)}
+		return append(problems, fmt.Sprintf("config variants %s: cannot inspect plan %q for shared build state: %v", strings.Join(names, ","), cmp.Plan, err))
 	}
 	for _, e := range plan.Entries {
 		if !slices.Contains(cmp.PerVariant, e.Name) {

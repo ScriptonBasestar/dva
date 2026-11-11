@@ -418,14 +418,20 @@ func instanceComposeConfig(pctx *PluginContext, cfg *config.ComposePluginConfig)
 	return &out
 }
 
-// instanceProjectName is the compose project of an instance: the declared name (or the
-// directory's base name) with the instance appended, normalized the way compose requires an
-// explicit project name to be (lowercase letters, digits, - and _, starting with a letter or
-// digit). Compose only normalizes a name it derives itself, so "my.app-A" would be rejected.
+// instanceProjectName is the compose project of one entry of an instance: the declared name (or
+// the directory's base name), the entry's name and the instance, joined with "-" and normalized
+// the way compose requires an explicit project name to be (lowercase letters, digits, - and _,
+// starting with a letter or digit). Compose only normalizes a name it derives itself, so
+// "my.app-A" would be rejected. The entry's name is part of it because a plain run names each
+// entry's project after its own compose file: two entries must stay two projects, or one's
+// `ps` and `down --remove-orphans` would reach the other's containers.
 func instanceProjectName(pctx *PluginContext, declared string) string {
 	base := pctx.Env.Interpolate(declared)
 	if base == "" {
 		base = filepath.Base(pctx.ConfigDir)
+	}
+	if pctx.Entry != nil && pctx.Entry.Name != "" {
+		base += "-" + pctx.Entry.Name
 	}
 	name := strings.Map(func(r rune) rune {
 		switch {

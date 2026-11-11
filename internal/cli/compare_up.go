@@ -117,6 +117,11 @@ func resolveUp(ctx context.Context, dir, name string, cmp *config.CompareConfig,
 			v.ports = prev.Ports
 			v.skip = !states[s.Name] && variantRunning(ctx, cmp, prev)
 		} else {
+			if other := caseCollision(rec, s.Name); other != "" {
+				problems = append(problems, fmt.Sprintf("variant %s differs only by case from the recorded variant %s: on a case-insensitive filesystem they are one directory; run `%s` first or use another name",
+					s.Name, other, downCommand(name, []string{other})))
+				continue
+			}
 			fresh = append(fresh, s.Name)
 		}
 		variants = append(variants, v)
@@ -386,4 +391,16 @@ func changedSource(prev *compare.Variant, v *upVariant, mode string) bool {
 		return prev.Path != v.target.Path
 	}
 	return prev.Commit != v.commit
+}
+
+// caseCollision names the recorded variant that name differs from only by case, or "". The
+// pid, log and snapshot directories are named after the variant, so on a case-insensitive
+// filesystem such a pair would share one directory and adopt or stop each other's processes.
+func caseCollision(rec *compare.Record, name string) string {
+	for _, v := range rec.Variants {
+		if v.Name != name && strings.EqualFold(v.Name, name) {
+			return v.Name
+		}
+	}
+	return ""
 }

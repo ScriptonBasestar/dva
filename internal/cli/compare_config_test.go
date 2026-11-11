@@ -220,3 +220,35 @@ func TestAnnotateProcessesReadsTheInstanceDirectory(t *testing.T) {
 		t.Errorf("ordinary row = pids %v logs %v", plain.Pids, plain.LogPaths)
 	}
 }
+
+// A variant that differs only by case from one already recorded (by an earlier up) is refused
+// before anything starts: the two would share one pid directory on a case-insensitive
+// filesystem and one's down would stop the other's processes.
+func TestCompareUpRefusesNameDifferingByCaseFromRecordedVariant(t *testing.T) {
+	c, host, _ := compareFixture(t)
+	if _, err := upConfig(t, c, "A=config"); err != nil {
+		t.Fatal(err)
+	}
+	before := len(host.calls)
+	_, err := upConfig(t, c, "a=config")
+	if err == nil || errorCode(err) != codeComparePreflight || !strings.Contains(err.Error(), "differs only by case from the recorded variant A") {
+		t.Fatalf("err = %v", err)
+	}
+	if len(host.calls) != before {
+		t.Errorf("a preflight failure must start nothing: %v", host.calls[before:])
+	}
+}
+
+// When the plan cannot be inspected, the OS DVA_VARIANT problem found first still reaches the
+// caller instead of being replaced by the inspection error.
+func TestConfigModeProblemsKeepsEnvProblemWhenPlanIsUnreadable(t *testing.T) {
+	c, _, _ := compareFixture(t)
+	t.Setenv(variantVar, "outer")
+	cmp := *c.Compare["layout"]
+	cmp.Plan = "no-such-plan"
+	cv := compare.ConfigVariant("a", c.FileDir())
+	problems := configModeProblems(c, &cmp, []*upVariant{{spec: variantSpec{Name: "a", Source: "config"}, target: &cv}})
+	if len(problems) != 2 || !strings.Contains(problems[0], "environment sets "+variantVar) || !strings.Contains(problems[1], "cannot inspect plan") {
+		t.Fatalf("problems = %v", problems)
+	}
+}
