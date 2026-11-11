@@ -7,7 +7,7 @@ status: done
 quality-review: pass
 quality-reviewed-at: 2026-11-11T09:00:00Z
 quality-review-evidence: tasks/done/evidence/TASK-602/independent-review.json
-quality-review-receipt: tasks/done/evidence/TASK-602/done-review-cb9c8e04f2a0609424a6d81cc7d921d0b817b63dc8565678e1a43cf06dd38529.json
+quality-review-receipt: tasks/done/evidence/TASK-602/done-review-0e6cb2d1092c6aed3168c7774431f31a7b3f7789f11cc15a8d2eba7e9105527e.json
 created: 2026-11-11
 ---
 
@@ -17,13 +17,13 @@ TASK-597의 `readinessText`는 서비스 state가 `running`이 아니거나 heal
 
 ## Completion Criteria
 
-- [x] health·state가 `unknown`이거나 helm `deployed`처럼 판단할 수 없는 서비스는 not ready가 아니라 `-`로 표시되고, 확실히 나쁜 신호가 함께 있으면 not ready로 남는다 | verify: go test ./internal/cli/ -run '^(TestReadinessTextUnjudgeableServices|TestReadinessTextSummarizesHealth|TestCompareTableRowShowsDerivedReadiness)$' -count=1
+- [x] health·state가 `unknown`이거나 helm `deployed`처럼 판단할 수 없는 서비스는 not ready가 아니라 `-`로 표시되고, 확실히 나쁜 신호가 함께 있으면 not ready로 남는다 | verify: `go test ./internal/cli/ -run '^(TestReadinessTextUnjudgeableServices|TestReadinessTextSummarizesHealth|TestCompareTableRowShowsDerivedReadiness)$' -count=1`
 
 ## Review Attempts
 
 ### 1. 2026-11-11 — reviewer: claude-code-subagent (독립), executor: claude-opus-5-5
 
-- 대상: 8090fec4. 판정: fail. `status.phase`가 없는 kubectl/kustomize 리소스는 state가 `""`인데 여전히 not ready로 표시됐다. 9e565d2c에서 수리했다.
+- 대상: 8090fec4. 판정: fail. `status.phase`가 없는 kubectl/kustomize 리소스는 state가 `""`인데 여전히 not ready로 표시됐다. 9e565d2c에서 수리했다(코디네이터 요약, 리뷰 원문 미보존).
 
 ### 2. 2026-11-11 — reviewer: claude-code-subagent (독립, read-only), executor: claude-opus-5-5
 
