@@ -15,5 +15,11 @@ created: 2026-11-09
 
 ## Completion Criteria
 
-- [ ] 같은 비교 이름의 compare up 두 개가 겹쳐 실행되면 둘째는 아무것도 시작하기 전에 명확한 오류로 실패한다 | verify: human — 구현 카드가 추가한 테스트 이름을 go test -run 바인딩으로 바꾼다
-- [ ] 락은 프로세스가 죽어도 남지 않는다 | verify: human — 구현 카드가 go test -run 바인딩으로 바꾼다
+- [x] 같은 비교 이름의 compare up 두 개가 겹쳐 실행되면 둘째는 아무것도 시작하기 전에 명확한 오류로 실패한다 | verify: `go test ./internal/compare/ -run TestLockExcludesSecondHolderOfSameComparison -count=1 && go test ./internal/cli/ -run TestCompareUpRefusesWhileAnotherUpHoldsTheLock -count=1`
+- [x] 락은 프로세스가 죽어도 남지 않는다 | verify: `go test ./internal/compare/ -run TestLockDoesNotSurviveItsProcess -count=1`
+
+## Scope Notes
+
+- 락은 `.sb/dva/compare/<이름>.lock`에 건 비차단 flock이다. 파일이 아니라 열린 파일 기술자가 락을 쥐므로 프로세스가 죽으면 OS가 풀고, 남은 `.lock` 파일은 아무것도 잠그지 않는다.
+- `compare up`만 잠근다(카드 범위). dry-run은 아무것도 쓰지 않아 잠그지 않는다. `compare down`은 잠그지 않으며, up이 도는 동안의 down과의 경합은 이 카드 밖이다.
+- flock이 없는 운영체제(`lock_other.go`)에서는 jobrun과 같이 "지원하지 않음" 오류로 실패한다(조용히 보호를 빼지 않는다).

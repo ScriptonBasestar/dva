@@ -800,7 +800,7 @@ dva compare down layout                        # 전부 내림, 마지막에 sha
   멈추고 체크아웃(worktree와 브랜치, 호출한 체크아웃)은 그대로 둡니다. 커밋하지 않은 변경이나 추적 안 되는
   파일이 있는 snapshot은 지우지 않고 알립니다(entries는 이미 멈춘 상태). 마지막 비교안이 내려가야 `shared`를 멈춥니다.
 - `--json`: 성공은 `{action, compare, plan, shared, variants[], next}` 한 문서입니다. 실패는 기존 실패 envelope에
-  `error.code`(`compare_preflight_failed` 시작 전 실패, `compare_partial_failure` 일부 시작 후 실패,
+  `error.code`(`compare_preflight_failed` 시작 전 실패(같은 이름의 `compare up`이 이미 돌고 있을 때 포함), `compare_partial_failure` 일부 시작 후 실패,
   `compare_down_failed` 정리 미완료)와 같은 형태의 `error.result`가 붙습니다. 비교안 결과는
   `started`/`skipped`/`failed`/`not_attempted`/`stopped`/`observed`/`planned` 중 하나입니다.
 
