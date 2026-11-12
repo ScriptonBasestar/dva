@@ -23,7 +23,7 @@ The exit-0 one-shot filter and the docker path are unchanged.
 
 ## Completion Criteria
 
-- [ ] podman ps JSON names services | verify: `go test ./internal/lifecycle -run ServiceName`
+- [x] names resolve | verify: `go test ./internal/lifecycle -run ServiceName` (observed: 2026-11-12)
 
 ## Evidence
 
@@ -44,3 +44,8 @@ The exit-0 one-shot filter and the docker path are unchanged.
   swallows unrecognized `Labels` shapes silently (`UnmarshalJSON` returns nil), which hides
   malformed input instead of surfacing it. The remaining content compiled, passed gofmt and
   vet, and needed no other change.
+- The silent swallow in `composeLabels.UnmarshalJSON` was ACCEPTED INTENTIONALLY and left
+  unchanged. Returning an error would make the whole-array `json.Unmarshal` fail, and the
+  JSON-lines fallback also fails for a one-line array, dropping every container
+  (`compose.go` around lines 458-472), so nil is the safer choice. A stderr `[warn]` is an
+  optional follow-up, not done.
