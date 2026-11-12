@@ -83,3 +83,61 @@ func TestComposePsIncludesStopped(t *testing.T) {
 		}
 	})
 }
+
+// TestParseComposeServicesJSONServiceName binds the podman-compose status path: `podman ps
+// --format json` has no Service field, so the service is only in Labels
+// (io.podman.compose.service) or, failing that, the container name. docker compose ps reports
+// Service directly and writes Labels as a "k=v,k=v" string, so both encodings must parse
+// without a JSON error. The one-shot filter (exit 0 beside a running container) ignores the
+// name and must keep working on podman-shaped records.
+func TestParseComposeServicesJSONServiceName(t *testing.T) {
+	cases := []struct {
+		name string
+		out  string
+		want []string
+	}{
+		{
+			name: "docker compose array keeps Service",
+			out:  `[{"Service":"db","State":"running"},{"Service":"api","State":"running"}]`,
+			want: []string{"db", "api"},
+		},
+		{
+			name: "podman array reads the compose service label, not the container name",
+			out:  `[{"Names":["proj_db_1"],"Labels":{"io.podman.compose.service":"db","com.docker.compose.service":"db","com.docker.compose.project":"proj"},"State":"running"}]`,
+			want: []string{"db"},
+		},
+		{
+			name: "podman array without a compose label falls back to Names[0]",
+			out:  `[{"Names":["proj_db_1"],"State":"running","ExitCode":0}]`,
+			want: []string{"proj_db_1"},
+		},
+		{
+			name: "docker comma-separated Labels string resolves when Service is absent",
+			out:  `[{"Names":["proj-api-1"],"Labels":"com.docker.compose.project=proj,com.docker.compose.service=api","State":"running"}]`,
+			want: []string{"api"},
+		},
+		{
+			name: "podman JSON lines resolve names and still drop a completed one-shot",
+			out: `{"Names":["proj_db_1"],"Labels":{"io.podman.compose.service":"db"},"State":"running"}
+{"Names":["proj_migrate_1"],"Labels":{"io.podman.compose.service":"migrate"},"State":"exited","ExitCode":0}
+{"Names":["proj_worker_1"],"Labels":{"io.podman.compose.service":"worker"},"State":"exited","ExitCode":1}`,
+			want: []string{"db", "worker"},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			services, err := parseComposeServicesJSON([]byte(tc.out))
+			if err != nil {
+				t.Fatalf("parseComposeServicesJSON: %v", err)
+			}
+			var names []string
+			for _, s := range services {
+				names = append(names, s.Name)
+			}
+			if !slices.Equal(names, tc.want) {
+				t.Fatalf("resolved service names = %v, want %v", names, tc.want)
+			}
+		})
+	}
+}

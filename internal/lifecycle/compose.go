@@ -323,14 +323,74 @@ func firstLine(s string) string {
 	return s
 }
 
-// composeServiceInfo mirrors docker compose ps JSON output for parsing.
+// composeServiceInfo mirrors the parts of `compose ps --format json` that dva reads, from
+// either compose plugin. docker compose fills Service and encodes Labels as a comma-separated
+// string; podman-compose has no Service, keeps container names in Names and its labels in an
+// object. Both shapes must parse, so Labels decides its own encoding.
 type composeServiceInfo struct {
 	Name       string             `json:"Name"`
 	Service    string             `json:"Service"`
+	Names      []string           `json:"Names"`
+	Labels     composeLabels      `json:"Labels"`
 	State      string             `json:"State"`
 	ExitCode   int                `json:"ExitCode"`
 	Health     string             `json:"Health"`
 	Publishers []composePublisher `json:"Publishers"`
+}
+
+// composeLabels holds the two label encodings the compose plugins emit: an object
+// (podman ps: {"io.podman.compose.service":"db"}) and docker compose's "k=v,k=v" string.
+// An unrecognized shape is dropped rather than failing the whole container record: a name
+// resolved from the other fields is better than losing the container from the status.
+type composeLabels map[string]string
+
+func (l *composeLabels) UnmarshalJSON(data []byte) error {
+	s := strings.TrimSpace(string(data))
+	switch {
+	case s == "", s == "null":
+		return nil
+	case strings.HasPrefix(s, "{"):
+		var m map[string]string
+		if err := json.Unmarshal([]byte(s), &m); err == nil {
+			*l = m
+		}
+		return nil
+	}
+	var raw string
+	if err := json.Unmarshal([]byte(s), &raw); err != nil {
+		return nil
+	}
+	labels := make(composeLabels)
+	for pair := range strings.SplitSeq(raw, ",") {
+		k, v, ok := strings.Cut(pair, "=")
+		if !ok || k == "" {
+			continue
+		}
+		labels[k] = v
+	}
+	*l = labels
+	return nil
+}
+
+// serviceNameOf resolves the compose service a container belongs to. Service is authoritative
+// when present; podman-compose leaves it empty, so the compose service label is read next
+// (either plugin's key) and the container name is the last resort. Returning "" keeps an
+// unresolved record unresolved instead of giving it another container's name.
+func serviceNameOf(info composeServiceInfo) string {
+	if name := strings.TrimSpace(info.Service); name != "" {
+		return name
+	}
+	for _, key := range [...]string{"com.docker.compose.service", "io.podman.compose.service"} {
+		if name := strings.TrimSpace(info.Labels[key]); name != "" {
+			return name
+		}
+	}
+	for _, name := range info.Names {
+		if name = strings.TrimSpace(name); name != "" {
+			return name
+		}
+	}
+	return ""
 }
 
 type composePublisher struct {
@@ -434,7 +494,7 @@ func parseComposeServicesJSON(out []byte) ([]ServiceStatus, error) {
 			}
 		}
 		services = append(services, ServiceStatus{
-			Name:   info.Service,
+			Name:   serviceNameOf(info),
 			State:  info.State,
 			Health: info.Health,
 			Ports:  ports,
