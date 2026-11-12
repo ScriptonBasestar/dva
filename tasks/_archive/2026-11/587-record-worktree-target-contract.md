@@ -17,7 +17,7 @@ created: 2026-11-05
 
 ## Summary
 
-[TASK-538](../todo/538-worktree-development-targets.md)은 작업 워크트리와 기본 체크아웃을 혼동하지 않도록 실행 대상을 고르는 요구사항을 소유한다. 명령 형태와 기록할 파일이 정해지기 전에는 그 요구사항을 실행 단위로 나눌 수 없다. 이 카드는 2026-11-05에 채택한 계약을 세 문서에 적는다. 명령을 구현하지 않고, TASK-538을 완료하거나 대체하지 않는다.
+[TASK-538](../../todo/538-worktree-development-targets.md)은 작업 워크트리와 기본 체크아웃을 혼동하지 않도록 실행 대상을 고르는 요구사항을 소유한다. 명령 형태와 기록할 파일이 정해지기 전에는 그 요구사항을 실행 단위로 나눌 수 없다. 이 카드는 2026-11-05에 채택한 계약을 세 문서에 적는다. 명령을 구현하지 않고, TASK-538을 완료하거나 대체하지 않는다.
 
 ## 현재와 목표
 
@@ -27,7 +27,7 @@ created: 2026-11-05
 
 ## 채택한 계약
 
-명령 이름은 `dva target`이다. 대상 ID 없이 호출하면 후보만 보여주고 프로세스를 시작하거나 끝내지 않는다. 실행 형태는 `dva target <target-id> up|down|status|stop <plan>`이다. 대상 ID는 provider가 정의한다. CE provider는 작업 ID, worktrunk provider는 branch를 쓴다(2026-11-06 사용자 결정, [비교안 동시 실행 설계](../../docs/75-variant-comparison-design.md#결정-기록)). 이 호출은 선택된 체크아웃의 설정 디렉터리로 기존 수명주기를 호출한다. 대상 ID가 없거나, 알 수 없거나, 후보가 여럿인데 지정되지 않거나, 조회가 실패하면 프로세스를 시작하지 않고 실패한다. 기본 체크아웃으로 조용히 돌아가지 않는다.
+명령 이름은 `dva target`이다. 대상 ID 없이 호출하면 후보만 보여주고 프로세스를 시작하거나 끝내지 않는다. 실행 형태는 `dva target <target-id> up|down|status|stop <plan>`이다. 대상 ID는 provider가 정의한다. CE provider는 작업 ID, worktrunk provider는 branch를 쓴다(2026-11-06 사용자 결정, [비교안 동시 실행 설계](../../../docs/75-variant-comparison-design.md#결정-기록)). 이 호출은 선택된 체크아웃의 설정 디렉터리로 기존 수명주기를 호출한다. 대상 ID가 없거나, 알 수 없거나, 후보가 여럿인데 지정되지 않거나, 조회가 실패하면 프로세스를 시작하지 않고 실패한다. 기본 체크아웃으로 조용히 돌아가지 않는다.
 
 플래그 없는 `dva up`, `dva down`, `dva status`, `dva stop`은 지금처럼 작업 디렉터리에서 설정을 찾는다. 모든 동사에 `--worktree`를 붙이는 안은 기각한다. 플래그가 없으면 작업 디렉터리로 조용히 떨어질 수 있다. pnpm이 디렉터리를 옮긴 뒤 `dva up`만 호출하는 안도 기각한다. 선택이 DVA 밖에 남고 프로세스 관리자가 둘로 나뉜다.
 
@@ -83,9 +83,9 @@ TASK-538의 네 번째 완료 기준은 그대로 둔다. Singlepageweb 체크�
 
 ## References
 
-- [TASK-538](../todo/538-worktree-development-targets.md)이 요구사항을 소유한다. 이 카드는 그 완료 기준을 지우거나 대신 닫지 않는다.
-- 기록 위치는 [USAGE.md](../../USAGE.md), [ARCHITECTURE.md](../../ARCHITECTURE.md), [실행 계획 해석](../../docs/31-execution-plan-resolution.md)이다.
-- 제품 경계는 [PRODUCT.md](../../PRODUCT.md), 채택 기준은 [SOUL.md](../../SOUL.md), 파일럿 재개 조건은 [ROADMAP.md](../../ROADMAP.md)에 있다.
+- [TASK-538](../../todo/538-worktree-development-targets.md)이 요구사항을 소유한다. 이 카드는 그 완료 기준을 지우거나 대신 닫지 않는다.
+- 기록 위치는 [USAGE.md](../../../USAGE.md), [ARCHITECTURE.md](../../../ARCHITECTURE.md), [실행 계획 해석](../../../docs/31-execution-plan-resolution.md)이다.
+- 제품 경계는 [PRODUCT.md](../../../PRODUCT.md), 채택 기준은 [SOUL.md](../../../SOUL.md), 파일럿 재개 조건은 [ROADMAP.md](../../../ROADMAP.md)에 있다.
 
 ## Review Attempts
 

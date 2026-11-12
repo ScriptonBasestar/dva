@@ -1,0 +1,28 @@
+DVA tasks/done -> tasks/_archive/2026-11/ 이관 및 재검증 기록 (2026-11-12)
+기준 커밋: ee5a4aa7e4806f77d97b4cdc52360eeb4dd7e179 (master)
+작업 브랜치: dev/antigravity/mst/docs/archive-2026-11-done
+
+1. 이관 대상 (18장 -> tasks/_archive/2026-11/)
+- quality-review: pass (16장):
+  TASK-587, TASK-588, TASK-589, TASK-590, TASK-591, TASK-594, TASK-595,
+  TASK-596, TASK-598, TASK-599, TASK-600, TASK-601, TASK-602, TASK-603,
+  TASK-604, TASK-605
+  (참고: TASK-588·594는 blocks: 필드가 없으며 independent-review.md·verification.md로 pass 마감됨)
+- quality-review: waived (2장):
+  TASK-593 (tasks/done/evidence/TASK-593/waiver.json, config-mode-run.txt)
+  TASK-597 (tasks/done/evidence/TASK-597/waiver.json, flake-runs.txt)
+- 기존 tasks/done/evidence/TASK-*/ 아래 리뷰·영수증·증거 파일은 수정하지 않았다.
+
+2. 이관 전 기준선 재검증 결과
+- 18장 개별 기계 검증 `verify:` 바인딩(grep 및 go test, TASK-598 `-count=50` 포함): 모두 exit 0
+- `ce task validate --all`: exit 0
+- `ce task gate --dir . --json` (`LC_ALL=C LANG=C`): status=ready (task_board_ready)
+- `make test` (`go test -timeout 5m -race -cover ./...`): exit 0
+- `make doc-check`, `make check-generate`: exit 0
+- `make lint`: 기준선 `master`(`ee5a4aa7`)의 본 작업 범위 밖 기존 경고 2건으로 실패 (`internal/cli/compare_test.go:745` stringsseq, `internal/cli/compare_runner_instance_test.go:21` SA4032); 본 작업에서 수정하지 않았다.
+
+3. 링크 보정
+- `tasks/_archive/2026-11/587-record-worktree-target-contract.md`: `../todo/` -> `../../todo/`, `../../` -> `../../../` (단, 본문 ````text` 블록 안 `docs/31` 인용문 `[USAGE.md](../USAGE.md)`는 원문 유지)
+- `tasks/_archive/2026-11/589-compare-declaration-validation.md`: `../../docs/75-variant-comparison-design.md` -> `../../../docs/75-variant-comparison-design.md`
+- `tasks/review/592-compare-worktree-mode.md`: `../done/587-record-worktree-target-contract.md` -> `../_archive/2026-11/587-record-worktree-target-contract.md`
+

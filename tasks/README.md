@@ -1,6 +1,18 @@
 # DVA Task Management Board
 
-## 현재 상태 (2026-11-05)
+## 현재 상태 (2026-11-12)
+
+리뷰와 예외 마감(`waived`)이 끝난 done 카드 18장(TASK-587~591, 593~605)을
+`tasks/_archive/2026-11/`로 보관했다. 기존 리뷰·영수증 파일은 바꾸지 않았고,
+보관 깊이에 맞춰 깨지는 상대 링크(TASK-587, TASK-589 본문과
+`tasks/review/592-compare-worktree-mode.md`의 인바운드 링크)만 보정했다.
+18장의 기계 `verify:` 바인딩, `make test`, `make doc-check`, `ce task gate`
+통과를 확인했으며, `TASK-593`·`TASK-597`은 기존 `waiver.json`과 사용자 마감
+결정을 유지했다. [이관 기록](done/evidence/archive-2026-11-12-review.txt)에
+검증 결과를 남겼다. `tasks/done/`의 깊이 1 카드는 0장이고 `evidence/`만 남는다.
+현재 카드 목록과 상태는 `ce task list`, 실행 상태는 `ce task run-list`로 확인한다.
+
+### 2026-11-05 기록
 
 리뷰가 끝난 done 카드 15장(TASK-557~562, 564, 579~586)을
 `tasks/_archive/2026-11/`로 보관했다. 카드 본문과 기존 리뷰 영수증은 바꾸지 않았다.
@@ -13,7 +25,6 @@ TASK-585는 재현 기록 경로 참조)이었다. 그 명령은 카드를 지�
 [이관 기록](done/evidence/archive-2026-11-05-review.txt)과
 [링크 보정](done/evidence/archive-2026-11-05-link-depth.txt)에 남겼다.
 `tasks/done/`의 깊이 1 카드는 0장이고 `evidence/`만 남는다.
-현재 카드 목록과 상태는 `ce task list`, 실행 상태는 `ce task run-list`로 확인한다.
 
 ### 2026-11-04 기록
 

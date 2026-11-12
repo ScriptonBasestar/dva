@@ -16,7 +16,7 @@ allowed-paths: [internal/config/, internal/cli/config_dump.go, internal/cli/conf
 
 ## Summary
 
-[비교안 동시 실행 설계](../../docs/75-variant-comparison-design.md)의 `compare:` 선언을 `dva.yml`에서 읽고, 프로세스를 시작하기 전에 잘못된 선언을 거부한다. 이 카드는 선언과 검증만 다룬다. 실행 명령, 실행 기록, 체크아웃 생성은 TASK-590 이후가 맡는다.
+[비교안 동시 실행 설계](../../../docs/75-variant-comparison-design.md)의 `compare:` 선언을 `dva.yml`에서 읽고, 프로세스를 시작하기 전에 잘못된 선언을 거부한다. 이 카드는 선언과 검증만 다룬다. 실행 명령, 실행 기록, 체크아웃 생성은 TASK-590 이후가 맡는다.
 
 ## Scope
 
