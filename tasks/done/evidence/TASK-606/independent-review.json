@@ -1,0 +1,31 @@
+{
+  "verdict": "PASS",
+  "reviews": [
+    {
+      "reviewed-commit": "ca42c5742819fa1a6fb17ef62141763210fe6d71",
+      "reviewed-at": "2026-11-12",
+      "reviewer": "opus (independent; execution reference not recorded)",
+      "result": "PASS",
+      "checks": [
+        "code and tests clean",
+        "revert-proof: reverting the production call site (serviceNameOf back to info.Service) makes four of the five TestParseComposeServicesJSONServiceName cases fail (names `[]`, `[ ]`); restoring serviceNameOf makes all pass",
+        "the exit-0 one-shot filter and the docker label parsing are bound by tests"
+      ]
+    },
+    {
+      "reviewed-range": "ca42c5742819fa1a6fb17ef62141763210fe6d71..3607674c07d0d07aaf451d4bfc3bc85d32aad71c",
+      "reviewed-at": "2026-11-12",
+      "reviewer": "opus (independent; execution reference not recorded)",
+      "result": "PASS",
+      "checks": [
+        "the delta touches only tasks/review/606-podman-compose-service-name.md",
+        "disclosures truthful",
+        "markdownlint (100-char lines, MD037) and ce task validate pass",
+        "go test -count=1 passes"
+      ]
+    }
+  ],
+  "raw-review": "tasks/done/evidence/TASK-606/done-review.txt",
+  "raw-review-sha256": "d175d71cc2675e292c5d240f429b1ced151a89eea73af41aed113a9d50e6d879",
+  "quality-review-receipt": "tasks/done/evidence/TASK-606/done-review-a750e4d0dc1495b05ec260173ed63c873199b083d268432174180407071aad5d.json"
+}
