@@ -1,5 +1,5 @@
 ---
-id: TASK-595
+id: TASK-607
 title: "실행 없이 CI 단계별 재사용 가능 여부를 조회하고 checkout 간 재사용을 증명 뒤 허용"
 type: feature
 priority: P2
