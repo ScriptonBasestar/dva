@@ -742,7 +742,7 @@ func TestCompareTableRowShowsDerivedReadiness(t *testing.T) {
 	var buf bytes.Buffer
 	printCompareTable(&buf, r)
 	rows := map[string]string{}
-	for _, l := range strings.Split(buf.String(), "\n") {
+	for l := range strings.SplitSeq(buf.String(), "\n") {
 		if f := strings.Fields(l); len(f) > 0 && (f[0] == "a" || f[0] == "b") {
 			rows[f[0]] = l
 		}

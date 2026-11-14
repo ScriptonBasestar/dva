@@ -12,6 +12,12 @@ Check selection and scope belong to `quality:verification-workflow` and the
 project's acceptance contract. Use [scope routing](references/languages.md)
 when a technical verification method is needed.
 
+When mapping commit, push, PR/MR, scheduled or release-check events, read the
+[event contract](https://github.com/ScriptonBasestar/dva/blob/master/docs/ci-lifecycle.md)
+and its linked adoption status first. Map events to existing declared profiles;
+event names are not built-in profiles or automatic hooks. Keep current required
+gates until the project's acceptance contract adopts a split.
+
 ## Discover and execute
 
 For opt-in native step PASS reuse and fresh runs, follow

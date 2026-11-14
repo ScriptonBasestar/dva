@@ -6,7 +6,6 @@ import (
 	"context"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -18,9 +17,6 @@ import (
 // The production runner passes the instance down to the lifecycle: two instances of one plan
 // entry in one directory leave two pid files, and an instance's down stops only its own process.
 func TestLifecycleRunnerRunsInstancesWithSeparatePidFiles(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip("native runner requires Unix process groups")
-	}
 	dir := t.TempDir()
 	yml := `version: "0.1.0"
 stack:
