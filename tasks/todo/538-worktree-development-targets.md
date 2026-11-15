@@ -19,7 +19,7 @@ DevBox 루트에서 개발 서버를 실행할 때 기본 체크아웃과 작업
 - 워크트리 후보의 발견은 호스트의 등록된 provider와 연결한다. Singlepageweb 파일럿에서는 CE 실행 기록과 실제 Git 신원을 대조한다. CE를 DVA의 필수 의존성으로 만들거나 경로를 추정하지 않는다.
 - 사용자 선택은 작업 워크트리와 통합 소스 스냅샷을 구분한다. 최신 수정 시각·브랜치 이름·기본 체크아웃을 근거로 임의 전환하지 않는다.
 - pnpm 어댑터는 임시 소비자다. DVA에 PID·포트·수명주기 정본을 두고 어댑터에는 두 번째 관리자·자동 kill·영구 대상 레지스트리를 만들지 않는다.
-- 후속 구현 소유 모듈은 `internal/cli/`, `internal/config/`, `internal/lifecycle/`이며 구체적 변경 파일은 인터페이스 결정 후 카드에 좁힌다. 사용법은 `USAGE.md`, 관련 구성·수명주기 문서는 기존 소유 문서에 기록한다.
+- 후속 구현 소유 모듈은 `internal/cli/`, `internal/config/`, `internal/lifecycle/`, 그리고 1단계 결정 A로 `internal/compare`에서 옮길 중립 provider 패키지이며 구체적 변경 파일은 인터페이스 결정 후 카드에 좁힌다. 사용법은 `USAGE.md`, 관련 구성·수명주기 문서는 기존 소유 문서에 기록한다.
 
 ## Completion Criteria
 
@@ -61,24 +61,28 @@ DevBox 루트에서 개발 서버를 실행할 때 기본 체크아웃과 작업
   - B: 위 계약을 따르고, target이 `internal/compare`를 그대로 import한다.
   - C: 587을 다시 연다(전역 `--target`, 상태 저장형 `select`, `dva.yml` `targets:`).
 
-  선택: A. provider 이동은 TASK-592가 닫힌 뒤에 한다. 이동 뒤 대상 record는 Git 메타데이터에서
-  읽은 다음 정보를 더 가진다.
+  선택: A. provider 이동은 TASK-592가 닫힌 뒤에 한다(592가 `internal/compare/provider.go`를
+  소유하고 아직 review다).
+
+  에이전트 설계 방향(사용자 결정 아님, 3단계에서 확정): 이동 뒤 대상 record가 Git 메타데이터에서
+  읽은 다음 정보를 더 갖게 한다.
   - 저장소 신원(`git rev-parse --git-common-dir`)
   - 종류(`default`/`task`/`snapshot`/`other`)
   - dirty·locked·prunable 여부
 - 기본 체크아웃: 후보에 `default` 종류로 표시하고, ID로 명시했을 때만 실행한다(추천안 채택).
   다른 선택지는 후보에서 제외하는 것이었다.
 - provider 선택: 접두 ID(예: `ce:TASK-12`)로 정한다(추천안 채택).
-  - 접두가 없으면 쓸 수 있는 provider가 하나이거나 기본 provider일 때만 받는다.
-  - 모호하면 후보를 보여 주고 실패한다.
   - 다른 선택지는 `--provider` 플래그와 호스트 설정이었다.
-  - 호스트 provider 등록 위치는 이후 단계에서 정한다.
+  - 에이전트 설계 방향(사용자 결정 아님): 접두가 없으면 쓸 수 있는 provider가 하나일 때만 받고,
+    모호하면 후보를 보여 주고 실패한다. 호스트 provider 등록 위치는 이후 단계에서 정한다.
 - 아직 열린 질문 (2026-11-15 설계 분석 기준):
   - 같은 워크트리에서 target 실행과 compare `worktree:X` 변형이 프로세스 소유권을 공유하는가.
-    지금은 pid 디렉터리를 공유한다(추정).
+    pid 디렉터리는 공유한다(검증: worktree 변형은 Instance가 비어 `internal/compare/record.go:59-67`,
+    `StateDir`이 하위 디렉터리를 붙이지 않는다 `internal/lifecycle/plugin.go:64-71`. 587 계약의
+    target 실행도 같은 `.sb/dva/pids/`를 쓴다). 열린 것은 소유권 의미다.
   - 4단계에서 pid 옆에 둘 대상 신원 파일이 금지된 레지스트리에 해당하는가.
 - 설계 분석에서 확인한 현재 코드 간극(검증, master 65debfcd 기준):
-  - git provider는 detached 항목을 건너뛴다(`internal/compare/provider.go:114-116`). 그래서
+  - git provider는 detached 항목을 건너뛴다(`internal/compare/provider.go:113-114`). 그래서
     snapshot은 대상이 될 수 없다.
   - git provider는 기본 체크아웃을 제외하지 않는다.
   - porcelain 파서는 `locked`/`prunable`을 읽지 않는다(`internal/compare/git.go:50-61`).
