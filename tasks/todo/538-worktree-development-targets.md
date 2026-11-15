@@ -46,6 +46,43 @@ DevBox 루트에서 개발 서버를 실행할 때 기본 체크아웃과 작업
 5. Singlepageweb에서 최소 두 작업과 두 사이트를 검증한 뒤 공통 기능으로 전환한다. DVA가 대상 발견·수명주기를 제공하고 같은 시나리오가 통과하면 pnpm의 임시 조회/선택 코드를 제거하고 얇은 명령 연결만 남긴다.
 6. 독립 리뷰·해당 모듈 필수 검사·실제 적용 증거를 남긴 뒤 완료한다. 현재 카드는 todo이며 기능 구현·설치·릴리스·검증 완료를 주장하지 않는다.
 
+## 사용자 결정 — 1단계 대상 인터페이스 (2026-11-15)
+
+- 인터페이스: TASK-587에서 채택한 계약([587](../_archive/2026-11/587-record-worktree-target-contract.md))을
+  1단계 인터페이스로 확정한다.
+  - `dva target`는 후보만 나열한다. `dva target <target-id> up|down|status|stop <plan>`이 그 대상에서
+    실행한다.
+  - 레지스트리와 마지막 선택 저장은 두지 않는다.
+  - 기존 `dva up/down/status/stop`은 cwd 의미를 유지한다.
+
+  옵션:
+
+  - A(추천): 위 계약을 따르고, provider를 `internal/compare`에서 중립 패키지로 옮긴다.
+  - B: 위 계약을 따르고, target이 `internal/compare`를 그대로 import한다.
+  - C: 587을 다시 연다(전역 `--target`, 상태 저장형 `select`, `dva.yml` `targets:`).
+
+  선택: A. provider 이동은 TASK-592가 닫힌 뒤에 한다. 이동 뒤 대상 record는 Git 메타데이터에서
+  읽은 다음 정보를 더 가진다.
+  - 저장소 신원(`git rev-parse --git-common-dir`)
+  - 종류(`default`/`task`/`snapshot`/`other`)
+  - dirty·locked·prunable 여부
+- 기본 체크아웃: 후보에 `default` 종류로 표시하고, ID로 명시했을 때만 실행한다(추천안 채택).
+  다른 선택지는 후보에서 제외하는 것이었다.
+- provider 선택: 접두 ID(예: `ce:TASK-12`)로 정한다(추천안 채택).
+  - 접두가 없으면 쓸 수 있는 provider가 하나이거나 기본 provider일 때만 받는다.
+  - 모호하면 후보를 보여 주고 실패한다.
+  - 다른 선택지는 `--provider` 플래그와 호스트 설정이었다.
+  - 호스트 provider 등록 위치는 이후 단계에서 정한다.
+- 아직 열린 질문 (2026-11-15 설계 분석 기준):
+  - 같은 워크트리에서 target 실행과 compare `worktree:X` 변형이 프로세스 소유권을 공유하는가.
+    지금은 pid 디렉터리를 공유한다(추정).
+  - 4단계에서 pid 옆에 둘 대상 신원 파일이 금지된 레지스트리에 해당하는가.
+- 설계 분석에서 확인한 현재 코드 간극(검증, master 65debfcd 기준):
+  - git provider는 detached 항목을 건너뛴다(`internal/compare/provider.go:114-116`). 그래서
+    snapshot은 대상이 될 수 없다.
+  - git provider는 기본 체크아웃을 제외하지 않는다.
+  - porcelain 파서는 `locked`/`prunable`을 읽지 않는다(`internal/compare/git.go:50-61`).
+
 ## Evidence / Pilot
 
 - 2026-10-28 사용자 요청: “임시로 pnpm으로 추가해주고 … .dva에 요구사항을 태스크로 … singlepageweb에 적용해가면서 검증”.
