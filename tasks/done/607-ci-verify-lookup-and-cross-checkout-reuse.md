@@ -5,7 +5,7 @@ type: feature
 priority: P2
 effort: L
 exec-tier: strong
-status: review
+status: done
 quality-review: pass
 quality-review-evidence: tasks/done/evidence/TASK-607/review.md
 created: 2026-11-14
@@ -65,4 +65,5 @@ T2 dev 9447314a5161cea73063bab478e2c473 (1m27.497s)가 통과했다.
 빌드 바이너리의 실제 --lookup도 새 XDG state를 만들지 않고 9개 비선언 단계를 보고했다.
 새 cache 선언의 실제 소비자 채택은 이 카드 범위 밖이다.
 최신 source 반영과 최종 full·통합·설치는 아직 완료하지 않았다.
-CE 상태 전환 확인을 기다리는 동안 코드와 증거를 작업 브랜치에 보존한다.
+CE epoch 3 전환을 완료했다. 코드와 기존 검토 증거는 작업 브랜치에 보존하며,
+최신 source 반영 후 최종 full·독립 통합 리뷰·전달은 CE 실행 영수증으로 확인한다.
