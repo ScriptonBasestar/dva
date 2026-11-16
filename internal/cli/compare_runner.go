@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ScriptonBasestar/dva/internal/compare"
 	"github.com/ScriptonBasestar/dva/internal/config"
 	"github.com/ScriptonBasestar/dva/internal/lifecycle"
 )
@@ -20,6 +21,9 @@ import (
 // entries and which vars, and the runner applies the same plan resolution `dva up <plan>` does.
 // Tests replace compareHost with a fake; production uses lifecycleRunner.
 type compareRunner interface {
+	// PortBusy is the host's point-in-time occupancy check. Fake lifecycle hosts
+	// supply deterministic state; the production host always probes the OS.
+	PortBusy(port int) (bool, error)
 	Up(ctx context.Context, dir, instance, plan string, vars map[string]string, names []string, wait bool) (*compareObserved, error)
 	Down(ctx context.Context, dir, instance, plan string, vars map[string]string, names []string) error
 	Status(ctx context.Context, dir, instance, plan string, vars map[string]string, names []string) (*compareObserved, error)
@@ -31,6 +35,10 @@ type compareRunner interface {
 var compareHost compareRunner = lifecycleRunner{}
 
 type lifecycleRunner struct{}
+
+func (lifecycleRunner) PortBusy(port int) (bool, error) {
+	return compare.PortBusy(port)
+}
 
 // open resolves planName for the config in dir exactly as the plan verbs do: the plan's owner
 // decides the environment, and a failed env_file input stops the call before any entry starts.

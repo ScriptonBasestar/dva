@@ -203,7 +203,7 @@ func checkPorts(variants []*upVariant) []string {
 			if ev, ok := os.LookupEnv(k); ok && ev != strconv.Itoa(port) {
 				problems = append(problems, fmt.Sprintf("variant %s: environment sets %s=%s, which would override the port %d dva assigned; unset it", v.spec.Name, k, ev, port))
 			}
-			busy, err := compare.PortBusy(port)
+			busy, err := compareHost.PortBusy(port)
 			switch {
 			case err != nil:
 				problems = append(problems, fmt.Sprintf("variant %s: %v", v.spec.Name, err))

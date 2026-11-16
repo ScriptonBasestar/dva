@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -22,6 +21,9 @@ import (
 // fakeHost records every call compare makes to the lifecycle and fails the ones a test names.
 // up marks the (dir, entry) pair running, so a later Status sees what Up started.
 type fakeHost struct {
+	busyPorts  map[int]bool
+	portErrors map[int]error
+	portChecks []int
 	calls      []string
 	failUp     map[string]bool  // dir base name → Up fails
 	failStatus map[string]bool  // dir base name → Status fails
@@ -32,7 +34,12 @@ type fakeHost struct {
 }
 
 func newFakeHost() *fakeHost {
-	return &fakeHost{failUp: map[string]bool{}, failStatus: map[string]bool{}, running: map[string]bool{}, vars: map[string]map[string]string{}}
+	return &fakeHost{busyPorts: map[int]bool{}, portErrors: map[int]error{}, failUp: map[string]bool{}, failStatus: map[string]bool{}, running: map[string]bool{}, vars: map[string]map[string]string{}}
+}
+
+func (f *fakeHost) PortBusy(port int) (bool, error) {
+	f.portChecks = append(f.portChecks, port)
+	return f.busyPorts[port], f.portErrors[port]
 }
 
 // tag names a (dir, instance) pair in calls and failure maps. An instance of the calling
@@ -140,24 +147,6 @@ compare:
       WEB_PORT: [%d, %d, %d]
 `
 
-func freePorts(t *testing.T, n int) []int {
-	t.Helper()
-	var ports []int
-	var ls []net.Listener
-	for range n {
-		l, err := net.Listen("tcp", "0.0.0.0:0")
-		if err != nil {
-			t.Fatal(err)
-		}
-		ls = append(ls, l)
-		ports = append(ports, l.Addr().(*net.TCPAddr).Port)
-	}
-	for _, l := range ls {
-		_ = l.Close()
-	}
-	return ports
-}
-
 func gitIn(t *testing.T, dir string, args ...string) {
 	t.Helper()
 	full := append([]string{"-C", dir, "-c", "user.name=t", "-c", "user.email=t@example.com"}, args...)
@@ -172,7 +161,12 @@ func compareFixture(t *testing.T) (*config.Config, *fakeHost, []int) {
 	t.Helper()
 	t.Setenv("GIT_CONFIG_GLOBAL", os.DevNull)
 	t.Setenv("GIT_CONFIG_NOSYSTEM", "1")
-	ports := freePorts(t, 3)
+	// These are fake-host inputs, never ports acquired from or probed on the OS.
+	ports := []int{41001, 41002, 41003}
+	t.Setenv("WEB_PORT", "")
+	if err := os.Unsetenv("WEB_PORT"); err != nil {
+		t.Fatal(err)
+	}
 	dir := filepath.Join(t.TempDir(), "repo")
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		t.Fatal(err)
@@ -304,19 +298,18 @@ func TestCompareUpPartialFailureLeavesStartedAndRetryStartsOnlyMissing(t *testin
 func TestCompareUpPreflightCreatesNothing(t *testing.T) {
 	cases := []struct {
 		name string
-		prep func(t *testing.T, ports []int)
+		prep func(t *testing.T, host *fakeHost, ports []int)
 		args []string
 		want string
 	}{
-		{"busy port", func(t *testing.T, ports []int) {
-			l, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", ports[1]))
-			if err != nil {
-				t.Skipf("cannot hold port: %v", err)
-			}
-			t.Cleanup(func() { _ = l.Close() })
+		{"busy port", func(_ *testing.T, host *fakeHost, ports []int) {
+			host.busyPorts[ports[1]] = true
 		}, []string{"a=main", "b=other"}, "already in use"},
+		{"port probe error", func(_ *testing.T, host *fakeHost, ports []int) {
+			host.portErrors[ports[1]] = errors.New("port probe denied")
+		}, []string{"a=main", "b=other"}, "port probe denied"},
 		{"short port list", nil, []string{"a=main", "b=other", "c=main", "d=other"}, "ports"},
-		{"env override", func(t *testing.T, ports []int) { t.Setenv("WEB_PORT", "1") }, []string{"a=main"}, "environment sets WEB_PORT"},
+		{"env override", func(t *testing.T, _ *fakeHost, _ []int) { t.Setenv("WEB_PORT", "1") }, []string{"a=main"}, "environment sets WEB_PORT"},
 		{"bad ref", nil, []string{"a=no-such-ref"}, "no-such-ref"},
 		{"unknown worktree target", nil, []string{"a=worktree:TASK-1"}, `no worktree has branch "TASK-1"`},
 		{"unknown provider", nil, []string{"a=ce:TASK-1"}, "provider target dva does not know"},
@@ -327,7 +320,7 @@ func TestCompareUpPreflightCreatesNothing(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			c, host, ports := compareFixture(t)
 			if tc.prep != nil {
-				tc.prep(t, ports)
+				tc.prep(t, host, ports)
 			}
 			_, err := captureJSON(t, func() error { return runCompareUp(context.Background(), c, "layout", tc.args, false) })
 			if err == nil || !strings.Contains(err.Error(), tc.want) {

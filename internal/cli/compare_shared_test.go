@@ -50,7 +50,7 @@ func TestCompareUpReportsAlreadyRunningSharedAsSkipped(t *testing.T) {
 // entry, with ports of its own.
 func addSharingComparison(t *testing.T, c *config.Config) {
 	t.Helper()
-	ports := freePorts(t, 2)
+	ports := []int{41011, 41012}
 	c.Compare["board"] = &config.CompareConfig{
 		Plan: "web-dev", Shared: []string{"api"}, PerVariant: []string{"web"},
 		Ports: map[string][]int{"WEB_PORT": ports},
