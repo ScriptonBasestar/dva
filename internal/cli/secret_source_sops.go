@@ -29,6 +29,28 @@ func editSecretSOPS(ctx context.Context, root, source, rules, format string) err
 	return nil
 }
 
+type sopsStageResult struct {
+	stage string
+	err   error
+}
+
+// resealResultError only uses diagnostics after both waits have completed.
+// Never return the diagnostic itself: it may contain decrypted data.
+func resealResultError(first, second sopsStageResult, diagnostic string) error {
+	if ((first.stage == "encrypt" && first.err != nil) || (second.stage == "encrypt" && second.err != nil)) &&
+		strings.Contains(strings.ToLower(diagnostic), "creation rule") {
+		return fmt.Errorf("secret_creation_rule_missing")
+	}
+	failed := first
+	if failed.err == nil {
+		failed = second
+	}
+	if failed.err != nil {
+		return fmt.Errorf("secret_%s_failed", failed.stage)
+	}
+	return nil
+}
+
 // resealSecretSOPS connects two children with a kernel pipe. No plaintext file
 // or plaintext buffer is created by DVA; only ciphertext reaches the writer.
 // Both children must succeed before the caller may commit that ciphertext.
@@ -59,29 +81,14 @@ func resealSecretSOPS(ctx context.Context, root, source, rules, format string, o
 	}
 	_ = r.Close()
 	_ = w.Close()
-	// Observe the first failing stage before cancellation can make its peer
-	// fail too; the latter must never replace the original cause.
-	type result struct {
-		stage string
-		err   error
-	}
-	finished := make(chan result, 2)
-	go func() { finished <- result{"decrypt", decrypt.Wait()} }()
-	go func() { finished <- result{"encrypt", encrypt.Wait()} }()
+	// Cancel a peer promptly on the first failure, then collect both outcomes.
+	finished := make(chan sopsStageResult, 2)
+	go func() { finished <- sopsStageResult{"decrypt", decrypt.Wait()} }()
+	go func() { finished <- sopsStageResult{"encrypt", encrypt.Wait()} }()
 	first := <-finished
 	if first.err != nil {
 		cancel()
 	}
 	second := <-finished
-	failed := first
-	if failed.err == nil {
-		failed = second
-	}
-	if failed.err != nil {
-		if failed.stage == "encrypt" && strings.Contains(strings.ToLower(diagnostic.String()), "creation rule") {
-			return fmt.Errorf("secret_creation_rule_missing")
-		}
-		return fmt.Errorf("secret_%s_failed", failed.stage)
-	}
-	return nil
+	return resealResultError(first, second, diagnostic.String())
 }

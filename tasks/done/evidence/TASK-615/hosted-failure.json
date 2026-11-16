@@ -1,0 +1,170 @@
+{
+  "run": {
+    "id": 43903070005,
+    "run_attempt": 1,
+    "status": "completed",
+    "conclusion": "failure",
+    "html_url": "https://github.com/ScriptonBasestar/dva/actions/runs/43903070005"
+  },
+  "job": {
+    "id": 133424545268,
+    "name": "test",
+    "status": "completed",
+    "conclusion": "failure",
+    "started_at": "2026-11-16T16:02:41Z",
+    "completed_at": "2026-11-16T16:08:13Z",
+    "steps": [
+      {
+        "name": "Set up job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 1,
+        "started_at": "2026-11-16T16:02:42Z",
+        "completed_at": "2026-11-16T16:02:43Z"
+      },
+      {
+        "name": "Run actions/checkout@v7",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 2,
+        "started_at": "2026-11-16T16:02:43Z",
+        "completed_at": "2026-11-16T16:02:45Z"
+      },
+      {
+        "name": "Run sh scripts/ci-input.sh",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 3,
+        "started_at": "2026-11-16T16:02:45Z",
+        "completed_at": "2026-11-16T16:02:45Z"
+      },
+      {
+        "name": "Run actions/setup-go@v7",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 4,
+        "started_at": "2026-11-16T16:02:45Z",
+        "completed_at": "2026-11-16T16:02:54Z"
+      },
+      {
+        "name": "Documentation",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 5,
+        "started_at": "2026-11-16T16:02:54Z",
+        "completed_at": "2026-11-16T16:03:05Z"
+      },
+      {
+        "name": "Build",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 6,
+        "started_at": "2026-11-16T16:03:05Z",
+        "completed_at": "2026-11-16T16:03:22Z"
+      },
+      {
+        "name": "Skill Installer Dogfood",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 7,
+        "started_at": "2026-11-16T16:03:22Z",
+        "completed_at": "2026-11-16T16:03:25Z"
+      },
+      {
+        "name": "Test",
+        "status": "completed",
+        "conclusion": "failure",
+        "number": 8,
+        "started_at": "2026-11-16T16:03:25Z",
+        "completed_at": "2026-11-16T16:08:06Z"
+      },
+      {
+        "name": "Preserve test progress",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 9,
+        "started_at": "2026-11-16T16:08:06Z",
+        "completed_at": "2026-11-16T16:08:08Z"
+      },
+      {
+        "name": "Integration Test",
+        "status": "completed",
+        "conclusion": "skipped",
+        "number": 10,
+        "started_at": "2026-11-16T16:08:08Z",
+        "completed_at": "2026-11-16T16:08:08Z"
+      },
+      {
+        "name": "Preserve integration progress",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 11,
+        "started_at": "2026-11-16T16:08:08Z",
+        "completed_at": "2026-11-16T16:08:08Z"
+      },
+      {
+        "name": "Vet",
+        "status": "completed",
+        "conclusion": "skipped",
+        "number": 12,
+        "started_at": "2026-11-16T16:08:08Z",
+        "completed_at": "2026-11-16T16:08:08Z"
+      },
+      {
+        "name": "Post Run actions/setup-go@v7",
+        "status": "completed",
+        "conclusion": "skipped",
+        "number": 23,
+        "started_at": "2026-11-16T16:08:08Z",
+        "completed_at": "2026-11-16T16:08:08Z"
+      },
+      {
+        "name": "Post Run actions/checkout@v7",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 24,
+        "started_at": "2026-11-16T16:08:08Z",
+        "completed_at": "2026-11-16T16:08:08Z"
+      },
+      {
+        "name": "Complete job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 25,
+        "started_at": "2026-11-16T16:08:08Z",
+        "completed_at": "2026-11-16T16:08:08Z"
+      }
+    ]
+  },
+  "selected_original_log_lines": [
+    "2026-11-16T16:05:38.5164915Z {\"Time\":\"2026-11-16T16:05:38.515801015Z\",\"Action\":\"run\",\"Package\":\"github.com/ScriptonBasestar/dva/internal/cli\",\"Test\":\"TestSecretSourceResealFailurePreservesSource\"}",
+    "2026-11-16T16:05:38.5166344Z {\"Time\":\"2026-11-16T16:05:38.515826073Z\",\"Action\":\"output\",\"Package\":\"github.com/ScriptonBasestar/dva/internal/cli\",\"Test\":\"TestSecretSourceResealFailurePreservesSource\",\"Output\":\"=== RUN   TestSecretSourceResealFailurePreservesSource\\n\",\"OutputType\":\"frame\"}",
+    "2026-11-16T16:05:38.5167454Z {\"Time\":\"2026-11-16T16:05:38.515832914Z\",\"Action\":\"run\",\"Package\":\"github.com/ScriptonBasestar/dva/internal/cli\",\"Test\":\"TestSecretSourceResealFailurePreservesSource/decrypt\"}",
+    "2026-11-16T16:05:38.5168865Z {\"Time\":\"2026-11-16T16:05:38.515835938Z\",\"Action\":\"output\",\"Package\":\"github.com/ScriptonBasestar/dva/internal/cli\",\"Test\":\"TestSecretSourceResealFailurePreservesSource/decrypt\",\"Output\":\"=== RUN   TestSecretSourceResealFailurePreservesSource/decrypt\\n\",\"OutputType\":\"frame\"}",
+    "2026-11-16T16:05:38.5206034Z {\"Time\":\"2026-11-16T16:05:38.520378946Z\",\"Action\":\"output\",\"Package\":\"github.com/ScriptonBasestar/dva/internal/cli\",\"Test\":\"TestSecretSourceResealFailurePreservesSource/decrypt\",\"Output\":\"--- PASS: TestSecretSourceResealFailurePreservesSource/decrypt (0.00s)\\n\",\"OutputType\":\"frame\"}",
+    "2026-11-16T16:05:38.5208396Z {\"Time\":\"2026-11-16T16:05:38.520396302Z\",\"Action\":\"pass\",\"Package\":\"github.com/ScriptonBasestar/dva/internal/cli\",\"Test\":\"TestSecretSourceResealFailurePreservesSource/decrypt\",\"Elapsed\":0}",
+    "2026-11-16T16:05:38.5210021Z {\"Time\":\"2026-11-16T16:05:38.520404685Z\",\"Action\":\"run\",\"Package\":\"github.com/ScriptonBasestar/dva/internal/cli\",\"Test\":\"TestSecretSourceResealFailurePreservesSource/encrypt\"}",
+    "2026-11-16T16:05:38.5212177Z {\"Time\":\"2026-11-16T16:05:38.52040803Z\",\"Action\":\"output\",\"Package\":\"github.com/ScriptonBasestar/dva/internal/cli\",\"Test\":\"TestSecretSourceResealFailurePreservesSource/encrypt\",\"Output\":\"=== RUN   TestSecretSourceResealFailurePreservesSource/encrypt\\n\",\"OutputType\":\"frame\"}",
+    "2026-11-16T16:05:38.5250509Z {\"Time\":\"2026-11-16T16:05:38.524829424Z\",\"Action\":\"output\",\"Package\":\"github.com/ScriptonBasestar/dva/internal/cli\",\"Test\":\"TestSecretSourceResealFailurePreservesSource/encrypt\",\"Output\":\"--- PASS: TestSecretSourceResealFailurePreservesSource/encrypt (0.00s)\\n\",\"OutputType\":\"frame\"}",
+    "2026-11-16T16:05:38.5252703Z {\"Time\":\"2026-11-16T16:05:38.52484635Z\",\"Action\":\"pass\",\"Package\":\"github.com/ScriptonBasestar/dva/internal/cli\",\"Test\":\"TestSecretSourceResealFailurePreservesSource/encrypt\",\"Elapsed\":0}",
+    "2026-11-16T16:05:38.5254301Z {\"Time\":\"2026-11-16T16:05:38.524852759Z\",\"Action\":\"run\",\"Package\":\"github.com/ScriptonBasestar/dva/internal/cli\",\"Test\":\"TestSecretSourceResealFailurePreservesSource/empty\"}",
+    "2026-11-16T16:05:38.5256305Z {\"Time\":\"2026-11-16T16:05:38.524856835Z\",\"Action\":\"output\",\"Package\":\"github.com/ScriptonBasestar/dva/internal/cli\",\"Test\":\"TestSecretSourceResealFailurePreservesSource/empty\",\"Output\":\"=== RUN   TestSecretSourceResealFailurePreservesSource/empty\\n\",\"OutputType\":\"frame\"}",
+    "2026-11-16T16:05:38.5293303Z {\"Time\":\"2026-11-16T16:05:38.529122585Z\",\"Action\":\"output\",\"Package\":\"github.com/ScriptonBasestar/dva/internal/cli\",\"Test\":\"TestSecretSourceResealFailurePreservesSource/empty\",\"Output\":\"--- PASS: TestSecretSourceResealFailurePreservesSource/empty (0.00s)\\n\",\"OutputType\":\"frame\"}",
+    "2026-11-16T16:05:38.5295477Z {\"Time\":\"2026-11-16T16:05:38.529140242Z\",\"Action\":\"pass\",\"Package\":\"github.com/ScriptonBasestar/dva/internal/cli\",\"Test\":\"TestSecretSourceResealFailurePreservesSource/empty\",\"Elapsed\":0}",
+    "2026-11-16T16:05:38.5297098Z {\"Time\":\"2026-11-16T16:05:38.529147903Z\",\"Action\":\"run\",\"Package\":\"github.com/ScriptonBasestar/dva/internal/cli\",\"Test\":\"TestSecretSourceResealFailurePreservesSource/early\"}",
+    "2026-11-16T16:05:38.5299373Z {\"Time\":\"2026-11-16T16:05:38.529151398Z\",\"Action\":\"output\",\"Package\":\"github.com/ScriptonBasestar/dva/internal/cli\",\"Test\":\"TestSecretSourceResealFailurePreservesSource/early\",\"Output\":\"=== RUN   TestSecretSourceResealFailurePreservesSource/early\\n\",\"OutputType\":\"frame\"}",
+    "2026-11-16T16:05:38.5351760Z {\"Time\":\"2026-11-16T16:05:38.534955981Z\",\"Action\":\"output\",\"Package\":\"github.com/ScriptonBasestar/dva/internal/cli\",\"Test\":\"TestSecretSourceResealFailurePreservesSource/early\",\"Output\":\"    secret_source_test.go:103: lost cause: secret_decrypt_failed\\n\",\"OutputType\":\"error\"}",
+    "2026-11-16T16:05:38.5354283Z {\"Time\":\"2026-11-16T16:05:38.535259854Z\",\"Action\":\"output\",\"Package\":\"github.com/ScriptonBasestar/dva/internal/cli\",\"Test\":\"TestSecretSourceResealFailurePreservesSource/early\",\"Output\":\"--- FAIL: TestSecretSourceResealFailurePreservesSource/early (0.01s)\\n\",\"OutputType\":\"frame\"}",
+    "2026-11-16T16:05:38.5356399Z {\"Time\":\"2026-11-16T16:05:38.53527709Z\",\"Action\":\"fail\",\"Package\":\"github.com/ScriptonBasestar/dva/internal/cli\",\"Test\":\"TestSecretSourceResealFailurePreservesSource/early\",\"Elapsed\":0.01}",
+    "2026-11-16T16:05:38.5358735Z {\"Time\":\"2026-11-16T16:05:38.535311207Z\",\"Action\":\"output\",\"Package\":\"github.com/ScriptonBasestar/dva/internal/cli\",\"Test\":\"TestSecretSourceResealFailurePreservesSource\",\"Output\":\"--- FAIL: TestSecretSourceResealFailurePreservesSource (0.02s)\\n\",\"OutputType\":\"frame\"}",
+    "2026-11-16T16:05:38.5360965Z {\"Time\":\"2026-11-16T16:05:38.535320501Z\",\"Action\":\"fail\",\"Package\":\"github.com/ScriptonBasestar/dva/internal/cli\",\"Test\":\"TestSecretSourceResealFailurePreservesSource\",\"Elapsed\":0.02}"
+  ],
+  "local_reproduction": {
+    "command": "GOMAXPROCS=1 go test -race ./internal/cli -run '^TestSecretSourceResealFailurePreservesSource/early$' -count=30",
+    "result": "PASS",
+    "elapsed_seconds": 4.105,
+    "platform": "darwin/arm64",
+    "limitation": "Linux hosted failure scheduling not reproduced locally"
+  },
+  "input_identity": "See immutable run URL/API head_sha; affected secret-source code is unchanged from source 250e1d5c7cf5b0a118e768941717342c29508064."
+}

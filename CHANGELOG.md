@@ -31,6 +31,9 @@ All notable changes to DVA are documented here.
 
 ### Fixed
 
+- `secret reseal`에서 encrypt의 creation-rule 오류 진단이 있으면 하위 프로세스의
+  종료 결과 관측 순서와 관계없이 해당 고정 오류 코드를 보존합니다.
+
 - DVA 자체 commit 검사에서 `_test.go`만 바뀐 패키지는 직접 테스트하고, 일반 Go 변경은
   기존 역의존 검사를 유지합니다. 혼합·미매핑·공유 변경의 보수적 경계는 유지합니다.
 - 비교 fake-host 테스트의 포트 점유 조회를 host 경계로 격리하고 실제 운영 점유 검사는
