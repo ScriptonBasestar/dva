@@ -99,6 +99,7 @@ jobs:
 
   commit-subjects:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       # fetch-depth: 0 is load-bearing. commitcheck pins a baseline commit and walks
       # baseline..HEAD; in the default shallow clone that baseline is absent, the range
@@ -120,6 +121,7 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - run: sh scripts/ci-input.sh
@@ -186,6 +188,7 @@ jobs:
         # when the job runs, so the upper end moves without a hand bump.
         sops: ["3.13.1", "latest"]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
       - run: sh scripts/ci-input.sh
@@ -233,6 +236,7 @@ jobs:
 
   goreleaser-snapshot:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
       - run: sh scripts/ci-input.sh

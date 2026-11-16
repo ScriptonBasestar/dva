@@ -22,6 +22,9 @@ PR merge ref와 queue SHA 의미는 GitHub의
 실패한다. workflow가 있다는 사실이 원격 queue의 활성화나 branch protection 채택을
 증명하지는 않는다. 실행된 workflow의 입력과 결과는 해당 원격 run에서 확인한다.
 
+job별 실행 상한과 runner 확보 실패의 관찰·재시도 기록은
+[Hosted CI 실행 예산](ci-hosted-budgets.md)을 따른다.
+
 ## 중복과 취소
 
 push의 head와 PR·queue의 결합 결과는 서로 다른 입력이다. 같은 브랜치라는 이유만으로

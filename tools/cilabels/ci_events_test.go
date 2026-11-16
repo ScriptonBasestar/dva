@@ -26,8 +26,9 @@ func TestCIEventRoutingAndCheckoutIdentity(t *testing.T) {
 			Cancel bool   `yaml:"cancel-in-progress"`
 		} `yaml:"concurrency"`
 		Jobs map[string]struct {
-			If    string `yaml:"if"`
-			Steps []struct {
+			If             string `yaml:"if"`
+			TimeoutMinutes int    `yaml:"timeout-minutes"`
+			Steps          []struct {
 				Name string         `yaml:"name"`
 				Uses string         `yaml:"uses"`
 				Run  string         `yaml:"run"`
@@ -65,6 +66,9 @@ func TestCIEventRoutingAndCheckoutIdentity(t *testing.T) {
 		job, ok := workflow.Jobs[name]
 		if !ok || job.If != "" || len(job.Steps) < 2 {
 			t.Fatalf("job %s absent, conditional or incomplete", name)
+		}
+		if job.TimeoutMinutes <= 0 || job.TimeoutMinutes > 30 {
+			t.Fatalf("%s must declare an execution timeout between 1 and 30 minutes, got %d", name, job.TimeoutMinutes)
 		}
 		if job.Steps[0].Uses != "actions/checkout@v7" || job.Steps[0].If != "" {
 			t.Fatalf("%s does not start with unconditional checkout", name)
