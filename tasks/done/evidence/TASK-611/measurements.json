@@ -1,0 +1,376 @@
+{
+  "schema": 1,
+  "kind": "diagnostic-not-acceptance",
+  "metadata": {
+    "owner": "codex/mbp",
+    "task": "TASK-611",
+    "purpose": "diagnostic real-DVA commit measurements and ignored-input counterexample",
+    "source": "cdbe1c5fc236f35dc3493d218f97c626435bb03e",
+    "created_at": "2026-11-16T05:40:20.533098+00:00",
+    "cleanup": "remove only this created tree after recording observations in docs/ci-commit-measurements.md; not acceptance evidence",
+    "go": "go version go1.27.3 darwin/arm64",
+    "dva": "{\n  \"build_date\": \"2026-11-16T05:22:08Z\",\n  \"commit\": \"cdbe1c5fc236f35dc3493d218f97c626435bb03e\",\n  \"commit_source\": \"ldflags\",\n  \"version\": \"0.5.1\"\n}"
+  },
+  "command": [
+    "dva",
+    "ci",
+    "commit",
+    "--fresh",
+    "--json"
+  ],
+  "environment": {
+    "GOPROXY": "off",
+    "GOSUMDB": "off",
+    "GOTOOLCHAIN": "local",
+    "PATH": "same pinned Go 1.27.3 bin first; remaining inherited PATH unchanged",
+    "GOCACHE": "separate initially empty directory per case; reused only for repeat"
+  },
+  "host": {
+    "logical_cpus": 18,
+    "memory_bytes": 137438953472,
+    "other_load": "not controlled"
+  },
+  "staged_diffs": {
+    "docs": "diff --git a/docs/ci-commit-pilot.md b/docs/ci-commit-pilot.md\nindex f640d802..62fc1572 100644\n--- a/docs/ci-commit-pilot.md\n+++ b/docs/ci-commit-pilot.md\n@@ -74,3 +74,5 @@ fixture에서 staged/unstaged/untracked·충돌·삭제·공유 입력·경로 \n 이 파일럿은 실행 없는 증거 조회나 checkout 간 재사용을 구현하지 않는다. 그 범위는\n [TASK-607](../tasks/todo/607-ci-verify-lookup-and-cross-checkout-reuse.md)과\n [재사용 계약](75-ci-result-reuse.md)이 소유한다.\n+\n+<!-- TASK-611 diagnostic measurement only. -->\n",
+    "go": "diff --git a/internal/agentdeny/match_test.go b/internal/agentdeny/match_test.go\nindex 2aa142df..ad04b5e7 100644\n--- a/internal/agentdeny/match_test.go\n+++ b/internal/agentdeny/match_test.go\n@@ -157,3 +157,5 @@ func TestKnownUncoveredInvocations(t *testing.T) {\n \t\t}\n \t}\n }\n+\n+// TASK-611 diagnostic measurement only.\n"
+  },
+  "results": [
+    {
+      "case": "docs",
+      "condition": "empty-build-cache",
+      "exit_code": 0,
+      "wall_seconds": 23.151,
+      "id": "7f4f19ac4a704749ef8f5988a164f5b3",
+      "status": "succeeded",
+      "duration": "23.092741125s",
+      "error": null,
+      "steps": [
+        {
+          "name": "integrity",
+          "status": "succeeded",
+          "started_at": "2026-11-16T14:40:21.209344+09:00",
+          "finished_at": "2026-11-16T14:40:43.066073+09:00",
+          "duration": 21856446292,
+          "worker_budget": {
+            "tool_jobs": 4,
+            "source": "computed(cpu/max_parallel)",
+            "dva_ci_jobs": 4,
+            "cargo_build_jobs": 4,
+            "cargo_build_jobs_source": "computed(cpu/max_parallel)",
+            "rust_test_threads": 1,
+            "rust_test_threads_source": "default"
+          }
+        },
+        {
+          "name": "lint",
+          "status": "succeeded",
+          "started_at": "2026-11-16T14:40:43.066701+09:00",
+          "finished_at": "2026-11-16T14:40:43.475069+09:00",
+          "duration": 408362875,
+          "worker_budget": {
+            "tool_jobs": 4,
+            "source": "computed(cpu/max_parallel)",
+            "dva_ci_jobs": 4,
+            "cargo_build_jobs": 4,
+            "cargo_build_jobs_source": "computed(cpu/max_parallel)",
+            "rust_test_threads": 1,
+            "rust_test_threads_source": "default"
+          }
+        },
+        {
+          "name": "compile",
+          "status": "succeeded",
+          "started_at": "2026-11-16T14:40:43.475727+09:00",
+          "finished_at": "2026-11-16T14:40:43.724618+09:00",
+          "duration": 248888417,
+          "worker_budget": {
+            "tool_jobs": 4,
+            "source": "computed(cpu/max_parallel)",
+            "dva_ci_jobs": 4,
+            "cargo_build_jobs": 4,
+            "cargo_build_jobs_source": "computed(cpu/max_parallel)",
+            "rust_test_threads": 1,
+            "rust_test_threads_source": "default"
+          }
+        },
+        {
+          "name": "test",
+          "status": "succeeded",
+          "started_at": "2026-11-16T14:40:43.72506+09:00",
+          "finished_at": "2026-11-16T14:40:43.97811+09:00",
+          "duration": 253047250,
+          "worker_budget": {
+            "tool_jobs": 4,
+            "source": "computed(cpu/max_parallel)",
+            "dva_ci_jobs": 4,
+            "cargo_build_jobs": 4,
+            "cargo_build_jobs_source": "computed(cpu/max_parallel)",
+            "rust_test_threads": 1,
+            "rust_test_threads_source": "default"
+          }
+        }
+      ],
+      "attestation": {
+        "available": true,
+        "before": "723987719a8e5e882ba9eb3cd0bb0372f06427c00908d2a3d9bf1c081b4ae11e",
+        "after": "723987719a8e5e882ba9eb3cd0bb0372f06427c00908d2a3d9bf1c081b4ae11e",
+        "commit": "cdbe1c5fc236f35dc3493d218f97c626435bb03e",
+        "dirty": true
+      }
+    },
+    {
+      "case": "docs",
+      "condition": "repeat-same-build-cache",
+      "exit_code": 0,
+      "wall_seconds": 3.919,
+      "id": "c9c282a7156b2dc5b745f41f220a118a",
+      "status": "succeeded",
+      "duration": "3.861954375s",
+      "error": null,
+      "steps": [
+        {
+          "name": "integrity",
+          "status": "succeeded",
+          "started_at": "2026-11-16T14:40:44.382307+09:00",
+          "finished_at": "2026-11-16T14:40:47.080226+09:00",
+          "duration": 2697884083,
+          "worker_budget": {
+            "tool_jobs": 4,
+            "source": "computed(cpu/max_parallel)",
+            "dva_ci_jobs": 4,
+            "cargo_build_jobs": 4,
+            "cargo_build_jobs_source": "computed(cpu/max_parallel)",
+            "rust_test_threads": 1,
+            "rust_test_threads_source": "default"
+          }
+        },
+        {
+          "name": "lint",
+          "status": "succeeded",
+          "started_at": "2026-11-16T14:40:47.081105+09:00",
+          "finished_at": "2026-11-16T14:40:47.344094+09:00",
+          "duration": 262985500,
+          "worker_budget": {
+            "tool_jobs": 4,
+            "source": "computed(cpu/max_parallel)",
+            "dva_ci_jobs": 4,
+            "cargo_build_jobs": 4,
+            "cargo_build_jobs_source": "computed(cpu/max_parallel)",
+            "rust_test_threads": 1,
+            "rust_test_threads_source": "default"
+          }
+        },
+        {
+          "name": "compile",
+          "status": "succeeded",
+          "started_at": "2026-11-16T14:40:47.347549+09:00",
+          "finished_at": "2026-11-16T14:40:47.630045+09:00",
+          "duration": 282492500,
+          "worker_budget": {
+            "tool_jobs": 4,
+            "source": "computed(cpu/max_parallel)",
+            "dva_ci_jobs": 4,
+            "cargo_build_jobs": 4,
+            "cargo_build_jobs_source": "computed(cpu/max_parallel)",
+            "rust_test_threads": 1,
+            "rust_test_threads_source": "default"
+          }
+        },
+        {
+          "name": "test",
+          "status": "succeeded",
+          "started_at": "2026-11-16T14:40:47.633504+09:00",
+          "finished_at": "2026-11-16T14:40:47.907723+09:00",
+          "duration": 274214875,
+          "worker_budget": {
+            "tool_jobs": 4,
+            "source": "computed(cpu/max_parallel)",
+            "dva_ci_jobs": 4,
+            "cargo_build_jobs": 4,
+            "cargo_build_jobs_source": "computed(cpu/max_parallel)",
+            "rust_test_threads": 1,
+            "rust_test_threads_source": "default"
+          }
+        }
+      ],
+      "attestation": {
+        "available": true,
+        "before": "723987719a8e5e882ba9eb3cd0bb0372f06427c00908d2a3d9bf1c081b4ae11e",
+        "after": "723987719a8e5e882ba9eb3cd0bb0372f06427c00908d2a3d9bf1c081b4ae11e",
+        "commit": "cdbe1c5fc236f35dc3493d218f97c626435bb03e",
+        "dirty": true
+      }
+    },
+    {
+      "case": "go",
+      "condition": "empty-build-cache",
+      "exit_code": 0,
+      "wall_seconds": 74.753,
+      "id": "a36cb465e27d127bfa6953c8197f3a4f",
+      "status": "succeeded",
+      "duration": "1m14.717548166s",
+      "error": null,
+      "steps": [
+        {
+          "name": "integrity",
+          "status": "succeeded",
+          "started_at": "2026-11-16T14:40:48.660178+09:00",
+          "finished_at": "2026-11-16T14:40:55.600113+09:00",
+          "duration": 6939933459,
+          "worker_budget": {
+            "tool_jobs": 4,
+            "source": "computed(cpu/max_parallel)",
+            "dva_ci_jobs": 4,
+            "cargo_build_jobs": 4,
+            "cargo_build_jobs_source": "computed(cpu/max_parallel)",
+            "rust_test_threads": 1,
+            "rust_test_threads_source": "default"
+          }
+        },
+        {
+          "name": "lint",
+          "status": "succeeded",
+          "started_at": "2026-11-16T14:40:55.60056+09:00",
+          "finished_at": "2026-11-16T14:41:15.131083+09:00",
+          "duration": 19530510500,
+          "worker_budget": {
+            "tool_jobs": 4,
+            "source": "computed(cpu/max_parallel)",
+            "dva_ci_jobs": 4,
+            "cargo_build_jobs": 4,
+            "cargo_build_jobs_source": "computed(cpu/max_parallel)",
+            "rust_test_threads": 1,
+            "rust_test_threads_source": "default"
+          }
+        },
+        {
+          "name": "compile",
+          "status": "succeeded",
+          "started_at": "2026-11-16T14:41:15.131476+09:00",
+          "finished_at": "2026-11-16T14:41:23.351949+09:00",
+          "duration": 8220406959,
+          "worker_budget": {
+            "tool_jobs": 4,
+            "source": "computed(cpu/max_parallel)",
+            "dva_ci_jobs": 4,
+            "cargo_build_jobs": 4,
+            "cargo_build_jobs_source": "computed(cpu/max_parallel)",
+            "rust_test_threads": 1,
+            "rust_test_threads_source": "default"
+          }
+        },
+        {
+          "name": "test",
+          "status": "succeeded",
+          "started_at": "2026-11-16T14:41:23.35536+09:00",
+          "finished_at": "2026-11-16T14:42:03.044138+09:00",
+          "duration": 39688322917,
+          "worker_budget": {
+            "tool_jobs": 4,
+            "source": "computed(cpu/max_parallel)",
+            "dva_ci_jobs": 4,
+            "cargo_build_jobs": 4,
+            "cargo_build_jobs_source": "computed(cpu/max_parallel)",
+            "rust_test_threads": 1,
+            "rust_test_threads_source": "default"
+          }
+        }
+      ],
+      "attestation": {
+        "available": true,
+        "before": "ec2fc1c5aa35d2176d9d71938531247b5ca58849d2b43072eb3d9fba8d55ba1e",
+        "after": "ec2fc1c5aa35d2176d9d71938531247b5ca58849d2b43072eb3d9fba8d55ba1e",
+        "commit": "cdbe1c5fc236f35dc3493d218f97c626435bb03e",
+        "dirty": true
+      }
+    },
+    {
+      "case": "go",
+      "condition": "repeat-same-build-cache",
+      "exit_code": 0,
+      "wall_seconds": 41.895,
+      "id": "9e21cd41540e604b5c8bba913669293b",
+      "status": "succeeded",
+      "duration": "41.843574s",
+      "error": null,
+      "steps": [
+        {
+          "name": "integrity",
+          "status": "succeeded",
+          "started_at": "2026-11-16T14:42:03.388464+09:00",
+          "finished_at": "2026-11-16T14:42:03.645552+09:00",
+          "duration": 257084625,
+          "worker_budget": {
+            "tool_jobs": 4,
+            "source": "computed(cpu/max_parallel)",
+            "dva_ci_jobs": 4,
+            "cargo_build_jobs": 4,
+            "cargo_build_jobs_source": "computed(cpu/max_parallel)",
+            "rust_test_threads": 1,
+            "rust_test_threads_source": "default"
+          }
+        },
+        {
+          "name": "lint",
+          "status": "succeeded",
+          "started_at": "2026-11-16T14:42:03.645992+09:00",
+          "finished_at": "2026-11-16T14:42:04.516844+09:00",
+          "duration": 870841083,
+          "worker_budget": {
+            "tool_jobs": 4,
+            "source": "computed(cpu/max_parallel)",
+            "dva_ci_jobs": 4,
+            "cargo_build_jobs": 4,
+            "cargo_build_jobs_source": "computed(cpu/max_parallel)",
+            "rust_test_threads": 1,
+            "rust_test_threads_source": "default"
+          }
+        },
+        {
+          "name": "compile",
+          "status": "succeeded",
+          "started_at": "2026-11-16T14:42:04.517472+09:00",
+          "finished_at": "2026-11-16T14:42:05.735527+09:00",
+          "duration": 1218039709,
+          "worker_budget": {
+            "tool_jobs": 4,
+            "source": "computed(cpu/max_parallel)",
+            "dva_ci_jobs": 4,
+            "cargo_build_jobs": 4,
+            "cargo_build_jobs_source": "computed(cpu/max_parallel)",
+            "rust_test_threads": 1,
+            "rust_test_threads_source": "default"
+          }
+        },
+        {
+          "name": "test",
+          "status": "succeeded",
+          "started_at": "2026-11-16T14:42:05.736341+09:00",
+          "finished_at": "2026-11-16T14:42:44.923869+09:00",
+          "duration": 39187031667,
+          "worker_budget": {
+            "tool_jobs": 4,
+            "source": "computed(cpu/max_parallel)",
+            "dva_ci_jobs": 4,
+            "cargo_build_jobs": 4,
+            "cargo_build_jobs_source": "computed(cpu/max_parallel)",
+            "rust_test_threads": 1,
+            "rust_test_threads_source": "default"
+          }
+        }
+      ],
+      "attestation": {
+        "available": true,
+        "before": "ec2fc1c5aa35d2176d9d71938531247b5ca58849d2b43072eb3d9fba8d55ba1e",
+        "after": "ec2fc1c5aa35d2176d9d71938531247b5ca58849d2b43072eb3d9fba8d55ba1e",
+        "commit": "cdbe1c5fc236f35dc3493d218f97c626435bb03e",
+        "dirty": true
+      }
+    }
+  ],
+  "reuse_counterexample": {
+    "git_input_listing_unchanged": true,
+    "gofmt_reports_ignored_input": true
+  },
+  "cleanup_policy": "created diagnostic copies and private build caches removed after observation; receipts remain identified by run IDs"
+}

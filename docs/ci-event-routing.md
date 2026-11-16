@@ -32,9 +32,21 @@ push의 head와 PR·queue의 결합 결과는 서로 다른 입력이다. 같은
 새 push가 수동 실행이나 다른 입력의 검증을 취소하지 않게 한다. 부하 감소가 필요하면
 실제 보호 규칙·입력·검사 범위와 증거의 동등성을 확인한 별도 변경으로 처리한다.
 
-현재 토큰으로 master branch protection을 조회하면 HTTP 403이다. 보호 규칙과
-required-check 목록은 미확인으로 남기며 권한 확대·보호 설정 변경은 하지 않는다.
-job 이름을 유지하고 skip을 성공 증거로 대신하지 않는다.
+2026-11-16 기존 인증으로 master의 적용 규칙을 읽기 전용 조회했다.
+[API 관찰 원문](../tasks/done/evidence/TASK-611/protection-observation.json)을 보존한다.
+
+- `GET /repos/ScriptonBasestar/dva/rules/branches/master`와
+  `GET /repos/ScriptonBasestar/dva/rulesets/25476604`에서 active `require-ci`
+  ruleset의 required contexts `lint`, `test`, `commit-subjects`를 확인했다.
+  대상은 `~DEFAULT_BRANCH`, strict 정책은 false이고 bypass 설정도 있다.
+  이는 모든 쓰기 경로의 강제 차단이나 최신 target 결합 검증 보장이 아니다.
+- GraphQL `repository.mergeQueue(branch: "master")`는 null이다. 현재 조회상
+  master queue 객체가 없으며 실제 merge_group 실행 성공은 아직 관찰하지 않았다.
+- 별도 `GET /repos/ScriptonBasestar/dva/branches/master/protection`은 HTTP 403이다.
+  legacy branch protection 전체 설정은 여전히 미확인이다.
+
+이는 측정 시점의 관찰이며 향후 설정을 보장하지 않는다. 권한·보호 규칙·queue를
+변경하지 않았다. job 이름을 유지하고 skip을 성공 증거로 대신하지 않는다.
 
 ## 일간·주간·릴리스
 

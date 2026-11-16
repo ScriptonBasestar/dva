@@ -1,0 +1,26 @@
+{
+  "kind": "separate-targeted-diagnostic-not-acceptance",
+  "source": "cdbe1c5fc236f35dc3493d218f97c626435bb03e",
+  "command": [
+    "go",
+    "test",
+    "./internal/cli",
+    "-run",
+    "^TestCompareFailureEnvelopeCarriesCodeAndResult$",
+    "-count=1",
+    "-timeout",
+    "30s"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 0.99,
+  "stdout": "ok  \tgithub.com/ScriptonBasestar/dva/internal/cli\t0.614s\n",
+  "stderr": "",
+  "failed_profile_run": "edb5beb427397da1c5efb7a886ec9ead",
+  "profile_failure": "TestCompareFailureEnvelopeCarriesCodeAndResult expected compare_partial_failure but observed compare_preflight_failed: variant b WEB_PORT 50796 already in use",
+  "listener_observation": "read-only lsof confirmed a separate loopback TCP listener at 127.0.0.1:50796 after the failed run; ownership or exact collision mechanism not inferred; no listener stopped",
+  "report_route": {
+    "status": "undeclared",
+    "external_registration": false
+  },
+  "interpretation": "A separate narrow rerun has a new port allocation and is not a successful replacement for the failed profile."
+}

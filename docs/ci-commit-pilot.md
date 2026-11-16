@@ -65,12 +65,13 @@ compile은 지원 Unix의 `/usr/bin/true`를 Go `-exec`에 지정해 init·TestM
 fixture에서 staged/unstaged/untracked·충돌·삭제·공유 입력·경로 이름과 도구 실패를
 대조한다. 범위 축소로 잘못된 성공이 생기지 않는지 독립 리뷰한다. 실제 저장소에서는
 동일한 staged 입력에 대해 phase와 전체 실행 결과를 확인하며 cold와 warm을 구분한다.
-측정값과 최종 full 실행 ID는 작업 완료 증거에 보존한다.
+측정값과 조건은 [실제 DVA 변경 사례의 제한된 실측](ci-commit-measurements.md),
+최종 full 실행 ID는 작업 완료 증거에 보존한다.
 
 초기 전체 범위 실험은 test 단계의 90초 제한에 도달했다. 이 결과에 따라 공유 변경을
 빠른 경로에서 자동 실행하는 대신 위와 같이 명시적 전체 게이트로 라우팅한다. 당시
 실패는 통과 증거로 재사용하지 않으며, 30초 목표를 달성했다고 주장하지 않는다.
 
 이 파일럿은 실행 없는 증거 조회나 checkout 간 재사용을 구현하지 않는다. 그 범위는
-[TASK-607](../tasks/todo/607-ci-verify-lookup-and-cross-checkout-reuse.md)과
+[TASK-607](../tasks/done/607-ci-verify-lookup-and-cross-checkout-reuse.md)과
 [재사용 계약](75-ci-result-reuse.md)이 소유한다.

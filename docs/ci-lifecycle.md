@@ -57,9 +57,10 @@ merge나 배포의 성공 증거가 아니다. 원격 CI와 일정 실행은 해
 
 프로필 조회는 프로젝트 manifest와 실제 선언을 사용한다. 로컬의 `pre-push`가 이미
 완료된 검사의 증거를 사용하려면 소비자가 해당 입력·범위·환경에 유효한지 확인할 수
-있어야 한다. HEAD만 같다는 이유로 인정하지 않는다. 현재 DVA의 재사용은 명시적으로
-선언한 단계와 동일 canonical checkout 범위다. 별도 실행 없는 유효성 조회나 다른
-worktree 간 재사용은 현재 이 문서가 보장하는 기능이 아니다.
+있어야 한다. HEAD만 같다는 이유로 인정하지 않는다. 현재 DVA는 `--lookup`으로
+단계별 성공 증거 조회를 지원한다. 기본 재사용은 동일 canonical checkout 안이며,
+명시적 `scope: repository`의 동일 Git 저장소 worktree 간 재사용은
+[조회 계약](ci-reuse-lookup.md)을 따른다. 조회 성공 자체는 CI 통과가 아니다.
 
 ## commit 검사와 입력
 

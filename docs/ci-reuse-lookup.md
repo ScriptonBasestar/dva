@@ -65,6 +65,10 @@ root hash를 단순 제거하거나 과거 checkout 증거를 공유 증거로 �
 
 ## 채택 검증
 
+DVA 자체의 기존 필수 단계에는 아직 reuse를 선언하지 않는다. `format`의 실제 입력과
+Git 기반 key의 차이를 포함한 [채택 판정](ci-commit-measurements.md)을 먼저 따른다.
+기능이 존재한다는 이유만으로 모든 단계가 covered가 되거나 빨라지는 것은 아니다.
+
 두 실제 Git worktree에서 같은 입력의 재사용을 확인하고, 내용·파일 추가/삭제·도구·환경·
 산출물 유실·만료·fresh 변이가 covered가 되지 않는지 대조한다. 기본 checkout 격리도
 회귀 검증한다. 조회 전후 cache·receipt 디렉터리와 marker를 대조해 읽기 전용 계약을
