@@ -5,7 +5,7 @@ type: feature
 priority: P2
 effort: M
 exec-tier: strong
-status: review
+status: done
 quality-review: pass
 quality-review-evidence: tasks/done/evidence/TASK-610/review.md
 created: 2026-11-16
@@ -37,5 +37,6 @@ PR·외부 이슈를 만들지 않는다. 원격 queue 활성화와 run 성공�
 독립 strong 소스 검토, sh -n, scoped tests, make doc-check·make lint와
 T2 dev d1f49dea4f1eaf7faf5921d453faafc8 (2m47.878s)가 통과했다.
 최신 source 반영과 최종 clean-head full·통합·설치본 전달은 아직 완료하지 않았다.
-현재 CE epoch 전환 확인을 기다리며 작업 브랜치에 구현과 증거를 보존한다.
+CE epoch 3 전환을 완료했다. 구현과 기존 검토 증거는 작업 브랜치에 보존하며,
+최신 source 반영 후 최종 full·독립 통합 리뷰·전달은 CE 실행 영수증으로 확인한다.
 프로필 추가를 원격 queue 활성화나 실제 hosted CI 성공으로 보고하지 않는다.
