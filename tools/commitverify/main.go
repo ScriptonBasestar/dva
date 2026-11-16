@@ -27,10 +27,11 @@ type change struct {
 }
 
 type selection struct {
-	goFiles []string
-	all     bool
-	docs    bool
-	dirs    map[string]bool
+	goFiles        []string
+	all            bool
+	docs           bool
+	productionDirs map[string]bool
+	testDirs       map[string]bool
 }
 
 func main() {
@@ -96,13 +97,13 @@ func verify(ctx context.Context, phase string, run runner, out io.Writer) error 
 		}
 		return nil
 	}
-	if !sel.all && len(sel.dirs) == 0 {
+	if !sel.all && len(sel.productionDirs) == 0 && len(sel.testDirs) == 0 {
 		_, _ = fmt.Fprintf(out, "%s: not applicable (documentation-only changes)\n", phase)
 		return nil
 	}
 	packages := []string{"./..."}
 	if !sel.all {
-		packages, err = affectedPackages(ctx, run, sel.dirs)
+		packages, err = affectedPackages(ctx, run, sel.productionDirs, sel.testDirs)
 		if err != nil {
 			return err
 		}
@@ -239,7 +240,7 @@ func validStatus(status string) bool {
 }
 
 func selectChanges(changes []change) selection {
-	s := selection{dirs: make(map[string]bool)}
+	s := selection{productionDirs: make(map[string]bool), testDirs: make(map[string]bool)}
 	for _, c := range changes {
 		if strings.ContainsAny(c.status[:1], "DRCT") {
 			s.all = true
@@ -261,21 +262,29 @@ func selectChanges(changes []change) selection {
 			if c.status[0] != 'D' && ((c.status[0] != 'R' && c.status[0] != 'C') || i == len(c.paths)-1) {
 				s.goFiles = append(s.goFiles, "./"+path)
 			}
-			s.dirs[filepath.ToSlash(filepath.Dir(path))] = true
+			dir := filepath.ToSlash(filepath.Dir(path))
+			if strings.HasSuffix(path, "_test.go") {
+				s.testDirs[dir] = true
+			} else {
+				s.productionDirs[dir] = true
+			}
 		}
 	}
 	return s
 }
 
 type goPackage struct {
-	ImportPath   string
-	Dir          string
-	Imports      []string
-	TestImports  []string
-	XTestImports []string
+	ImportPath      string
+	Dir             string
+	Imports         []string
+	TestImports     []string
+	XTestImports    []string
+	EmbedFiles      []string
+	TestEmbedFiles  []string
+	XTestEmbedFiles []string
 }
 
-func affectedPackages(ctx context.Context, run runner, dirs map[string]bool) ([]string, error) {
+func affectedPackages(ctx context.Context, run runner, productionDirs, testDirs map[string]bool) ([]string, error) {
 	root, err := os.Getwd()
 	if err != nil {
 		return nil, err
@@ -296,17 +305,51 @@ func affectedPackages(ctx context.Context, run runner, dirs map[string]bool) ([]
 		packages = append(packages, p)
 	}
 	selected := make(map[string]bool)
+	testPackages := make(map[string]bool)
+	mapped := make(map[string]bool)
 	for _, p := range packages {
 		rel, err := filepath.Rel(root, p.Dir)
 		if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) || p.ImportPath == "" {
 			return nil, fmt.Errorf("invalid package directory %q", p.Dir)
 		}
-		if dirs[filepath.ToSlash(rel)] {
+		embedded := append(append(append([]string{}, p.EmbedFiles...), p.TestEmbedFiles...), p.XTestEmbedFiles...)
+		for _, path := range embedded {
+			if !strings.HasSuffix(path, "_test.go") {
+				continue
+			}
+			clean := filepath.Clean(path)
+			if filepath.IsAbs(path) || clean == ".." || strings.HasPrefix(clean, ".."+string(filepath.Separator)) {
+				return nil, fmt.Errorf("invalid embedded path %q", path)
+			}
+			embedDir, err := filepath.Rel(root, filepath.Dir(filepath.Join(p.Dir, clean)))
+			if err != nil || embedDir == ".." || strings.HasPrefix(embedDir, ".."+string(filepath.Separator)) {
+				return nil, fmt.Errorf("invalid embedded path %q", path)
+			}
+			if testDirs[filepath.ToSlash(embedDir)] {
+				return nil, errors.New("embedded Go test input requires core/full; run make ci-core or make ci-full")
+			}
+		}
+		dir := filepath.ToSlash(rel)
+		if productionDirs[dir] {
 			selected[p.ImportPath] = true
-			delete(dirs, filepath.ToSlash(rel))
+			mapped[dir] = true
+		}
+		if testDirs[dir] {
+			testPackages[p.ImportPath] = true
+			mapped[dir] = true
 		}
 	}
-	if len(dirs) > 0 || len(selected) == 0 {
+	for dir := range productionDirs {
+		if !mapped[dir] {
+			return nil, errors.New("unmapped Go change requires core/full; run make ci-core or make ci-full")
+		}
+	}
+	for dir := range testDirs {
+		if !mapped[dir] {
+			return nil, errors.New("unmapped Go change requires core/full; run make ci-core or make ci-full")
+		}
+	}
+	if len(selected) == 0 && len(testPackages) == 0 {
 		return nil, errors.New("unmapped Go change requires core/full; run make ci-core or make ci-full")
 	}
 	for changed := true; changed; {
@@ -323,6 +366,9 @@ func affectedPackages(ctx context.Context, run runner, dirs map[string]bool) ([]
 				}
 			}
 		}
+	}
+	for name := range testPackages {
+		selected[name] = true
 	}
 	result := make([]string, 0, len(selected))
 	for name := range selected {

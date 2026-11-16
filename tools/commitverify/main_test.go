@@ -297,23 +297,174 @@ func TestAffectedPackagesIncludesReverseTestDependencies(t *testing.T) {
 	}
 	run := func(_ context.Context, args ...string) ([]byte, error) {
 		if !reflect.DeepEqual(args, []string{"go", "list", "-json", "./..."}) {
-			t.Fatalf("unexpected command %q", args)
+			return nil, errors.New("unexpected command: " + strings.Join(args, " "))
 		}
 		return raw.Bytes(), nil
 	}
-	got, err := affectedPackages(context.Background(), run, map[string]bool{"a": true})
+	got, err := affectedPackages(context.Background(), run, map[string]bool{"a": true}, nil)
 	want := []string{"example/a", "example/b", "example/c"}
 	if err != nil || !reflect.DeepEqual(got, want) {
 		t.Fatalf("got %q, want %q: %v", got, want, err)
 	}
-	got, err = affectedPackages(context.Background(), run, map[string]bool{"missing": true})
+	got, err = affectedPackages(context.Background(), run, map[string]bool{"missing": true}, nil)
 	if err == nil || !strings.Contains(err.Error(), "requires core/full") || len(got) != 0 {
 		t.Fatalf("missing package must require core/full: %q, %v", got, err)
 	}
 }
 
+func TestTestOnlyAndMixedChangesSelectPackageGraph(t *testing.T) {
+	root, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	packages := []goPackage{
+		{ImportPath: "example/a", Dir: filepath.Join(root, "a")},
+		{ImportPath: "example/b", Dir: filepath.Join(root, "b"), TestImports: []string{"example/a"}},
+		{ImportPath: "example/c", Dir: filepath.Join(root, "c"), Imports: []string{"example/b"}},
+		{ImportPath: "example/d", Dir: filepath.Join(root, "d"), XTestImports: []string{"example/a"}},
+		{ImportPath: "example/e", Dir: filepath.Join(root, "e")},
+	}
+	var raw bytes.Buffer
+	for _, pkg := range packages {
+		if err := json.NewEncoder(&raw).Encode(pkg); err != nil {
+			t.Fatal(err)
+		}
+	}
+	run := func(_ context.Context, args ...string) ([]byte, error) {
+		if !reflect.DeepEqual(args, []string{"go", "list", "-json", "./..."}) {
+			return nil, errors.New("unexpected command: " + strings.Join(args, " "))
+		}
+		return raw.Bytes(), nil
+	}
+	for _, tc := range []struct {
+		name    string
+		paths   []string
+		want    []string
+		wantErr bool
+	}{
+		{"internal test", []string{"a/a_test.go"}, []string{"example/a"}, false},
+		{"external test", []string{"a/external_test.go"}, []string{"example/a"}, false},
+		{"production", []string{"a/a.go"}, []string{"example/a", "example/b", "example/c", "example/d"}, false},
+		{"mixed same directory", []string{"a/a.go", "a/a_test.go"}, []string{"example/a", "example/b", "example/c", "example/d"}, false},
+		{"mixed directories", []string{"a/a_test.go", "b/b.go"}, []string{"example/a", "example/b", "example/c"}, false},
+		{"two tests", []string{"a/a_test.go", "b/b_test.go"}, []string{"example/a", "example/b"}, false},
+		{"production plus unrelated test", []string{"a/a.go", "e/e_test.go"}, []string{"example/a", "example/b", "example/c", "example/d", "example/e"}, false},
+		{"missing production", []string{"missing/a.go"}, nil, true},
+		{"missing test", []string{"missing/a_test.go"}, nil, true},
+		{"valid test plus missing production", []string{"a/a_test.go", "missing/a.go"}, nil, true},
+		{"valid production plus missing test", []string{"a/a.go", "missing/a_test.go"}, nil, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var changes []change
+			for _, path := range tc.paths {
+				changes = append(changes, change{status: "M", paths: []string{path}})
+			}
+			sel := selectChanges(changes)
+			got, err := affectedPackages(context.Background(), run, sel.productionDirs, sel.testDirs)
+			if (err != nil) != tc.wantErr || !reflect.DeepEqual(got, tc.want) {
+				t.Fatalf("got %q, want %q: %v", got, tc.want, err)
+			}
+		})
+	}
+}
+
+func TestTestOnlySelectionUsedInAllGoPhases(t *testing.T) {
+	t.Setenv("DVA_CI_FRESH", "0")
+	root, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var listing bytes.Buffer
+	for _, pkg := range []goPackage{
+		{ImportPath: "example/a", Dir: filepath.Join(root, "a")},
+		{ImportPath: "example/b", Dir: filepath.Join(root, "b"), XTestImports: []string{"example/a"}},
+	} {
+		if err := json.NewEncoder(&listing).Encode(pkg); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var calls [][]string
+	run := func(_ context.Context, args ...string) ([]byte, error) {
+		calls = append(calls, append([]string{}, args...))
+		switch {
+		case reflect.DeepEqual(args, []string{"git", "diff", "--cached", "--name-status", "-z", "--"}):
+			return []byte("M\x00a/external_test.go\x00"), nil
+		case reflect.DeepEqual(args, []string{"go", "list", "-json", "./..."}):
+			return listing.Bytes(), nil
+		default:
+			return nil, nil
+		}
+	}
+	for _, phase := range []string{"integrity", "lint", "compile", "test"} {
+		if err := verify(context.Background(), phase, run, &bytes.Buffer{}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, want := range [][]string{
+		{"gofmt", "-s", "-l", "./a/external_test.go"},
+		{"go", "vet", "example/a"},
+		{"go", "test", "-exec", "/usr/bin/true", "-run", "^$", "example/a"},
+		{"go", "test", "-timeout", "75s", "example/a"},
+	} {
+		found := false
+		for _, call := range calls {
+			found = found || reflect.DeepEqual(call, want)
+		}
+		if !found {
+			t.Errorf("missing %q in %q", want, calls)
+		}
+	}
+}
+
+func TestEmbeddedTestFilesRequireCore(t *testing.T) {
+	root, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		name    string
+		embed   goPackage
+		dir     string
+		wantErr bool
+	}{
+		{"production embed same package", goPackage{EmbedFiles: []string{"fixture_test.go"}}, "a", true},
+		{"test embed same package", goPackage{TestEmbedFiles: []string{"fixture_test.go"}}, "a", true},
+		{"external test embed same package", goPackage{XTestEmbedFiles: []string{"fixture_test.go"}}, "a", true},
+		{"parent embeds child file", goPackage{EmbedFiles: []string{"child/fixture_test.go"}}, "a/child", true},
+		{"parent test embeds child file", goPackage{TestEmbedFiles: []string{"child/fixture_test.go"}}, "a/child", true},
+		{"parent external test embeds child file", goPackage{XTestEmbedFiles: []string{"child/fixture_test.go"}}, "a/child", true},
+		{"ordinary data unaffected", goPackage{EmbedFiles: []string{"fixture.json"}}, "a", false},
+		{"unrelated test directory unaffected", goPackage{EmbedFiles: []string{"fixture_test.go"}}, "a/child", false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			tc.embed.ImportPath = "example/a"
+			tc.embed.Dir = filepath.Join(root, "a")
+			var listing bytes.Buffer
+			for _, pkg := range []goPackage{tc.embed, {ImportPath: "example/a/child", Dir: filepath.Join(root, "a", "child")}} {
+				if err := json.NewEncoder(&listing).Encode(pkg); err != nil {
+					t.Fatal(err)
+				}
+			}
+			run := func(_ context.Context, args ...string) ([]byte, error) {
+				if !reflect.DeepEqual(args, []string{"go", "list", "-json", "./..."}) {
+					return nil, errors.New("unexpected command: " + strings.Join(args, " "))
+				}
+				return listing.Bytes(), nil
+			}
+			got, err := affectedPackages(context.Background(), run, nil, map[string]bool{tc.dir: true})
+			if tc.wantErr {
+				if err == nil || !strings.Contains(err.Error(), "embedded Go test input requires core/full") {
+					t.Fatalf("got %q, %v; want core/full", got, err)
+				}
+			} else if err != nil || len(got) != 1 {
+				t.Fatalf("got %q, %v; want one test package", got, err)
+			}
+		})
+	}
+}
+
 func TestBroadChangesFailBeforeExpensiveChecks(t *testing.T) {
-	for _, input := range []string{"M\x00go.mod\x00", "D\x00internal/a/file.go\x00", "R100\x00a.go\x00b.go\x00", "M\x00skills/dva/SKILL.md\x00"} {
+	for _, input := range []string{"M\x00go.mod\x00", "D\x00internal/a/file.go\x00", "D\x00internal/a/file_test.go\x00", "R100\x00a.go\x00b.go\x00", "R100\x00a_test.go\x00b_test.go\x00", "M\x00tools/shared/check_test.go\x00", "M\x00skills/dva/SKILL.md\x00"} {
 		for _, phase := range []string{"integrity", "lint", "compile", "test"} {
 			run := func(_ context.Context, args ...string) ([]byte, error) {
 				if args[0] != "git" {

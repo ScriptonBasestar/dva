@@ -31,6 +31,8 @@ All notable changes to DVA are documented here.
 
 ### Fixed
 
+- DVA 자체 commit 검사에서 `_test.go`만 바뀐 패키지는 직접 테스트하고, 일반 Go 변경은
+  기존 역의존 검사를 유지합니다. 혼합·미매핑·공유 변경의 보수적 경계는 유지합니다.
 - 비교 fake-host 테스트의 포트 점유 조회를 host 경계로 격리하고 실제 운영 점유 검사는
   유지합니다. 외부 포트 상태가 오류 응답 검증을 바꾸는 테스트 의존성을 제거합니다.
 - 제거된 설정 키는 null·YAML alias/merge·인코딩된 키도 로딩 단계에서 거부합니다.
