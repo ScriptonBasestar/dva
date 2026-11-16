@@ -197,6 +197,9 @@ plans:
 
 ## Build & Test
 
+이벤트별 T1·T2와 `commit/core/full` 선택은 [commit 파일럿](docs/ci-commit-pilot.md)을 따른다.
+`make ci`는 staged fast 검사이며 이전 전체 core 범위는 `make ci-core`에 보존한다.
+
 DVA 자체의 복구·독립성 검증에서는 native 도구 직접 실행을 허용한다.
 `make recovery-check`로 설치된 DVA CLI 없이 빌드와 핵심 검사를 검증한다.
 이 저장소의 복구 작업에서는 스킬의 DVA 우선 실행 규칙보다 이 예외를 우선한다.

@@ -2,7 +2,7 @@
 
 [OCI 단계](ci-oci-steps.md)는 별도 격리·정리 계약을 따른다.
 
-이벤트 선택은 [이벤트 계약](ci-lifecycle.md), Rust 적용 증거는 [설치 기록](local-rust-worker-installation.md)을 따른다.
+이벤트는 [계약](ci-lifecycle.md), 자체 검사는 [파일럿](ci-commit-pilot.md)을 따른다.
 
 DVA는 `ci.profiles`의 검사와 시간 예산을 감독한다. 서비스 수명 주기와
 배포·릴리스·운영 환경 변경은 소유하지 않는다.
