@@ -27,6 +27,12 @@ declared scope and may reuse valid PASS evidence; a declared `audit` profile use
 `DVA_CI_FRESH=1`; project commands must also bypass their language test-result caches.
 Never treat a reused result or an unrun external check as a new execution.
 
+Use `dva ci <profile> --lookup` to inspect current per-step coverage without
+executing checks or writing CI state. A successful query is not a passing gate:
+inspect `covered` and every step's state. Read the
+[lookup and worktree contract](https://github.com/ScriptonBasestar/dva/blob/master/docs/ci-reuse-lookup.md)
+before adopting explicit repository-scope reuse; checkout isolation remains the default.
+
 1. Run `dva version` and `dva manifest -f json`. Select an entry from
    `ci_profiles`; do not infer a profile from a Make target name. Older DVA
    versions without `ci` need an upgrade before these guarantees apply.

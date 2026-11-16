@@ -14,6 +14,7 @@ const CIFreshEnv = "DVA_CI_FRESH"
 // CIReuse declares the complete inputs of a deterministic native check. Omission
 // always executes the check. Artifacts must still exist and match Outputs on a hit.
 type CIReuse struct {
+	Scope             string   `yaml:"scope,omitempty" json:"scope,omitempty"`
 	Inputs            []string `yaml:"inputs" json:"inputs"`
 	Tools             []string `yaml:"tools" json:"tools"`
 	Environment       []string `yaml:"environment,omitempty" json:"environment,omitempty"`
@@ -32,6 +33,12 @@ func validateCIReuse(step CIStep) error {
 	}
 	if step.OCI != nil || step.ChildCI != "" {
 		return fmt.Errorf("reuse is supported only on native steps without child_ci")
+	}
+	if r.Scope != "" && r.Scope != "checkout" && r.Scope != "repository" {
+		return fmt.Errorf("reuse.scope must be checkout or repository")
+	}
+	if r.Scope == "repository" && (filepath.IsAbs(step.Workdir) || len(r.Probes) != 0) {
+		return fmt.Errorf("repository reuse requires a relative workdir and no probes")
 	}
 	if len(r.Inputs) == 0 || len(r.Tools) == 0 {
 		return fmt.Errorf("reuse requires nonempty inputs and tools")

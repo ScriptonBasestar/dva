@@ -88,8 +88,9 @@ fresh는 overlay에서 true로 설정한 뒤 false로 약화하지 않는다. CL
 
 ## 한계와 검증
 
-초기 구현은 같은 canonical checkout 안에서만 재사용한다. 다른 worktree로 옮겼다는
-이유로 입력의 경로 독립성을 가정하지 않는다. 선언 밖 외부 상태와 변경 후 복구된
+기본은 같은 canonical checkout 안에서만 재사용한다. 명시적 `scope: repository`와
+실행 없는 `--lookup`의 조건은 [조회·worktree 재사용](ci-reuse-lookup.md)을 따른다.
+다른 worktree라는 이유로 경로 독립성을 가정하지 않는다. 선언 밖 외부 상태와 변경 후 복구된
 중간 입력을 증명하는 지속 감시는 아니다. 결과 파일은 로컬 상태이며 외부 게시하지 않는다.
 
 채택 시 동일 입력의 warm 반복, 입력/도구/환경/추가/삭제 변이, 산출물 유실, 만료,
