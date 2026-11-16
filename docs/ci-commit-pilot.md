@@ -73,7 +73,8 @@ fixture에서 staged/unstaged/untracked·충돌·삭제·공유 입력·경로 �
 대조한다. 범위 축소로 잘못된 성공이 생기지 않는지 독립 리뷰한다. 실제 저장소에서는
 동일한 staged 입력에 대해 phase와 전체 실행 결과를 확인하며 cold와 warm을 구분한다.
 측정값과 조건은 [실제 DVA 변경 사례의 제한된 실측](ci-commit-measurements.md),
-최종 full 실행 ID는 작업 완료 증거에 보존한다.
+[선택기 개선 후 실측](ci-commit-followup-measurements.md), 최종 full 실행 ID는
+작업 완료 증거에 보존한다.
 
 초기 전체 범위 실험은 test 단계의 90초 제한에 도달했다. 이 결과에 따라 공유 변경을
 빠른 경로에서 자동 실행하는 대신 위와 같이 명시적 전체 게이트로 라우팅한다. 당시

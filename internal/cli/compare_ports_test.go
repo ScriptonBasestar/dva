@@ -38,3 +38,21 @@ func TestCompareProductionPortProbeSeesHeldListener(t *testing.T) {
 		t.Fatalf("production probe did not reject listener: %v", problems)
 	}
 }
+
+func TestCompareFakePortProbeIgnoresHeldListener(t *testing.T) {
+	l, err := net.Listen("tcp4", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = l.Close() })
+	port := l.Addr().(*net.TCPAddr).Port
+	t.Setenv("DVA_TEST_HELD_PORT", strconv.Itoa(port))
+	host := newFakeHost()
+	old := compareHost
+	compareHost = host
+	t.Cleanup(func() { compareHost = old })
+	problems := checkPorts([]*upVariant{{spec: variantSpec{Name: "fake"}, ports: map[string]int{"DVA_TEST_HELD_PORT": port}}})
+	if len(problems) != 0 || len(host.portChecks) != 1 || host.portChecks[0] != port {
+		t.Fatalf("fake probe consulted OS state: problems=%v probes=%v", problems, host.portChecks)
+	}
+}

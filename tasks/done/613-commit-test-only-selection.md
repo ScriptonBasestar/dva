@@ -5,7 +5,9 @@ type: feature
 priority: P2
 effort: M
 exec-tier: strong
-status: review
+status: done
+quality-review: pass
+quality-review-evidence: tasks/done/evidence/TASK-613/review.txt
 created: 2026-11-16
 ---
 
@@ -23,9 +25,9 @@ created: 2026-11-16
 
 ## Completion Criteria
 
-- [ ] 테스트 전용 root와 일반 변경 root를 구분한다 | verify: `/usr/bin/grep -q 'productionDirs' tools/commitverify/main.go`
-- [ ] 내부/외부 test·일반·혼합·미매핑 변경과 각 phase의 argv를 검증한다 | verify: `go test ./tools/commitverify -run 'TestTestOnlyAndMixedChangesSelectPackageGraph|TestTestOnlySelectionUsedInAllGoPhases|TestBroadChangesFailBeforeExpensiveChecks'`
-- [ ] 동일 staged 사례의 source·cache·명령·성공/실패·시간과 채택 결정을 보존한다 | verify: human — raw measurement와 독립 리뷰 대조
+- [x] 테스트 전용 root와 일반 변경 root를 구분한다 | verify: `/usr/bin/grep -q 'productionDirs' tools/commitverify/main.go` (observed: 2026-11-17)
+- [x] 내부/외부 test·일반·혼합·미매핑 변경과 각 phase의 argv를 검증한다 | verify: `go test ./tools/commitverify -run 'TestTestOnlyAndMixedChangesSelectPackageGraph|TestTestOnlySelectionUsedInAllGoPhases|TestBroadChangesFailBeforeExpensiveChecks|TestEmbeddedTestFilesRequireCore'` (observed: 2026-11-17)
+- [x] 동일 staged 사례의 source·cache·명령·성공/실패·시간과 채택 결정을 보존한다 | verify: human — raw measurement와 독립 리뷰 대조 (observed: 2026-11-17)
 
 ## Delivery
 

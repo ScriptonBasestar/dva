@@ -99,3 +99,9 @@ Git 목록으로 축소하지 않는다. 다른 단계도 입력·도구·환경
 측정 원문을 보존한 뒤 이 진단이 만든 복사본·전용 cache·임시 스크립트를 회수한다.
 사용자 index·전역 cache와 설치된 toolchain은 바꾸지 않는다. TASK-611의 문서·lint·
 생성물·최종 full·독립 리뷰 및 통합 결과는 이 측정과 별도 CE 전달 증거로 남긴다.
+
+## 후속 변경
+
+위 관찰·실패 원문은 당시 source의 기록으로 보존한다. TASK-612의 fake-host 포트 조회
+격리와 TASK-613의 테스트 전용 선택 개선·재측정은
+[후속 실측](ci-commit-followup-measurements.md)을 따른다.

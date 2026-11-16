@@ -5,7 +5,9 @@ type: bug
 priority: P1
 effort: M
 exec-tier: strong
-status: review
+status: done
+quality-review: pass
+quality-review-evidence: tasks/done/evidence/TASK-613/review.txt
 created: 2026-11-16
 ---
 
@@ -22,9 +24,9 @@ TASK-611 진단에서 fake lifecycle 테스트가 실제 포트 점유 상태 �
 
 ## Completion Criteria
 
-- [ ] 포트 점유 조회가 기존 host 경계에 포함된다 | verify: `/usr/bin/grep -q 'PortBusy(port int)' internal/cli/compare_runner.go`
-- [ ] fake busy/error는 시작·파일 생성을 막고 skipped variant는 점유 조회를 하지 않는다 | verify: `go test ./internal/cli -run 'TestCompare(UpPreflightCreatesNothing|SkippedVariantDoesNotProbePorts)'`
-- [ ] 실제 listener를 유지한 운영 점유 검사가 실패를 검출한다 | verify: `go test ./internal/cli -run '^TestCompareProductionPortProbeSeesHeldListener$'`
+- [x] 포트 점유 조회가 기존 host 경계에 포함된다 | verify: `/usr/bin/grep -q 'PortBusy(port int)' internal/cli/compare_runner.go` (observed: 2026-11-17)
+- [x] fake busy/error는 시작·파일 생성을 막고 skipped variant는 점유 조회를 하지 않는다 | verify: `go test ./internal/cli -run 'TestCompare(UpPreflightCreatesNothing|SkippedVariantDoesNotProbePorts)'` (observed: 2026-11-17)
+- [x] 실제 listener를 유지한 운영 점유 검사가 실패를 검출한다 | verify: `go test ./internal/cli -run '^TestCompareProductionPortProbeSeesHeldListener$'` (observed: 2026-11-17)
 
 ## Delivery
 
