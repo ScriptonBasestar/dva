@@ -58,6 +58,9 @@
 
 ## 파일럿과 지원 차이
 
+- 후속 E와 정기 검사 F의 적용·미채택 근거는 [원격 이벤트 계약](ci-event-routing.md)이
+  소유한다. 기존 일반 PR은 이미 merge ref를 사용하며 merge queue 연결을 추가한다.
+  push와 PR의 서로 다른 입력을 중복으로 간주해 검사를 제거하지 않는다.
 - 새 commit 목표는 [이벤트 계약](ci-lifecycle.md)의 채택 기준이다. 기존 런타임의
   commit 상한과 프로젝트의 기존 timeout은 그대로다. DVA 자체 `commit`을 2분으로
   줄이거나 race·전체 lint를 다른 경계로 옮기는 변경은 이번 전달에 포함하지 않는다.

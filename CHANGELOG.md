@@ -7,6 +7,8 @@ All notable changes to DVA are documented here.
 
 ### Added
 
+- 원격 CI에 merge queue 이벤트와 checkout SHA 검증을 연결합니다. 기존 push·PR·수동
+  검사는 유지하고 이벤트별 동시성 키로 다른 입력의 실행을 취소하지 않습니다.
 - `dva secret edit/reseal <source>`로 이름 붙인 SOPS source를 편집하거나 현재 규칙으로
   재암호화합니다. `format:`과 `project:`로 파일 형식과 하위 프로젝트를 선택하며,
   기존 `--project`로 child가 소유한 source도 선택할 수 있습니다.
