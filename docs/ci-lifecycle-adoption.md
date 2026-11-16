@@ -58,9 +58,12 @@
 
 ## 파일럿과 지원 차이
 
+- 후속 D의 DVA 자체 적용은 [commit 파일럿](ci-commit-pilot.md)이 소유한다.
+  `commit`은 staged fast, 기존 전체 core는 `core`, 최종 `full/audit` 범위는 유지한다.
+  위 현황 표는 TASK-608 기준의 역사적 관찰이며 새 파일럿의 상태와 구분한다.
 - 새 commit 목표는 [이벤트 계약](ci-lifecycle.md)의 채택 기준이다. 기존 런타임의
   commit 상한과 프로젝트의 기존 timeout은 그대로다. DVA 자체 `commit`을 2분으로
-  줄이거나 race·전체 lint를 다른 경계로 옮기는 변경은 이번 전달에 포함하지 않는다.
+  줄이거나 race·전체 lint를 다른 경계로 옮기는 변경은 TASK-608에 포함하지 않았다.
 - staged 전용 snapshot·일반 영향 분석은 DVA 공통 기능으로 보장하지 않는다.
   DVA 자체의 `tools/affectedtests`는 저장소 소유 도구다. 부분 staging을 지원하려면
   staged와 작업 트리의 차이·삭제·미추적 입력을 대조한 별도 검증이 필요하다.
@@ -71,6 +74,16 @@
   다른 선택 프로필을 선언한다. fresh는 테스트 결과 캐시 우회이며 cold 빌드와 다르다.
 
 ## 검증과 인계
+
+2026-11-16 사용자가 후속 적용을 승인했다. 실행 순서는 TASK-609의 commit 파일럿,
+TASK-607의 읽기 전용 증거 조회·명시적 checkout 간 재사용, 원격 이벤트 연결·정기
+검사 채택 판정, 정본 스킬 설치본 갱신이다. 각 공개 계약 단위는 별도 task 실행과
+독립 리뷰·최종 검증을 거친다. 완료된 범위만 지원으로 표시한다.
+
+원격 조사에서 일반 PR의 기본 checkout은 이미 merge ref를 검사함을 확인했다.
+추가 대상은 merge queue 이벤트와 입력 식별이다. branch push의 head 검사와 PR의
+결합 검사는 서로 다른 입력이므로 단순 중복으로 제거하지 않는다. 일정 검사는 기존
+push 검사와 다른 추가 보장이 있을 때만 채택하고, 그 외에는 해당 없음과 이유를 기록한다.
 
 문서 인수는 이벤트 전수 대조, 현재 설정 대조, 독립 리뷰와 `make doc-check`로 한다.
 스킬 변경은 `make generate`와 `make check-generate`로 투영을 확인하고,

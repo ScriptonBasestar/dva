@@ -81,7 +81,7 @@ func TestDocsStepToolsFromDvaYAML(t *testing.T) {
 version: "0.1.44"
 ci:
   profiles:
-    commit:
+    core:
       timeout: 10m
       steps:
         - name: format
@@ -90,7 +90,7 @@ ci:
           run: go run ./tools/doccheck && go run ./tools/cilabels && go run ./tools/yamlcheck
           depends_on: [format]
 `)
-	got, err := docsStepToolsFromDvaYAML(dvaPath, "commit")
+	got, err := docsStepToolsFromDvaYAML(dvaPath, "core")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -104,14 +104,14 @@ func TestDocsStepToolsFromDvaYAMLMissingStepErrors(t *testing.T) {
 version: "0.1.44"
 ci:
   profiles:
-    commit:
+    core:
       timeout: 10m
       steps:
         - name: format
           run: gofmt -s -l .
 `)
-	if _, err := docsStepToolsFromDvaYAML(dvaPath, "commit"); err == nil {
-		t.Fatal("expected error when the commit profile has no docs step")
+	if _, err := docsStepToolsFromDvaYAML(dvaPath, "core"); err == nil {
+		t.Fatal("expected error when the core profile has no docs step")
 	}
 }
 
@@ -126,44 +126,44 @@ func TestRepoDocCheckAndDocsStepAgree(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Makefile: %v", err)
 	}
-	dvaTools, err := docsStepToolsFromDvaYAML(filepath.Join(root, "dva.yml"), "commit")
+	dvaTools, err := docsStepToolsFromDvaYAML(filepath.Join(root, "dva.yml"), "core")
 	if err != nil {
 		t.Fatalf("dva.yml: %v", err)
 	}
 	for tool := range mfTools {
 		if !dvaTools[tool] {
-			t.Errorf("Makefile doc-check runs %q; dva.yml ci.profiles.commit docs step does not", tool)
+			t.Errorf("Makefile doc-check runs %q; dva.yml ci.profiles.core docs step does not", tool)
 		}
 	}
 	for tool := range dvaTools {
 		if !mfTools[tool] {
-			t.Errorf("dva.yml ci.profiles.commit docs step runs %q; Makefile doc-check does not", tool)
+			t.Errorf("dva.yml ci.profiles.core docs step runs %q; Makefile doc-check does not", tool)
 		}
 	}
 }
 
-// TestRepoFullProfileDocsStepAgreesWithCommit guards the full profile's reuse of
-// commit's docs step: today it is the same YAML anchor (&ci-docs / *ci-docs), but an
+// TestRepoFullProfileDocsStepAgreesWithCore guards the full profile's reuse of
+// core's docs step: today it is the same YAML anchor (&ci-docs / *ci-docs), but an
 // anchor is an authoring convenience, not an enforced invariant — a future edit could
 // silently replace it with a literal, independently-drifting step list.
-func TestRepoFullProfileDocsStepAgreesWithCommit(t *testing.T) {
+func TestRepoFullProfileDocsStepAgreesWithCore(t *testing.T) {
 	root := repoRoot(t)
-	commitTools, err := docsStepToolsFromDvaYAML(filepath.Join(root, "dva.yml"), "commit")
+	coreTools, err := docsStepToolsFromDvaYAML(filepath.Join(root, "dva.yml"), "core")
 	if err != nil {
-		t.Fatalf("dva.yml commit profile: %v", err)
+		t.Fatalf("dva.yml core profile: %v", err)
 	}
 	fullTools, err := docsStepToolsFromDvaYAML(filepath.Join(root, "dva.yml"), "full")
 	if err != nil {
 		t.Fatalf("dva.yml full profile: %v", err)
 	}
-	for tool := range commitTools {
+	for tool := range coreTools {
 		if !fullTools[tool] {
-			t.Errorf("dva.yml ci.profiles.commit docs step runs %q; full profile's docs step does not", tool)
+			t.Errorf("dva.yml ci.profiles.core docs step runs %q; full profile's docs step does not", tool)
 		}
 	}
 	for tool := range fullTools {
-		if !commitTools[tool] {
-			t.Errorf("dva.yml ci.profiles.full docs step runs %q; commit profile's docs step does not", tool)
+		if !coreTools[tool] {
+			t.Errorf("dva.yml ci.profiles.full docs step runs %q; core profile's docs step does not", tool)
 		}
 	}
 }

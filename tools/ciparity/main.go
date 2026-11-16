@@ -1,5 +1,5 @@
 // Command ciparity keeps Makefile's doc-check target and dva.yml's ci.profiles
-// commit "docs" step running the exact same leaf tools.
+// core "docs" step running the exact same leaf tools.
 //
 // TASK-413: dva.yml's `docs` CI step and Makefile's `doc-check` target each hand-list
 // the same `go run ./tools/...` gates as independent copies (Make aliases must not call
@@ -41,14 +41,14 @@ func main() {
 		fmt.Fprintf(os.Stderr, "ciparity: Makefile: %v\n", err)
 		os.Exit(2)
 	}
-	commitTools, err := docsStepToolsFromDvaYAML(dvaPath, "commit")
+	coreTools, err := docsStepToolsFromDvaYAML(dvaPath, "core")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ciparity: dva.yml: %v\n", err)
 		os.Exit(2)
 	}
-	// full reuses commit's docs step via a YAML anchor (&ci-docs / *ci-docs) today, but an
+	// full reuses core's docs step via a YAML anchor (&ci-docs / *ci-docs) today, but an
 	// anchor is an authoring convenience, not a guarantee — a future edit could replace it
-	// with a literal, independently-drifting copy. Compare both, not just commit's.
+	// with a literal, independently-drifting copy. Compare both, not just core's.
 	fullTools, err := docsStepToolsFromDvaYAML(dvaPath, "full")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ciparity: dva.yml: %v\n", err)
@@ -56,15 +56,15 @@ func main() {
 	}
 
 	fmt.Printf("Makefile doc-check tools (%d): %s\n", len(mfTools), strings.Join(sortedKeys(mfTools), ", "))
-	fmt.Printf("dva.yml ci.profiles.commit docs step tools (%d): %s\n", len(commitTools), strings.Join(sortedKeys(commitTools), ", "))
+	fmt.Printf("dva.yml ci.profiles.core docs step tools (%d): %s\n", len(coreTools), strings.Join(sortedKeys(coreTools), ", "))
 	fmt.Printf("dva.yml ci.profiles.full docs step tools (%d): %s\n", len(fullTools), strings.Join(sortedKeys(fullTools), ", "))
 
 	var errs []string
-	errs = append(errs, diffToolSets("Makefile doc-check", mfTools, "dva.yml's commit/docs step", commitTools)...)
+	errs = append(errs, diffToolSets("Makefile doc-check", mfTools, "dva.yml's core/docs step", coreTools)...)
 	errs = append(errs, diffToolSets("Makefile doc-check", mfTools, "dva.yml's full/docs step", fullTools)...)
 
 	if len(errs) == 0 {
-		fmt.Println("ciparity: OK — Makefile doc-check, dva.yml commit/docs and dva.yml full/docs all run the same tools")
+		fmt.Println("ciparity: OK — Makefile doc-check, dva.yml core/docs and dva.yml full/docs all run the same tools")
 		return
 	}
 	for _, e := range errs {
