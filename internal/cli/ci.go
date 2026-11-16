@@ -16,6 +16,7 @@ import (
 
 var ciProject, ciSubproject string
 var ciFresh bool
+var ciLookup bool
 
 var ciCmd = &cobra.Command{
 	Use:   "ci [profile]",
@@ -23,6 +24,9 @@ var ciCmd = &cobra.Command{
 	Long:  "Run a declared ci.profiles entry. Commit checks warn after five minutes and have a ten-minute maximum. Full checks require an explicit timeout. A concurrent CI that has the same owning config directory or declared shared lock returns busy instead of starting. Use --dry-run to inspect the resolved profile without executing checks. --project runs a declared subproject's own profile in its directory; --subproject runs this root's profile and exports the declared subproject name to its steps as DVA_CI_SUBPROJECT.",
 	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if ciLookup && dryRun {
+			return errors.New("--lookup and --dry-run are separate read-only operations")
+		}
 		c, err := loadConfig(config.ForCI())
 		if err != nil {
 			return err
@@ -67,6 +71,13 @@ var ciCmd = &cobra.Command{
 		}
 		ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
 		defer stop()
+		if ciLookup {
+			report, err := cirun.Lookup(ctx, opts)
+			if err != nil {
+				return err
+			}
+			return output.PrintJSON(report)
+		}
 		writer := cmd.OutOrStdout()
 		if jsonOutput {
 			writer = cmd.ErrOrStderr()
@@ -119,6 +130,7 @@ func ciOwner(c *config.Config, project string) (*config.Config, error) {
 
 func init() {
 	ciCmd.GroupID = "core"
+	ciCmd.Flags().BoolVar(&ciLookup, "lookup", false, "Inspect current step reuse eligibility without executing checks or writing CI state")
 	ciCmd.Flags().BoolVar(&ciFresh, "fresh", false, "Execute all steps without result reuse; exports DVA_CI_FRESH=1 for project-owned test caches")
 	ciCmd.Flags().StringVar(&ciProject, "project", "", "Run a declared subproject's own CI profile")
 	ciCmd.Flags().StringVar(&ciSubproject, "subproject", "", "Run this root's CI profile with a declared subproject's name exported as "+config.CISubprojectEnv)

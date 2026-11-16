@@ -34,6 +34,7 @@ type reuseRuntime struct {
 
 type reuseRecord struct {
 	Schema      int               `json:"schema"`
+	StepName    string            `json:"step_name,omitempty"`
 	Key         string            `json:"key"`
 	RunID       string            `json:"run_id"`
 	FinishedAt  time.Time         `json:"finished_at"`
@@ -44,9 +45,10 @@ type reuseRecord struct {
 // measurement prevents a successful command which changed its own declared
 // inputs from becoming a false cache hit for a later run.
 type reusePlan struct {
-	key     string
-	cache   string
-	outputs []string
+	key      string
+	cache    string
+	outputs  []string
+	stepName string
 }
 
 // A cache integrity failure means the command's own declared contract could
@@ -74,8 +76,17 @@ func reuseFor(ctx context.Context, root string, step config.CIStep, env []string
 	if len(step.Reuse.Inputs) == 0 {
 		return reusePlan{}, fmt.Errorf("ci step %q: reuse.inputs must not be empty", step.Name)
 	}
+	repository := step.Reuse.Scope == "repository"
+	if repository {
+		if err := validateRepositoryReuse(root, step, env); err != nil {
+			return reusePlan{}, err
+		}
+	}
 	h := sha256.New()
 	writeReuseField(h, "schema", fmt.Sprint(reuseSchema))
+	if repository {
+		writeReuseField(h, "scope", "repository-v2")
+	}
 	writeReuseField(h, "step", step.Name)
 	writeReuseField(h, "run", step.Run)
 	writeReuseField(h, "workdir", step.Workdir)
@@ -128,6 +139,9 @@ func reuseFor(ctx context.Context, root string, step config.CIStep, env []string
 		if err != nil {
 			return reusePlan{}, fmt.Errorf("ci step %q reuse tool %q: %w", step.Name, name, err)
 		}
+		if repository && pathInside(root, strings.SplitN(resolved, "\x00", 2)[0]) {
+			return reusePlan{}, errors.New("repository reuse forbids checkout-local tools")
+		}
 		writeReuseField(h, "tool", name+"\x00"+resolved)
 	}
 	values := environmentMap(env)
@@ -145,6 +159,9 @@ func reuseFor(ctx context.Context, root string, step config.CIStep, env []string
 		}
 		// The key is hashed with the value and only the digest is persisted.
 		value, present := values[key]
+		if repository && strings.Contains(value, root) {
+			return reusePlan{}, fmt.Errorf("repository reuse environment %s contains checkout root", key)
+		}
 		presence := "absent"
 		if present {
 			presence = "present"
@@ -162,6 +179,11 @@ func reuseFor(ctx context.Context, root string, step config.CIStep, env []string
 	if err != nil {
 		return reusePlan{}, fmt.Errorf("ci step %q reuse outputs: %w", step.Name, err)
 	}
+	if repository {
+		for _, output := range outputs {
+			writeReuseField(h, "output", output)
+		}
+	}
 	common, err := gitStdout(ctx, root, "rev-parse", "--git-common-dir")
 	if err != nil {
 		return reusePlan{}, fmt.Errorf("locate git common directory: %w", gitError(err))
@@ -176,7 +198,11 @@ func reuseFor(ctx context.Context, root string, step config.CIStep, env []string
 	}
 	rootDigest := sha256.Sum256([]byte(root))
 	key := hex.EncodeToString(h.Sum(nil))
-	return reusePlan{key: key, cache: filepath.Join(commonDir, "dva-ci-cache", "v1", hex.EncodeToString(rootDigest[:]), key+".json"), outputs: outputs}, nil
+	cacheDir := filepath.Join(commonDir, "dva-ci-cache", "v1", hex.EncodeToString(rootDigest[:]))
+	if repository {
+		cacheDir = filepath.Join(commonDir, "dva-ci-cache", "v2", "repository")
+	}
+	return reusePlan{key: key, cache: filepath.Join(cacheDir, key+".json"), outputs: outputs, stepName: step.Name}, nil
 }
 
 func writeReuseField(w io.Writer, key, value string) {
@@ -541,7 +567,7 @@ func saveReuse(plan reusePlan, root, runID string, now time.Time) (retErr error)
 	if err != nil {
 		return err
 	}
-	record := reuseRecord{Schema: reuseSchema, Key: plan.key, RunID: runID, FinishedAt: now, OutputState: outputs}
+	record := reuseRecord{Schema: reuseSchema, StepName: plan.stepName, Key: plan.key, RunID: runID, FinishedAt: now, OutputState: outputs}
 	b, err := json.Marshal(record)
 	if err != nil {
 		return err

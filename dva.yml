@@ -113,7 +113,28 @@ ci:
           run: go build -trimpath -o bin/dva ./cmd/dva
           depends_on: [affected-test]
     commit:
-      description: Local commit gates (all core checks, no platform matrix)
+      description: Staged fast checks; broad/shared changes require core/full
+      warn_after: 60s
+      timeout: 2m
+      max_parallel: 1
+      steps:
+        - name: integrity
+          run: go run ./tools/commitverify --phase integrity
+          timeout: 45s
+        - name: lint
+          run: go run ./tools/commitverify --phase lint
+          timeout: 60s
+          depends_on: [integrity]
+        - name: compile
+          run: go run ./tools/commitverify --phase compile
+          timeout: 60s
+          depends_on: [lint]
+        - name: test
+          run: go run ./tools/commitverify --phase test
+          timeout: 90s
+          depends_on: [compile]
+    core:
+      description: Former commit gates preserved in full (all core checks, no platform matrix)
       warn_after: 5m
       timeout: 10m
       max_parallel: 2

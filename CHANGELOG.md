@@ -9,6 +9,12 @@ All notable changes to DVA are documented here.
 
 - 원격 CI에 merge queue 이벤트와 checkout SHA 검증을 연결합니다. 기존 push·PR·수동
   검사는 유지하고 이벤트별 동시성 키로 다른 입력의 실행을 취소하지 않습니다.
+- `dva ci <profile> --lookup`으로 검사를 실행하지 않고 현재 단계별 증거 상태를 조회합니다.
+  명시적 `reuse.scope: repository`는 경로 독립 조건을 만족하는 같은 Git 저장소의
+  worktree 간 성공 재사용을 허용하며, 기본 checkout 격리와 fresh는 유지합니다.
+- DVA 자체 저장소에 staged 입력과 작업 트리의 일치를 확인하는 빠른 commit 검사를
+  추가합니다. `make ci`는 경고 60초·전체 제한 2분의 검사이며, 기존 전체 core 검사는
+  `make ci-core`에 보존하고 최종 `full`·`audit`의 범위를 유지합니다.
 - `dva secret edit/reseal <source>`로 이름 붙인 SOPS source를 편집하거나 현재 규칙으로
   재암호화합니다. `format:`과 `project:`로 파일 형식과 하위 프로젝트를 선택하며,
   기존 `--project`로 child가 소유한 source도 선택할 수 있습니다.

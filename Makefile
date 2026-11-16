@@ -405,10 +405,14 @@ help:
 # possible only because `make doc-check` keeps calling its own leaf tools directly
 # instead of going through here (see doc-check below and tools/ciparity).
 DVA ?= dva
-.PHONY: ci ci-full
-## ci: Supervise the local commit CI profile via `dva ci commit` (docs/53-ci-profiles.md)
+.PHONY: ci ci-core ci-full
+## ci: Supervise staged fast commit checks via `dva ci commit` (docs/53-ci-profiles.md)
 ci:
 	$(DVA) ci commit
+
+## ci-core: Run all former commit gates via `dva ci core`
+ci-core:
+	$(DVA) ci core
 
 ## ci-full: Supervise the full CI profile via `dva ci full` (docs/53-ci-profiles.md)
 ci-full:
