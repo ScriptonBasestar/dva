@@ -145,7 +145,15 @@ func reuseFor(ctx context.Context, root string, step config.CIStep, env []string
 		writeReuseField(h, "tool", name+"\x00"+resolved)
 	}
 	values := environmentMap(env)
-	keys := []string{"PATH", "LANG", "LC_ALL", "LC_CTYPE", "TZ", "GOFLAGS", "GOTOOLCHAIN", "CGO_ENABLED", "GOMAXPROCS", "CARGO_BUILD_JOBS", "RUST_TEST_THREADS", "DVA_CI_JOBS", "PYTHONPATH", "PYTHONHOME", "PYTHONSAFEPATH", "MAKEFLAGS", "MFLAGS", config.CISubprojectEnv}
+	// DVA_CI_JOBS is deliberately absent: a step sees only DVA's own computed
+	// worker budget (ciEnv overwrites the ambient value), the tool knobs that
+	// budget feeds — CARGO_BUILD_JOBS default, GOMAXPROCS, GOFLAGS,
+	// RUST_TEST_THREADS — are keyed separately, and no consumer sizes behavior
+	// from the informational variable itself. Keying it churned caches on
+	// host CPU counts and unrelated profile edits without a behavior change.
+	// A step that does read it can restore discrimination per step with
+	// reuse.environment.
+	keys := []string{"PATH", "LANG", "LC_ALL", "LC_CTYPE", "TZ", "GOFLAGS", "GOTOOLCHAIN", "CGO_ENABLED", "GOMAXPROCS", "CARGO_BUILD_JOBS", "RUST_TEST_THREADS", "PYTHONPATH", "PYTHONHOME", "PYTHONSAFEPATH", "MAKEFLAGS", "MFLAGS", config.CISubprojectEnv}
 	keys = append(keys, step.Reuse.Environment...)
 	keys = append(keys, step.Reuse.UnlessEnvironment...)
 	for key := range step.Environment {

@@ -36,6 +36,17 @@ All notable changes to DVA are documented here.
   `fresh: true`와 `dva ci --fresh`는 결과 재사용을 우회하며 프로젝트에
   `DVA_CI_FRESH`를 전달해 언어 테스트 결과 캐시도 우회할 수 있습니다.
 
+### Changed
+
+- CI 결과 재사용 키에서 `DVA_CI_JOBS`를 제외합니다. 단계 환경의 이 값은 항상
+  DVA가 계산한 worker 예산이며(앰비언트 값은 실행·키 산정 전에 덮어쓴다), 그
+  예산이 실제로 반영되는 도구 변수(`CARGO_BUILD_JOBS` 기본값, `GOMAXPROCS`,
+  `GOFLAGS`, `RUST_TEST_THREADS`)는 이미 키에 별도로 남는다. 실측(18-CPU 호스트,
+  dev·commit=4, core·full=2, 반복 실행마다 안정, 앰비언트 `DVA_CI_JOBS=17`
+  무시)에서 이 항목은 행동 차이 없이 호스트 CPU 수와 무관한 프로필 편집으로
+  캐시 키만 바꾸므로 제외한다. 단계가 이 변수를 직접 읽는다면
+  `reuse.environment`로 그 단계의 판별을 복원할 수 있다.
+
 ### Removed
 
 - v0.5.0 개발 소스에서 `modes`·`default_mode`·`--mode/-M`를 제거합니다. 기존 설정은 `dva config migrate`로 변환한 뒤 named plans로 실행하세요. 자동 변환할 수 없는 mode는
