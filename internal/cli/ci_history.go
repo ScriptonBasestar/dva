@@ -5,6 +5,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/ScriptonBasestar/dva/internal/cirun"
 	"github.com/ScriptonBasestar/dva/internal/output"
@@ -13,9 +14,10 @@ import (
 
 func newCIHistoryCommand(parent *cobra.Command, readStatus func(string) ([]cirun.Report, error)) *cobra.Command {
 	var root, profile, repositoryID string
+	var summary bool
 	cmd := &cobra.Command{Use: "history", Short: "Run the history profile or inspect CI receipts", Long: "Without --root and --profile, run the declared history CI profile. With both flags, inspect receipts for the exact recorded root and profile without running checks. Missing host, configuration, and cache identities make timing comparisons unknown.", Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if !cmd.Flags().Changed("root") && !cmd.Flags().Changed("profile") && !cmd.Flags().Changed("repository-local-id") {
+			if !cmd.Flags().Changed("root") && !cmd.Flags().Changed("profile") && !cmd.Flags().Changed("repository-local-id") && !cmd.Flags().Changed("summary") {
 				return parent.RunE(cmd, []string{"history"})
 			}
 			if strings.TrimSpace(profile) == "" || (strings.TrimSpace(root) == "") == (strings.TrimSpace(repositoryID) == "") || (cmd.Flags().Changed("root") && cmd.Flags().Changed("repository-local-id")) {
@@ -34,6 +36,13 @@ func newCIHistoryCommand(parent *cobra.Command, readStatus func(string) ([]cirun
 			if repositoryID != "" && !regexp.MustCompile(`^[a-f0-9]{64}$`).MatchString(repositoryID) {
 				return errors.New("repository local ID must be current or 64 lowercase hexadecimal characters")
 			}
+			if summary {
+				r, excluded, err := cirun.ReadSummaryReceipts("")
+				if err != nil {
+					return err
+				}
+				return output.PrintJSON(cirun.SummarizeHistory(r, root, repositoryID, profile, time.Now(), excluded))
+			}
 			r, err := readStatus("")
 			if err != nil {
 				return err
@@ -47,6 +56,7 @@ func newCIHistoryCommand(parent *cobra.Command, readStatus func(string) ([]cirun
 	cmd.Flags().StringVar(&root, "root", "", "Exact recorded root")
 	cmd.Flags().StringVar(&profile, "profile", "", "Exact recorded profile")
 	cmd.Flags().StringVar(&repositoryID, "repository-local-id", "", "Local clone identity or current")
+	cmd.Flags().BoolVar(&summary, "summary", false, "Read a bounded descriptive history summary; requires selector and profile")
 	// Parent profile flags are local, so share them with this dispatch command.
 	cmd.Flags().AddFlagSet(parent.Flags())
 	return cmd
