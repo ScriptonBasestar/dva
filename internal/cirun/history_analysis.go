@@ -26,9 +26,11 @@ type HistoryRun struct {
 }
 
 type HistoryStep struct {
-	Name     string  `json:"name"`
-	Status   string  `json:"status"`
-	Duration *string `json:"duration"`
+	Name             string  `json:"name"`
+	Status           string  `json:"status"`
+	Duration         *string `json:"duration"`
+	ReuseDisposition string  `json:"reuse_disposition"`
+	OriginalRunID    string  `json:"original_run_id,omitempty"`
 }
 
 // AnalyzeHistory selects the exact recorded root and profile; an absent host,
@@ -47,11 +49,20 @@ func AnalyzeHistory(reports []Report, root, profile string) HistoryAnalysis {
 		}
 		var completed []StepReport
 		for _, s := range r.Steps {
-			step := HistoryStep{Name: s.Name, Status: s.Status}
+			step := HistoryStep{Name: s.Name, Status: s.Status, ReuseDisposition: "unknown"}
+			if s.Reuse != nil {
+				step.ReuseDisposition = s.Reuse.Disposition
+				step.OriginalRunID = s.Reuse.OriginalRunID
+				if step.ReuseDisposition == "" {
+					step.ReuseDisposition = "unknown"
+				}
+			}
 			if !s.FinishedAt.IsZero() && (s.Status == "succeeded" || s.Status == "failed" || s.Status == "timed_out" || s.Status == "canceled") {
 				d := s.Duration.String()
 				step.Duration = &d
-				completed = append(completed, s)
+				if step.ReuseDisposition == "executed" || step.ReuseDisposition == "bypassed" {
+					completed = append(completed, s)
+				}
 			}
 			run.Steps = append(run.Steps, step)
 		}
@@ -61,7 +72,7 @@ func AnalyzeHistory(reports []Report, root, profile string) HistoryAnalysis {
 				break
 			}
 			d := s.Duration.String()
-			run.Slowest = append(run.Slowest, HistoryStep{Name: s.Name, Status: s.Status, Duration: &d})
+			run.Slowest = append(run.Slowest, HistoryStep{Name: s.Name, Status: s.Status, Duration: &d, ReuseDisposition: s.Reuse.Disposition, OriginalRunID: s.Reuse.OriginalRunID})
 		}
 		a.Runs = append(a.Runs, run)
 	}
