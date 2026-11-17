@@ -50,6 +50,52 @@ func TestParseSopsVersion(t *testing.T) {
 	}
 }
 
+func TestExplicitIntegrationTool(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "sops")
+	if _, err := explicitIntegrationTool(dir, "sops"); err == nil {
+		t.Fatal("missing explicit tool accepted")
+	}
+	if err := os.WriteFile(path, []byte("fixture"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := explicitIntegrationTool(dir, "sops"); err == nil {
+		t.Fatal("non-executable explicit tool accepted")
+	}
+	if err := os.Chmod(path, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := explicitIntegrationTool(dir, "sops"); err != nil || got != path {
+		t.Fatalf("got %q: %v", got, err)
+	}
+	if _, err := explicitIntegrationTool("relative", "sops"); err == nil {
+		t.Fatal("relative directory accepted")
+	}
+	if _, err := explicitIntegrationTool(dir, "git"); err == nil {
+		t.Fatal("unrelated tool accepted")
+	}
+	if err := os.Symlink(path, filepath.Join(dir, "age")); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := explicitIntegrationTool(dir, "age"); err == nil {
+		t.Fatal("symlink explicit tool accepted")
+	}
+}
+
+func TestExplicitToolNoFallback(t *testing.T) {
+	if os.Getenv("DVA_TEST_TOOL_CHILD") == "1" {
+		realTool(t, "sops")
+		return
+	}
+	dir := t.TempDir()
+	cmd := exec.Command(os.Args[0], "-test.run=^TestExplicitToolNoFallback$")
+	cmd.Env = append(os.Environ(), "DVA_TEST_TOOL_CHILD=1", "DVA_INTEGRATION_TOOL_DIR="+dir)
+	out, err := cmd.CombinedOutput()
+	if err == nil || !strings.Contains(string(out), "DVA_INTEGRATION_TOOL_DIR") {
+		t.Fatalf("missing explicit tool fell back or lost cause: %s %v", out, err)
+	}
+}
+
 func TestLookPathOutsideShims(t *testing.T) {
 	root := t.TempDir()
 	mkTool := func(dir string) string {

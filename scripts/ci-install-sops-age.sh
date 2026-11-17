@@ -1,12 +1,39 @@
 #!/usr/bin/env bash
 # ci-install-sops-age.sh: install the sops and age the config-env-platform job tests.
-# Usage: ci-install-sops-age.sh <sops-version|latest>
+# Usage: ci-install-sops-age.sh <sops-version|latest> [--local <destination> <workdir>]
 #   Needs the GitHub Actions runner environment (RUNNER_OS, RUNNER_ARCH,
 #   RUNNER_TEMP, GITHUB_ENV, GITHUB_PATH); `latest` also needs GH_TOKEN and cosign.
 #   Exports SOPS_VERSION, the resolved x.y.z, for the steps that follow.
 set -euo pipefail
 
 requested="${1:?usage: ci-install-sops-age.sh <sops-version|latest>}"
+mode=github
+if [ "$#" -eq 4 ] && [ "$2" = --local ]; then
+  mode=local
+  destination=$3
+  workdir=$4
+  root=$(git rev-parse --show-toplevel)
+  root=$(cd "$root" && pwd -P)
+  [ -d "$destination" ] && [ -d "$workdir" ] || { echo 'ERROR: local destination and workdir must already exist.' >&2; exit 1; }
+  destination=$(cd "$destination" && pwd -P)
+  workdir=$(cd "$workdir" && pwd -P)
+  case "$destination/" in "$root/tmp/"*) ;; *) echo 'ERROR: destination must be inside project tmp/.' >&2; exit 1;; esac
+  case "$workdir/" in "$root/tmp/"*) ;; *) echo 'ERROR: workdir must be inside project tmp/.' >&2; exit 1;; esac
+  case "$destination/" in "$workdir/"*) echo 'ERROR: local directories must be separate.' >&2; exit 1;; esac
+  case "$workdir/" in "$destination/"*) echo 'ERROR: local directories must be separate.' >&2; exit 1;; esac
+  existing=$(ls -A "$destination")
+  [ -z "$existing" ] || { echo 'ERROR: local destination is not empty.' >&2; exit 1; }
+  existing=$(ls -A "$workdir")
+  [ -z "$existing" ] || { echo 'ERROR: local workdir is not empty.' >&2; exit 1; }
+  export TUF_ROOT="$workdir/tuf"
+elif [ "$#" -eq 1 ]; then
+  destination="$HOME/.dva-tools"
+  workdir="$RUNNER_TEMP"
+  mkdir -p "$destination"
+else
+  echo 'usage: ci-install-sops-age.sh <sops-version|latest> [--local <destination> <workdir>]' >&2
+  exit 2
+fi
 
 # releases/latest never returns a prerelease or a draft. The version must be a
 # plain x.y.z: it is spliced into download URLs and compared verbatim later.
@@ -38,8 +65,7 @@ case "$RUNNER_OS-$RUNNER_ARCH" in
     ;;
 esac
 
-mkdir -p "$HOME/.dva-tools"
-cd "$RUNNER_TEMP"
+cd "$workdir"
 release="https://github.com/getsops/sops/releases/download/v$sops_version"
 
 # Every download is verified by digest. A fixed version's digest is written
@@ -49,8 +75,8 @@ release="https://github.com/getsops/sops/releases/download/v$sops_version"
 # signature from getsops/sops' release workflow at exactly that tag before any
 # digest in it is trusted.
 if [ "$requested" = latest ]; then
-  curl -fsSL -o checksums.txt "$release/sops-v$sops_version.checksums.txt"
-  curl -fsSL -o checksums.sigstore.json "$release/sops-v$sops_version.checksums.sigstore.json"
+  curl --connect-timeout 10 --max-time 120 -fsSL -o checksums.txt "$release/sops-v$sops_version.checksums.txt"
+  curl --connect-timeout 10 --max-time 120 -fsSL -o checksums.sigstore.json "$release/sops-v$sops_version.checksums.sigstore.json"
   cosign verify-blob checksums.txt \
     --bundle checksums.sigstore.json \
     --certificate-identity "https://github.com/getsops/sops/.github/workflows/release.yml@refs/tags/v$sops_version" \
@@ -68,15 +94,25 @@ if ! printf '%s\n' "$sops_sha" | grep -Eq '^[0-9a-f]{64}$'; then
   exit 1
 fi
 
-curl -fsSL -o sops "$release/$sops_asset"
+curl --connect-timeout 10 --max-time 120 -fsSL -o sops "$release/$sops_asset"
 echo "$sops_sha  sops" | shasum -a 256 -c -
-install -m 0755 sops "$HOME/.dva-tools/sops"
+install -m 0755 sops "$destination/sops"
 
 # age matches the .mise.toml pin, so a local run and a CI run exercise one age binary.
-curl -fsSL -o age.tar.gz "https://github.com/FiloSottile/age/releases/download/v1.3.1/$age_asset"
+curl --connect-timeout 10 --max-time 120 -fsSL -o age.tar.gz "https://github.com/FiloSottile/age/releases/download/v1.3.1/$age_asset"
 echo "$age_sha  age.tar.gz" | shasum -a 256 -c -
 tar -xzf age.tar.gz
-install -m 0755 age/age age/age-keygen "$HOME/.dva-tools/"
+install -m 0755 age/age age/age-keygen "$destination/"
 
-echo "$HOME/.dva-tools" >> "$GITHUB_PATH"
-echo "SOPS_VERSION=$sops_version" >> "$GITHUB_ENV"
+if [ "$mode" = github ]; then
+  echo "$destination" >> "$GITHUB_PATH"
+  echo "SOPS_VERSION=$sops_version" >> "$GITHUB_ENV"
+else
+  {
+    printf 'sops_version %s\n' "$sops_version"
+    for tool in sops age age-keygen; do
+      digest=$(shasum -a 256 "$destination/$tool")
+      printf '%s %s\n' "$tool" "${digest%% *}"
+    done
+  } > "$destination/receipt"
+fi

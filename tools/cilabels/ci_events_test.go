@@ -28,7 +28,12 @@ func TestCIEventRoutingAndCheckoutIdentity(t *testing.T) {
 		Jobs map[string]struct {
 			If             string `yaml:"if"`
 			TimeoutMinutes int    `yaml:"timeout-minutes"`
-			Steps          []struct {
+			RunsOn         any    `yaml:"runs-on"`
+			Strategy       struct {
+				FailFast bool                `yaml:"fail-fast"`
+				Matrix   map[string][]string `yaml:"matrix"`
+			} `yaml:"strategy"`
+			Steps []struct {
 				Name string         `yaml:"name"`
 				Uses string         `yaml:"uses"`
 				Run  string         `yaml:"run"`
@@ -69,6 +74,14 @@ func TestCIEventRoutingAndCheckoutIdentity(t *testing.T) {
 		}
 		if job.TimeoutMinutes <= 0 || job.TimeoutMinutes > 30 {
 			t.Fatalf("%s must declare an execution timeout between 1 and 30 minutes, got %d", name, job.TimeoutMinutes)
+		}
+		if name == "config-env-platform" {
+			if job.RunsOn != "${{ matrix.os }}" || job.Strategy.FailFast ||
+				!reflect.DeepEqual(job.Strategy.Matrix, map[string][]string{"os": {"ubuntu-latest"}, "sops": {"3.13.1", "latest"}}) {
+				t.Fatalf("hosted platform coverage must retain Linux and both SOPS endpoints: %+v", job)
+			}
+		} else if job.RunsOn != "ubuntu-latest" {
+			t.Fatalf("%s requires the Linux hosted runner, got %v", name, job.RunsOn)
 		}
 		if job.Steps[0].Uses != "actions/checkout@v7" || job.Steps[0].If != "" {
 			t.Fatalf("%s does not start with unconditional checkout", name)

@@ -33,7 +33,7 @@ deadline과 별도로 GNU `timeout`의 10분 제한과 30초 강제 종료 유�
 일반 테스트·통합 테스트의 JSON 진행 기록은 각각 `test-progress-*`,
 `integration-progress-*` artifact로 14일 보존한다. Bash `pipefail`로 `tee`가
 테스트 실패를 성공으로 바꾸지 못하게 한다. runner 자체가 통신을 잃으면 후속 artifact
-업로드도 실행되지 않을 수 있다. Linux/macOS 통합 matrix는 기존 검사를 유지한다.
+업로드도 실행되지 않을 수 있다. Linux hosted 통합 검사는 유지하고 macOS는 [명시적 로컬 검증](ci-macos-local.md)으로 수행한다.
 
 ## 검증 기록
 

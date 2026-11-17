@@ -166,7 +166,7 @@ ci:
           run: go build -trimpath -o bin/dva ./cmd/dva
           depends_on: [test]
     full:
-      description: Core gates plus integration and built-binary skill dogfood; hosted platform/release matrix remains in CI
+      description: Core gates plus integration and built-binary skill dogfood; Linux/release checks remain hosted, macOS uses its explicit local profile
       timeout: 30m
       warn_after: 15m
       max_parallel: 2
@@ -193,3 +193,28 @@ ci:
       max_parallel: 2
       fresh: true
       steps: *full-steps
+    macos-platform:
+      description: Explicit native macOS platform checks with prepared SOPS floor/latest tools
+      timeout: 20m
+      max_parallel: 1
+      steps:
+        - name: preflight
+          run: bash scripts/local-macos-platform.sh preflight
+          timeout: 1m
+        - name: platform-unit
+          run: bash scripts/local-macos-platform.sh unit
+          environment: &macos-go-env
+            GOMAXPROCS: "2"
+            GOFLAGS: "-p=2"
+          timeout: 5m
+          depends_on: [preflight]
+        - name: integration-floor
+          run: bash scripts/local-macos-platform.sh integration floor
+          environment: *macos-go-env
+          timeout: 5m
+          depends_on: [platform-unit]
+        - name: integration-latest
+          run: bash scripts/local-macos-platform.sh integration latest
+          environment: *macos-go-env
+          timeout: 5m
+          depends_on: [integration-floor]

@@ -170,17 +170,14 @@ jobs:
             exit 1
           fi
 
-  # The env bridge is the one feature whose guarantees — 0600 restricting other
-  # users, replace-over-an-open-file, directory fsync, and sops' own exit codes —
-  # were measured per platform rather than assumed. TASK-245 §8-6 declares linux
-  # and darwin supported and nothing else, so the declared matrix is the matrix
-  # that runs; every other platform takes the fail-closed path, which the unit
-  # suite exercises everywhere by injecting GOOS.
+  # Hosted runners verify Linux. Darwin execution is an explicit local gate
+  # (make ci-macos); see docs/ci-macos-local.md for required change scopes.
+  # Keep both supported SOPS endpoints here; crossbuild is not a Darwin run.
   config-env-platform:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
         # sops is not pinned in .mise.toml: workstations use the copy devenv
         # installs. DVA's contract is a floor (minSopsVersion in
         # internal/integration), and this axis covers both ends of the supported

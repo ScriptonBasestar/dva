@@ -7,6 +7,9 @@ All notable changes to DVA are documented here.
 
 ### Added
 
+- macOS 플랫폼 검사를 명시적 로컬 `macos-platform` 프로필로 분리합니다.
+  준비된 SOPS floor/latest 도구로 검사하며 원격 CI는 Linux 두 조합을 유지합니다.
+
 - 원격 CI에 merge queue 이벤트와 checkout SHA 검증을 연결합니다. 기존 push·PR·수동
   검사는 유지하고 이벤트별 동시성 키로 다른 입력의 실행을 취소하지 않습니다.
 - `dva ci <profile> --lookup`으로 검사를 실행하지 않고 현재 단계별 증거 상태를 조회합니다.

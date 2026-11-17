@@ -422,3 +422,13 @@ ci-full:
 ## recovery-check: Verify native build and core gates with an unusable installed DVA
 recovery-check:
 	sh scripts/without-dva.sh $(MAKE) --no-print-directory --no-keep-going -j1 build test lint doc-check
+
+.PHONY: prepare-macos-platform ci-macos
+
+## prepare-macos-platform: Prepare isolated verified tools for explicit local macOS checks
+prepare-macos-platform:
+	bash scripts/local-macos-platform.sh prepare
+
+## ci-macos: Run the declared native macOS platform profile (prepare tools separately)
+ci-macos:
+	dva ci macos-platform

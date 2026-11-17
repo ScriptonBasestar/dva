@@ -4,7 +4,9 @@
 
 원격 CI 정본은 [.github/workflows/ci.yml](../.github/workflows/ci.yml)이다.
 GitHub Actions는 이벤트를 선택하고 DVA 자체의 native 복구 경로를 검증한다.
-이벤트 추가를 이유로 기존 job·플랫폼 matrix·snapshot 검사를 줄이지 않는다.
+이벤트 추가를 이유로 검사 범위를 줄이지 않는다. 사용자 결정에 따라 원격 플랫폼 검사는
+Linux의 SOPS 두 조합이며 macOS는 [명시적 로컬 검증](ci-macos-local.md)으로 수행한다.
+따라서 원격 PR 성공은 macOS 검사의 자동 실행을 뜻하지 않는다.
 PR merge ref와 queue SHA 의미는 GitHub의
 [pull_request](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request),
 [merge_group](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#merge_group)

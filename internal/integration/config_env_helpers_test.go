@@ -77,6 +77,13 @@ func dvaBinary(t *testing.T) string {
 // once, from the repository, and handed to the child directly.
 func realTool(t *testing.T, name string) string {
 	t.Helper()
+	if dir, explicit := os.LookupEnv("DVA_INTEGRATION_TOOL_DIR"); explicit && (name == "sops" || name == "age" || name == "age-keygen") {
+		p, err := explicitIntegrationTool(dir, name)
+		if err != nil {
+			t.Fatalf("DVA_INTEGRATION_TOOL_DIR: %v", err)
+		}
+		return p
+	}
 	if mise, err := exec.LookPath("mise"); err == nil {
 		cmd := exec.Command(mise, "which", name)
 		cmd.Dir = repoRoot()
@@ -92,6 +99,24 @@ func realTool(t *testing.T, name string) string {
 			"and the config-env-platform CI job for where each tool comes from", name)
 	}
 	return p
+}
+
+func explicitIntegrationTool(dir, name string) (string, error) {
+	if !filepath.IsAbs(dir) {
+		return "", errors.New("tool directory must be absolute")
+	}
+	if name != "sops" && name != "age" && name != "age-keygen" {
+		return "", fmt.Errorf("unsupported explicit tool %q", name)
+	}
+	p := filepath.Join(dir, name)
+	info, err := os.Lstat(p)
+	if err != nil {
+		return "", fmt.Errorf("explicit %s: %w", name, err)
+	}
+	if !info.Mode().IsRegular() || info.Mode().Perm()&0o111 == 0 {
+		return "", fmt.Errorf("explicit %s must be a regular executable", name)
+	}
+	return p, nil
 }
 
 // lookPathOutsideShims is exec.LookPath over pathList minus version-manager shim

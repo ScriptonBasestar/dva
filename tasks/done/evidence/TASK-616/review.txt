@@ -1,0 +1,34 @@
+TASK-616 independent source and done-card review
+Reviewer execution reference: /root/ci_contract_review
+Observed concrete model: unknown
+Reviewed baseline: 09decd3a168d3413e4fa504583ff35f45cec0554
+Reviewed worktree: /Users/archmagece/worktrees/misc/dva/codex__mbp__chore__local-macos-ci
+
+판정: source 검토 차단 사항 없음. 현재 카드의 다섯 완료 기준과 진단 증거는 done 승격을 지원한다. 최종 committed-head의 macOS·dev/full·원격 Linux 검증은 별도 전달 조건으로 남는다.
+
+완료 기준 1: PASS.
+dva.yml의 macos-platform은 전체 20분, max_parallel 1과 네 단계의 의존성을 선언한다. preflight 1분, unit 및 두 integration 단계 각각 5분의 상한이 있다. Go 단계에는 GOMAXPROCS=2와 GOFLAGS=-p=2를 명시한다.
+
+완료 기준 2: PASS.
+workflow는 macOS matrix 항목만 제거한다. Linux의 SOPS 3.13.1/latest 두 조합, 기존 다섯 job, 이벤트·입력 SHA 확인·concurrency·검사 단계와 실행 상한은 보존한다. tools/cilabels의 실제 YAML 회귀 검사도 이 경계를 확인한다.
+
+완료 기준 3: PASS.
+준비는 명시적인 별도 Make 진입점이다. local installer는 프로젝트 tmp 아래의 서로 분리된 빈 디렉터리만 허용하며 기존 파일을 덮어쓰지 않는다. 고정 checksum과 latest checksum 파일의 Sigstore 검증을 유지하고 TUF cache도 local workdir로 격리한다. 검사 단계에는 다운로드·설치가 없다. 준비 receipt, 세 바이너리 digest·실행 권한·버전과 디렉터리 경계를 재검증한다.
+
+명시적인 integration 도구 디렉터리는 mise 해석보다 우선한다. 해당 override의 누락·잘못된 경로·비실행 파일은 Fatal이며 fallback이나 Skip으로 전환하지 않는다. override 없는 기존 동작과 git 도구 해석은 유지한다. fixture 테스트는 변조·누락·버전 불일치, 위험한 설치 목적지와 실제 호출 인자를 검증한다.
+
+완료 기준 4: PASS, 작업 후보의 실제 진단 범위.
+tasks/done/evidence/TASK-616/local-diagnostic.json의 run 20b943e5deace25d20fa865a7b5f64e5는 네 단계 성공과 1m8.286초를 기록한다. 원본 DVA 로그를 직접 읽어 CLI/config 단위 검사와 두 integration 패키지 실행의 성공 행을 확인했고, 보존된 floor/latest receipt가 현재 준비 receipt와 일치함을 확인했다. 도구 조합은 SOPS 3.13.1/3.13.3과 age 1.3.1이다.
+
+첫 준비의 TUF 네트워크 timeout과 두 번째 준비 성공은 별도 attempt로 보존한다. 검증 우회나 첫 실패의 성공 재분류는 없다. 이 진단은 dirty 작업 후보의 실행이며, 이후 추가된 Go worker 제한·절대 도구 경로 출력·integration JSON 출력의 최종 실행 증거는 아니다. 카드와 증거가 이 차이를 명시한다.
+
+완료 기준 5: PASS.
+docs/ci-macos-local.md는 macOS 영향 변경의 전달 전 및 릴리스 전 실행 조건, 준비와 검사 분리, Darwin/arm64 준비 자산의 범위와 증거 요구를 명시한다. 원격 PR 성공이 macOS 실행을 보장하지 않는다는 공개 계약 변화가 이벤트·예산·채택 문서와 프로필 설명에 반영된다. release runbook에도 공개 tag push 전 해당 revision의 로컬 검사를 연결한다. 과거 hosted 관찰은 역사적 기록으로 유지한다.
+
+보안 및 불확실성:
+전역 pin·HOME·전역 도구 설치를 변경하지 않고 명시적인 호환성 fixture를 사용한다. 검사 중 슬롯을 교체하지 않는 운영 조건을 문서화했다. receipt 재검증은 준비 이후 파일 변경을 탐지하지만 적대적인 동시 교체까지 방지한다는 주장은 없다. 실제 Mac 진단 한 건으로 cold 성능이나 모든 macOS 아키텍처의 실행을 보장하지 않는다.
+
+검증 범위:
+코드·테스트·문서·카드·진단 receipt와 원본 로그를 읽기 전용으로 대조했고 git diff --check가 통과했다. 테스트는 중복 실행하지 않았다. scoped 검사·lint·doc-check·check-generate·profile validate 결과는 main의 실행 증거이며 이 검토자의 실행으로 표시하지 않는다. 최종 커밋에서 integration JSON의 실행·skip·실패 결과와 네 단계의 완료를 다시 확인해야 한다.
+
+VERDICT: PASS

@@ -5,13 +5,15 @@
 실행 값의 정본은 [.github/workflows/ci.yml](../.github/workflows/ci.yml)이다.
 이 문서는 DVA 저장소의 GitHub Actions 예산 채택 근거를 소유한다.
 로컬 commit/dev/full 예산은 [이벤트별 계약](ci-lifecycle.md)을 따른다.
+2026-11-17 사용자 결정으로 macOS hosted 의존을 제거하고
+[로컬 macOS 프로필](ci-macos-local.md)로 옮겼다. 아래 과거 macOS 관측은 당시 기록이다.
 
 | job | job 실행 상한 | 채택 근거 |
 |---|---|---|
 | test | 30분 유지 | 기존 전체 테스트·진행 기록 보호, 이번에 축소하지 않음 |
 | commit-subjects | 10분 | 전체 Git history·도구 준비를 포함한 초기 상한 |
 | lint | 15분 | lint·gopls 설치와 cold 준비 여유를 포함 |
-| config-env-platform | 각 조합 20분 | Ubuntu/macOS × SOPS floor/latest의 설치·검증 포함 |
+| config-env-platform | 각 조합 20분 | Linux × SOPS floor/latest의 설치·검증 포함 |
 | goreleaser-snapshot | 20분 | 다중 대상 snapshot build의 준비·실행 포함 |
 
 이는 평소 목표 시간이나 p95·SLA가 아닌 초기 중단 상한이다. 원격 전체 검사를
@@ -21,7 +23,7 @@
 
 GitHub의 [job timeout 계약](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idtimeout-minutes)에
 따른 실행 제한이며 runner 할당·대기열 지연을 해소하는 설정이 아니다. matrix의
-20분은 각 job에 적용되며 workflow 전체나 네 조합의 누적 사용량 상한이 아니다.
+20분은 각 job에 적용되며 workflow 전체나 두 조합의 누적 사용량 상한이 아니다.
 기존 test 단계의 25분 제한과 shell의 10분 timeout·30초 kill 여유는 유지한다.
 실패 시 기록 보장의 한계는 [실패 분석](ci-failure-analysis.md)을 따른다.
 
