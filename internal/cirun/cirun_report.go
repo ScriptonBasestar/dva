@@ -54,6 +54,7 @@ type Options struct {
 }
 
 type StepReport struct {
+	Workdir           string             `json:"workdir,omitempty"`
 	Condition         *ConditionReport   `json:"condition,omitempty"`
 	Reuse             *ReuseReport       `json:"reuse,omitempty"`
 	CompositionBudget *CompositionBudget `json:"composition_budget,omitempty"`
@@ -122,6 +123,7 @@ type Attestation struct {
 }
 
 type Report struct {
+	Observability                      *Observability
 	ID, Root, Profile, Status, LogPath string
 	Subproject                         string
 	Error                              string
@@ -138,6 +140,7 @@ type Report struct {
 
 func (r Report) MarshalJSON() ([]byte, error) {
 	type wire struct {
+		Observability    *Observability     `json:"observability,omitempty"`
 		ID               string             `json:"id"`
 		Root             string             `json:"root"`
 		Profile          string             `json:"profile"`
@@ -156,11 +159,12 @@ func (r Report) MarshalJSON() ([]byte, error) {
 		CompositionDepth int                `json:"composition_depth,omitempty"`
 		Fresh            bool               `json:"fresh,omitempty"`
 	}
-	return json.Marshal(wire{r.ID, r.Root, r.Profile, r.Subproject, r.Status, r.LogPath, r.Error, r.SkipReason, r.StartedAt, r.FinishedAt, r.Duration.String(), r.Steps, r.Attestation, r.Conflict, r.Parent, r.CompositionDepth, r.Fresh})
+	return json.Marshal(wire{r.Observability, r.ID, r.Root, r.Profile, r.Subproject, r.Status, r.LogPath, r.Error, r.SkipReason, r.StartedAt, r.FinishedAt, r.Duration.String(), r.Steps, r.Attestation, r.Conflict, r.Parent, r.CompositionDepth, r.Fresh})
 }
 
 func (r *Report) UnmarshalJSON(data []byte) error {
 	type wire struct {
+		Observability    *Observability     `json:"observability,omitempty"`
 		ID               string             `json:"id"`
 		Root             string             `json:"root"`
 		Profile          string             `json:"profile"`
@@ -187,7 +191,7 @@ func (r *Report) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
-	*r = Report{ID: in.ID, Root: in.Root, Profile: in.Profile, Subproject: in.Subproject, Status: in.Status, LogPath: in.LogPath, Error: in.Error, SkipReason: in.SkipReason, StartedAt: in.StartedAt, FinishedAt: in.FinishedAt, Duration: d, Steps: in.Steps, Attestation: in.Attestation, Conflict: in.Conflict, Parent: in.Parent, CompositionDepth: in.CompositionDepth, Fresh: in.Fresh}
+	*r = Report{Observability: in.Observability, ID: in.ID, Root: in.Root, Profile: in.Profile, Subproject: in.Subproject, Status: in.Status, LogPath: in.LogPath, Error: in.Error, SkipReason: in.SkipReason, StartedAt: in.StartedAt, FinishedAt: in.FinishedAt, Duration: d, Steps: in.Steps, Attestation: in.Attestation, Conflict: in.Conflict, Parent: in.Parent, CompositionDepth: in.CompositionDepth, Fresh: in.Fresh}
 	return nil
 }
 

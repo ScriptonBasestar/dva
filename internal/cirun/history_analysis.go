@@ -37,7 +37,7 @@ type HistoryStep struct {
 // AnalyzeHistory selects the exact recorded root and profile; an absent host,
 // cache or configuration identity must never be treated as a common cohort.
 func AnalyzeHistory(reports []Report, root, profile string) HistoryAnalysis {
-	a := HistoryAnalysis{Root: root, Profile: profile, Comparability: "unknown: host, configuration and cache identity are not recorded", StatusCounts: map[string]int{}, Runs: []HistoryRun{}}
+	a := HistoryAnalysis{Root: root, Profile: profile, Comparability: "unknown: complete host, configuration and cache comparability is not established", StatusCounts: map[string]int{}, Runs: []HistoryRun{}}
 	for _, r := range reports {
 		if r.Root != root || r.Profile != profile {
 			continue

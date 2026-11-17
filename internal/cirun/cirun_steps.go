@@ -39,6 +39,8 @@ type lockedWriter struct {
 	err error
 }
 
+type progressIntervalKey struct{}
+
 func (w *lockedWriter) Write(p []byte) (int, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -90,6 +92,13 @@ func execute(ctx context.Context, root string, p config.CIProfile, inherited []s
 		err error
 	}
 	done := make(chan result, n)
+	interval := 30 * time.Second
+	if v, ok := ctx.Value(progressIntervalKey{}).(time.Duration); ok && v > 0 {
+		interval = v
+	}
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	started := time.Now()
 	running := 0
 	complete := 0
 	failed := false
@@ -131,6 +140,7 @@ func execute(ctx context.Context, root string, p config.CIProfile, inherited []s
 			return fmt.Errorf("checkpoint started step %q: %w", p.Steps[i].Name, err)
 		}
 		running++
+		_, _ = fmt.Fprintf(out, "ci dispatch step=%s completed=%d/%d\n", p.Steps[i].Name, complete, n)
 		startedAt := reports[i].StartedAt
 		go func() {
 			r, e := runConditionedStep(ctx, root, p.Steps[i], inherited, workers, source, out, startedAt)
@@ -199,10 +209,23 @@ func execute(ctx context.Context, root string, p config.CIProfile, inherited []s
 			}
 			break
 		}
-		r := <-done
+		var r result
+		select {
+		case r = <-done:
+		case <-ticker.C:
+			var active []string
+			for _, report := range reports {
+				if report.Status == "running" {
+					active = append(active, report.Name)
+				}
+			}
+			_, _ = fmt.Fprintf(out, "ci progress completed=%d/%d running=%d pending=%d elapsed=%s active=%s\n", complete, n, running, n-complete-running, time.Since(started).Round(time.Second), strings.Join(active, ","))
+			continue
+		}
 		running--
 		complete++
 		reports[r.i] = r.r
+		_, _ = fmt.Fprintf(out, "ci completed step=%s status=%s elapsed=%s completed=%d/%d\n", r.r.Name, r.r.Status, r.r.Duration.Round(time.Millisecond), complete, n)
 		if err := checkpoint(reports); err != nil {
 			stepErr = errors.Join(stepErr, fmt.Errorf("checkpoint completed step %q: %w", p.Steps[r.i].Name, err))
 			fatal = true
@@ -288,6 +311,7 @@ func runStep(ctx context.Context, root string, step config.CIStep, inherited []s
 		r.OCI, ret = runOCIStep(stepCtx, root, step, out)
 		return r, ret
 	}
+	r.Workdir = workdir
 	cmd := exec.Command("/bin/sh", "-eu", "-c", step.Run)
 	cmd.Dir = workdir
 	cmd.Env = ciEnv(inherited, step.Environment, workers)
@@ -426,7 +450,7 @@ func ciEnv(base []string, add map[string]string, workers int) []string {
 		m["GOFLAGS"] = strings.TrimSpace(m["GOFLAGS"] + " -p=1")
 	}
 	for k, v := range add {
-		if k == "DVA_CI_JOBS" || k == parentRunEnv || k == config.CISubprojectEnv || k == config.CICompositionEnv || k == config.CIFreshEnv {
+		if k == "DVA_CI_RUN_ID" || k == "DVA_CI_EVENTS_DIR" || k == "DVA_CI_JOBS" || k == parentRunEnv || k == config.CISubprojectEnv || k == config.CICompositionEnv || k == config.CIFreshEnv {
 			continue
 		}
 		m[k] = v

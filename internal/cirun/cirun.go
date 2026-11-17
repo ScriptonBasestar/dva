@@ -146,6 +146,10 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 	if grant != nil && grant.Fresh {
 		fresh, report.Fresh = true, true
 	}
+	report.Observability = prepareObservability(state, id, opts.ProfileName, opts.Profile)
+	if repositoryID, err := RepositoryLocalID(ctx, root); err == nil {
+		report.Observability.RepositoryLocalID = repositoryID
+	}
 	stopMonitor := func() {}
 	if grant != nil {
 		last := grant.Ancestry[len(grant.Ancestry)-1]
@@ -175,6 +179,9 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 		}
 	}()
 	writer := &lockedWriter{w: io.MultiWriter(log, outputOrDiscard(opts.Output))}
+	if report.Observability.EventsStatus != "available" {
+		_, _ = fmt.Fprintf(writer, "ci observability degraded: %s\n", report.Observability.EventsError)
+	}
 	if err := writeReport(state, report); err != nil {
 		return report, fmt.Errorf("record running ci receipt: %w", err)
 	}
@@ -197,6 +204,8 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 			return report, marshalErr
 		}
 		env := append(subprojectEnv(opts.Env, opts.Subproject), parentRunEnv+"="+string(parentInfo))
+		env = setCIEnvironment(env, "DVA_CI_RUN_ID", id)
+		env = setCIEnvironment(env, "DVA_CI_EVENTS_DIR", report.Observability.EventsDir)
 		freshValue := "0"
 		if fresh {
 			freshValue = "1"

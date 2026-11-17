@@ -48,6 +48,7 @@
 - [native child CI 구성](ci-child-composition-proposal.md), [검증 기록](ci-child-composition-evidence.md)
 - [CI 실패 분석](ci-failure-analysis.md), [reseal 오류 분류 결함](reseal-error-classification.md)
 - [CI 트러블슈팅 기록](ci-troubleshooting.md), [실행 메트릭 수집 제안](ci-metrics-proposal.md)
+- [CI 실행 관측](ci-execution-observability.md)
 - [Env 경고 후속 항목 재현](env-warning-reproduction.md)
 - [선택적 완료 근거](evidence-capture.md)
 

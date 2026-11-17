@@ -99,7 +99,7 @@ attestation 필드(`available`·`reason`·`commit`·`dirty`)는
 [CI receipt attestation](72-ci-receipt-attestation.md)을 따른다. HEAD만 같은 과거 결과를
 자동 재사용하지 않는다. 로그는 비밀값이 포함될 수 있어 자동 게시하지 않는다.
 
-실행 중 step의 dispatch와 완료 때 기존 receipt를 atomic checkpoint로 저장한다.
+dispatch·완료 때 receipt를 atomic checkpoint로 저장한다([관측](ci-execution-observability.md)).
 started_at은 scheduler가 step을 배정한 시각이며 최종 receipt에서도 같은 값을 유지한다.
 프로세스 spawn 성공 시각을 증명하는 값은 아니다. 감독 프로세스가 강제 종료돼도
 마지막 저장된 단계와 배정 시각을 확인할 수 있다.

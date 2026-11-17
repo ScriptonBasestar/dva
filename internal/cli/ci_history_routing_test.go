@@ -26,6 +26,10 @@ func TestCIHistoryRoutesLegacyProfileAndExplicitAnalysis(t *testing.T) {
 		{name: "empty root", args: []string{"history", "--root=", "--profile", "full"}, wantErr: true},
 		{name: "empty profile", args: []string{"history", "--root", "/tmp", "--profile= "}, wantErr: true},
 		{name: "explicit analysis", args: []string{"history", "--root", "/tmp", "--profile", "full"}, wantStatus: true},
+		{name: "repository analysis", args: []string{"history", "--repository-local-id", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "--profile", "full"}, wantStatus: true},
+		{name: "repository missing profile", args: []string{"history", "--repository-local-id", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}, wantErr: true},
+		{name: "invalid repository", args: []string{"history", "--repository-local-id", "bad", "--profile", "full"}, wantErr: true},
+		{name: "conflicting selectors", args: []string{"history", "--root", "/tmp", "--repository-local-id", "current", "--profile", "full"}, wantErr: true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			type contextKey struct{}
