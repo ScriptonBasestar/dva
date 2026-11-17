@@ -140,7 +140,7 @@ func TestVerificationArgumentsAndFresh(t *testing.T) {
 		{"gofmt", "-s", "-l", "./internal/unit/x with space.go"},
 		{"go", "vet", "example/unit"},
 		{"go", "test", "-exec", "/usr/bin/true", "-run", "^$", "example/unit"},
-		{"go", "test", "-timeout", "75s", "-count=1", "example/unit"},
+		{"go", "test", "-json", "-timeout", "75s", "-count=1", "example/unit"},
 	} {
 		found := false
 		for _, call := range calls {
@@ -404,7 +404,7 @@ func TestTestOnlySelectionUsedInAllGoPhases(t *testing.T) {
 		{"gofmt", "-s", "-l", "./a/external_test.go"},
 		{"go", "vet", "example/a"},
 		{"go", "test", "-exec", "/usr/bin/true", "-run", "^$", "example/a"},
-		{"go", "test", "-timeout", "75s", "example/a"},
+		{"go", "test", "-json", "-timeout", "75s", "example/a"},
 	} {
 		found := false
 		for _, call := range calls {

@@ -1,0 +1,21 @@
+TASK-619 source delta re-review
+Reviewer execution reference: /root/ci_contract_review
+Observed concrete model: unknown
+
+기존 1·2·4·5번 지적은 source상 해결됐다. raw tuple association과 run/start/malformed 초기화, build event 검증, 같은 nonblocking lock 아래의 publish·prune, raw artifact 우선 보존과 부가 단계의 1분 상한을 확인했다. 관련 fixture도 해당 경계를 검사한다.
+
+P2 차단 사항 한 건은 남는다.
+
+tools/internal/cimetrics/events.go:176 및 :202는 전역 buildPending을 아무 build-fail 또는 package terminal에서 지운다. 따라서 다음 스트림이 complete가 된다.
+
+build-output ImportPath=x
+pass Package=y
+EOF
+
+이는 x의 완료를 관측한 것이 아니다. 병렬 package에서 다른 package가 완료된 뒤 x의 컴파일이 중단된 경우를 놓친다. 여러 build-output 뒤 한 ImportPath만 build-fail인 경우도 같다.
+
+ImportPath별 pending을 추적해 대응하는 terminal만 닫거나, 연관을 증명하지 못하는 build output을 보수적으로 partial로 남겨야 한다. 현재 events_test.go:76의 완료 fixture는 x→x만 확인하므로 서로 다른 package/import path 변이도 필요하다.
+
+파일 변경·테스트 실행·하위 위임은 하지 않았다. 실제 오버헤드 및 최종 gate의 성공은 이번 source 검토로 판정하지 않는다.
+
+VERDICT: FAIL

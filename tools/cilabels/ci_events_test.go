@@ -34,11 +34,13 @@ func TestCIEventRoutingAndCheckoutIdentity(t *testing.T) {
 				Matrix   map[string][]string `yaml:"matrix"`
 			} `yaml:"strategy"`
 			Steps []struct {
-				Name string         `yaml:"name"`
-				Uses string         `yaml:"uses"`
-				Run  string         `yaml:"run"`
-				If   string         `yaml:"if"`
-				With map[string]any `yaml:"with"`
+				ContinueOnError bool           `yaml:"continue-on-error"`
+				TimeoutMinutes  int            `yaml:"timeout-minutes"`
+				Name            string         `yaml:"name"`
+				Uses            string         `yaml:"uses"`
+				Run             string         `yaml:"run"`
+				If              string         `yaml:"if"`
+				With            map[string]any `yaml:"with"`
 			} `yaml:"steps"`
 		} `yaml:"jobs"`
 	}
@@ -58,7 +60,7 @@ func TestCIEventRoutingAndCheckoutIdentity(t *testing.T) {
 	}
 	want := []string{"test", "commit-subjects", "lint", "config-env-platform", "goreleaser-snapshot"}
 	checks := map[string][]string{
-		"test":                {"Documentation", "Build", "Skill Installer Dogfood", "Test", "Preserve test progress", "Integration Test", "Preserve integration progress", "Vet"},
+		"test":                {"Documentation", "Build", "Skill Installer Dogfood", "Test", "Preserve test progress", "Summarize test metrics", "Preserve test metrics", "Integration Test", "Preserve integration progress", "Summarize integration metrics", "Preserve integration metrics", "Vet"},
 		"commit-subjects":     {"Commit Subjects"},
 		"lint":                {"Format", "Lint", "Install gopls", "gopls check"},
 		"config-env-platform": {"Unit suite", "Install cosign", "Install verified sops and age", "Verify the pinned toolchain resolves", "Integration Test"},
@@ -99,6 +101,13 @@ func TestCIEventRoutingAndCheckoutIdentity(t *testing.T) {
 		}
 		var names []string
 		for _, step := range job.Steps {
+			auxiliary := strings.HasPrefix(step.Name, "Summarize ") || step.Name == "Preserve test metrics" || step.Name == "Preserve integration metrics"
+			if step.ContinueOnError && !auxiliary {
+				t.Fatalf("%s weakened a required step: %s", name, step.Name)
+			}
+			if auxiliary && (!step.ContinueOnError || step.If != "always()" || step.TimeoutMinutes != 1) {
+				t.Fatalf("%s auxiliary summary must run on failure without becoming a gate", step.Name)
+			}
 			if step.Name != "" {
 				names = append(names, step.Name)
 			}

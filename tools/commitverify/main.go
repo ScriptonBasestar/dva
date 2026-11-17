@@ -11,10 +11,14 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"slices"
 	"strings"
+	"syscall"
 	"time"
+
+	"github.com/ScriptonBasestar/dva/tools/internal/cimetrics"
 )
 
 type runner func(context.Context, ...string) ([]byte, error)
@@ -41,7 +45,9 @@ func main() {
 		fmt.Fprintln(os.Stderr, "commitverify: unexpected argument")
 		os.Exit(2)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 110*time.Second)
+	parent, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
+	defer stop()
+	ctx, cancel := context.WithTimeout(parent, 110*time.Second)
 	defer cancel()
 	if err := verify(ctx, *phase, execCommand, os.Stdout); err != nil {
 		fmt.Fprintf(os.Stderr, "commitverify: %v\n", err)
@@ -50,6 +56,13 @@ func main() {
 }
 
 func execCommand(ctx context.Context, args ...string) ([]byte, error) {
+	if len(args) > 2 && args[0] == "go" && args[1] == "test" && slices.Contains(args, "-json") {
+		out, _ := ctx.Value(streamOutputKey{}).(io.Writer)
+		if out == nil {
+			out = os.Stdout
+		}
+		return nil, cimetrics.RunWithStdin(ctx, "commit-test", args, nil, out, os.Stderr)
+	}
 	cmd := exec.CommandContext(ctx, args[0], args[1:]...)
 	cmd.Env = append(os.Environ(), "GIT_OPTIONAL_LOCKS=0")
 	cmd.Stderr = os.Stderr
@@ -117,7 +130,7 @@ func verify(ctx context.Context, phase string, run runner, out io.Writer) error 
 		// makes Go build and link each test binary without starting it.
 		args = []string{"go", "test", "-exec", "/usr/bin/true", "-run", "^$"}
 	case "test":
-		args = []string{"go", "test", "-timeout", "75s"}
+		args = []string{"go", "test", "-json", "-timeout", "75s"}
 		if os.Getenv("DVA_CI_FRESH") == "1" {
 			args = append(args, "-count=1")
 		}

@@ -2,6 +2,13 @@
 # Shared native lint gate used by Make and DVA CI.
 set -eu
 
+phase=${1:-all}
+case "$phase" in
+	all|preflight|golangci|gopls) ;;
+	*) echo "ci-lint: unknown phase" >&2; exit 2 ;;
+esac
+if [ "$phase" = all ] || [ "$phase" = preflight ]; then
+
 # A go binary that disagrees with the GOROOT mise exports makes golangci-lint fail
 # with "could not import os/strings/..." on every cold analysis, which reads as if
 # the tree does not compile. Measured: the same binary on the same cold cache
@@ -31,6 +38,9 @@ set -eu
 if command -v mise >/dev/null 2>&1 && mise which golangci-lint >/dev/null 2>&1; then \
 	mise exec -- sh -c 'tool=$(go version | cut -d" " -f3); root=$(head -1 "$(go env GOROOT)/VERSION"); if [ -z "$tool" ] || [ -z "$root" ]; then echo "make lint: cannot read the go/GOROOT pairing under mise exec" >&2; echo "  go version     -> [$tool] (empty: go did not run)" >&2; echo "  GOROOT/VERSION -> [$root] (empty: GOROOT unset, or VERSION unreadable)" >&2; exit 1; fi; if [ "$tool" != "$root" ]; then echo "make lint: go and GOROOT disagree - go tool is $tool, GOROOT holds $root" >&2; echo "  go:     $(command -v go)" >&2; echo "  GOROOT: $(go env GOROOT)" >&2; echo "  Unchecked, this surfaces as could-not-import errors about stdlib packages. TASK-204." >&2; exit 1; fi' || exit 1; \
 fi
+fi
+[ "$phase" != preflight ] || exit 0
+if [ "$phase" = all ] || [ "$phase" = golangci ]; then
 # golangci-lint's cache is machine-wide by default (~/Library/Caches/golangci-lint)
 # and its entries carry the absolute paths they were analysed at. The git workflow
 # reclaims a worktree per completed task, so those paths keep dying, and the next
@@ -53,6 +63,8 @@ elif command -v golangci-lint >/dev/null 2>&1; then \
 else \
 	echo "Install golangci-lint v2 (https://golangci-lint.run/usage/install/) or run 'mise install'"; exit 1; \
 fi
+fi
+[ "$phase" != golangci ] || exit 0
 # gopls check covers modernize-analyzer findings golangci-lint's vendored
 # copy misses (e.g. strings.SplitN where it only catches strings.Index). TASK-130.
 # gopls check reports findings on stdout and exits 0 even when it has some, so
@@ -69,7 +81,7 @@ elif command -v gopls >/dev/null 2>&1; then \
 else \
 	echo "Install gopls (https://pkg.go.dev/golang.org/x/tools/gopls) or run 'mise install'"; exit 1; \
 fi; \
-findings=$($gopls_cmd check -severity=hint $(find cmd internal tools -name '*.go')); rc=$?; \
+rc=0; findings=$($gopls_cmd check -severity=hint $(find cmd internal tools -name '*.go')) || rc=$?; \
 if [ $rc -ne 0 ]; then \
 	echo "ERROR: gopls check could not run (exit $rc); see stderr above."; exit 1; \
 fi; \

@@ -1,0 +1,473 @@
+{
+  "purpose": "working-tree diagnostic; not final gate acceptance",
+  "overhead_raw": {
+    "owner": "codex/mbp",
+    "task": "TASK-619",
+    "purpose": "diagnostic, not final acceptance",
+    "created_at": "2026-11-17T07:23:07.196245+00:00",
+    "baseline": "a4e54a30f194efd20beeadd0e75db8e65204c63e",
+    "working_code_sha256": {
+      ".github/workflows/ci.yml": "3dc22d7edb803f04de25f2bfe395d9e11bcd58f89f883581f129d3df7c138130",
+      "Makefile": "fb582e5755c6814f379ac7aceb7b30a93f62b6428394aca385b7ad3032247085",
+      "dva.yml": "ae4165b4dfba5b7a58e97bf3493559e32654011bf743192566f7e93c57a81062",
+      "scripts/ci-lint.sh": "9a0812f593d48b742828eadaae13b32f17cccf9833740727a13329c992c757ce",
+      "tools/cilabels/ci_events_test.go": "5a2219d30238b4cd1f820766ec97a21528c6161e83322af551ff0487ec4b4b48",
+      "tools/cimetrics/main.go": "50ef458779781d51139b1de6a3d04168ac714322f4b17bb226444966ec9a2be4",
+      "tools/cimetrics/main_test.go": "0d31dd626f19b24b1b35693b430cf7e9c755a619fe420a3031ec8c1a3f370b98",
+      "tools/cimetrics/signals_other.go": "a3ec02c63e3e33766ae1d6670bccf37cabbbed61c670b2d2f9b700111388915f",
+      "tools/cimetrics/signals_unix.go": "90ac453de028ba915ee615b44bfbdb64463b2257f173fbaba0650c8fbde65860",
+      "tools/cimetrics/signals_unix_test.go": "e68d6255f0b82707abcda13337ba46b66bdedd8a9ad236aec3a42d4964ecd452",
+      "tools/cimetrics/wiring_test.go": "2ec090ee20a61b9e59f952bbd20e0fd1f7845e10fb3fe55a75061529771b9743",
+      "tools/commitverify/main.go": "20f87188c2ea62cc2455a1b8a003c0f8bfe35930fa2a54098e2dc8941e608202",
+      "tools/commitverify/main_test.go": "bd1277b2de5689031b87b47ecd9931155f4ca13ad3e95b959b40ffd4e3751dc7",
+      "tools/internal/cimetrics/allowlist.go": "9d7bcb4f44b093fc7f43041dbff8f35d7e63ce0ebf72ad9bff98cabe4dcf9d81",
+      "tools/internal/cimetrics/allowlist_test.go": "2cb1942b32ab6a63e039af8997271d5b5c52178b1d918c997a5b1f68388ce508",
+      "tools/internal/cimetrics/events.go": "5f337a83e4ad943d9459b5f5c579ef14e8685573191bce8e03e22fa710e79727",
+      "tools/internal/cimetrics/events_test.go": "f540b4e1b287f3d5af177a888bb30f36860bbb1aa667f3a2a90988a7f92a8066",
+      "tools/internal/cimetrics/metadata.go": "63a5044b567cc144d91f06d701beadbdb7f4ef3fe73fef844fdacd102a97fcb2",
+      "tools/internal/cimetrics/metadata_test.go": "e3ec7e6d32f37108d7b54404af45f860c5e0be181757360a2fcef3335ff207f5",
+      "tools/internal/cimetrics/output.go": "9ca4fd7ac29531f42795e5405a45becb5139ce46c6efb9a08f83488c4a4b913f",
+      "tools/internal/cimetrics/output_test.go": "8f36256268a6837d7bfbcf25bf83b3e1291a5e0fa6c59761f54d134bafe9166b",
+      "tools/internal/cimetrics/run.go": "1a2aa5d4bb34375ff260ea6af07b03897000c1054a45c939e92b1da161fd58a9",
+      "tools/internal/cimetrics/run_other.go": "83ac7309cdc7d62633e9b2bcd613cb7598ae35102ffd1bef14b3020cfac63c02",
+      "tools/internal/cimetrics/run_summary.go": "8781544675c8fcd27cfc9aa67da65cc839fbb3d147a21b0873d3785fc88c1be5",
+      "tools/internal/cimetrics/run_test.go": "a1092dd1a98806318544b9bf8a3437543108d6335fb583ea1a2c7a9e5cede9bf",
+      "tools/internal/cimetrics/run_unix.go": "f2e9d035612b5122961e294537c888bf870426fdcb2e50133aac24d81ec82df9",
+      "tools/internal/cimetrics/run_unix_test.go": "9c2e07f8cbb24b9e1579869829be36e48ae80cdffdcdc95c1243d1d3f5e079d1",
+      "tools/internal/cimetrics/store.go": "4c216a47b2f053441560c42f90129da1a24b4f7b489258399cfe2275c3735b9d",
+      "tools/internal/cimetrics/store_other.go": "9f0e5ce7b81c602c929ca3bbad98d982c94a3ad1f89c30a34920a9fc1ddb7f1f",
+      "tools/internal/cimetrics/store_test.go": "4ba359c2e348d87c115a2360c4955d29406161aa11ae09d896d97097988732a1",
+      "tools/internal/cimetrics/store_unix.go": "8bdd98ce7d3bddfb2480ac387946c9b9b9ace4077b5981912cd9a96f062fb6f7"
+    },
+    "conditions": "prepared module cache; existing shared Go build cache; recorded warmups; test result cache disabled by -count=1; other host load uncontrolled",
+    "environment": {
+      "GOPROXY": "off",
+      "GOSUMDB": "off",
+      "GOTOOLCHAIN": "local",
+      "GOMAXPROCS": "1",
+      "GOFLAGS": "-p=1",
+      "DVA_CI_JOBS": "4",
+      "DVA_CI_FRESH": "1"
+    },
+    "declared_toolchain": "go1.27.3",
+    "selected_go_version": "see wrapper runtime/build observations; a shim is not assumed to prove the selected Go version",
+    "limits": "90s per command; own process group TERM then KILL; only sanitized metrics copied to evidence",
+    "cleanup": "CE delivery worktree reclamation after preserving diagnostic summary",
+    "runs": [
+      {
+        "mode": "warmup-direct",
+        "argv": [
+          "go",
+          "test",
+          "-count=1",
+          "-timeout",
+          "75s",
+          "./internal/agentdeny"
+        ],
+        "wall_seconds": 2.5296289161778986,
+        "returncode": 0,
+        "timeout": false
+      },
+      {
+        "mode": "warmup-observed",
+        "argv": [
+          "go",
+          "run",
+          "./tools/cimetrics",
+          "run",
+          "--check",
+          "commit-test",
+          "--",
+          "go",
+          "test",
+          "-json",
+          "-count=1",
+          "-timeout",
+          "75s",
+          "./internal/agentdeny"
+        ],
+        "wall_seconds": 1.4329766249284148,
+        "returncode": 0,
+        "timeout": false,
+        "measurement": {
+          "measurement_id": "9cc236fdd6321fa5de9fe2b361430a8d",
+          "check_outcome": "succeeded",
+          "collection_status": "complete",
+          "collection_reason": null,
+          "wall_ms": 728,
+          "exit_code": 0,
+          "signal": null,
+          "output_degraded": null,
+          "options": {
+            "flags": [
+              "-json",
+              "-count=1",
+              "-timeout=1m15s",
+              "GOFLAGS:-p=1"
+            ],
+            "packages": [
+              "./internal/agentdeny"
+            ],
+            "test_filter": false,
+            "unclassified_options": false,
+            "workers": 4
+          },
+          "metadata": {
+            "revision": "a4e54a30f194efd20beeadd0e75db8e65204c63e",
+            "dirty": "unknown",
+            "observed_at": "2026-11-17T07:23:10.393596Z",
+            "source_evidence": "asynchronous_unattested",
+            "os": "darwin",
+            "arch": "arm64",
+            "cpus": 18,
+            "wrapper_go": "go1.27.3",
+            "go_binary_build": "go1.27.3",
+            "goroot_version": "go1.27.3",
+            "go_pairing": "matched_build_versions",
+            "fresh": "true",
+            "workspace": "auto_unknown",
+            "config_key_id": "77ecda12bc7b03e9",
+            "config_hmac": {
+              ".mise.toml": "b886e04de7213106887ebfea567b074f17609c680b802802d43f9f3f85cef76a",
+              "dva.yml": "a09f211a87a646e0ac01038096471b1e3eef026172f2d34546b607494fb53857",
+              "go.mod": "4ca2fbff36eafd05deceaafb0a9d012ff79072462e350a313ae41ad5559d8b04",
+              "go.sum": "ac317b94b1a969d46615d9f1743afb5782a03ff94b323ecd46d072c87a1c2ed0"
+            },
+            "config_fingerprint_status": "complete"
+          }
+        },
+        "events": {
+          "status": "complete",
+          "counts": {
+            "pass": 24,
+            "run": 23,
+            "start": 1
+          },
+          "incomplete_count": 0,
+          "pending_build_count": 0,
+          "pending_package_count": 0,
+          "go_test_cache_hint_seen": false,
+          "timings_truncated": null
+        }
+      },
+      {
+        "mode": "direct",
+        "argv": [
+          "go",
+          "test",
+          "-count=1",
+          "-timeout",
+          "75s",
+          "./internal/agentdeny"
+        ],
+        "wall_seconds": 0.6491781668737531,
+        "returncode": 0,
+        "timeout": false
+      },
+      {
+        "mode": "observed",
+        "argv": [
+          "go",
+          "run",
+          "./tools/cimetrics",
+          "run",
+          "--check",
+          "commit-test",
+          "--",
+          "go",
+          "test",
+          "-json",
+          "-count=1",
+          "-timeout",
+          "75s",
+          "./internal/agentdeny"
+        ],
+        "wall_seconds": 0.9180592498742044,
+        "returncode": 0,
+        "timeout": false,
+        "measurement": {
+          "measurement_id": "1b2aeb04d9d9bcb3d1aaa0382fe288a3",
+          "check_outcome": "succeeded",
+          "collection_status": "complete",
+          "collection_reason": null,
+          "wall_ms": 644,
+          "exit_code": 0,
+          "signal": null,
+          "output_degraded": null,
+          "options": {
+            "flags": [
+              "-json",
+              "-count=1",
+              "-timeout=1m15s",
+              "GOFLAGS:-p=1"
+            ],
+            "packages": [
+              "./internal/agentdeny"
+            ],
+            "test_filter": false,
+            "unclassified_options": false,
+            "workers": 4
+          },
+          "metadata": {
+            "revision": "a4e54a30f194efd20beeadd0e75db8e65204c63e",
+            "dirty": "unknown",
+            "observed_at": "2026-11-17T07:23:12.093343Z",
+            "source_evidence": "asynchronous_unattested",
+            "os": "darwin",
+            "arch": "arm64",
+            "cpus": 18,
+            "wrapper_go": "go1.27.3",
+            "go_binary_build": "go1.27.3",
+            "goroot_version": "go1.27.3",
+            "go_pairing": "matched_build_versions",
+            "fresh": "true",
+            "workspace": "auto_unknown",
+            "config_key_id": "77ecda12bc7b03e9",
+            "config_hmac": {
+              ".mise.toml": "b886e04de7213106887ebfea567b074f17609c680b802802d43f9f3f85cef76a",
+              "dva.yml": "a09f211a87a646e0ac01038096471b1e3eef026172f2d34546b607494fb53857",
+              "go.mod": "4ca2fbff36eafd05deceaafb0a9d012ff79072462e350a313ae41ad5559d8b04",
+              "go.sum": "ac317b94b1a969d46615d9f1743afb5782a03ff94b323ecd46d072c87a1c2ed0"
+            },
+            "config_fingerprint_status": "complete"
+          }
+        },
+        "events": {
+          "status": "complete",
+          "counts": {
+            "pass": 24,
+            "run": 23,
+            "start": 1
+          },
+          "incomplete_count": 0,
+          "pending_build_count": 0,
+          "pending_package_count": 0,
+          "go_test_cache_hint_seen": false,
+          "timings_truncated": null
+        }
+      },
+      {
+        "mode": "observed",
+        "argv": [
+          "go",
+          "run",
+          "./tools/cimetrics",
+          "run",
+          "--check",
+          "commit-test",
+          "--",
+          "go",
+          "test",
+          "-json",
+          "-count=1",
+          "-timeout",
+          "75s",
+          "./internal/agentdeny"
+        ],
+        "wall_seconds": 0.8060932499356568,
+        "returncode": 0,
+        "timeout": false,
+        "measurement": {
+          "measurement_id": "1d1b2b51794d3d4f2e933a48c5bd7086",
+          "check_outcome": "succeeded",
+          "collection_status": "complete",
+          "collection_reason": null,
+          "wall_ms": 635,
+          "exit_code": 0,
+          "signal": null,
+          "output_degraded": null,
+          "options": {
+            "flags": [
+              "-json",
+              "-count=1",
+              "-timeout=1m15s",
+              "GOFLAGS:-p=1"
+            ],
+            "packages": [
+              "./internal/agentdeny"
+            ],
+            "test_filter": false,
+            "unclassified_options": false,
+            "workers": 4
+          },
+          "metadata": {
+            "revision": "a4e54a30f194efd20beeadd0e75db8e65204c63e",
+            "dirty": "unknown",
+            "observed_at": "2026-11-17T07:23:12.919398Z",
+            "source_evidence": "asynchronous_unattested",
+            "os": "darwin",
+            "arch": "arm64",
+            "cpus": 18,
+            "wrapper_go": "go1.27.3",
+            "go_binary_build": "go1.27.3",
+            "goroot_version": "go1.27.3",
+            "go_pairing": "matched_build_versions",
+            "fresh": "true",
+            "workspace": "auto_unknown",
+            "config_key_id": "77ecda12bc7b03e9",
+            "config_hmac": {
+              ".mise.toml": "b886e04de7213106887ebfea567b074f17609c680b802802d43f9f3f85cef76a",
+              "dva.yml": "a09f211a87a646e0ac01038096471b1e3eef026172f2d34546b607494fb53857",
+              "go.mod": "4ca2fbff36eafd05deceaafb0a9d012ff79072462e350a313ae41ad5559d8b04",
+              "go.sum": "ac317b94b1a969d46615d9f1743afb5782a03ff94b323ecd46d072c87a1c2ed0"
+            },
+            "config_fingerprint_status": "complete"
+          }
+        },
+        "events": {
+          "status": "complete",
+          "counts": {
+            "pass": 24,
+            "run": 23,
+            "start": 1
+          },
+          "incomplete_count": 0,
+          "pending_build_count": 0,
+          "pending_package_count": 0,
+          "go_test_cache_hint_seen": false,
+          "timings_truncated": null
+        }
+      },
+      {
+        "mode": "direct",
+        "argv": [
+          "go",
+          "test",
+          "-count=1",
+          "-timeout",
+          "75s",
+          "./internal/agentdeny"
+        ],
+        "wall_seconds": 0.7160537499003112,
+        "returncode": 0,
+        "timeout": false
+      },
+      {
+        "mode": "direct",
+        "argv": [
+          "go",
+          "test",
+          "-count=1",
+          "-timeout",
+          "75s",
+          "./internal/agentdeny"
+        ],
+        "wall_seconds": 0.696018457878381,
+        "returncode": 0,
+        "timeout": false
+      },
+      {
+        "mode": "observed",
+        "argv": [
+          "go",
+          "run",
+          "./tools/cimetrics",
+          "run",
+          "--check",
+          "commit-test",
+          "--",
+          "go",
+          "test",
+          "-json",
+          "-count=1",
+          "-timeout",
+          "75s",
+          "./internal/agentdeny"
+        ],
+        "wall_seconds": 0.9157785843126476,
+        "returncode": 0,
+        "timeout": false,
+        "measurement": {
+          "measurement_id": "9091ebf1b25fcbf15d17ca1e66e8a1dc",
+          "check_outcome": "succeeded",
+          "collection_status": "complete",
+          "collection_reason": null,
+          "wall_ms": 711,
+          "exit_code": 0,
+          "signal": null,
+          "output_degraded": null,
+          "options": {
+            "flags": [
+              "-json",
+              "-count=1",
+              "-timeout=1m15s",
+              "GOFLAGS:-p=1"
+            ],
+            "packages": [
+              "./internal/agentdeny"
+            ],
+            "test_filter": false,
+            "unclassified_options": false,
+            "workers": 4
+          },
+          "metadata": {
+            "revision": "a4e54a30f194efd20beeadd0e75db8e65204c63e",
+            "dirty": "unknown",
+            "observed_at": "2026-11-17T07:23:15.128818Z",
+            "source_evidence": "asynchronous_unattested",
+            "os": "darwin",
+            "arch": "arm64",
+            "cpus": 18,
+            "wrapper_go": "go1.27.3",
+            "go_binary_build": "go1.27.3",
+            "goroot_version": "go1.27.3",
+            "go_pairing": "matched_build_versions",
+            "fresh": "true",
+            "workspace": "auto_unknown",
+            "config_key_id": "77ecda12bc7b03e9",
+            "config_hmac": {
+              ".mise.toml": "b886e04de7213106887ebfea567b074f17609c680b802802d43f9f3f85cef76a",
+              "dva.yml": "a09f211a87a646e0ac01038096471b1e3eef026172f2d34546b607494fb53857",
+              "go.mod": "4ca2fbff36eafd05deceaafb0a9d012ff79072462e350a313ae41ad5559d8b04",
+              "go.sum": "ac317b94b1a969d46615d9f1743afb5782a03ff94b323ecd46d072c87a1c2ed0"
+            },
+            "config_fingerprint_status": "complete"
+          }
+        },
+        "events": {
+          "status": "complete",
+          "counts": {
+            "pass": 24,
+            "run": 23,
+            "start": 1
+          },
+          "incomplete_count": 0,
+          "pending_build_count": 0,
+          "pending_package_count": 0,
+          "go_test_cache_hint_seen": false,
+          "timings_truncated": null
+        }
+      }
+    ]
+  },
+  "overhead_raw_sha256": "ea24c31ca6b19b60520abea685a18b69cc19e58686823d535ff4e0408e32a6a7",
+  "clarifications": [
+    "Harness explicitly used inherited GOCACHE, or the macOS user build-cache path if unset. Initial cache contents were not measured or cleared; warmups are separate.",
+    "The observed difference includes Go -json, Go-run tool startup, rendering and collection; small sample, uncontrolled host load, no universal p95 or speed guarantee.",
+    "After measurement only common-test helper placement changed for Windows build analysis. Runtime code hashes still match; test-source changes are listed. Windows execution was not tested."
+  ],
+  "test_source_changes_after_diagnostic": [
+    "tools/internal/cimetrics/output_test.go",
+    "tools/internal/cimetrics/run_test.go"
+  ],
+  "runtime_code_still_matches": true,
+  "prepared_macos_tools": {
+    "floor": {
+      "sops_version": "3.13.1",
+      "sops": "a2c0dd37eb031068af6ef213b78cfa67b7f1afd76c2e5cc404257f42bbc8367d",
+      "age": "0e3ea0b1bed2b30aa2dc46eef4e1723864d626c80f37319c20d9b73ca045f56f",
+      "age-keygen": "37c4b509d86f233d8dd065f5a905e11d2e1d5549d59445a9bc52da9235a622ad"
+    },
+    "latest": {
+      "sops_version": "3.13.3",
+      "sops": "b97c0d434aab577dc40310e8d22ff9e45eef4c80638ab978daae9b4681c59286",
+      "age": "0e3ea0b1bed2b30aa2dc46eef4e1723864d626c80f37319c20d9b73ca045f56f",
+      "age-keygen": "37c4b509d86f233d8dd065f5a905e11d2e1d5549d59445a9bc52da9235a622ad"
+    }
+  },
+  "committed_head_fast_profile_followup": {
+    "state": "planned; executed after task commit, results belong to immutable DVA/CE receipts",
+    "method": "CE experiment with tree identical to candidate; stage only the following no-behavior-change comment in internal/agentdeny/match_test.go; run dva ci commit --fresh --json twice, then checkpoint and protected discard",
+    "comment": "// TASK-619 staged fast-profile diagnostic; no behavior change."
+  }
+}

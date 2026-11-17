@@ -56,6 +56,7 @@ jobs:
         env:
           GOMAXPROCS: "1"
           GOTESTFLAGS: "-json"
+          DVA_PROJECT_CI_RAW_JSON: "1"
         shell: bash
         run: |
           set -euo pipefail
@@ -75,10 +76,28 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
+      - name: Summarize test metrics
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 1
+        run: go run ./tools/cimetrics summarize --check unit --input tmp/ci/test.jsonl --output tmp/ci/test-summary.json
+
+      - name: Preserve test metrics
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 1
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-metrics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: tmp/ci/test-summary.json
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Integration Test
         env:
           GOMAXPROCS: "1"
           GOTESTFLAGS: "-json"
+          DVA_PROJECT_CI_RAW_JSON: "1"
         shell: bash
         run: |
           set -euo pipefail
@@ -91,6 +110,23 @@ jobs:
         with:
           name: integration-progress-${{ github.run_id }}-${{ github.run_attempt }}
           path: tmp/ci/integration.jsonl
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Summarize integration metrics
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 1
+        run: go run ./tools/cimetrics summarize --check integration --input tmp/ci/integration.jsonl --output tmp/ci/integration-summary.json
+
+      - name: Preserve integration metrics
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 1
+        uses: actions/upload-artifact@v7
+        with:
+          name: integration-metrics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: tmp/ci/integration-summary.json
           if-no-files-found: warn
           retention-days: 14
 

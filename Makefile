@@ -241,20 +241,30 @@ dogfood-skill-install:
 # 2. The CI Test / Integration Test steps set GOMAXPROCS=1 so -race cannot
 #    saturate a 2-core hosted runner and starve its heartbeat.
 test:
-	go test -timeout 5m -race -cover $(GOTESTFLAGS) ./...
+	@if [ "$${DVA_PROJECT_CI_RAW_JSON:-}" = 1 ]; then \
+		go test -timeout 5m -race -cover $(GOTESTFLAGS) ./...; \
+	else \
+		go run ./tools/cimetrics run --check unit -- go test -json -timeout 5m -race -cover $(GOTESTFLAGS) ./...; \
+	fi
 
 ## test-skill-dogfood: Run the built executable through a hermetic skill-installer round-trip (CI)
 test-skill-dogfood: build
-	DVA_DOGFOOD_BIN="$(abspath $(BUILD_DIR)/$(BINARY))" go test -run '^TestBuiltExecutableDogfood$$' ./tools/skilldogfood
+	DVA_DOGFOOD_BIN="$(abspath $(BUILD_DIR)/$(BINARY))" go run ./tools/cimetrics run --check skill-dogfood -- go test -json -run '^TestBuiltExecutableDogfood$$' ./tools/skilldogfood
 
 ## test-integration: Run integration tests (requires build tag) (CI)
 test-integration:
-	go test -tags=integration -race -timeout 10m $(GOTESTFLAGS) ./internal/integration/...
+	@if [ "$${DVA_PROJECT_CI_RAW_JSON:-}" = 1 ]; then \
+		go test -tags=integration -race -timeout 10m $(GOTESTFLAGS) ./internal/integration/...; \
+	else \
+		go run ./tools/cimetrics run --check integration -- go test -json -tags=integration -race -timeout 10m $(GOTESTFLAGS) ./internal/integration/...; \
+	fi
 
 ## lint: Run linters (golangci-lint v2 + gopls check, both pinned in .mise.toml)
 lint: vet fmt-check
 	go run ./tools/archcheck
-	sh scripts/ci-lint.sh
+	go run ./tools/cimetrics run --check lint-preflight -- sh scripts/ci-lint.sh preflight
+	go run ./tools/cimetrics run --check lint-golangci -- sh scripts/ci-lint.sh golangci
+	go run ./tools/cimetrics run --check lint-gopls -- sh scripts/ci-lint.sh gopls
 
 ## vet: Run go vet
 vet:

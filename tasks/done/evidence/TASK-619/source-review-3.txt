@@ -1,0 +1,18 @@
+TASK-619 final source re-review
+Reviewer execution reference: /root/ci_contract_review
+Observed concrete model: unknown
+Reviewed baseline: a4e54a30f194efd20beeadd0e75db8e65204c63e
+
+판정: 기존 차단 사항이 모두 해결됐으며 추가 source 차단 사항은 없다.
+
+events.go는 이제 ImportPath별 pending build를 추적하고 대응하는 terminal만 제거한다. 다른 package의 완료나 일부 build-fail이 나머지 build를 완료로 바꾸지 않는다. 생성된 test import ID와 package ID가 다르면 보수적으로 partial을 유지한다. 새 fixture가 x→y, x/z→x, 생성 ID 불일치와 양쪽 종료를 구분한다.
+
+pending build/package의 count와 식별자는 개인정보 처리 후 제한된 크기로 제공한다. 상세 목록 128개 상한과 잘림 표시도 확인했다.
+
+이전 검토의 나머지 수정도 유지된다. 출력은 raw tuple로 association을 분리하고 run/start/malformed에서 이전 버퍼를 폐기한다. 불완전 build event의 raw 출력 우회를 막는다. 최종 publish·prune는 같은 nonblocking lock 안에서 처리하고 경쟁 시 active 기록으로 남긴다. hosted는 기존 raw artifact를 먼저 보존하며, 새 요약·metrics 업로드만 별도 1분 상한과 continue-on-error를 사용한다.
+
+git diff --check가 통과했다. 파일 변경·테스트 실행·하위 위임은 하지 않았다. main과 worker의 검사 성공을 이 검토자의 실행으로 표시하지 않는다.
+
+이 판정은 source에 한정한다. 실제 오버헤드·native 실행 증거와 완료 카드의 최종 판정, 확정 커밋의 gate·통합 검증은 후속 단계다.
+
+VERDICT: PASS

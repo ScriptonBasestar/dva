@@ -53,4 +53,5 @@ TASK-616은 원격 Linux 검사를 유지하고 [명시적 로컬 macOS 검증](
 TASK-617은 native dev/full, 독립 검토와
 [master CI 6개 job](https://github.com/ScriptonBasestar/dva/actions/runs/44009932433)이 통과했다.
 이는 위 원인 미확정 timeout이 해결됐다는 뜻이 아니다.
-반복 발생을 관찰할 [메트릭 수집안](ci-metrics-proposal.md)은 검토 제안이며 아직 구현하지 않았다.
+반복 발생을 관찰할 [실행 메트릭](ci-metrics.md)은 TASK-619에서 연결한다.
+새 수집 기능과 기존 timeout 원인의 해결은 구분한다.

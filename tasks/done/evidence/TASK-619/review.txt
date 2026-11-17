@@ -1,0 +1,29 @@
+TASK-619 source and done-card completion review
+Reviewer execution reference: /root/ci_contract_review
+Observed concrete model: unknown
+Reviewed baseline: a4e54a30f194efd20beeadd0e75db8e65204c63e
+
+판정: 차단 사항 없음. 현재 다섯 완료 기준과 증거는 done 승격을 지원한다. 확정 커밋의 profile·hosted gate 및 전달 성공은 별도 확인 대상이다.
+
+완료 기준 1: PASS.
+수정된 parser는 완료·미완료, package/build terminal, 병렬·pause/cont, zero/missing Elapsed와 cache 힌트를 구분한다. 동적·미확인 식별자는 가리고 Output 원문은 요약에 저장하지 않는다. 이전 두 FAIL과 수정 후 PASS 원문도 보존돼 있다.
+
+완료 기준 2: PASS.
+출력 association의 반복·손실·redaction 충돌을 보완했고, malformed event의 raw 방출을 막는다. passing sibling·미완료 출력은 버리며 알려진 실패의 제한된 진단만 방출한다. 전역 버퍼 상한, truncation 표시와 원래 자식 종료·취소·회수 경계가 유지된다. 실제 Go fixture는 passing t.Log와 실패 진단을 함께 검사한다.
+
+완료 기준 3: PASS.
+private namespace, 파일 권한·소유권·symlink 검사, 활성 파일 lock과 orphan 복구를 구현했다. publish와 retention은 같은 nonblocking lock을 사용하며 경쟁 시 검사를 기다리게 하지 않고 active 기록을 남긴다. 복구 결과는 partial/unknown이다.
+
+완료 기준 4: PASS.
+commit의 실제 test만 수집하고 compile 경로는 제외한다. native profile·Make·hosted wiring은 기존 선택·검사 인자·fresh·예산을 유지한다. lint 의존성과 gopls findings/nonzero 판정을 보존한다. hosted raw artifact는 먼저 보존하고 새 부가 단계에만 별도 상한과 continue-on-error를 적용한다.
+
+완료 기준 5: PASS.
+diagnostic.json의 원본 hash와 보존된 결과를 직접 대조했다. 측정 source hash 31개 중 차이는 명시된 두 test 파일뿐이며 runtime 코드 지문은 같다. 네 collector 기록의 필드·event count도 실제 private 기록과 일치한다. 각 기록은 complete이며 23 run 이벤트와 package를 포함한 24 pass 이벤트를 보여준다.
+
+일반 반복의 직접 명령 0.649~0.716초, 수집 명령 0.806~0.918초가 기록과 일치한다. 별도 warmup, 초기 cache 미측정·미삭제, uncontrolled host load를 밝히고 차이에 JSON·go-run·렌더링·수집 비용이 함께 포함됨을 명시한다. 이를 모든 CI의 비용이나 p95로 일반화하지 않는다. 준비된 Mac 도구 receipt도 증거와 일치한다.
+
+진단의 planned 항목은 당시 후속 계획으로 한정하고 최종 실행 상태는 DVA/CE receipt가 소유한다고 명시한다. TASK-617 timeout을 해결했다거나 최종 staged fast/dev/full/Mac/hosted가 이미 통과했다고 주장하지 않는다.
+
+파일 변경·테스트 실행·하위 위임은 하지 않았다. git diff --check, 상대 링크와 문서 크기를 확인했다. main/worker의 검사 결과는 그들의 실행 증거이며 이 검토자의 실행으로 표시하지 않는다.
+
+VERDICT: PASS
