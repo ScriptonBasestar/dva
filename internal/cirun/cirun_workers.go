@@ -60,8 +60,8 @@ func workerBudget(env []string, step map[string]string, inherited []string, jobs
 		goSource = "default"
 	}
 	for i := 0; i < len(goFlags); i++ {
-		if strings.HasPrefix(goFlags[i], "-p=") {
-			goJobs = observed(strings.TrimPrefix(goFlags[i], "-p="), goSource)
+		if value, ok := strings.CutPrefix(goFlags[i], "-p="); ok {
+			goJobs = observed(value, goSource)
 		} else if goFlags[i] == "-p" && i+1 < len(goFlags) {
 			i++
 			goJobs = observed(goFlags[i], goSource)
