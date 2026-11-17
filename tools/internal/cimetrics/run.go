@@ -148,9 +148,7 @@ func RunWithStdin(ctx context.Context, checkID string, argv []string, stdin io.R
 			_ = killGroup(pid)
 		}
 	}
-	if cancellation != nil && runErr == nil {
-		runErr = cancellation
-	}
+	runErr = preserveCancellation(runErr, cancellation)
 	finished := time.Now()
 	outputDegraded := false
 	if renderer != nil {
@@ -198,6 +196,13 @@ func RunWithStdin(ctx context.Context, checkID string, argv []string, stdin io.R
 		if !c.finish(r) {
 			_, _ = fmt.Fprintf(stderr, "ci-metrics: collection partial (measurement=%s)\n", id)
 		}
+	}
+	return runErr
+}
+
+func preserveCancellation(runErr, cancellation error) error {
+	if cancellation != nil && (runErr == nil || errors.Is(runErr, exec.ErrWaitDelay)) {
+		return errors.Join(runErr, cancellation)
 	}
 	return runErr
 }

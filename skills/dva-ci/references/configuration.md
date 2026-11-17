@@ -50,7 +50,7 @@ ci:
 | `steps[].timeout` | 전체 제한보다 작거나 같은 개별 제한 |
 | `steps[].child_ci` | native run에서만 `independent-root` 허용. 생략하면 중첩 CI 거절 |
 | `steps[].condition` | native 단계의 읽기 전용 선택. `run`과 양의 유한 `timeout`을 명시하며 [조건 계약](../../../docs/ci-step-conditions.md)을 따른다 |
-| `steps[].host_slot` | `true`면 native run 단계가 실행되는 동안 호스트 전체 advisory 슬롯을 잡는다. 서로 다른 저장소·워크트리·세션의 `dva` 실행끼리 같은 슬롯으로 직렬화한다. 슬롯 대기는 `steps[].timeout` 예산에서 제외되며 profile `timeout`만 대기를 제한한다. OCI 단계와 함께 쓸 수 없다 |
+| `steps[].host_slot` | `true`면 native run 단계에 호스트 자원 슬롯을 사용한다. 정책 유무에 따른 호환·공유 규칙은 아래를 따른다. OCI 단계와 함께 쓸 수 없다 |
 
 독립 단계는 `max_parallel` 범위에서 병렬 실행할 수 있다. 목록 순서로 선행 관계를
 대신하지 않는다. 순환·없는 참조·중복 이름·빈 명령은 실행 전에 실패한다.
@@ -65,6 +65,7 @@ ci:
 목록 전체를 교체한다. `locks: []`는 공유 자원 락을 제거한다. 프로필을 소유한 설정
 디렉터리의 자동 락은 `locks`와 무관하게 항상 적용된다.
 
+`DVA_RESOURCE_POLICY`가 **설정되지 않은** 호환 경로에서,
 `host_slot`을 선언한 단계는 실행 내내 CI 상태 루트의 고정 슬롯 파일
 `locks/host-slot.lock`을 잡는다. 이 파일은 저장소·워크트리·세션과 무관하게 호스트의
 모든 `dva` 실행이 공유하므로 서로 다른 root의 선언된 무거운 단계끼리만 직렬화한다.
@@ -81,6 +82,16 @@ ID·PID·profile·단계·root·점유 시각을 밝히고, 획득·해제 시�
 조상 점유로 즉시 실패시켜 자기 부모를 기다리는 교착에 빠지지 않는다. 그 외 조상이
 스핀을 잡은 상태의 재선언도 같은 검사로 즉시 실패한다. 근거는
 [결정 기록 621](../../../decisions/621-host-slot-serialization.md)에 있다.
+
+`DVA_RESOURCE_POLICY`가 선언되면 `host_slot`은 공용 admission provider의
+`heavy`/`normal` 요청으로 바뀐다. 정책의 `max_heavy`는 정확히 1이어야 한다.
+빈 값·무효 정책·0 또는 2 이상의 `max_heavy`는 실패하며 이전 락으로 우회하지
+않는다. 대기는 최대 5분과 profile deadline 중 빠른 쪽으로 제한하며 단계 실행
+제한은 획득 후 적용한다. 조건 거짓과 재사용 hit은 요청하지 않는다. 프로필
+`admission`과 `host_slot`의 혼합, provider로 감싼 중첩 실행, `child_ci`와의
+혼합은 거부한다. worker 제한은 실제 단계 환경에 적용한다. 종료 확인 실패 시
+요청을 quarantine으로 남긴다. 호환 락과 새로운 provider는 서로 다른 큐이므로
+구버전이나 비참여 실행과의 상호 배제는 보장하지 않는다.
 
 프로필 map은 이름별 병합, scalar는 나중 값 우선, `steps`와 `locks` 목록은 지정 시
 교체한다. `tool_jobs` 생략은 이전 값을 유지하고, 명시한 양의 정수는 이전 값을

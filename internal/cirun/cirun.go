@@ -41,12 +41,82 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 		return report, resolveErr
 	}
 	opts.Profile = resolved
+	bridge, err := resolveHostSlotBridge(opts)
+	if err != nil {
+		return report, err
+	}
 	opts.Env = setCIEnvironment(opts.Env, "DVA_RESOURCE_WORKER_LIMIT", "")
+	var admissionAttempt *Report
+	var admissionState string
+	var admissionFinalWritten bool
+	defer func() {
+		if admissionAttempt == nil || admissionFinalWritten {
+			return
+		}
+		attempt := *admissionAttempt
+		if report.ID == attempt.ID {
+			attempt = report
+		}
+		attempt.FinishedAt = time.Now()
+		attempt.Duration = attempt.FinishedAt.Sub(attempt.StartedAt)
+		switch {
+		case errors.Is(retErr, context.DeadlineExceeded):
+			attempt.Status = "timed_out"
+		case errors.Is(retErr, context.Canceled):
+			attempt.Status = "canceled"
+		default:
+			attempt.Status = "failed"
+		}
+		if retErr != nil {
+			attempt.Error = retErr.Error()
+			if attempt.Admission != nil && attempt.Admission.Outcome == "waiting" {
+				attempt.Admission.Outcome = attempt.Status
+			}
+		}
+		if report.ID == attempt.ID {
+			report = attempt
+		}
+		if err := writeReport(admissionState, attempt); err != nil {
+			retErr = errors.Join(retErr, fmt.Errorf("record admission attempt: %w", err))
+		}
+	}()
 	var cleanupTracker *resourceCleanupTracker
 	var finishAdmission func() error
 	if admission := opts.Profile.Admission; admission != nil {
 		if os.Getenv("DVA_RESOURCE_SUPERVISED") != "" || environmentValue(opts.Env, "DVA_RESOURCE_SUPERVISED") != "" || os.Getenv(parentRunEnv) != "" || environmentValue(opts.Env, parentRunEnv) != "" {
 			return report, errors.New("nested resource admission is unsupported")
+		}
+		root, rootErr := filepath.EvalSymlinks(opts.Root)
+		if rootErr != nil {
+			return report, fmt.Errorf("canonicalize ci root: %w", rootErr)
+		}
+		root, rootErr = filepath.Abs(root)
+		if rootErr != nil {
+			return report, rootErr
+		}
+		admissionState, rootErr = stateDirectory(opts.StateDir)
+		if rootErr != nil {
+			return report, rootErr
+		}
+		if rootErr = os.MkdirAll(admissionState, 0700); rootErr != nil {
+			return report, rootErr
+		}
+		admissionState, rootErr = filepath.Abs(admissionState)
+		if rootErr != nil {
+			return report, rootErr
+		}
+		admissionState, rootErr = filepath.EvalSymlinks(admissionState)
+		if rootErr != nil {
+			return report, rootErr
+		}
+		attemptID, rootErr := runID()
+		if rootErr != nil {
+			return report, rootErr
+		}
+		admissionAttempt = &Report{ID: attemptID, Root: root, Profile: opts.ProfileName, Subproject: opts.Subproject, Status: "waiting", StartedAt: time.Now(), Fresh: opts.Fresh || opts.Profile.Fresh, Admission: &AdmissionObservation{Class: admission.Class, Priority: admission.Priority, Outcome: "waiting"}}
+		report = *admissionAttempt
+		if rootErr = writeReport(admissionState, report); rootErr != nil {
+			return report, fmt.Errorf("record waiting admission: %w", rootErr)
 		}
 		policyPath := environmentValue(opts.Env, "DVA_RESOURCE_POLICY")
 		if policyPath == "" {
@@ -68,25 +138,40 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 			return report, err
 		}
 		waitCtx, cancelWait := context.WithTimeout(parent, wait)
-		lease, err := resourceadmission.Acquire(waitCtx, dir, p, digest, admission.Class, admission.Priority)
+		lease, observation, err := admissionWait(waitCtx, dir, p, digest, admission.Class, admission.Priority, "profile", outputOrDiscard(opts.Output))
 		cancelWait()
+		admissionAttempt.Admission = observation
+		report = *admissionAttempt
 		if err != nil {
 			return report, err
 		}
+		admissionExecutionStart := time.Now()
 		cleanupTracker = &resourceCleanupTracker{}
 		finishAdmission = func() error {
+			duration := time.Since(admissionExecutionStart).String()
+			observation.ExecutionDuration = &duration
 			if cleanupTracker.isUncertain() {
+				observation.Outcome = "quarantined"
 				return errors.Join(fmt.Errorf("resource lease %s quarantined: process group cleanup unconfirmed", lease.ID()), lease.Quarantine())
 			}
 			releaseCtx, cancelRelease := context.WithTimeout(context.Background(), time.Second)
 			defer cancelRelease()
-			return lease.Complete(releaseCtx)
+			err := lease.Complete(releaseCtx)
+			if err != nil {
+				observation.Outcome = "failed"
+			} else {
+				observation.Outcome = "completed"
+			}
+			return err
 		}
 		defer func() {
 			if finishAdmission != nil {
 				retErr = errors.Join(retErr, finishAdmission())
 			}
 		}()
+		if err := writeReport(admissionState, report); err != nil {
+			return report, fmt.Errorf("record acquired admission: %w", err)
+		}
 		opts.Env = setCIEnvironment(opts.Env, "DVA_RESOURCE_SUPERVISED", "1")
 		if total := p.WorkerLimits[admission.Class]; total > 0 {
 			opts.Profile.MaxParallel = min(opts.Profile.MaxParallel, total)
@@ -95,6 +180,9 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 		}
 	}
 	ctx := parent
+	if bridge != nil {
+		ctx = context.WithValue(ctx, hostSlotBridgeKey{}, bridge)
+	}
 	if cleanupTracker != nil {
 		ctx = context.WithValue(ctx, resourceCleanupKey{}, cleanupTracker)
 	}
@@ -136,12 +224,22 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 	if err != nil {
 		return report, err
 	}
-	id, err := runID()
-	if err != nil {
-		return report, err
+	var id string
+	if admissionAttempt != nil {
+		id = admissionAttempt.ID
+	} else {
+		id, err = runID()
+		if err != nil {
+			return report, err
+		}
 	}
 	fresh := opts.Fresh || opts.Profile.Fresh
-	report = Report{ID: id, Root: root, Profile: opts.ProfileName, Subproject: opts.Subproject, Status: "running", StartedAt: time.Now(), LogPath: filepath.Join(state, "logs", id+".log"), Fresh: fresh}
+	startedAt := time.Now()
+	var observation *AdmissionObservation
+	if admissionAttempt != nil {
+		startedAt, observation = admissionAttempt.StartedAt, admissionAttempt.Admission
+	}
+	report = Report{ID: id, Root: root, Profile: opts.ProfileName, Subproject: opts.Subproject, Status: "running", StartedAt: startedAt, LogPath: filepath.Join(state, "logs", id+".log"), Fresh: fresh, Admission: observation}
 	if err := os.MkdirAll(filepath.Dir(report.LogPath), 0o700); err != nil {
 		return report, err
 	}
@@ -329,6 +427,7 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 	if retErr != nil {
 		report.Error = retErr.Error()
 	}
+	admissionFinalWritten = admissionAttempt != nil
 	if e := writeReport(state, report); e != nil {
 		if report.Status == "succeeded" || report.Status == "skipped" {
 			report.Status = "failed"

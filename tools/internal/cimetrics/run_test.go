@@ -17,6 +17,28 @@ import (
 	"time"
 )
 
+func TestPreserveCancellation(t *testing.T) {
+	childFailure := errors.New("child failed")
+	for _, tc := range []struct {
+		name                                       string
+		runErr, cancellation                       error
+		wantCancellation, wantWaitDelay, wantChild bool
+	}{
+		{"cancel after success", nil, context.Canceled, true, false, false},
+		{"cancel with pipe wait", exec.ErrWaitDelay, context.Canceled, true, true, false},
+		{"deadline with pipe wait", exec.ErrWaitDelay, context.DeadlineExceeded, true, true, false},
+		{"child failure unchanged", childFailure, context.Canceled, false, false, true},
+		{"completed pipe failure unchanged", exec.ErrWaitDelay, nil, false, true, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got := preserveCancellation(tc.runErr, tc.cancellation)
+			if errors.Is(got, tc.cancellation) != tc.wantCancellation || errors.Is(got, exec.ErrWaitDelay) != tc.wantWaitDelay || errors.Is(got, childFailure) != tc.wantChild {
+				t.Fatalf("preserveCancellation(%v, %v) = %v", tc.runErr, tc.cancellation, got)
+			}
+		})
+	}
+}
+
 func awaitRecord(t *testing.T, state string) (Record, []byte) {
 	t.Helper()
 	root, ok := findProjectRoot()

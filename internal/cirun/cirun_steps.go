@@ -311,15 +311,47 @@ func runStep(ctx context.Context, root string, step config.CIStep, inherited []s
 		if origin == nil {
 			origin = ctx
 		}
-		runtime, _ := origin.Value(compositionRuntimeKey{}).(compositionRuntime)
-		release, waited, err := acquireHostSlot(origin, hostSlotState(origin), hostSlotMetadata{
-			RunID: runtime.id, PID: os.Getpid(), Root: root, Profile: runtime.profile, Step: step.Name,
-		}, step.Name, out, runtime.ancestry)
-		r.HostSlotWait = waited
-		if err != nil {
-			return r, err
+		if bridge, ok := origin.Value(hostSlotBridgeKey{}).(*hostSlotBridge); ok {
+			lease, observation, err := bridge.acquire(origin, step.Name, out)
+			r.Admission = observation
+			if observation.WaitDuration != nil {
+				r.HostSlotWait, _ = time.ParseDuration(*observation.WaitDuration)
+			}
+			if err != nil {
+				return r, err
+			}
+			tracker := &resourceCleanupTracker{}
+			startedExecution := time.Now()
+			defer func() {
+				finishErr := finishHostSlotBridge(lease, tracker)
+				duration := time.Since(startedExecution).String()
+				observation.ExecutionDuration = &duration
+				if finishErr != nil {
+					observation.Outcome = "quarantined"
+				} else {
+					observation.Outcome = "completed"
+				}
+				ret = errors.Join(ret, finishErr)
+			}()
+			origin = context.WithValue(origin, resourceCleanupKey{}, tracker)
+			inherited = setCIEnvironment(inherited, "DVA_RESOURCE_SUPERVISED", "1")
+			if limit := bridge.policy.WorkerLimits["heavy"]; limit > 0 {
+				workers = min(workers, limit)
+				source = "admission"
+				inherited = setCIEnvironment(inherited, "DVA_RESOURCE_WORKER_LIMIT", strconv.Itoa(limit))
+			}
+			_, _ = fmt.Fprintf(out, "ci step %s host_slot=acquired provider=resource waited=%s\n", step.Name, r.HostSlotWait.Round(time.Millisecond))
+		} else {
+			runtime, _ := origin.Value(compositionRuntimeKey{}).(compositionRuntime)
+			release, waited, err := acquireHostSlot(origin, hostSlotState(origin), hostSlotMetadata{
+				RunID: runtime.id, PID: os.Getpid(), Root: root, Profile: runtime.profile, Step: step.Name,
+			}, step.Name, out, runtime.ancestry)
+			r.HostSlotWait = waited
+			if err != nil {
+				return r, err
+			}
+			defer release()
 		}
-		defer release()
 		ctx = origin
 	}
 	stepCtx := ctx

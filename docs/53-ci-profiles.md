@@ -107,6 +107,12 @@ started_at은 scheduler가 step을 배정한 시각이며 최종 receipt에서�
 checkpoint가 전체 검사 완료나 성공을 뜻하지 않는다. 종료 시각과 사라진 출력을
 추정해서 채우지 않으며 새 heartbeat 프로세스는 만들지 않는다.
 
+명시적 profile admission의 대기 단계는 동일 run ID의 `waiting` receipt로 남는다.
+대기 중 duration과 실행 시간은 null이고 상태 출력은 30초마다 반복된다. 획득·실패·
+취소는 대기 시간과 함께 같은 ID로 기록한다. 강제 종료로 `waiting`이 남으면 생존
+상태는 unknown이며 완료·성공으로 간주하지 않는다. wait 출력은 감독 상태이지 작업
+진행의 증거가 아니다.
+
 step의 선택적 `worker_budget`은 자식 환경에 전달하는 `DVA_CI_JOBS`,
 `CARGO_BUILD_JOBS`, `RUST_TEST_THREADS`를 각각 숫자로 기록한다. 세 값이 모두 양의
 정수일 때만 필드를 남기며 그 밖의 값은 기록하지 않는다. 이 값은 도구에 전달한
