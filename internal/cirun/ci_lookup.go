@@ -62,6 +62,8 @@ func lookup(parent context.Context, opts Options, observed func(int)) (LookupRep
 	for i, step := range profile.Steps {
 		s := LookupStep{Name: step.Name, State: "not-reusable"}
 		switch {
+		case step.Condition != nil:
+			s.Reason = "condition-not-evaluated"
 		case opts.Fresh || profile.Fresh:
 			s.Reason = "fresh"
 		case composition:

@@ -25,7 +25,7 @@ import (
 func Run(parent context.Context, opts Options) (report Report, retErr error) {
 	defer func() {
 		if retErr != nil {
-			if report.Status == "" || report.Status == "running" || report.Status == "succeeded" {
+			if report.Status == "" || report.Status == "running" || report.Status == "succeeded" || report.Status == "skipped" {
 				report.Status = "failed"
 			}
 			report.Error = retErr.Error()
@@ -231,7 +231,18 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 	retErr = errors.Join(retErr, writer.err)
 	if report.Status == "running" {
 		if retErr == nil {
-			report.Status = "succeeded"
+			allSkipped := len(report.Steps) > 0
+			for _, step := range report.Steps {
+				if step.Status != "skipped" {
+					allSkipped = false
+					break
+				}
+			}
+			if allSkipped {
+				report.Status, report.SkipReason = "skipped", "no-applicable-steps"
+			} else {
+				report.Status = "succeeded"
+			}
 		} else if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 			report.Status = "timed_out"
 		} else if errors.Is(ctx.Err(), context.Canceled) {
@@ -249,7 +260,7 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 		report.Error = retErr.Error()
 	}
 	if e := writeReport(state, report); e != nil {
-		if report.Status == "succeeded" {
+		if report.Status == "succeeded" || report.Status == "skipped" {
 			report.Status = "failed"
 		}
 		report.Error = errors.Join(retErr, fmt.Errorf("record ci report: %w", e)).Error()

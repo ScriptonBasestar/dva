@@ -111,6 +111,7 @@ func execute(ctx context.Context, root string, p config.CIProfile, inherited []s
 	}
 	markSkipped := func(i int) error {
 		reports[i].Status = "skipped"
+		reports[i].SkipReason = "dependency"
 		complete++
 		if err := checkpoint(reports); err != nil {
 			return fmt.Errorf("checkpoint skipped step %q: %w", p.Steps[i].Name, err)
@@ -132,7 +133,7 @@ func execute(ctx context.Context, root string, p config.CIProfile, inherited []s
 		running++
 		startedAt := reports[i].StartedAt
 		go func() {
-			r, e := runReusableStep(ctx, root, p.Steps[i], inherited, workers, source, out, startedAt)
+			r, e := runConditionedStep(ctx, root, p.Steps[i], inherited, workers, source, out, startedAt)
 			done <- result{i, r, e}
 		}()
 		return nil

@@ -7,6 +7,9 @@ All notable changes to DVA are documented here.
 
 ### Added
 
+- native CI 단계에 읽기 전용 JSON `condition`을 추가합니다. 선택된 검사만 실행·재사용하며
+  조건 오류는 실패, 조건 거짓은 skipped로 구분합니다. lookup과 dry-run은 조건을 실행하지 않습니다.
+
 - macOS 플랫폼 검사를 명시적 로컬 `macos-platform` 프로필로 분리합니다.
   준비된 SOPS floor/latest 도구로 검사하며 원격 CI는 Linux 두 조합을 유지합니다.
 

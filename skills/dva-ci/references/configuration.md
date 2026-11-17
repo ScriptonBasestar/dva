@@ -49,12 +49,14 @@ ci:
 | `steps[].environment` | 단계 환경 변수 |
 | `steps[].timeout` | 전체 제한보다 작거나 같은 개별 제한 |
 | `steps[].child_ci` | native run에서만 `independent-root` 허용. 생략하면 중첩 CI 거절 |
+| `steps[].condition` | native 단계의 읽기 전용 선택. `run`과 양의 유한 `timeout`을 명시하며 [조건 계약](../../../docs/ci-step-conditions.md)을 따른다 |
 
 독립 단계는 `max_parallel` 범위에서 병렬 실행할 수 있다. 목록 순서로 선행 관계를
 대신하지 않는다. 순환·없는 참조·중복 이름·빈 명령은 실행 전에 실패한다.
 `fail_fast: false`면 일반 단계 실패 뒤에도 그 실패와 독립된 준비 완료 단계는 계속 실행한다.
 실패·skip·timeout·cancel된 단계를 선행 조건으로 하는 모든 후속 단계는 실행하지 않고 skip되며,
-CI 전체 결과는 여전히 nonzero다. 반대로 `fail_fast: true`(기본값)는 첫 일반 단계 실패 때
+원인이 실패·timeout·cancel이면 CI 전체 결과는 nonzero다. 조건 거짓은 별도의 skipped 판정이다.
+반대로 `fail_fast: true`(기본값)는 첫 일반 단계 실패 때
 다른 단계를 취소한다. 외부 취소·deadline과 checkpoint/report 무결성 오류는 `fail_fast` 값과
 무관하게 모든 실행을 중단한다.
 락 키는 `^[A-Za-z0-9][A-Za-z0-9_.-]*$`를 만족해야 하며 대소문자를 구분한다. 같은

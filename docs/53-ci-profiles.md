@@ -34,7 +34,7 @@ CI는 root 환경·CI 프로필만 검증하고 child import와 stack·remote·p
 
 ## 설정
 
-필드와 예시는 [번들 설정 참조](../skills/dva-ci/references/configuration.md)를 따른다.
+[필드 참조](../skills/dva-ci/references/configuration.md)와 [조건부 선택](ci-step-conditions.md)을 따른다.
 
 ## 시간과 동시 실행
 

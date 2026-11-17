@@ -33,6 +33,7 @@
 ## CI와 증거
 
 - [CI 프로필](53-ci-profiles.md)
+- [native 단계의 조건부 선택](ci-step-conditions.md)
 - [CI 이벤트별 검사 계약](ci-lifecycle.md), [채택 계획과 현재 적용 상태](ci-lifecycle-adoption.md)
 - [원격 CI 이벤트와 입력](ci-event-routing.md), [Hosted CI 실행 예산](ci-hosted-budgets.md), [로컬 macOS 검증](ci-macos-local.md)
 - [DVA 자체 commit 검사 파일럿](ci-commit-pilot.md), [제한된 실측](ci-commit-measurements.md)

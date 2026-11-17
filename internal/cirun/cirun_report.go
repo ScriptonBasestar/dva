@@ -54,16 +54,25 @@ type Options struct {
 }
 
 type StepReport struct {
+	Condition         *ConditionReport   `json:"condition,omitempty"`
 	Reuse             *ReuseReport       `json:"reuse,omitempty"`
 	CompositionBudget *CompositionBudget `json:"composition_budget,omitempty"`
 	OCI               *ociexec.Report    `json:"oci,omitempty"`
 	Name              string             `json:"name"`
 	Status            string             `json:"status"`
 	Error             string             `json:"error,omitempty"`
+	SkipReason        string             `json:"skip_reason,omitempty"`
 	StartedAt         time.Time          `json:"started_at"`
 	FinishedAt        time.Time          `json:"finished_at"`
 	Duration          time.Duration      `json:"duration"`
 	WorkerBudget      *WorkerBudget      `json:"worker_budget,omitempty"`
+}
+
+type ConditionReport struct {
+	DefinitionSHA256 string `json:"definition_sha256"`
+	Timeout          string `json:"timeout"`
+	Outcome          string `json:"outcome"`
+	Selected         *bool  `json:"selected,omitempty"`
 }
 
 // ReuseReport distinguishes a command that ran from a valid prior PASS. A
@@ -116,6 +125,7 @@ type Report struct {
 	ID, Root, Profile, Status, LogPath string
 	Subproject                         string
 	Error                              string
+	SkipReason                         string
 	StartedAt, FinishedAt              time.Time
 	Duration                           time.Duration
 	Steps                              []StepReport
@@ -135,6 +145,7 @@ func (r Report) MarshalJSON() ([]byte, error) {
 		Status           string             `json:"status"`
 		LogPath          string             `json:"log_path"`
 		Error            string             `json:"error,omitempty"`
+		SkipReason       string             `json:"skip_reason,omitempty"`
 		StartedAt        time.Time          `json:"started_at"`
 		FinishedAt       time.Time          `json:"finished_at"`
 		Duration         string             `json:"duration"`
@@ -145,7 +156,7 @@ func (r Report) MarshalJSON() ([]byte, error) {
 		CompositionDepth int                `json:"composition_depth,omitempty"`
 		Fresh            bool               `json:"fresh,omitempty"`
 	}
-	return json.Marshal(wire{r.ID, r.Root, r.Profile, r.Subproject, r.Status, r.LogPath, r.Error, r.StartedAt, r.FinishedAt, r.Duration.String(), r.Steps, r.Attestation, r.Conflict, r.Parent, r.CompositionDepth, r.Fresh})
+	return json.Marshal(wire{r.ID, r.Root, r.Profile, r.Subproject, r.Status, r.LogPath, r.Error, r.SkipReason, r.StartedAt, r.FinishedAt, r.Duration.String(), r.Steps, r.Attestation, r.Conflict, r.Parent, r.CompositionDepth, r.Fresh})
 }
 
 func (r *Report) UnmarshalJSON(data []byte) error {
@@ -157,6 +168,7 @@ func (r *Report) UnmarshalJSON(data []byte) error {
 		Status           string             `json:"status"`
 		LogPath          string             `json:"log_path"`
 		Error            string             `json:"error,omitempty"`
+		SkipReason       string             `json:"skip_reason,omitempty"`
 		StartedAt        time.Time          `json:"started_at"`
 		FinishedAt       time.Time          `json:"finished_at"`
 		Duration         string             `json:"duration"`
@@ -175,7 +187,7 @@ func (r *Report) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
-	*r = Report{ID: in.ID, Root: in.Root, Profile: in.Profile, Subproject: in.Subproject, Status: in.Status, LogPath: in.LogPath, Error: in.Error, StartedAt: in.StartedAt, FinishedAt: in.FinishedAt, Duration: d, Steps: in.Steps, Attestation: in.Attestation, Conflict: in.Conflict, Parent: in.Parent, CompositionDepth: in.CompositionDepth, Fresh: in.Fresh}
+	*r = Report{ID: in.ID, Root: in.Root, Profile: in.Profile, Subproject: in.Subproject, Status: in.Status, LogPath: in.LogPath, Error: in.Error, SkipReason: in.SkipReason, StartedAt: in.StartedAt, FinishedAt: in.FinishedAt, Duration: d, Steps: in.Steps, Attestation: in.Attestation, Conflict: in.Conflict, Parent: in.Parent, CompositionDepth: in.CompositionDepth, Fresh: in.Fresh}
 	return nil
 }
 
