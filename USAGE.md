@@ -12,6 +12,7 @@
 공유 설정·Go 이외의 입력은 전체 Go 테스트로 넓힙니다. 선택 실패나 빈 입력은 실패로 보고합니다.
 커밋·전체 검증은 `dva ci commit` / `dva ci full`을 사용합니다. 선언과 시간 예산,
 root·공유 자원별 중복 실행 방지, 상태 조회는 [CI 프로필](docs/53-ci-profiles.md)을 참조하세요.
+로컬 실행별 시간과 느린 단계는 [CI 이력 분석](docs/ci-history-analysis.md)을 참조하세요.
 
 ## 버전과 지원 범위
 
