@@ -4,20 +4,23 @@
 정확히 일치하는 실행과 상태별 건수를 JSON으로 보여준다. 검사를 실행하지 않는다.
 로그 경로와 각 실행의 시간은 원문을 추적하기 위한 정보다.
 
-두 분석 플래그를 모두 생략한 `dva ci history`는 기존 `history` CI 프로필을 실행한다.
+선택 플래그와 `--summary`를 모두 생략한 `dva ci history`는 기존 `history` CI 프로필을 실행한다.
 `--fresh`·`--lookup`·`--dry-run` 등 일반 프로필 옵션도 유지한다. 분석 플래그를 하나라도
-명시했다면 `--root`와 `--profile`에 모두 비어 있지 않은 값을 제공해야 한다.
+명시했다면 비어 있지 않은 `--profile`과 `--root` 또는 `--repository-local-id` 중 하나가
+필요하다. 두 selector는 함께 사용할 수 없다. `--repository-local-id current`는 현재
+clone의 Git common directory를 공유하는 worktree를 연결하며 다른 clone의 동등성을 뜻하지 않는다.
 완료된 단계의 기록 시간과 실행별 느린 단계 최대 다섯 개를 보여준다. 미완료 시간은
 null이며 단계 시간 합은 병렬 작업의 전체 경과 시간이 아니다.
 재사용 여부가 executed 또는 bypassed로 확인된 단계만 느린 실행 순위에 넣는다.
 reused는 원본 실행 ID를 보존하며, 재사용 정보가 없는 과거 단계는 unknown으로 표시한다.
 
-기존 receipt에는 host, 설정 및 캐시 조건이 없어 실행들의 비교 가능성은 unknown이다.
-따라서 서로 다른 실행의 시간 백분위나 성능 변화로 해석하지 않는다. 임시 worktree가
-root인 경우 경로가 실행마다 다르므로 별도 식별 계약이 필요하다.
+legacy receipt에는 host·설정·캐시와 repository ID가 없을 수 있다. 신규 Observability는
+장비·OS·설정 형태 지문·로컬 clone ID 등을 기록하지만 전체 명령·설정의 동등성은 증명하지
+못하고 캐시 상태는 unknown이다. 따라서 서로 다른 실행의 시간 백분위나 성능 변화로
+해석하지 않는다. repository ID가 없는 과거 기록을 현재 clone에 임의로 귀속하지 않는다.
 
-향후 버전의 구조화된 조건·대기·준비·세부 단계·자원 측정과 주기적 분석은 아직
-구현되지 않았다. 기존 기록의 빠진 값은 0으로 취급하지 않는다. receipt와 로그에는
+전체 provenance·구간별 대기·준비·실측 자원 attribution과 자동 예약은 이 분석 명령이
+제공하지 않는다. 기존 기록의 빠진 값은 0으로 취급하지 않는다. receipt와 로그에는
 민감한 경로가 있을 수 있으므로 자동 게시하지 않는다.
 
 ## 반복 분석 요약
