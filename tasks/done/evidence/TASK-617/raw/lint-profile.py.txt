@@ -1,0 +1,92 @@
+#!/usr/bin/env python3
+"""TASK617 diagnostic instrumentation; never an acceptance gate."""
+import argparse
+import datetime
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import signal
+import subprocess
+import time
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--root', type=Path, required=True)
+parser.add_argument('--output', type=Path, required=True)
+args = parser.parse_args()
+root = args.root.resolve(strict=True)
+output = args.output.resolve()
+output.mkdir(parents=True, exist_ok=False)
+source = (root / 'scripts/ci-lint.sh').read_text()
+instrumented = source.replace(
+    'mise exec -- golangci-lint run ./...;',
+    '/usr/bin/time -p mise exec -- golangci-lint run ./...;')
+instrumented = instrumented.replace(
+    '\tgolangci-lint run ./...;',
+    '\t/usr/bin/time -p golangci-lint run ./...;')
+instrumented = instrumented.replace(
+    'GOLANGCI_LINT_CACHE="${GOLANGCI_LINT_CACHE:',
+    'echo "TASK617 phase=golangci" >&2\nGOLANGCI_LINT_CACHE="${GOLANGCI_LINT_CACHE:')
+instrumented = instrumented.replace(
+    'findings=$($gopls_cmd check',
+    'echo "TASK617 phase=gopls" >&2\nfindings=$(/usr/bin/time -p $gopls_cmd check')
+assert instrumented.count('/usr/bin/time -p') == 3
+assert instrumented.count('TASK617 phase=') == 2
+script = output / 'lint-timed.sh'
+script.write_text(instrumented)
+subprocess.run(['/bin/sh', '-n', str(script)], check=True)
+cache = root / 'tmp/task617-lint-cache'
+cache.mkdir(exist_ok=False)
+go_cache = root / 'tmp/task617-cache'
+assert go_cache.is_dir(), 'benchmark build cache must already be prepared'
+env = os.environ.copy()
+env.update(PATH='/Users/archmagece/.local/share/mise/installs/go/1.27.3/bin:' + env.get('PATH', ''),
+           GOROOT='/Users/archmagece/.local/share/mise/installs/go/1.27.3', GOCACHE=str(go_cache), GOLANGCI_LINT_CACHE=str(cache),
+           GOTOOLCHAIN='local', GOPROXY='off', GOSUMDB='off',
+           DVA_CI_JOBS='2', CARGO_BUILD_JOBS='2', RUST_TEST_THREADS='1')
+metadata = {'owner': 'codex/mbp', 'task': 'TASK-617',
+            'purpose': 'split full lint timing; not acceptance evidence',
+            'created_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            'source_sha256': hashlib.sha256(source.encode()).hexdigest(),
+            'instrumented_sha256': hashlib.sha256(instrumented.encode()).hexdigest(),
+            'instrumentation': 'only phase markers and /usr/bin/time -p prefixes; original checks retained',
+            'go_cache': 'same private build cache already populated by commit measurements',
+            'golangci_cache': 'private empty cache first, same cache second',
+            'other_load': 'not controlled; measured serially with the other TASK617 experiments',
+            'root': str(root), 'runs': []}
+for label in ['empty-golangci-cache', 'repeat-golangci-cache']:
+    start = time.monotonic()
+    out_file, err_file = output / (label + '.stdout'), output / (label + '.stderr')
+    timeout = False
+    with out_file.open('wb') as out, err_file.open('wb') as err:
+        proc = subprocess.Popen(['/bin/sh', str(script)], cwd=root, env=env,
+                                stdout=out, stderr=err, start_new_session=True)
+        try:
+            rc = proc.wait(timeout=180)
+        except subprocess.TimeoutExpired:
+            timeout = True
+            try:
+                os.killpg(proc.pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+            try:
+                rc = proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                os.killpg(proc.pid, signal.SIGKILL)
+                rc = proc.wait()
+    times, phase = {}, None
+    for line in err_file.read_text().splitlines():
+        if line.startswith('TASK617 phase='):
+            phase = line.split('=', 1)[1]
+        match = re.fullmatch(r'real\s+([\d.]+)', line.strip())
+        if match and phase:
+            times[phase] = float(match.group(1))
+    wall = time.monotonic() - start
+    metadata['runs'].append({'condition': label, 'argv': ['/bin/sh', str(script)],
+                             'returncode': rc, 'outer_timeout': timeout,
+                             'wall_seconds': wall, 'tool_seconds': times,
+                             'preflight_and_instrumentation_seconds': wall - sum(times.values()),
+                             'stdout': str(out_file), 'stderr': str(err_file)})
+    (output / 'results.json').write_text(json.dumps(metadata, indent=2) + '\n')
+    print(json.dumps(metadata['runs'][-1]), flush=True)

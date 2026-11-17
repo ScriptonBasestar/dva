@@ -37,6 +37,7 @@
 - [원격 CI 이벤트와 입력](ci-event-routing.md), [Hosted CI 실행 예산](ci-hosted-budgets.md), [로컬 macOS 검증](ci-macos-local.md)
 - [DVA 자체 commit 검사 파일럿](ci-commit-pilot.md), [제한된 실측](ci-commit-measurements.md)
 - [테스트 격리·선택기 개선 후 실측](ci-commit-followup-measurements.md)
+- [일반 Go 변경·full lint 실측과 재사용 판정](ci-production-measurements.md)
 - [CI 결과 재사용과 전체 재실행](75-ci-result-reuse.md)
 - [CI 증거 조회와 worktree 간 재사용](ci-reuse-lookup.md)
 - [subproject 범위 CI](71-ci-subproject-scope.md)

@@ -1,0 +1,55 @@
+{
+  "owner": "codex/mbp",
+  "task": "TASK-617",
+  "purpose": "split full lint timing; not acceptance evidence",
+  "created_at": "2026-11-17T02:58:46.362783+00:00",
+  "source_sha256": "bbd4c4c62a4851d997e065bd2f7e1f10429666102a4b5da7788a2f6b1b696ab2",
+  "instrumented_sha256": "0aefda11dbbf302a694f47f3e4ec0c79910d4f26f5993a09d14248c3ae7a87e0",
+  "instrumentation": "only phase markers and /usr/bin/time -p prefixes; original checks retained",
+  "go_cache": "same private build cache already populated by commit measurements",
+  "golangci_cache": "private empty cache first, same cache second",
+  "other_load": "not controlled; measured serially with the other TASK617 experiments",
+  "root": "/Users/archmagece/worktrees/misc/dva/exp__codex__mbp__test__measure-production-agentdeny",
+  "runs": [
+    {
+      "condition": "empty-golangci-cache",
+      "argv": [
+        "/bin/sh",
+        "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__ci-production-measurements/tmp/task617/lint-results/lint-timed.sh"
+      ],
+      "returncode": 0,
+      "outer_timeout": false,
+      "wall_seconds": 22.38174462504685,
+      "tool_seconds": {
+        "golangci": 4.04,
+        "gopls": 18.09
+      },
+      "preflight_and_instrumentation_seconds": 0.25174462504685025,
+      "stdout": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__ci-production-measurements/tmp/task617/lint-results/empty-golangci-cache.stdout",
+      "stderr": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__ci-production-measurements/tmp/task617/lint-results/empty-golangci-cache.stderr"
+    },
+    {
+      "condition": "repeat-golangci-cache",
+      "argv": [
+        "/bin/sh",
+        "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__ci-production-measurements/tmp/task617/lint-results/lint-timed.sh"
+      ],
+      "returncode": 0,
+      "outer_timeout": false,
+      "wall_seconds": 18.60426429193467,
+      "tool_seconds": {
+        "golangci": 0.97,
+        "gopls": 17.38
+      },
+      "preflight_and_instrumentation_seconds": 0.25426429193467115,
+      "stdout": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__ci-production-measurements/tmp/task617/lint-results/repeat-golangci-cache.stdout",
+      "stderr": "/Users/archmagece/worktrees/misc/dva/codex__mbp__chore__ci-production-measurements/tmp/task617/lint-results/repeat-golangci-cache.stderr"
+    }
+  ],
+  "baseline": "3fa577340ededf26fcb2275733be8b625e63b876",
+  "GOROOT": "/Users/archmagece/.local/share/mise/installs/go/1.27.3",
+  "staged_change": "raw/agentdeny/staged.diff.json",
+  "original_receipt": "8b0cd5d4214dd36cba6db691b84f5234",
+  "original_full_lint_seconds": 32.273,
+  "comparison": "Separate diagnostic; not retrospective decomposition of original 32.273 seconds."
+}

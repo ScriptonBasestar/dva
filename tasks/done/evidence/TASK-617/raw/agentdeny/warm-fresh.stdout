@@ -1,0 +1,84 @@
+{
+  "id": "4d86e8095aecfaea8227aa0b7454fc4d",
+  "root": "/Users/archmagece/worktrees/misc/dva/exp__codex__mbp__test__measure-production-agentdeny",
+  "profile": "commit",
+  "status": "succeeded",
+  "log_path": "/Users/archmagece/.local/state/dva/ci/logs/4d86e8095aecfaea8227aa0b7454fc4d.log",
+  "started_at": "2026-11-17T11:49:53.98165+09:00",
+  "finished_at": "2026-11-17T11:50:50.027106+09:00",
+  "duration": "56.044721916s",
+  "steps": [
+    {
+      "name": "integrity",
+      "status": "succeeded",
+      "started_at": "2026-11-17T11:49:54.227187+09:00",
+      "finished_at": "2026-11-17T11:49:54.699417+09:00",
+      "duration": 472223750,
+      "worker_budget": {
+        "tool_jobs": 4,
+        "source": "computed(cpu/max_parallel)",
+        "dva_ci_jobs": 4,
+        "cargo_build_jobs": 4,
+        "cargo_build_jobs_source": "computed(cpu/max_parallel)",
+        "rust_test_threads": 1,
+        "rust_test_threads_source": "default"
+      }
+    },
+    {
+      "name": "lint",
+      "status": "succeeded",
+      "started_at": "2026-11-17T11:49:54.700169+09:00",
+      "finished_at": "2026-11-17T11:49:56.305939+09:00",
+      "duration": 1605749542,
+      "worker_budget": {
+        "tool_jobs": 4,
+        "source": "computed(cpu/max_parallel)",
+        "dva_ci_jobs": 4,
+        "cargo_build_jobs": 4,
+        "cargo_build_jobs_source": "computed(cpu/max_parallel)",
+        "rust_test_threads": 1,
+        "rust_test_threads_source": "default"
+      }
+    },
+    {
+      "name": "compile",
+      "status": "succeeded",
+      "started_at": "2026-11-17T11:49:56.315858+09:00",
+      "finished_at": "2026-11-17T11:49:58.763749+09:00",
+      "duration": 2447858959,
+      "worker_budget": {
+        "tool_jobs": 4,
+        "source": "computed(cpu/max_parallel)",
+        "dva_ci_jobs": 4,
+        "cargo_build_jobs": 4,
+        "cargo_build_jobs_source": "computed(cpu/max_parallel)",
+        "rust_test_threads": 1,
+        "rust_test_threads_source": "default"
+      }
+    },
+    {
+      "name": "test",
+      "status": "succeeded",
+      "started_at": "2026-11-17T11:49:58.764266+09:00",
+      "finished_at": "2026-11-17T11:50:49.681276+09:00",
+      "duration": 50916342416,
+      "worker_budget": {
+        "tool_jobs": 4,
+        "source": "computed(cpu/max_parallel)",
+        "dva_ci_jobs": 4,
+        "cargo_build_jobs": 4,
+        "cargo_build_jobs_source": "computed(cpu/max_parallel)",
+        "rust_test_threads": 1,
+        "rust_test_threads_source": "default"
+      }
+    }
+  ],
+  "attestation": {
+    "available": true,
+    "before": "a12ef36e6de28d6705c37fe7531d6bd82c3efdb72ca7833a403f2bd701ded108",
+    "after": "a12ef36e6de28d6705c37fe7531d6bd82c3efdb72ca7833a403f2bd701ded108",
+    "commit": "3fa577340ededf26fcb2275733be8b625e63b876",
+    "dirty": true
+  },
+  "fresh": true
+}

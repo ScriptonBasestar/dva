@@ -1,0 +1,8 @@
+TASK617 phase=golangci
+real 0.97
+user 1.11
+sys 4.12
+TASK617 phase=gopls
+real 17.38
+user 17.15
+sys 39.93
