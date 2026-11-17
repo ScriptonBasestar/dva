@@ -259,6 +259,44 @@ func TestHostBridgeReuseTracksEffectiveWorkerCap(t *testing.T) {
 	}
 }
 
+func TestHostBridgeReuseTracksSupervisionMarker(t *testing.T) {
+	root, state, resource, _, _ := bridgeFixture(t)
+	if err := runGit(root, "init"); err != nil {
+		t.Skipf("git unavailable: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "input"), []byte("one"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, ".gitignore"), []byte("count\npolicy.json\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	policy := filepath.Join(root, "policy.json")
+	if err := os.WriteFile(policy, []byte(`{"capacity":4,"max_running":3,"max_heavy":1,"weights":{"heavy":2,"light":1},"aging_interval":"5m"}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	commitAll(t, root)
+	step := config.CIStep{Name: "cached", Run: `printf '%s\n' "${DVA_RESOURCE_SUPERVISED:-absent}" >> count`, HostSlot: true,
+		Reuse: &config.CIReuse{Inputs: []string{"input"}, Tools: []string{"sh"}, Outputs: []string{"count"}, Environment: []string{"DVA_RESOURCE_SUPERVISED"}, MaxAge: "1h"}}
+	opts := Options{Root: root, ProfileName: "full", StateDir: state, lockDirectory: state, resourceDirectory: resource, Env: []string{"PATH=" + os.Getenv("PATH"), "DVA_RESOURCE_POLICY=" + policy}, Profile: profile(step)}
+	for i := range 3 {
+		if i == 1 {
+			opts.Env = []string{"PATH=" + os.Getenv("PATH")}
+		}
+		r, err := Run(context.Background(), opts)
+		want := "executed"
+		if i == 2 {
+			want = "reused"
+		}
+		if err != nil || r.Steps[0].Reuse == nil || r.Steps[0].Reuse.Disposition != want {
+			t.Fatalf("run %d: report=%+v err=%v", i, r, err)
+		}
+	}
+	data, err := os.ReadFile(filepath.Join(root, "count"))
+	if err != nil || string(data) != "1\nabsent\n" {
+		t.Fatalf("child supervision markers: %q, %v", data, err)
+	}
+}
+
 func TestHostBridgeExternalSupervisorWithoutPolicyFails(t *testing.T) {
 	root, state, resource, _, _ := bridgeFixture(t)
 	t.Setenv("DVA_RESOURCE_SUPERVISED", "1")

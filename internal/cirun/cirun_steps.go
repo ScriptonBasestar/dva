@@ -135,6 +135,7 @@ func execute(ctx context.Context, root string, p config.CIProfile, inherited []s
 	start := func(i int) error {
 		stepEnv, stepWorkers, stepSource := inherited, workers, source
 		if bridge, ok := ctx.Value(hostSlotBridgeKey{}).(*hostSlotBridge); ok && p.Steps[i].HostSlot {
+			stepEnv = setCIEnvironment(stepEnv, "DVA_RESOURCE_SUPERVISED", "1")
 			if limit := bridge.policy.WorkerLimits["heavy"]; limit > 0 {
 				stepWorkers = min(stepWorkers, limit)
 				stepSource = "admission"
@@ -342,7 +343,6 @@ func runStep(ctx context.Context, root string, step config.CIStep, inherited []s
 				ret = errors.Join(ret, finishErr)
 			}()
 			origin = context.WithValue(origin, resourceCleanupKey{}, tracker)
-			inherited = setCIEnvironment(inherited, "DVA_RESOURCE_SUPERVISED", "1")
 			_, _ = fmt.Fprintf(out, "ci step %s host_slot=acquired provider=resource waited=%s\n", step.Name, r.HostSlotWait.Round(time.Millisecond))
 		} else {
 			runtime, _ := origin.Value(compositionRuntimeKey{}).(compositionRuntime)

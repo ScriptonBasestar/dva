@@ -18,6 +18,40 @@ import (
 	"github.com/ScriptonBasestar/dva/internal/config"
 )
 
+func TestMain(m *testing.M) {
+	// Isolate the initial test process from host admission. Test subprocesses
+	// inherit the sentinel so explicitly constructed composition markers survive.
+	if os.Getenv("DVA_CIRUN_TEST_SANITIZED") != "1" {
+		for _, key := range []string{"DVA_RESOURCE_POLICY", "DVA_RESOURCE_SUPERVISED", "DVA_RESOURCE_WORKER_LIMIT", parentRunEnv} {
+			if err := os.Unsetenv(key); err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				os.Exit(1)
+			}
+		}
+		if err := os.Setenv("DVA_CIRUN_TEST_SANITIZED", "1"); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+	}
+	os.Exit(m.Run())
+}
+
+func TestHostAdmissionEnvironmentIsolated(t *testing.T) {
+	if os.Getenv("DVA_CIRUN_ISOLATION_HELPER") == "1" {
+		for _, key := range []string{"DVA_RESOURCE_POLICY", "DVA_RESOURCE_SUPERVISED", "DVA_RESOURCE_WORKER_LIMIT", parentRunEnv} {
+			if _, ok := os.LookupEnv(key); ok {
+				t.Fatalf("host environment leaked: %s", key)
+			}
+		}
+		return
+	}
+	cmd := exec.Command(os.Args[0], "-test.run=^TestHostAdmissionEnvironmentIsolated$")
+	cmd.Env = append(os.Environ(), "DVA_CIRUN_TEST_SANITIZED=0", "DVA_CIRUN_ISOLATION_HELPER=1", "DVA_RESOURCE_POLICY=/host-policy", "DVA_RESOURCE_SUPERVISED=1", "DVA_RESOURCE_WORKER_LIMIT=2", parentRunEnv+"=host-parent")
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("isolated subprocess: %v: %s", err, output)
+	}
+}
+
 func profile(steps ...config.CIStep) config.CIProfile {
 	return config.CIProfile{Timeout: "5s", MaxParallel: 2, Steps: steps}
 }
