@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -55,14 +54,18 @@ func ReadSummaryReceipts(dir string) ([]Report, map[string]int, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	f, err := os.Open(state)
+	f, err := openSummaryState(state)
 	if os.IsNotExist(err) {
 		return nil, map[string]int{}, nil
 	}
 	if err != nil {
-		return nil, nil, err
+		return nil, map[string]int{"state_directory_unavailable": 1}, nil
 	}
 	defer f.Close()
+	return readSummaryFromOpenedDir(f)
+}
+
+func readSummaryFromOpenedDir(f *os.File) ([]Report, map[string]int, error) {
 	entries, err := f.ReadDir(10001)
 	if err != nil && err != io.EOF {
 		return nil, nil, err
@@ -78,29 +81,9 @@ func ReadSummaryReceipts(dir string) ([]Report, map[string]int, error) {
 		if !strings.HasSuffix(name, ".json") || !safeID(strings.TrimSuffix(name, ".json")) {
 			continue
 		}
-		path := filepath.Join(state, name)
-		info, e := os.Lstat(path)
+		file, reason, e := openSummaryReceipt(f, name)
 		if e != nil {
-			excluded["unreadable"]++
-			continue
-		}
-		if !info.Mode().IsRegular() {
-			excluded["non_regular"]++
-			continue
-		}
-		if info.Size() > 4<<20 {
-			excluded["oversized"]++
-			continue
-		}
-		file, e := os.Open(path)
-		if e != nil {
-			excluded["unreadable"]++
-			continue
-		}
-		actual, e := file.Stat()
-		if e != nil || !os.SameFile(info, actual) || !actual.Mode().IsRegular() {
-			file.Close()
-			excluded["changed_or_non_regular"]++
+			excluded[reason]++
 			continue
 		}
 		data, e := io.ReadAll(io.LimitReader(file, (4<<20)+1))
@@ -212,7 +195,7 @@ func SummarizeHistory(reports []Report, root, repositoryID, profile string, now 
 		s.Conditions = append(s.Conditions, c)
 		analysis := AnalyzeHistory([]Report{r}, r.Root, r.Profile)
 		if len(analysis.Runs) > 0 {
-			s.CurrentLongestSteps = append(s.CurrentLongestSteps, SummaryRun{RunID: r.ID, Status: r.Status, Steps: analysis.Runs[0].Slowest})
+			s.CurrentLongestSteps = append(s.CurrentLongestSteps, SummaryRun{RunID: r.ID, Status: r.Status, Steps: analysis.Runs[0].RecordedDurationRanking})
 		}
 	}
 	return s

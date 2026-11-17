@@ -14,7 +14,8 @@ func TestSummaryKeepsUnknownConditionsAndReuseSeparate(t *testing.T) {
 	o := &Observability{Host: "host-a", OS: "darwin", Arch: "arm64", ConfigurationShapeFingerprint: "same", CacheCondition: "unknown", RepositoryLocalID: "repo"}
 	base := Report{ID: "one", Root: "/a", Profile: "full", Status: "succeeded", StartedAt: now.Add(-time.Hour), FinishedAt: now, Observability: o, Steps: []StepReport{
 		{Name: "ran", Status: "succeeded", StartedAt: now.Add(-time.Second), FinishedAt: now, Duration: time.Second, Reuse: &ReuseReport{Disposition: "executed"}},
-		{Name: "cached", Reuse: &ReuseReport{Disposition: "reused"}}, {Name: "legacy"},
+		{Name: "cached", Status: "succeeded", FinishedAt: now, Duration: 2 * time.Second, Reuse: &ReuseReport{Disposition: "reused"}},
+		{Name: "legacy", Status: "succeeded", FinishedAt: now, Duration: 3 * time.Second},
 	}}
 	other := base
 	other.ID = "two"
@@ -37,7 +38,7 @@ func TestSummaryKeepsUnknownConditionsAndReuseSeparate(t *testing.T) {
 	if s.ExcludedByReason["cache_unknown"] != 2 || s.ExcludedByReason["host_missing"] != 1 || s.ExcludedByReason["invalid_or_future_time"] != 1 || s.ExcludedByReason["not_succeeded"] != 1 || s.ExcludedByReason["complete_provenance_unavailable"] != 3 {
 		t.Fatalf("exclusions %+v", s.ExcludedByReason)
 	}
-	if len(s.CurrentLongestSteps[0].Steps) != 1 || s.CurrentLongestSteps[0].Steps[0].Name != "ran" {
+	if len(s.CurrentLongestSteps[0].Steps) != 3 || s.CurrentLongestSteps[0].Steps[0].Name != "legacy" || s.CurrentLongestSteps[0].Steps[0].ReuseDisposition != "unknown" || s.CurrentLongestSteps[0].Steps[1].ReuseDisposition != "reused" {
 		t.Fatalf("ranking %+v", s.CurrentLongestSteps)
 	}
 	if s.Conditions[0].Host == s.Conditions[1].Host {
@@ -55,6 +56,9 @@ func TestSummaryKeepsUnknownConditionsAndReuseSeparate(t *testing.T) {
 
 func TestReadSummaryReceiptsBoundsAndRejectsUnsafeInputs(t *testing.T) {
 	dir := t.TempDir()
+	if err := os.Chmod(dir, 0700); err != nil {
+		t.Fatal(err)
+	}
 	id := strings.Repeat("a", 32)
 	data, err := json.Marshal(Report{ID: id, Root: "/a", Profile: "full", Status: "succeeded", Duration: time.Second})
 	if err != nil {
