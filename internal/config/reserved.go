@@ -11,7 +11,8 @@ import (
 // reservedCommands is the canonical set of built-in DVA command names.
 // Use IsReservedCommand or ReservedCommandNames for read-only access.
 var reservedCommands = map[string]bool{
-	"help": true, "version": true, "ls": true, "compose": true,
+	"resource": true,
+	"help":     true, "version": true, "ls": true, "compose": true,
 	"up": true, "stop": true, "down": true, "build": true,
 	"run": true, "provision": true, "validate": true, "manifest": true,
 	"ktl": true, "kubectl": true, "ssh": true, "console": true,

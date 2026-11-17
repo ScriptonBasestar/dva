@@ -51,6 +51,7 @@ type Options struct {
 	WorkerEnvironment map[string]bool
 	Output            io.Writer
 	lockDirectory     string // test seam; production callers cannot set it.
+	resourceDirectory string // test seam; production callers share host state.
 }
 
 type StepReport struct {

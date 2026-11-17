@@ -12,11 +12,13 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/ScriptonBasestar/dva/internal/config"
+	"github.com/ScriptonBasestar/dva/internal/resourceadmission"
 )
 
 func outputOrDiscard(w io.Writer) io.Writer {
@@ -81,6 +83,9 @@ func execute(ctx context.Context, root string, p config.CIProfile, inherited []s
 		max = n
 	}
 	workers, source := toolWorkerBudget(p, availableCPUs())
+	if limit, err := strconv.Atoi(environmentValue(inherited, "DVA_RESOURCE_WORKER_LIMIT")); err == nil && limit > 0 && workers > limit {
+		workers, source = limit, "admission"
+	}
 	if scope, ok := ctx.Value(compositionRuntimeKey{}).(compositionRuntime); ok && scope.workers != nil {
 		workers, source = scope.workers.jobs, scope.workers.source
 	}
@@ -470,7 +475,7 @@ func ciEnv(base []string, add map[string]string, workers int) []string {
 		m["GOFLAGS"] = strings.TrimSpace(m["GOFLAGS"] + " -p=1")
 	}
 	for k, v := range add {
-		if k == "DVA_CI_RUN_ID" || k == "DVA_CI_EVENTS_DIR" || k == "DVA_CI_JOBS" || k == parentRunEnv || k == config.CISubprojectEnv || k == config.CICompositionEnv || k == config.CIFreshEnv {
+		if k == "DVA_RESOURCE_WORKER_LIMIT" || k == "DVA_RESOURCE_SUPERVISED" || k == "DVA_CI_RUN_ID" || k == "DVA_CI_EVENTS_DIR" || k == "DVA_CI_JOBS" || k == parentRunEnv || k == config.CISubprojectEnv || k == config.CICompositionEnv || k == config.CIFreshEnv {
 			continue
 		}
 		m[k] = v
@@ -483,6 +488,9 @@ func ciEnv(base []string, add map[string]string, workers int) []string {
 	out := make([]string, 0, len(keys))
 	for _, k := range keys {
 		out = append(out, k+"="+m[k])
+	}
+	if limit, err := strconv.Atoi(m["DVA_RESOURCE_WORKER_LIMIT"]); err == nil && limit > 0 {
+		out = resourceadmission.CapWorkerEnvironment(out, limit)
 	}
 	return out
 }

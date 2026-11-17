@@ -1838,6 +1838,7 @@
               "additionalProperties": false,
               "properties": {
                 "description": { "type": "string" },
+				"admission": { "type": "object", "additionalProperties": false, "required": ["class", "priority", "wait_timeout"], "properties": {"class": {"enum": ["heavy", "light"]}, "priority": {"enum": ["interactive", "normal", "background"]}, "wait_timeout": {"type": "string", "minLength": 1}} },
                 "fresh": { "type": "boolean", "description": "Disable step result reuse and export DVA_CI_FRESH=1" },
                 "timeout": { "type": "string", "description": "Positive Go duration for the whole profile" },
                 "warn_after": { "type": "string", "description": "Positive Go duration after which the profile warns" },

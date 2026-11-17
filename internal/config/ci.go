@@ -40,15 +40,23 @@ type CIConfig struct {
 
 // CIProfile declares the ordered gates and shared budget for a CI invocation.
 type CIProfile struct {
-	Fresh       bool     `yaml:"fresh,omitempty" json:"fresh,omitempty"`
-	Description string   `yaml:"description" json:"description"`
-	Timeout     string   `yaml:"timeout" json:"timeout"`
-	WarnAfter   string   `yaml:"warn_after" json:"warn_after"`
-	MaxParallel int      `yaml:"max_parallel" json:"max_parallel"`
-	FailFast    *bool    `yaml:"fail_fast,omitempty" json:"fail_fast,omitempty"`
-	ToolJobs    *int     `yaml:"tool_jobs,omitempty" json:"tool_jobs,omitempty"`
-	Locks       []string `yaml:"locks" json:"locks"`
-	Steps       []CIStep `yaml:"steps" json:"steps"`
+	Admission   *CIAdmission `yaml:"admission,omitempty" json:"admission,omitempty"`
+	Fresh       bool         `yaml:"fresh,omitempty" json:"fresh,omitempty"`
+	Description string       `yaml:"description" json:"description"`
+	Timeout     string       `yaml:"timeout" json:"timeout"`
+	WarnAfter   string       `yaml:"warn_after" json:"warn_after"`
+	MaxParallel int          `yaml:"max_parallel" json:"max_parallel"`
+	FailFast    *bool        `yaml:"fail_fast,omitempty" json:"fail_fast,omitempty"`
+	ToolJobs    *int         `yaml:"tool_jobs,omitempty" json:"tool_jobs,omitempty"`
+	Locks       []string     `yaml:"locks" json:"locks"`
+	Steps       []CIStep     `yaml:"steps" json:"steps"`
+}
+
+// CIAdmission opts a profile into the host-wide cooperative resource budget.
+type CIAdmission struct {
+	Class       string `yaml:"class" json:"class"`
+	Priority    string `yaml:"priority" json:"priority"`
+	WaitTimeout string `yaml:"wait_timeout" json:"wait_timeout"`
 }
 
 // FailFastEnabled preserves the established cancellation behavior unless a
@@ -138,6 +146,25 @@ func (c *Config) validateCIProfiles() error {
 }
 
 func validateCIProfile(name string, profile CIProfile) error {
+	if a := profile.Admission; a != nil {
+		if a.Class != "heavy" && a.Class != "light" {
+			return fmt.Errorf("ci profile %q: admission class must be heavy or light", name)
+		}
+		if a.Priority != "interactive" && a.Priority != "normal" && a.Priority != "background" {
+			return fmt.Errorf("ci profile %q: invalid admission priority", name)
+		}
+		if _, err := parsePositiveCIDuration(name, "admission.wait_timeout", a.WaitTimeout); err != nil {
+			return err
+		}
+		for _, step := range profile.Steps {
+			if step.OCI != nil {
+				return fmt.Errorf("ci profile %q: admission does not support OCI", name)
+			}
+			if step.ChildCI != "" {
+				return fmt.Errorf("ci profile %q: admission does not support nested child CI", name)
+			}
+		}
+	}
 	if !validCIName(name) {
 		return fmt.Errorf("ci profile %q: name must match %s", name, ciNamePattern.String())
 	}
@@ -322,6 +349,9 @@ func hasCIStepCycle(steps map[string]CIStep) bool {
 }
 
 func mergeCIProfile(base, other CIProfile) CIProfile {
+	if other.Admission != nil {
+		base.Admission = other.Admission
+	}
 	// A fresh profile cannot accidentally regain cached execution in an overlay.
 	base.Fresh = base.Fresh || other.Fresh
 	if other.Description != "" {

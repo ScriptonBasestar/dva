@@ -378,6 +378,10 @@ func buildManifest(c *config.Config) *Manifest {
 		// remains is the hand-parsed set, which has no cobra flag to derive from. See both
 		// functions for why (TASK-105).
 		StaticCommands: map[string]ManifestCmd{
+			"resource": {Type: "config", Subcommands: map[string]ManifestCmd{
+				"run":    {Type: "mutation", Effects: []string{"local_write:resource_state", "process_start"}},
+				"status": {Type: "query"},
+			}},
 			"secret": {Type: "config", Subcommands: map[string]ManifestCmd{
 				"push":   {Type: "mutation", Effects: []string{"remote_write:secrets", "local_write:receipt"}},
 				"edit":   {Type: "mutation", Effects: []string{"local_write:encrypted_source", "interactive:editor"}},

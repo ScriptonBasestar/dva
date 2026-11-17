@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/ScriptonBasestar/dva/internal/config"
+	"github.com/ScriptonBasestar/dva/internal/resourceadmission"
 )
 
 func Run(parent context.Context, opts Options) (report Report, retErr error) {
@@ -40,6 +41,48 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 		return report, resolveErr
 	}
 	opts.Profile = resolved
+	opts.Env = setCIEnvironment(opts.Env, "DVA_RESOURCE_WORKER_LIMIT", "")
+	if admission := opts.Profile.Admission; admission != nil {
+		if os.Getenv("DVA_RESOURCE_SUPERVISED") != "" || environmentValue(opts.Env, "DVA_RESOURCE_SUPERVISED") != "" || os.Getenv(parentRunEnv) != "" || environmentValue(opts.Env, parentRunEnv) != "" {
+			return report, errors.New("nested resource admission is unsupported")
+		}
+		policyPath := environmentValue(opts.Env, "DVA_RESOURCE_POLICY")
+		if policyPath == "" {
+			policyPath = os.Getenv("DVA_RESOURCE_POLICY")
+		}
+		p, digest, err := resourceadmission.ReadPolicy(policyPath)
+		if err != nil {
+			return report, err
+		}
+		dir, err := resourceadmission.DefaultDirectory()
+		if err != nil {
+			return report, err
+		}
+		if opts.resourceDirectory != "" {
+			dir = opts.resourceDirectory
+		}
+		wait, err := time.ParseDuration(admission.WaitTimeout)
+		if err != nil {
+			return report, err
+		}
+		waitCtx, cancelWait := context.WithTimeout(parent, wait)
+		lease, err := resourceadmission.Acquire(waitCtx, dir, p, digest, admission.Class, admission.Priority)
+		cancelWait()
+		if err != nil {
+			return report, err
+		}
+		defer func() {
+			releaseCtx, cancelRelease := context.WithTimeout(context.Background(), time.Second)
+			defer cancelRelease()
+			retErr = errors.Join(retErr, lease.Complete(releaseCtx))
+		}()
+		opts.Env = setCIEnvironment(opts.Env, "DVA_RESOURCE_SUPERVISED", "1")
+		if total := p.WorkerLimits[admission.Class]; total > 0 {
+			opts.Profile.MaxParallel = min(opts.Profile.MaxParallel, total)
+			perStep := max(1, total/min(opts.Profile.MaxParallel, len(opts.Profile.Steps)))
+			opts.Env = setCIEnvironment(opts.Env, "DVA_RESOURCE_WORKER_LIMIT", fmt.Sprint(perStep))
+		}
+	}
 	ctx := parent
 	if opts.Profile.Timeout != "" {
 		d, err := time.ParseDuration(opts.Profile.Timeout)

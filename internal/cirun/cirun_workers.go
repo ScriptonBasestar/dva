@@ -34,6 +34,15 @@ func workerBudget(env []string, step map[string]string, inherited []string, jobs
 		values[key] = value
 	}
 	origin := func(key, fallback string) string {
+		if limit, err := strconv.Atoi(environmentValue(inherited, "DVA_RESOURCE_WORKER_LIMIT")); err == nil && limit > 0 {
+			original := environmentValue(inherited, key)
+			if value, ok := step[key]; ok {
+				original = value
+			}
+			if before, err := strconv.Atoi(original); err == nil && before > limit && environmentValue(env, key) == strconv.Itoa(limit) {
+				return "admission"
+			}
+		}
 		if _, ok := step[key]; ok {
 			return "step.environment"
 		}

@@ -241,6 +241,10 @@ func Execute() {
 	}
 
 	if err := rootCmd.Execute(); err != nil {
+		var childExit *resourceChildExit
+		if errors.As(err, &childExit) {
+			os.Exit(childExit.code)
+		}
 		errMsg := err.Error()
 		emitFailureJSONFor(err)
 		fmt.Fprintf(os.Stderr, "\nERROR: %s\n", errMsg)
