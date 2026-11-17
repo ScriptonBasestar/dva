@@ -417,8 +417,13 @@ func runStep(ctx context.Context, root string, step config.CIStep, inherited []s
 	if r.WorkerBudget != nil {
 		_, _ = fmt.Fprintf(out, "ci step %s tool_jobs=%d source=%s cargo_build_jobs=%d source=%s rust_test_threads=%d source=%s dva_ci_jobs=%d\n", step.Name, r.WorkerBudget.ToolJobs, r.WorkerBudget.Source, r.WorkerBudget.CargoBuildJobs, r.WorkerBudget.CargoBuildJobsSource, r.WorkerBudget.RustTestThreads, r.WorkerBudget.RustTestThreadsSource, r.WorkerBudget.DVAJobs)
 	}
-	cmd.Stdout = out
-	cmd.Stderr = out
+	var watch *outputWatch
+	if step.ChildCI == "" {
+		watch = newOutputWatch(out, step.Name, 3*time.Minute, 30*time.Second)
+		cmd.Stdout, cmd.Stderr = watch, watch
+	} else {
+		cmd.Stdout, cmd.Stderr = out, out
+	}
 	cmd.Stdin = nil
 	// A background descendant retaining the output pipes must not keep Wait
 	// blocked after its parent exited. The group is cleaned on every wait path.
@@ -434,6 +439,10 @@ func runStep(ctx context.Context, root string, step config.CIStep, inherited []s
 			err = errors.Join(err, childScope.drain(stepCtx, lockState, true, nil))
 		}
 		return r, err
+	}
+	if watch != nil {
+		watch.start()
+		defer func() { r.OutputObservation = watch.stop() }()
 	}
 	pid := cmd.Process.Pid
 	defer observeResourceCleanup(stepCtx, pid)

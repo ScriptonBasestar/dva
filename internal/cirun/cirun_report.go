@@ -55,6 +55,7 @@ type Options struct {
 }
 
 type StepReport struct {
+	OutputObservation *OutputObservation    `json:"output_observation,omitempty"`
 	Admission         *AdmissionObservation `json:"admission,omitempty"`
 	Workdir           string                `json:"workdir,omitempty"`
 	Condition         *ConditionReport      `json:"condition,omitempty"`
