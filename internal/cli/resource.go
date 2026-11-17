@@ -33,6 +33,7 @@ type resourceReport struct {
 }
 
 var resourceStateDirectory = resourceadmission.DefaultDirectory
+var resourceReportSync = func(f *os.File) error { return f.Sync() }
 
 func newResourceCommand() *cobra.Command {
 	var policyPath, class, priority, waitLimit, executionLimit, reportPath string
@@ -82,7 +83,7 @@ func newResourceCommand() *cobra.Command {
 			if err := json.NewEncoder(report).Encode(result); err != nil {
 				return err
 			}
-			return report.Sync()
+			return resourceReportSync(report)
 		}
 		ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
 		defer stop()
@@ -211,9 +212,6 @@ func newResourceCommand() *cobra.Command {
 		}
 		if reportErr := writeReport(); reportErr != nil {
 			fmt.Fprintf(cmd.ErrOrStderr(), "resource report failed: %v\n", reportErr)
-			if code == 0 {
-				return reportErr
-			}
 		}
 		if code != 0 {
 			return &resourceChildExit{code: code}

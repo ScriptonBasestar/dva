@@ -58,3 +58,32 @@ func TestAdmissionProfileSharesWorkersAndReleasesLease(t *testing.T) {
 		t.Fatalf("lease not released: %+v %v", entries, err)
 	}
 }
+
+func TestAdmissionQuarantinesUnconfirmedNativeCleanup(t *testing.T) {
+	t.Setenv("DVA_RESOURCE_SUPERVISED", "")
+	t.Setenv("DVA_CI_PARENT_RUN", "")
+	root, state, resource := t.TempDir(), t.TempDir(), filepath.Join(t.TempDir(), "resource")
+	policy := filepath.Join(root, "policy.json")
+	data := `{"capacity":4,"max_running":3,"max_heavy":1,"weights":{"heavy":2,"light":1},"aging_interval":"5m"}`
+	if err := os.WriteFile(policy, []byte(data), 0600); err != nil {
+		t.Fatal(err)
+	}
+	p := config.CIProfile{Timeout: "5s", MaxParallel: 1, Admission: &config.CIAdmission{Class: "light", Priority: "normal", WaitTimeout: "1s"}, Steps: []config.CIStep{{Name: "one", Run: "true"}}}
+	ctx := context.WithValue(context.Background(), resourceCleanupProbeKey{}, func(int) bool { return false })
+	r, err := Run(ctx, Options{Root: root, ProfileName: "full", StateDir: state, lockDirectory: state, resourceDirectory: resource, Env: []string{"DVA_RESOURCE_POLICY=" + policy}, Profile: p})
+	if err == nil || r.Status != "failed" {
+		t.Fatalf("unconfirmed cleanup accepted: status=%s err=%v", r.Status, err)
+	}
+	_, digest, err := resourceadmission.ReadPolicy(policy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	entries, err := resourceadmission.Status(context.Background(), resource, digest)
+	if err != nil || len(entries) != 1 || entries[0].State != "quarantined" {
+		t.Fatalf("lease released: %+v %v", entries, err)
+	}
+	receipts, err := Status(state)
+	if err != nil || len(receipts) != 1 || receipts[0].Status != "failed" {
+		t.Fatalf("receipt not failed: %+v %v", receipts, err)
+	}
+}

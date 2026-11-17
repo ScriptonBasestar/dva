@@ -14,7 +14,8 @@ func tryLock(f *os.File) error { return syscall.Flock(int(f.Fd()), syscall.LOCK_
 func lockContended(err error) bool {
 	return errors.Is(err, syscall.EWOULDBLOCK) || errors.Is(err, syscall.EAGAIN)
 }
-func unlock(f *os.File) error { return syscall.Flock(int(f.Fd()), syscall.LOCK_UN) }
+func unlock(f *os.File) error               { return syscall.Flock(int(f.Fd()), syscall.LOCK_UN) }
+func resourceProcessGroupGone(pid int) bool { return errors.Is(syscall.Kill(-pid, 0), syscall.ESRCH) }
 func startProcess(cmd *exec.Cmd) error {
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	return cmd.Start()

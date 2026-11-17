@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -56,7 +57,7 @@ func lockFile(ctx context.Context, path string, create bool, fn func() error) (r
 	if create {
 		flags |= os.O_CREATE
 	}
-	f, err := os.OpenFile(path, flags, 0600)
+	f, err := openPrivateRegular(path, flags)
 	if err != nil {
 		return err
 	}
@@ -133,9 +134,20 @@ func readEntries(dir string) ([]entry, error) {
 		if !info.Mode().IsRegular() || info.Mode().Perm() != 0600 || !owned(info) || info.Size() > 8192 {
 			return nil, fmt.Errorf("invalid resource entry %s", f.Name())
 		}
-		b, err := os.ReadFile(filepath.Join(dir, f.Name()))
+		handle, err := openPrivateRegular(filepath.Join(dir, f.Name()), os.O_RDONLY)
 		if err != nil {
 			return nil, err
+		}
+		b, err := io.ReadAll(io.LimitReader(handle, 8193))
+		closeErr := handle.Close()
+		if err != nil {
+			return nil, err
+		}
+		if closeErr != nil {
+			return nil, closeErr
+		}
+		if len(b) > 8192 {
+			return nil, errors.New("resource entry exceeds size limit")
 		}
 		var e entry
 		if err = json.Unmarshal(b, &e); err != nil || e.ID+".json" != f.Name() {
@@ -173,7 +185,7 @@ func Acquire(ctx context.Context, dir string, p Policy, digest, class, priority 
 	}
 	id := hex.EncodeToString(idbytes)
 	lockPath := filepath.Join(dir, id+".lock")
-	lf, err := os.OpenFile(lockPath, os.O_CREATE|os.O_EXCL|os.O_RDWR, 0600)
+	lf, err := openPrivateRegular(lockPath, os.O_CREATE|os.O_EXCL|os.O_RDWR)
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +223,7 @@ func Acquire(ctx context.Context, dir string, p Policy, digest, class, priority 
 			for _, e := range entries {
 				if e.State == "waiting" && e.ID != id {
 					path := filepath.Join(dir, e.ID+".lock")
-					f, err := os.OpenFile(path, os.O_RDWR, 0)
+					f, err := openPrivateRegular(path, os.O_RDWR)
 					if err != nil {
 						return fmt.Errorf("inspect waiting lease: %w", err)
 					}
@@ -310,6 +322,12 @@ func Acquire(ctx context.Context, dir string, p Policy, digest, class, priority 
 				w := p.Weights[candidate.Class]
 				if w < 1 {
 					return errors.New("invalid waiting resource class")
+				}
+				// Reserve free capacity for an aged heavy request when only
+				// other work's capacity prevents it from starting. A heavy
+				// already occupying the heavy lane permits light backfill.
+				if candidate.Class == "heavy" && now.Sub(candidate.QueuedAt) >= age && heavy < p.MaxHeavy && used+w > p.Capacity {
+					break
 				}
 				if used+w <= p.Capacity && running < p.MaxRunning && (candidate.Class != "heavy" || heavy < p.MaxHeavy) {
 					selected = candidate.ID

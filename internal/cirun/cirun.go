@@ -42,6 +42,8 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 	}
 	opts.Profile = resolved
 	opts.Env = setCIEnvironment(opts.Env, "DVA_RESOURCE_WORKER_LIMIT", "")
+	var cleanupTracker *resourceCleanupTracker
+	var finishAdmission func() error
 	if admission := opts.Profile.Admission; admission != nil {
 		if os.Getenv("DVA_RESOURCE_SUPERVISED") != "" || environmentValue(opts.Env, "DVA_RESOURCE_SUPERVISED") != "" || os.Getenv(parentRunEnv) != "" || environmentValue(opts.Env, parentRunEnv) != "" {
 			return report, errors.New("nested resource admission is unsupported")
@@ -71,10 +73,19 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 		if err != nil {
 			return report, err
 		}
-		defer func() {
+		cleanupTracker = &resourceCleanupTracker{}
+		finishAdmission = func() error {
+			if cleanupTracker.isUncertain() {
+				return errors.Join(fmt.Errorf("resource lease %s quarantined: process group cleanup unconfirmed", lease.ID()), lease.Quarantine())
+			}
 			releaseCtx, cancelRelease := context.WithTimeout(context.Background(), time.Second)
 			defer cancelRelease()
-			retErr = errors.Join(retErr, lease.Complete(releaseCtx))
+			return lease.Complete(releaseCtx)
+		}
+		defer func() {
+			if finishAdmission != nil {
+				retErr = errors.Join(retErr, finishAdmission())
+			}
 		}()
 		opts.Env = setCIEnvironment(opts.Env, "DVA_RESOURCE_SUPERVISED", "1")
 		if total := p.WorkerLimits[admission.Class]; total > 0 {
@@ -84,13 +95,16 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 		}
 	}
 	ctx := parent
+	if cleanupTracker != nil {
+		ctx = context.WithValue(ctx, resourceCleanupKey{}, cleanupTracker)
+	}
 	if opts.Profile.Timeout != "" {
 		d, err := time.ParseDuration(opts.Profile.Timeout)
 		if err != nil {
 			return report, fmt.Errorf("profile timeout: %w", err)
 		}
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(parent, d)
+		ctx, cancel = context.WithTimeout(ctx, d)
 		defer cancel()
 	}
 	if opts.Root == "" {
@@ -266,6 +280,10 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 		}
 		executionCtx = context.WithValue(executionCtx, compositionRuntimeKey{}, runtime)
 		report.Steps, retErr = execute(executionCtx, root, opts.Profile, env, writer, checkpoint)
+	}
+	if finishAdmission != nil {
+		retErr = errors.Join(retErr, finishAdmission())
+		finishAdmission = nil
 	}
 	after, _, attestErr := fingerprintInputs(ctx, root)
 	retErr = errors.Join(retErr, attestErr)

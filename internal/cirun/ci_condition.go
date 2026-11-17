@@ -94,6 +94,7 @@ func runCondition(ctx context.Context, root string, step config.CIStep, inherite
 		return false, errors.New("condition could not start")
 	}
 	pid := cmd.Process.Pid
+	defer observeResourceCleanup(conditionCtx, pid)
 	waited := make(chan error, 1)
 	go func() { waited <- cmd.Wait() }()
 	select {

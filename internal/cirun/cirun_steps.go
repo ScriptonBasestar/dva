@@ -401,6 +401,7 @@ func runStep(ctx context.Context, root string, step config.CIStep, inherited []s
 		return r, err
 	}
 	pid := cmd.Process.Pid
+	defer observeResourceCleanup(stepCtx, pid)
 	var signaledAt time.Time
 	signalWork := func() {
 		if signaledAt.IsZero() {

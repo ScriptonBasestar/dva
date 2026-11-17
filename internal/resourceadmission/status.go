@@ -77,7 +77,7 @@ func Status(ctx context.Context, dir, digest string) ([]StatusEntry, error) {
 				return fmt.Errorf("resource policy differs from existing state")
 			}
 			item := StatusEntry{ID: e.ID, Class: e.Class, Priority: e.Priority, State: e.State}
-			f, err := os.OpenFile(filepath.Join(dir, e.ID+".lock"), os.O_RDWR, 0)
+			f, err := openPrivateRegular(filepath.Join(dir, e.ID+".lock"), os.O_RDWR)
 			if err != nil {
 				item.Liveness = "unknown"
 				item.Reason = "lease lock unavailable; operator review required"

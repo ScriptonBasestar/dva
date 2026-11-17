@@ -15,3 +15,6 @@ func owned(os.FileInfo) bool { return false }
 func openPolicy(string) (*os.File, error) {
 	return nil, errors.New("resource admission unsupported on this platform")
 }
+func openPrivateRegular(string, int) (*os.File, error) {
+	return nil, errors.New("resource admission unsupported on this platform")
+}
