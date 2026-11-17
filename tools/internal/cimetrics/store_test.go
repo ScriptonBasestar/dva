@@ -13,6 +13,20 @@ import (
 	"time"
 )
 
+var errRetentionBusy = errors.New("metrics retention lock busy")
+
+func pruneFinished(dir string, now time.Time) error {
+	lock, err := lockRetention(dir)
+	if err != nil {
+		return err
+	}
+	if lock == nil {
+		return errRetentionBusy
+	}
+	defer unlockRetention(lock)
+	return pruneFinishedLocked(dir, now)
+}
+
 func testRecord(id string, at time.Time) Record {
 	return Record{Schema: recordSchema, ID: id, Check: "unit", StartedAt: at.Add(-time.Second), FinishedAt: at, Status: "complete", Outcome: "succeeded", Metadata: unknownMetadata()}
 }
@@ -46,7 +60,7 @@ func TestMetricsRetentionProtectsActiveAndRecoversAbandoned(t *testing.T) {
 		t.Fatal(err)
 	}
 	oldEvents := filepath.Join(dir, oldID+".events.jsonl")
-	if err := os.WriteFile(oldEvents, []byte(fmt.Sprintf("{\"schema\":%q,\"measurement_id\":%q}\n", recordSchema, oldID)), 0o600); err != nil {
+	if err := os.WriteFile(oldEvents, fmt.Appendf(nil, "{\"schema\":%q,\"measurement_id\":%q}\n", recordSchema, oldID), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	live := writeActive(t, dir, liveID, now.Add(-time.Minute))

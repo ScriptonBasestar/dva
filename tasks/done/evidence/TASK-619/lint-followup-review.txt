@@ -1,0 +1,12 @@
+TASK-619 follow-up source review
+Reviewer execution reference: /root/ci_contract_review
+
+차단 사항 없음. fmt.Appendf 변경은 같은 형식의 바이트를 생성한다. pruneFinished와 errRetentionBusy는 원래 테스트에서만 사용했으며 Unix 조건의 test 파일로 그대로 이동했다.
+
+production의 publish·pruneFinishedLocked 호출, nonblocking lock, 보존 한도와 orphan 복구 경로는 변경되지 않았다. 기존 done-review 완료 기준은 유효하다.
+
+기존 진단 hash는 당시 source의 기록이며 이번 후속 head의 동일성 증거로 재사용하지 않아야 한다. 이전 hosted lint 실패도 보존하고 새 head 검증 결과와 구분해야 한다.
+
+git diff --check를 확인했다. 테스트·파일 변경·하위 위임은 하지 않았다. main의 scoped gopls 성공은 main 실행 증거다.
+
+VERDICT: PASS

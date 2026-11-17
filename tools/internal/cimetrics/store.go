@@ -336,20 +336,6 @@ type finishedRecord struct {
 	events      string
 }
 
-var errRetentionBusy = errors.New("metrics retention lock busy")
-
-func pruneFinished(dir string, now time.Time) error {
-	lock, err := lockRetention(dir)
-	if err != nil {
-		return err
-	}
-	if lock == nil {
-		return errRetentionBusy
-	}
-	defer unlockRetention(lock)
-	return pruneFinishedLocked(dir, now)
-}
-
 func pruneFinishedLocked(dir string, now time.Time) error {
 	if err := reapAbandoned(dir, now); err != nil {
 		return err
