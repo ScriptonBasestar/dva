@@ -1,5 +1,5 @@
 ---
-id: TASK-619
+id: TASK-621
 title: "Host-wide heavy-step serialization slot"
 type: decision
 priority: P2

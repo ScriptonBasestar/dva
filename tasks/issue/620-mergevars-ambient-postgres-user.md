@@ -6,7 +6,7 @@ priority: P3
 effort: S
 status: todo
 severity: low
-discovered-in: "TASK-619 delivery: make test failed in a shell exporting POSTGRES_USER; independent reviewer reproduced it at pristine base a58ddad7"
+discovered-in: "TASK-621 delivery: make test failed in a shell exporting POSTGRES_USER; independent reviewer reproduced it at pristine base a58ddad7"
 discovered-at: 2026-11-17
 created: 2026-11-17
 ownership: local
@@ -24,7 +24,7 @@ Postgres를 쓰는 개발 셸처럼 이 변수를 export한 환경에서는 기�
 ## Reproduction
 
 - `env POSTGRES_USER=scripton go test ./internal/config -run TestMergeVarsDefaultSyntax -count=1`
-  → FAIL: `DB_URL = "postgres://scripton@localhost/db"` (2026-11-17, TASK-619 작업 셸)
+  → FAIL: `DB_URL = "postgres://scripton@localhost/db"` (2026-11-17, TASK-621 작업 셸)
 - pristine base `a58ddad7`에서 동일 실패를 독립 리뷰가 재현했다(2026-11-17).
 - `env -u POSTGRES_USER go test ./internal/config -run TestMergeVarsDefaultSyntax -count=1`
   → ok

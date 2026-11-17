@@ -1,5 +1,5 @@
 ---
-id: TASK-619
+id: TASK-621
 title: "호스트 전역 무거운 CI 단계 직렬화 슬롯"
 type: feature
 priority: P1
@@ -27,7 +27,7 @@ advisory 슬롯(CI 상태 루트의 고정 `locks/host-slot.lock`)을 잡고, �
   올리지 않는다.
 - 재사용 hit과 조건 거짓은 슬롯을 잡지 않는다. 조상이 슬롯을 잡은 구성 child의
   재선언은 교착 대신 즉시 실패한다.
-- 메커니즘 결정 기록은 [decisions/619](../../decisions/619-host-slot-serialization.md),
+- 메커니즘 결정 기록은 [decisions/621](../../decisions/621-host-slot-serialization.md),
   사용법은 [dva-ci 설정 참조](../../skills/dva-ci/references/configuration.md)에 둔다.
   `docs/53-ci-profiles.md`는 크기 상한 17바이트 이내라 문단을 넣지 않았다.
 

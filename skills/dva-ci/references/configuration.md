@@ -80,7 +80,7 @@ ID·PID·profile·단계·root·점유 시각을 밝히고, 획득·해제 시�
 실행 내내 슬롯을 잡는데, 자식이 다시 `host_slot`을 선언하면 구성 ancestry 검사가
 조상 점유로 즉시 실패시켜 자기 부모를 기다리는 교착에 빠지지 않는다. 그 외 조상이
 스핀을 잡은 상태의 재선언도 같은 검사로 즉시 실패한다. 근거는
-[결정 기록 619](../../../decisions/619-host-slot-serialization.md)에 있다.
+[결정 기록 621](../../../decisions/621-host-slot-serialization.md)에 있다.
 
 프로필 map은 이름별 병합, scalar는 나중 값 우선, `steps`와 `locks` 목록은 지정 시
 교체한다. `tool_jobs` 생략은 이전 값을 유지하고, 명시한 양의 정수는 이전 값을
