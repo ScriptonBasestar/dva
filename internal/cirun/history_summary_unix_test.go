@@ -12,6 +12,37 @@ import (
 	"time"
 )
 
+func TestReadSummaryReceiptsBoundsAndRejectsUnsafeInputs(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.Chmod(dir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	id := strings.Repeat("a", 32)
+	data, err := json.Marshal(Report{ID: id, Root: "/a", Profile: "full", Status: "succeeded", Duration: time.Second})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, id+".json"), data, 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, strings.Repeat("b", 32)+".json"), []byte("invalid"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, strings.Repeat("c", 32)+".json"), make([]byte, (4<<20)+1), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(filepath.Join(dir, id+".json"), filepath.Join(dir, strings.Repeat("d", 32)+".json")); err != nil {
+		t.Fatal(err)
+	}
+	reports, excluded, err := ReadSummaryReceipts(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(reports) != 1 || excluded["invalid_receipt"] != 1 || excluded["oversized"] != 1 || excluded["non_regular"] != 1 {
+		t.Fatalf("reports %v excluded %v", reports, excluded)
+	}
+}
+
 func TestSummaryRejectsFIFOAndUntrustedModes(t *testing.T) {
 	dir := t.TempDir()
 	if err := os.Chmod(dir, 0700); err != nil {
@@ -59,7 +90,11 @@ func TestSummaryRejectsSymlinkStateAndPinsDirectoryAcrossSwap(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer opened.Close()
+	t.Cleanup(func() {
+		if err := opened.Close(); err != nil {
+			t.Errorf("close directory: %v", err)
+		}
+	})
 	if err := os.Rename(dir, filepath.Join(base, "original")); err != nil {
 		t.Fatal(err)
 	}

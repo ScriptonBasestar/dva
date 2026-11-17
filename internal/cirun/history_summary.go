@@ -2,6 +2,7 @@ package cirun
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -9,6 +10,15 @@ import (
 	"strings"
 	"time"
 )
+
+var errSummaryClose = errors.New("close CI history input")
+
+func closeSummaryRejected(closer io.Closer, cause error) error {
+	if err := closer.Close(); err != nil {
+		return errors.Join(cause, fmt.Errorf("%w: %w", errSummaryClose, err))
+	}
+	return cause
+}
 
 // HistorySummary is descriptive; this receipt schema cannot prove comparable
 // complete command/configuration and cache provenance.
@@ -59,10 +69,16 @@ func ReadSummaryReceipts(dir string) ([]Report, map[string]int, error) {
 		return nil, map[string]int{}, nil
 	}
 	if err != nil {
+		if errors.Is(err, errSummaryClose) {
+			return nil, nil, err
+		}
 		return nil, map[string]int{"state_directory_unavailable": 1}, nil
 	}
-	defer f.Close()
-	return readSummaryFromOpenedDir(f)
+	reports, excluded, readErr := readSummaryFromOpenedDir(f)
+	if closeErr := f.Close(); closeErr != nil {
+		return nil, nil, errors.Join(readErr, fmt.Errorf("%w: %w", errSummaryClose, closeErr))
+	}
+	return reports, excluded, readErr
 }
 
 func readSummaryFromOpenedDir(f *os.File) ([]Report, map[string]int, error) {
@@ -84,12 +100,18 @@ func readSummaryFromOpenedDir(f *os.File) ([]Report, map[string]int, error) {
 		file, reason, e := openSummaryReceipt(f, name)
 		if e != nil {
 			excluded[reason]++
+			if errors.Is(e, errSummaryClose) {
+				excluded["close_failed"]++
+			}
 			continue
 		}
 		data, e := io.ReadAll(io.LimitReader(file, (4<<20)+1))
 		closeErr := file.Close()
 		if e != nil || closeErr != nil {
 			excluded["unreadable"]++
+			if closeErr != nil {
+				excluded["close_failed"]++
+			}
 			continue
 		}
 		if len(data) > 4<<20 {

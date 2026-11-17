@@ -4,8 +4,9 @@ package cirun
 
 import (
 	"errors"
-	"golang.org/x/sys/unix"
 	"os"
+
+	"golang.org/x/sys/unix"
 )
 
 func openSummaryState(path string) (*os.File, error) {
@@ -16,8 +17,7 @@ func openSummaryState(path string) (*os.File, error) {
 	f := os.NewFile(uintptr(fd), path)
 	info, err := f.Stat()
 	if err != nil || !info.IsDir() || info.Mode().Perm() != 0700 || !ownedByCurrentUser(info) {
-		f.Close()
-		return nil, errors.New("CI history state is not a private owned directory")
+		return nil, closeSummaryRejected(f, errors.New("CI history state is not a private owned directory"))
 	}
 	return f, nil
 }
@@ -33,20 +33,16 @@ func openSummaryReceipt(dir *os.File, name string) (*os.File, string, error) {
 	f := os.NewFile(uintptr(fd), name)
 	info, err := f.Stat()
 	if err != nil {
-		f.Close()
-		return nil, "unreadable", err
+		return nil, "unreadable", closeSummaryRejected(f, err)
 	}
 	if !info.Mode().IsRegular() {
-		f.Close()
-		return nil, "non_regular", errors.New("not regular")
+		return nil, "non_regular", closeSummaryRejected(f, errors.New("not regular"))
 	}
 	if info.Mode().Perm() != 0600 || !ownedByCurrentUser(info) {
-		f.Close()
-		return nil, "untrusted_owner_or_mode", errors.New("receipt is not private and owned")
+		return nil, "untrusted_owner_or_mode", closeSummaryRejected(f, errors.New("receipt is not private and owned"))
 	}
 	if info.Size() > 4<<20 {
-		f.Close()
-		return nil, "oversized", errors.New("receipt too large")
+		return nil, "oversized", closeSummaryRejected(f, errors.New("receipt too large"))
 	}
 	return f, "", nil
 }
