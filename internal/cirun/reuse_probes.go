@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"io"
 	"os/exec"
 	"sync"
@@ -30,12 +31,10 @@ func reuseProbeDigest(ctx context.Context, _, workdir, command string, env []str
 	pid := cmd.Process.Pid
 	waited := make(chan error, 1)
 	go func() { waited <- cmd.Wait() }()
+	var waitErr error
 	select {
-	case err := <-waited:
+	case waitErr = <-waited:
 		cleanupGroup(pid)
-		if err != nil {
-			return "", errors.New("reuse fingerprint probe failed (output withheld)")
-		}
 	case <-ctx.Done():
 		terminateProcessGroup(pid, waited)
 		return "", ctx.Err()
@@ -47,6 +46,12 @@ func reuseProbeDigest(ctx context.Context, _, workdir, command string, env []str
 	defer stdout.mu.Unlock()
 	if stdout.overflow {
 		return "", errors.New("reuse fingerprint probe exceeded 1 MiB output limit")
+	}
+	if waitErr != nil {
+		if exitErr, ok := errors.AsType[*exec.ExitError](waitErr); ok {
+			return "", fmt.Errorf("reuse fingerprint probe failed: exit_code=%d (output withheld)", exitErr.ExitCode())
+		}
+		return "", errors.New("reuse fingerprint probe failed (output withheld)")
 	}
 	return hex.EncodeToString(stdout.hash.Sum(nil)), nil
 }

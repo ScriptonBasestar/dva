@@ -37,6 +37,10 @@ All notable changes to DVA are documented here.
 
 ### Fixed
 
+- CI 재사용 probe 실패의 숫자 종료 코드와 출력 한도 초과를 구분하며 stdout·stderr 원문은 계속 숨깁니다.
+
+- `dva ci history`의 기존 프로필 호출을 유지하고 명시적 `--root`·`--profile` 이력 조회와 구분합니다.
+
 - `secret reseal`에서 encrypt의 creation-rule 오류 진단이 있으면 하위 프로세스의
   종료 결과 관측 순서와 관계없이 해당 고정 오류 코드를 보존합니다.
 
