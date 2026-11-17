@@ -9,6 +9,8 @@
 정책은 `capacity`, `max_running`, `max_heavy`, `weights`(`heavy`·`light`),
 `aging_interval`을 가진 JSON이다. 예를 들어 4·3·1·2/1·5m은 초기 실험값이며
 측정된 최적값이 아니다. `worker_limits`의 `heavy`·`light`는 선택적 양의 정수다.
+heavy 가중치는 light 이상이어야 한다. 정책은 현재 사용자 소유 일반 파일이어야 하며
+0644 읽기 권한을 허용한다. 상태·보고 파일은 별도 0600 비공개 파일이다.
 입장 점수는 실제 CPU·RSS 강제가 아니다. worker 환경은 알려진 숫자만 협력적으로
 제한하며 임의 도구·자식이 무시할 수 있다. GOFLAGS 등 불명 형식은 수정하지 않는다.
 

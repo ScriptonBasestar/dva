@@ -58,7 +58,7 @@ func ReadPolicy(path string) (Policy, string, error) {
 	if err = d.Decode(&extra); err != io.EOF {
 		return p, "", errors.New("resource policy must contain one JSON value")
 	}
-	if p.Capacity < 1 || p.MaxRunning < 1 || p.MaxHeavy < 0 || p.MaxHeavy > p.MaxRunning || len(p.Weights) != 2 || p.Weights["light"] < 1 || p.Weights["heavy"] < 1 || p.Weights["light"] > p.Capacity || p.Weights["heavy"] > p.Capacity {
+	if p.Capacity < 1 || p.MaxRunning < 1 || p.MaxHeavy < 0 || p.MaxHeavy > p.MaxRunning || len(p.Weights) != 2 || p.Weights["light"] < 1 || p.Weights["heavy"] < p.Weights["light"] || p.Weights["light"] > p.Capacity || p.Weights["heavy"] > p.Capacity {
 		return p, "", errors.New("invalid resource capacity, limits or weights")
 	}
 	for class, limit := range p.WorkerLimits {
