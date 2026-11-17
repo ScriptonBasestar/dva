@@ -91,7 +91,7 @@ func lockFile(ctx context.Context, path string, create bool, fn func() error) (r
 	return fn()
 }
 
-func writeEntry(dir string, e entry) error {
+func writeEntry(dir string, e entry) (retErr error) {
 	b, err := json.Marshal(e)
 	if err != nil {
 		return err
@@ -101,7 +101,11 @@ func writeEntry(dir string, e entry) error {
 		return err
 	}
 	tmp := f.Name()
-	defer os.Remove(tmp)
+	defer func() {
+		if removeErr := os.Remove(tmp); removeErr != nil && !errors.Is(removeErr, os.ErrNotExist) {
+			retErr = errors.Join(retErr, removeErr)
+		}
+	}()
 	if err = f.Chmod(0600); err == nil {
 		_, err = f.Write(b)
 	}
@@ -299,9 +303,7 @@ func Acquire(ctx context.Context, dir string, p Policy, digest, class, priority 
 					return -1
 				}
 				boost := now.Sub(e.QueuedAt) / age
-				if boost < 0 {
-					boost = 0
-				}
+				boost = max(0, boost)
 				if boost >= 2 {
 					return 2
 				}

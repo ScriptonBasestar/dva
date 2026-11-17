@@ -16,9 +16,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type resourceChildExit struct{ code int }
+type resourceChildExit struct {
+	code  int
+	cause error
+}
 
 func (e *resourceChildExit) Error() string { return fmt.Sprintf("child exited %d", e.code) }
+func (e *resourceChildExit) Unwrap() error { return e.cause }
 
 type resourceReport struct {
 	Schema            string  `json:"schema"`
@@ -34,11 +38,12 @@ type resourceReport struct {
 
 var resourceStateDirectory = resourceadmission.DefaultDirectory
 var resourceReportSync = func(f *os.File) error { return f.Sync() }
+var resourceReportClose = func(f *os.File) error { return f.Close() }
 
 func newResourceCommand() *cobra.Command {
 	var policyPath, class, priority, waitLimit, executionLimit, reportPath string
 	resource := &cobra.Command{Use: "resource", Short: "Coordinate cooperative host resources", Long: "Coordinate classified local workloads using the host resource policy.", SilenceUsage: true, SilenceErrors: true}
-	run := &cobra.Command{Use: "run -- COMMAND [ARG...]", Short: "Run a classified command", Long: "Wait for a cooperative host resource lease and run the command. An interrupted active lease remains quarantined for operator review.", Args: cobra.MinimumNArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
+	run := &cobra.Command{Use: "run -- COMMAND [ARG...]", Short: "Run a classified command", Long: "Wait for a cooperative host resource lease and run the command. An interrupted active lease remains quarantined for operator review.", Args: cobra.MinimumNArgs(1), RunE: func(cmd *cobra.Command, args []string) (resultErr error) {
 		if os.Getenv("DVA_RESOURCE_SUPERVISED") != "" || os.Getenv("DVA_CI_PARENT_RUN") != "" {
 			return errors.New("nested resource admission is unsupported")
 		}
@@ -73,7 +78,12 @@ func newResourceCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			defer report.Close()
+			defer func() {
+				if closeErr := resourceReportClose(report); closeErr != nil {
+					_, printErr := fmt.Fprintf(cmd.ErrOrStderr(), "resource report close failed: %v\n", closeErr)
+					resultErr = errors.Join(resultErr, printErr)
+				}
+			}()
 		}
 		result := resourceReport{Schema: "dva-resource-run/1", PolicyFingerprint: digest, Class: class, Priority: priority, Outcome: "waiting"}
 		writeReport := func() error {
@@ -162,12 +172,14 @@ func newResourceCommand() *cobra.Command {
 					if !resourceGroupGone(child.Process.Pid) {
 						killErr := resourceKillGroup(child.Process.Pid)
 						if killErr != nil {
-							fmt.Fprintf(cmd.ErrOrStderr(), "resource group kill failed: %v\n", killErr)
+							_, printErr := fmt.Fprintf(cmd.ErrOrStderr(), "resource group kill failed: %v\n", killErr)
+							err = errors.Join(err, printErr)
 						}
 						err = errors.Join(err, killErr)
 					}
 					if termErr != nil {
-						fmt.Fprintf(cmd.ErrOrStderr(), "resource group terminate failed: %v\n", termErr)
+						_, printErr := fmt.Fprintf(cmd.ErrOrStderr(), "resource group terminate failed: %v\n", termErr)
+						err = errors.Join(err, printErr)
 					}
 					err = errors.Join(err, termErr)
 				}
@@ -199,7 +211,8 @@ func newResourceCommand() *cobra.Command {
 			cleanupCancel()
 			if releaseErr != nil {
 				err = errors.Join(err, releaseErr)
-				fmt.Fprintf(cmd.ErrOrStderr(), "resource lease release failed: %v\n", releaseErr)
+				_, printErr := fmt.Fprintf(cmd.ErrOrStderr(), "resource lease release failed: %v\n", releaseErr)
+				err = errors.Join(err, printErr)
 			}
 		} else {
 			result.Outcome = "quarantined"
@@ -208,13 +221,15 @@ func newResourceCommand() *cobra.Command {
 			}
 			quarantineErr := fmt.Errorf("resource lease %s quarantined: child process group may remain; operator review required", lease.ID())
 			err = errors.Join(err, quarantineErr)
-			fmt.Fprintln(cmd.ErrOrStderr(), quarantineErr)
+			_, printErr := fmt.Fprintln(cmd.ErrOrStderr(), quarantineErr)
+			err = errors.Join(err, printErr)
 		}
 		if reportErr := writeReport(); reportErr != nil {
-			fmt.Fprintf(cmd.ErrOrStderr(), "resource report failed: %v\n", reportErr)
+			_, printErr := fmt.Fprintf(cmd.ErrOrStderr(), "resource report failed: %v\n", reportErr)
+			err = errors.Join(err, printErr)
 		}
 		if code != 0 {
-			return &resourceChildExit{code: code}
+			return &resourceChildExit{code: code, cause: err}
 		}
 		return err
 	}}

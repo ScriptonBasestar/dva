@@ -185,6 +185,50 @@ func TestResourceReportWriteFailurePreservesChildResult(t *testing.T) {
 	}
 }
 
+func TestResourceReportCloseFailurePreservesChildResult(t *testing.T) {
+	if runtime.GOOS != "darwin" && runtime.GOOS != "linux" {
+		t.Skip("native resource admission not available")
+	}
+	t.Setenv("DVA_RESOURCE_SUPERVISED", "")
+	t.Setenv("DVA_CI_PARENT_RUN", "")
+	for _, code := range []int{0, 17} {
+		t.Run(fmt.Sprint(code), func(t *testing.T) {
+			dir := t.TempDir()
+			if err := os.Chmod(dir, 0700); err != nil {
+				t.Fatal(err)
+			}
+			oldDir := resourceStateDirectory
+			resourceStateDirectory = func() (string, error) { return filepath.Join(dir, "state"), nil }
+			t.Cleanup(func() { resourceStateDirectory = oldDir })
+			oldClose := resourceReportClose
+			resourceReportClose = func(f *os.File) error { return errors.Join(f.Close(), errors.New("close failed")) }
+			t.Cleanup(func() { resourceReportClose = oldClose })
+			policy := filepath.Join(dir, "policy.json")
+			if err := os.WriteFile(policy, []byte(`{"capacity":4,"max_running":3,"max_heavy":1,"weights":{"heavy":2,"light":1},"aging_interval":"5m"}`), 0600); err != nil {
+				t.Fatal(err)
+			}
+			cmd := newResourceCommand()
+			var out, stderr bytes.Buffer
+			cmd.SetOut(&out)
+			cmd.SetErr(&stderr)
+			cmd.SetArgs([]string{"run", "--policy", policy, "--class", "light", "--execution-timeout", "2s", "--report-file", filepath.Join(dir, "report"), "--", "/bin/sh", "-c", fmt.Sprintf("exit %d", code)})
+			err := cmd.Execute()
+			if code == 0 && err != nil {
+				t.Fatalf("success changed: %v", err)
+			}
+			if code != 0 {
+				var child *resourceChildExit
+				if !errors.As(err, &child) || child.code != code {
+					t.Fatalf("child exit changed: %v", err)
+				}
+			}
+			if !strings.Contains(stderr.String(), "resource report close failed") {
+				t.Fatalf("missing diagnostic: %s", stderr.String())
+			}
+		})
+	}
+}
+
 func TestResourceRunTimeoutStopsOwnedChildGroup(t *testing.T) {
 	if runtime.GOOS != "darwin" && runtime.GOOS != "linux" {
 		t.Skip("native resource admission not available")

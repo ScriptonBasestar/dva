@@ -25,8 +25,7 @@ type Policy struct {
 
 // ReadPolicy rejects relative paths, symlinks, non-regular files and malformed
 // input. The returned digest is a hash of normalized validated policy values.
-func ReadPolicy(path string) (Policy, string, error) {
-	var p Policy
+func ReadPolicy(path string) (p Policy, digest string, retErr error) {
 	if !filepath.IsAbs(path) {
 		return p, "", errors.New("resource policy path must be absolute")
 	}
@@ -34,7 +33,7 @@ func ReadPolicy(path string) (Policy, string, error) {
 	if err != nil {
 		return p, "", err
 	}
-	defer f.Close()
+	defer func() { retErr = errors.Join(retErr, f.Close()) }()
 	opened, err := f.Stat()
 	if err != nil {
 		return p, "", err

@@ -241,8 +241,7 @@ func Execute() {
 	}
 
 	if err := rootCmd.Execute(); err != nil {
-		var childExit *resourceChildExit
-		if errors.As(err, &childExit) {
+		if childExit, ok := errors.AsType[*resourceChildExit](err); ok {
 			os.Exit(childExit.code)
 		}
 		errMsg := err.Error()
