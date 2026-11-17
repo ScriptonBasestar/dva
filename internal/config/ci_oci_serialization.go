@@ -21,6 +21,9 @@ func (s CIStep) MarshalJSON() ([]byte, error) {
 	if s.OCI != nil && s.ChildCI != "" {
 		return nil, fmt.Errorf("child_ci is only supported by native run steps")
 	}
+	if s.OCI != nil && s.HostSlot {
+		return nil, fmt.Errorf("host_slot is only supported by native run steps")
+	}
 	if s.OCI == nil {
 		return json.Marshal(ciStepAlias(s))
 	}
@@ -33,6 +36,9 @@ func (s CIStep) MarshalYAML() (any, error) {
 	}
 	if s.OCI != nil && s.ChildCI != "" {
 		return nil, fmt.Errorf("child_ci is only supported by native run steps")
+	}
+	if s.OCI != nil && s.HostSlot {
+		return nil, fmt.Errorf("host_slot is only supported by native run steps")
 	}
 	if s.OCI == nil {
 		return ciStepAlias(s), nil

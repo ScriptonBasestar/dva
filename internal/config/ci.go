@@ -69,6 +69,7 @@ type CIStep struct {
 	Workdir     string            `yaml:"workdir" json:"workdir"`
 	Environment map[string]string `yaml:"environment" json:"environment"`
 	Timeout     string            `yaml:"timeout" json:"timeout"`
+	HostSlot    bool              `yaml:"host_slot,omitempty" json:"host_slot,omitempty"`
 	OCI         *CIOCI            `yaml:"oci,omitempty" json:"oci,omitempty"`
 }
 
@@ -198,6 +199,9 @@ func validateCIProfile(name string, profile CIProfile) error {
 		}
 		if step.ChildCI != "" && step.OCI != nil {
 			return fmt.Errorf("ci profile %q step %q: child_ci is only supported by native run steps", name, step.Name)
+		}
+		if step.HostSlot && step.OCI != nil {
+			return fmt.Errorf("ci profile %q step %q: host_slot is only supported by native run steps", name, step.Name)
 		}
 		if step.Condition != nil {
 			if step.OCI != nil || step.ChildCI != "" {

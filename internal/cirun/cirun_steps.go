@@ -297,6 +297,26 @@ func runStep(ctx context.Context, root string, step config.CIStep, inherited []s
 		return r, errors.New("step workdir escapes root")
 	}
 	workdir = canonicalWorkdir
+	if step.HostSlot {
+		// Take the host-wide slot before the step budget is armed and measure
+		// the wait against the pre-budget context, so queueing for the slot
+		// never consumes the declared step timeout. The profile deadline and
+		// external cancellation still bound the wait itself.
+		origin, _ := ctx.Value(hostSlotOriginKey{}).(context.Context)
+		if origin == nil {
+			origin = ctx
+		}
+		runtime, _ := origin.Value(compositionRuntimeKey{}).(compositionRuntime)
+		release, waited, err := acquireHostSlot(origin, hostSlotState(origin), hostSlotMetadata{
+			RunID: runtime.id, PID: os.Getpid(), Root: root, Profile: runtime.profile, Step: step.Name,
+		}, step.Name, out, runtime.ancestry)
+		r.HostSlotWait = waited
+		if err != nil {
+			return r, err
+		}
+		defer release()
+		ctx = origin
+	}
 	stepCtx := ctx
 	var cancel context.CancelFunc
 	if step.Timeout != "" {

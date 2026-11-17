@@ -4,7 +4,7 @@
 `Status`를 갱신한 뒤 그 결과대로 실행한다. 카드는 `DECISION-NNN`과 `TASK-` ID를 함께 쓴다. 아래 계수기는 ce 게이트가 요구하는 값이다:
 ADR은 승격 문서가 없어 0000이고, 로그는 위 카드들의 최대 번호를 잇는다.
 
-현재 최대: ADR-0000, 로그 513. 다음은 ADR-0001, 로그 514.
+현재 최대: ADR-0000, 로그 619. 다음은 ADR-0001, 로그 620.
 
 | ID | 제목 | Status | 핵심 질문 |
 |---|---|---|---|
@@ -19,6 +19,7 @@ ADR은 승격 문서가 없어 0000이고, 로그는 위 카드들의 최대 번
 | [TASK-503](503-usage-ceiling-metric.md) | USAGE.md ceiling metric | accepted | 펜스 밖 비지 않은 줄 기준 |
 | [TASK-504](504-decision-record-locations.md) | Decision record locations | accepted | 모든 결정을 `decisions/`에 둔다 |
 | [TASK-513](513-published-commit-history-policy.md) | Published commit subject history | accepted | 네 literal SHA만 역사 처리 |
+| [TASK-619](619-host-slot-serialization.md) | Host-wide heavy-step slot | accepted | 옵트인 `host_slot`, 대기는 단계 예산 밖 |
 
 DECISION-001의 ceiling은 그대로다. [TASK-487](487-changelog-half-ceiling-trigger.md)은
 2026-10-05 사용자가 실제 ceiling 트리거를 선택해 Accepted다.

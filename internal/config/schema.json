@@ -1882,14 +1882,15 @@
                         },
                         "required": ["image", "argv", "source", "pids_limit", "memory_bytes", "cpus", "output_limit_bytes"]
                       },
-                      "timeout": { "type": "string", "description": "Positive Go duration no greater than the profile timeout" }
+                      "timeout": { "type": "string", "description": "Positive Go duration no greater than the profile timeout" },
+                      "host_slot": { "type": "boolean", "description": "Hold the host-wide advisory slot while this native step executes; waiting for the slot does not consume the step timeout" }
                     },
                     "required": ["name"],
                     "oneOf": [
                       { "required": ["run"], "not": { "required": ["oci"] } },
                       { "required": ["oci", "timeout"], "not": { "anyOf": [{ "required": ["run"] }, { "required": ["workdir"] }, { "required": ["environment"] }, { "required": ["child_ci"] }, { "required": ["condition"] }] } }
                     ],
-                    "not": { "required": ["condition", "child_ci"] }
+                    "not": { "anyOf": [{ "required": ["condition", "child_ci"] }, { "required": ["host_slot", "oci"] }] }
                   }
                 }
               }

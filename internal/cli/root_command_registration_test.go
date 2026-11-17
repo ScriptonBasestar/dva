@@ -176,11 +176,11 @@ func TestCommandHelpGroupsAndDiscoveryDescriptions(t *testing.T) {
 		}
 	}
 
-	// Keep the current public shape pinned: 1.11 adds optional native CI
-	// selection conditions while preserving route identity.
+	// Keep the current public shape pinned: 1.12 adds the optional host_slot
+	// marker to native CI steps while preserving route identity.
 	manifest := buildManifest(&config.Config{})
-	if manifest.SchemaVersion != "1.11" {
-		t.Errorf("manifest schema version = %q, want 1.11 (optional CI condition)", manifest.SchemaVersion)
+	if manifest.SchemaVersion != "1.12" {
+		t.Errorf("manifest schema version = %q, want 1.12 (optional CI host_slot)", manifest.SchemaVersion)
 	}
 	for _, name := range []string{"manifest", "show", "status"} {
 		entry, ok := manifest.StaticCommands[name]

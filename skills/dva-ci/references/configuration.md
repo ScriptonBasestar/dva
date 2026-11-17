@@ -50,6 +50,7 @@ ci:
 | `steps[].timeout` | 전체 제한보다 작거나 같은 개별 제한 |
 | `steps[].child_ci` | native run에서만 `independent-root` 허용. 생략하면 중첩 CI 거절 |
 | `steps[].condition` | native 단계의 읽기 전용 선택. `run`과 양의 유한 `timeout`을 명시하며 [조건 계약](../../../docs/ci-step-conditions.md)을 따른다 |
+| `steps[].host_slot` | `true`면 native run 단계가 실행되는 동안 호스트 전체 advisory 슬롯을 잡는다. 서로 다른 저장소·워크트리·세션의 `dva` 실행끼리 같은 슬롯으로 직렬화한다. 슬롯 대기는 `steps[].timeout` 예산에서 제외되며 profile `timeout`만 대기를 제한한다. OCI 단계와 함께 쓸 수 없다 |
 
 독립 단계는 `max_parallel` 범위에서 병렬 실행할 수 있다. 목록 순서로 선행 관계를
 대신하지 않는다. 순환·없는 참조·중복 이름·빈 명령은 실행 전에 실패한다.
@@ -63,6 +64,17 @@ ci:
 프로필 안의 중복 키는 오류다. `locks`를 생략하면 병합 전 값을 유지하고, 지정하면
 목록 전체를 교체한다. `locks: []`는 공유 자원 락을 제거한다. 프로필을 소유한 설정
 디렉터리의 자동 락은 `locks`와 무관하게 항상 적용된다.
+
+`host_slot`을 선언한 단계는 실행 내내 CI 상태 루트의 고정 슬롯 파일
+`locks/host-slot.lock`을 잡는다. 이 파일은 저장소·워크트리·세션과 무관하게 호스트의
+모든 `dva` 실행이 공유하므로 서로 다른 root의 선언된 무거운 단계끼리만 직렬화한다.
+root·자원 락과 달리 점유 중이면 실패하지 않고 기다린다. 대기 도중에는 점유 run
+ID·PID·profile·단계·root·점유 시각을 밝히고, 획득·해제 시각에 각각
+`host_slot=acquired waited=…`, `host_slot=released held=…` 줄을 남긴다. 대기는 그
+단계의 `timeout` 예산에서 제외되며 profile `timeout`과 외부 취소만 대기를 제한한다.
+어떤 timeout 값도 늘어나지 않는다. 재사용 hit과 조건 거짓은 단계를 실행하지 않으므로
+슬롯을 잡지 않고, 슬롯을 잡은 조상 아래에서 구성 child가 다시 선언하면 자기 조상을
+기다리지 않도록 즉시 실패한다. 근거는 [결정 기록 619](../../../decisions/619-host-slot-serialization.md)에 있다.
 
 프로필 map은 이름별 병합, scalar는 나중 값 우선, `steps`와 `locks` 목록은 지정 시
 교체한다. `tool_jobs` 생략은 이전 값을 유지하고, 명시한 양의 정수는 이전 값을

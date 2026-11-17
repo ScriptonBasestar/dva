@@ -10,6 +10,10 @@ All notable changes to DVA are documented here.
 - DVA 자체 검사에서 Go 테스트의 완료·미완료·소요 시간을 제한된 로컬 요약으로
   수집하고 hosted JSONL artifact에도 요약을 추가합니다. native 린트는 도구별
   단계 시간으로 구분하며 부가 수집 오류가 실제 검사 결과를 덮어쓰지 않습니다.
+- native CI 단계에 옵트인 `host_slot` 마커를 추가합니다. 표시한 단계는 실행 내내
+  호스트 전체 advisory 슬롯을 잡아 서로 다른 저장소·워크트리의 무거운 `dva` 실행을
+  직렬화하며, 점유자 신원·대기·획득·해제를 로그로 남깁니다. 슬롯 대기는 단계
+  `timeout` 예산에서 제외되고 profile `timeout`만 대기를 제한합니다.
 
 - native CI 단계에 읽기 전용 JSON `condition`을 추가합니다. 선택된 검사만 실행·재사용하며
   조건 오류는 실패, 조건 거짓은 skipped로 구분합니다. lookup과 dry-run은 조건을 실행하지 않습니다.

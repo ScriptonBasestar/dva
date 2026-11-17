@@ -15,6 +15,7 @@ import (
 type compositionRuntimeKey struct{}
 type compositionRuntime struct {
 	id, root, state string
+	profile         string
 	ancestry        []compositionFrame
 	workers         *compositionWorkers
 	fresh           bool

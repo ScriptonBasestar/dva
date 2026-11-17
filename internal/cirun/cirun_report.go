@@ -66,6 +66,7 @@ type StepReport struct {
 	StartedAt         time.Time          `json:"started_at"`
 	FinishedAt        time.Time          `json:"finished_at"`
 	Duration          time.Duration      `json:"duration"`
+	HostSlotWait      time.Duration      `json:"host_slot_wait,omitempty"`
 	WorkerBudget      *WorkerBudget      `json:"worker_budget,omitempty"`
 }
 

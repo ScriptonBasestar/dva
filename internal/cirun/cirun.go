@@ -217,7 +217,7 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 		}
 		executionCtx := context.WithValue(ctx, ociScopeKey{}, ociScope{state: state, runID: id})
 		executionCtx = context.WithValue(executionCtx, reuseRuntimeKey{}, reuseRuntime{runID: id, fresh: fresh})
-		runtime := compositionRuntime{id: id, root: root, state: lockState, workers: boundedWorkers, fresh: fresh}
+		runtime := compositionRuntime{id: id, root: root, state: lockState, profile: opts.ProfileName, workers: boundedWorkers, fresh: fresh}
 		if grant != nil {
 			runtime.ancestry = append([]compositionFrame(nil), grant.Ancestry...)
 		}

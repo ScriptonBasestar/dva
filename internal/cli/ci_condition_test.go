@@ -34,8 +34,8 @@ func TestCIConditionPreviewAndLookupNeverExecuteSelection(t *testing.T) {
 	}
 	withEnvPolicyGlobals(t, c, true)
 	manifest := buildManifest(c)
-	if manifest.SchemaVersion != "1.11" || manifest.CIProfiles["verify"].Steps[0].Condition == nil {
-		t.Fatal("discovery must expose conditional selection under schema 1.11")
+	if manifest.SchemaVersion != "1.12" || manifest.CIProfiles["verify"].Steps[0].Condition == nil {
+		t.Fatal("discovery must expose conditional selection under schema 1.12")
 	}
 	oldContext := ciCmd.Context()
 	ciCmd.SetContext(t.Context())

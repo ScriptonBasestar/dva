@@ -113,6 +113,12 @@ func runCondition(ctx context.Context, root string, step config.CIStep, inherite
 }
 
 func runConditionedStep(ctx context.Context, root string, step config.CIStep, inherited []string, workers int, source string, out io.Writer, startedAt time.Time) (StepReport, error) {
+	if step.HostSlot {
+		// Stash the pre-budget context before any step timeout arming. The
+		// executor reads it back so a host-slot wait is never charged to the
+		// declared step timeout. Values set above this point survive the arm.
+		ctx = context.WithValue(ctx, hostSlotOriginKey{}, ctx)
+	}
 	if step.Condition == nil {
 		return runReusableStep(ctx, root, step, inherited, workers, source, out, startedAt)
 	}
