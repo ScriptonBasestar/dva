@@ -35,3 +35,11 @@ CI profile의 `admission`은 `class`, `priority`, `wait_timeout`을 명시한 �
 같은 host 정책에 참가한다. 선언하지 않은 기존 프로필은 바뀌지 않는다. OCI 단계와
 중첩 resource/child CI는 지원하지 않으며 명시적으로 거부한다. 환경 마커는 참여자가
 중첩을 감지하기 위한 값일 뿐 권한이나 신뢰할 수 있는 lease 증거가 아니다.
+
+## CI 대기 관측
+
+명시적 profile admission의 대기 단계는 동일 run ID의 `waiting` receipt로 남는다.
+대기 중 duration과 실행 시간은 null이고 상태 출력은 30초마다 반복된다. 획득·실패·
+취소는 대기 시간과 함께 같은 ID로 기록한다. 강제 종료로 `waiting`이 남으면 생존
+상태는 unknown이며 완료·성공으로 간주하지 않는다. wait 출력은 감독 상태이지 작업
+진행의 증거가 아니다.
