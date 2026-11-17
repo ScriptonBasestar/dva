@@ -133,10 +133,18 @@ func execute(ctx context.Context, root string, p config.CIProfile, inherited []s
 		return nil
 	}
 	start := func(i int) error {
+		stepEnv, stepWorkers, stepSource := inherited, workers, source
+		if bridge, ok := ctx.Value(hostSlotBridgeKey{}).(*hostSlotBridge); ok && p.Steps[i].HostSlot {
+			if limit := bridge.policy.WorkerLimits["heavy"]; limit > 0 {
+				stepWorkers = min(stepWorkers, limit)
+				stepSource = "admission"
+				stepEnv = setCIEnvironment(stepEnv, "DVA_RESOURCE_WORKER_LIMIT", strconv.Itoa(limit))
+			}
+		}
 		reports[i].Status = "running"
 		reports[i].StartedAt = time.Now()
 		if p.Steps[i].OCI == nil {
-			reports[i].WorkerBudget = workerBudget(ciEnv(inherited, p.Steps[i].Environment, workers), p.Steps[i].Environment, inherited, workers, source)
+			reports[i].WorkerBudget = workerBudget(ciEnv(stepEnv, p.Steps[i].Environment, stepWorkers), p.Steps[i].Environment, stepEnv, stepWorkers, stepSource)
 		}
 		if err := checkpoint(reports); err != nil {
 			reports[i].Status = "pending"
@@ -148,7 +156,7 @@ func execute(ctx context.Context, root string, p config.CIProfile, inherited []s
 		_, _ = fmt.Fprintf(out, "ci dispatch step=%s completed=%d/%d\n", p.Steps[i].Name, complete, n)
 		startedAt := reports[i].StartedAt
 		go func() {
-			r, e := runConditionedStep(ctx, root, p.Steps[i], inherited, workers, source, out, startedAt)
+			r, e := runConditionedStep(ctx, root, p.Steps[i], stepEnv, stepWorkers, stepSource, out, startedAt)
 			done <- result{i, r, e}
 		}()
 		return nil
@@ -335,11 +343,6 @@ func runStep(ctx context.Context, root string, step config.CIStep, inherited []s
 			}()
 			origin = context.WithValue(origin, resourceCleanupKey{}, tracker)
 			inherited = setCIEnvironment(inherited, "DVA_RESOURCE_SUPERVISED", "1")
-			if limit := bridge.policy.WorkerLimits["heavy"]; limit > 0 {
-				workers = min(workers, limit)
-				source = "admission"
-				inherited = setCIEnvironment(inherited, "DVA_RESOURCE_WORKER_LIMIT", strconv.Itoa(limit))
-			}
 			_, _ = fmt.Fprintf(out, "ci step %s host_slot=acquired provider=resource waited=%s\n", step.Name, r.HostSlotWait.Round(time.Millisecond))
 		} else {
 			runtime, _ := origin.Value(compositionRuntimeKey{}).(compositionRuntime)

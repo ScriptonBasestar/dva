@@ -221,6 +221,44 @@ func TestHostBridgeReuseHitDoesNotClaim(t *testing.T) {
 	}
 }
 
+func TestHostBridgeReuseTracksEffectiveWorkerCap(t *testing.T) {
+	root, state, resource, _, _ := bridgeFixture(t)
+	if err := runGit(root, "init"); err != nil {
+		t.Skipf("git unavailable: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "input"), []byte("one"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, ".gitignore"), []byte("count\npolicy.json\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	commitAll(t, root)
+	step := config.CIStep{Name: "cached", Run: `printf '%s\n' "$CARGO_BUILD_JOBS" >> count`, HostSlot: true,
+		Environment: map[string]string{"CARGO_BUILD_JOBS": "8"},
+		Condition:   &config.CICondition{Run: `test "$CARGO_BUILD_JOBS" -eq "$DVA_RESOURCE_WORKER_LIMIT"; printf '{"selected":true}'`, Timeout: "1s"},
+		Reuse:       &config.CIReuse{Inputs: []string{"input"}, Tools: []string{"sh"}, Outputs: []string{"count"}, MaxAge: "1h"}}
+	policy := filepath.Join(root, "policy.json")
+	opts := Options{Root: root, ProfileName: "full", StateDir: state, lockDirectory: state, resourceDirectory: resource, Env: []string{"PATH=" + os.Getenv("PATH"), "DVA_RESOURCE_POLICY=" + policy}, Profile: profile(step)}
+	for i, limit := range []int{2, 4, 4} {
+		data := fmt.Sprintf(`{"capacity":4,"max_running":3,"max_heavy":1,"weights":{"heavy":2,"light":1},"aging_interval":"5m","worker_limits":{"heavy":%d,"light":1}}`, limit)
+		if err := os.WriteFile(policy, []byte(data), 0600); err != nil {
+			t.Fatal(err)
+		}
+		r, err := Run(context.Background(), opts)
+		want := "executed"
+		if i == 2 {
+			want = "reused"
+		}
+		if err != nil || r.Steps[0].Reuse == nil || r.Steps[0].Reuse.Disposition != want {
+			t.Fatalf("limit %d: report=%+v err=%v", limit, r, err)
+		}
+	}
+	data, err := os.ReadFile(filepath.Join(root, "count"))
+	if err != nil || string(data) != "2\n4\n" {
+		t.Fatalf("child environments: %q, %v", data, err)
+	}
+}
+
 func TestHostBridgeExternalSupervisorWithoutPolicyFails(t *testing.T) {
 	root, state, resource, _, _ := bridgeFixture(t)
 	t.Setenv("DVA_RESOURCE_SUPERVISED", "1")
