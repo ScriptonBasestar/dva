@@ -42,7 +42,7 @@ func TestGeneratedReservedCommandCorpus(t *testing.T) {
 			t.Errorf("%s: got %d blocks, want 3", path, starts)
 		}
 		total += starts
-		for i := 0; i < starts; i++ {
+		for i := range starts {
 			before, rest, ok := strings.Cut(text, start)
 			if !ok || strings.Contains(before, end) {
 				t.Fatalf("%s: malformed block order", path)
@@ -51,7 +51,7 @@ func TestGeneratedReservedCommandCorpus(t *testing.T) {
 			if !ok || strings.Contains(block, start) {
 				t.Fatalf("%s: malformed block order", path)
 			}
-			line := strings.Split(strings.TrimSpace(block), "\n")[0]
+			line, _, _ := strings.Cut(strings.TrimSpace(block), "\n")
 			matches := name.FindAllStringSubmatch(line, -1)
 			got := make([]string, 0, len(matches))
 			for _, m := range matches {
