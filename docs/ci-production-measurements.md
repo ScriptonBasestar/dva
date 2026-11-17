@@ -101,3 +101,25 @@ checkout의 probe 단계는 `--lookup`이 실행하지 않아 not-reusable로 �
 golangci/gopls 검사 차이 확인, 필요하면 gopls 단독 phase 분리 순이다.
 완전한 입력과 실제 순절감이 입증될 때만 좁은 재사용 후보를 다시 판단한다.
 추가 캐시·timeout 상향으로 이번 관측을 숨기지 않는다.
+
+## 후속 인계: 상세 수집 상한과 성능 비교 (2026-11-17)
+
+상태: 조사 대기. worker 관측 변경 `1cde067e`의 `make ci-full`은 실행
+`5b02f4834043896f85b36f94c03f2a63`에서 4분 39.192초로 성공했다.
+해당 로그의 메트릭 `0b3217f2e3cf6c2034222a837de6b801`은 검사 성공과 별도로
+`collection_status=partial`, `collection_reason=progress queue or byte limit exceeded`다.
+보존된 events JSONL은 관측 당시 1,048,569 bytes였다. 큐 초과의 동시 발생 여부는
+확정하지 않았다. 상한 도달을 정상적인 전체 수집 완료로 해석하지 않는다.
+
+재조사 진입점은 [메트릭 계약](ci-metrics.md)과 `tools/internal/cimetrics/store.go`다.
+로컬 DVA state의 `ci/<실행 ID>.json`·`ci/logs/<실행 ID>.log`에서 시작하고,
+프로젝트 메트릭 저장소에서 위 measurement ID의 요약·events를 대조한다.
+private state의 보존 정책 때문에 원자료가 없으면 누락으로 표시하고 새 표본을 남긴다.
+다음 작업은 큐/바이트 초과를 구분하고 이벤트 축약·집계로 상세 수집의 완전성을
+개선할 수 있는지 검토하는 것이다. 상한 확대나 검사 생략을 선결 조치로 삼지 않는다.
+
+이번 세션은 관측 기반을 반영했으며 속도 개선을 입증하지 않았다. DVA·infra-ops·KMP는
+명령·범위가 다르고 기존 실행의 캐시·동시 부하 조건도 통제하지 않아 시간을 직접
+비교하지 않는다. 후속 비교는 같은 장비·입력·도구·프로필·worker와 캐시 조건을
+기록하고 cold/warm·작은 변경·전체 재실행을 분리한다. 비교 가능한 표본을 확보한 뒤
+언어별 병목과 장비 공통 예산을 조정하며, 다른 세션의 heavy 슬롯 작업 상태부터 확인한다.
