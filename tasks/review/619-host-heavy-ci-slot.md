@@ -40,12 +40,13 @@ advisory 슬롯(CI 상태 루트의 고정 `locks/host-slot.lock`)을 잡고, �
 
 - [x] 표시한 native 단계만 호스트 슬롯을 잡고, 표시 없는 단계는 점유 중에도 영향 없이 실행한다 | verify: `go test ./internal/cirun -run TestHostSlot -count=1` (observed: 2026-11-17)
 - [x] 슬롯 대기가 단계 timeout 예산에서 제외된다 | verify: `go test ./internal/cirun -run TestHostSlotWaitExcludedFromStepTimeout -count=1` (observed: 2026-11-17)
+- [x] 재사용 경로에서도 대기가 예산에서 제외되고 실행 창 예산은 여전히 강제한다 | verify: `go test ./internal/cirun -run TestHostSlotReuse -count=1` (observed: 2026-11-17)
 - [x] host_slot은 OCI 단계 공존과 비 boolean 값을 거절한다 | verify: `go test ./internal/config -run HostSlot -count=1` (observed: 2026-11-17)
 
 ## Verification
 
-실제 보조 프로세스가 진짜 슬롯 파일을 잡는 7개 프로세스 수준 테스트
-(internal/cirun/host_slot_test.go)가 녹색이다. 변이 확인(green-both-ways):
+실제 보조 프로세스가 진짜 슬롯 파일을 잡는 프로세스 수준 테스트
+(internal/cirun/host_slot_test.go, 9개)가 녹색이다. 변이 확인(green-both-ways):
 
 - `cirun_steps.go`의 획득 게이트를 `step.HostSlot && false`로 무력화하면
   `TestHostSlotStepWaitsForRealHolderProcess`가 "slot step executed while another
@@ -54,8 +55,14 @@ advisory 슬롯(CI 상태 루트의 고정 `locks/host-slot.lock`)을 잡고, �
   `TestHostSlotWaitExcludedFromStepTimeout`가 "context deadline exceeded"(1.006s)로
   실패했다(2026-11-17). 이 테스트는 조건 단계로 wrapper deadline이 대기 위에
   걸리는 형태를 쓴다.
+- 독립 리뷰가 재사용 경로의 예산 제외 누락을 지목했다(a8be9ca0). 재현 테스트
+  `TestHostSlotReuseWaitExcludedFromStepTimeout`를 수정 전 코드에서 먼저 실행해
+  wait 1.924s·실제 점유 28ms인 정상 직렬 실행이 "timed_out"으로 오분류되는 것을
+  확인했고(2026-11-17), `ci_reuse_step.go`가 대기 후 검증 창을 pre-budget 문맥에서
+  재산정하는 수정 뒤 통과했다. `TestHostSlotReuseExecutionDeadlineStillBites`는
+  대기 제외가 예산 강제를 비활성화하지 않음을 같은 경로에서 확인한다.
 
-두 변이 모두 복원 후 전체 `TestHostSlot` 슈트가 통과했다.
+모든 변이 복원 후 전체 `TestHostSlot` 슈트가 통과했다.
 
 ## Delivery
 

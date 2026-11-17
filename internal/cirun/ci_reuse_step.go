@@ -64,6 +64,22 @@ func runReusableStep(ctx context.Context, root string, step config.CIStep, inher
 	if ret != nil {
 		return r, ret
 	}
+	if step.HostSlot && step.Timeout != "" {
+		// The slot wait ran on the pre-budget context inside runStep, so the
+		// wrapper armed above may have expired during the wait while the step
+		// stayed inside its budget. Re-arm the verification window from the
+		// same pre-budget origin: the wait stays free, no configured timeout
+		// value changes, and the post-execution checks below read a budget
+		// that still reflects only work the step actually performed.
+		if origin, _ := ctx.Value(hostSlotOriginKey{}).(context.Context); origin != nil {
+			if d, err := time.ParseDuration(step.Timeout); err == nil {
+				cancel()
+				var rearm context.CancelFunc
+				stepCtx, rearm = context.WithTimeout(origin, d)
+				defer rearm()
+			}
+		}
+	}
 	if err := stepCtx.Err(); err != nil {
 		return reusePreparationFailure(stepCtx, r, err)
 	}

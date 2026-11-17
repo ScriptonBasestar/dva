@@ -22,6 +22,11 @@ const hostSlotFilename = "host-slot.lock"
 // non-blocking attempts instead of entering a blocking syscall.
 const hostSlotPollInterval = 100 * time.Millisecond
 
+// hostSlotMetadataLimit bounds the occupancy record a waiter reads. Records
+// beyond it (unreachable in practice: it would take multi-kilobyte root paths
+// plus step names) fail to parse and report as an unrecorded holder.
+const hostSlotMetadataLimit = 8 << 10
+
 // hostSlotOriginKey carries the pre-budget step context past the step timeout
 // arming, so a slot wait is never charged to the declared step timeout.
 type hostSlotOriginKey struct{}
@@ -55,10 +60,18 @@ func hostSlotState(ctx context.Context) string {
 	return state
 }
 
-// readHostSlotMetadata reads the current occupancy record. The flock is the
-// authority; a stale record from a crashed holder is reported as-is.
+// readHostSlotMetadata reads the current occupancy record. The record length
+// is not fixed: root paths and step names vary, so the reader sizes the buffer
+// from the file (capped at 8 KiB) instead of truncating at a constant. The
+// flock is the authority; a stale record from a crashed holder is reported
+// as-is.
 func readHostSlotMetadata(f *os.File) hostSlotMetadata {
-	b := make([]byte, 512)
+	info, err := f.Stat()
+	if err != nil || info.Size() == 0 {
+		return hostSlotMetadata{}
+	}
+	size := min(info.Size(), hostSlotMetadataLimit)
+	b := make([]byte, size)
 	n, err := f.ReadAt(b, 0)
 	if err != nil && !errors.Is(err, io.EOF) {
 		return hostSlotMetadata{}

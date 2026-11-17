@@ -216,7 +216,7 @@ func TestHostSlotWaitExcludedFromStepTimeout(t *testing.T) {
 			}},
 		})
 	}()
-	time.Sleep(1500 * time.Millisecond)
+	time.Sleep(2 * time.Second)
 	holder.stop(t)
 	select {
 	case <-done:
@@ -227,8 +227,107 @@ func TestHostSlotWaitExcludedFromStepTimeout(t *testing.T) {
 		t.Fatalf("serialized step timed out: status=%s err=%v log=%q", report.Status, runErr, output.String())
 	}
 	step := report.Steps[0]
-	if step.Status != "succeeded" || step.HostSlotWait < 1400*time.Millisecond {
-		t.Fatalf("step=%+v, want a recorded wait of at least 1.4s", step)
+	if step.Status != "succeeded" || step.HostSlotWait < 1500*time.Millisecond {
+		t.Fatalf("step=%+v, want a recorded wait of at least 1.5s", step)
+	}
+}
+
+// Reviewer reproduction: on the reuse path the wrapper deadline is armed
+// before the slot wait. A wait longer than the step timeout must not leave
+// the post-execution checks reading an expired wrapper, misreporting a
+// successful serialized step as timed_out.
+func TestHostSlotReuseWaitExcludedFromStepTimeout(t *testing.T) {
+	t.Setenv(config.CIParentRunEnv, "")
+	state, root := t.TempDir(), t.TempDir()
+	if err := runGit(root, "init"); err != nil {
+		t.Skipf("git unavailable: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "input"), []byte("one"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, ".gitignore"), []byte("count\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	commitAll(t, root)
+	holder := startHostSlotHolder(t, state, hostSlotHolderID, "heavy-suite")
+	holder.ready(t)
+	output := &bytes.Buffer{}
+	done := make(chan struct{})
+	var report Report
+	var runErr error
+	go func() {
+		defer close(done)
+		report, runErr = Run(context.Background(), Options{
+			Root: root, ProfileName: "full", StateDir: state, lockDirectory: state, Output: output,
+			Env: os.Environ(),
+			Profile: config.CIProfile{Timeout: "10s", MaxParallel: 1, Steps: []config.CIStep{
+				{Name: "heavy", Run: "printf x >> count", Timeout: "1s", HostSlot: true,
+					Reuse: &config.CIReuse{Inputs: []string{"input"}, Tools: []string{"sh"}, Outputs: []string{"count"}, MaxAge: "1h"}},
+			}},
+		})
+	}()
+	time.Sleep(2 * time.Second)
+	holder.stop(t)
+	select {
+	case <-done:
+	case <-time.After(15 * time.Second):
+		t.Fatal("slot step did not finish after the holder released")
+	}
+	if runErr != nil || report.Status != "succeeded" {
+		t.Fatalf("serialized reuse step misreported: status=%s err=%v log=%q", report.Status, runErr, output.String())
+	}
+	step := report.Steps[0]
+	if step.Status != "succeeded" || step.HostSlotWait < 1300*time.Millisecond {
+		t.Fatalf("step=%+v, want a recorded wait of at least 1.3s", step)
+	}
+	if step.Reuse == nil || step.Reuse.Disposition != "executed" {
+		t.Fatalf("reuse disposition not reported: %+v", step.Reuse)
+	}
+}
+
+// The exclusion must not disable enforcement: after a wait excluded from the
+// budget, a command exceeding the re-armed step timeout still times out
+// through the reuse path.
+func TestHostSlotReuseExecutionDeadlineStillBites(t *testing.T) {
+	t.Setenv(config.CIParentRunEnv, "")
+	state, root := t.TempDir(), t.TempDir()
+	if err := runGit(root, "init"); err != nil {
+		t.Skipf("git unavailable: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "input"), []byte("one"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	commitAll(t, root)
+	holder := startHostSlotHolder(t, state, hostSlotHolderID, "heavy-suite")
+	holder.ready(t)
+	output := &bytes.Buffer{}
+	done := make(chan struct{})
+	var report Report
+	var runErr error
+	go func() {
+		defer close(done)
+		report, runErr = Run(context.Background(), Options{
+			Root: root, ProfileName: "full", StateDir: state, lockDirectory: state, Output: output,
+			Env: os.Environ(),
+			Profile: config.CIProfile{Timeout: "10s", MaxParallel: 1, Steps: []config.CIStep{
+				{Name: "heavy", Run: "sleep 2", Timeout: "1s", HostSlot: true,
+					Reuse: &config.CIReuse{Inputs: []string{"input"}, Tools: []string{"sh"}, MaxAge: "1h"}},
+			}},
+		})
+	}()
+	time.Sleep(600 * time.Millisecond)
+	holder.stop(t)
+	select {
+	case <-done:
+	case <-time.After(15 * time.Second):
+		t.Fatal("slot step did not finish after the holder released")
+	}
+	if runErr == nil || report.Status == "succeeded" {
+		t.Fatalf("overrunning reuse step was not stopped: status=%s err=%v", report.Status, runErr)
+	}
+	step := report.Steps[0]
+	if step.Status != "timed_out" || step.HostSlotWait <= 0 {
+		t.Fatalf("step=%+v, want timed_out after a recorded wait", step)
 	}
 }
 
