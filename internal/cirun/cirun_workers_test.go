@@ -15,6 +15,51 @@ import (
 	"github.com/ScriptonBasestar/dva/internal/config"
 )
 
+func TestWorkerBudgetRecordsOnlyNumericLanguageSettings(t *testing.T) {
+	inherited := []string{"GOMAXPROCS=3", "PYTEST_MAX_WORKERS=8", "PYTEST_WORKERS=auto", "GOFLAGS=-p=2"}
+	step := map[string]string{"GOMAXPROCS": "4"}
+	budget := workerBudget(ciEnv(inherited, step, 2), step, inherited, 2, "test")
+	if budget.GoMaxProcs.Value != 4 || budget.GoMaxProcs.Source != "step.environment" || budget.GoPackageJobs.Value != 2 || budget.PytestMaxWorkers.Value != 8 || budget.PytestWorkers != nil {
+		t.Fatalf("unexpected language settings: %#v", budget)
+	}
+}
+
+func TestWorkerBudgetLanguageEvidenceIsSafe(t *testing.T) {
+	for _, tc := range []struct {
+		flags, workers string
+		want           int
+	}{
+		{"-p=2 -p=4", "0", 4}, {"-p=2 -p=bad", "auto", 0}, {"'-p=3'", "invalid", 0},
+	} {
+		env := []string{"GOFLAGS=" + tc.flags, "GOMAXPROCS=2", "PYTEST_WORKERS=" + tc.workers, "SECRET_TOKEN=do-not-record"}
+		b := workerBudget(ciEnv(env, nil, 2), nil, env, 2, "test")
+		if (b.GoPackageJobs == nil) != (tc.want == 0) || (b.GoPackageJobs != nil && b.GoPackageJobs.Value != tc.want) || b.PytestWorkers != nil || b.GoMaxProcs.Source != "inherited.environment" {
+			t.Fatalf("bad evidence: %#v", b)
+		}
+		encoded, err := json.Marshal(b)
+		if err != nil || strings.Contains(string(encoded), "do-not-record") || strings.Contains(string(encoded), "GOFLAGS") {
+			t.Fatalf("unsafe encoding: %s", encoded)
+		}
+		var decoded WorkerBudget
+		if err := json.Unmarshal(encoded, &decoded); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func TestGoJobsSourceTracksRuntimeDefaultAndStepOverride(t *testing.T) {
+	inherited := []string{"GOFLAGS=-mod=readonly"}
+	b := workerBudget(ciEnv(inherited, nil, 2), nil, inherited, 2, "test")
+	if b.GoPackageJobs == nil || b.GoPackageJobs.Value != 1 || b.GoPackageJobs.Source != "default" {
+		t.Fatalf("default: %#v", b.GoPackageJobs)
+	}
+	step := map[string]string{"GOFLAGS": "-mod=readonly"}
+	b = workerBudget(ciEnv(inherited, step, 2), step, inherited, 2, "test")
+	if b.GoPackageJobs != nil {
+		t.Fatalf("step override: %#v", b.GoPackageJobs)
+	}
+}
+
 func TestWorkerBudgetLimitsAndExplicitValue(t *testing.T) {
 	for _, tc := range []struct{ cpu, parallel, steps, want int }{
 		{1, 1, 1, 1}, {2, 1, 1, 2}, {8, 1, 1, 4},

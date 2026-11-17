@@ -13,6 +13,12 @@ degraded를 기록하고 경고하며 검사 결과는 유지한다. 이벤트 p
 이 변수는 호스트 셸 단계의 환경에 제공한다. OCI 컨테이너 내부 전달과 자식 출력
 기준 idle 경고는 아직 제공하지 않는다. worker 예산은 실제 CPU 사용량이 아니다.
 
+Go와 Python의 worker 관측은 단계 환경에 전달된 해석 가능한 양의 정수만 기록한다.
+Go의 CPU 실행 병렬도와 패키지 병렬도, Python의 worker 수와 상한은 서로 다른
+설정이다. 값이 없거나 자동 선택이면 실제 실행 수를 추정하지 않는다. 이 관측은
+기존 실행 기본값을 바꾸거나 장비 전체 자원 제한을 강제하지 않는다.
+Gradle worker·테스트 fork·JVM heap은 아직 이 계약으로 자동 매핑하지 않는다.
+
 `dva ci history --repository-local-id current --profile full`은 현재 checkout과 Git
 common directory를 공유하는 worktree의 신규 receipt를 찾는다. 또는 receipt의
 `repository_local_id`를 직접 지정한다. ID는 로컬 common directory의 해시로, 다른

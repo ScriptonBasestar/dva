@@ -3,6 +3,7 @@ package cirun
 import (
 	"runtime"
 	"strconv"
+	"strings"
 
 	"github.com/ScriptonBasestar/dva/internal/config"
 )
@@ -41,7 +42,36 @@ func workerBudget(env []string, step map[string]string, inherited []string, jobs
 		}
 		return fallback
 	}
+	observed := func(value, source string) *ObservedWorker {
+		n, err := strconv.Atoi(value)
+		if err != nil || n < 1 {
+			return nil
+		}
+		return &ObservedWorker{Value: n, Source: source}
+	}
+	rawFlags := environmentValue(env, "GOFLAGS")
+	goFlags := strings.Fields(rawFlags)
+	if strings.ContainsAny(rawFlags, "'\"\\") {
+		goFlags = nil // Go's quoted flag syntax needs its own parser; do not guess.
+	}
+	var goJobs *ObservedWorker
+	goSource := origin("GOFLAGS", "default")
+	if _, explicit := step["GOFLAGS"]; !explicit && !strings.Contains(" "+environmentValue(inherited, "GOFLAGS")+" ", " -p=") {
+		goSource = "default"
+	}
+	for i := 0; i < len(goFlags); i++ {
+		if strings.HasPrefix(goFlags[i], "-p=") {
+			goJobs = observed(strings.TrimPrefix(goFlags[i], "-p="), goSource)
+		} else if goFlags[i] == "-p" && i+1 < len(goFlags) {
+			i++
+			goJobs = observed(goFlags[i], goSource)
+		}
+	}
 	return &WorkerBudget{
+		GoMaxProcs:            observed(environmentValue(env, "GOMAXPROCS"), origin("GOMAXPROCS", "default")),
+		GoPackageJobs:         goJobs,
+		PytestWorkers:         observed(environmentValue(env, "PYTEST_WORKERS"), origin("PYTEST_WORKERS", "unknown")),
+		PytestMaxWorkers:      observed(environmentValue(env, "PYTEST_MAX_WORKERS"), origin("PYTEST_MAX_WORKERS", "unknown")),
 		ToolJobs:              jobs,
 		Source:                source,
 		DVAJobs:               values["DVA_CI_JOBS"],

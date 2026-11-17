@@ -100,13 +100,23 @@ type CompositionParent struct {
 // WorkerBudget records the numeric worker limits actually supplied to a CI step.
 // Sources are fixed runtime labels; it intentionally excludes all other environment values.
 type WorkerBudget struct {
-	ToolJobs              int    `json:"tool_jobs,omitempty"`
-	Source                string `json:"source,omitempty"`
-	DVAJobs               int    `json:"dva_ci_jobs"`
-	CargoBuildJobs        int    `json:"cargo_build_jobs"`
-	CargoBuildJobsSource  string `json:"cargo_build_jobs_source,omitempty"`
-	RustTestThreads       int    `json:"rust_test_threads"`
-	RustTestThreadsSource string `json:"rust_test_threads_source,omitempty"`
+	GoMaxProcs            *ObservedWorker `json:"go_max_procs,omitempty"`
+	GoPackageJobs         *ObservedWorker `json:"go_package_jobs,omitempty"`
+	PytestWorkers         *ObservedWorker `json:"pytest_workers,omitempty"`
+	PytestMaxWorkers      *ObservedWorker `json:"pytest_max_workers,omitempty"`
+	ToolJobs              int             `json:"tool_jobs,omitempty"`
+	Source                string          `json:"source,omitempty"`
+	DVAJobs               int             `json:"dva_ci_jobs"`
+	CargoBuildJobs        int             `json:"cargo_build_jobs"`
+	CargoBuildJobsSource  string          `json:"cargo_build_jobs_source,omitempty"`
+	RustTestThreads       int             `json:"rust_test_threads"`
+	RustTestThreadsSource string          `json:"rust_test_threads_source,omitempty"`
+}
+
+// ObservedWorker is an explicit numeric setting, not proof that a tool used it.
+type ObservedWorker struct {
+	Value  int    `json:"value"`
+	Source string `json:"source"`
 }
 
 // Attestation describes the Git inputs a run measured. Reason explains an
