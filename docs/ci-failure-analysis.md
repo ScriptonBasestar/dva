@@ -37,6 +37,11 @@ deadline과 별도로 GNU `timeout`의 10분 제한과 30초 강제 종료 유�
 
 ## 검증 기록
 
+2026-11-17: 선택기·fake port·reseal·측정 환경 보정과 남은 성능 관찰은
+[CI 트러블슈팅 기록](ci-troubleshooting.md)에 정리했다.
+수치와 원문은 기존 실측 문서를 참조하고, [메트릭 수집안](ci-metrics-proposal.md)은
+현재 기능과 구분한 제안이다.
+
 2026-11-05: TASK-575의 고정 후보 `7da534ae`에서 native full 실행
 `6718eaa06559cf7162e74707a7370e73`의 `TestFailFastFalseProfileDeadlineStopsRunningStep`가
 시작 marker 부재로 실패했다. guarded race 단독 10회에서도 8회 재현됐다.
