@@ -33,6 +33,8 @@
 ## CI와 증거
 
 - [CI 프로필](53-ci-profiles.md)
+- [native 단계의 조건부 선택](ci-step-conditions.md)
+- [기록된 단계 시간 순위](ci-history-recorded-ranking.md)
 - [CI 이벤트별 검사 계약](ci-lifecycle.md), [채택 계획과 현재 적용 상태](ci-lifecycle-adoption.md)
 - [원격 CI 이벤트와 입력](ci-event-routing.md), [Hosted CI 실행 예산](ci-hosted-budgets.md), [로컬 macOS 검증](ci-macos-local.md)
 - [DVA 자체 commit 검사 파일럿](ci-commit-pilot.md), [제한된 실측](ci-commit-measurements.md)
@@ -46,6 +48,7 @@
 - [native child CI 구성](ci-child-composition-proposal.md), [검증 기록](ci-child-composition-evidence.md)
 - [CI 실패 분석](ci-failure-analysis.md), [reseal 오류 분류 결함](reseal-error-classification.md)
 - [CI 트러블슈팅 기록](ci-troubleshooting.md), [실행 메트릭 수집](ci-metrics.md), [수집안 분석](ci-metrics-proposal.md)
+- [CI 실행 관측](ci-execution-observability.md)
 - [Env 경고 후속 항목 재현](env-warning-reproduction.md)
 - [선택적 완료 근거](evidence-capture.md)
 

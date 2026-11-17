@@ -176,11 +176,11 @@ func TestCommandHelpGroupsAndDiscoveryDescriptions(t *testing.T) {
 		}
 	}
 
-	// Keep the current public shape pinned: 1.10 adds optional child CI
-	// composition to CI profile steps (TASK-537), preserving route identity.
+	// Keep the current public shape pinned: 1.11 adds optional native CI
+	// selection conditions while preserving route identity.
 	manifest := buildManifest(&config.Config{})
-	if manifest.SchemaVersion != "1.10" {
-		t.Errorf("manifest schema version = %q, want 1.10 (optional child CI)", manifest.SchemaVersion)
+	if manifest.SchemaVersion != "1.11" {
+		t.Errorf("manifest schema version = %q, want 1.11 (optional CI condition)", manifest.SchemaVersion)
 	}
 	for _, name := range []string{"manifest", "show", "status"} {
 		entry, ok := manifest.StaticCommands[name]

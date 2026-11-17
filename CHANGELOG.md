@@ -11,6 +11,9 @@ All notable changes to DVA are documented here.
   수집하고 hosted JSONL artifact에도 요약을 추가합니다. native 린트는 도구별
   단계 시간으로 구분하며 부가 수집 오류가 실제 검사 결과를 덮어쓰지 않습니다.
 
+- native CI 단계에 읽기 전용 JSON `condition`을 추가합니다. 선택된 검사만 실행·재사용하며
+  조건 오류는 실패, 조건 거짓은 skipped로 구분합니다. lookup과 dry-run은 조건을 실행하지 않습니다.
+
 - macOS 플랫폼 검사를 명시적 로컬 `macos-platform` 프로필로 분리합니다.
   준비된 SOPS floor/latest 도구로 검사하며 원격 CI는 Linux 두 조합을 유지합니다.
 
@@ -37,6 +40,10 @@ All notable changes to DVA are documented here.
   전에 현재 0.4.x 실행 파일로 해당 mode를 중지하고, 프로세스를 native stack entry로 이관하세요.
 
 ### Fixed
+
+- CI 재사용 probe 실패의 숫자 종료 코드와 출력 한도 초과를 구분하며 stdout·stderr 원문은 계속 숨깁니다.
+
+- `dva ci history`의 기존 프로필 호출을 유지하고 명시적 `--root`·`--profile` 이력 조회와 구분합니다.
 
 - `secret reseal`에서 encrypt의 creation-rule 오류 진단이 있으면 하위 프로세스의
   종료 결과 관측 순서와 관계없이 해당 고정 오류 코드를 보존합니다.

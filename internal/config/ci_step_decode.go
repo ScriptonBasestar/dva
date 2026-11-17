@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -16,6 +17,17 @@ func (s *CIStep) UnmarshalYAML(node *yaml.Node) error {
 	if value, present := fields["child_ci"]; present {
 		if mode, ok := value.(string); !ok || mode != CIChildIndependentRoot {
 			return fmt.Errorf("child_ci must be independent-root when present")
+		}
+	}
+	if value, present := fields["condition"]; present {
+		condition, ok := value.(map[string]any)
+		if !ok || len(condition) != 2 {
+			return fmt.Errorf("condition requires only run and timeout")
+		}
+		run, runOK := condition["run"].(string)
+		timeout, timeoutOK := condition["timeout"].(string)
+		if !runOK || !timeoutOK || strings.TrimSpace(run) == "" || strings.TrimSpace(timeout) == "" {
+			return fmt.Errorf("condition requires nonempty run and timeout strings")
 		}
 	}
 	var decoded ciStepAlias
@@ -35,6 +47,19 @@ func (s *CIStep) UnmarshalJSON(data []byte) error {
 		var mode string
 		if err := json.Unmarshal(value, &mode); err != nil || mode != CIChildIndependentRoot {
 			return fmt.Errorf("child_ci must be independent-root when present")
+		}
+	}
+	if value, present := fields["condition"]; present {
+		var condition map[string]json.RawMessage
+		if err := json.Unmarshal(value, &condition); err != nil || len(condition) != 2 {
+			return fmt.Errorf("condition requires only run and timeout")
+		}
+		var run, timeout string
+		if err := json.Unmarshal(condition["run"], &run); err != nil || strings.TrimSpace(run) == "" {
+			return fmt.Errorf("condition.run must be a nonempty string")
+		}
+		if err := json.Unmarshal(condition["timeout"], &timeout); err != nil || strings.TrimSpace(timeout) == "" {
+			return fmt.Errorf("condition.timeout must be a nonempty string")
 		}
 	}
 	var decoded ciStepAlias

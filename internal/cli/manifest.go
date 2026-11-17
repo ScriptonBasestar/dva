@@ -355,8 +355,8 @@ func fillCommandDescriptions(command *cobra.Command, entry ManifestCmd) Manifest
 func buildManifest(c *config.Config) *Manifest {
 	m := &Manifest{
 		DvaVersion: config.Version,
-		// Schema 1.10 adds optional child_ci to CI profile steps (TASK-537).
-		SchemaVersion:     "1.10",
+		// Schema 1.11 adds optional read-only conditions to native CI steps.
+		SchemaVersion:     "1.11",
 		GeneratedAt:       time.Now().Format(time.RFC3339),
 		ConfigFile:        c.FilePath(),
 		ProjectDir:        c.FileDir(),

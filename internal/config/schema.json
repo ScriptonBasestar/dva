@@ -1860,6 +1860,7 @@
                     "properties": {
                       "name": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$" },
                       "run": { "type": "string" },
+                      "condition": { "type": "object", "additionalProperties": false, "required": ["run", "timeout"], "properties": { "run": { "type": "string", "minLength": 1 }, "timeout": { "type": "string", "minLength": 1 } } },
                       "reuse": {"type": "object", "additionalProperties": false, "required": ["inputs", "tools", "max_age"], "properties": {"scope": {"type": "string", "enum": ["checkout", "repository"], "description": "Explicit path-independent same-repository worktree sharing; default checkout"}, "inputs": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}, "tools": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}, "environment": {"type": "array", "items": {"type": "string"}}, "outputs": {"type": "array", "items": {"type": "string", "minLength": 1}}, "unless_environment": {"type": "array", "items": {"type": "string", "minLength": 1}}, "max_age": {"type": "string", "minLength": 1}, "probes": {"type": "array", "items": {"type": "string", "minLength": 1}}}},
                       "child_ci": { "type": "string", "enum": ["independent-root"], "description": "Opt in this native step to supervised independent-root child CI" },
                       "depends_on": { "type": "array", "items": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$" } },
@@ -1886,8 +1887,9 @@
                     "required": ["name"],
                     "oneOf": [
                       { "required": ["run"], "not": { "required": ["oci"] } },
-                      { "required": ["oci", "timeout"], "not": { "anyOf": [{ "required": ["run"] }, { "required": ["workdir"] }, { "required": ["environment"] }, { "required": ["child_ci"] }] } }
-                    ]
+                      { "required": ["oci", "timeout"], "not": { "anyOf": [{ "required": ["run"] }, { "required": ["workdir"] }, { "required": ["environment"] }, { "required": ["child_ci"] }, { "required": ["condition"] }] } }
+                    ],
+                    "not": { "required": ["condition", "child_ci"] }
                   }
                 }
               }

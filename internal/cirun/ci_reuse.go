@@ -184,17 +184,9 @@ func reuseFor(ctx context.Context, root string, step config.CIStep, env []string
 			writeReuseField(h, "output", output)
 		}
 	}
-	common, err := gitStdout(ctx, root, "rev-parse", "--git-common-dir")
+	commonDir, err := gitCommonDirectory(ctx, root)
 	if err != nil {
-		return reusePlan{}, fmt.Errorf("locate git common directory: %w", gitError(err))
-	}
-	commonDir := strings.TrimSpace(string(common))
-	if !filepath.IsAbs(commonDir) {
-		commonDir = filepath.Join(root, commonDir)
-	}
-	commonDir, err = filepath.EvalSymlinks(commonDir)
-	if err != nil {
-		return reusePlan{}, fmt.Errorf("canonicalize git common directory: %w", err)
+		return reusePlan{}, err
 	}
 	rootDigest := sha256.Sum256([]byte(root))
 	key := hex.EncodeToString(h.Sum(nil))

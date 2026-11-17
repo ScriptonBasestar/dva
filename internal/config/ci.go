@@ -60,6 +60,7 @@ func (p CIProfile) FailFastEnabled() bool {
 
 // CIStep is one named CI gate.
 type CIStep struct {
+	Condition   *CICondition      `yaml:"condition,omitempty" json:"condition,omitempty"`
 	Reuse       *CIReuse          `yaml:"reuse,omitempty" json:"reuse,omitempty"`
 	ChildCI     string            `yaml:"child_ci,omitempty" json:"child_ci,omitempty"`
 	Name        string            `yaml:"name" json:"name"`
@@ -69,6 +70,12 @@ type CIStep struct {
 	Environment map[string]string `yaml:"environment" json:"environment"`
 	Timeout     string            `yaml:"timeout" json:"timeout"`
 	OCI         *CIOCI            `yaml:"oci,omitempty" json:"oci,omitempty"`
+}
+
+// CICondition selects a native step using a bounded, project-owned command.
+type CICondition struct {
+	Run     string `yaml:"run" json:"run"`
+	Timeout string `yaml:"timeout" json:"timeout"`
 }
 
 // ResolveCIProfile returns an executable CI profile. An empty name selects commit.
@@ -191,6 +198,30 @@ func validateCIProfile(name string, profile CIProfile) error {
 		}
 		if step.ChildCI != "" && step.OCI != nil {
 			return fmt.Errorf("ci profile %q step %q: child_ci is only supported by native run steps", name, step.Name)
+		}
+		if step.Condition != nil {
+			if step.OCI != nil || step.ChildCI != "" {
+				return fmt.Errorf("ci profile %q step %q: condition requires a native step without child_ci", name, step.Name)
+			}
+			if strings.TrimSpace(step.Condition.Run) == "" {
+				return fmt.Errorf("ci profile %q step %q: condition.run must not be empty", name, step.Name)
+			}
+			conditionTimeout, err := parsePositiveCIDuration(name+" step "+fmt.Sprintf("%q", step.Name), "condition.timeout", step.Condition.Timeout)
+			if err != nil {
+				return err
+			}
+			if conditionTimeout > profileTimeout {
+				return fmt.Errorf("ci profile %q step %q: condition.timeout must not exceed profile timeout", name, step.Name)
+			}
+			if step.Timeout != "" {
+				stepTimeout, err := parsePositiveCIDuration(name+" step "+fmt.Sprintf("%q", step.Name), "timeout", step.Timeout)
+				if err != nil {
+					return err
+				}
+				if conditionTimeout > stepTimeout {
+					return fmt.Errorf("ci profile %q step %q: condition.timeout must not exceed step timeout", name, step.Name)
+				}
+			}
 		}
 		if err := validateCIReuse(step); err != nil {
 			return fmt.Errorf("ci profile %q step %q: %w", name, step.Name, err)

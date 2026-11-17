@@ -15,6 +15,9 @@ type ciOCIStepWire struct {
 }
 
 func (s CIStep) MarshalJSON() ([]byte, error) {
+	if s.OCI != nil && s.Condition != nil {
+		return nil, fmt.Errorf("condition is only supported by native run steps")
+	}
 	if s.OCI != nil && s.ChildCI != "" {
 		return nil, fmt.Errorf("child_ci is only supported by native run steps")
 	}
@@ -25,6 +28,9 @@ func (s CIStep) MarshalJSON() ([]byte, error) {
 }
 
 func (s CIStep) MarshalYAML() (any, error) {
+	if s.OCI != nil && s.Condition != nil {
+		return nil, fmt.Errorf("condition is only supported by native run steps")
+	}
 	if s.OCI != nil && s.ChildCI != "" {
 		return nil, fmt.Errorf("child_ci is only supported by native run steps")
 	}

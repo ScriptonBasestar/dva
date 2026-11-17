@@ -25,7 +25,7 @@ import (
 func Run(parent context.Context, opts Options) (report Report, retErr error) {
 	defer func() {
 		if retErr != nil {
-			if report.Status == "" || report.Status == "running" || report.Status == "succeeded" {
+			if report.Status == "" || report.Status == "running" || report.Status == "succeeded" || report.Status == "skipped" {
 				report.Status = "failed"
 			}
 			report.Error = retErr.Error()
@@ -146,6 +146,10 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 	if grant != nil && grant.Fresh {
 		fresh, report.Fresh = true, true
 	}
+	report.Observability = prepareObservability(state, id, opts.ProfileName, opts.Profile)
+	if repositoryID, err := RepositoryLocalID(ctx, root); err == nil {
+		report.Observability.RepositoryLocalID = repositoryID
+	}
 	stopMonitor := func() {}
 	if grant != nil {
 		last := grant.Ancestry[len(grant.Ancestry)-1]
@@ -175,6 +179,9 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 		}
 	}()
 	writer := &lockedWriter{w: io.MultiWriter(log, outputOrDiscard(opts.Output))}
+	if report.Observability.EventsStatus != "available" {
+		_, _ = fmt.Fprintf(writer, "ci observability degraded: %s\n", report.Observability.EventsError)
+	}
 	if err := writeReport(state, report); err != nil {
 		return report, fmt.Errorf("record running ci receipt: %w", err)
 	}
@@ -197,6 +204,8 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 			return report, marshalErr
 		}
 		env := append(subprojectEnv(opts.Env, opts.Subproject), parentRunEnv+"="+string(parentInfo))
+		env = setCIEnvironment(env, "DVA_CI_RUN_ID", id)
+		env = setCIEnvironment(env, "DVA_CI_EVENTS_DIR", report.Observability.EventsDir)
 		freshValue := "0"
 		if fresh {
 			freshValue = "1"
@@ -231,7 +240,18 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 	retErr = errors.Join(retErr, writer.err)
 	if report.Status == "running" {
 		if retErr == nil {
-			report.Status = "succeeded"
+			allSkipped := len(report.Steps) > 0
+			for _, step := range report.Steps {
+				if step.Status != "skipped" {
+					allSkipped = false
+					break
+				}
+			}
+			if allSkipped {
+				report.Status, report.SkipReason = "skipped", "no-applicable-steps"
+			} else {
+				report.Status = "succeeded"
+			}
 		} else if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 			report.Status = "timed_out"
 		} else if errors.Is(ctx.Err(), context.Canceled) {
@@ -249,7 +269,7 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 		report.Error = retErr.Error()
 	}
 	if e := writeReport(state, report); e != nil {
-		if report.Status == "succeeded" {
+		if report.Status == "succeeded" || report.Status == "skipped" {
 			report.Status = "failed"
 		}
 		report.Error = errors.Join(retErr, fmt.Errorf("record ci report: %w", e)).Error()
