@@ -42,7 +42,7 @@ All notable changes to DVA are documented here.
   DVA가 계산한 worker 예산이며(앰비언트 값은 실행·키 산정 전에 덮어쓴다), 그
   예산이 실제로 반영되는 도구 변수(`CARGO_BUILD_JOBS` 기본값, `GOMAXPROCS`,
   `GOFLAGS`, `RUST_TEST_THREADS`)는 이미 키에 별도로 남는다. 실측(18-CPU 호스트,
-  dev·commit=4, core·full=2, 반복 실행마다 안정, 앰비언트 `DVA_CI_JOBS=17`
+  dev·commit=4, core·full·audit=2, 반복 실행마다 안정, 앰비언트 `DVA_CI_JOBS=17`
   무시)에서 이 항목은 행동 차이 없이 호스트 CPU 수와 무관한 프로필 편집으로
   캐시 키만 바꾸므로 제외한다. 단계가 이 변수를 직접 읽는다면
   `reuse.environment`로 그 단계의 판별을 복원할 수 있다.
