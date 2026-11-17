@@ -14,6 +14,11 @@ null이며 단계 시간 합은 병렬 작업의 전체 경과 시간이 아니�
 재사용 여부가 executed 또는 bypassed로 확인된 단계만 느린 실행 순위에 넣는다.
 reused는 원본 실행 ID를 보존하며, 재사용 정보가 없는 과거 단계는 unknown으로 표시한다.
 
+두 분석 출력의 `observations`는 선택된 실행마다 admission과 단계별 상태,
+admission, 출력 관측 및 기록된 작업 디렉터리·worker 예산을 보여준다. 누락된
+관측은 null이며 미측정이다. 전체 단계 관측은 10,000개까지 투영하고 각 실행의
+`omitted_steps`에 생략 수를 기록한다. 출력이나 명령 원문은 읽지 않는다.
+
 legacy receipt에는 host·설정·캐시와 repository ID가 없을 수 있다. 신규 Observability는
 장비·OS·설정 형태 지문·로컬 clone ID 등을 기록하지만 전체 명령·설정의 동등성은 증명하지
 못하고 캐시 상태는 unknown이다. 따라서 서로 다른 실행의 시간 백분위나 성능 변화로

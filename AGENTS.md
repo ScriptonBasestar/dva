@@ -183,6 +183,7 @@ plans:
 | Task | Files |
 |------|-------|
 | Add new CLI command | `internal/cli/` + register in `root.go` init() |
+| Change reserved built-in commands | `internal/config/reserved.go`; run `make generate` and `make check-generate` before committing the generated references |
 | Add new stack plugin | `internal/config/lifecycle.go` (config type) + `internal/lifecycle/` (executor) |
 | Add new runner | `internal/runner/` + update `NewRunner()` factory |
 | Modify config schema | `internal/config/schema.json` + `config.go` structs |

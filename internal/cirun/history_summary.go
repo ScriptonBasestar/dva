@@ -23,20 +23,21 @@ func closeSummaryRejected(closer io.Closer, cause error) error {
 // HistorySummary is descriptive; this receipt schema cannot prove comparable
 // complete command/configuration and cache provenance.
 type HistorySummary struct {
-	Schema              string             `json:"schema"`
-	Root                string             `json:"root,omitempty"`
-	RepositoryLocalID   string             `json:"repository_local_id,omitempty"`
-	Profile             string             `json:"profile"`
-	SelectionCount      int                `json:"selection_count"`
-	StatusCounts        map[string]int     `json:"status_counts"`
-	DispositionCounts   map[string]int     `json:"disposition_counts"`
-	ExcludedByReason    map[string]int     `json:"excluded_by_reason"`
-	ReadExclusions      map[string]int     `json:"read_exclusions"`
-	Conditions          []SummaryCondition `json:"conditions"`
-	CurrentLongestSteps []SummaryRun       `json:"current_longest_steps"`
-	EligibleSampleCount int                `json:"eligible_sample_count"`
-	Cohorts             []any              `json:"cohorts"`
-	Sparse              bool               `json:"sparse"`
+	Schema              string               `json:"schema"`
+	Root                string               `json:"root,omitempty"`
+	RepositoryLocalID   string               `json:"repository_local_id,omitempty"`
+	Profile             string               `json:"profile"`
+	SelectionCount      int                  `json:"selection_count"`
+	StatusCounts        map[string]int       `json:"status_counts"`
+	DispositionCounts   map[string]int       `json:"disposition_counts"`
+	ExcludedByReason    map[string]int       `json:"excluded_by_reason"`
+	ReadExclusions      map[string]int       `json:"read_exclusions"`
+	Conditions          []SummaryCondition   `json:"conditions"`
+	Observations        []HistoryObservation `json:"observations"`
+	CurrentLongestSteps []SummaryRun         `json:"current_longest_steps"`
+	EligibleSampleCount int                  `json:"eligible_sample_count"`
+	Cohorts             []any                `json:"cohorts"`
+	Sparse              bool                 `json:"sparse"`
 }
 
 type SummaryCondition struct {
@@ -136,7 +137,7 @@ func SummarizeHistory(reports []Report, root, repositoryID, profile string, now 
 	s := HistorySummary{Schema: "dva-ci-history-summary/1", Root: root, RepositoryLocalID: repositoryID, Profile: profile,
 		StatusCounts: map[string]int{}, DispositionCounts: map[string]int{"executed": 0, "reused": 0, "unknown": 0},
 		ExcludedByReason: map[string]int{}, ReadExclusions: readExclusions, Conditions: []SummaryCondition{},
-		CurrentLongestSteps: []SummaryRun{}, Cohorts: []any{}, Sparse: true}
+		CurrentLongestSteps: []SummaryRun{}, Observations: []HistoryObservation{}, Cohorts: []any{}, Sparse: true}
 	if s.ReadExclusions == nil {
 		s.ReadExclusions = map[string]int{}
 	}
@@ -159,7 +160,9 @@ func SummarizeHistory(reports []Report, root, repositoryID, profile string, now 
 		selected = append(selected, r)
 	}
 	sort.SliceStable(selected, func(i, j int) bool { return selected[i].StartedAt.After(selected[j].StartedAt) })
+	remaining := maxHistoryStepObservations
 	for _, r := range selected {
+		s.Observations = append(s.Observations, projectHistoryObservation(r, &remaining))
 		s.SelectionCount++
 		s.StatusCounts[r.Status]++
 		c := SummaryCondition{RunID: r.ID, Profile: r.Profile, Host: "unknown", OS: "unknown", Arch: "unknown", ConfigurationShape: "unknown", CacheCondition: "unknown", Exclusions: []string{}}

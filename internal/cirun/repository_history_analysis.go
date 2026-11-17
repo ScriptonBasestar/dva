@@ -51,10 +51,12 @@ type RepositoryHistoryAnalysis struct {
 	Comparability     string                 `json:"comparability"`
 	ProfileUnassigned int                    `json:"profile_unassigned_repository_id"`
 	Runs              []RepositoryHistoryRun `json:"runs"`
+	Observations      []HistoryObservation   `json:"observations"`
 }
 
 func AnalyzeRepositoryHistory(reports []Report, id, profile string) RepositoryHistoryAnalysis {
-	a := RepositoryHistoryAnalysis{RepositoryLocalID: id, Profile: profile, Comparability: "unknown: complete host, configuration and cache comparability is not established", Runs: []RepositoryHistoryRun{}}
+	a := RepositoryHistoryAnalysis{RepositoryLocalID: id, Profile: profile, Comparability: "unknown: complete host, configuration and cache comparability is not established", Runs: []RepositoryHistoryRun{}, Observations: []HistoryObservation{}}
+	remaining := maxHistoryStepObservations
 	for _, r := range reports {
 		if r.Profile != profile {
 			continue
@@ -66,10 +68,8 @@ func AnalyzeRepositoryHistory(reports []Report, id, profile string) RepositoryHi
 		if r.Observability.RepositoryLocalID != id {
 			continue
 		}
-		v := AnalyzeHistory([]Report{r}, r.Root, profile)
-		if len(v.Runs) == 1 {
-			a.Runs = append(a.Runs, RepositoryHistoryRun{Root: r.Root, Commit: r.Attestation.Commit, Observability: r.Observability, HistoryRun: v.Runs[0]})
-		}
+		a.Runs = append(a.Runs, RepositoryHistoryRun{Root: r.Root, Commit: r.Attestation.Commit, Observability: r.Observability, HistoryRun: projectHistoryRun(r)})
+		a.Observations = append(a.Observations, projectHistoryObservation(r, &remaining))
 	}
 	return a
 }

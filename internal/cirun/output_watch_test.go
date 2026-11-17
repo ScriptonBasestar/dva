@@ -129,6 +129,33 @@ func TestOutputWarningDoesNotStopChild(t *testing.T) {
 	}
 }
 
+func TestOutputWatchRealQuietAndOutputPreservesExit(t *testing.T) {
+	for _, tc := range []struct {
+		name, command string
+		exit          int
+		hasOutput     bool
+	}{
+		{"quiet", "sleep 0.15; exit 7", 7, false},
+		{"output", "printf child; sleep 0.15; exit 0", 0, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var output bytes.Buffer
+			w := newOutputWatch(&lockedWriter{w: &output}, tc.name, 30*time.Millisecond, 10*time.Millisecond)
+			cmd := exec.Command("/bin/sh", "-c", tc.command)
+			cmd.Stdout, cmd.Stderr = w, w
+			if err := cmd.Start(); err != nil {
+				t.Fatal(err)
+			}
+			w.start()
+			err := cmd.Wait()
+			observation := w.stop()
+			if cmd.ProcessState.ExitCode() != tc.exit || (err == nil) != (tc.exit == 0) || !observation.WarningEmitted || (observation.LastOutputAt != nil) != tc.hasOutput {
+				t.Fatalf("exit=%d err=%v observation=%+v", cmd.ProcessState.ExitCode(), err, observation)
+			}
+		})
+	}
+}
+
 func TestOutputObservationForCanceledAndChildCI(t *testing.T) {
 	root, err := filepath.EvalSymlinks(t.TempDir())
 	if err != nil {
