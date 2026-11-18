@@ -130,7 +130,7 @@ func TestCIChildDryRunUsesOwningWorkerEnvironment(t *testing.T) {
 	// fixture verifies the child config's own environment, so remove ambient
 	// worker values after registering cleanup instead of letting the parent run
 	// change the preview it is meant to inspect.
-	for _, key := range []string{"DVA_CI_JOBS", "CARGO_BUILD_JOBS", "RUST_TEST_THREADS"} {
+	for _, key := range []string{"DVA_CI_JOBS", "CARGO_BUILD_JOBS", "RUST_TEST_THREADS", "DVA_RESOURCE_WORKER_LIMIT"} {
 		t.Setenv(key, "ambient-"+key)
 		if err := os.Unsetenv(key); err != nil {
 			t.Fatalf("unset %s: %v", key, err)
