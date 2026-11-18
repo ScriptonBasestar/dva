@@ -106,7 +106,7 @@ gopls phase로 분리됐다. 과거 묶음 측정은 당시 실행의 기록으�
 
 ## 후속 인계: 상세 수집 상한과 성능 비교 (2026-11-17)
 
-상태: v2 구현 후 native full 실측 대기. worker 관측 변경 `1cde067e`의 `make ci-full`은 실행
+과거 상태: worker 관측 변경 `1cde067e`의 `make ci-full`은 실행
 `5b02f4834043896f85b36f94c03f2a63`에서 4분 39.192초로 성공했다.
 해당 로그의 메트릭 `0b3217f2e3cf6c2034222a837de6b801`은 검사 성공과 별도로
 `collection_status=partial`, `collection_reason=progress queue or byte limit exceeded`다.
@@ -117,8 +117,11 @@ gopls phase로 분리됐다. 과거 묶음 측정은 당시 실행의 기록으�
 로컬 DVA state의 `ci/<실행 ID>.json`·`ci/logs/<실행 ID>.log`에서 시작하고,
 프로젝트 메트릭 저장소에서 위 measurement ID의 요약·events를 대조한다.
 private state의 보존 정책 때문에 원자료가 없으면 누락으로 표시하고 새 표본을 남긴다.
-`aa5b64f7`에서 큐·바이트 손실 구분과 이벤트 축약·집계를 구현했다. 실제 native full에서
-v2 수집 결과를 확인하는 작업은 남아 있다. 상한 확대나 검사 생략을 선결 조치로 삼지 않는다.
+`aa5b64f7`에서 큐·바이트 손실 구분과 이벤트 축약·집계를 구현했다. 2026-11-19
+native full 측정은 검사 성공과 세 v2 수집 complete를 관찰했다. 축약 생략과 손실,
+unit 시간 상세 잘림, 별도 lint 단계와 검증 범위는 [측정 증거](../tasks/done/evidence/TASK-625/full-a-validation.md.txt)에
+기록했다. 이전 partial의 원인이 해결됐다는 뜻은 아니다. 상한 확대나 검사 생략을
+선결 조치로 삼지 않는다.
 
 이번 세션은 관측 기반을 반영했으며 속도 개선을 입증하지 않았다. DVA·infra-ops·KMP는
 명령·범위가 다르고 기존 실행의 캐시·동시 부하 조건도 통제하지 않아 시간을 직접

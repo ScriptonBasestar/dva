@@ -56,3 +56,6 @@ TASK-617은 native dev/full, 독립 검토와
 이는 위 원인 미확정 timeout이 해결됐다는 뜻이 아니다.
 반복 발생을 관찰할 [실행 메트릭](ci-metrics.md)은 TASK-619에서 연결한다.
 새 수집 기능과 기존 timeout 원인의 해결은 구분한다.
+2026-11-19 native full의 v2 수집 관찰은 [별도 측정 증거](../tasks/done/evidence/TASK-625/full-a-validation.md.txt)다.
+이 결과는 이전 allowlist unavailable partial이나 CLI timeout의 원인을 확정하지 않는다.
+해당 DVA receipt의 configuration fingerprint는 불완전하며 완전한 실행 재현을 증명하지 않는다.
