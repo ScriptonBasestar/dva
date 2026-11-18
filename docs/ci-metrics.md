@@ -1,8 +1,7 @@
 # DVA 자체 CI 실행 메트릭
 
 TASK-619는 [수집안](ci-metrics-proposal.md)을 DVA 저장소의 검사 도구에 적용한다.
-다른 프로젝트에 자동 적용되는 DVA core 기능이나 외부 모니터링 서비스가 아니다.
-[기존 트러블슈팅](ci-troubleshooting.md)의 비용·정지 지점을 관찰하며 검사 선택·예산을 유지한다.
+DVA 저장소 전용이며 외부 모니터링 서비스가 아니다.
 
 ## 실행 경로
 
@@ -29,7 +28,7 @@ platform unit suite의 별도 원본·단계 관측 계약도 유지한다. 그 
 
 수집기는 `ci-metrics: measurement=<ID>`를 기존 로그에 남긴다.
 DVA run ID를 임의로 만들거나 보호된 parent/composition 환경값을 해석하지 않는다.
-해당 run 로그의 ID로 프로젝트 기록을 연결한다.
+로그의 ID로 기록을 연결한다.
 
 | 필드 | 의미 |
 |---|---|
@@ -51,10 +50,10 @@ hosted 요약은 기존 JSONL의 관측이며 원래 명령의 wall/exit을 모�
 metadata는 best-effort source 관측과 dirty unknown, OS·arch·CPU, 수집기 Go 버전, 확인 가능한 Go 실행 파일의
 build 버전과 GOROOT 버전, fresh 및 안전한 옵션·패키지 범위를 남긴다.
 shim·자동 toolchain·Go 설정 등 확인할 수 없는 조건은 unknown/unclassified다.
-RAM·전체 환경·실제 모든 도구 버전을 측정했다고 주장하지 않는다.
+RAM·전체 환경·모든 도구 버전은 측정하지 않는다.
 공유 설정의 HMAC은 private key ID가 같을 때만 비교하며 완전한 재사용 입력 key가 아니다.
 이 메타데이터는 비동기·비인증 관측이다. 정확한 실행 전후 source/dirty 판정은
-DVA attestation을 따르며 부가 수집을 위해 Git·버전 관리자 프로세스를 새로 실행하지 않는다.
+DVA attestation을 따르며 별도 Git·버전 관리자 프로세스를 실행하지 않는다.
 
 ## 로컬 출력의 개인정보 경계
 
@@ -89,6 +88,13 @@ XDG state가 없으면 `~/.local/state/`를 사용한다. repository key는 Git 
   알 수 없는 파일·손상된 헤더·다른 도구의 상태는 삭제하지 않는다.
 - 진행·최종 요약은 각각 1 MiB, queue는 256개, JSON 한 행은 64 KiB로 제한한다.
   활성 추적은 16,384개, 상세 목록은 제한하고 잘림·누락을 표시한다.
+- 새 v2 기록의 `progress_retention`은 `package-milestones-and-failures` 모드를 명시한다.
+  `detail_status`는 축약을 `compacted`, 손실을 `partial`로 표시한다. package 단계와 실패를
+  남기고 나머지 test 이벤트는 의도적으로 생략하며 `omitted`로 센다. `collection_status`는
+  parser 집계와 선택된 진행 기록의 수집 상태이며 원본 trace의 완전성을 뜻하지 않는다.
+  `queue_dropped`, `byte_dropped`, `marshal_failures`, `write_failures`는 실제 손실을 구분한다.
+  v1 기록은 그대로 읽으며 이 필드의 부재는 0이 아닌 미상이다. v1 전용 리더는 v2를 거부해야 한다. 전체 원본 trace는 제공하지 않는다.
+  진행 파일 끝에 종료 결과와 집계용 공간을 예약하지만 저장 실패 시 footer를 보장하지 않는다.
 - 원문 Output·명령 인자·환경값·개인 경로는 요약에 저장하지 않는다. 소스에서 확인한
   정적 테스트 이름만 사용하고 동적 subtest·미확인 package/name은 실행별 HMAC으로 가린다.
 
@@ -97,11 +103,11 @@ XDG state가 없으면 `~/.local/state/`를 사용한다. repository key는 Git 
 메트릭 수집은 partial로 남긴다.
 수집 종료 대기는 최대 100ms다. 강제 KILL·OS 장애·runner 상실 때 최종 파일을 보장하지
 않으며 관측하지 못한 종료를 PASS로 쓰지 않는다. 저장 자체가 막히면 안전한 수집 경고만 남을 수 있다.
-기존 private DVA 로그의 원본 출력까지 비밀값이 제거됐다는 뜻은 아니다.
+기존 private DVA 로그의 원본은 비밀값 제거 대상이 아니다.
 
 ## 조회와 기존 로그 요약
 
-별도로 실행할 필수 작업은 없다. 기존 프로젝트 검사 진입점이 자동으로 수집한다.
+기존 검사 진입점이 자동으로 수집한다.
 DVA의 `dva ci logs <run-id>`에서 measurement ID를 찾고 해당 JSON의 위 필드를 조회한다.
 GitHub에서는 `test-metrics-*`, `integration-metrics-*`의 요약을 기존
 `test-progress-*`, `integration-progress-*` 원본 JSONL·step 결과와 함께 읽는다.

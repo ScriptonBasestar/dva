@@ -16,30 +16,75 @@ import (
 	"time"
 )
 
-const recordSchema = "dva-project-ci-metrics/v1"
+const recordSchema = "dva-project-ci-metrics/v2"
+const legacyRecordSchema = "dva-project-ci-metrics/v1"
+
+func supportedRecordSchema(schema string) bool {
+	return schema == recordSchema || schema == legacyRecordSchema
+}
+
 const maxProgressBytes = 1024 * 1024
+const progressFooterReserve = 4096
 const maxSummaryBytes = 1024 * 1024
 const maxFinishedBytes = 100 * 1024 * 1024
 const maxFinishedCount = 1000
 const maxFinishedAge = 30 * 24 * time.Hour
 
 type Record struct {
-	Schema         string    `json:"schema"`
-	ID             string    `json:"measurement_id"`
-	Check          string    `json:"check"`
-	StartedAt      time.Time `json:"started_at"`
-	FinishedAt     time.Time `json:"finished_at"`
-	WallMS         *int64    `json:"wall_ms,omitempty"`
-	Status         string    `json:"collection_status"`
-	Reason         string    `json:"collection_reason,omitempty"`
-	OutputDegraded bool      `json:"output_degraded,omitempty"`
-	Outcome        string    `json:"check_outcome"`
-	ExitCode       *int      `json:"exit_code,omitempty"`
-	Signal         string    `json:"signal,omitempty"`
-	Metadata       Metadata  `json:"metadata"`
-	Options        Options   `json:"options"`
-	Events         *Snapshot `json:"events,omitempty"`
-	Hosted         *Hosted   `json:"hosted,omitempty"`
+	Schema            string             `json:"schema"`
+	ID                string             `json:"measurement_id"`
+	Check             string             `json:"check"`
+	StartedAt         time.Time          `json:"started_at"`
+	FinishedAt        time.Time          `json:"finished_at"`
+	WallMS            *int64             `json:"wall_ms,omitempty"`
+	Status            string             `json:"collection_status"`
+	Reason            string             `json:"collection_reason,omitempty"`
+	OutputDegraded    bool               `json:"output_degraded,omitempty"`
+	Outcome           string             `json:"check_outcome"`
+	ExitCode          *int               `json:"exit_code,omitempty"`
+	Signal            string             `json:"signal,omitempty"`
+	Metadata          Metadata           `json:"metadata"`
+	Options           Options            `json:"options"`
+	Events            *Snapshot          `json:"events,omitempty"`
+	Hosted            *Hosted            `json:"hosted,omitempty"`
+	ProgressRetention *ProgressRetention `json:"progress_retention,omitempty"`
+}
+
+// ProgressRetention describes intentional compaction separately from lost detail.
+type ProgressRetention struct {
+	Mode            string `json:"mode"`
+	DetailStatus    string `json:"detail_status"`
+	Omitted         uint64 `json:"omitted"`
+	QueueDropped    uint64 `json:"queue_dropped"`
+	ByteDropped     uint64 `json:"byte_dropped"`
+	MarshalFailures uint64 `json:"marshal_failures"`
+	WriteFailures   uint64 `json:"write_failures"`
+}
+
+type progressWriter struct {
+	w     io.Writer
+	size  int
+	stats *ProgressRetention
+}
+
+func (w *progressWriter) write(v any, limit int) bool {
+	b, err := json.Marshal(v)
+	if err != nil {
+		w.stats.MarshalFailures++
+		return false
+	}
+	if len(b)+1 > limit-w.size {
+		w.stats.ByteDropped++
+		return false
+	}
+	b = append(b, '\n')
+	n, err := w.w.Write(b)
+	w.size += n
+	if err != nil || n != len(b) {
+		w.stats.WriteFailures++
+		return false
+	}
+	return true
 }
 
 type Hosted struct {
@@ -50,15 +95,17 @@ type Hosted struct {
 }
 
 type collector struct {
-	id      string
-	check   string
-	start   time.Time
-	events  chan Progress
-	stop    chan struct{}
-	final   chan Record
-	done    chan struct{}
-	dropped atomic.Bool
-	failed  atomic.Bool
+	id           string
+	check        string
+	start        time.Time
+	events       chan Progress
+	stop         chan struct{}
+	final        chan Record
+	done         chan struct{}
+	dropped      atomic.Bool
+	omitted      atomic.Uint64
+	queueDropped atomic.Uint64
+	failed       atomic.Bool
 }
 
 func newCollector(root, check, id string, start time.Time) *collector {
@@ -68,7 +115,12 @@ func newCollector(root, check, id string, start time.Time) *collector {
 }
 
 // emit must never wait on a filesystem operation or a full queue.
+// Test failures and package milestones remain visible; other test events are summarized.
 func (c *collector) emit(p Progress) {
+	if p.Test != "" && p.Action != "fail" {
+		c.omitted.Add(1)
+		return
+	}
 	select {
 	case <-c.stop:
 		return
@@ -80,6 +132,7 @@ func (c *collector) emit(p Progress) {
 	case c.events <- p:
 	default:
 		c.dropped.Store(true)
+		c.queueDropped.Add(1)
 	}
 }
 
@@ -140,17 +193,9 @@ func (c *collector) write(root string) {
 			c.failed.Store(true)
 		}
 	}()
-	progressSize := 0
-	write := func(v any) bool {
-		b, e := json.Marshal(v)
-		if e != nil || len(b)+1 > maxProgressBytes-progressSize {
-			return false
-		}
-		b = append(b, '\n')
-		n, e := f.Write(b)
-		progressSize += n
-		return e == nil && n == len(b)
-	}
+	stats := &ProgressRetention{Mode: "package-milestones-and-failures", DetailStatus: "compacted"}
+	writer := &progressWriter{w: f, stats: stats}
+	write := func(v any) bool { return writer.write(v, maxProgressBytes-progressFooterReserve) }
 	if !write(struct {
 		Schema    string    `json:"schema"`
 		ID        string    `json:"measurement_id"`
@@ -162,6 +207,9 @@ func (c *collector) write(root string) {
 	consume := func(p Progress) {
 		if !c.failed.Load() && !write(p) {
 			c.dropped.Store(true)
+			if stats.WriteFailures > 0 {
+				c.failed.Store(true)
+			}
 		}
 	}
 	for {
@@ -181,6 +229,11 @@ func (c *collector) write(root string) {
 	}
 drained:
 	r := <-c.final
+	stats.Omitted, stats.QueueDropped = c.omitted.Load(), c.queueDropped.Load()
+	r.ProgressRetention = stats
+	if c.failed.Load() || c.dropped.Load() {
+		stats.DetailStatus = "partial"
+	}
 	select {
 	case r.Metadata = <-metadataReady:
 	default:
@@ -189,10 +242,28 @@ drained:
 	if c.failed.Load() {
 		r.Status, r.Reason = "partial", "progress storage failed"
 	} else if c.dropped.Load() {
-		r.Status, r.Reason = "partial", "progress queue or byte limit exceeded"
+		r.Status, r.Reason = "partial", "progress detail lost"
 	}
 	if r.Events != nil && r.Events.Status != "complete" && r.Status == "complete" {
 		r.Status, r.Reason = "partial", "incomplete event stream"
+	}
+	// The reserved footer gives bounded terminal context even after the detail limit.
+	footer := struct {
+		Type      string             `json:"type"`
+		ID        string             `json:"measurement_id"`
+		Outcome   string             `json:"check_outcome"`
+		ExitCode  *int               `json:"exit_code,omitempty"`
+		Status    string             `json:"collection_status"`
+		Retention *ProgressRetention `json:"progress_retention"`
+		Counts    map[string]int     `json:"counts,omitempty"`
+	}{Type: "final", ID: r.ID, Outcome: r.Outcome, ExitCode: r.ExitCode, Status: r.Status, Retention: stats}
+	if r.Events != nil {
+		footer.Counts = r.Events.Counts
+	}
+	if !c.failed.Load() && !writer.write(footer, maxProgressBytes) {
+		c.failed.Store(true)
+		stats.DetailStatus = "partial"
+		r.Status, r.Reason = "partial", "progress storage failed"
 	}
 	// Publication and retention share one nonblocking lock. If it is busy,
 	// leave the active record for a later collector to recover as partial.
@@ -363,7 +434,7 @@ func pruneFinishedLocked(dir string, now time.Time) error {
 		if err != nil {
 			continue
 		}
-		if r.Schema != recordSchema || r.ID != id || r.FinishedAt.IsZero() || r.FinishedAt.After(now) {
+		if !supportedRecordSchema(r.Schema) || r.ID != id || r.FinishedAt.IsZero() || r.FinishedAt.After(now) {
 			continue
 		}
 		x := finishedRecord{id: id, summary: p, at: r.FinishedAt, bytes: size}
@@ -390,7 +461,7 @@ func pruneFinishedLocked(dir string, now time.Time) error {
 		// inventory avoids reading every test summary on every invocation.
 		b, err := readOwnedRegular(r.summary, maxSummaryBytes)
 		var verified Record
-		if err != nil || json.Unmarshal(b, &verified) != nil || verified.Schema != recordSchema || verified.ID != r.id || verified.FinishedAt.IsZero() {
+		if err != nil || json.Unmarshal(b, &verified) != nil || !supportedRecordSchema(verified.Schema) || verified.ID != r.id || verified.FinishedAt.IsZero() {
 			continue
 		}
 		// Delete the event file only after verifying its own header and type.
@@ -489,7 +560,7 @@ func validProgressHeader(b []byte, id string) bool {
 		Schema string `json:"schema"`
 		ID     string `json:"measurement_id"`
 	}
-	return json.Unmarshal(s.Bytes(), &h) == nil && h.Schema == recordSchema && h.ID == id
+	return json.Unmarshal(s.Bytes(), &h) == nil && supportedRecordSchema(h.Schema) && h.ID == id
 }
 
 // reapAbandoned acquires each active file's own non-blocking lock before
@@ -585,7 +656,7 @@ func recoverOneActive(dir, path, id string, f *os.File, info os.FileInfo, now ti
 		Check     string    `json:"check"`
 		StartedAt time.Time `json:"started_at"`
 	}
-	if json.Unmarshal(s.Bytes(), &h) != nil || h.Schema != recordSchema || h.ID != id || !validCheck(h.Check) || h.StartedAt.IsZero() || h.StartedAt.After(now) {
+	if json.Unmarshal(s.Bytes(), &h) != nil || !supportedRecordSchema(h.Schema) || h.ID != id || !validCheck(h.Check) || h.StartedAt.IsZero() || h.StartedAt.After(now) {
 		return nil
 	}
 	current, err := os.Lstat(path)
@@ -604,7 +675,7 @@ func recoverOneActive(dir, path, id string, f *os.File, info os.FileInfo, now ti
 	summaryPath := filepath.Join(dir, id+".json")
 	if summaryBytes, err := readOwnedRegular(summaryPath, maxSummaryBytes); err == nil {
 		var r Record
-		if json.Unmarshal(summaryBytes, &r) != nil || r.Schema != recordSchema || r.ID != id || r.FinishedAt.IsZero() {
+		if json.Unmarshal(summaryBytes, &r) != nil || !supportedRecordSchema(r.Schema) || r.ID != id || r.FinishedAt.IsZero() {
 			return nil
 		}
 	} else if errors.Is(err, os.ErrNotExist) {
@@ -612,7 +683,7 @@ func recoverOneActive(dir, path, id string, f *os.File, info os.FileInfo, now ti
 		if finished.Before(h.StartedAt) {
 			finished = h.StartedAt
 		}
-		r := Record{Schema: recordSchema, ID: id, Check: h.Check, StartedAt: h.StartedAt, FinishedAt: finished, Status: "partial", Outcome: "unknown", Reason: "collector stopped before finalization", Metadata: unknownMetadata()}
+		r := Record{Schema: h.Schema, ID: id, Check: h.Check, StartedAt: h.StartedAt, FinishedAt: finished, Status: "partial", Outcome: "unknown", Reason: "collector stopped before finalization", Metadata: unknownMetadata()}
 		if err := writeFinal(dir, r); err != nil {
 			return err
 		}
