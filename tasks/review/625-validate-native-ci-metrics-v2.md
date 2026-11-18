@@ -45,8 +45,24 @@ compaction, loss and outcomes without changing the runtime or historical evidenc
 - [독립 내용 리뷰 전사](../done/evidence/TASK-625/b-draft-content-review.txt)는 증거 경로
   보정 후 세 기준의 내용을 통과로 판정했다 (별도 ce-judge 세션, gpt-6.1-sol high).
   이는 통합 리뷰나 완료 전용 done-review가 아니다.
+- 측정 증거의 행 크기 설명은 [정정](../done/evidence/TASK-625/full-a-correction.txt)을
+  따른다. summary JSON 본문 1 MiB 상한과 입력 Go JSONL 이벤트 행 64 KiB 상한은 서로 다르다. 이전
+  내용 리뷰가 그 넓은 설명을 승인한 부분도 정식 1차 판정과 이 정정으로 대체한다.
+- [수리 초안의 독립 내용 리뷰](../done/evidence/TASK-625/c-content-review.txt)는 통과했다.
+  후행 개행의 별도 처리 문구를 추가했으며 정확한 최종 후보 통합 리뷰는 별도다.
+
+## Review Attempts
+
+- 1차 (2026-11-18T15:24:02Z): 독립 ce-judge `gpt-6.1-sol` high/strong,
+  작성자 `gpt-6.1-terra` medium/standard. 결과 FIX-NEEDED: 측정 증거가 summary에도
+  행 상한을 적용한다고 잘못 서술했다. 1차 판정의 progress 행 상한 설명도 위 정정으로
+  바로잡는다. 세 원본 측정·크기와 full B receipt를
+  대조한 [정식 판정](../done/evidence/TASK-625/formal-review-attempt-1.txt)과
+  [unit 기록](../done/evidence/TASK-625/unit-review-attempt-1.json)을 보존한다.
+  기존 증거는 유지하고 연결된 정정으로 한정해 수리한다. 다음 단계는 다른 독립
+  리뷰어가 수리 결과를 재검토하는 것이다.
 
 ## 다음 단계
 
-최종 후보를 고정하고 그 후보의 필수 full gate와 통합 리뷰를 거쳐 통합한다.
-완료 전용 done-review는 별도로 수행한다.
+정정의 독립 내용 리뷰 후 수리 후보의 필수 full gate와 통합 리뷰를 거쳐 통합한다.
+그 뒤 다른 독립 리뷰어가 완료 전용 재검토를 수행한다.

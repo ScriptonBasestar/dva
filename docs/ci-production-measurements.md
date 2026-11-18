@@ -122,6 +122,7 @@ native full 측정은 검사 성공과 세 v2 수집 complete를 관찰했다. �
 unit 시간 상세 잘림, 별도 lint 단계와 검증 범위는 [측정 증거](../tasks/done/evidence/TASK-625/full-a-validation.md.txt)에
 기록했다. 이전 partial의 원인이 해결됐다는 뜻은 아니다. 상한 확대나 검사 생략을
 선결 조치로 삼지 않는다.
+측정 증거의 행 크기 설명은 [정정](../tasks/done/evidence/TASK-625/full-a-correction.txt)을 따른다.
 
 이번 세션은 관측 기반을 반영했으며 속도 개선을 입증하지 않았다. DVA·infra-ops·KMP는
 명령·범위가 다르고 기존 실행의 캐시·동시 부하 조건도 통제하지 않아 시간을 직접

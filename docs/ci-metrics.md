@@ -86,14 +86,14 @@ XDG state가 없으면 `~/.local/state/`를 사용한다. repository key는 Git 
   lock이 사용 중이면 최종화를 미루고 partial 진행 기록을 남긴다. 검사는 기다리지 않는다.
 - 새 기록만 30일·최근 1,000회·총 100 MiB 중 먼저 도달한 기준으로 오래된 것부터 정리한다.
   알 수 없는 파일·손상된 헤더·다른 도구의 상태는 삭제하지 않는다.
-- 진행·최종 요약은 각각 1 MiB, queue는 256개, JSON 한 행은 64 KiB로 제한한다.
+- 진행 파일과 최종 요약 JSON 본문은 각각 1 MiB, queue 256개, 입력 Go JSONL 이벤트 행은 64 KiB로 제한한다. 요약 후행 개행은 별도다.
   활성 추적은 16,384개, 상세 목록은 제한하고 잘림·누락을 표시한다.
 - 새 v2 기록의 `progress_retention`은 `package-milestones-and-failures` 모드를 명시한다.
   `detail_status`는 축약을 `compacted`, 손실을 `partial`로 표시한다. package 단계와 실패를
   남기고 나머지 test 이벤트는 의도적으로 생략하며 `omitted`로 센다. `collection_status`는
   parser 집계와 선택된 진행 기록의 수집 상태이며 원본 trace의 완전성을 뜻하지 않는다.
   `queue_dropped`, `byte_dropped`, `marshal_failures`, `write_failures`는 실제 손실을 구분한다.
-  v1 기록은 그대로 읽으며 이 필드의 부재는 0이 아닌 미상이다. v1 전용 리더는 v2를 거부해야 한다. 전체 원본 trace는 제공하지 않는다.
+  v1 기록은 그대로 읽으며 필드 부재는 0이 아닌 미상이다. v1 전용 리더는 v2를 거부해야 한다.
   진행 파일 끝에 종료 결과와 집계용 공간을 예약하지만 저장 실패 시 footer를 보장하지 않는다.
 - 원문 Output·명령 인자·환경값·개인 경로는 요약에 저장하지 않는다. 소스에서 확인한
   정적 테스트 이름만 사용하고 동적 subtest·미확인 package/name은 실행별 HMAC으로 가린다.
