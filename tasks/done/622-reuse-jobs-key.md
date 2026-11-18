@@ -56,7 +56,7 @@ created: 2026-11-18
 
 - [x] 계산된 `DVA_CI_JOBS` 예산 차이만 있으면 재사용 키가 동일하다 | verify: `go test ./internal/cirun -run TestReuseKeyIgnoresDVAJobs -count=1` (observed: 2026-11-18)
 - [x] 도구 환경(`GOFLAGS -p`) 차이는 여전히 키를 판별한다 | verify: `go test ./internal/cirun -run TestReuseKeyStillDifferentiatesToolEnvironment -count=1` (observed: 2026-11-18)
-- [x] 키 목록에서 `DVA_CI_JOBS`가 제거되고 이웃 항목들은 그대로다 | verify: `/usr/bin/grep -q '"RUST_TEST_THREADS", "PYTHONPATH"' internal/cirun/ci_reuse.go` (observed: 2026-11-18)
+- [x] 키 목록에서 `DVA_CI_JOBS`가 제거되고 이웃 항목들은 그대로다 | verify: `/usr/bin/grep -q '"RUST_TEST_THREADS"' internal/cirun/ci_reuse.go && /usr/bin/grep -q '"PYTHONPATH"' internal/cirun/ci_reuse.go && ! /usr/bin/grep -q '"DVA_CI_JOBS"' internal/cirun/ci_reuse.go` (observed: 2026-11-18)
 
 ## Verification
 
@@ -66,6 +66,11 @@ created: 2026-11-18
   전후 모두 통과한다(대조).
 - 변이 확인: 세 번째 binding의 인접쌍 grep은 수정 전 레이아웃
   (`"RUST_TEST_THREADS", "DVA_CI_JOBS", "PYTHONPATH"`)에서 실패한다.
+- 2026-11-18 TASK-624 재부호화: `PYTEST_MAX_WORKERS`가 두 이웃 사이에 합법적으로
+  들어오며 인접쌍 부호화가 깨졌다(인접은 이 카드의 계약이 아니라 부재 증명의
+  우연한 형태였다). 같은 치아를 항목 수준으로 옮겼다: 두 이웃 키 리터럴 존재 +
+  `"DVA_CI_JOBS"` 키 리터럴 부재(주석의 비인용 언급은 제외). 인접 형태는 다음
+  어떤 키 삽입에도 다시 깨지지 않는다.
 - `TestReuseKeyMutationMatrix`는 `"workers"` 행을 빼고 녹색이며, 그 계약은
   위 두 테스트가 대체한다. 전체 `TestReuse*`/`TestStepReuse*` 슈트 통과.
 
