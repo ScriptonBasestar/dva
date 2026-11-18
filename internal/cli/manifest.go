@@ -355,8 +355,8 @@ func fillCommandDescriptions(command *cobra.Command, entry ManifestCmd) Manifest
 func buildManifest(c *config.Config) *Manifest {
 	m := &Manifest{
 		DvaVersion: config.Version,
-		// Schema 1.12 adds the optional host_slot marker to native CI steps.
-		SchemaVersion:     "1.12",
+		// Schema 1.13 adds the optional profile admission mode.
+		SchemaVersion:     "1.13",
 		GeneratedAt:       time.Now().Format(time.RFC3339),
 		ConfigFile:        c.FilePath(),
 		ProjectDir:        c.FileDir(),

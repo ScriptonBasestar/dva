@@ -64,7 +64,7 @@ func TestCIManifestAndDryRunExposeLocks(t *testing.T) {
 	if got := m.CIProfiles["commit"].Locks; len(got) != 1 || got[0] != "integration-db" {
 		t.Fatalf("manifest locks = %#v", got)
 	}
-	if m.SchemaVersion != "1.12" || m.CIProfiles["commit"].Steps[0].ChildCI != config.CIChildIndependentRoot {
+	if m.SchemaVersion != "1.13" || m.CIProfiles["commit"].Steps[0].ChildCI != config.CIChildIndependentRoot {
 		t.Fatalf("manifest child composition shape: %+v", m.CIProfiles)
 	}
 	oldProject := ciProject

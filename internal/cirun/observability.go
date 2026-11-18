@@ -37,24 +37,7 @@ func newObservability(events string) *Observability {
 
 func prepareObservability(state, id, profileName string, p config.CIProfile) *Observability {
 	o := newObservability("")
-	type stepShape struct {
-		Name             string
-		DependsOn        []string
-		Timeout, Workdir string
-	}
-	shape := struct {
-		Profile     string
-		Timeout     string
-		MaxParallel int
-		ToolJobs    *int
-		Steps       []stepShape
-	}{Profile: profileName, Timeout: p.Timeout, MaxParallel: p.MaxParallel, ToolJobs: p.ToolJobs}
-	for _, s := range p.Steps {
-		shape.Steps = append(shape.Steps, stepShape{s.Name, s.DependsOn, s.Timeout, s.Workdir})
-	}
-	b, _ := json.Marshal(shape)
-	sum := sha256.Sum256(b)
-	o.ConfigurationShapeFingerprint = hex.EncodeToString(sum[:])
+	o.ConfigurationShapeFingerprint = configurationShapeFingerprint(profileName, p)
 	parent := filepath.Join(state, "events")
 	if err := os.MkdirAll(parent, 0700); err != nil {
 		o.EventsStatus = "degraded"
@@ -82,4 +65,29 @@ func prepareObservability(state, id, profileName string, p config.CIProfile) *Ob
 	o.EventsDir = path
 	o.EventsStatus = "available"
 	return o
+}
+
+// This diagnostic shape is incomplete and is not a reuse authority. Adding the
+// public admission declaration changes identities for profiles that declare it;
+// nil admission retains the prior serialized shape.
+func configurationShapeFingerprint(profileName string, p config.CIProfile) string {
+	type stepShape struct {
+		Name             string
+		DependsOn        []string
+		Timeout, Workdir string
+	}
+	shape := struct {
+		Profile     string
+		Timeout     string
+		MaxParallel int
+		ToolJobs    *int
+		Steps       []stepShape
+		Admission   *config.CIAdmission `json:",omitempty"`
+	}{Profile: profileName, Timeout: p.Timeout, MaxParallel: p.MaxParallel, ToolJobs: p.ToolJobs, Admission: p.Admission}
+	for _, s := range p.Steps {
+		shape.Steps = append(shape.Steps, stepShape{s.Name, s.DependsOn, s.Timeout, s.Workdir})
+	}
+	b, _ := json.Marshal(shape)
+	sum := sha256.Sum256(b)
+	return hex.EncodeToString(sum[:])
 }

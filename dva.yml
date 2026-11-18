@@ -97,6 +97,7 @@ provision:
 ci:
   profiles:
     dev:
+      admission: {mode: when-policy-configured, class: heavy, priority: interactive, wait_timeout: 5m}
       description: Fast edit-loop checks for changed Go packages and their reverse test dependencies
       timeout: 5m
       max_parallel: 1
@@ -113,6 +114,7 @@ ci:
           run: go build -trimpath -o bin/dva ./cmd/dva
           depends_on: [affected-test]
     commit:
+      admission: {mode: when-policy-configured, class: heavy, priority: interactive, wait_timeout: 5m}
       description: Staged fast checks; broad/shared changes require core/full
       warn_after: 60s
       timeout: 2m
@@ -134,6 +136,7 @@ ci:
           timeout: 90s
           depends_on: [compile]
     core:
+      admission: {mode: when-policy-configured, class: heavy, priority: background, wait_timeout: 5m}
       description: Former commit gates preserved in full (all core checks, no platform matrix)
       warn_after: 5m
       timeout: 10m
@@ -174,6 +177,7 @@ ci:
           run: go build -trimpath -o bin/dva ./cmd/dva
           depends_on: [test]
     full:
+      admission: {mode: when-policy-configured, class: heavy, priority: background, wait_timeout: 5m}
       description: Core gates plus integration and built-binary skill dogfood; Linux/release checks remain hosted, macOS uses its explicit local profile
       timeout: 30m
       warn_after: 15m
@@ -197,6 +201,7 @@ ci:
           run: go run ./tools/commitcheck
           depends_on: [skill-dogfood]
     audit:
+      admission: {mode: when-policy-configured, class: heavy, priority: background, wait_timeout: 5m}
       description: Full checks with successful result reuse disabled
       timeout: 30m
       warn_after: 15m
@@ -204,6 +209,7 @@ ci:
       fresh: true
       steps: *full-steps
     macos-platform:
+      admission: {mode: when-policy-configured, class: heavy, priority: background, wait_timeout: 5m}
       description: Explicit native macOS platform checks with prepared SOPS floor/latest tools
       timeout: 20m
       max_parallel: 1

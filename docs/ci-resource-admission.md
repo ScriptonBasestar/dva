@@ -33,8 +33,27 @@ null이다. 비어 있는 보고 파일은 완료 증거가 아니다.
 
 CI profile의 `admission`은 `class`, `priority`, `wait_timeout`을 명시한 경우에만
 같은 host 정책에 참가한다. 선언하지 않은 기존 프로필은 바뀌지 않는다. OCI 단계와
-중첩 resource/child CI는 지원하지 않으며 명시적으로 거부한다. 환경 마커는 참여자가
-중첩을 감지하기 위한 값일 뿐 권한이나 신뢰할 수 있는 lease 증거가 아니다.
+child CI 선언은 지원하지 않는다. profile lease를 획득할 때 중첩 resource admission은
+거부한다. 조건부 모드에서 정책이 없으면 외부 감독 마커가 있어도 새 profile lease를
+획득하지 않고 기존 root·parent·child CI 검사를 따른다. 환경 마커는 중첩을 감지하기
+위한 값일 뿐 권한이나 신뢰할 수 있는 lease 증거가 아니다.
+
+`mode`의 기본값 `required`는 정책이 없으면 실패한다. 명시적으로
+`when-policy-configured`를 선택하면 `DVA_RESOURCE_POLICY`가 실제로 없는 host에서는
+lease 없이 실행하고 admission 결과를 `not_configured`로 기록한다. 빈 값, 상대 경로,
+없는 파일, 잘못된 정책은 두 모드 모두 실행 전에 실패한다. 명시된 환경의 마지막 값이
+우선하며 해당 키가 없을 때만 프로세스 환경을 읽는다. 정책을 자동 탐색하지 않는다.
+기존 receipt에 admission이 없으면 그 결과는 unknown이다.
+관측용 configuration shape fingerprint는 공개 admission 선언을 포함한다. 이 확장으로
+선언한 프로필의 fingerprint는 이전 기록과 달라지며, 선언이 없는 기존 shape는 유지한다.
+이는 불완전한 진단 정보이며 결과 재사용이나 같은 전체 실행의 증거가 아니다.
+
+DVA 자체 프로필은 모두 heavy로 분류한다. dev·commit은 interactive, core·full·audit·
+macos-platform은 background 우선순위를 사용한다. class는 자원량의 협력적 분류이고
+priority는 대기 순서다. host 정책을 지정한 경우에만 참가하므로 공개 CLI와 hosted CI는
+정책 없이도 실행된다. 5분은 측정된 최적값이 아닌 초기 입장 대기 예산이며 긴 gate 뒤에서
+시간 초과할 수 있다. 초기 host 운영은 heavy 1개와 light 2개 동시 용량을 기준으로 하되
+자동 조정하지 않는다. 이 분류는 CPU 사용량 측정이나 강제 제한이 아니다.
 
 ## CI 대기 관측
 

@@ -176,11 +176,10 @@ func TestCommandHelpGroupsAndDiscoveryDescriptions(t *testing.T) {
 		}
 	}
 
-	// Keep the current public shape pinned: 1.12 adds the optional host_slot
-	// marker to native CI steps while preserving route identity.
+	// Keep the current public shape pinned: 1.13 adds profile admission mode.
 	manifest := buildManifest(&config.Config{})
-	if manifest.SchemaVersion != "1.12" {
-		t.Errorf("manifest schema version = %q, want 1.12 (optional CI host_slot)", manifest.SchemaVersion)
+	if manifest.SchemaVersion != "1.13" {
+		t.Errorf("manifest schema version = %q, want 1.13 (optional CI admission mode)", manifest.SchemaVersion)
 	}
 	for _, name := range []string{"manifest", "show", "status"} {
 		entry, ok := manifest.StaticCommands[name]

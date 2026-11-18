@@ -79,8 +79,8 @@ plans:
 		t.Fatalf("unmarshal manifest: %v", err)
 	}
 
-	if manifest.SchemaVersion != "1.12" {
-		t.Fatalf("schema_version = %q, want 1.12", manifest.SchemaVersion)
+	if manifest.SchemaVersion != "1.13" {
+		t.Fatalf("schema_version = %q, want 1.13", manifest.SchemaVersion)
 	}
 	if len(manifest.Plans) != 3 {
 		t.Fatalf("plans = %v, want exactly 3 plans", manifest.Plans)

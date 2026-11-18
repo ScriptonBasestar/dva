@@ -82,101 +82,106 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 	}()
 	var cleanupTracker *resourceCleanupTracker
 	var finishAdmission func() error
+	var unconfiguredAdmission *AdmissionObservation
 	if admission := opts.Profile.Admission; admission != nil {
-		if os.Getenv("DVA_RESOURCE_SUPERVISED") != "" || environmentValue(opts.Env, "DVA_RESOURCE_SUPERVISED") != "" || os.Getenv(parentRunEnv) != "" || environmentValue(opts.Env, parentRunEnv) != "" {
-			return report, errors.New("nested resource admission is unsupported")
-		}
-		root, rootErr := filepath.EvalSymlinks(opts.Root)
-		if rootErr != nil {
-			return report, fmt.Errorf("canonicalize ci root: %w", rootErr)
-		}
-		root, rootErr = filepath.Abs(root)
-		if rootErr != nil {
-			return report, rootErr
-		}
-		admissionState, rootErr = stateDirectory(opts.StateDir)
-		if rootErr != nil {
-			return report, rootErr
-		}
-		if rootErr = os.MkdirAll(admissionState, 0700); rootErr != nil {
-			return report, rootErr
-		}
-		admissionState, rootErr = filepath.Abs(admissionState)
-		if rootErr != nil {
-			return report, rootErr
-		}
-		admissionState, rootErr = filepath.EvalSymlinks(admissionState)
-		if rootErr != nil {
-			return report, rootErr
-		}
-		attemptID, rootErr := runID()
-		if rootErr != nil {
-			return report, rootErr
-		}
-		admissionAttempt = &Report{ID: attemptID, Root: root, Profile: opts.ProfileName, Subproject: opts.Subproject, Status: "waiting", StartedAt: time.Now(), Fresh: opts.Fresh || opts.Profile.Fresh, Admission: &AdmissionObservation{Class: admission.Class, Priority: admission.Priority, Outcome: "waiting"}}
-		report = *admissionAttempt
-		if rootErr = writeReport(admissionState, report); rootErr != nil {
-			return report, fmt.Errorf("record waiting admission: %w", rootErr)
-		}
-		policyPath := environmentValue(opts.Env, "DVA_RESOURCE_POLICY")
-		if policyPath == "" {
-			policyPath = os.Getenv("DVA_RESOURCE_POLICY")
-		}
-		p, digest, err := resourceadmission.ReadPolicy(policyPath)
-		if err != nil {
-			return report, err
-		}
-		dir, err := resourceadmission.DefaultDirectory()
-		if err != nil {
-			return report, err
-		}
-		if opts.resourceDirectory != "" {
-			dir = opts.resourceDirectory
-		}
-		wait, err := time.ParseDuration(admission.WaitTimeout)
-		if err != nil {
-			return report, err
-		}
-		waitCtx, cancelWait := context.WithTimeout(parent, wait)
-		lease, observation, err := admissionWait(waitCtx, dir, p, digest, admission.Class, admission.Priority, "profile", outputOrDiscard(opts.Output))
-		cancelWait()
-		admissionAttempt.Admission = observation
-		report = *admissionAttempt
-		if err != nil {
-			return report, err
-		}
-		admissionExecutionStart := time.Now()
-		cleanupTracker = &resourceCleanupTracker{}
-		finishAdmission = func() error {
-			duration := time.Since(admissionExecutionStart).String()
-			observation.ExecutionDuration = &duration
-			if cleanupTracker.isUncertain() {
-				observation.Outcome = "quarantined"
-				return errors.Join(fmt.Errorf("resource lease %s quarantined: process group cleanup unconfirmed", lease.ID()), lease.Quarantine())
+		policyPath, present := lookupCIEnvironment(opts.Env, "DVA_RESOURCE_POLICY")
+		if !present && admission.Mode == "when-policy-configured" {
+			unconfiguredAdmission = &AdmissionObservation{Class: admission.Class, Priority: admission.Priority, Outcome: "not_configured"}
+		} else {
+			if os.Getenv("DVA_RESOURCE_SUPERVISED") != "" || environmentValue(opts.Env, "DVA_RESOURCE_SUPERVISED") != "" || os.Getenv(parentRunEnv) != "" || environmentValue(opts.Env, parentRunEnv) != "" {
+				return report, errors.New("nested resource admission is unsupported")
 			}
-			releaseCtx, cancelRelease := context.WithTimeout(context.Background(), time.Second)
-			defer cancelRelease()
-			err := lease.Complete(releaseCtx)
+			root, rootErr := filepath.EvalSymlinks(opts.Root)
+			if rootErr != nil {
+				return report, fmt.Errorf("canonicalize ci root: %w", rootErr)
+			}
+			root, rootErr = filepath.Abs(root)
+			if rootErr != nil {
+				return report, rootErr
+			}
+			admissionState, rootErr = stateDirectory(opts.StateDir)
+			if rootErr != nil {
+				return report, rootErr
+			}
+			if rootErr = os.MkdirAll(admissionState, 0700); rootErr != nil {
+				return report, rootErr
+			}
+			admissionState, rootErr = filepath.Abs(admissionState)
+			if rootErr != nil {
+				return report, rootErr
+			}
+			admissionState, rootErr = filepath.EvalSymlinks(admissionState)
+			if rootErr != nil {
+				return report, rootErr
+			}
+			attemptID, rootErr := runID()
+			if rootErr != nil {
+				return report, rootErr
+			}
+			admissionAttempt = &Report{ID: attemptID, Root: root, Profile: opts.ProfileName, Subproject: opts.Subproject, Status: "waiting", StartedAt: time.Now(), Fresh: opts.Fresh || opts.Profile.Fresh, Admission: &AdmissionObservation{Class: admission.Class, Priority: admission.Priority, Outcome: "waiting"}}
+			report = *admissionAttempt
+			if rootErr = writeReport(admissionState, report); rootErr != nil {
+				return report, fmt.Errorf("record waiting admission: %w", rootErr)
+			}
+			if present && policyPath == "" {
+				return report, errors.New("DVA_RESOURCE_POLICY is explicitly empty")
+			}
+			p, digest, err := resourceadmission.ReadPolicy(policyPath)
 			if err != nil {
-				observation.Outcome = "failed"
-			} else {
-				observation.Outcome = "completed"
+				return report, err
 			}
-			return err
-		}
-		defer func() {
-			if finishAdmission != nil {
-				retErr = errors.Join(retErr, finishAdmission())
+			dir, err := resourceadmission.DefaultDirectory()
+			if err != nil {
+				return report, err
 			}
-		}()
-		if err := writeReport(admissionState, report); err != nil {
-			return report, fmt.Errorf("record acquired admission: %w", err)
-		}
-		opts.Env = setCIEnvironment(opts.Env, "DVA_RESOURCE_SUPERVISED", "1")
-		if total := p.WorkerLimits[admission.Class]; total > 0 {
-			opts.Profile.MaxParallel = min(opts.Profile.MaxParallel, total)
-			perStep := max(1, total/min(opts.Profile.MaxParallel, len(opts.Profile.Steps)))
-			opts.Env = setCIEnvironment(opts.Env, "DVA_RESOURCE_WORKER_LIMIT", fmt.Sprint(perStep))
+			if opts.resourceDirectory != "" {
+				dir = opts.resourceDirectory
+			}
+			wait, err := time.ParseDuration(admission.WaitTimeout)
+			if err != nil {
+				return report, err
+			}
+			waitCtx, cancelWait := context.WithTimeout(parent, wait)
+			lease, observation, err := admissionWait(waitCtx, dir, p, digest, admission.Class, admission.Priority, "profile", outputOrDiscard(opts.Output))
+			cancelWait()
+			admissionAttempt.Admission = observation
+			report = *admissionAttempt
+			if err != nil {
+				return report, err
+			}
+			admissionExecutionStart := time.Now()
+			cleanupTracker = &resourceCleanupTracker{}
+			finishAdmission = func() error {
+				duration := time.Since(admissionExecutionStart).String()
+				observation.ExecutionDuration = &duration
+				if cleanupTracker.isUncertain() {
+					observation.Outcome = "quarantined"
+					return errors.Join(fmt.Errorf("resource lease %s quarantined: process group cleanup unconfirmed", lease.ID()), lease.Quarantine())
+				}
+				releaseCtx, cancelRelease := context.WithTimeout(context.Background(), time.Second)
+				defer cancelRelease()
+				err := lease.Complete(releaseCtx)
+				if err != nil {
+					observation.Outcome = "failed"
+				} else {
+					observation.Outcome = "completed"
+				}
+				return err
+			}
+			defer func() {
+				if finishAdmission != nil {
+					retErr = errors.Join(retErr, finishAdmission())
+				}
+			}()
+			if err := writeReport(admissionState, report); err != nil {
+				return report, fmt.Errorf("record acquired admission: %w", err)
+			}
+			opts.Env = setCIEnvironment(opts.Env, "DVA_RESOURCE_SUPERVISED", "1")
+			if total := p.WorkerLimits[admission.Class]; total > 0 {
+				opts.Profile.MaxParallel = min(opts.Profile.MaxParallel, total)
+				perStep := max(1, total/min(opts.Profile.MaxParallel, len(opts.Profile.Steps)))
+				opts.Env = setCIEnvironment(opts.Env, "DVA_RESOURCE_WORKER_LIMIT", fmt.Sprint(perStep))
+			}
 		}
 	}
 	ctx := parent
@@ -235,7 +240,7 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 	}
 	fresh := opts.Fresh || opts.Profile.Fresh
 	startedAt := time.Now()
-	var observation *AdmissionObservation
+	observation := unconfiguredAdmission
 	if admissionAttempt != nil {
 		startedAt, observation = admissionAttempt.StartedAt, admissionAttempt.Admission
 	}

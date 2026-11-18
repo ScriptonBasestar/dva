@@ -54,6 +54,7 @@ type CIProfile struct {
 
 // CIAdmission opts a profile into the host-wide cooperative resource budget.
 type CIAdmission struct {
+	Mode        string `yaml:"mode,omitempty" json:"mode,omitempty"`
 	Class       string `yaml:"class" json:"class"`
 	Priority    string `yaml:"priority" json:"priority"`
 	WaitTimeout string `yaml:"wait_timeout" json:"wait_timeout"`
@@ -147,6 +148,9 @@ func (c *Config) validateCIProfiles() error {
 
 func validateCIProfile(name string, profile CIProfile) error {
 	if a := profile.Admission; a != nil {
+		if a.Mode != "" && a.Mode != "required" && a.Mode != "when-policy-configured" {
+			return fmt.Errorf("ci profile %q: invalid admission mode", name)
+		}
 		if a.Class != "heavy" && a.Class != "light" {
 			return fmt.Errorf("ci profile %q: admission class must be heavy or light", name)
 		}
