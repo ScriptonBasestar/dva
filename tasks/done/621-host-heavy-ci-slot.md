@@ -5,7 +5,9 @@ type: feature
 priority: P1
 effort: M
 exec-tier: strong
-status: review
+status: done
+quality-review: pass
+quality-review-evidence: tasks/done/evidence/TASK-621/review.txt
 created: 2026-11-17
 ---
 

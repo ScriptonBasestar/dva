@@ -5,7 +5,9 @@ type: bug
 priority: P2
 effort: S
 exec-tier: strong
-status: review
+status: done
+quality-review: pass
+quality-review-evidence: tasks/done/evidence/TASK-622/review.txt
 created: 2026-11-18
 ---
 

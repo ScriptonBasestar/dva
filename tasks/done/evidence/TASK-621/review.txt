@@ -1,0 +1,114 @@
+TASK-621 independent quality review — 호스트 전역 무거운 CI 단계 직렬화 슬롯
+master SHA at review (start and end): 3dda5bba9d69a3132252243703ee4869b1bbd91d
+date: 2026-11-18
+reviewer: claude-code:review-621
+executor: peer-session
+
+IMPLEMENTATION COMMITS (card citations, cross-checked)
+- e6f4f3a5 feat(ci): serialize heavy steps through a host-wide slot
+  (landed twin of reviewed a8be9ca0, which is NOT an ancestor of HEAD; rebased)
+- 2563979e fix(ci): keep the slot wait out of the reuse budget window (review fix)
+- f28544cc chore(ci): renumber host-slot card to TASK-621 (docs only, no behavior)
+- f9310eff docs(task): budget-window doc correction (docs only)
+The gpt-6/gpt-6.1 "resource admission" family (2b5d8d6d, 10bc75fc, 178927ef,
+854c1192, 91693ccb, d60bcadf, a4b80431, 9cf64e1f, dbc46c00, c9314d2e, 688bf82d,
+3dda5bba) belongs to other cards; it layers an opt-in bridge
+(DVA_RESOURCE_POLICY-declared, host_slot_bridge.go:53-56 keeps the TASK-621 file
+path when no host policy is declared) and does not alter the reviewed semantics.
+
+PER-CRITERION VERDICTS (bindings run verbatim from the primary)
+1. marked-only acquisition, unmarked unaffected while held
+   $ go test ./internal/cirun -run TestHostSlot -count=1
+   => ok github.com/ScriptonBasestar/dva/internal/cirun 7.907s — exit 0
+2. slot wait excluded from step timeout budget
+   $ go test ./internal/cirun -run TestHostSlotWaitExcludedFromStepTimeout -count=1
+   => ok github.com/ScriptonBasestar/dva/internal/cirun 2.860s — exit 0
+3. reuse path: wait excluded, execution-window budget still enforced
+   $ go test ./internal/cirun -run TestHostSlotReuse -count=1
+   => ok github.com/ScriptonBasestar/dva/internal/cirun 4.309s — exit 0
+4. host_slot rejects OCI coexistence and non-boolean values
+   $ go test ./internal/config -run HostSlot -count=1
+   => ok github.com/ScriptonBasestar/dva/internal/config 0.336s — exit 0
+All four criteria: PASS.
+
+DIFF FINDINGS
+F1 [Low] Unbounded wait when the profile declares no timeout. If a profile has
+   no timeout and no external cancellation arrives, a waiter polls forever
+   (host_slot.go:121-167, 100ms interval) behind a stuck-but-alive holder.
+   Holder identity IS revealed (announce at :110-120) so it is not silent, and
+   decisions/621 Consequences documents profile timeout / external cancel as
+   the only bounds. Advisory by design; accepted, recorded for awareness.
+F2 [Low] Non-unix platforms hard-fail marked steps. os_other.go tryLock returns
+   "locking is unsupported", so acquireHostSlot errors and the step fails
+   (host_slot.go:150-151). Visible fail-fast, not a silent no-op; but config
+   schema does not gate host_slot by platform, so a portable dva.yml with
+   host_slot breaks on unsupported OSes. darwin/linux/BSD are covered by build
+   tags; acceptable for this product.
+F3 [Info] Lock-path symlink following. acquireHostSlot opens
+   O_CREATE|O_RDWR without O_NOFOLLOW (host_slot.go:99); a pre-placed symlink
+   under the UID-owned state dir could redirect the flock target or a rename
+   could split waiters across inodes. The mechanism is explicitly cooperative
+   and advisory within the user's own state root; not a security boundary.
+   No action required.
+F4 [Info] Torn metadata read. Waiters read the holder record without holding
+   the flock (readHostSlotMetadata, host_slot.go:68-84) and can observe a
+   truncate/rewrite in progress, briefly reporting holder=<unrecorded>.
+   Transient and cosmetic; the flock remains the authority.
+F5 [Info] Three-window budget widening is real but documented. runStep resets
+   to the pre-budget origin after acquisition (cirun_steps.go:358), so a
+   conditioned/reuse slot step can consume probe + execution + verification
+   windows each of the full step timeout plus the wait, where a non-slot step
+   gets one window. Documented in decisions/621 (예산 창 규칙, Consequences)
+   and skills/dva-ci/references/configuration.md (corrected by f9310eff).
+   No timeout value itself is raised; matches the card's stated rule.
+F6 [Info] Release happens before the reuse verification window
+   (defer release() in runStep unblocks when runStep returns;
+   ci_reuse_step.go:83-95 verifies outside the slot). Another heavy step may
+   start during verification. Verification is cheap input hashing; part of the
+   documented three-window model.
+Positive findings: failure/panic paths release correctly (deferred unlock,
+   runStep defer release at cirun_steps.go:356; metadata-write failure unlocks
+   before returning, host_slot.go:136-138); kernel reclaims flock on process
+   death so crashes cannot deadlock, and the next holder overwrites stale
+   metadata (documented); ancestor re-declaration fails fast instead of
+   deadlocking (host_slot.go:154-160, tested); unmarked steps never open the
+   lock file — gate at cirun_steps.go:314 plus bridge branch at :137 both key
+   on step.HostSlot; config rejection exists in all three layers
+   (ci.go:203-205 validation, schema.json host_slot boolean,
+   ci_oci_serialization.go MarshalJSON/MarshalYAML) with tests incl. the
+   YAML-1.1 "yes" schema gate.
+
+TEST QUALITY
+Process-level: real helper processes hold the actual slot file via fd-3
+release pipes (no scheduler-timing dependence). Tests genuinely contend
+(TestHostSlotTwoProcessAcquisition asserts handoff through READY gating),
+assert serialization (TestHostSlotStepWaitsForRealHolderProcess asserts the
+marker does not appear while held), cover failure-release
+(TestHostSlotReleasedAfterStepFailure), unmarked isolation, ancestor
+fail-fast, and both budget directions on the reuse path (exclusion AND
+enforcement). Gaps: no direct test that external cancellation interrupts an
+active wait (ctx.Err() branches at host_slot.go:122/163) nor that a profile
+timeout kills a long wait; both are simple context paths already exercised
+indirectly by the profile deadline in the budget tests. Non-blocking.
+
+FALSIFICATION (isolated scratch worktree, master untouched)
+git worktree add --detach /Users/archmagece/worktrees/misc/dva/review-621-scratch HEAD
+Neutered the single acquisition-gate hunk in the scratch copy only:
+  cirun_steps.go:314  `if step.HostSlot {` -> `if step.HostSlot && false {`
+$ go test ./internal/cirun -run TestHostSlotStepWaitsForRealHolderProcess -count=1
+  => FAIL host_slot_test.go:166 "slot step executed while another process held
+     the host slot" — exit 1 (reproduces the card's recorded mutation)
+$ go test ./internal/cirun -run TestHostSlot -count=1 (still neutered)
+  => 4 failures: TestHostSlotStepWaitsForRealHolderProcess,
+     TestHostSlotWaitExcludedFromStepTimeout,
+     TestHostSlotReuseWaitExcludedFromStepTimeout,
+     TestHostSlotReuseExecutionDeadlineStillBites — exit 1
+git worktree remove --force .../review-621-scratch; primary checkout verified
+clean at 3dda5bba before and after. The tests are bound to the acquisition
+logic, not vacuous.
+Note: a project filesize hook (ce-validate-filesize.sh) fired on the scratch
+edit because cirun_steps.go is a pre-existing 535-line file over the 500-line
+limit; the mutation lived only in the destroyed scratch worktree and the
+primary was never edited. Reported per hook-denial policy.
+
+VERDICT: PASS
