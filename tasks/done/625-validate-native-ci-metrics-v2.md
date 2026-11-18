@@ -4,8 +4,12 @@ title: "Native full CI 메트릭 v2 실측 검증"
 type: chore
 priority: P2
 exec-tier: standard
-status: review
+status: done
 created: 2026-11-18
+quality-review: pass
+quality-reviewed-at: 2026-11-18T15:50:23Z
+quality-review-evidence: tasks/done/evidence/TASK-625/unit-review-attempt-2.json
+quality-review-receipt: tasks/done/evidence/TASK-625/done-review-b08715fae3a42db86a0ceea092e4d0eb29788aa6f04c3660ccb30edf01f11101.json
 ---
 
 ## Summary
@@ -40,15 +44,15 @@ compaction, loss and outcomes without changing the runtime or historical evidenc
 - 이후 이 카드의 dev T2 `3e3a221d9a1f2ccf55a18f86901ab585`는 초안에서 통과했다.
   앞선 `8474a0c86cd9790e130e1cd1867da61d`는 임시 진단 파일 서식으로 실패했고
   해당 파일을 정리한 뒤 재실행했다. source refresh 후 측정 A는 clean 후보에서
-  성공했다. [안전 집계와 한계](../done/evidence/TASK-625/full-a-validation.md.txt)에
+  성공했다. [안전 집계와 한계](evidence/TASK-625/full-a-validation.md.txt)에
   기록했으며, 후속 변경을 포함한 최종 후보의 full gate와 독립 리뷰는 남았다.
-- [독립 내용 리뷰 전사](../done/evidence/TASK-625/b-draft-content-review.txt)는 증거 경로
+- [독립 내용 리뷰 전사](evidence/TASK-625/b-draft-content-review.txt)는 증거 경로
   보정 후 세 기준의 내용을 통과로 판정했다 (별도 ce-judge 세션, gpt-6.1-sol high).
   이는 통합 리뷰나 완료 전용 done-review가 아니다.
-- 측정 증거의 행 크기 설명은 [정정](../done/evidence/TASK-625/full-a-correction.txt)을
+- 측정 증거의 행 크기 설명은 [정정](evidence/TASK-625/full-a-correction.txt)을
   따른다. summary JSON 본문 1 MiB 상한과 입력 Go JSONL 이벤트 행 64 KiB 상한은 서로 다르다. 이전
   내용 리뷰가 그 넓은 설명을 승인한 부분도 정식 1차 판정과 이 정정으로 대체한다.
-- [수리 초안의 독립 내용 리뷰](../done/evidence/TASK-625/c-content-review.txt)는 통과했다.
+- [수리 초안의 독립 내용 리뷰](evidence/TASK-625/c-content-review.txt)는 통과했다.
   후행 개행의 별도 처리 문구를 추가했으며 정확한 최종 후보 통합 리뷰는 별도다.
 
 ## Review Attempts
@@ -57,12 +61,17 @@ compaction, loss and outcomes without changing the runtime or historical evidenc
   작성자 `gpt-6.1-terra` medium/standard. 결과 FIX-NEEDED: 측정 증거가 summary에도
   행 상한을 적용한다고 잘못 서술했다. 1차 판정의 progress 행 상한 설명도 위 정정으로
   바로잡는다. 세 원본 측정·크기와 full B receipt를
-  대조한 [정식 판정](../done/evidence/TASK-625/formal-review-attempt-1.txt)과
-  [unit 기록](../done/evidence/TASK-625/unit-review-attempt-1.json)을 보존한다.
+  대조한 [정식 판정](evidence/TASK-625/formal-review-attempt-1.txt)과
+  [unit 기록](evidence/TASK-625/unit-review-attempt-1.json)을 보존한다.
   기존 증거는 유지하고 연결된 정정으로 한정해 수리한다. 다음 단계는 다른 독립
   리뷰어가 수리 결과를 재검토하는 것이다.
+- 2차 (2026-11-18T15:50:23Z): 별도 ce-judge `gpt-6.1-sol` high/strong,
+  작성자 `gpt-6.1-terra` medium/standard. 결과 PASS: 세 기준을 원본 측정·수리 diff와
+  full C receipt에 대조했고 차단 항목은 없었다. [정식 판정](evidence/TASK-625/formal-review-attempt-2.txt)과
+  [unit 기록](evidence/TASK-625/unit-review-attempt-2.json)을 보존한다.
+  한 차례 수리를 수락하고 done으로 전이한다.
 
 ## 다음 단계
 
-정정의 독립 내용 리뷰 후 수리 후보의 필수 full gate와 통합 리뷰를 거쳐 통합한다.
-그 뒤 다른 독립 리뷰어가 완료 전용 재검토를 수행한다.
+수리 후보는 full C와 통합 리뷰를 거쳐 전달됐고, 독립 완료 재검토가 통과했다.
+완료 메타데이터 전달의 검증과 통합은 별도로 수행한다.

@@ -1,0 +1,44 @@
+Review kind: canonical postdelivery unit quality review
+UTC: 2026-11-18T15:50:23Z
+Formal attempt: 2
+Reviewer execution: /root/metrics_repair_review
+Reviewer generation: ceg-44420e6ce5059c904db7d3a9a23313ad60fb71e41006cc103c17ee12905e15be
+Reviewer routing: ce-judge, gpt-6.1-sol, high, strong
+Executor routing: gpt-6.1-terra, medium, standard
+Covered cards: task-625
+Blocking findings: 0
+
+Delivery: ci-metrics-v2-evidence-correction
+Delivery generation: ceg-0473fe8fa763b2eb668490b3d79a888974bb854525527cfb67d0cb2d103ab1d3
+Delivery receipt created: 2026-11-18T15:47:29.638571Z
+Delivery receipt SHA-256: 35b1d3fbffc56c2c37b0ea7373f42bd791e26cf61801f05796cdc5df498bd4c1
+Delivery outcome: DONE; delivery purpose, ordered cards, source push and three cleanup results verified.
+
+Source/integration commit: d6fe1bf99b10fbd503a6265af58ce6050c4234fe
+Source tree: 90c09ac14eb1440de7b9cdc5b8f192109784ae84
+Base: 7b16659352241ef5e7bc520850dfa908282d84db
+Review worktree: clean
+
+Card: tasks/review/625-validate-native-ci-metrics-v2.md
+Card raw SHA-256: cea3d7f68343ebc7972cd9906466ded38a34ded6a47b2ea96dee9d91da6f0651
+Canonical reviewed-subject digest: d13ad00c13bfa1aa6e0ad0a09a09d0cfa4a6c085e31157649d940485f029d82c
+
+Criterion 1: PASS.
+The three raw v2 measurements match the recorded child outcomes, collection states, counts, retention counters, hashes and observed sizes. Intentional omissions are 9774, 126 and 2; all four loss counters are zero. Unit timing detail is truncated; unrecorded flags remain unknown. Header/footer identities and aggregates match the summaries.
+
+The bounded correction resolves the first formal finding. Input Go JSONL event lines have the 64 KiB parser limit. Progress writing has a whole-file byte limit. Summary size checking applies to the serialized JSON body, with its trailing newline handled separately. The unit summary has 327866 file bytes and a 327865-byte JSON line. Progress maximum line lengths 398, 362 and 358 bytes are observations, not a separately enforced progress-line guarantee.
+
+Criterion 2: PASS.
+Existing historical evidence remains unchanged. The original full-a-validation.md.txt and earlier content review bytes are preserved, while the linked correction supersedes the inaccurate size statement. Canonical documentation retains the current lint phases, collection/privacy/retention limits and incomplete-trace limitations. It claims neither fresh execution, general performance improvement nor resolution of the prior allowlist partial.
+
+Criterion 3: PASS.
+Repository-relative evidence and correction links resolve. The first formal FIX-NEEDED result and its unit record retain the original reviewer, source/card digests and criterion judgments. The isolated repair has its own DONE delivery receipt and a different independent reviewer. Content and integration reviews are explicitly distinct from formal completion attempts.
+
+Final gate evidence: full C 7321cda69345d1431a08fc437bc52a78 succeeded in 4m4.92389275s with all 11 steps successful. Its attestation is available and clean, bound to the source commit above; before and after both equal 1578125ec64a6b43d49375374574f53ca9bdd45b4d2ed54686b2a4aab6933b5c.
+Full C receipt SHA-256: cf7067b85a9e746cde6df6f6c255e85a238fa2d3d6561c47b160c1a9d40f726f
+
+The single permitted repair cycle is accepted. This verdict covers delivered C only. The host must preserve the immutable unit result before approving the card, then complete authorized status/evidence/attempt writes and derive a new canonical receipt from that final subject. The reviewed-subject digest above must not be reused as the seal for subsequently changed completion metadata.
+
+No tests, source edits, state changes or receipt persistence were performed by this reviewer.
+
+VERDICT: PASS
