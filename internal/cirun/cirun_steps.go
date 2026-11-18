@@ -374,7 +374,7 @@ func runStep(ctx context.Context, root string, step config.CIStep, inherited []s
 	r.Workdir = workdir
 	cmd := exec.Command("/bin/sh", "-eu", "-c", step.Run)
 	cmd.Dir = workdir
-	cmd.Env = ciEnv(inherited, step.Environment, workers)
+	cmd.Env = setCIEnvironment(ciEnv(inherited, step.Environment, workers), "DVA_CI_STEP_NAME", step.Name)
 	r.WorkerBudget = workerBudget(cmd.Env, step.Environment, inherited, workers, source)
 	var childScope *compositionScope
 	var lockState string
@@ -461,6 +461,7 @@ func runStep(ctx context.Context, root string, step config.CIStep, inherited []s
 			err = errors.Join(err, childScope.drain(stepCtx, lockState, err != nil || stepCtx.Err() != nil, signalWork))
 		}
 		cleanupGroup(pid)
+		r.OSWaitResources = observeOSWaitResources(cmd.ProcessState)
 		return r, err
 	case <-stepCtx.Done():
 		var cleanupErr error
@@ -470,6 +471,7 @@ func runStep(ctx context.Context, root string, step config.CIStep, inherited []s
 		} else {
 			terminateProcessGroup(pid, waited)
 		}
+		r.OSWaitResources = observeOSWaitResources(cmd.ProcessState)
 		return r, errors.Join(context.Cause(stepCtx), cleanupErr)
 	}
 }
@@ -520,7 +522,7 @@ func ciEnv(base []string, add map[string]string, workers int) []string {
 		m["GOFLAGS"] = strings.TrimSpace(m["GOFLAGS"] + " -p=1")
 	}
 	for k, v := range add {
-		if k == "DVA_RESOURCE_WORKER_LIMIT" || k == "DVA_RESOURCE_SUPERVISED" || k == "DVA_CI_RUN_ID" || k == "DVA_CI_EVENTS_DIR" || k == "DVA_CI_JOBS" || k == parentRunEnv || k == config.CISubprojectEnv || k == config.CICompositionEnv || k == config.CIFreshEnv {
+		if k == "DVA_RESOURCE_WORKER_LIMIT" || k == "DVA_RESOURCE_SUPERVISED" || k == "DVA_CI_RUN_ID" || k == "DVA_CI_EVENTS_DIR" || k == "DVA_CI_STEP_NAME" || k == "DVA_CI_JOBS" || k == parentRunEnv || k == config.CISubprojectEnv || k == config.CICompositionEnv || k == config.CIFreshEnv {
 			continue
 		}
 		m[k] = v

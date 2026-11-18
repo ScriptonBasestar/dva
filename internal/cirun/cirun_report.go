@@ -57,6 +57,7 @@ type Options struct {
 type StepReport struct {
 	OutputObservation *OutputObservation    `json:"output_observation,omitempty"`
 	Admission         *AdmissionObservation `json:"admission,omitempty"`
+	OSWaitResources   *OSWaitResources      `json:"os_wait_resources,omitempty"`
 	Workdir           string                `json:"workdir,omitempty"`
 	Condition         *ConditionReport      `json:"condition,omitempty"`
 	Reuse             *ReuseReport          `json:"reuse,omitempty"`
@@ -71,6 +72,15 @@ type StepReport struct {
 	Duration          time.Duration         `json:"duration"`
 	HostSlotWait      time.Duration         `json:"host_slot_wait,omitempty"`
 	WorkerBudget      *WorkerBudget         `json:"worker_budget,omitempty"`
+}
+
+// OSWaitResources contains usage returned when DVA waits for the step process.
+// The exact child-process coverage depends on the operating system.
+type OSWaitResources struct {
+	CollectionStatus string `json:"collection_status"`
+	UserCPU          string `json:"user_cpu,omitempty"`
+	SystemCPU        string `json:"system_cpu,omitempty"`
+	PeakRSSBytes     *int64 `json:"peak_rss_bytes,omitempty"`
 }
 
 type ConditionReport struct {
@@ -139,6 +149,7 @@ type Attestation struct {
 type Report struct {
 	Admission                          *AdmissionObservation
 	Observability                      *Observability
+	NativeStages                       *NativeStageObservation
 	ID, Root, Profile, Status, LogPath string
 	Subproject                         string
 	Error                              string
@@ -155,55 +166,57 @@ type Report struct {
 
 func (r Report) MarshalJSON() ([]byte, error) {
 	type wire struct {
-		Admission        *AdmissionObservation `json:"admission,omitempty"`
-		Observability    *Observability        `json:"observability,omitempty"`
-		ID               string                `json:"id"`
-		Root             string                `json:"root"`
-		Profile          string                `json:"profile"`
-		Subproject       string                `json:"subproject,omitempty"`
-		Status           string                `json:"status"`
-		LogPath          string                `json:"log_path"`
-		Error            string                `json:"error,omitempty"`
-		SkipReason       string                `json:"skip_reason,omitempty"`
-		StartedAt        time.Time             `json:"started_at"`
-		FinishedAt       time.Time             `json:"finished_at"`
-		Duration         *string               `json:"duration"`
-		Steps            []StepReport          `json:"steps"`
-		Attestation      Attestation           `json:"attestation"`
-		Conflict         *Conflict             `json:"conflict,omitempty"`
-		Parent           *CompositionParent    `json:"parent,omitempty"`
-		CompositionDepth int                   `json:"composition_depth,omitempty"`
-		Fresh            bool                  `json:"fresh,omitempty"`
+		Admission        *AdmissionObservation   `json:"admission,omitempty"`
+		Observability    *Observability          `json:"observability,omitempty"`
+		NativeStages     *NativeStageObservation `json:"native_stages,omitempty"`
+		ID               string                  `json:"id"`
+		Root             string                  `json:"root"`
+		Profile          string                  `json:"profile"`
+		Subproject       string                  `json:"subproject,omitempty"`
+		Status           string                  `json:"status"`
+		LogPath          string                  `json:"log_path"`
+		Error            string                  `json:"error,omitempty"`
+		SkipReason       string                  `json:"skip_reason,omitempty"`
+		StartedAt        time.Time               `json:"started_at"`
+		FinishedAt       time.Time               `json:"finished_at"`
+		Duration         *string                 `json:"duration"`
+		Steps            []StepReport            `json:"steps"`
+		Attestation      Attestation             `json:"attestation"`
+		Conflict         *Conflict               `json:"conflict,omitempty"`
+		Parent           *CompositionParent      `json:"parent,omitempty"`
+		CompositionDepth int                     `json:"composition_depth,omitempty"`
+		Fresh            bool                    `json:"fresh,omitempty"`
 	}
 	var duration *string
 	if r.Status != "waiting" {
 		value := r.Duration.String()
 		duration = &value
 	}
-	return json.Marshal(wire{r.Admission, r.Observability, r.ID, r.Root, r.Profile, r.Subproject, r.Status, r.LogPath, r.Error, r.SkipReason, r.StartedAt, r.FinishedAt, duration, r.Steps, r.Attestation, r.Conflict, r.Parent, r.CompositionDepth, r.Fresh})
+	return json.Marshal(wire{r.Admission, r.Observability, r.NativeStages, r.ID, r.Root, r.Profile, r.Subproject, r.Status, r.LogPath, r.Error, r.SkipReason, r.StartedAt, r.FinishedAt, duration, r.Steps, r.Attestation, r.Conflict, r.Parent, r.CompositionDepth, r.Fresh})
 }
 
 func (r *Report) UnmarshalJSON(data []byte) error {
 	type wire struct {
-		Admission        *AdmissionObservation `json:"admission,omitempty"`
-		Observability    *Observability        `json:"observability,omitempty"`
-		ID               string                `json:"id"`
-		Root             string                `json:"root"`
-		Profile          string                `json:"profile"`
-		Subproject       string                `json:"subproject,omitempty"`
-		Status           string                `json:"status"`
-		LogPath          string                `json:"log_path"`
-		Error            string                `json:"error,omitempty"`
-		SkipReason       string                `json:"skip_reason,omitempty"`
-		StartedAt        time.Time             `json:"started_at"`
-		FinishedAt       time.Time             `json:"finished_at"`
-		Duration         *string               `json:"duration"`
-		Steps            []StepReport          `json:"steps"`
-		Attestation      Attestation           `json:"attestation"`
-		Conflict         *Conflict             `json:"conflict,omitempty"`
-		Parent           *CompositionParent    `json:"parent,omitempty"`
-		CompositionDepth int                   `json:"composition_depth,omitempty"`
-		Fresh            bool                  `json:"fresh,omitempty"`
+		Admission        *AdmissionObservation   `json:"admission,omitempty"`
+		Observability    *Observability          `json:"observability,omitempty"`
+		NativeStages     *NativeStageObservation `json:"native_stages,omitempty"`
+		ID               string                  `json:"id"`
+		Root             string                  `json:"root"`
+		Profile          string                  `json:"profile"`
+		Subproject       string                  `json:"subproject,omitempty"`
+		Status           string                  `json:"status"`
+		LogPath          string                  `json:"log_path"`
+		Error            string                  `json:"error,omitempty"`
+		SkipReason       string                  `json:"skip_reason,omitempty"`
+		StartedAt        time.Time               `json:"started_at"`
+		FinishedAt       time.Time               `json:"finished_at"`
+		Duration         *string                 `json:"duration"`
+		Steps            []StepReport            `json:"steps"`
+		Attestation      Attestation             `json:"attestation"`
+		Conflict         *Conflict               `json:"conflict,omitempty"`
+		Parent           *CompositionParent      `json:"parent,omitempty"`
+		CompositionDepth int                     `json:"composition_depth,omitempty"`
+		Fresh            bool                    `json:"fresh,omitempty"`
 	}
 	var in wire
 	if err := json.Unmarshal(data, &in); err != nil {
@@ -221,7 +234,7 @@ func (r *Report) UnmarshalJSON(data []byte) error {
 			return err
 		}
 	}
-	*r = Report{Admission: in.Admission, Observability: in.Observability, ID: in.ID, Root: in.Root, Profile: in.Profile, Subproject: in.Subproject, Status: in.Status, LogPath: in.LogPath, Error: in.Error, SkipReason: in.SkipReason, StartedAt: in.StartedAt, FinishedAt: in.FinishedAt, Duration: d, Steps: in.Steps, Attestation: in.Attestation, Conflict: in.Conflict, Parent: in.Parent, CompositionDepth: in.CompositionDepth, Fresh: in.Fresh}
+	*r = Report{Admission: in.Admission, Observability: in.Observability, NativeStages: in.NativeStages, ID: in.ID, Root: in.Root, Profile: in.Profile, Subproject: in.Subproject, Status: in.Status, LogPath: in.LogPath, Error: in.Error, SkipReason: in.SkipReason, StartedAt: in.StartedAt, FinishedAt: in.FinishedAt, Duration: d, Steps: in.Steps, Attestation: in.Attestation, Conflict: in.Conflict, Parent: in.Parent, CompositionDepth: in.CompositionDepth, Fresh: in.Fresh}
 	return nil
 }
 

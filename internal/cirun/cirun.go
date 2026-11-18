@@ -368,6 +368,7 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 		env = setCIEnvironment(env, config.CIFreshEnv, freshValue)
 		checkpoint := func(steps []StepReport) error {
 			report.Steps = append([]StepReport(nil), steps...)
+			report.NativeStages = collectNativeStages(report.Observability.EventsDir, report.ID, ciProfileStepNames(opts.Profile))
 			return writeReport(state, report)
 		}
 		executionCtx := context.WithValue(ctx, ociScopeKey{}, ociScope{state: state, runID: id})
@@ -378,6 +379,11 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 		}
 		executionCtx = context.WithValue(executionCtx, compositionRuntimeKey{}, runtime)
 		report.Steps, retErr = execute(executionCtx, root, opts.Profile, env, writer, checkpoint)
+	}
+	// Capture a terminal snapshot even when execute returned an error or context
+	// cancellation. This observation is diagnostic and does not affect retErr.
+	if report.Observability != nil {
+		report.NativeStages = collectNativeStages(report.Observability.EventsDir, report.ID, ciProfileStepNames(opts.Profile))
 	}
 	if finishAdmission != nil {
 		retErr = errors.Join(retErr, finishAdmission())
