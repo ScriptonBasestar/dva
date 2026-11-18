@@ -76,7 +76,8 @@ agentdeny 진단 뒤의 warm Go cache와 별도의 전용 golangci cache를 썼�
 이번 별도 진단에서는 gopls가 대부분을 차지했다. 원래 32.273초를 소급해
 도구별로 분해한 수치는 아니다. 과거 gopls가 golangci의 vendored modernize에서
 놓친 항목을 발견한 근거(TASK-130)가 있어 현재 중복처럼 보인다는 이유로 제거하지 않는다.
-현재 pin에서의 차이를 조사하고 검사 범위를 보존하는 분리는 향후 별도 변경이다.
+당시에는 검사 범위를 보존하는 분리가 후속 과제였다. 현재 phase 분리는 완료됐으며,
+현재 pin의 검사 차이와 범위를 보존하는 중복 제거 판단은 별도로 남는다.
 
 ## 결과 재사용 판정
 
@@ -97,14 +98,15 @@ agentdeny 진단 뒤의 warm Go cache와 별도의 전용 golangci cache를 썼�
 checkout의 probe 단계는 `--lookup`이 실행하지 않아 not-reusable로 보고한다.
 실제 Run에서의 checkout probe 재사용은 가능하며 repository scope는 probe를 금지한다.
 
-후속 우선순위는 CLI test의 개별 시간·90초 timeout 원인 관찰, 현재 도구 pin의
-golangci/gopls 검사 차이 확인, 필요하면 gopls 단독 phase 분리 순이다.
+후속 우선순위는 CLI test의 개별 시간·90초 timeout 원인 관찰과 현재 도구 pin의
+golangci/gopls 검사 차이 확인이다. 이후 native full의 lint는 preflight, golangci,
+gopls phase로 분리됐다. 과거 묶음 측정은 당시 실행의 기록으로 유지한다.
 완전한 입력과 실제 순절감이 입증될 때만 좁은 재사용 후보를 다시 판단한다.
 추가 캐시·timeout 상향으로 이번 관측을 숨기지 않는다.
 
 ## 후속 인계: 상세 수집 상한과 성능 비교 (2026-11-17)
 
-상태: 조사 대기. worker 관측 변경 `1cde067e`의 `make ci-full`은 실행
+상태: v2 구현 후 native full 실측 대기. worker 관측 변경 `1cde067e`의 `make ci-full`은 실행
 `5b02f4834043896f85b36f94c03f2a63`에서 4분 39.192초로 성공했다.
 해당 로그의 메트릭 `0b3217f2e3cf6c2034222a837de6b801`은 검사 성공과 별도로
 `collection_status=partial`, `collection_reason=progress queue or byte limit exceeded`다.
@@ -115,8 +117,8 @@ golangci/gopls 검사 차이 확인, 필요하면 gopls 단독 phase 분리 순�
 로컬 DVA state의 `ci/<실행 ID>.json`·`ci/logs/<실행 ID>.log`에서 시작하고,
 프로젝트 메트릭 저장소에서 위 measurement ID의 요약·events를 대조한다.
 private state의 보존 정책 때문에 원자료가 없으면 누락으로 표시하고 새 표본을 남긴다.
-다음 작업은 큐/바이트 초과를 구분하고 이벤트 축약·집계로 상세 수집의 완전성을
-개선할 수 있는지 검토하는 것이다. 상한 확대나 검사 생략을 선결 조치로 삼지 않는다.
+`aa5b64f7`에서 큐·바이트 손실 구분과 이벤트 축약·집계를 구현했다. 실제 native full에서
+v2 수집 결과를 확인하는 작업은 남아 있다. 상한 확대나 검사 생략을 선결 조치로 삼지 않는다.
 
 이번 세션은 관측 기반을 반영했으며 속도 개선을 입증하지 않았다. DVA·infra-ops·KMP는
 명령·범위가 다르고 기존 실행의 캐시·동시 부하 조건도 통제하지 않아 시간을 직접

@@ -34,15 +34,16 @@ test phase였다. 이 선택 자체가 잘못됐다는 증거는 없다.
 
 ### full lint가 수십 초 걸리는 이유
 
-full의 lint는 `scripts/ci-lint.sh`가 전체 golangci-lint와 gopls를 순차 실행하는 묶음이다.
-commit의 영향 패키지 go vet와 같은 검사가 아니다.
+TASK-617 당시 full의 lint는 `scripts/ci-lint.sh`가 전체 golangci-lint와 gopls를
+순차 실행한 묶음이었다. 현재 native full은 preflight, golangci, gopls를 별도
+phase로 기록한다. 어느 경우에도 commit의 영향 패키지 go vet와 같은 검사가 아니다.
 TASK-617의 별도 계측에서는 gopls의 비중이 컸지만, 과거 full 전체 시간을 소급해
 도구별로 나눈 결과는 아니다. [도구별 진단과 cache 조건](ci-production-measurements.md#full-lint-32초의-의미)을 따른다.
 
 현재 pin에서 검사 결과의 차이와 재실행 비용을 조사하기 전에는 gopls를 삭제하지 않는다.
 과거에는 golangci의 vendored modernize에서 놓친 항목을 gopls가 검출했다.
-같은 실제 실행의 두 도구별 시간·상태를 먼저 모으고, 검사 범위를 보존할 수 있을 때만
-분리·중복 제거를 판단한다. 전체 lint와 CLI suite의 DVA 결과 재사용은 미채택 상태다.
+같은 실제 실행의 두 도구별 시간·상태를 확인하고, 검사 범위를 보존할 수 있을 때만
+중복 제거를 판단한다. 전체 lint와 CLI suite의 DVA 결과 재사용은 미채택 상태다.
 
 ## 환경 제약과 전달 확인
 
