@@ -153,7 +153,11 @@ func reuseFor(ctx context.Context, root string, step config.CIStep, env []string
 	// host CPU counts and unrelated profile edits without a behavior change.
 	// A step that does read it can restore discrimination per step with
 	// reuse.environment.
-	keys := []string{"PATH", "LANG", "LC_ALL", "LC_CTYPE", "TZ", "GOFLAGS", "GOTOOLCHAIN", "CGO_ENABLED", "GOMAXPROCS", "CARGO_BUILD_JOBS", "RUST_TEST_THREADS", "PYTHONPATH", "PYTHONHOME", "PYTHONSAFEPATH", "MAKEFLAGS", "MFLAGS", config.CISubprojectEnv}
+	// PYTEST_MAX_WORKERS is the counterpoint and is keyed: the admission cap
+	// creates the variable from nothing (CapWorkerEnvironment sets an absent
+	// entry to the limit), so absence and a limit value are different
+	// executions the key must discriminate, unlike the informational budget.
+	keys := []string{"PATH", "LANG", "LC_ALL", "LC_CTYPE", "TZ", "GOFLAGS", "GOTOOLCHAIN", "CGO_ENABLED", "GOMAXPROCS", "CARGO_BUILD_JOBS", "RUST_TEST_THREADS", "PYTEST_MAX_WORKERS", "PYTHONPATH", "PYTHONHOME", "PYTHONSAFEPATH", "MAKEFLAGS", "MFLAGS", config.CISubprojectEnv}
 	keys = append(keys, step.Reuse.Environment...)
 	keys = append(keys, step.Reuse.UnlessEnvironment...)
 	for key := range step.Environment {

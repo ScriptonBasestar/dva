@@ -226,6 +226,45 @@ func TestReuseKeyStillDifferentiatesToolEnvironment(t *testing.T) {
 	}
 }
 
+// The admission cap creates PYTEST_MAX_WORKERS from nothing —
+// CapWorkerEnvironment sets an absent entry to the limit — so an unadmitted
+// run (variable absent) and an admitted run (variable at the limit) are two
+// different executions. The key must discriminate them: the counterpoint to
+// DVA_CI_JOBS, which DVA computes itself and no consumer sizes behavior from.
+func TestReuseKeyTracksAdmissionCreatedPytestWorkers(t *testing.T) {
+	root, step := reuseFixture(t)
+	base := func() []string {
+		// Pin the keyed worker knobs at the limit so the two prepared envs
+		// differ in PYTEST_MAX_WORKERS alone; an unpinned knob would let the
+		// cap differentiate the key for the wrong reason.
+		return []string{
+			"PATH=" + os.Getenv("PATH"),
+			"GOMAXPROCS=2",
+			"CARGO_BUILD_JOBS=2",
+			"RUST_TEST_THREADS=2",
+		}
+	}
+	unadmitted := ciEnv(base(), step.Environment, 2)
+	admitted := ciEnv(append(base(), "DVA_RESOURCE_WORKER_LIMIT=2"), step.Environment, 2)
+	if got := environmentValue(unadmitted, "PYTEST_MAX_WORKERS"); got != "" {
+		t.Fatalf("unadmitted env PYTEST_MAX_WORKERS=%q, want absent", got)
+	}
+	if got := environmentValue(admitted, "PYTEST_MAX_WORKERS"); got != "2" {
+		t.Fatalf("admitted env PYTEST_MAX_WORKERS=%q, want the cap-created limit 2", got)
+	}
+	planUnadmitted, err := reuseFor(context.Background(), root, step, unadmitted)
+	if err != nil {
+		t.Fatal(err)
+	}
+	planAdmitted, err := reuseFor(context.Background(), root, step, admitted)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if planUnadmitted.key == planAdmitted.key {
+		t.Fatal("reuse key ignored the admission-created PYTEST_MAX_WORKERS")
+	}
+}
+
 func withoutEnv(env []string, key string) []string {
 	out := make([]string, 0, len(env))
 	for _, entry := range env {

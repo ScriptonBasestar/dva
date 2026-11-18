@@ -5,7 +5,7 @@ type: bug
 priority: P3
 effort: S
 exec-tier: strong
-status: todo
+status: review
 created: 2026-11-18
 ---
 
@@ -47,11 +47,32 @@ worker 수 분산은 입력 키잉 재사용 전체가 세운 전제 아래 결�
 단계별 키잉을 복원할 수 있다(master 자체가 `DVA_RESOURCE_SUPERVISED`에
 그 탈출구를 쓴다).
 
+**선택(2026-11-18, 본 구현)**: 옵션 1 — 키 목록 추가. 옵션 2는 기각한다:
+workers.go:27-34의 "없으면 limit으로 생성"이 pytest 협력적 worker 제한의
+강제 수단이다. cap이 변수를 만들지 않게 하면 승인 단계에서 pytest가
+제한 없이 돌아가는 자원 통제 약화로 이어진다. 키에 넣는 쪽이 강제를
+그대로 두고 간격만 닫는다.
+
 ## Completion Criteria
 
-- [ ] 승인/비승인 실행의 `PYTEST_MAX_WORKERS` 차이가 재사용 키에 반영된다(또는 cap이 변수를 새로 만들지 않는다) | verify: human — 대안 선택과 함께 리뷰로 판정
+- [x] 승인 cap이 만든 `PYTEST_MAX_WORKERS` 차이(부재 vs limit)가 재사용 키를 판별한다 | verify: `go test ./internal/cirun -run TestReuseKeyTracksAdmissionCreatedPytestWorkers -count=1` (observed: 2026-11-18)
+- [x] `DVA_CI_JOBS` 무시 계약과 도구 환경 판별 대조는 유지된다 | verify: `go test ./internal/cirun -run 'TestReuseKeyIgnoresDVAJobs|TestReuseKeyStillDifferentiatesToolEnvironment' -count=1` (observed: 2026-11-18)
+- [x] 키 목록에 `PYTEST_MAX_WORKERS`가 이웃 worker 노브와 함께 들어간다 | verify: `/usr/bin/grep -q '"RUST_TEST_THREADS", "PYTEST_MAX_WORKERS", "PYTHONPATH"' internal/cirun/ci_reuse.go` (observed: 2026-11-18)
+
+## Verification
+
+- 수정 전 트리에서 `TestReuseKeyTracksAdmissionCreatedPytestWorkers`가
+  "reuse key ignored the admission-created PYTEST_MAX_WORKERS"로 실패했다
+  (2026-11-18, green-both-ways). 키 목록에 변수를 추가한 뒤 통과. 두 사전
+  guard(비승인=부재, 승인=cap 생성값 2)는 red 시점에도 통과해 실패가 정확히
+  키 동일 assertion임을 보인다.
+- 대조: `TestReuseKeyIgnoresDVAJobs`(DVA_CI_JOBS 제외 계약)와
+  `TestReuseKeyStillDifferentiatesToolEnvironment`(GOFLAGS 판별)는 전후
+  모두 통과. 인접쌍 grep binding은 수정 전 레이아웃
+  (`"RUST_TEST_THREADS", "PYTHONPATH"`)에서 실패한다.
+- `TestReuseKey*` 슈트 전체가 수정 후 녹색(ok, -count=1).
 
 ## Delivery
 
-이 카드는 기록 전용으로 만들어졌다. 구현은 별도 실행에서 이 criteria를
-채운 뒤 진행한다.
+구현(키 목록 + 주석)과 회귀 테스트, 이 카드를 같은 태스크 브랜치에서
+하나의 커밋으로 push한다. 게이트·독립 리뷰는 조정자 세션이 수행한다.
