@@ -29,7 +29,7 @@ func TestProgressRetentionNoisyTests(t *testing.T) {
 	now := time.Now().UTC()
 	c := newCollector(root, "unit", id, now)
 	p := NewParser(nil, c.emit)
-	for i := 0; i < 12000; i++ {
+	for i := range 12000 {
 		for _, action := range []string{"run", "pass"} {
 			_, _ = fmt.Fprintf(p, "{\"Action\":%q,\"Package\":\"example/pkg\",\"Test\":%q}\n", action, fmt.Sprintf("Test%d", i))
 		}
