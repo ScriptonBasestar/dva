@@ -22,9 +22,50 @@ heavy 가중치는 light 이상이어야 한다. 정책은 현재 사용자 소�
 
 `dva resource status --policy <절대경로>`는 현재 대기·실행·격리 요청과 ID를 보여준다.
 감독자 비정상 종료 후 실행 중 기록은 자동 회수하지 않는다. 사용자 또는 운영자는
-해당 workload의 소유자와 실행 상태를 조사해야 한다. 해제·복구 계약은 아직 없으며
+해당 workload의 소유자와 실행 상태를 조사해야 한다. 아래 운영자 복구 절차를 사용하며
 임의 삭제나 다른 프로세스 종료를 수행하지 않는다. 비참여 프로세스, 독립 세션으로
 이탈한 자손과 외부 작업은 추적하거나 제한하지 않는다.
+
+## 운영자 claim 복구
+
+`not-held`는 감독자 lease 락이 없다는 뜻이며, 작업과 자손이 종료됐다는 증명이 아니다.
+기존 claim에는 프로세스 식별자가 없으므로 workload 소유자가 종료 상태를 별도로
+확인해야 한다. 에이전트는 이 확인을 추정하거나 종료 확인 근거를 대신 작성하지 않는다.
+복구는 실행 중인 프로세스를 종료하지 않으며 기존 CI 결과를 성공으로 바꾸지 않는다.
+
+종료를 확인한 운영자는 현재 사용자 소유 0600 일반 JSON 파일에 근거를 작성한다.
+경로는 절대 경로이고, claim ID·원본 파일의 SHA-256·정책 fingerprint를 정확히 결속한다.
+정책 fingerprint는 원본 claim의 `Policy` 값이며 현재 정책을 정규화해 재검증한다.
+정책 JSON 파일 자체의 바이트 SHA-256과 혼동하지 않는다.
+
+```json
+{
+  "claim_id": "<32자리 소문자 hex>",
+  "claim_sha256": "<원본 claim 바이트의 SHA-256>",
+  "policy_fingerprint": "<확인한 정책 fingerprint>",
+  "workload_ended": true,
+  "explanation": "<소유자와 작업·자손 종료를 확인한 근거>"
+}
+```
+
+```text
+dva resource recover --policy <절대-정책-경로> --claim-id <ID>
+  --claim-sha256 <SHA256> --policy-fingerprint <FINGERPRINT>
+  --evidence-file <절대-근거-파일-경로>
+```
+
+위 명령은 한 줄로 실행하며 기본값은 읽기 전용 계획이다. `--apply`를 추가하면 운영자의
+터미널에서 claim ID를 직접 입력해 확인해야 한다. 계획 성공은 실제 복구 성공이 아니다.
+전역 상태 락과 대상 lease 락 안에서 원본·정책·근거를 재검증한다. 보유 중인 lease,
+대기 claim, 바뀐 digest, 잘못된 파일은 거부하며 다른 claim은 처리하지 않는다.
+
+실제 복구는 원본과 근거를 비공개 `.recovery-receipt`에 보존·동기화한 뒤 원본 claim을
+같은 상태 디렉터리의 `.released` 파일로 원자적으로 옮긴다. lease 락 파일은 보존한다.
+이 영수증은 복구 준비 근거이며, 영수증 파일만으로 용량 반환 완료를 판정하지 않는다.
+실패 시 출력과 보존 파일을 확인하고 반복 적용하거나 파일을 삭제하지 않는다.
+복구 후 `resource status`로 남은 claim을 확인하며, 중단된 검사는 별도로 재개해야 한다.
+
+## 실행 결과와 CI 연결
 
 `--report-file`은 0700 현재 사용자 소유 디렉터리 아래 새 파일에 0600으로 실행 결과를
 기록한다. `dva-resource-run/1`은 정책 fingerprint·class·priority·대기/실행 시간·

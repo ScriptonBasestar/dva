@@ -261,7 +261,7 @@ func newResourceCommand() *cobra.Command {
 		return json.NewEncoder(cmd.OutOrStdout()).Encode(entries)
 	}}
 	status.Flags().StringVar(&statusPolicy, "policy", "", "Absolute host policy path (or DVA_RESOURCE_POLICY)")
-	resource.AddCommand(run, status)
+	resource.AddCommand(run, status, newResourceRecoverCommand())
 	resource.GroupID = "core"
 	return resource
 }

@@ -7,6 +7,10 @@ All notable changes to DVA are documented here.
 
 ### Added
 
+- 격리된 로컬 자원 claim을 운영자가 원본 digest와 작업 종료 확인 근거에 결속해
+  복구하는 경로를 추가합니다. 기본 계획은 읽기 전용이며, 실제 복구는 대화형 확인과
+  원본·근거 보존 뒤 특정 claim만 처리합니다. 프로세스 종료나 CI 성공 판정은 하지 않습니다.
+
 - DVA 자체 검사에서 Go 테스트의 완료·미완료·소요 시간을 제한된 로컬 요약으로
   수집하고 hosted JSONL artifact에도 요약을 추가합니다. native 린트는 도구별
   단계 시간으로 구분하며 부가 수집 오류가 실제 검사 결과를 덮어쓰지 않습니다.
