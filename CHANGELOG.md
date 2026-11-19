@@ -60,6 +60,9 @@ All notable changes to DVA are documented here.
 
 ### Fixed
 
+- `resource recover --apply`도 전역 `--dry-run`을 유지해 실제 복구와 터미널 확인으로
+  넘어가지 않도록 합니다.
+
 - CI 재사용 probe 실패의 숫자 종료 코드와 출력 한도 초과를 구분하며 stdout·stderr 원문은 계속 숨깁니다.
 
 - `dva ci history`의 기존 프로필 호출을 유지하고 명시적 `--root`·`--profile` 이력 조회와 구분합니다.

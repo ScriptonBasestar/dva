@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/ScriptonBasestar/dva/internal/resourceadmission"
+	"github.com/spf13/cobra"
 )
 
 func TestResourceRecoverPlanAndNonTerminalApply(t *testing.T) {
@@ -59,6 +60,43 @@ func TestResourceRecoverPlanAndNonTerminalApply(t *testing.T) {
 	if !strings.Contains(output.String(), `"applied":false`) {
 		t.Fatalf("plan: %s", output.String())
 	}
+	before, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	oldDryRun := dryRun
+	defer func() { dryRun = oldDryRun }()
+	ttyCalls := 0
+	bridgeOpenTTY = func() (*os.File, error) { ttyCalls++; return nil, os.ErrNotExist }
+	parent := &cobra.Command{Use: "dva", SilenceErrors: true, SilenceUsage: true}
+	parent.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "plan only")
+	parent.AddCommand(newResourceRecoverCommand())
+	output.Reset()
+	parent.SetOut(&output)
+	parent.SetArgs(append([]string{"--dry-run", "recover"}, append(args, "--apply")...))
+	if err := parent.Execute(); err != nil {
+		t.Fatalf("dry-run apply: %v", err)
+	}
+	if !strings.Contains(output.String(), `"applied":false`) || ttyCalls != 0 {
+		t.Fatalf("dry-run output %q, tty calls %d", output.String(), ttyCalls)
+	}
+	after, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(before) != len(after) {
+		t.Fatalf("dry-run changed directory entries: %d -> %d", len(before), len(after))
+	}
+	for i := range before {
+		if before[i].Name() != after[i].Name() {
+			t.Fatalf("dry-run changed directory entry %q -> %q", before[i].Name(), after[i].Name())
+		}
+	}
+	actualClaim, err := os.ReadFile(filepath.Join(dir, id+".json"))
+	if err != nil || !bytes.Equal(actualClaim, claim) {
+		t.Fatalf("dry-run changed original claim: %v", err)
+	}
+	dryRun = false
 	cmd = newResourceRecoverCommand()
 	cmd.SetArgs(append(args, "--apply"))
 	if err := cmd.Execute(); err == nil {

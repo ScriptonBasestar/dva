@@ -39,7 +39,7 @@ func newResourceRecoverCommand() *cobra.Command {
 		if err != nil {
 			return err
 		}
-		if !apply {
+		if !apply || dryRun {
 			return json.NewEncoder(cmd.OutOrStdout()).Encode(plan)
 		}
 		if detectAgentEnvironment() {
