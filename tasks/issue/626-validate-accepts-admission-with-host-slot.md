@@ -21,6 +21,12 @@ A profile that declares `admission:` and has a step with `host_slot: true` passe
 intended (TASK-621), but static validation does not report it, so a config stays green
 under validation while it cannot run, even with no `DVA_RESOURCE_POLICY` set.
 
+## 소유권 — 이 저장소
+
+DVA owns both the configuration validator and CI runtime behavior involved here.
+Consumer host policy cannot correct a missing validator check; the issue remains
+local to DVA and does not authorize a change to the runtime rule.
+
 ## Reproduction
 
 1. In an empty Git repository, write `dva.yml`:
