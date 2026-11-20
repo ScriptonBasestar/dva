@@ -140,12 +140,20 @@ func newResourceCommand() *cobra.Command {
 		child.Stderr = cmd.ErrOrStderr()
 		started = time.Now()
 		childWaited := false
-		err = child.Start()
+		// Announce the launch on the claim before Start: a supervisor crash
+		// before the group is recorded then leaves the claim unprovable
+		// (operator recovery) instead of looking ended.
+		trackCtx, cancelTrack := context.WithTimeout(context.Background(), time.Second)
+		err = lease.BeginLaunch(trackCtx)
+		cancelTrack()
 		if err == nil {
-			trackCtx, cancelTrack := context.WithTimeout(context.Background(), time.Second)
-			if trackErr := lease.TrackProcessGroup(trackCtx, child.Process.Pid); trackErr != nil {
-				_, printErr := fmt.Fprintf(cmd.ErrOrStderr(), "resource lease process group record failed: %v\n", trackErr)
-				err = errors.Join(err, printErr)
+			err = child.Start()
+			trackCtx, cancelTrack = context.WithTimeout(context.Background(), time.Second)
+			if err != nil {
+				err = errors.Join(err, lease.EndLaunch(trackCtx))
+			} else if trackErr := lease.TrackProcessGroup(trackCtx, child.Process.Pid); trackErr != nil {
+				// The launch stays announced, so the claim is never auto-released.
+				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "resource lease process group record failed; a crash would need operator recovery: %v\n", trackErr)
 			}
 			cancelTrack()
 		}

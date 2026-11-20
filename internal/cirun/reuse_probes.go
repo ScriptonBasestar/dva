@@ -25,11 +25,10 @@ func reuseProbeDigest(ctx context.Context, _, workdir, command string, env []str
 	cmd.Dir, cmd.Env = workdir, env
 	cmd.Stdout, cmd.Stderr = stdout, io.Discard
 	cmd.WaitDelay = time.Second
-	if err := startProcess(cmd); err != nil {
+	if err := startResourceProcess(ctx, cmd); err != nil {
 		return "", errors.New("reuse fingerprint probe could not start")
 	}
 	pid := cmd.Process.Pid
-	observeResourceStart(ctx, pid)
 	defer observeResourceCleanup(ctx, pid)
 	waited := make(chan error, 1)
 	go func() { waited <- cmd.Wait() }()

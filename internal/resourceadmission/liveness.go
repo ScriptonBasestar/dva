@@ -35,8 +35,13 @@ func claimLiveness(e entry) ClaimLiveness {
 	if e.Boot == "" || e.SupervisorPID <= 0 {
 		return ClaimLiveness{Legacy: true, Reason: "claim predates process evidence; operator confirmation required"}
 	}
-	if current := bootID(); current != "" && current != e.Boot {
+	// Only a boot ID that cannot change within one boot proves a reboot;
+	// darwin and Linux provide one, kern.boottime does not (clock steps move it).
+	if current := bootID(); stableBoot(current) && stableBoot(e.Boot) && current != e.Boot {
 		return ClaimLiveness{Ended: true, Reason: "host rebooted since the claim was admitted"}
+	}
+	if e.Launching > 0 {
+		return ClaimLiveness{Reason: fmt.Sprintf("%d process launch(es) started without a recorded process group", e.Launching)}
 	}
 	if processAlive(e.SupervisorPID) {
 		return ClaimLiveness{Reason: fmt.Sprintf("supervisor pid %d is still present", e.SupervisorPID)}
@@ -49,26 +54,52 @@ func claimLiveness(e entry) ClaimLiveness {
 	return ClaimLiveness{Ended: true, Reason: fmt.Sprintf("supervisor pid %d and recorded process groups %v have exited", e.SupervisorPID, e.PGIDs)}
 }
 
-// TrackProcessGroup records a started child process group on the claim so
-// that a later recovery can prove the workload ended. Call it right after
-// the child starts, before waiting on it.
-func (l *Lease) TrackProcessGroup(ctx context.Context, pgid int) error {
+func stableBoot(id string) bool { return id != "" && !strings.HasPrefix(id, "boottime:") }
+
+func (l *Lease) updateClaim(ctx context.Context, change func(*entry)) error {
 	if l == nil || l.lock == nil {
 		return errors.New("resource lease already closed")
-	}
-	if pgid <= 0 {
-		return errors.New("invalid process group")
 	}
 	return locked(ctx, filepath.Join(l.dir, "state.lock"), func() error {
 		e, _, err := readClaim(l.dir, l.id)
 		if err != nil {
 			return err
 		}
-		if slices.Contains(e.PGIDs, pgid) {
-			return nil
-		}
-		e.PGIDs = append(e.PGIDs, pgid)
+		change(&e)
 		return writeEntry(l.dir, e)
+	})
+}
+
+// BeginLaunch announces, before Start, that a child is about to run. Until
+// TrackProcessGroup or EndLaunch settles it, the claim cannot be proven
+// ended, so a supervisor crash in between never releases a live workload.
+func (l *Lease) BeginLaunch(ctx context.Context) error {
+	return l.updateClaim(ctx, func(e *entry) { e.Launching++ })
+}
+
+// EndLaunch settles a BeginLaunch whose Start failed.
+func (l *Lease) EndLaunch(ctx context.Context) error {
+	return l.updateClaim(ctx, func(e *entry) {
+		if e.Launching > 0 {
+			e.Launching--
+		}
+	})
+}
+
+// TrackProcessGroup records a started child process group on the claim and
+// settles its BeginLaunch, so a later recovery can prove the workload ended.
+// Call it right after the child starts, before waiting on it.
+func (l *Lease) TrackProcessGroup(ctx context.Context, pgid int) error {
+	if pgid <= 0 {
+		return errors.New("invalid process group")
+	}
+	return l.updateClaim(ctx, func(e *entry) {
+		if !slices.Contains(e.PGIDs, pgid) {
+			e.PGIDs = append(e.PGIDs, pgid)
+		}
+		if e.Launching > 0 {
+			e.Launching--
+		}
 	})
 }
 

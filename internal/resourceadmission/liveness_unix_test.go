@@ -164,3 +164,38 @@ func TestLegacyClaimIsNeverAutoReleased(t *testing.T) {
 		t.Fatalf("legacy claim removed: %v", err)
 	}
 }
+
+func exitedPID(t *testing.T) int {
+	t.Helper()
+	c := exec.Command("true")
+	if err := c.Run(); err != nil {
+		t.Fatal(err)
+	}
+	return c.Process.Pid
+}
+
+// A supervisor that crashed after announcing a launch but before recording
+// its process group must not look ended: the child may still be running.
+func TestUnrecordedLaunchIsNeverProvenEnded(t *testing.T) {
+	v := claimLiveness(entry{SupervisorPID: exitedPID(t), Boot: bootID(), Launching: 1})
+	if v.Ended || v.Legacy {
+		t.Fatalf("unrecorded launch proven ended: %+v", v)
+	}
+	if v := claimLiveness(entry{SupervisorPID: exitedPID(t), Boot: bootID()}); !v.Ended {
+		t.Fatalf("settled claim with dead supervisor not ended: %+v", v)
+	}
+}
+
+// kern.boottime moves with clock steps, so a changed boottime: ID never
+// proves a reboot while recorded evidence says the workload may be alive.
+func TestUnstableBootIDNeverProvesReboot(t *testing.T) {
+	v := claimLiveness(entry{SupervisorPID: os.Getpid(), Boot: "boottime:1.000000"})
+	if v.Ended {
+		t.Fatalf("boottime mismatch released a live supervisor: %+v", v)
+	}
+	if current := bootID(); stableBoot(current) {
+		if v := claimLiveness(entry{SupervisorPID: os.Getpid(), Boot: current + "-other"}); !v.Ended {
+			t.Fatalf("stable boot mismatch not treated as reboot: %+v", v)
+		}
+	}
+}

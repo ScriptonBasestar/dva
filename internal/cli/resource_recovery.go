@@ -57,7 +57,7 @@ func writeGeneratedEvidence(data []byte) (string, func() error, error) {
 func newResourceRecoverCommand() *cobra.Command {
 	var policyPath, claim, digest, fingerprint, evidence string
 	var apply, acceptUnknown bool
-	cmd := &cobra.Command{Use: "recover", Short: "Recover quarantined resource claims", Long: "Without --claim-id, list quarantined claims with a machine liveness verdict and the exact next command. With --claim-id, dva derives the claim digest and policy fingerprint itself (explicit values must match). --apply releases a claim whose recorded supervisor and process groups are proven gone, writing its own evidence; a claim from an older dva without process evidence needs a human to type the claim ID on the controlling terminal. A claim whose workload is still present is refused. --evidence-file supplies operator evidence instead. --accept-unknown-workload with unknown-workload --evidence-file releases accounting for a workload whose state is unknown after a human types RELEASE UNKNOWN and the claim ID. Recovery does not terminate processes or alter CI success records.", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, _ []string) (retErr error) {
+	cmd := &cobra.Command{Use: "recover", Short: "Recover quarantined resource claims", Long: "Without --claim-id, list quarantined claims with a machine liveness verdict and the exact next command. With --claim-id, dva derives the claim digest and policy fingerprint itself (explicit values must match). --apply releases a claim whose recorded supervisor and process groups are proven gone, writing its own evidence; a claim from an older dva without process evidence needs a human to type the claim ID on the controlling terminal. A claim whose workload is still present is refused. --evidence-file supplies operator evidence instead, but any claim not machine-proven ended still needs that terminal confirmation. --accept-unknown-workload with unknown-workload --evidence-file releases accounting for a workload whose state is unknown after a human types RELEASE UNKNOWN and the claim ID. Recovery does not terminate processes or alter CI success records.", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, _ []string) (retErr error) {
 		if policyPath == "" {
 			policyPath = os.Getenv("DVA_RESOURCE_POLICY")
 		}
@@ -109,7 +109,7 @@ func newResourceRecoverCommand() *cobra.Command {
 		if acceptUnknown && evidence == "" {
 			return errors.New("--accept-unknown-workload requires --evidence-file with unknown-workload evidence")
 		}
-		human := (evidence == "" && !verdict.Ended) || acceptUnknown
+		human := !verdict.Ended || acceptUnknown
 		if evidence == "" {
 			if !verdict.Ended && !verdict.Legacy {
 				return fmt.Errorf("claim %s workload is still present: %s", claim, verdict.Reason)
@@ -147,7 +147,7 @@ func newResourceRecoverCommand() *cobra.Command {
 				Next     string                          `json:"next"`
 			}{plan, verdict, recoveryNext(claim, verdict)})
 		}
-		if human || verdict.Legacy {
+		if human {
 			if err := confirmOnTerminal(claim, acceptUnknown); err != nil {
 				return err
 			}
@@ -174,11 +174,11 @@ func newResourceRecoverCommand() *cobra.Command {
 	return cmd
 }
 
-// confirmOnTerminal is the one human step left for claims that carry no
-// process evidence: a person types the claim ID on the controlling terminal.
+// confirmOnTerminal is the one human step left for claims that are not
+// machine-proven ended: a person types the claim ID on the controlling terminal.
 func confirmOnTerminal(claim string, unknown bool) (retErr error) {
 	if detectAgentEnvironment() {
-		return errors.New("this claim has no process evidence; a human must run the apply on a terminal and type the claim ID")
+		return errors.New("this claim is not machine-proven ended; a human must run the apply on a terminal and type the claim ID")
 	}
 	tty, err := bridgeOpenTTY()
 	if err != nil {

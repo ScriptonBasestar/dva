@@ -23,6 +23,7 @@ type entry struct {
 	SupervisorPID int    `json:",omitempty"`
 	Boot          string `json:",omitempty"`
 	PGIDs         []int  `json:",omitempty"`
+	Launching     int    `json:",omitempty"`
 }
 type Lease struct {
 	dir, id string

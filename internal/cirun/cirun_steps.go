@@ -434,7 +434,7 @@ func runStep(ctx context.Context, root string, step config.CIStep, inherited []s
 		}
 		return r, err
 	}
-	if err := startProcess(cmd); err != nil {
+	if err := startResourceProcess(stepCtx, cmd); err != nil {
 		if childScope != nil {
 			err = errors.Join(err, childScope.drain(stepCtx, lockState, true, nil))
 		}
@@ -445,7 +445,6 @@ func runStep(ctx context.Context, root string, step config.CIStep, inherited []s
 		defer func() { r.OutputObservation = watch.stop() }()
 	}
 	pid := cmd.Process.Pid
-	observeResourceStart(stepCtx, pid)
 	defer observeResourceCleanup(stepCtx, pid)
 	var signaledAt time.Time
 	signalWork := func() {

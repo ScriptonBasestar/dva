@@ -2,6 +2,9 @@ package cirun
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"os/exec"
 	"sync"
 	"time"
 
@@ -18,21 +21,32 @@ type resourceCleanupTracker struct {
 	lease *resourceadmission.Lease
 }
 
-// observeResourceStart records a just-started process group on the lease.
-// A failed record leaves the claim unable to prove that group ended, so the
-// tracker is marked uncertain and the lease is quarantined at the end.
-func observeResourceStart(ctx context.Context, pid int) {
+// startResourceProcess starts cmd and records its process group on the
+// lease. The launch is announced on the claim before Start, so a supervisor
+// crash between Start and the record leaves the claim unprovable instead of
+// looking ended. A failed record keeps that announcement and marks the
+// tracker uncertain, so the lease is quarantined at the end.
+func startResourceProcess(ctx context.Context, cmd *exec.Cmd) error {
 	tracker, ok := ctx.Value(resourceCleanupKey{}).(*resourceCleanupTracker)
 	if !ok || tracker.lease == nil {
-		return
+		return startProcess(cmd)
 	}
 	recordCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), time.Second)
 	defer cancel()
-	if err := tracker.lease.TrackProcessGroup(recordCtx, pid); err != nil {
+	if err := tracker.lease.BeginLaunch(recordCtx); err != nil {
+		return fmt.Errorf("record process launch on resource lease: %w", err)
+	}
+	if err := startProcess(cmd); err != nil {
+		endCtx, endCancel := context.WithTimeout(context.WithoutCancel(ctx), time.Second)
+		defer endCancel()
+		return errors.Join(err, tracker.lease.EndLaunch(endCtx))
+	}
+	if err := tracker.lease.TrackProcessGroup(recordCtx, cmd.Process.Pid); err != nil {
 		tracker.mu.Lock()
 		tracker.uncertain = true
 		tracker.mu.Unlock()
 	}
+	return nil
 }
 
 func observeResourceCleanup(ctx context.Context, pid int) {

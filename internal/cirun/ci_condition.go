@@ -90,11 +90,10 @@ func runCondition(ctx context.Context, root string, step config.CIStep, inherite
 	cmd := exec.Command("/bin/sh", "-eu", "-c", condition.Run)
 	cmd.Dir, cmd.Env, cmd.Stdout, cmd.Stderr = workdir, ciEnv(inherited, step.Environment, workers), output, io.Discard
 	cmd.WaitDelay = time.Second
-	if err := startProcess(cmd); err != nil {
+	if err := startResourceProcess(conditionCtx, cmd); err != nil {
 		return false, errors.New("condition could not start")
 	}
 	pid := cmd.Process.Pid
-	observeResourceStart(conditionCtx, pid)
 	defer observeResourceCleanup(conditionCtx, pid)
 	waited := make(chan error, 1)
 	go func() { waited <- cmd.Wait() }()
