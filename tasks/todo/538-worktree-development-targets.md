@@ -108,6 +108,9 @@ DevBox 루트에서 개발 서버를 실행할 때 기본 체크아웃과 작업
 - 순서: 592의 남은 기준은 사람 파일럿뿐이라 provider 이동을 기다리지 않는다. 이동은
   `internal/worktarget/`로 완료했다(동작 변경 없음). 다음은 3단계 후보 나열(detached·locked·prunable
   파싱, `default` 종류, dirty, 저장소 신원)이다.
+- 3단계 후보 나열 완료(2026-11-20): `worktarget.Candidates`와 `dva target`(표·`--json`, 저장 없음).
+  prunable·사라진 디렉터리·bare는 제외, `target`은 예약 명령. 다음은 실행 전 신원 검증과
+  `dva target <id> up|down|status|stop`, 신원 파일(`started_by`)이다.
 
 ## Evidence / Pilot
 

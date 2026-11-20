@@ -748,6 +748,16 @@ provision 마커는 plan이 아니라 provision 프로파일 단위라서, `--pu
 - 기본은 `plans.<name>` 안에 `environment`, `site`를 정의
 - 추가 일회성 조정이 필요하면 `--var KEY=VALUE` 같은 명시적 override 사용
 
+### 실행 대상 후보 (`dva target`)
+
+```bash
+dva target          # 현재 저장소의 worktree 후보 표
+dva target --json   # repository(공통 .git 경로)와 candidates
+```
+
+- `git worktree list`를 매번 읽고 저장하지 않습니다. KIND는 메인 `default`, 브랜치 worktree `task`(ID=브랜치),
+  detached `snapshot`(ID 없음)이며 bare·사라진 worktree는 뺍니다. 대상 지정 실행 동사는 후속 단계입니다(TASK-538).
+
 ### 비교안 동시 실행 (`dva compare`)
 
 같은 plan을 여러 ref에서 동시에 띄워 나란히 보고 내립니다. 설계는

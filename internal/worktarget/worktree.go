@@ -37,6 +37,10 @@ type Worktree struct {
 	// Branch is the short branch name checked out there; empty when detached.
 	Branch string
 	Bare   bool
+	// Locked and Prunable mirror the porcelain lines of the same name: a locked worktree is kept
+	// from removal, a prunable one is registered but its directory is gone.
+	Locked   bool
+	Prunable bool
 }
 
 // List returns every worktree of the repository dir belongs to, the main one included.
@@ -58,6 +62,10 @@ func List(ctx context.Context, dir string) ([]Worktree, error) {
 				wt.Detached = true
 			case line == "bare":
 				wt.Bare = true
+			case line == "locked" || strings.HasPrefix(line, "locked "):
+				wt.Locked = true
+			case line == "prunable" || strings.HasPrefix(line, "prunable "):
+				wt.Prunable = true
 			case strings.HasPrefix(line, "branch refs/heads/"):
 				wt.Branch = strings.TrimPrefix(line, "branch refs/heads/")
 			}
