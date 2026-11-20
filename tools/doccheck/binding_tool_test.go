@@ -92,10 +92,10 @@ func TestBindingToolSweepsRealCorpus(t *testing.T) {
 		t.Fatalf("inventory: %v", err)
 	}
 	res := Check(CheckInput{Root: root, Inventory: inv})
-	// Reach is proven by the run-pattern count, not by wrapped tools: after the 2026-11-20
+	// Reach is proven by the tasks/ bodies this loop swept, not by wrapped tools: after the 2026-11-20
 	// board clearing the live zones need not hold any absolute-path tool binding.
-	if res.RunPatternsChecked < 1 {
-		t.Errorf("run_patterns_checked=%d, want at least 1 — binding sweep no longer reaches the task corpus", res.RunPatternsChecked)
+	if res.TaskBodiesSwept < 1 {
+		t.Errorf("task_bodies_swept=%d, want at least 1 — binding sweep no longer reaches the task corpus", res.TaskBodiesSwept)
 	}
 	if res.BareToolBindings > 0 {
 		t.Errorf("bare_tool_bindings=%d:\n  %s", res.BareToolBindings, strings.Join(res.PortabilityDetail, "\n  "))

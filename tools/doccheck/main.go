@@ -82,6 +82,7 @@ func printReport(res Result) {
 	fmt.Printf("escaped_pipe_bindings: %d\n", res.EscapedPipeBindings)
 	fmt.Printf("abs_checkout_bindings: %d\n", res.AbsCheckoutBindings)
 	fmt.Printf("external_corpus_bindings: %d\n", res.ExternalCorpusBindings)
+	fmt.Printf("task_bodies_swept: %d\n", res.TaskBodiesSwept)
 	fmt.Printf("wrapped_tool_bindings: %d\n", res.WrappedToolBindings)
 	fmt.Printf("bare_tool_bindings: %d\n", res.BareToolBindings)
 	fmt.Printf("inverted_grep_bindings: %d\n", res.InvertedGrepBindings)

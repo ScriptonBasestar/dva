@@ -46,6 +46,7 @@ type Result struct {
 	EscapedPipeBindings    int
 	AbsCheckoutBindings    int
 	ExternalCorpusBindings int
+	TaskBodiesSwept        int // tasks/ bodies the binding-portability loop inspected
 	WrappedToolBindings    int
 	BareToolBindings       int
 	InvertedGrepBindings   int
@@ -239,6 +240,7 @@ func Check(in CheckInput) Result {
 			continue
 		}
 		if body, ok := bodies[e.Path]; ok {
+			res.TaskBodiesSwept++
 			pipes, checkout, corpus, msgs := checkBindingPortability(e.Path, body)
 			res.EscapedPipeBindings += pipes
 			res.AbsCheckoutBindings += checkout
