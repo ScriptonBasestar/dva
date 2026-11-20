@@ -58,7 +58,12 @@ type Orchestrator struct {
 	hc              *HealthChecker
 	// instance is copied into every PluginContext; see PluginContext.Instance.
 	instance string
+	// startedBy is copied into the PluginContext of every Up; see PluginContext.StartedBy.
+	startedBy string
 }
+
+// SetStartedBy records who starts this orchestrator's entries in their identity files.
+func (o *Orchestrator) SetStartedBy(by string) { o.startedBy = by }
 
 // SetInstance runs this orchestrator's entries as the named instance, so their pid files,
 // logs and compose project do not collide with another run in the same config directory.
@@ -69,11 +74,12 @@ func NewOrchestrator(cfg *config.Config, env *config.Environment) *Orchestrator 
 	entries := cfg.SortedStack()
 
 	return &Orchestrator{
-		entries: entries,
-		cfg:     cfg,
-		env:     env,
-		logger:  slog.Default(),
-		hc:      &HealthChecker{},
+		entries:   entries,
+		startedBy: DefaultStartedBy,
+		cfg:       cfg,
+		env:       env,
+		logger:    slog.Default(),
+		hc:        &HealthChecker{},
 	}
 }
 
@@ -141,6 +147,7 @@ func (o *Orchestrator) Up(ctx context.Context, opts UpOptions) error {
 			ComposeServices: entryComposeServices,
 			Logger:          o.logger.With("entry", entry.Name, "plugin", pluginType),
 			Instance:        o.instance,
+			StartedBy:       o.startedBy,
 		}
 
 		fmt.Fprintf(os.Stderr, "[lifecycle] %s (%s)\n", entry.Name, pluginType)

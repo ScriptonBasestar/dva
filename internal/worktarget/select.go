@@ -2,7 +2,9 @@ package worktarget
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
@@ -80,8 +82,14 @@ func gitID(id string) (string, error) {
 // same branch checked out. A new commit or uncommitted change is not a failure: the target is
 // being worked on.
 func Verify(ctx context.Context, s Selection) error {
-	if info, err := os.Stat(s.Path); err != nil || !info.IsDir() {
+	info, err := os.Stat(s.Path)
+	switch {
+	case errors.Is(err, fs.ErrNotExist):
 		return fmt.Errorf("target %s: worktree %s is gone", s.ID, s.Path)
+	case err != nil:
+		return fmt.Errorf("target %s: %w", s.ID, err)
+	case !info.IsDir():
+		return fmt.Errorf("target %s: %s is no longer a directory", s.ID, s.Path)
 	}
 	common, err := git(ctx, s.Path, "rev-parse", "--path-format=absolute", "--git-common-dir")
 	if err != nil {

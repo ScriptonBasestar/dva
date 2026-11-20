@@ -62,7 +62,7 @@ plans:
 		}
 	})
 	for _, inst := range []string{"a", "b"} {
-		if _, err := r.Up(ctx, dir, inst, "p", nil, []string{"web"}, false); err != nil {
+		if _, err := r.Up(ctx, dir, inst, "p", compareStarter("p"), nil, []string{"web"}, false); err != nil {
 			t.Fatalf("Up %s: %v", inst, err)
 		}
 	}

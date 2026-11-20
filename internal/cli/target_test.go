@@ -11,6 +11,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/ScriptonBasestar/dva/internal/lifecycle"
 	"github.com/ScriptonBasestar/dva/internal/worktarget"
 )
 
@@ -74,8 +75,8 @@ func captureTargetRun(t *testing.T) *[]string {
 	t.Helper()
 	var got []string
 	old := runTargetIn
-	runTargetIn = func(_ context.Context, dir string, args []string) error {
-		got = append([]string{dir}, args...)
+	runTargetIn = func(_ context.Context, dir, id string, args []string) error {
+		got = append([]string{dir, id}, args...)
 		return nil
 	}
 	t.Cleanup(func() { runTargetIn = old })
@@ -89,9 +90,43 @@ func TestRunTargetHandsTheVerbToTheTarget(t *testing.T) {
 	if err := runTarget(newTargetTestCmd(), filepath.Join(repo, "app"), []string{"git:feat", "up", "dev", "--dry-run"}); err != nil {
 		t.Fatal(err)
 	}
-	if len(*got) != 4 || worktarget.Canonical((*got)[0]) != worktarget.Canonical(filepath.Join(feat, "app")) ||
-		strings.Join((*got)[1:], " ") != "up dev --dry-run" {
+	// The ID is passed on without its provider prefix: the child records started_by target:feat.
+	if len(*got) != 5 || worktarget.Canonical((*got)[0]) != worktarget.Canonical(filepath.Join(feat, "app")) ||
+		(*got)[1] != "feat" || strings.Join((*got)[2:], " ") != "up dev --dry-run" {
 		t.Errorf("ran %q", *got)
+	}
+}
+
+// The starter variable is read once and cleared, so the entries a target run starts never
+// inherit it. Only the form dva target itself sets is accepted.
+func TestTakeStartedBy(t *testing.T) {
+	for _, tc := range []struct {
+		name, value string
+		set         bool
+		want        string
+		wantErr     bool
+	}{
+		{name: "unset is cwd", want: lifecycle.StartedByCwd},
+		{name: "target", value: "target:feat/x", set: true, want: "target:feat/x"},
+		{name: "empty id", value: "target:", set: true, wantErr: true},
+		{name: "compare is not handed over", value: "compare:layout", set: true, wantErr: true},
+		{name: "empty", value: "", set: true, wantErr: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv(startedByEnv, "")
+			if tc.set {
+				t.Setenv(startedByEnv, tc.value)
+			} else if err := os.Unsetenv(startedByEnv); err != nil {
+				t.Fatal(err)
+			}
+			got, err := takeStartedBy()
+			if (err != nil) != tc.wantErr || got != tc.want {
+				t.Fatalf("takeStartedBy() = %q, %v; want %q, error %v", got, err, tc.want, tc.wantErr)
+			}
+			if _, still := os.LookupEnv(startedByEnv); still {
+				t.Error("the variable is still set after it was taken")
+			}
+		})
 	}
 }
 

@@ -131,6 +131,9 @@ type compareVariantResult struct {
 	Drift     *compareDrift  `json:"drift,omitempty"`
 	Pids      map[string]int `json:"pids,omitempty"`
 	LogPaths  []string       `json:"logs,omitempty"`
+	// Kept maps a worktree variant's entries that down left running to why: only entries the
+	// comparison itself started are stopped in a checkout someone else works in.
+	Kept map[string]string `json:"kept,omitempty"`
 	compareObserved
 }
 
@@ -232,6 +235,14 @@ func printCompareTable(w io.Writer, r *compareResult) {
 		}
 		if v.Drift != nil {
 			_, _ = fmt.Fprintf(w, "  %s drift: %s\n", v.Name, driftText(v.Drift))
+		}
+		kept := make([]string, 0, len(v.Kept))
+		for e := range v.Kept {
+			kept = append(kept, e)
+		}
+		sort.Strings(kept)
+		for _, e := range kept {
+			_, _ = fmt.Fprintf(w, "  %s %s kept: %s\n", v.Name, e, v.Kept[e])
 		}
 	}
 	keys := make([]string, 0, len(r.Next))

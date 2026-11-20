@@ -41,6 +41,10 @@ type PluginContext struct {
 	// paths and names are unchanged.
 	Instance string
 
+	// StartedBy is recorded in the identity file of every background process this run starts
+	// (see Identity). Empty records StartedByCwd.
+	StartedBy string
+
 	// Mode-derived compose hints (set by orchestrator when a mode is active)
 	ComposeProfiles []string  // --profile flags for docker compose
 	ComposeServices *[]string // service names to append to compose up (nil=all)

@@ -126,11 +126,11 @@ func (p *TiltPlugin) stopBackgroundProcess(pctx *PluginContext) error {
 	}
 	pid, err := strconv.Atoi(strings.TrimSpace(string(data)))
 	if err != nil {
-		_ = os.Remove(pidFile)
+		removeEntryState(pctx, name)
 		return nil
 	}
 	if !signalableProcessGroupPID(pid) {
-		_ = os.Remove(pidFile)
+		removeEntryState(pctx, name)
 		return nil
 	}
 	if err := requireProcessGroupPID(pid, pidFile); err != nil {
@@ -139,6 +139,6 @@ func (p *TiltPlugin) stopBackgroundProcess(pctx *PluginContext) error {
 	if err := terminateProcessGroup(pid); errors.Is(err, errProcessGroupsUnsupported) {
 		return fmt.Errorf("stop %s: %w", name, err)
 	}
-	_ = os.Remove(pidFile)
+	removeEntryState(pctx, name)
 	return nil
 }

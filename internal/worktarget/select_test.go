@@ -2,6 +2,8 @@ package worktarget
 
 import (
 	"context"
+	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -108,6 +110,40 @@ func TestVerify(t *testing.T) {
 }
 
 // A replacement repository at the same path is not the selected target.
+// Only a missing path is "gone". A file in its place, or a path that cannot be read, is
+// reported as what it is, so a permission problem is not mistaken for a removed worktree.
+func TestVerifyTellsGoneFromUnreadable(t *testing.T) {
+	repo := testRepo(t)
+	parent := t.TempDir()
+	feat := filepath.Join(parent, "feat")
+	runGit(t, repo, "worktree", "add", "-q", "-b", "feat", feat)
+	ctx := context.Background()
+	s, err := Select(ctx, repo, "feat")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.Chmod(parent, 0o000); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(parent, 0o755) })
+	err = Verify(ctx, s)
+	if err == nil || strings.Contains(err.Error(), "gone") || !errors.Is(err, fs.ErrPermission) {
+		t.Errorf("unreadable parent: err = %v, want a permission error that is not \"gone\"", err)
+	}
+	if err := os.Chmod(parent, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	runGit(t, repo, "worktree", "remove", "--force", feat)
+	if err := os.WriteFile(feat, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := Verify(ctx, s); err == nil || !strings.Contains(err.Error(), "no longer a directory") {
+		t.Errorf("file in place of the worktree: err = %v", err)
+	}
+}
+
 func TestVerifyRejectsAnotherRepository(t *testing.T) {
 	repo := testRepo(t)
 	feat := filepath.Join(t.TempDir(), "feat")

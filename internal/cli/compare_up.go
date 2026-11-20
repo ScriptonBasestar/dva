@@ -234,7 +234,7 @@ func startUp(ctx context.Context, dir, name string, cmp *config.CompareConfig, r
 		if obs, err := compareHost.Status(ctx, dir, "", cmp.Plan, nil, cmp.Shared); err == nil && entriesRunning(obs, cmp.Shared) {
 			result.Shared.Outcome = outcomeSkipped
 			result.Shared.compareObserved = *obs
-		} else if obs, err := compareHost.Up(ctx, dir, "", cmp.Plan, nil, cmp.Shared, wait); err != nil {
+		} else if obs, err := compareHost.Up(ctx, dir, "", cmp.Plan, compareStarter(name), nil, cmp.Shared, wait); err != nil {
 			result.Shared.Outcome, result.Shared.Error = outcomeFailed, err.Error()
 			failure = fmt.Sprintf("shared entries %s failed to start: %v", strings.Join(cmp.Shared, ","), err)
 		} else {
@@ -308,7 +308,7 @@ func startVariant(ctx context.Context, dir, name string, cmp *config.CompareConf
 		row.Outcome = outcomeStarted
 		return nil
 	}
-	obs, err := compareHost.Up(ctx, snap.ConfigDir, snap.Instance, cmp.Plan, variantVars(&snap), cmp.PerVariant, wait)
+	obs, err := compareHost.Up(ctx, snap.ConfigDir, snap.Instance, cmp.Plan, compareStarter(name), variantVars(&snap), cmp.PerVariant, wait)
 	if err != nil {
 		return err
 	}

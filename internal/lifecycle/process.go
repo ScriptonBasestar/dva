@@ -171,7 +171,7 @@ func (p *ProcessPlugin) haltProcess(ctx context.Context, pctx *PluginContext) er
 	}
 
 	if !signalableProcessGroupPID(pid) {
-		_ = os.Remove(pidFile)
+		removeEntryState(pctx, name)
 		return nil
 	}
 	if err := requireProcessGroupPID(pid, pidFile); err != nil {
@@ -212,7 +212,7 @@ func (p *ProcessPlugin) removeProcess(ctx context.Context, pctx *PluginContext) 
 
 	pid, err := strconv.Atoi(strings.TrimSpace(string(data)))
 	if err != nil {
-		_ = os.Remove(pidFile)
+		removeEntryState(pctx, name)
 		return nil
 	}
 
@@ -233,7 +233,7 @@ func (p *ProcessPlugin) removeProcess(ctx context.Context, pctx *PluginContext) 
 		}
 	}
 
-	_ = os.Remove(pidFile)
+	removeEntryState(pctx, name)
 	_ = os.Remove(logFile)
 	fmt.Fprintf(os.Stderr, "[-] removed %s (pid %d)\n", name, pid)
 	return nil
@@ -281,6 +281,15 @@ func startLocalProcess(name, command, dir string, pctx *PluginContext) error {
 		_ = logFile.Close()
 		_ = os.Remove(filepath.Join(logDir, name+".log"))
 		return fmt.Errorf("save pid: %w", err)
+	}
+	if err := writeIdentity(pctx, name, cmd.Process.Pid); err != nil {
+		if signalableProcessGroupPID(cmd.Process.Pid) {
+			_ = terminateProcessGroup(cmd.Process.Pid)
+		}
+		_ = logFile.Close()
+		_ = os.Remove(pidPath)
+		_ = os.Remove(filepath.Join(logDir, name+".log"))
+		return fmt.Errorf("save identity: %w", err)
 	}
 
 	_ = logFile.Close()

@@ -11,6 +11,7 @@ import (
 
 	"github.com/ScriptonBasestar/dva/internal/config"
 	dvaexec "github.com/ScriptonBasestar/dva/internal/exec"
+	"github.com/ScriptonBasestar/dva/internal/lifecycle"
 	"github.com/ScriptonBasestar/dva/internal/logger"
 	"github.com/ScriptonBasestar/dva/internal/output"
 )
@@ -200,6 +201,13 @@ func Execute() {
 	setGroupParentBehavior(configCmd)
 	setGroupParentBehavior(configEnvCmd)
 	setGroupParentBehavior(sshCmd)
+
+	startedBy, err := takeStartedBy()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "ERROR: %v\n", err)
+		os.Exit(1)
+	}
+	lifecycle.DefaultStartedBy = startedBy
 
 	args := os.Args[1:]
 

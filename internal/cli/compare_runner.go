@@ -24,12 +24,17 @@ type compareRunner interface {
 	// PortBusy is the host's point-in-time occupancy check. Fake lifecycle hosts
 	// supply deterministic state; the production host always probes the OS.
 	PortBusy(port int) (bool, error)
-	Up(ctx context.Context, dir, instance, plan string, vars map[string]string, names []string, wait bool) (*compareObserved, error)
+	// Up records startedBy in the identity of each background entry it starts.
+	Up(ctx context.Context, dir, instance, plan, startedBy string, vars map[string]string, names []string, wait bool) (*compareObserved, error)
 	Down(ctx context.Context, dir, instance, plan string, vars map[string]string, names []string) error
 	Status(ctx context.Context, dir, instance, plan string, vars map[string]string, names []string) (*compareObserved, error)
 	// Endpoints returns the plan's endpoints in dir interpolated with vars, as observe would
 	// report them for an entry run with those vars. It starts and reads nothing.
 	Endpoints(ctx context.Context, dir, plan string, vars map[string]string) ([]planEndpointOutput, error)
+	// StartedBy reads who started entry in dir, from the identity file its start wrote. An
+	// entry with no identity returns an error wrapping fs.ErrNotExist; one whose identity no
+	// longer matches its pid file returns lifecycle.ErrIdentityStale.
+	StartedBy(dir, instance, entry string) (string, error)
 }
 
 var compareHost compareRunner = lifecycleRunner{}
@@ -83,11 +88,12 @@ func compareConfigAt(dir string) (*config.Config, *envLoad, error) {
 	return c, newConfigEnvironmentAt(c, c.FileDir()), nil
 }
 
-func (r lifecycleRunner) Up(ctx context.Context, dir, instance, plan string, vars map[string]string, names []string, wait bool) (*compareObserved, error) {
+func (r lifecycleRunner) Up(ctx context.Context, dir, instance, plan, startedBy string, vars map[string]string, names []string, wait bool) (*compareObserved, error) {
 	runtime, orch, err := r.open(dir, instance, plan, vars)
 	if err != nil {
 		return nil, err
 	}
+	orch.SetStartedBy(startedBy)
 	if err := orch.Up(ctx, lifecycle.UpOptions{Wait: wait, Names: names, Env: runtime.plan.EnvironmentName}); err != nil {
 		return nil, err
 	}
@@ -108,6 +114,14 @@ func (r lifecycleRunner) Status(ctx context.Context, dir, instance, plan string,
 		return nil, err
 	}
 	return observe(ctx, runtime, orch, names)
+}
+
+func (lifecycleRunner) StartedBy(dir, instance, entry string) (string, error) {
+	id, err := lifecycle.ReadIdentity(dir, instance, entry)
+	if err != nil {
+		return "", err
+	}
+	return id.StartedBy, nil
 }
 
 func (lifecycleRunner) Endpoints(_ context.Context, dir, plan string, vars map[string]string) ([]planEndpointOutput, error) {

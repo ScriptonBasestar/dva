@@ -12,6 +12,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/ScriptonBasestar/dva/internal/lifecycle"
 	"github.com/ScriptonBasestar/dva/internal/output"
 	"github.com/ScriptonBasestar/dva/internal/worktarget"
 )
@@ -96,15 +97,37 @@ func yesNo(b bool) string {
 	return "no"
 }
 
-// runTargetIn runs one dva invocation in dir with this process's stdio. A variable so tests can
-// observe the hand-off without starting a second dva.
-var runTargetIn = func(ctx context.Context, dir string, args []string) error {
+// startedByEnv carries a `dva target` run's starter to the dva it runs, so the entries that run
+// starts record "target:<id>" instead of "cwd". Execute takes it out of the environment before
+// anything else runs, so the entries' own processes never inherit it.
+const startedByEnv = "DVA_STARTED_BY"
+
+// takeStartedBy reads and clears startedByEnv. Only a "target:<id>" value is accepted; anything
+// else is refused, so a stray variable cannot make an ordinary run claim another starter.
+func takeStartedBy() (string, error) {
+	v, set := os.LookupEnv(startedByEnv)
+	if !set {
+		return lifecycle.StartedByCwd, nil
+	}
+	if err := os.Unsetenv(startedByEnv); err != nil {
+		return "", err
+	}
+	if id, ok := strings.CutPrefix(v, "target:"); !ok || id == "" {
+		return "", fmt.Errorf("%s=%q: only `dva target` sets it, to target:<id>", startedByEnv, v)
+	}
+	return v, nil
+}
+
+// runTargetIn runs one dva invocation in dir with this process's stdio, as target id. A
+// variable so tests can observe the hand-off without starting a second dva.
+var runTargetIn = func(ctx context.Context, dir, id string, args []string) error {
 	self, err := os.Executable()
 	if err != nil {
 		return fmt.Errorf("locate dva executable: %w", err)
 	}
 	child := exec.CommandContext(ctx, self, args...)
 	child.Dir = dir
+	child.Env = append(os.Environ(), startedByEnv+"=target:"+id)
 	child.Stdin, child.Stdout, child.Stderr = os.Stdin, os.Stdout, os.Stderr
 	if err := child.Run(); err != nil {
 		if exit, ok := errors.AsType[*exec.ExitError](err); ok {
@@ -145,7 +168,7 @@ func runTarget(cmd *cobra.Command, dir string, args []string) error {
 	if err := worktarget.Verify(ctx, sel); err != nil {
 		return err
 	}
-	return runTargetIn(ctx, runDir, args[1:])
+	return runTargetIn(ctx, runDir, sel.ID, args[1:])
 }
 
 func init() {

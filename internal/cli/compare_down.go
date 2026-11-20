@@ -77,7 +77,9 @@ func runCompareDown(ctx context.Context, c *config.Config, name string, variantA
 	var failures []string
 	for _, v := range targets {
 		row := result.variant(v.Name)
-		if err := downVariant(ctx, dir, cmp, rec, v); err != nil {
+		kept, err := downVariant(ctx, dir, cmp, rec, v)
+		row.Kept = kept
+		if err != nil {
 			row.Outcome, row.Error = outcomeFailed, err.Error()
 			failures = append(failures, fmt.Sprintf("variant %s: %v", v.Name, err))
 			continue
@@ -176,31 +178,70 @@ func downTargets(rec *compare.Record, names []string) ([]compare.Variant, error)
 // downVariant stops v's per_variant entries (skipped when the checkout is already gone, since
 // nothing is left there to stop) and then removes the snapshot. A dirty snapshot is refused by
 // RemoveSnapshot; the entries are already stopped by then, and the error says the checkout stays.
-func downVariant(ctx context.Context, dir string, cmp *config.CompareConfig, rec *compare.Record, v compare.Variant) error {
+//
+// A worktree variant runs in a checkout someone else works in, so only the entries this
+// comparison started are stopped there; the others are returned as kept, each with the reason.
+func downVariant(ctx context.Context, dir string, cmp *config.CompareConfig, rec *compare.Record, v compare.Variant) (map[string]string, error) {
 	unverified := false
-	if len(cmp.PerVariant) > 0 && pathExists(v.ConfigDir) {
-		err := compareHost.Down(ctx, v.ConfigDir, v.Instance, cmp.Plan, variantVars(&v), cmp.PerVariant)
+	entries, kept := cmp.PerVariant, map[string]string(nil)
+	if v.Mode == compare.ModeWorktree && pathExists(v.ConfigDir) {
+		entries, kept = ownEntries(v, rec.Name, cmp.PerVariant)
+	}
+	if len(entries) > 0 && pathExists(v.ConfigDir) {
+		err := compareHost.Down(ctx, v.ConfigDir, v.Instance, cmp.Plan, variantVars(&v), entries)
 		switch {
 		case errors.Is(err, errVariantConfigUnreadable):
 			unverified = true
 		case err != nil:
-			return fmt.Errorf("stop entries: %w", err)
+			return kept, fmt.Errorf("stop entries: %w", err)
 		}
 	}
 	if !v.OwnsCheckout() {
-		return nil // a work worktree is the provider's and the config-mode checkout is the caller's; only the processes were dva's
+		return kept, nil // a work worktree is the provider's and the config-mode checkout is the caller's; only the processes were dva's
 	}
 	if !pathExists(v.Path) {
-		return nil // already gone; only the record is left to drop
+		return kept, nil // already gone; only the record is left to drop
 	}
 	if err := compare.RemoveSnapshot(ctx, dir, rec, v.Name); err != nil {
 		if unverified {
-			return fmt.Errorf("dva.yml in the checkout cannot be loaded, so its entries were not stopped by dva and may still run; checkout kept: %w", err)
+			return kept, fmt.Errorf("dva.yml in the checkout cannot be loaded, so its entries were not stopped by dva and may still run; checkout kept: %w", err)
 		}
-		return fmt.Errorf("entries stopped, checkout kept: %w", err)
+		return kept, fmt.Errorf("entries stopped, checkout kept: %w", err)
 	}
-	return nil
+	return kept, nil
 }
+
+// ownEntries splits entries into those whose identity says this comparison started them and
+// the rest, mapped to why they are kept. Only a verified identity naming compare:<name> is
+// stopped: an entry started from the worktree itself, by `dva target`, by another comparison,
+// or with no readable identity (not running, a compose entry, or an older dva) is left alone.
+func ownEntries(v compare.Variant, name string, entries []string) ([]string, map[string]string) {
+	var own []string
+	var kept map[string]string
+	keep := func(entry, why string) {
+		if kept == nil {
+			kept = map[string]string{}
+		}
+		kept[entry] = why
+	}
+	for _, e := range entries {
+		by, err := compareHost.StartedBy(v.ConfigDir, v.Instance, e)
+		switch {
+		case errors.Is(err, fs.ErrNotExist):
+			keep(e, "no identity record")
+		case err != nil:
+			keep(e, err.Error())
+		case by != compareStarter(name):
+			keep(e, "started by "+by)
+		default:
+			own = append(own, e)
+		}
+	}
+	return own, kept
+}
+
+// compareStarter is the started_by value of the entries `dva compare <name> up` starts.
+func compareStarter(name string) string { return "compare:" + name }
 
 func removeVariant(vs []compare.Variant, name string) []compare.Variant {
 	out := vs[:0:0]

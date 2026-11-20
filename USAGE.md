@@ -761,6 +761,9 @@ dva target main status dev --json   # 기본 체크아웃은 이름으로 지정
   detached `snapshot`(ID 없음)이며 bare·사라진 worktree는 뺍니다.
 - `dva target <id> up|down|status|stop ...`은 실행 직전 경로·저장소·브랜치를 재검증하고 같은 하위 디렉터리에서
   그 동사를 실행합니다. 모르는 ID·`git:` 외 접두·조회 실패는 실행 없이 실패하며 `--json` 등은 동사 뒤에 둡니다.
+- 백그라운드 엔트리는 pid 옆 `<name>.identity.json`에 시작 주체(`started_by`: `cwd`·`target:<id>`·`compare:<name>`)와
+  경로·저장소·브랜치·커밋을 남기고, 읽을 때마다 pid·경로와 대조합니다. 세션이 끝나도 멈추지 않습니다(자기 프로세스 그룹).
+- Git 2.36 이상이 필요합니다(`worktree list -z`).
 
 ### 비교안 동시 실행 (`dva compare`)
 
@@ -812,7 +815,9 @@ dva compare down layout                        # 전부 내림, 마지막에 sha
   목록에 없는 도구가 공유 경로에 쓰는지는 dva가 볼 수 없습니다. 소스 브랜치 이름이 `config`면
   `refs/heads/config`로 씁니다.
 - `down`은 비교안의 `per_variant`를 먼저 멈춘 뒤 snapshot 체크아웃을 지웁니다. worktree·config 비교안은 프로세스만
-  멈추고 체크아웃(worktree와 브랜치, 호출한 체크아웃)은 그대로 둡니다. 커밋하지 않은 변경이나 추적 안 되는
+  멈추고 체크아웃(worktree와 브랜치, 호출한 체크아웃)은 그대로 둡니다. worktree 비교안에서는 `started_by`가
+  `compare:<이 비교>`인 엔트리만 멈추고 나머지(소유자의 `dva up`, `dva target`, 다른 비교, 신원 기록 없음 — compose
+  포함)는 `kept`(엔트리 → 이유)로 보고합니다. 그것은 `dva target <id> down`으로 내립니다. 커밋하지 않은 변경이나 추적 안 되는
   파일이 있는 snapshot은 지우지 않고 알립니다(entries는 이미 멈춘 상태). 마지막 비교안이 내려가야 `shared`를 멈춥니다.
   같은 `dva.yml`의 다른 비교가 같은 `shared` 엔트리를 선언했고 그 기록(`.sb/dva/compare/<다른 이름>.json`)이 남아 있으면
   그 엔트리는 멈추지 않고 `kept`로 보고합니다(`shared.kept`: 엔트리 → 쓰고 있는 비교 이름, 표에는 `shared api kept: in use by comparison board`).

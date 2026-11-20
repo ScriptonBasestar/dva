@@ -115,6 +115,12 @@ DevBox 루트에서 개발 서버를 실행할 때 기본 체크아웃과 작업
   다른 접두 거부)·`Verify`(경로·common-dir·브랜치 재검증, 커밋·dirty는 허용)·`ConfigDir`(같은 하위 디렉터리)
   뒤 같은 dva 바이너리를 그 디렉터리에서 실행한다. porcelain은 `-z`, stat 오류는 숨기지 않는다.
   남은 것: 신원 파일(`started_by`)과 compare down 제한, 프로세스 그룹 생존 테스트, Singlepageweb 파일럿.
+- 4단계 완료(2026-11-21): 신원 파일 `<pids>/<name>.identity.json`(`started_by`·경로·common-dir·브랜치·커밋·pid)을
+  `startLocalProcess`가 pid와 함께 쓰고 pid 제거 때 함께 지운다. `lifecycle.ReadIdentity`는 pid·경로가 다르면
+  `ErrIdentityStale`. `dva target`은 `DVA_STARTED_BY=target:<id>`로 넘기고 자식 Execute가 읽은 뒤 지운다.
+  compare up은 `compare:<name>`, worktree 비교안의 down은 자기 것만 멈추고 나머지는 `kept`(이유 포함; compose처럼
+  신원 없는 엔트리 포함). 세션 생존 테스트는 Setpgid를 끄면 실패함을 확인했다. Git ≥2.36 문서화, Verify는
+  ErrNotExist만 "gone". 남은 것: Singlepageweb 파일럿(사람 검증).
 
 ## Evidence / Pilot
 

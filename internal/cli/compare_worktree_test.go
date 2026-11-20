@@ -209,3 +209,63 @@ func TestCompareStatusWorktreeRemovedIsStale(t *testing.T) {
 		t.Errorf("b = %v", b)
 	}
 }
+
+// A work worktree is someone else's checkout: down stops only what this comparison started
+// there. An entry its owner started with `dva up`, or one whose starter cannot be read, keeps
+// running and is named with the reason; the variant still leaves the record.
+func TestCompareDownKeepsWorktreeEntriesItDidNotStart(t *testing.T) {
+	for _, tc := range []struct {
+		name, starter, why string
+	}{
+		{"owner's own up", "cwd", "started by cwd"},
+		{"another comparison", "compare:other", "started by compare:other"},
+		{"dva target run", "target:other", "started by target:other"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c, host, _ := compareFixture(t)
+			wt := mustEval(t, workWorktree(t, c))
+			// The entry is already running in the worktree, started by someone else; compare
+			// up finds it running and its identity keeps the first starter.
+			host.running[wt+"||web"] = true
+			host.startedBy[wt+"||web"] = tc.starter
+			upMixed(t, c)
+			host.calls = nil
+
+			doc, err := captureJSON(t, func() error { return runCompareDown(context.Background(), c, "layout", nil) })
+			if err != nil {
+				t.Fatal(err)
+			}
+			if host.count("down:wt-other:web") != 0 {
+				t.Errorf("down stopped an entry it did not start: %v", host.calls)
+			}
+			b := variantRow(t, doc, "b")
+			kept, _ := b["kept"].(map[string]any)
+			if b["outcome"] != outcomeStopped || kept["web"] != tc.why {
+				t.Errorf("b = %v, want outcome stopped and kept web: %q", b, tc.why)
+			}
+			if !host.running[wt+"||web"] {
+				t.Error("the owner's entry no longer runs")
+			}
+			if host.count("down:a:web") != 1 {
+				t.Errorf("the snapshot variant's own entry must still stop: %v", host.calls)
+			}
+		})
+	}
+}
+
+// An entry with no identity record (an older dva started it, or it has no pid) is not proven
+// to be this comparison's, so it is kept.
+func TestCompareDownKeepsWorktreeEntryWithoutIdentity(t *testing.T) {
+	c, host, _ := compareFixture(t)
+	wt := mustEval(t, workWorktree(t, c))
+	upMixed(t, c)
+	delete(host.startedBy, wt+"||web")
+	doc, err := captureJSON(t, func() error { return runCompareDown(context.Background(), c, "layout", nil) })
+	if err != nil {
+		t.Fatal(err)
+	}
+	kept, _ := variantRow(t, doc, "b")["kept"].(map[string]any)
+	if kept["web"] != "no identity record" || host.count("down:wt-other:web") != 0 {
+		t.Errorf("kept = %v, calls = %v", kept, host.calls)
+	}
+}

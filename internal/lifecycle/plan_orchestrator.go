@@ -50,6 +50,7 @@ func NewPlanOrchestrator(cfg *config.Config, env *config.Environment, plan *Exec
 
 	return &Orchestrator{
 		entries:         entries,
+		startedBy:       DefaultStartedBy,
 		composeProfiles: composeProfiles,
 		composeServices: composeServices,
 		cfg:             owner,

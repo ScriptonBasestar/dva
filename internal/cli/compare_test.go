@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -31,10 +32,11 @@ type fakeHost struct {
 	onUp       func(dir string) // runs when an Up succeeds, to leave files a real start would
 	running    map[string]bool  // "dir|entry"
 	vars       map[string]map[string]string
+	startedBy  map[string]string // "dir|inst|entry" → starter recorded by Up
 }
 
 func newFakeHost() *fakeHost {
-	return &fakeHost{busyPorts: map[int]bool{}, portErrors: map[int]error{}, failUp: map[string]bool{}, failStatus: map[string]bool{}, running: map[string]bool{}, vars: map[string]map[string]string{}}
+	return &fakeHost{busyPorts: map[int]bool{}, portErrors: map[int]error{}, failUp: map[string]bool{}, failStatus: map[string]bool{}, running: map[string]bool{}, vars: map[string]map[string]string{}, startedBy: map[string]string{}}
 }
 
 func (f *fakeHost) PortBusy(port int) (bool, error) {
@@ -55,14 +57,18 @@ func (f *fakeHost) tag(dir, instance string) string {
 	return t
 }
 
-func (f *fakeHost) Up(_ context.Context, dir, inst, _ string, vars map[string]string, names []string, _ bool) (*compareObserved, error) {
+func (f *fakeHost) Up(_ context.Context, dir, inst, _, startedBy string, vars map[string]string, names []string, _ bool) (*compareObserved, error) {
 	f.calls = append(f.calls, "up:"+f.tag(dir, inst)+":"+strings.Join(names, ","))
 	f.vars[f.tag(dir, inst)] = vars
 	if f.failUp[f.tag(dir, inst)] {
 		return nil, errors.New("simulated start failure")
 	}
 	for _, n := range names {
-		f.running[dir+"|"+inst+"|"+n] = true
+		key := dir + "|" + inst + "|" + n
+		if !f.running[key] {
+			f.startedBy[key] = startedBy // a running entry keeps its first starter, as Up does
+		}
+		f.running[key] = true
 	}
 	if f.onUp != nil {
 		f.onUp(dir)
@@ -87,8 +93,17 @@ func (f *fakeHost) Down(_ context.Context, dir, inst, _ string, _ map[string]str
 	}
 	for _, n := range names {
 		delete(f.running, dir+"|"+inst+"|"+n)
+		delete(f.startedBy, dir+"|"+inst+"|"+n)
 	}
 	return nil
+}
+
+func (f *fakeHost) StartedBy(dir, inst, entry string) (string, error) {
+	by, ok := f.startedBy[dir+"|"+inst+"|"+entry]
+	if !ok {
+		return "", fs.ErrNotExist
+	}
+	return by, nil
 }
 
 func (f *fakeHost) Status(_ context.Context, dir, inst, _ string, vars map[string]string, names []string) (*compareObserved, error) {

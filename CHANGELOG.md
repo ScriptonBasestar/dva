@@ -19,6 +19,10 @@ All notable changes to DVA are documented here.
   보여 줍니다. 저장하는 것은 없습니다. `target`은 예약 명령 이름이 되어 같은 이름의 interaction은 거부됩니다.
 - `dva target <id> up|down|status|stop [args...]`: 그 worktree에서 해당 동사를 실행합니다. 실행 직전 경로·저장소·
   브랜치를 재검증하고, 모르는 ID나 실패한 조회는 현재 체크아웃으로 대신하지 않고 실패합니다.
+- 백그라운드 엔트리의 신원 파일(`.sb/dva/pids/<name>.identity.json`): 시작 주체 `started_by`(`cwd`·`target:<id>`·
+  `compare:<name>`)와 경로·저장소·브랜치·커밋. pid 파일과 함께 생기고 지워지며 읽을 때 pid·경로와 대조합니다.
+  `dva compare down`은 worktree 비교안에서 자기가 시작한 엔트리만 멈추고 나머지는 `kept`로 보고합니다.
+  Git 2.36 이상 필요. 사라진 경로가 아닌 stat 오류는 "gone"이 아닌 원래 오류로 보고합니다.
 - 자원 복구에 명시적인 미확인 workload 위험 수용 경로를 추가합니다. 원본·승인 근거를
   보존하고 특정 claim의 회계만 반환하며, 기존 종료 확인 경로는 유지합니다.
 
