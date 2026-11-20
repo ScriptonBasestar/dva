@@ -1,7 +1,7 @@
 ---
 id: TASK-627
 title: "compose status: warn on unknown Labels shape and review Names[0] fallback"
-type: improvement
+type: feature
 priority: P3
 effort: XS
 exec-tier: standard
