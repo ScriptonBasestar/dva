@@ -47,9 +47,11 @@ func newResourceCommand() *cobra.Command {
 		if os.Getenv("DVA_RESOURCE_SUPERVISED") != "" || os.Getenv("DVA_CI_PARENT_RUN") != "" {
 			return errors.New("nested resource admission is unsupported")
 		}
-		if policyPath == "" {
-			policyPath = os.Getenv("DVA_RESOURCE_POLICY")
+		resolvedPolicy, err := resolveResourcePolicyPath(policyPath)
+		if err != nil {
+			return err
 		}
+		policyPath = resolvedPolicy
 		p, digest, err := resourceadmission.ReadPolicy(policyPath)
 		if err != nil {
 			return err
@@ -257,8 +259,9 @@ func newResourceCommand() *cobra.Command {
 	run.Flags().StringVar(&reportPath, "report-file", "", "New private report path")
 	var statusPolicy string
 	status := &cobra.Command{Use: "status", Short: "Inspect cooperative resource claims", Long: "Read current waiting and running claims. Interrupted active claims remain quarantined for operator review.", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, args []string) error {
-		if statusPolicy == "" {
-			statusPolicy = os.Getenv("DVA_RESOURCE_POLICY")
+		statusPolicy, err := resolveResourcePolicyPath(statusPolicy)
+		if err != nil {
+			return err
 		}
 		_, digest, err := resourceadmission.ReadPolicy(statusPolicy)
 		if err != nil {

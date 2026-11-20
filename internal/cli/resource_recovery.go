@@ -58,9 +58,11 @@ func newResourceRecoverCommand() *cobra.Command {
 	var policyPath, claim, digest, fingerprint, evidence string
 	var apply, acceptUnknown bool
 	cmd := &cobra.Command{Use: "recover", Short: "Recover quarantined resource claims", Long: "Without --claim-id, list quarantined claims with a machine liveness verdict and the exact next command. With --claim-id, dva derives the claim digest and policy fingerprint itself (explicit values must match). --apply releases a claim whose recorded supervisor and process groups are proven gone, writing its own evidence; a claim from an older dva without process evidence needs a human to type the claim ID on the controlling terminal. A claim whose workload is still present is refused. --evidence-file supplies operator evidence instead, but any claim not machine-proven ended still needs that terminal confirmation. --accept-unknown-workload with unknown-workload --evidence-file releases accounting for a workload whose state is unknown after a human types RELEASE UNKNOWN and the claim ID. Recovery does not terminate processes or alter CI success records.", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, _ []string) (retErr error) {
-		if policyPath == "" {
-			policyPath = os.Getenv("DVA_RESOURCE_POLICY")
+		resolvedPolicy, err := resolveResourcePolicyPath(policyPath)
+		if err != nil {
+			return err
 		}
+		policyPath = resolvedPolicy
 		_, actual, err := resourceadmission.ReadPolicy(policyPath)
 		if err != nil {
 			return err
