@@ -53,7 +53,7 @@ func Status(ctx context.Context, dir, digest string) ([]StatusEntry, error) {
 	if !info.IsDir() || info.Mode().Perm() != 0700 || !owned(info) {
 		return nil, fmt.Errorf("invalid resource state directory")
 	}
-	var result []StatusEntry
+	result := []StatusEntry{}
 	lockPath := filepath.Join(dir, "state.lock")
 	if _, err = os.Lstat(lockPath); os.IsNotExist(err) {
 		entries, readErr := readEntries(dir)

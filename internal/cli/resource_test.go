@@ -13,6 +13,36 @@ import (
 	"time"
 )
 
+func TestResourceStatusEmptyJSONIsArray(t *testing.T) {
+	if runtime.GOOS != "darwin" && runtime.GOOS != "linux" {
+		t.Skip("native resource admission not available")
+	}
+	dir := t.TempDir()
+	if err := os.Chmod(dir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "state.lock"), nil, 0600); err != nil {
+		t.Fatal(err)
+	}
+	policy := filepath.Join(t.TempDir(), "policy.json")
+	if err := os.WriteFile(policy, []byte(`{"capacity":4,"max_running":3,"max_heavy":1,"weights":{"heavy":2,"light":1},"aging_interval":"5m"}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	old := resourceStateDirectory
+	resourceStateDirectory = func() (string, error) { return dir, nil }
+	t.Cleanup(func() { resourceStateDirectory = old })
+	cmd := newResourceCommand()
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	cmd.SetArgs([]string{"status", "--policy", policy})
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	if out.String() != "[]\n" {
+		t.Fatalf("status output %q, want []", out.String())
+	}
+}
+
 func TestResourceRunPreservesChildExitAndReport(t *testing.T) {
 	if runtime.GOOS != "darwin" && runtime.GOOS != "linux" {
 		t.Skip("native resource admission not available")

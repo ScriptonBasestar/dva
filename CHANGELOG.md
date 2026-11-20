@@ -63,6 +63,9 @@ All notable changes to DVA are documented here.
 
 ### Fixed
 
+- 활성 claim이 없는 기존 상태 디렉터리에서도 `resource status --json`이 `null` 대신
+  빈 배열을 반환하도록 수정합니다.
+
 - 측정 도구 테스트가 writer와 metadata 수집의 완료를 모두 기다린 뒤 임시 디렉터리를
   정리하도록 보완합니다. 운영의 100ms 종료 대기 예산은 유지합니다.
 
