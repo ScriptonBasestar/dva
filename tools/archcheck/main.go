@@ -29,7 +29,7 @@ var allowedImports = map[string][]string{
 		"internal/jobrun", "internal/lifecycle", "internal/logger", "internal/output",
 		"internal/remotetarget", "internal/resourceadmission", "internal/runner", "internal/secretpush", "internal/skillinstall",
 	},
-	"internal/compare":           {"internal/config", "internal/lifecycle"},
+	"internal/compare":           {"internal/config", "internal/lifecycle", "internal/worktarget"},
 	"internal/config":            {},
 	"internal/exec":              {"internal/config"},
 	"internal/jobrun":            {"internal/ociverify", "internal/remotetarget", "internal/statedir"},
@@ -43,6 +43,7 @@ var allowedImports = map[string][]string{
 	"internal/secretpush":        {"internal/remotetarget", "internal/statedir"},
 	"internal/skillclaim":        {},
 	"internal/statedir":          {},
+	"internal/worktarget":        {},
 	"internal/skillinstall":      {"internal/skillclaim", "internal/statedir", "skills"},
 }
 
