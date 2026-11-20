@@ -9,9 +9,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ScriptonBasestar/dva/internal/worktarget"
-
 	"github.com/ScriptonBasestar/dva/internal/lifecycle"
+	"github.com/ScriptonBasestar/dva/internal/worktarget"
 )
 
 // VariantState is Check's verdict on one recorded variant. A stale variant carries every

@@ -8,9 +8,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ScriptonBasestar/dva/internal/worktarget"
-
 	"github.com/ScriptonBasestar/dva/internal/config"
+	"github.com/ScriptonBasestar/dva/internal/worktarget"
 )
 
 // SnapshotPath is where DVA checks out variant of comparison compareName, under configDir:
