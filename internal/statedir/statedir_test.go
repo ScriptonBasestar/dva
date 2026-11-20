@@ -50,6 +50,23 @@ func TestRootUnderMigratesLegacyAndLinksIt(t *testing.T) {
 	}
 }
 
+func TestGroupDirMigratesNamedDirectory(t *testing.T) {
+	base := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(base, "dva-project-ci-metrics", "key"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	dir, err := GroupDir(base, "dva-project-ci-metrics")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "key")); err != nil {
+		t.Fatalf("migrated data missing: %v", err)
+	}
+	if link, err := os.Readlink(filepath.Join(base, "dva-project-ci-metrics")); err != nil || link != filepath.Join("sb", "dva-project-ci-metrics") {
+		t.Fatalf("legacy link = %q, %v", link, err)
+	}
+}
+
 func TestRootUnderRefusesToMergeBothLayouts(t *testing.T) {
 	base := t.TempDir()
 	for _, dir := range []string{filepath.Join(base, "dva"), filepath.Join(base, "sb", "dva")} {

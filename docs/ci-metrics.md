@@ -72,8 +72,9 @@ byte 단위 동일성을 보장하는 수집기가 아니며 부가 관측 때�
 
 ## 저장·보존·개인정보
 
-로컬 기본 위치는 `$XDG_STATE_HOME/dva-project-ci-metrics/<repository-key>/`다.
-XDG state가 없으면 `~/.local/state/`를 사용한다. repository key는 Git common directory의
+로컬 기본 위치는 `$XDG_STATE_HOME/sb/dva-project-ci-metrics/<repository-key>/`다.
+XDG state가 없으면 `~/.local/state/`를 사용한다. 기존 `<state>/dva-project-ci-metrics`는 첫
+실행 때 이 위치로 옮기고 원래 자리에 상대 symlink를 남긴다. repository key는 Git common directory의
 지문이므로 같은 저장소의 task worktree를 회수한 뒤에도 이력이 남는다.
 테스트·별도 보관에는 절대 경로 `DVA_PROJECT_CI_METRICS_DIR`로 전용 namespace를 지정할 수 있다.
 기존 DVA receipt/log의 저장·정리 정책은 바꾸지 않는다.

@@ -14,6 +14,8 @@ import (
 	"strings"
 	"sync/atomic"
 	"time"
+
+	"github.com/ScriptonBasestar/dva/internal/statedir"
 )
 
 const recordSchema = "dva-project-ci-metrics/v2"
@@ -346,7 +348,11 @@ func metricsDirectory(key string) (string, error) {
 			}
 			base = filepath.Join(home, ".local", "state")
 		}
-		base = filepath.Join(base, "dva-project-ci-metrics")
+		grouped, err := statedir.GroupDir(base, "dva-project-ci-metrics")
+		if err != nil {
+			return "", err
+		}
+		base = grouped
 	}
 	if !filepath.IsAbs(base) {
 		return "", errors.New("metrics state directory must be absolute")

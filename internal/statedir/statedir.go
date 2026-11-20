@@ -53,22 +53,27 @@ func HostRoot() (string, error) {
 
 // RootUnder returns <base>/sb/dva after migrating a legacy <base>/dva.
 func RootUnder(base string) (string, error) {
+	return GroupDir(base, Tool)
+}
+
+// GroupDir returns <base>/sb/<name> after migrating a legacy <base>/<name>.
+func GroupDir(base, name string) (string, error) {
 	base, err := filepath.Abs(base)
 	if err != nil {
 		return "", err
 	}
-	if err := migrateLegacy(base); err != nil {
+	if err := migrateLegacy(base, name); err != nil {
 		return "", err
 	}
-	return filepath.Join(base, Group, Tool), nil
+	return filepath.Join(base, Group, name), nil
 }
 
-// migrateLegacy moves <base>/dva to <base>/sb/dva once and leaves a relative
-// symlink at the legacy path so older dva binaries keep sharing the same data.
-// An existing target is never merged or overwritten.
-func migrateLegacy(base string) error {
-	legacy := filepath.Join(base, Tool)
-	target := filepath.Join(base, Group, Tool)
+// migrateLegacy moves <base>/<name> to <base>/sb/<name> once and leaves a
+// relative symlink at the legacy path so older binaries keep sharing the same
+// data. An existing target is never merged or overwritten.
+func migrateLegacy(base, name string) error {
+	legacy := filepath.Join(base, name)
+	target := filepath.Join(base, Group, name)
 	info, err := os.Lstat(legacy)
 	if errors.Is(err, fs.ErrNotExist) || (err == nil && info.Mode()&fs.ModeSymlink != 0) {
 		return nil
@@ -93,7 +98,7 @@ func migrateLegacy(base string) error {
 			return fmt.Errorf("migrate state %s -> %s: %w", legacy, target, err)
 		}
 	}
-	if err := os.Symlink(filepath.Join(Group, Tool), legacy); err != nil && !errors.Is(err, fs.ErrExist) {
+	if err := os.Symlink(filepath.Join(Group, name), legacy); err != nil && !errors.Is(err, fs.ErrExist) {
 		return fmt.Errorf("link legacy state path %s: %w", legacy, err)
 	}
 	return nil
