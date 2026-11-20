@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/ScriptonBasestar/dva/internal/ociverify"
+	"github.com/ScriptonBasestar/dva/internal/statedir"
 )
 
 type receipt struct {
@@ -51,14 +52,11 @@ type receiptRun struct {
 }
 
 func defaultStateDir() (string, error) {
-	if x := os.Getenv("XDG_STATE_HOME"); x != "" {
-		return filepath.Join(x, "dva", "jobs"), nil
-	}
-	h, err := os.UserHomeDir()
+	root, err := statedir.XDGRoot()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(h, ".local", "state", "dva", "jobs"), nil
+	return filepath.Join(root, "jobs"), nil
 }
 func statePath(dir, id string) (string, error) {
 	if !validID(id) {

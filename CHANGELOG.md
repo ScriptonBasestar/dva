@@ -5,6 +5,13 @@ All notable changes to DVA are documented here.
 
 ## [Unreleased]
 
+### Changed
+
+- DVA 상태 루트를 ScriptonBasestar 그룹 경로 `<state>/sb/dva`로 옮깁니다
+  (`<state>` = `$XDG_STATE_HOME` 또는 `~/.local/state`, ci·resource-admission은 UID 홈 고정).
+  첫 실행 때 기존 `<state>/dva`를 자동 이전하고 그 자리에 `sb/dva` 상대 symlink를 남겨 이전
+  바이너리와 데이터를 공유합니다. 두 경로가 모두 실제 디렉토리면 병합하지 않고 오류로 멈춥니다.
+
 ### Added
 
 - 자원 복구에 명시적인 미확인 workload 위험 수용 경로를 추가합니다. 원본·승인 근거를

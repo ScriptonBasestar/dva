@@ -5,12 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os/user"
 	"path/filepath"
 	"time"
 
 	"github.com/ScriptonBasestar/dva/internal/cirun/ociexec"
 	"github.com/ScriptonBasestar/dva/internal/config"
+	"github.com/ScriptonBasestar/dva/internal/statedir"
 )
 
 var ErrBusy = errors.New("a conflicting dva ci run is active")
@@ -242,10 +242,10 @@ func stateDirectory(dir string) (string, error) {
 	if dir != "" {
 		return dir, nil
 	}
-	u, err := user.Current()
+	// Do not use HOME/XDG_STATE_HOME: sessions must share UID-owned resource locks.
+	root, err := statedir.HostRoot()
 	if err != nil {
 		return "", err
 	}
-	// Do not use HOME/XDG_CACHE_HOME: sessions must share UID-owned resource locks.
-	return filepath.Join(u.HomeDir, ".local", "state", "dva", "ci"), nil
+	return filepath.Join(root, "ci"), nil
 }

@@ -3,11 +3,13 @@ package skillinstall
 import (
 	"errors"
 	"fmt"
-	bundled "github.com/ScriptonBasestar/dva/skills"
 	"os"
 	"path/filepath"
 	"slices"
 	"sort"
+
+	"github.com/ScriptonBasestar/dva/internal/statedir"
+	bundled "github.com/ScriptonBasestar/dva/skills"
 )
 
 func containsRuntimes(have, wanted []Runtime) bool {
@@ -98,10 +100,14 @@ func resolve(options Options) (Options, []destination, error) {
 	}
 	options.ProjectRoot = project
 	if options.StateRoot == "" {
-		if xdg := os.Getenv("XDG_STATE_HOME"); xdg != "" {
-			options.StateRoot = filepath.Join(xdg, "dva")
-		} else {
-			options.StateRoot = filepath.Join(home, ".local", "state", "dva")
+		root, err := statedir.RootUnderHome(home)
+		if err != nil {
+			return Options{}, nil, err
+		}
+		options.StateRoot = root
+		if options.ClaimRoot == "" {
+			// Claims live in the producer-neutral state base, not the sb group.
+			options.ClaimRoot = filepath.Dir(filepath.Dir(root))
 		}
 	}
 	state, err := filepath.Abs(options.StateRoot)

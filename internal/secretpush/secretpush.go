@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/ScriptonBasestar/dva/internal/remotetarget"
+	"github.com/ScriptonBasestar/dva/internal/statedir"
 )
 
 const (
@@ -453,18 +454,11 @@ func stateDirectory(dir string) (string, error) {
 		}
 		return resolved, nil
 	}
-	if xdg := os.Getenv("XDG_STATE_HOME"); xdg != "" {
-		resolved, err := filepath.Abs(filepath.Join(xdg, "dva", "secrets"))
-		if err != nil {
-			return "", codeError("state_directory_unavailable")
-		}
-		return resolved, nil
-	}
-	home, err := os.UserHomeDir()
+	root, err := statedir.XDGRoot()
 	if err != nil {
 		return "", codeError("state_directory_unavailable")
 	}
-	return filepath.Join(home, ".local", "state", "dva", "secrets"), nil
+	return filepath.Join(root, "secrets"), nil
 }
 
 func secureMkdir(dir string) error {

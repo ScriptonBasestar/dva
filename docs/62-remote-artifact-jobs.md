@@ -100,7 +100,7 @@ source는 root 내부의 일반 파일이어야 하며 symlink로 경계를 넘�
 
 ## 실행 기록과 재개
 
-로컬 결과는 `${XDG_STATE_HOME:-~/.local/state}/dva/secrets`와 `dva/jobs`에 저장한다.
+로컬 결과는 `${XDG_STATE_HOME:-~/.local/state}/sb/dva/secrets`와 `sb/dva/jobs`에 저장한다.
 명령은 성공·부분 실패 모두 단일 JSON 문서의 `result`를 출력하며, 실패 시 `error`와
 비정상 종료 코드를 반환한다. `job run` 결과의 `result.job.id`가 후속 명령의 run ID다.
 GitHub run ID는 각 실행의 `run_id`로 별도 기록한다. `--with-secrets` 결과에는 시크릿

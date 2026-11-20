@@ -4,17 +4,18 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/user"
 	"path/filepath"
+
+	"github.com/ScriptonBasestar/dva/internal/statedir"
 )
 
 // DefaultDirectory identifies this user's single host-wide resource state.
 func DefaultDirectory() (string, error) {
-	u, err := user.Current()
+	root, err := statedir.HostRoot()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(u.HomeDir, ".local", "state", "dva", "resource-admission"), nil
+	return filepath.Join(root, "resource-admission"), nil
 }
 
 type StatusEntry struct {

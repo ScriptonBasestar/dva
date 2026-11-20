@@ -191,8 +191,8 @@ dva skill uninstall --dry-run --runtime claude-code
 
 프로젝트 scope에서 Codex와 Antigravity IDE는 같은 `.agents/skills`를 공유하므로 한 번만
 복사하고 receipt에서 두 runtime의 소유 관계를 함께 기록합니다. 설치 상태는
-`$XDG_STATE_HOME/dva/skill-installs/` 아래 receipt로 관리하며, `XDG_STATE_HOME`이 없으면
-`~/.local/state/dva/skill-installs/`를 사용합니다.
+`$XDG_STATE_HOME/sb/dva/skill-installs/` 아래 receipt로 관리하며, `XDG_STATE_HOME`이 없으면
+`~/.local/state/sb/dva/skill-installs/`를 사용합니다.
 
 공유 runtime root 자체의 소유자는 없습니다. 설치기는 각 최상위 스킬마다
 `$XDG_STATE_HOME/agent-skills/claims/v1/`에 producer-neutral claim을 기록하며, DVA는
@@ -205,7 +205,7 @@ dva skill uninstall --dry-run --runtime claude-code
 두 위험 옵션은 지원 runtime 전체를 암묵적으로 선택하지 않으며 `--runtime`을 반드시 지정해야
 합니다. 공유 목적지에 다른 consumer가 남아 있으면 복원을 거부합니다.
 
-takeover 백업은 `$XDG_STATE_HOME/dva/skill-takeovers/` 아래의 검증된 ID로 계산하며 receipt의
+takeover 백업은 `$XDG_STATE_HOME/sb/dva/skill-takeovers/` 아래의 검증된 ID로 계산하며 receipt의
 임의 절대경로를 신뢰하지 않습니다. 일반 uninstall로 마지막 consumer를 제거하면 DVA 파일과
 claim만 없애고 `backup-only` receipt tombstone을 남깁니다. 이후 명시적 restore가 원본과
 manifest를 검증해 성공한 뒤에만 backup과 tombstone을 제거합니다. 보존 범위는 regular

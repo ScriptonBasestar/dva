@@ -9,6 +9,7 @@ import (
 
 	"github.com/ScriptonBasestar/dva/internal/config"
 	"github.com/ScriptonBasestar/dva/internal/skillinstall"
+	"github.com/ScriptonBasestar/dva/internal/statedir"
 )
 
 // RuntimeClaudeCode is the only runtime with an implemented, tested deploy target as of
@@ -111,11 +112,11 @@ func resolve(options Options) (Options, error) {
 	}
 	options.ProjectRoot = project
 	if options.StateRoot == "" {
-		if xdg := os.Getenv("XDG_STATE_HOME"); xdg != "" {
-			options.StateRoot = filepath.Join(xdg, "dva")
-		} else {
-			options.StateRoot = filepath.Join(home, ".local", "state", "dva")
+		root, err := statedir.RootUnderHome(home)
+		if err != nil {
+			return Options{}, err
 		}
+		options.StateRoot = root
 	}
 	state, err := filepath.Abs(options.StateRoot)
 	if err != nil {

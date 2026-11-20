@@ -21,8 +21,8 @@ const modulePath = "github.com/ScriptonBasestar/dva/"
 // allowedImports maps each package to the module packages it may import.
 var allowedImports = map[string][]string{
 	"cmd/dva":                {"internal/cli"},
-	"internal/agentdeny":     {"internal/config", "internal/runner", "internal/skillinstall"},
-	"internal/cirun":         {"internal/cirun/ociexec", "internal/config", "internal/resourceadmission"},
+	"internal/agentdeny":     {"internal/config", "internal/runner", "internal/skillinstall", "internal/statedir"},
+	"internal/cirun":         {"internal/cirun/ociexec", "internal/config", "internal/resourceadmission", "internal/statedir"},
 	"internal/cirun/ociexec": {"internal/config"},
 	"internal/cli": {
 		"internal/agentdeny", "internal/cirun", "internal/compare", "internal/config", "internal/exec",
@@ -32,17 +32,18 @@ var allowedImports = map[string][]string{
 	"internal/compare":           {"internal/config", "internal/lifecycle"},
 	"internal/config":            {},
 	"internal/exec":              {"internal/config"},
-	"internal/jobrun":            {"internal/ociverify", "internal/remotetarget"},
+	"internal/jobrun":            {"internal/ociverify", "internal/remotetarget", "internal/statedir"},
 	"internal/lifecycle":         {"internal/config", "internal/exec"},
 	"internal/logger":            {},
 	"internal/ociverify":         {},
 	"internal/output":            {},
 	"internal/remotetarget":      {},
-	"internal/resourceadmission": {},
+	"internal/resourceadmission": {"internal/statedir"},
 	"internal/runner":            {"internal/config", "internal/exec", "internal/output"},
-	"internal/secretpush":        {"internal/remotetarget"},
+	"internal/secretpush":        {"internal/remotetarget", "internal/statedir"},
 	"internal/skillclaim":        {},
-	"internal/skillinstall":      {"internal/skillclaim", "skills"},
+	"internal/statedir":          {},
+	"internal/skillinstall":      {"internal/skillclaim", "internal/statedir", "skills"},
 }
 
 // targetOSes covers every OS with build-tagged files; a host-only listing misses the rest.
