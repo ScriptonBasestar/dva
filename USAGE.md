@@ -753,10 +753,14 @@ provision 마커는 plan이 아니라 provision 프로파일 단위라서, `--pu
 ```bash
 dva target          # 현재 저장소의 worktree 후보 표
 dva target --json   # repository(공통 .git 경로)와 candidates
+dva target feat/login up dev        # feat/login worktree에서 dva up dev
+dva target main status dev --json   # 기본 체크아웃은 이름으로 지정할 때만
 ```
 
 - `git worktree list`를 매번 읽고 저장하지 않습니다. KIND는 메인 `default`, 브랜치 worktree `task`(ID=브랜치),
-  detached `snapshot`(ID 없음)이며 bare·사라진 worktree는 뺍니다. 대상 지정 실행 동사는 후속 단계입니다(TASK-538).
+  detached `snapshot`(ID 없음)이며 bare·사라진 worktree는 뺍니다.
+- `dva target <id> up|down|status|stop ...`은 실행 직전 경로·저장소·브랜치를 재검증하고 같은 하위 디렉터리에서
+  그 동사를 실행합니다. 모르는 ID·`git:` 외 접두·조회 실패는 실행 없이 실패하며 `--json` 등은 동사 뒤에 둡니다.
 
 ### 비교안 동시 실행 (`dva compare`)
 

@@ -43,16 +43,23 @@ type Worktree struct {
 	Prunable bool
 }
 
-// List returns every worktree of the repository dir belongs to, the main one included.
+// List returns every worktree of the repository dir belongs to, the main one included. It reads
+// the NUL-terminated porcelain (-z), so a path containing a newline is read whole.
 func List(ctx context.Context, dir string) ([]Worktree, error) {
-	out, err := git(ctx, dir, "worktree", "list", "--porcelain")
+	out, err := git(ctx, dir, "worktree", "list", "--porcelain", "-z")
 	if err != nil {
 		return nil, err
 	}
+	return parsePorcelainZ(out), nil
+}
+
+// parsePorcelainZ parses `git worktree list --porcelain -z`: each field ends in NUL and an empty
+// field ends an entry.
+func parsePorcelainZ(out string) []Worktree {
 	var list []Worktree
-	for block := range strings.SplitSeq(out, "\n\n") {
+	for block := range strings.SplitSeq(out, "\x00\x00") {
 		var wt Worktree
-		for line := range strings.SplitSeq(block, "\n") {
+		for line := range strings.SplitSeq(block, "\x00") {
 			switch {
 			case strings.HasPrefix(line, "worktree "):
 				wt.Path = strings.TrimPrefix(line, "worktree ")
@@ -74,7 +81,7 @@ func List(ctx context.Context, dir string) ([]Worktree, error) {
 			list = append(list, wt)
 		}
 	}
-	return list, nil
+	return list
 }
 
 // Canonical resolves symlinks so a path DVA built and the path git prints compare equal; on

@@ -2,7 +2,9 @@ package worktarget
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 )
 
@@ -47,8 +49,12 @@ func Candidates(ctx context.Context, dir string) (repo string, list []Candidate,
 		if wt.Bare || wt.Prunable {
 			continue
 		}
-		if info, statErr := os.Stat(wt.Path); statErr != nil || !info.IsDir() {
-			continue
+		info, statErr := os.Stat(wt.Path)
+		if errors.Is(statErr, fs.ErrNotExist) || (statErr == nil && !info.IsDir()) {
+			continue // gone: Git has not noticed yet, and nothing can run there
+		}
+		if statErr != nil {
+			return "", nil, fmt.Errorf("inspect worktree %s: %w", wt.Path, statErr)
 		}
 		status, err := git(ctx, wt.Path, "status", "--porcelain", "--untracked-files=normal")
 		if err != nil {

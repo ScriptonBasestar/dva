@@ -111,6 +111,10 @@ DevBox 루트에서 개발 서버를 실행할 때 기본 체크아웃과 작업
 - 3단계 후보 나열 완료(2026-11-20): `worktarget.Candidates`와 `dva target`(표·`--json`, 저장 없음).
   prunable·사라진 디렉터리·bare는 제외, `target`은 예약 명령. 다음은 실행 전 신원 검증과
   `dva target <id> up|down|status|stop`, 신원 파일(`started_by`)이다.
+- 4단계 일부 완료(2026-11-21): `dva target <id> up|down|status|stop` — `worktarget.Select`(접두 `git:`,
+  다른 접두 거부)·`Verify`(경로·common-dir·브랜치 재검증, 커밋·dirty는 허용)·`ConfigDir`(같은 하위 디렉터리)
+  뒤 같은 dva 바이너리를 그 디렉터리에서 실행한다. porcelain은 `-z`, stat 오류는 숨기지 않는다.
+  남은 것: 신원 파일(`started_by`)과 compare down 제한, 프로세스 그룹 생존 테스트, Singlepageweb 파일럿.
 
 ## Evidence / Pilot
 

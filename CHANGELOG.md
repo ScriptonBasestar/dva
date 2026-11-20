@@ -17,6 +17,8 @@ All notable changes to DVA are documented here.
 
 - `dva target`: 현재 저장소의 worktree 후보(default·task·snapshot, dirty·locked)를 표 또는 `--json`으로
   보여 줍니다. 저장하는 것은 없습니다. `target`은 예약 명령 이름이 되어 같은 이름의 interaction은 거부됩니다.
+- `dva target <id> up|down|status|stop [args...]`: 그 worktree에서 해당 동사를 실행합니다. 실행 직전 경로·저장소·
+  브랜치를 재검증하고, 모르는 ID나 실패한 조회는 현재 체크아웃으로 대신하지 않고 실패합니다.
 - 자원 복구에 명시적인 미확인 workload 위험 수용 경로를 추가합니다. 원본·승인 근거를
   보존하고 특정 claim의 회계만 반환하며, 기존 종료 확인 경로는 유지합니다.
 
