@@ -101,7 +101,7 @@ func resolveMissingPath(path string) string {
 }
 
 func hasDotComponent(path string) bool {
-	for _, part := range strings.Split(path, string(filepath.Separator)) {
+	for part := range strings.SplitSeq(path, string(filepath.Separator)) {
 		if part == "." || part == ".." {
 			return true
 		}
