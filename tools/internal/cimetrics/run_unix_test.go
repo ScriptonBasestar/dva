@@ -24,7 +24,7 @@ func TestMetricsCancellationCannotBecomePassWhenChildTrapsTERM(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	done := make(chan error, 1)
 	go func() {
-		done <- RunWithStdin(ctx, "unit", []string{"/bin/sh", "-c", `trap 'exit 0' TERM; printf ready > "$1"; sleep 30 & wait`, "sh", ready}, nil, &stdout, &stderr)
+		done <- observedRun(t, ctx, []string{"/bin/sh", "-c", `trap 'exit 0' TERM; printf ready > "$1"; sleep 30 & wait`, "sh", ready}, &stdout, &stderr)
 	}()
 	deadline := time.Now().Add(3 * time.Second)
 	for time.Now().Before(deadline) {
@@ -63,7 +63,7 @@ func TestMetricsCompletedCheckWinsLaterCancellation(t *testing.T) {
 	t.Setenv("DVA_PROJECT_CI_METRICS_DIR", state)
 	ctx, cancel := context.WithCancel(context.Background())
 	var out, stderr bytes.Buffer
-	if err := RunWithStdin(ctx, "unit", []string{"/bin/sh", "-c", "exit 0"}, nil, &out, &stderr); err != nil {
+	if err := observedRun(t, ctx, []string{"/bin/sh", "-c", "exit 0"}, &out, &stderr); err != nil {
 		t.Fatal(err)
 	}
 	cancel()

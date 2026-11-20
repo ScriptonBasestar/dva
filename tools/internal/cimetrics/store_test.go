@@ -224,6 +224,7 @@ func TestMetricsFinalizationDefersWhileRetentionLocked(t *testing.T) {
 	}
 	id := strings.Repeat("f", 32)
 	c := newCollector(root, "unit", id, now)
+	trackFixtureCollector(t, c)
 	if c.finish(testRecord(id, now)) {
 		t.Fatal("busy finalization reported complete")
 	}

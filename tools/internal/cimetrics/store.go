@@ -102,6 +102,8 @@ type collector struct {
 	stop         chan struct{}
 	final        chan Record
 	done         chan struct{}
+	metadataDone chan struct{}
+	metadata     func(string, string) Metadata
 	dropped      atomic.Bool
 	omitted      atomic.Uint64
 	queueDropped atomic.Uint64
@@ -109,7 +111,11 @@ type collector struct {
 }
 
 func newCollector(root, check, id string, start time.Time) *collector {
-	c := &collector{id: id, check: check, start: start, events: make(chan Progress, 256), stop: make(chan struct{}), final: make(chan Record, 1), done: make(chan struct{})}
+	return newCollectorWithMetadata(root, check, id, start, collectMetadata)
+}
+
+func newCollectorWithMetadata(root, check, id string, start time.Time, metadata func(string, string) Metadata) *collector {
+	c := &collector{id: id, check: check, start: start, events: make(chan Progress, 256), stop: make(chan struct{}), final: make(chan Record, 1), done: make(chan struct{}), metadataDone: make(chan struct{}), metadata: metadata}
 	go c.write(root)
 	return c
 }
@@ -152,6 +158,12 @@ func (c *collector) finish(r Record) bool {
 
 func (c *collector) write(root string) {
 	defer close(c.done)
+	metadataStarted := false
+	defer func() {
+		if !metadataStarted {
+			close(c.metadataDone)
+		}
+	}()
 	key, ok := repositoryKey(root)
 	if !ok {
 		c.failed.Store(true)
@@ -172,7 +184,8 @@ func (c *collector) write(root string) {
 		return
 	}
 	metadataReady := make(chan Metadata, 1)
-	go func() { metadataReady <- collectMetadata(root, dir) }()
+	metadataStarted = true
+	go func() { defer close(c.metadataDone); metadataReady <- c.metadata(root, dir) }()
 	activePath := filepath.Join(dir, c.id+".active.jsonl")
 	f, err := openExclusive(activePath)
 	if err != nil {

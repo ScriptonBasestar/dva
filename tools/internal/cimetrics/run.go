@@ -41,6 +41,10 @@ func Run(ctx context.Context, checkID string, argv []string, stdout, stderr io.W
 // RunWithStdin forwards non-JSON output and renders Go JSON output without
 // exposing passing-test logs. Collection cannot decide the check's result.
 func RunWithStdin(ctx context.Context, checkID string, argv []string, stdin io.Reader, stdout, stderr io.Writer) error {
+	return runWithStdin(ctx, checkID, argv, stdin, stdout, stderr, newCollector)
+}
+
+func runWithStdin(ctx context.Context, checkID string, argv []string, stdin io.Reader, stdout, stderr io.Writer, factory func(string, string, string, time.Time) *collector) error {
 	if !validCheck(checkID) {
 		return errors.New("ci-metrics: unsupported check ID")
 	}
@@ -80,7 +84,7 @@ func RunWithStdin(ctx context.Context, checkID string, argv []string, stdin io.R
 	started := time.Now()
 	id, idErr := newID()
 	if idErr == nil && rootOK && groupSupported() {
-		c = newCollector(root, checkID, id, started)
+		c = factory(root, checkID, id, started)
 		_, _ = fmt.Fprintf(stderr, "ci-metrics: measurement=%s\n", id)
 	} else {
 		_, _ = fmt.Fprintln(stderr, "ci-metrics: collection degraded (identity or platform unavailable)")

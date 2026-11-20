@@ -79,6 +79,45 @@ func awaitRecord(t *testing.T, state string) (Record, []byte) {
 	return rec, b
 }
 
+func waitFixtureCollector(ctx context.Context, c *collector) error {
+	for _, done := range []<-chan struct{}{c.done, c.metadataDone} {
+		select {
+		case <-done:
+			continue
+		default:
+		}
+		select {
+		case <-done:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
+	return nil
+}
+
+func trackFixtureCollector(t *testing.T, c *collector) {
+	t.Helper()
+	t.Cleanup(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		if err := waitFixtureCollector(ctx, c); err != nil {
+			t.Errorf("fixture collector or metadata did not finish before cleanup: %v", err)
+		}
+	})
+}
+
+// observedRun waits for this fixture's writer and metadata after its assertions
+// and before t.TempDir cleanup, without changing production's bounded finish.
+func observedRun(t *testing.T, ctx context.Context, args []string, stdout, stderr io.Writer) error {
+	t.Helper()
+	factory := func(root, check, id string, start time.Time) *collector {
+		c := newCollector(root, check, id, start)
+		trackFixtureCollector(t, c)
+		return c
+	}
+	return runWithStdin(ctx, "unit", args, nil, stdout, stderr, factory)
+}
+
 func TestMetricsRunPreservesCheckFailureWhenStorageFails(t *testing.T) {
 	root := t.TempDir()
 	target := filepath.Join(root, "target")
@@ -91,7 +130,7 @@ func TestMetricsRunPreservesCheckFailureWhenStorageFails(t *testing.T) {
 	}
 	t.Setenv("DVA_PROJECT_CI_METRICS_DIR", link)
 	var out, stderr bytes.Buffer
-	err := RunWithStdin(context.Background(), "unit", []string{"/bin/sh", "-c", `printf 'live output'; printf 'child error' >&2; exit 42`}, nil, &out, &stderr)
+	err := observedRun(t, context.Background(), []string{"/bin/sh", "-c", `printf 'live output'; printf 'child error' >&2; exit 42`}, &out, &stderr)
 	var child *exec.ExitError
 	if !errors.As(err, &child) || child.ExitCode() != 42 {
 		t.Fatalf("child exit lost: %v", err)
@@ -118,7 +157,7 @@ func TestMetricsMalformedProgressDoesNotSuppressOutputOrLeakSecrets(t *testing.T
 	output := fmt.Sprintf(`{"Action":"output","Package":%q,"Output":%q}`, module+"/tools/internal/cimetrics", secret)
 	args := []string{"/bin/sh", "-c", `printf '%s\n' "$1" "$2" "$3"`, "sh", "not-json", line, output, "-json"}
 	var out, stderr bytes.Buffer
-	if err := RunWithStdin(context.Background(), "unit", args, nil, &out, &stderr); err != nil {
+	if err := observedRun(t, context.Background(), args, &out, &stderr); err != nil {
 		t.Fatalf("successful check turned failure: %v", err)
 	}
 	if got := out.String(); got != "" || strings.Contains(got, secret) || strings.Contains(got, "not-json") {
@@ -154,7 +193,7 @@ func TestMetricsRunDoesNotSuppressOriginalOutputFailure(t *testing.T) {
 	}
 	t.Setenv("DVA_PROJECT_CI_METRICS_DIR", state)
 	var stderr bytes.Buffer
-	err := RunWithStdin(context.Background(), "unit", []string{"/bin/sh", "-c", "printf hello"}, nil, failOutput{}, &stderr)
+	err := observedRun(t, context.Background(), []string{"/bin/sh", "-c", "printf hello"}, failOutput{}, &stderr)
 	if err == nil || !strings.Contains(err.Error(), "fixture output failure") {
 		t.Fatalf("original stdout error hidden: %v", err)
 	}
@@ -167,7 +206,7 @@ func TestMetricsRunWithoutJSONMarksTestCoveragePartial(t *testing.T) {
 	}
 	t.Setenv("DVA_PROJECT_CI_METRICS_DIR", state)
 	var out, stderr bytes.Buffer
-	if err := RunWithStdin(context.Background(), "unit", []string{"/bin/sh", "-c", "printf plain-output"}, nil, &out, &stderr); err != nil {
+	if err := observedRun(t, context.Background(), []string{"/bin/sh", "-c", "printf plain-output"}, &out, &stderr); err != nil {
 		t.Fatal(err)
 	}
 	if out.String() != "plain-output" {
@@ -180,6 +219,53 @@ func TestMetricsRunWithoutJSONMarksTestCoveragePartial(t *testing.T) {
 	if !strings.Contains(stderr.String(), "collection partial") {
 		t.Fatalf("missing structured events not reported: %q", stderr.String())
 	}
+}
+
+func TestMetricsFixtureWaitsForMetadataAfterSummary(t *testing.T) {
+	state := t.TempDir()
+	if err := os.Chmod(state, 0700); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("DVA_PROJECT_CI_METRICS_DIR", state)
+	entered, release, metadataFinished := make(chan struct{}), make(chan struct{}), make(chan struct{})
+	defer close(release)
+	metadata := func(root, dir string) Metadata {
+		close(entered)
+		<-release
+		defer close(metadataFinished)
+		return collectMetadata(root, dir)
+	}
+	root, ok := findProjectRoot()
+	if !ok {
+		t.Fatal("project root not found")
+	}
+	id := strings.Repeat("a", 32)
+	now := time.Now().UTC()
+	c := newCollectorWithMetadata(root, "unit", id, now, metadata)
+	trackFixtureCollector(t, c)
+	_ = c.finish(testRecord(id, now))
+	select {
+	case <-entered:
+	case <-time.After(2 * time.Second):
+		t.Fatal("metadata did not start")
+	}
+	_, _ = awaitRecord(t, state)
+	select {
+	case <-c.done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("writer did not finish")
+	}
+	select {
+	case <-metadataFinished:
+		t.Fatal("metadata finished before release")
+	default:
+	}
+	canceled, cancel := context.WithCancel(context.Background())
+	cancel()
+	if err := waitFixtureCollector(canceled, c); !errors.Is(err, context.Canceled) {
+		t.Fatalf("fixture wait ignored active metadata: %v", err)
+	}
+	// The deferred release runs before the fixture cleanup waits on metadata.
 }
 
 func TestMetricsActualGoFixtureHidesPassingLogOnPackageFailure(t *testing.T) {
@@ -242,7 +328,7 @@ func TestFail(t *testing.T) { t.Error("expected-fixture-diagnostic") }
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	var out, stderr bytes.Buffer
-	err = RunWithStdin(ctx, "unit", []string{"go", "test", "-json", "-count=1", "-timeout=15s", dir}, nil, &out, &stderr)
+	err = observedRun(t, ctx, []string{"go", "test", "-json", "-count=1", "-timeout=15s", dir}, &out, &stderr)
 	var exit *exec.ExitError
 	if !errors.As(err, &exit) || exit.ExitCode() == 0 {
 		t.Fatalf("fixture must fail: %v; %s", err, stderr.String())

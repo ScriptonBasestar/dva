@@ -63,6 +63,9 @@ All notable changes to DVA are documented here.
 
 ### Fixed
 
+- 측정 도구 테스트가 writer와 metadata 수집의 완료를 모두 기다린 뒤 임시 디렉터리를
+  정리하도록 보완합니다. 운영의 100ms 종료 대기 예산은 유지합니다.
+
 - `resource recover --apply`도 전역 `--dry-run`을 유지해 실제 복구와 터미널 확인으로
   넘어가지 않도록 합니다.
 

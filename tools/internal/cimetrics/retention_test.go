@@ -28,6 +28,7 @@ func TestProgressRetentionNoisyTests(t *testing.T) {
 	id := strings.Repeat("9", 32)
 	now := time.Now().UTC()
 	c := newCollector(root, "unit", id, now)
+	trackFixtureCollector(t, c)
 	p := NewParser(nil, c.emit)
 	for i := range 12000 {
 		for _, action := range []string{"run", "pass"} {
