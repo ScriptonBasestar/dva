@@ -12,6 +12,10 @@ func unlock(*os.File) error  { return nil }
 func busy(error) bool        { return false }
 func owned(os.FileInfo) bool { return false }
 
+func processAlive(int) bool     { return true }
+func processGroupGone(int) bool { return false }
+func bootID() string            { return "" }
+
 func openPolicy(string) (*os.File, error) {
 	return nil, errors.New("resource admission unsupported on this platform")
 }

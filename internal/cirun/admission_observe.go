@@ -45,7 +45,10 @@ func admissionWait(ctx context.Context, dir string, p resourceadmission.Policy, 
 	duration := time.Since(start).String()
 	obs.WaitDuration = &duration
 	if err != nil {
+		var blocked *resourceadmission.QuarantineBlockedError
 		switch {
+		case errors.As(err, &blocked):
+			obs.Outcome = "quarantine_blocked"
 		case errors.Is(err, context.DeadlineExceeded):
 			obs.Outcome = "timed_out"
 		case errors.Is(err, context.Canceled):

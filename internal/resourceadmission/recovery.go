@@ -13,7 +13,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"time"
 )
 
 var recoveryID = regexp.MustCompile(`^[0-9a-f]{32}$`)
@@ -195,8 +194,7 @@ func recoverClaim(ctx context.Context, dir, id, expected, policy, policyPath, ev
 		if err != nil {
 			return err
 		}
-		sum := sha256.Sum256(claim)
-		if hex.EncodeToString(sum[:]) != expected {
+		if sha256Hex(claim) != expected {
 			return errors.New("claim digest changed")
 		}
 		var e entry
@@ -212,56 +210,13 @@ func recoverClaim(ctx context.Context, dir, id, expected, policy, policyPath, ev
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		// All evidence is durable before the atomic capacity exclusion.
-		receiptPath := filepath.Join(dir, id+".recovery-receipt")
-		releasedPath := filepath.Join(dir, id+".released")
-		if _, err := os.Lstat(releasedPath); !errors.Is(err, os.ErrNotExist) {
-			return errors.New("released claim path already exists or is inaccessible")
-		}
-		receipt, err := os.OpenFile(receiptPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
+		receiptPath, err := releaseClaim(ctx, dir, id, claim, evidence, func() {
+			if unknown {
+				result.AccountingReleased = nil
+			}
+		})
 		if err != nil {
 			return err
-		}
-		payload := struct {
-			Schema   string    `json:"schema"`
-			Time     time.Time `json:"time"`
-			Claim    []byte    `json:"claim_base64"`
-			Evidence []byte    `json:"evidence_base64"`
-		}{"dva-resource-recovery/1", time.Now().UTC(), claim, evidence}
-		err = json.NewEncoder(receipt).Encode(payload)
-		if err == nil {
-			err = receipt.Chmod(0400)
-		}
-		if err == nil {
-			err = receipt.Sync()
-		}
-		err = errors.Join(err, receipt.Close())
-		if err != nil {
-			return fmt.Errorf("persist recovery receipt: %w", err)
-		}
-		d, err := os.Open(dir)
-		if err != nil {
-			return err
-		}
-		defer func() { retErr = errors.Join(retErr, d.Close()) }()
-		if err := recoveryDirectorySync(d); err != nil {
-			return fmt.Errorf("sync recovery receipt: %w", err)
-		}
-		if err := ctx.Err(); err != nil {
-			return err
-		}
-		currentClaim, err := readRecoveryFile(path, 8192)
-		if err != nil || !bytes.Equal(currentClaim, claim) {
-			return errors.New("claim changed during receipt preparation")
-		}
-		if err := os.Rename(path, releasedPath); err != nil {
-			return fmt.Errorf("archive claim: %w", err)
-		}
-		if unknown {
-			result.AccountingReleased = nil
-		}
-		if err := recoveryDirectorySync(d); err != nil {
-			return fmt.Errorf("claim archived but directory sync failed; operator review required: %w", err)
 		}
 		result.Applied = true
 		if unknown {
@@ -272,4 +227,9 @@ func recoverClaim(ctx context.Context, dir, id, expected, policy, policyPath, ev
 		return nil
 	})
 	return result, err
+}
+
+func sha256Hex(b []byte) string {
+	sum := sha256.Sum256(b)
+	return hex.EncodeToString(sum[:])
 }

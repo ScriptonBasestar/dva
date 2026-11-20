@@ -329,7 +329,7 @@ func runStep(ctx context.Context, root string, step config.CIStep, inherited []s
 			if err != nil {
 				return r, err
 			}
-			tracker := &resourceCleanupTracker{}
+			tracker := &resourceCleanupTracker{lease: lease}
 			startedExecution := time.Now()
 			defer func() {
 				finishErr := finishHostSlotBridge(lease, tracker)
@@ -445,6 +445,7 @@ func runStep(ctx context.Context, root string, step config.CIStep, inherited []s
 		defer func() { r.OutputObservation = watch.stop() }()
 	}
 	pid := cmd.Process.Pid
+	observeResourceStart(stepCtx, pid)
 	defer observeResourceCleanup(stepCtx, pid)
 	var signaledAt time.Time
 	signalWork := func() {

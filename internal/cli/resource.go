@@ -142,6 +142,14 @@ func newResourceCommand() *cobra.Command {
 		childWaited := false
 		err = child.Start()
 		if err == nil {
+			trackCtx, cancelTrack := context.WithTimeout(context.Background(), time.Second)
+			if trackErr := lease.TrackProcessGroup(trackCtx, child.Process.Pid); trackErr != nil {
+				_, printErr := fmt.Fprintf(cmd.ErrOrStderr(), "resource lease process group record failed: %v\n", trackErr)
+				err = errors.Join(err, printErr)
+			}
+			cancelTrack()
+		}
+		if err == nil {
 			waited := make(chan error, 1)
 			go func() { waited <- child.Wait() }()
 			select {

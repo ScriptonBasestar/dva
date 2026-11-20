@@ -150,7 +150,7 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 				return report, err
 			}
 			admissionExecutionStart := time.Now()
-			cleanupTracker = &resourceCleanupTracker{}
+			cleanupTracker = &resourceCleanupTracker{lease: lease}
 			finishAdmission = func() error {
 				duration := time.Since(admissionExecutionStart).String()
 				observation.ExecutionDuration = &duration

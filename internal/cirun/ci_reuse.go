@@ -424,6 +424,7 @@ func runMiseWhich(parent context.Context, workdir, mise, name string, env []stri
 		return nil, fmt.Errorf("start mise which: %w", err)
 	}
 	pid := cmd.Process.Pid
+	observeResourceStart(ctx, pid)
 	defer observeResourceCleanup(ctx, pid)
 	waited := make(chan error, 1)
 	go func() { waited <- cmd.Wait() }()

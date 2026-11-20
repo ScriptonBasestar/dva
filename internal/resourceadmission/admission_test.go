@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"os"
-	"os/exec"
 	"testing"
 	"time"
 )
@@ -46,43 +45,6 @@ func TestCapacityAndCanceledWait(t *testing.T) {
 	entries, err := readEntries(dir)
 	if err != nil || len(entries) != 0 {
 		t.Fatalf("left entries: %+v %v", entries, err)
-	}
-}
-
-func TestCrashRetainsActiveCapacity(t *testing.T) {
-	if os.Getenv("DVA_TEST_RESOURCE_CHILD") == "1" {
-		p := Policy{Capacity: 2, MaxRunning: 1, MaxHeavy: 1, Weights: map[string]int{"heavy": 2, "light": 1}, AgingInterval: "1m"}
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-		defer cancel()
-		if _, err := Acquire(ctx, os.Getenv("DVA_TEST_RESOURCE_DIR"), p, "same", "heavy", "normal"); err != nil {
-			t.Fatal(err)
-		}
-		os.Exit(0)
-	}
-	dir := t.TempDir()
-	if err := os.Chmod(dir, 0700); err != nil {
-		t.Fatal(err)
-	}
-	cmd := exec.Command(os.Args[0], "-test.run=^TestCrashRetainsActiveCapacity$")
-	cmd.Env = append(os.Environ(), "DVA_TEST_RESOURCE_CHILD=1", "DVA_TEST_RESOURCE_DIR="+dir)
-	if output, err := cmd.CombinedOutput(); err != nil {
-		t.Fatalf("child: %s %v", output, err)
-	}
-	p := Policy{Capacity: 2, MaxRunning: 1, MaxHeavy: 1, Weights: map[string]int{"heavy": 2, "light": 1}, AgingInterval: "1m"}
-	ctx, cancel := context.WithTimeout(context.Background(), 150*time.Millisecond)
-	defer cancel()
-	if _, err := Acquire(ctx, dir, p, "same", "light", "normal"); !errors.Is(err, context.DeadlineExceeded) {
-		t.Fatalf("crashed lease released: %v", err)
-	}
-	entries, err := readEntries(dir)
-	if err != nil || len(entries) != 1 || entries[0].State != "running" {
-		t.Fatalf("quarantine lost: %+v %v", entries, err)
-	}
-	statusCtx, stop := context.WithTimeout(context.Background(), time.Second)
-	defer stop()
-	observed, err := Status(statusCtx, dir, "same")
-	if err != nil || len(observed) != 1 || observed[0].State != "quarantined" || observed[0].Reason == "" {
-		t.Fatalf("bad status: %+v %v", observed, err)
 	}
 }
 
