@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -341,7 +342,8 @@ type composeServiceInfo struct {
 // composeLabels holds the two label encodings the compose plugins emit: an object
 // (podman ps: {"io.podman.compose.service":"db"}) and docker compose's "k=v,k=v" string.
 // An unrecognized shape is dropped rather than failing the whole container record: a name
-// resolved from the other fields is better than losing the container from the status.
+// resolved from the other fields is better than losing the container from the status. The drop
+// is reported once per record on stderr, naming the shape, so a plugin format change is seen.
 type composeLabels map[string]string
 
 func (l *composeLabels) UnmarshalJSON(data []byte) error {
@@ -351,13 +353,16 @@ func (l *composeLabels) UnmarshalJSON(data []byte) error {
 		return nil
 	case strings.HasPrefix(s, "{"):
 		var m map[string]string
-		if err := json.Unmarshal([]byte(s), &m); err == nil {
-			*l = m
+		if err := json.Unmarshal([]byte(s), &m); err != nil {
+			warnLabelsShape("an object with non-string values")
+			return nil
 		}
+		*l = m
 		return nil
 	}
 	var raw string
 	if err := json.Unmarshal([]byte(s), &raw); err != nil {
+		warnLabelsShape(jsonShapeOf(s))
 		return nil
 	}
 	labels := make(composeLabels)
@@ -372,10 +377,37 @@ func (l *composeLabels) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// labelsWarnOut is where an unrecognized Labels shape is reported; tests replace it.
+var labelsWarnOut io.Writer = os.Stderr
+
+func warnLabelsShape(shape string) {
+	_, _ = fmt.Fprintf(labelsWarnOut, "[warn] compose ps Labels is %s, not an object or a k=v string; labels ignored for this container\n", shape)
+}
+
+// jsonShapeOf names the JSON kind of a value that is neither an object nor a string.
+func jsonShapeOf(s string) string {
+	switch {
+	case strings.HasPrefix(s, "["):
+		return "an array"
+	case s == "true", s == "false":
+		return "a boolean"
+	case strings.HasPrefix(s, "\""):
+		return "a malformed string"
+	default:
+		return "a number"
+	}
+}
+
 // serviceNameOf resolves the compose service a container belongs to. Service is authoritative
 // when present; podman-compose leaves it empty, so the compose service label is read next
 // (either plugin's key) and the container name is the last resort. Returning "" keeps an
 // unresolved record unresolved instead of giving it another container's name.
+//
+// Decision (TASK-627): the Names[0] fallback stays. The records come from a ps already scoped
+// to this project, so a container without a service label is still one of ours; showing its
+// own container name keeps it identifiable in status, while "" would print a nameless row the
+// user cannot act on. The container name carries the project prefix and replica suffix
+// (proj_db_1), so it reads as a container, not as a declared service name.
 func serviceNameOf(info composeServiceInfo) string {
 	if name := strings.TrimSpace(info.Service); name != "" {
 		return name

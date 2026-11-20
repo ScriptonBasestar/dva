@@ -1,8 +1,10 @@
 package lifecycle
 
 import (
+	"bytes"
 	"log/slog"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/ScriptonBasestar/dva/internal/config"
@@ -139,5 +141,73 @@ func TestParseComposeServicesJSONServiceName(t *testing.T) {
 				t.Fatalf("resolved service names = %v, want %v", names, tc.want)
 			}
 		})
+	}
+}
+
+// TestParseComposeServicesJSONServiceNameUnknownLabels binds TASK-627: a Labels value that is
+// neither an object of strings nor a k=v string is reported once on stderr by shape, the
+// record still parses, and the name falls back to the container name (kept by decision).
+func TestParseComposeServicesJSONServiceNameUnknownLabels(t *testing.T) {
+	cases := []struct {
+		name, labels, shape string
+	}{
+		{"array", `["a","b"]`, "an array"},
+		{"number", `42`, "a number"},
+		{"boolean", `true`, "a boolean"},
+		{"object with non-string values", `{"io.podman.compose.service":1}`, "an object with non-string values"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var buf bytes.Buffer
+			prev := labelsWarnOut
+			labelsWarnOut = &buf
+			t.Cleanup(func() { labelsWarnOut = prev })
+
+			out := `[{"Names":["proj_db_1"],"Labels":` + tc.labels + `,"State":"running"}]`
+			services, err := parseComposeServicesJSON([]byte(out))
+			if err != nil {
+				t.Fatalf("parseComposeServicesJSON: %v", err)
+			}
+			if len(services) != 1 || services[0].Name != "proj_db_1" {
+				t.Fatalf("services = %+v, want one record named proj_db_1", services)
+			}
+			warn := buf.String()
+			if strings.Count(warn, "[warn]") != 1 || !strings.Contains(warn, tc.shape) {
+				t.Fatalf("stderr = %q, want one [warn] naming %q", warn, tc.shape)
+			}
+		})
+	}
+
+	t.Run("known shapes stay silent", func(t *testing.T) {
+		var buf bytes.Buffer
+		prev := labelsWarnOut
+		labelsWarnOut = &buf
+		t.Cleanup(func() { labelsWarnOut = prev })
+		out := `[{"Labels":{"io.podman.compose.service":"db"},"State":"running"},{"Labels":"com.docker.compose.service=api","State":"running"},{"Labels":null,"Service":"x","State":"running"}]`
+		if _, err := parseComposeServicesJSON([]byte(out)); err != nil {
+			t.Fatalf("parseComposeServicesJSON: %v", err)
+		}
+		if buf.Len() != 0 {
+			t.Fatalf("stderr = %q, want nothing for recognized shapes", buf.String())
+		}
+	})
+}
+
+// TestServiceNameOfFallbackOrder binds the documented serviceNameOf decision: Service, then a
+// compose label, then Names[0]; nothing resolvable yields "".
+func TestServiceNameOfFallbackOrder(t *testing.T) {
+	cases := []struct {
+		info composeServiceInfo
+		want string
+	}{
+		{composeServiceInfo{Service: "web", Names: []string{"p_web_1"}}, "web"},
+		{composeServiceInfo{Labels: composeLabels{"io.podman.compose.service": "db"}, Names: []string{"p_db_1"}}, "db"},
+		{composeServiceInfo{Names: []string{" ", "p_db_1"}}, "p_db_1"},
+		{composeServiceInfo{}, ""},
+	}
+	for _, tc := range cases {
+		if got := serviceNameOf(tc.info); got != tc.want {
+			t.Errorf("serviceNameOf(%+v) = %q, want %q", tc.info, got, tc.want)
+		}
 	}
 }
