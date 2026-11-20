@@ -16,8 +16,8 @@ import (
 
 func newResourceRecoverCommand() *cobra.Command {
 	var policyPath, claim, digest, fingerprint, evidence string
-	var apply bool
-	cmd := &cobra.Command{Use: "recover", Short: "Plan an operator recovery of a quarantined claim", Long: "Inspect an exact quarantined claim, original digest, policy fingerprint and private operator evidence. By default no state is changed. Apply requires explicit human confirmation on the controlling terminal; a free supervisor lease alone does not prove the workload has ended. Recovery does not terminate processes or alter CI success records.", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, _ []string) (retErr error) {
+	var apply, acceptUnknown bool
+	cmd := &cobra.Command{Use: "recover", Short: "Plan an operator recovery of a quarantined claim", Long: "Inspect an exact quarantined claim, original digest, policy fingerprint and private operator evidence. By default no state is changed. Apply requires explicit human confirmation on the controlling terminal; a free supervisor lease alone does not prove the workload has ended. Unknown workload risk requires a separate opt-in and evidence. Recovery does not terminate processes or alter CI success records.", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, _ []string) (retErr error) {
 		if policyPath == "" {
 			policyPath = os.Getenv("DVA_RESOURCE_POLICY")
 		}
@@ -34,7 +34,11 @@ func newResourceRecoverCommand() *cobra.Command {
 		}
 		ctx, cancel := context.WithTimeout(cmd.Context(), 5*time.Second)
 		// The preview uses the same locks and validations but never writes state.
-		plan, err := resourceadmission.Recover(ctx, dir, claim, digest, fingerprint, policyPath, evidence, false)
+		recoverFn := resourceadmission.Recover
+		if acceptUnknown {
+			recoverFn = resourceadmission.RecoverUnknown
+		}
+		plan, err := recoverFn(ctx, dir, claim, digest, fingerprint, policyPath, evidence, false)
 		cancel()
 		if err != nil {
 			return err
@@ -58,18 +62,28 @@ func newResourceRecoverCommand() *cobra.Command {
 				retErr = errors.Join(retErr, closeErr)
 			}
 		}()
-		_, err = fmt.Fprintf(tty, "Confirm workload and descendants have ended. Type claim ID %s to release: ", claim)
+		confirmation := claim
+		prompt := fmt.Sprintf("Confirm workload and descendants have ended. Type claim ID %s to release: ", claim)
+		if acceptUnknown {
+			confirmation = "RELEASE UNKNOWN " + claim
+			prompt = fmt.Sprintf("Workload state is unknown; overlapping workloads may run. Type %s to release accounting: ", confirmation)
+		}
+		_, err = fmt.Fprint(tty, prompt)
 		if err != nil {
 			return err
 		}
 		line, err := bufio.NewReader(tty).ReadString('\n')
-		if err != nil || strings.TrimSpace(line) != claim {
+		response := strings.TrimSpace(line)
+		if acceptUnknown {
+			response = strings.TrimSuffix(strings.TrimSuffix(line, "\n"), "\r")
+		}
+		if err != nil || response != confirmation {
 			return errors.New("operator confirmation did not match claim")
 		}
 		// The operation revalidates all state after interactive confirmation.
 		applyCtx, applyCancel := context.WithTimeout(cmd.Context(), 5*time.Second)
 		defer applyCancel()
-		result, err := resourceadmission.Recover(applyCtx, dir, claim, digest, fingerprint, policyPath, evidence, true)
+		result, err := recoverFn(applyCtx, dir, claim, digest, fingerprint, policyPath, evidence, true)
 		released = result.Applied
 		if err != nil {
 			if result.Applied {
@@ -85,5 +99,6 @@ func newResourceRecoverCommand() *cobra.Command {
 	cmd.Flags().StringVar(&fingerprint, "policy-fingerprint", "", "Expected policy fingerprint")
 	cmd.Flags().StringVar(&evidence, "evidence-file", "", "Absolute private operator evidence JSON")
 	cmd.Flags().BoolVar(&apply, "apply", false, "Release after interactive human confirmation")
+	cmd.Flags().BoolVar(&acceptUnknown, "accept-unknown-workload", false, "Explicitly accept overlapping workload risk using unknown-state evidence")
 	return cmd
 }

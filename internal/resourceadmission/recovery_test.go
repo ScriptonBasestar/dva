@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -180,5 +181,130 @@ func TestRecoveryCanceledContextDoesNotRelease(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(f.dir, f.id+".recovery-receipt")); !os.IsNotExist(err) {
 		t.Fatalf("unexpected receipt: %v", err)
+	}
+}
+
+func TestUnknownRecoveryRiskEvidenceAndScopedArchive(t *testing.T) {
+	f := newRecoveryFixture(t)
+	e := UnknownRecoveryEvidence{ClaimID: f.id, ClaimSHA256: f.digest, PolicyFingerprint: f.policy, WorkloadState: "unknown", Decision: "release-accounting", AcceptOverlappingWorkload: true, AuthorizationRef: "user instruction", Reason: "operator accepts potential overlap"}
+	b, err := json.Marshal(e)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(f.evidence, b, 0600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.recover(false); err == nil {
+		t.Fatal("unknown evidence accepted without opt-in")
+	}
+	other := strings.Repeat("b", 32) + ".json"
+	if err := os.WriteFile(filepath.Join(f.dir, other), []byte("untouched"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	plan, err := RecoverUnknown(context.Background(), f.dir, f.id, f.digest, f.policy, f.policyPath, f.evidence, false)
+	if err != nil || plan.Applied || plan.WorkloadState != "unknown" || plan.AccountingReleased == nil || *plan.AccountingReleased {
+		t.Fatalf("plan: %+v %v", plan, err)
+	}
+	result, err := RecoverUnknown(context.Background(), f.dir, f.id, f.digest, f.policy, f.policyPath, f.evidence, true)
+	if err != nil || !result.Applied || result.WorkloadState != "unknown" || result.AccountingReleased == nil || !*result.AccountingReleased {
+		t.Fatalf("apply: %+v %v", result, err)
+	}
+	var receipt struct {
+		Claim    []byte `json:"claim_base64"`
+		Evidence []byte `json:"evidence_base64"`
+	}
+	stored, err := os.ReadFile(result.Receipt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = json.Unmarshal(stored, &receipt); err != nil {
+		t.Fatal(err)
+	}
+	archived, err := os.ReadFile(filepath.Join(f.dir, f.id+".released"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(receipt.Claim) != string(archived) || string(receipt.Evidence) != string(b) {
+		t.Fatal("receipt did not preserve exact input bytes")
+	}
+	if value, err := os.ReadFile(filepath.Join(f.dir, other)); err != nil || string(value) != "untouched" {
+		t.Fatalf("other claim changed: %v", err)
+	}
+}
+
+func TestUnknownRecoveryRejectsInvalidEvidence(t *testing.T) {
+	for _, scenario := range []string{"ended-evidence", "mixed", "missing-risk", "missing-ref", "missing-reason", "wrong-decision", "unknown-field", "mismatched-id", "conflicting-case"} {
+		t.Run(scenario, func(t *testing.T) {
+			f := newRecoveryFixture(t)
+			m := map[string]any{"claim_id": f.id, "claim_sha256": f.digest, "policy_fingerprint": f.policy, "workload_state": "unknown", "decision": "release-accounting", "accept_overlapping_workload": true, "authorization_ref": "approved", "reason": "risk accepted"}
+			switch scenario {
+			case "ended-evidence":
+				if _, err := RecoverUnknown(context.Background(), f.dir, f.id, f.digest, f.policy, f.policyPath, f.evidence, true); err == nil {
+					t.Fatal("ended evidence accepted as unknown")
+				}
+				return
+			case "mixed":
+				m["workload_ended"] = true
+			case "missing-risk":
+				delete(m, "accept_overlapping_workload")
+			case "missing-ref":
+				delete(m, "authorization_ref")
+			case "missing-reason":
+				m["reason"] = " "
+			case "wrong-decision":
+				m["decision"] = "ended"
+			case "unknown-field":
+				m["extra"] = true
+			case "mismatched-id":
+				m["claim_id"] = strings.Repeat("b", 32)
+			case "conflicting-case":
+				m["accept_overlapping_workload"] = false
+			}
+			b, err := json.Marshal(m)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if scenario == "conflicting-case" {
+				b = append(b[:len(b)-1], []byte(`,"ACCEPT_OVERLAPPING_WORKLOAD":true}`)...)
+			}
+			if err = os.WriteFile(f.evidence, b, 0600); err != nil {
+				t.Fatal(err)
+			}
+			if _, err = RecoverUnknown(context.Background(), f.dir, f.id, f.digest, f.policy, f.policyPath, f.evidence, true); err == nil {
+				t.Fatal("invalid evidence accepted")
+			}
+			if _, err = os.Stat(filepath.Join(f.dir, f.id+".json")); err != nil {
+				t.Fatalf("claim not retained: %v", err)
+			}
+		})
+	}
+}
+
+func TestUnknownRecoveryPostArchiveSyncFailureIsIndeterminate(t *testing.T) {
+	f := newRecoveryFixture(t)
+	e := UnknownRecoveryEvidence{ClaimID: f.id, ClaimSHA256: f.digest, PolicyFingerprint: f.policy, WorkloadState: "unknown", Decision: "release-accounting", AcceptOverlappingWorkload: true, AuthorizationRef: "user request", Reason: "risk accepted"}
+	b, err := json.Marshal(e)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = os.WriteFile(f.evidence, b, 0600); err != nil {
+		t.Fatal(err)
+	}
+	originalSync := recoveryDirectorySync
+	defer func() { recoveryDirectorySync = originalSync }()
+	calls := 0
+	recoveryDirectorySync = func(file *os.File) error {
+		calls++
+		if calls == 2 {
+			return errors.New("simulated sync failure")
+		}
+		return originalSync(file)
+	}
+	result, err := RecoverUnknown(context.Background(), f.dir, f.id, f.digest, f.policy, f.policyPath, f.evidence, true)
+	if err == nil || !strings.Contains(err.Error(), "claim archived") || result.AccountingReleased != nil {
+		t.Fatalf("result %+v, error %v", result, err)
+	}
+	if _, err := os.Stat(filepath.Join(f.dir, f.id+".released")); err != nil {
+		t.Fatal(err)
 	}
 }

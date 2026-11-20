@@ -18,6 +18,7 @@ import (
 
 var recoveryID = regexp.MustCompile(`^[0-9a-f]{32}$`)
 var recoveryDigest = regexp.MustCompile(`^[0-9a-f]{64}$`)
+var recoveryDirectorySync = func(f *os.File) error { return f.Sync() }
 
 // RecoveryEvidence is an operator attestation, not machine proof of process state.
 type RecoveryEvidence struct {
@@ -28,12 +29,26 @@ type RecoveryEvidence struct {
 	Explanation       string `json:"explanation"`
 }
 
+// UnknownRecoveryEvidence records an operator's acceptance of an unverified workload.
+type UnknownRecoveryEvidence struct {
+	ClaimID                   string `json:"claim_id"`
+	ClaimSHA256               string `json:"claim_sha256"`
+	PolicyFingerprint         string `json:"policy_fingerprint"`
+	WorkloadState             string `json:"workload_state"`
+	Decision                  string `json:"decision"`
+	AcceptOverlappingWorkload bool   `json:"accept_overlapping_workload"`
+	AuthorizationRef          string `json:"authorization_ref"`
+	Reason                    string `json:"reason"`
+}
+
 type RecoveryResult struct {
-	ClaimID           string `json:"claim_id"`
-	ClaimSHA256       string `json:"claim_sha256"`
-	PolicyFingerprint string `json:"policy_fingerprint"`
-	Applied           bool   `json:"applied"`
-	Receipt           string `json:"receipt,omitempty"`
+	ClaimID            string `json:"claim_id"`
+	ClaimSHA256        string `json:"claim_sha256"`
+	PolicyFingerprint  string `json:"policy_fingerprint"`
+	Applied            bool   `json:"applied"`
+	Receipt            string `json:"receipt,omitempty"`
+	WorkloadState      string `json:"workload_state,omitempty"`
+	AccountingReleased *bool  `json:"accounting_released,omitempty"`
 }
 
 func readRecoveryFile(path string, limit int64) (_ []byte, retErr error) {
@@ -65,10 +80,51 @@ func decodeRecoveryJSON(data []byte, dst any) error {
 	return nil
 }
 
+func rejectDuplicateEvidenceFields(data []byte) error {
+	d := json.NewDecoder(bytes.NewReader(data))
+	opening, err := d.Token()
+	if err != nil || opening != json.Delim('{') {
+		return errors.New("evidence must be an object")
+	}
+	seen := make(map[string]bool)
+	allowed := map[string]bool{"claim_id": true, "claim_sha256": true, "policy_fingerprint": true, "workload_state": true, "decision": true, "accept_overlapping_workload": true, "authorization_ref": true, "reason": true}
+	for d.More() {
+		key, err := d.Token()
+		if err != nil {
+			return err
+		}
+		name, ok := key.(string)
+		if !ok || !allowed[name] || seen[name] {
+			return errors.New("duplicate or invalid evidence field")
+		}
+		seen[name] = true
+		var value json.RawMessage
+		if err := d.Decode(&value); err != nil {
+			return err
+		}
+	}
+	_, err = d.Token()
+	return err
+}
+
 // Recover plans or releases exactly one stale running claim. apply must be
 // authorized by the interactive CLI; a free lock does not prove child exit.
 func Recover(ctx context.Context, dir, id, expected, policy, policyPath, evidencePath string, apply bool) (result RecoveryResult, retErr error) {
+	return recoverClaim(ctx, dir, id, expected, policy, policyPath, evidencePath, apply, false)
+}
+
+// RecoverUnknown accepts an explicit operator risk decision, never proof of termination.
+func RecoverUnknown(ctx context.Context, dir, id, expected, policy, policyPath, evidencePath string, apply bool) (RecoveryResult, error) {
+	return recoverClaim(ctx, dir, id, expected, policy, policyPath, evidencePath, apply, true)
+}
+
+func recoverClaim(ctx context.Context, dir, id, expected, policy, policyPath, evidencePath string, apply, unknown bool) (result RecoveryResult, retErr error) {
 	result = RecoveryResult{ClaimID: id, ClaimSHA256: expected, PolicyFingerprint: policy}
+	if unknown {
+		result.WorkloadState = "unknown"
+		released := false
+		result.AccountingReleased = &released
+	}
 	if err := ctx.Err(); err != nil {
 		return result, err
 	}
@@ -114,12 +170,25 @@ func Recover(ctx context.Context, dir, id, expected, policy, policyPath, evidenc
 		if err != nil {
 			return fmt.Errorf("read evidence: %w", err)
 		}
-		var att RecoveryEvidence
-		if err := decodeRecoveryJSON(evidence, &att); err != nil {
-			return fmt.Errorf("invalid evidence: %w", err)
-		}
-		if att.ClaimID != id || att.ClaimSHA256 != expected || att.PolicyFingerprint != policy || !att.WorkloadEnded || strings.TrimSpace(att.Explanation) == "" {
-			return errors.New("evidence does not attest to the exact ended workload")
+		if unknown {
+			if err := rejectDuplicateEvidenceFields(evidence); err != nil {
+				return fmt.Errorf("invalid unknown-workload evidence: %w", err)
+			}
+			var att UnknownRecoveryEvidence
+			if err := decodeRecoveryJSON(evidence, &att); err != nil {
+				return fmt.Errorf("invalid unknown-workload evidence: %w", err)
+			}
+			if att.ClaimID != id || att.ClaimSHA256 != expected || att.PolicyFingerprint != policy || att.WorkloadState != "unknown" || att.Decision != "release-accounting" || !att.AcceptOverlappingWorkload || strings.TrimSpace(att.AuthorizationRef) == "" || strings.TrimSpace(att.Reason) == "" {
+				return errors.New("evidence does not authorize the exact unknown-workload risk")
+			}
+		} else {
+			var att RecoveryEvidence
+			if err := decodeRecoveryJSON(evidence, &att); err != nil {
+				return fmt.Errorf("invalid evidence: %w", err)
+			}
+			if att.ClaimID != id || att.ClaimSHA256 != expected || att.PolicyFingerprint != policy || !att.WorkloadEnded || strings.TrimSpace(att.Explanation) == "" {
+				return errors.New("evidence does not attest to the exact ended workload")
+			}
 		}
 		path := filepath.Join(dir, id+".json")
 		claim, err := readRecoveryFile(path, 8192)
@@ -175,7 +244,7 @@ func Recover(ctx context.Context, dir, id, expected, policy, policyPath, evidenc
 			return err
 		}
 		defer func() { retErr = errors.Join(retErr, d.Close()) }()
-		if err := d.Sync(); err != nil {
+		if err := recoveryDirectorySync(d); err != nil {
 			return fmt.Errorf("sync recovery receipt: %w", err)
 		}
 		if err := ctx.Err(); err != nil {
@@ -188,10 +257,17 @@ func Recover(ctx context.Context, dir, id, expected, policy, policyPath, evidenc
 		if err := os.Rename(path, releasedPath); err != nil {
 			return fmt.Errorf("archive claim: %w", err)
 		}
-		if err := d.Sync(); err != nil {
+		if unknown {
+			result.AccountingReleased = nil
+		}
+		if err := recoveryDirectorySync(d); err != nil {
 			return fmt.Errorf("claim archived but directory sync failed; operator review required: %w", err)
 		}
 		result.Applied = true
+		if unknown {
+			released := true
+			result.AccountingReleased = &released
+		}
 		result.Receipt = receiptPath
 		return nil
 	})
