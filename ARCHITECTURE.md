@@ -102,6 +102,11 @@ pid를 담지 않는다. 읽을 때마다 경로, `git worktree list`, 커밋과
 config의 상수와 lifecycle의 프로세스 생존 확인만 쓰며, plan을 시작하지 않는다. 계약은
 [비교안 동시 실행 설계](docs/75-variant-comparison-design.md)가 소유한다.
 
+`internal/worktarget/`는 작업 worktree 조회만 소유한다. `git worktree list` 파서와
+target provider 인터페이스(`Provider`, 기본 `Git`: 대상 ID는 branch)가 여기 있다.
+compare의 `worktree:<id>` 비교안과 `dva target`(TASK-538)이 같은 provider를 쓰며, 이
+패키지는 아무것도 시작하거나 지우지 않는다.
+
 ### Skill distribution
 
 - `internal/skillinstall/`은 번들된 DVA 스킬의 설치·상태·제거·백업을 담당한다

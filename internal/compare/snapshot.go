@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/ScriptonBasestar/dva/internal/worktarget"
+
 	"github.com/ScriptonBasestar/dva/internal/config"
 )
 
@@ -65,7 +67,7 @@ func EnsureSnapshot(ctx context.Context, configDir, compareName, variant, ref st
 			path, configDir, config.DotDirName+"/*")
 	}
 
-	list, err := listWorktrees(ctx, configDir)
+	list, err := worktarget.List(ctx, configDir)
 	if err != nil {
 		return Variant{}, false, err
 	}
@@ -129,7 +131,7 @@ func RemoveSnapshot(ctx context.Context, configDir string, rec *Record, variant 
 			"refusing to remove it", rec.Name, variant, v.Path, want)
 	}
 
-	list, err := listWorktrees(ctx, configDir)
+	list, err := worktarget.List(ctx, configDir)
 	if err != nil {
 		return err
 	}

@@ -82,10 +82,32 @@ DevBox 루트에서 개발 서버를 실행할 때 기본 체크아웃과 작업
     target 실행도 같은 `.sb/dva/pids/`를 쓴다). 열린 것은 소유권 의미다.
   - 4단계에서 pid 옆에 둘 대상 신원 파일이 금지된 레지스트리에 해당하는가.
 - 설계 분석에서 확인한 현재 코드 간극(검증, master 65debfcd 기준):
-  - git provider는 detached 항목을 건너뛴다(`internal/compare/provider.go:113-114`). 그래서
+  - git provider는 detached 항목을 건너뛴다(이동 전 `internal/compare/provider.go:113-114`, 현재 `internal/worktarget/provider.go`). 그래서
     snapshot은 대상이 될 수 없다.
   - git provider는 기본 체크아웃을 제외하지 않는다.
-  - porcelain 파서는 `locked`/`prunable`을 읽지 않는다(`internal/compare/git.go:50-61`).
+  - porcelain 파서는 `locked`/`prunable`을 읽지 않는다(이동 전 `internal/compare/git.go:50-61`, 현재 `internal/worktarget/worktree.go` `List`).
+
+## 사용자 결정 — 소유권·신원 파일·순서 (2026-11-20)
+
+- 프로세스 소유권: 체크아웃이 소유한다. 같은 worktree에서 cwd `dva up`·`dva target <id> up`·
+  compare `worktree:<id>`는 같은 `.sb/dva/pids/`를 본다. 이미 떠 있으면 중복 시작하지 않고
+  skipped로 보고한다.
+  - 시작자는 세션이 아니라 대상 신원 파일의 `started_by`(`cwd`/`target:<id>`/`compare:<name>`)로
+    남는다. dva 프로세스는 자기 프로세스 그룹이라 호출 세션 종료 뒤에도 계속 돈다(4단계에서
+    테스트로 고정).
+  - 그 체크아웃의 `dva target <id> down`·cwd `dva down`은 시작자와 무관하게 항상 정지할 수 있다.
+    원래 세션이 사라져도 고아가 남지 않는다.
+  - compare `down`만 `started_by=compare:<자기 이름>` 항목으로 제한하고, 나머지는 kept로 남긴다.
+  - 세션 종료로 자동 kill하지 않는다. 죽은 pid는 다음 status에서 stale로 보고·정리하고, 다른
+    프로세스가 쓰는 포트는 탈취하지 않고 실패한다.
+  - worktree 회수만 호스트와 연결한다. 회수 직전 호스트가 `dva target <id> status`로 활성 서버를
+    확인하고 정지/보존을 사용자에게 넘긴다(요구사항 6).
+- 대상 신원 파일: 허용한다. 체크아웃 안의 실행 상태(저장소 common-dir·경로·시작 시 branch/commit·
+  `started_by`)이고, 시작한 실행이 쓰고 stop이 지우며 읽을 때마다 Git·프로세스로 재검증한다.
+  587이 금지한 체크아웃 횡단 대상 목록·마지막 선택 저장에 해당하지 않는다.
+- 순서: 592의 남은 기준은 사람 파일럿뿐이라 provider 이동을 기다리지 않는다. 이동은
+  `internal/worktarget/`로 완료했다(동작 변경 없음). 다음은 3단계 후보 나열(detached·locked·prunable
+  파싱, `default` 종류, dirty, 저장소 신원)이다.
 
 ## Evidence / Pilot
 

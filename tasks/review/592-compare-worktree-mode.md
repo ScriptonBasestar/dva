@@ -38,7 +38,7 @@ allowed-paths: [internal/compare/, internal/cli/, USAGE.md, docs/75-variant-comp
 
 ## Scope Notes
 
-- provider는 `internal/compare/provider.go`의 `Provider` 인터페이스 하나(`Resolve(ctx, repoDir, id)`)이고, 기본 구현은 `git worktree list --porcelain`의 branch 매칭이다. 대상 ID는 branch 이름이며 `worktree:<branch>`로 쓴다. 모르는 provider 접두사(`ce:` 등)는 `up` 전에 거부한다.
+- provider는 `Provider` 인터페이스(TASK-538에서 `internal/worktarget/provider.go`로 이동) 하나(`Resolve(ctx, repoDir, id)`)이고, 기본 구현은 `git worktree list --porcelain`의 branch 매칭이다. 대상 ID는 branch 이름이며 `worktree:<branch>`로 쓴다. 모르는 provider 접두사(`ce:` 등)는 `up` 전에 거부한다.
 - 조회 실패, 알 수 없는 ID, 후보 여럿, 디스크에서 사라진 경로는 preflight에서 실패하고 호출한 체크아웃으로 대신하지 않는다.
 - 작업 worktree의 head 이동은 stale·drift가 아니다(편집 중인 디렉터리다). 경로가 바뀌었거나 worktree가 사라졌거나 branch를 잃은 경우만 stale이다. worktree 비교안의 동일성은 모드+출처+경로로 판단하고 커밋은 보지 않는다.
 - `down`은 recorded ConfigDir에서 per_variant 항목만 멈추고 worktree·branch는 건드리지 않는다.

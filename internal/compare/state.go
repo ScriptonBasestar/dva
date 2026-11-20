@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ScriptonBasestar/dva/internal/worktarget"
+
 	"github.com/ScriptonBasestar/dva/internal/lifecycle"
 )
 
@@ -28,7 +30,7 @@ type VariantState struct {
 // because which side is wrong — the record or the checkout — is not something Check can know.
 // An entry without a pid file is not stale: compose and other runners record no pid.
 func Check(ctx context.Context, configDir string, rec *Record, perVariant []string) ([]VariantState, error) {
-	list, err := listWorktrees(ctx, configDir)
+	list, err := worktarget.List(ctx, configDir)
 	if err != nil {
 		return nil, err
 	}
