@@ -48,7 +48,7 @@ DevBox 루트에서 개발 서버를 실행할 때 기본 체크아웃과 작업
 
 ## 사용자 결정 — 1단계 대상 인터페이스 (2026-11-15)
 
-- 인터페이스: TASK-587에서 채택한 계약([587](../_archive/2026-11/587-record-worktree-target-contract.md))을
+- 인터페이스: TASK-587에서 채택한 계약(587)을
   1단계 인터페이스로 확정한다.
   - `dva target`는 후보만 나열한다. `dva target <target-id> up|down|status|stop <plan>`이 그 대상에서
     실행한다.

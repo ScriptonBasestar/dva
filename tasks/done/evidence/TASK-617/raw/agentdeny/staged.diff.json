@@ -1,5 +1,0 @@
-{
-  "encoding": "utf-8",
-  "text": "diff --git a/internal/agentdeny/match.go b/internal/agentdeny/match.go\nindex ec288914..75e0d7b5 100644\n--- a/internal/agentdeny/match.go\n+++ b/internal/agentdeny/match.go\n@@ -33,3 +33,5 @@ func matchDenyPattern(pattern, argv string) bool {\n \t}\n \treturn argv == prefix || strings.HasPrefix(argv, prefix+\" \")\n }\n+\n+// TASK-617 diagnostic production-file comment; no behavior change.\n",
-  "original_sha256": "72595dae9b09038285fe1cdf8be2d483b897f759b6af794e9ea01b940d4c4b84"
-}

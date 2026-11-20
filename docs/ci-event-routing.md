@@ -38,7 +38,7 @@ push의 head와 PR·queue의 결합 결과는 서로 다른 입력이다. 같은
 실제 보호 규칙·입력·검사 범위와 증거의 동등성을 확인한 별도 변경으로 처리한다.
 
 2026-11-16 기존 인증으로 master의 적용 규칙을 읽기 전용 조회했다.
-[API 관찰 원문](../tasks/done/evidence/TASK-611/protection-observation.json)을 보존한다.
+API 관찰 원문을 보존한다.
 
 - `GET /repos/ScriptonBasestar/dva/rules/branches/master`와
   `GET /repos/ScriptonBasestar/dva/rulesets/25476604`에서 active `require-ci`

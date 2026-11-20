@@ -4,7 +4,7 @@
 
 2026-11-16 TASK-611의 진단이다. 검사 정본은 [commit 파일럿](ci-commit-pilot.md)이며
 수치와 staged diff·단계 상태·입력 attestation은
-[측정 원문](../tasks/done/evidence/TASK-611/measurements.json)에 보존한다.
+측정 원문에 보존한다.
 실제 DVA source `cdbe1c5fc236f35dc3493d218f97c626435bb03e`의 전체 Git 이력을
 읽을 수 있는 별도 임시 복사본 두 개에서 다음 변경만 stage했다.
 
@@ -43,7 +43,7 @@ test에서 실제 CLI 테스트가 약 38초를 차지했다. 이 사례는 warm
 성공했다. 목표를 통과 조건으로 바꾸거나 제한·필수 검사 범위를 완화하지 않는다.
 
 기본 명령 `dva ci commit --json`도 동일 Go staged 입력·준비된 build cache에서 두 번
-추가 관찰했다. [별도 원문](../tasks/done/evidence/TASK-611/measurements-default.json)은
+추가 관찰했다. 별도 원문은
 fresh 실행의 결과와 분리한다.
 
 | 기본 명령 | 전체 초 | 결과 | run ID |
@@ -68,7 +68,7 @@ fresh 실행의 결과와 분리한다.
 
 새 포트 할당으로 해당 테스트만 `go test ./internal/cli -run
 '^TestCompareFailureEnvelopeCarriesCodeAndResult$' -count=1 -timeout 30s`로 별도 실행하면
-통과했다([진단 원문](../tasks/done/evidence/TASK-611/port-diagnostic.json)). 이는 실패한
+통과했다(진단 원문). 이는 실패한
 profile의 재실행 성공이나 안정성 증명이 아니다. CLI 비교 테스트 소유자의 후속 조사
 대상이며, 이번 문서 작업은 fixture·제품 동작을 바꾸지 않는다. `ce task report-route`
 결과가 undeclared라 이슈 등록 경로를 추측하거나 외부 이슈를 만들지 않았다.

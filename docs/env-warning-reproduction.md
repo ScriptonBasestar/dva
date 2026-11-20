@@ -1,6 +1,6 @@
 # Env 경고 후속 항목 재현 — 2026-11-04
 
-[TASK-575](../tasks/_archive/2026-11/575-unsealed-env-warning-followups.md)의 네 후보를
+TASK-575의 네 후보를
 `cdb85caba74dcbf5272d805dd86026eaff49a897`에서 조사했다. 현재 동작 관찰이며,
 수정·명시적 예외 수락·실사용 장애 보고를 뜻하지 않는다.
 
@@ -11,14 +11,14 @@ tracked 소스는 변경하지 않았고, 테스트 fixture의 Git/SOPS 대역�
 복호화는 fake 결과이며 실제 비밀값·인증 변경·실제 SOPS를 사용하지 않았다.
 script runner의 `true`와 root doctor의 일반 진단은 실행됐다.
 
-실행 argv는 [실험 명령 원문](../tasks/done/evidence/TASK-584/task575-command.txt)에 보존한다.
+실행 argv는 실험 명령 원문에 보존한다.
 overlay에만 존재하는 fixture이므로 일반 checkout의 테스트 인벤토리에는 없다.
 exit 0은 관찰 코드가 끝났다는 뜻이다. 이 코드는 현재 값을 기록하는 diagnostic fixture이므로
 제품 동작의 올바름을 검증하는 regression gate로 사용하지 않는다.
 
-- [원시 출력](../tasks/done/evidence/TASK-584/task575-reproduction.log)
+- 원시 출력
   SHA-256: `13302d4480e39cfd8dc63cd7e01d843de82509173c11fe13a818706b07c1c03e`
-- [overlay 테스트 원문](../tasks/done/evidence/TASK-584/task575-overlay.go.txt)
+- overlay 테스트 원문
   SHA-256: `e30578bdb632aa7c63141608384cc4ad90c6405e46d29c22fd1ab4c48ab13456`
 
 overlay의 Replace는 가상 `internal/cli/zz_task575_repro_test.go`를 tmp의 위 테스트 소스로 매핑했다.
@@ -47,7 +47,7 @@ v0.4.5 후보를 갱신하면서 네 항목을 포함했다.
 
 ## 후속 수정
 
-[TASK-585](../tasks/_archive/2026-11/585-env-bridge-target-resolution.md)는 최신 소스에서 평문 I/O의
+TASK-585는 최신 소스에서 평문 I/O의
 경로 해석을 loader와 공유하고 선언 selector·출력은 보존한다. 고정된 위 재현 결과와
 v0.4.5 준비 기준선의 제약을 소급해 바꾸지는 않는다. 현재 사용법은
 [env bridge](../USAGE.md#암호화된-소스-브리지-dva-config-env), 갱신한 후보 변경 목록은 CHANGELOG의 0.4.5 섹션을 따른다.

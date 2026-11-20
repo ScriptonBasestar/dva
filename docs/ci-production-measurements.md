@@ -9,7 +9,7 @@
 두 CE experiment worktree에서 각각 `internal/agentdeny/match.go`,
 `internal/compare/ports.go`에 동작을 바꾸지 않는 주석만 stage했다.
 이 변경은 측정용이며 제품으로 통합하지 않는다.
-[측정 JSON](../tasks/done/evidence/TASK-617/measurements.json)은 각 receipt, staged diff,
+측정 JSON은 각 receipt, staged diff,
 표준 출력·오류, 임시 측정 코드의 보관 위치와 SHA-256을 담는다.
 원문 속 절대 경로는 측정 당시 위치이며 회수 뒤에는 보관된 상대 경로를 사용한다.
 
@@ -66,7 +66,7 @@ full의 별도 vet·format 시간도 이 수치에 포함되지 않는다.
 기존 스크립트에 phase marker와 `/usr/bin/time -p`만 넣은 임시 사본으로 따로 측정했다.
 원래 검사 인자·순서·findings/실행 실패 판정은 유지했다.
 agentdeny 진단 뒤의 warm Go cache와 별도의 전용 golangci cache를 썼다.
-[시간 원문](../tasks/done/evidence/TASK-617/lint-timings.json)에 스크립트 hash와 출력도 보존했다.
+시간 원문에 스크립트 hash와 출력도 보존했다.
 
 | 조건 | golangci-lint | gopls | 전체 wall | 결과 |
 |---|---:|---:|---:|---|
@@ -119,10 +119,10 @@ gopls phase로 분리됐다. 과거 묶음 측정은 당시 실행의 기록으�
 private state의 보존 정책 때문에 원자료가 없으면 누락으로 표시하고 새 표본을 남긴다.
 `aa5b64f7`에서 큐·바이트 손실 구분과 이벤트 축약·집계를 구현했다. 2026-11-19
 native full 측정은 검사 성공과 세 v2 수집 complete를 관찰했다. 축약 생략과 손실,
-unit 시간 상세 잘림, 별도 lint 단계와 검증 범위는 [측정 증거](../tasks/done/evidence/TASK-625/full-a-validation.md.txt)에
+unit 시간 상세 잘림, 별도 lint 단계와 검증 범위는 측정 증거에
 기록했다. 이전 partial의 원인이 해결됐다는 뜻은 아니다. 상한 확대나 검사 생략을
 선결 조치로 삼지 않는다.
-측정 증거의 행 크기 설명은 [정정](../tasks/done/evidence/TASK-625/full-a-correction.txt)을 따른다.
+측정 증거의 행 크기 설명은 정정을 따른다.
 
 이번 세션은 관측 기반을 반영했으며 속도 개선을 입증하지 않았다. DVA·infra-ops·KMP는
 명령·범위가 다르고 기존 실행의 캐시·동시 부하 조건도 통제하지 않아 시간을 직접

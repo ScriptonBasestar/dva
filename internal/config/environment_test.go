@@ -240,6 +240,8 @@ func TestInterpolateDefaultSyntax(t *testing.T) {
 // the sibling lookup rather than Environment.lookup answers the reference.
 func TestMergeVarsDefaultSyntax(t *testing.T) {
 	os.Unsetenv("DVA_TEST_UNSET_303")
+	t.Setenv("POSTGRES_USER", "") // restore the caller's value after the test (ISSUE-620)
+	os.Unsetenv("POSTGRES_USER")  // an exported POSTGRES_USER would answer the ${POSTGRES_USER:-app} reference
 	env := NewEnvironment(nil, "/tmp", "/tmp")
 	env.MergeVars(map[string]string{
 		"POSTGRES_USER": "gorisa",

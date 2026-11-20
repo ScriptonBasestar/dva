@@ -23,5 +23,5 @@ ADR은 승격 문서가 없어 0000이고, 로그는 위 카드들의 최대 번
 
 DECISION-001의 ceiling은 그대로다. [TASK-487](487-changelog-half-ceiling-trigger.md)은
 2026-10-05 사용자가 실제 ceiling 트리거를 선택해 Accepted다.
-[TASK-489](../tasks/_archive/done/489-apply-approved-changelog-ceiling.md)가 마커 문장을 반영한다.
+TASK-489가 마커 문장을 반영한다.
 별도 DECISION-005는 만들지 않는다.

@@ -92,8 +92,10 @@ func TestBindingToolSweepsRealCorpus(t *testing.T) {
 		t.Fatalf("inventory: %v", err)
 	}
 	res := Check(CheckInput{Root: root, Inventory: inv})
-	if res.WrappedToolBindings < 100 {
-		t.Errorf("wrapped_tool_bindings=%d, want at least 100 — binding sweep no longer reaches the task corpus", res.WrappedToolBindings)
+	// The floor proves the sweep reaches the corpus, not its size: tasks/done and tasks/_archive
+	// were cleared on 2026-11-20, leaving only the live zones.
+	if res.WrappedToolBindings < 1 {
+		t.Errorf("wrapped_tool_bindings=%d, want at least 1 — binding sweep no longer reaches the task corpus", res.WrappedToolBindings)
 	}
 	if res.BareToolBindings > 0 {
 		t.Errorf("bare_tool_bindings=%d:\n  %s", res.BareToolBindings, strings.Join(res.PortabilityDetail, "\n  "))

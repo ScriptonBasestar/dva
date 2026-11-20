@@ -31,7 +31,7 @@ TASK-585·TASK-575가 통합된 `bc690677834c65639a349b583fbb551027944c13`을 �
 
 - 범위: 기준 소스의 유지보수 변경과 진단·CI 선택 기능. 제거 결정을 실행하는 TASK-550은 제외한다.
 - 업그레이드 안내와 알려진 제약은 [후보 릴리스 노트](release-notes/v0.4.5.md)가 소유한다.
-- TASK-575의 네 항목은 TASK-585와 [완료 리뷰](tasks/_archive/2026-11/575-unsealed-env-warning-followups.md)로
+- TASK-575의 네 항목은 TASK-585와 완료 리뷰로
   해결됐다. 과거 재현과 현재 경계는 [재현 기록](docs/env-warning-reproduction.md)에서 연결한다.
 - 후보 검증은 독립 소스 리뷰 뒤 고정된 최종 SHA에서 전체 CI·hosted CI·비게시
   `make release-check`와 로컬 설치 확인으로 수행한다. 실행 receipt와 결과는 해당 delivery에 연결한다.
@@ -51,7 +51,7 @@ TASK-585·TASK-575가 통합된 `bc690677834c65639a349b583fbb551027944c13`을 �
 권고 근거는 기존 설정을 쓰는 사용자가 실행 결과를 올바르게 받도록 하는 수정과,
 설정 모델 제거를 분리해 각 변경의 인수 기준을 명확하게 유지하는 것이다.
 `modes`/`default_mode` 제거 여부를 다시 결정하는 것은 아니다. 제거 버전은 이미 v0.5.0으로
-승인됐으며, [TASK-550](tasks/_archive/2026-11/550-remove-modes-v050.md)은 그 범위에서 실행한다.
+승인됐으며, TASK-550은 그 범위에서 실행한다.
 
 **0.4.x 후보에도 업그레이드 주의사항이 필요하다.** 설정 제거를 이월한다는 의미이며,
 행위 변화가 없는 교체판을 약속하지 않는다. 릴리스 노트에서 다음을 명시한다.
@@ -124,7 +124,7 @@ TASK-585·TASK-575의 수정·독립 리뷰를 거쳐 위 갱신 범위에 포�
 - **포함**: 기준 소스에 구현된 사용자 기능·수정과 그에 필요한 생성물·내부 정리.
   대조 중 누락됐던 `config env reseal`과 검증 보완도 변경 내역에 반영한다.
 - **이월**: 아래 선택적 확장. 새 요구가 없다면 이번 후보의 필수 조건에 추가하지 않는다.
-- **버전 선택**: [TASK-500의 승인된 범위 결정](tasks/_archive/done/500-align-next-release-scope.md)이
+- **버전 선택**: TASK-500의 승인된 범위 결정이
   다음 후보를 v0.4.0으로 정했다. 이 후보는 그 owner 결정을 실행하며, 이번 metadata
   delivery가 새 호환성 판단을 추가하지 않는다. 저장소의 별도 SemVer 보증을 새로 선언하는
   것은 아니며, source-only TaskChain 연동은 제품 경계 밖으로 남긴다.
@@ -183,7 +183,7 @@ run attempt는 1로 유지됐다. 이 상태를 재실행 성공으로 기록하
 `tmp/dva-project-tooling-evidence-20261014/hosted-followup/`에 보존한다.
 지원되는 재실행에 필요한 Actions write 권한은 별도 인증 준비 사항이며, 이번
 변경에서 token·인증 설정·job timeout·워크플로 구조를 바꾸지 않았다.
-hosted test 재확인과 인증 준비는 [ISSUE-515](tasks/_archive/issue/515-hosted-candidate-test-cancellation.md)가
+hosted test 재확인과 인증 준비는 ISSUE-515가
 추적해 fixed로 해결됐다. 해결은 이 후보의 hosted 결과를 대신하지 않는다.
 
 ### 2026-10-21 실사용 검증
@@ -197,16 +197,16 @@ gitignore된 `tmp/release-v0.4.0-real-use-20261021/`에 보존한다.
   종료 코드·timeout·프로세스 그룹 종료, CI `tool_jobs` 지정·계산·상속과
   `RUST_TEST_THREADS=1`.
 - 발견과 처리: `dva config validate`의 kubernetes 목적지 거부는
-  [ISSUE-528](tasks/_archive/issue/528-k8s-target-schema.md), client-side apply의 미선언 키
-  삭제와 annotation 값 복사는 [ISSUE-529](tasks/_archive/issue/529-k8s-push-prunes-keys.md)로
+  ISSUE-528, client-side apply의 미선언 키
+  삭제와 annotation 값 복사는 ISSUE-529로
   수정했다. 529의 server-side apply는 kind에서 재검증했고, client-side `kubectl apply`로 쓴
   키가 지워지는 남은 한계는 [전송 계약](docs/69-kubernetes-secret-target.md)에 기록했다.
-  신호 종료 doctor 결과([ISSUE-530](tasks/_archive/issue/530-doctor-signal-exit.md))와 입력 0개
-  attestation([ISSUE-531](tasks/_archive/issue/531-ci-attestation-empty-inputs.md))은 low로 등록하고
+  신호 종료 doctor 결과(ISSUE-530)와 입력 0개
+  attestation(ISSUE-531)은 low로 등록하고
   이번 후보에서 고치지 않는다.
 - 범위 결정: Cloudflare Access `tunnel:`의 실제 터널 개통·종료는 계정 인가가 필요해 이번
   후보에서 검증하지 않는다. 인증 판정과 프로세스 수명주기의 fixture 테스트, 실제 cloudflared의
-  만료 토큰 판정과 `dva doctor` 보고([ISSUE-488](tasks/_archive/issue/488-measure-expired-tunnel-token-and-live-doctor.md))가
+  만료 토큰 판정과 `dva doctor` 보고(ISSUE-488)가
   기존 증거이며, 이 제한을 [지원표](USAGE.md#버전과-지원-범위)·CHANGELOG·릴리스 노트에 명시했다.
 
 v0.4.0 최종 후보(`8e8f8499`)의 `dva ci full`·hosted CI·snapshot 결과는 같은 tmp 증거 디렉터리의
@@ -263,7 +263,7 @@ Release만 만들도록 바꿨다(TASK-532). 공개된 tag는 이동하지 않�
 - 설치 확인: 작업 시스템의 설치본을 바꾸지 않고 임시 디렉터리에서 확인했다.
   `dva_darwin_arm64.tar.gz`는 `checksums.txt` 대조가 OK이고, 그 바이너리의 `dva version`이
   `0.4.1`과 후보 commit을 보고한다. `go install …/cmd/dva@v0.4.1`도 `0.4.1`을 보고하지만
-  commit은 `dev`다([ISSUE-533](tasks/_archive/issue/533-go-install-version-reports-dev-commit.md)).
+  commit은 `dev`다(ISSUE-533).
   다른 OS archive는 실행하지 않았다.
 
 ## v0.4.2 범위 (2026-10-24)

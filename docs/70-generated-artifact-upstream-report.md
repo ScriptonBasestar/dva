@@ -40,7 +40,7 @@ DECISION-003이 이름을 올린 JSON Schema.
 
 규칙 본문은 [ADR-0070](https://gitlab.polypia.net/archmagece/ce-agent-kit/-/blob/1270e1dc47bc7f3a2421de2074b92f619e4298a7/decisions/adr/0070-artifact-size-kinds.md)과 [decision 020](https://gitlab.polypia.net/archmagece/ce-agent-kit/-/blob/1270e1dc47bc7f3a2421de2074b92f619e4298a7/decisions/020-artifact-size-kinds.md)이다. `generated_flow`, `task_evidence`, `json_schema`의 정의는 그 문서가 소유한다. 이 파일은 YAML을 복제하지 않는다.
 
-DVA 채택 측정은 프로세스 로컬 `CE_CONFIG_DIR`로 정본 `source/src`를 읽었다. 설치 CLI의 프로덕션 워크플로는 실행하지 않았다. 회귀는 실제 OS 프로세스로 돌았다. 로그는 [adoption.json](../tasks/done/evidence/TASK-484/adoption.json)이다.
+DVA 채택 측정은 프로세스 로컬 `CE_CONFIG_DIR`로 정본 `source/src`를 읽었다. 설치 CLI의 프로덕션 워크플로는 실행하지 않았다. 회귀는 실제 OS 프로세스로 돌았다. 로그는 adoption.json이다.
 
 | 대상 | 결과 |
 | --- | --- |

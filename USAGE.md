@@ -27,7 +27,7 @@ Release archive의 바이너리는 tag commit을 맨 SHA로, `go install …@v0.
 tree면 `<revision>-dirty (vcs)`) 보고하며 `--json`의 `commit_source`가 그 출처를 준다.
 v0.4.1 이하에서 ldflags 없이 만든 빌드(module 설치·checkout 빌드 모두)와, VCS revision도
 module 버전도 없는 빌드(`-buildvcs=false` 등)는 commit을 `dev`로 보고한다
-([ISSUE-533](tasks/_archive/issue/533-go-install-version-reports-dev-commit.md)).
+(ISSUE-533).
 `dva manifest -f json`으로 설치본의 명령과 프로젝트 선언을 조회한다.
 
 | 기능 | 제공 시점 | 현재 지원·제한 |

@@ -182,6 +182,9 @@ func TestArchiveFrontmatter_sweepsTheRealCorpus(t *testing.T) {
 	if err != nil {
 		t.Fatalf("inventory: %v", err)
 	}
+	if _, err := os.Stat(filepath.Join(root, archivePrefix)); os.IsNotExist(err) {
+		t.Skipf("%s is absent (the archive was removed on 2026-11-20); fixture tests above still own the sweep logic", archivePrefix)
+	}
 	res := Check(CheckInput{Root: root, Inventory: inv})
 
 	// 201 archived cards on 2026-08-20, 0 carrying neither field (198 when TASK-206 was written; 8762d15

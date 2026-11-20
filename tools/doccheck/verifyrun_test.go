@@ -184,8 +184,9 @@ func TestRunPatterns_sweepsTheRealCorpus(t *testing.T) {
 	// 125 bindings and 1051 tests on 2026-08-03. The floors are well under both: this test owns
 	// "the sweep still reaches the corpus", not "the corpus stopped shrinking" — tasks get
 	// archived and bindings get consolidated, and neither should turn the suite red.
-	if res.RunPatternsChecked < 50 {
-		t.Errorf("run_patterns=%d, want at least 50 — the -run sweep no longer reaches the task corpus", res.RunPatternsChecked)
+	// tasks/done and tasks/_archive were cleared on 2026-11-20 (8 patterns left in live zones).
+	if res.RunPatternsChecked < 1 {
+		t.Errorf("run_patterns=%d, want at least 1 — the -run sweep no longer reaches the task corpus", res.RunPatternsChecked)
 	}
 	if res.TestFuncsFound < 500 {
 		t.Errorf("test_funcs_found=%d (from %d files), want at least 500 — the declaration sweep broke", res.TestFuncsFound, res.TestFilesSwept)

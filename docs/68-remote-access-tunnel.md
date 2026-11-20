@@ -117,7 +117,7 @@ Cloudflare Access가 소유하고, DVA는 **인증 상태를 확인하고 로그
 
 - 확인함 (cloudflared 2026.9.3): 캐시된 토큰이 있으면 `access token --app` 종료 코드는 0,
   없으면 1이다.
-- 확인함 (cloudflared 2026.9.3, 2026-10-05 [ISSUE-488](../tasks/_archive/issue/488-measure-expired-tunnel-token-and-live-doctor.md)):
+- 확인함 (cloudflared 2026.9.3, 2026-10-05 ISSUE-488):
   토큰이 **만료**되면 `access token --app` 종료 코드는 **0**이다. stdout은 비고 stderr에
   "Unable to find token…"만 나오며, cloudflared가 JWT를 담은 `<host>-<hash>-token` 파일을
   **지운다**(`-token.url` 파일은 남는다). 정본 소스

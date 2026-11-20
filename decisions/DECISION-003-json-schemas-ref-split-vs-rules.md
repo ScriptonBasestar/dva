@@ -39,7 +39,7 @@ upstream 규칙에 둔다. 로더를 `NewReferenceLoader`로 바꾸는 공사는
 `json_schema`는 정본 ce-agent-kit `1270e1dc47bc7f3a2421de2074b92f619e4298a7`에
 구현되어 있다. 예산 정본은 [ADR-0070](https://gitlab.polypia.net/archmagece/ce-agent-kit/-/blob/1270e1dc47bc7f3a2421de2074b92f619e4298a7/decisions/adr/0070-artifact-size-kinds.md)이다.
 이 세션은 그 소스 검사를 다시 실행하지 않았다. 저장된 증거는
-[adoption.json](../tasks/done/evidence/TASK-484/adoption.json)과
+adoption.json과
 [docs/70](../docs/70-generated-artifact-upstream-report.md)이다.
 
 `internal/config/schema.json`은 1882줄이다. 저장된 채택 측정은 이 파일에

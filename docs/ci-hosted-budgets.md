@@ -30,7 +30,7 @@ GitHub의 [job timeout 계약](https://docs.github.com/en/actions/reference/work
 ## 제한된 관측
 
 2026-11-17 읽기 전용 API 조회의
-[원문](../tasks/done/evidence/TASK-614/observations.json)을 보존한다.
+원문을 보존한다.
 성공한 master push 세 건의 `completed_at - started_at`을 초 단위로 계산했다.
 이는 API가 보고한 job 구간이며 정확한 CPU 사용량이나 순수 테스트 시간은 아니다.
 

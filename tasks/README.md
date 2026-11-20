@@ -8,7 +8,7 @@
 `tasks/review/592-compare-worktree-mode.md`의 인바운드 링크)만 보정했다.
 18장의 기계 `verify:` 바인딩, `make test`, `make doc-check`, `ce task gate`
 통과를 확인했으며, `TASK-593`·`TASK-597`은 기존 `waiver.json`과 사용자 마감
-결정을 유지했다. [이관 기록](done/evidence/archive-2026-11-12-review.txt)에
+결정을 유지했다. 이관 기록에
 검증 결과를 남겼다. `tasks/done/`의 깊이 1 카드는 0장이고 `evidence/`만 남는다.
 현재 카드 목록과 상태는 `ce task list`, 실행 상태는 `ce task run-list`로 확인한다.
 
@@ -22,8 +22,8 @@
 TASK-585는 재현 기록 경로 참조)이었다. 그 명령은 카드를 지우므로 실행하지 않았다.
 이어서 TASK-550, TASK-563, TASK-575도 같은 달 보관으로 옮겼다. 세 장의
 루트 상대 링크만 `../../../`로 고쳤고, 기존 리뷰 영수증 파일은 바꾸지 않았다.
-[이관 기록](done/evidence/archive-2026-11-05-review.txt)과
-[링크 보정](done/evidence/archive-2026-11-05-link-depth.txt)에 남겼다.
+이관 기록과
+링크 보정에 남겼다.
 `tasks/done/`의 깊이 1 카드는 0장이고 `evidence/`만 남는다.
 
 ### 2026-11-04 기록
@@ -32,19 +32,19 @@ TASK-585는 재현 기록 경로 참조)이었다. 그 명령은 카드를 지�
 보관 당시 카드 본문과 기존 리뷰 영수증은 변경하지 않았다.
 이관 전 `done-finalize-all --dry-run`은 후보 28장·스킵 0장을 보고했고,
 이관 후 `make doc-check`가 카드 ID·링크·문서 검사를 통과했다.
-[독립 이관 검토](done/evidence/archive-2026-11-review.txt)는 원문 보존과 기존 완료 증거를 확인했다.
-TASK-558~561의 [최종 독립 리뷰 원문](done/evidence/explicit-suppression-final-review.txt),
-TASK-579~581의 [독립 리뷰](done/evidence/stop-warning-bundle-review.txt),
-TASK-582의 [독립 리뷰](done/evidence/status-query-review.txt)는 검토 종료 시점의 기록을 보존한다.
+독립 이관 검토는 원문 보존과 기존 완료 증거를 확인했다.
+TASK-558~561의 최종 독립 리뷰 원문,
+TASK-579~581의 독립 리뷰,
+TASK-582의 독립 리뷰는 검토 종료 시점의 기록을 보존한다.
 제품·릴리스 상태는 [PRODUCT.md](../PRODUCT.md)와 [ROADMAP.md](../ROADMAP.md)를 따른다.
 
 ### 2026-10-23 기록
 
 v0.4.1이 2026-10-23 공개됐다(v0.4.0 tag는 Release 없음). 기록은
 [ROADMAP.md](../ROADMAP.md#2026-10-23-v041-후보-검증과-공개)에 있다.
-[ISSUE-534](_archive/issue/534-ci-subproject-run-resolves-unrelated-imports.md)는
+ISSUE-534는
 [[TASK-533]]에서 선택 범위에 맞는 CI 설정 로드로 수정했다.
-[ISSUE-533](_archive/issue/533-go-install-version-reports-dev-commit.md)(go install 설치본 commit `dev`)은 수정됐고 v0.4.1 다음 tag에
+ISSUE-533(go install 설치본 commit `dev`)은 수정됐고 v0.4.1 다음 tag에
 공개된다.
 
 ### 2026-10-08 기록
@@ -54,14 +54,14 @@ v0.3.0 공개·postflight와 PLAN-010(8/8)·PLAN-011(19/19)의 종결 기록은
 계획 진행률을 DVA 전체 기능 완성률로 사용하지 않는다.
 
 이 시점에 열린 계획·미해결 이슈·실행 대기 카드는 없다. 릴리스 범위 정합화
-[TASK-500](_archive/done/500-align-next-release-scope.md)은 대조와 독립 리뷰를 마쳤으며
+TASK-500은 대조와 독립 리뷰를 마쳤으며
 `tasks/done/`의 깊이 1 카드는 0장이다. `tasks/done/evidence/`는 과거 검증 증거를 보존한다. 현재 실행 세션은
 `ce task run-list`, 새 릴리스의 제품 인수 기준은 [ROADMAP.md](../ROADMAP.md)에서 확인한다.
 로드맵의 후속 항목은 실행 카드를 등록하기 전까지 이 보드의 대기 카드 수에 포함하지 않는다.
 
 - 최근 재검증: [Batch 11](#batch-11-상세-2026-10-08).
-- TaskChain 승인 pin과 host 검증: [TASK-496](_archive/done/496-activate-dd3ec0a-darwin-arm64-pin.md).
-- 기본 PATH DVA의 로컬 빌드 적용: [TASK-499](_archive/done/499-install-verified-master-dva-locally.md).
+- TaskChain 승인 pin과 host 검증: TASK-496.
+- 기본 PATH DVA의 로컬 빌드 적용: TASK-499.
 - 현행 지원 범위: [USAGE.md](../USAGE.md#버전과-지원-범위).
 - 수락된 결정: [decisions/](../decisions/README.md). 봉인된 카드·영수증은 해당 경로에 보존한다.
 
@@ -256,7 +256,7 @@ source 통합·회수 후 최종 조회도 exit 0이다. 준비 큐는 TASK-459 
 verdict는 human_required다. 카드 Markdown bytes는 두 읽기 전용 호출 전후 같았다.
 증거는 `tasks/done/evidence/TASK-492/live-readonly-final.json`이다.
 
-CI가 발견한 후속 [TASK-494](_archive/done/494-allow-local-only-issue-corpus.md)는 실제 보드에
+CI가 발견한 후속 TASK-494는 실제 보드에
 상류 소유 이슈가 반드시 있어야 한다는 테스트 가정을 보정했다. 합성 fixture로
 양성·음성 분류와 정상 local-only 보드를 검증했고 독립 Grok 4.7 PASS를 받았다.
 

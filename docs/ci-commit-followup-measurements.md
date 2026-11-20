@@ -20,7 +20,7 @@ core/full을 요구한다. 전체 core/full/audit와 공통 dev 선택기는 변
 source·측정 바이너리는 `e4cd10562d008bebc5a8ba92bd67b70c8e85f804`다.
 [초기 실측](ci-commit-measurements.md)과 같은 파일에 같은 진단 주석을 stage했다.
 문서 본문과 source는 후속 변경을 포함하므로 두 작업 트리 전체가 동일하다는 뜻은 아니다.
-원문은 [측정 JSON](../tasks/done/evidence/TASK-613/measurements.json)에 보존한다.
+원문은 측정 JSON에 보존한다.
 
 - Go 1.27.3 darwin/arm64, DVA 0.5.1, 18 logical CPU·128 GiB host.
 - case별 빈 전용 `GOCACHE`와 반복, 준비된 기존 module cache를 사용한다.
@@ -67,7 +67,7 @@ source·측정 바이너리는 `e4cd10562d008bebc5a8ba92bd67b70c8e85f804`다.
 key의 불일치는 남아 있다. 선택 범위를 바로잡아 관측된 비싼 소비자 검사를 제거했으며,
 새 cache의 입력 완전성과 절감 효과가 입증되기 전에는 채택하지 않는다.
 
-[읽기 전용 운영 관찰](../tasks/done/evidence/TASK-613/decisions.json)에서 필수 contexts는
+읽기 전용 운영 관찰에서 필수 contexts는
 `lint`, `test`, `commit-subjects`, strict=false, master merge queue 조회는 null이었다.
 legacy protection의 이전 403 관찰은 여전히 전체 설정 확인의 증거가 아니다.
 보호 규칙·권한·queue를 변경하지 않았다. queue 채택은 PR queue 사용 흐름이 필요할 때

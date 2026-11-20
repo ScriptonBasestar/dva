@@ -81,5 +81,5 @@ fixture에서 staged/unstaged/untracked·충돌·삭제·공유 입력·경로 �
 실패는 통과 증거로 재사용하지 않으며, 30초 목표를 달성했다고 주장하지 않는다.
 
 이 파일럿은 실행 없는 증거 조회나 checkout 간 재사용을 구현하지 않는다. 그 범위는
-[TASK-607](../tasks/done/607-ci-verify-lookup-and-cross-checkout-reuse.md)과
+TASK-607과
 [재사용 계약](75-ci-result-reuse.md)이 소유한다.

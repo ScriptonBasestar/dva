@@ -6,7 +6,7 @@
 [Test job](https://github.com/ScriptonBasestar/dva/actions/runs/43903070005/job/133424545268)에서
 `TestSecretSourceResealFailurePreservesSource/early`가 `secret_creation_rule_missing`
 대신 `secret_decrypt_failed`를 받아 실패했다. 다른 일곱 job은 성공했다.
-[원문 발췌와 job 단계](../tasks/done/evidence/TASK-615/hosted-failure.json)를 보존한다.
+원문 발췌와 job 단계를 보존한다.
 이는 CI timeout이나 runner 확보 실패가 아니다.
 
 기준 source `250e1d5c7cf5b0a118e768941717342c29508064`의

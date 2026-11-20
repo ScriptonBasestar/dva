@@ -1,5 +1,0 @@
-{
-  "encoding": "utf-8",
-  "text": "diff --git a/internal/compare/ports.go b/internal/compare/ports.go\nindex a1b5d72f..3a8a3521 100644\n--- a/internal/compare/ports.go\n+++ b/internal/compare/ports.go\n@@ -113,3 +113,5 @@ func PortBusy(port int) (bool, error) {\n \t}\n \treturn false, nil\n }\n+\n+// TASK-617 diagnostic production-file comment; no behavior change.\n",
-  "original_sha256": "a83bc8d64a4d69e28687a90a0dde49d5b6cdf386ef24c2460cad215547b4613c"
-}
