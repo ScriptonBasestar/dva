@@ -59,7 +59,7 @@ func TestResourceRecoverDerivesEveryValue(t *testing.T) {
 		t.Fatalf("listing: %s %v", listing, err)
 	}
 	c := candidates[0]
-	if c.ClaimID != id || !c.Liveness.Legacy || strings.Contains(c.Next, "<") || !strings.Contains(c.Next, "--claim-id "+id+" --apply") {
+	if c.ClaimID != id || !c.Liveness.NeedsOperator || strings.Contains(c.Next, "<") || !strings.Contains(c.Next, "--claim-id "+id+" --apply") {
 		t.Fatalf("candidate: %+v", c)
 	}
 	plan, err := run("--claim-id", id)

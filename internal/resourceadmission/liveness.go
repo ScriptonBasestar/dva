@@ -23,9 +23,9 @@ func (e *QuarantineBlockedError) Error() string {
 // ClaimLiveness is the machine verdict for a running claim whose supervisor
 // lease is no longer held.
 type ClaimLiveness struct {
-	Ended  bool   `json:"ended"`
-	Legacy bool   `json:"legacy"`
-	Reason string `json:"reason"`
+	Ended         bool   `json:"ended"`
+	NeedsOperator bool   `json:"needs_operator"`
+	Reason        string `json:"reason"`
 }
 
 // claimLiveness proves a claim ended only from recorded process evidence:
@@ -33,15 +33,12 @@ type ClaimLiveness struct {
 // Claims written before the evidence fields existed are never proven ended.
 func claimLiveness(e entry) ClaimLiveness {
 	if e.Boot == "" || e.SupervisorPID <= 0 {
-		return ClaimLiveness{Legacy: true, Reason: "claim predates process evidence; operator confirmation required"}
+		return ClaimLiveness{NeedsOperator: true, Reason: "claim predates process evidence; operator confirmation required"}
 	}
 	// Only a boot ID that cannot change within one boot proves a reboot;
 	// darwin and Linux provide one, kern.boottime does not (clock steps move it).
 	if current := bootID(); stableBoot(current) && stableBoot(e.Boot) && current != e.Boot {
 		return ClaimLiveness{Ended: true, Reason: "host rebooted since the claim was admitted"}
-	}
-	if e.Launching > 0 {
-		return ClaimLiveness{Reason: fmt.Sprintf("%d process launch(es) started without a recorded process group", e.Launching)}
 	}
 	if processAlive(e.SupervisorPID) {
 		return ClaimLiveness{Reason: fmt.Sprintf("supervisor pid %d is still present", e.SupervisorPID)}
@@ -50,6 +47,11 @@ func claimLiveness(e entry) ClaimLiveness {
 		if !processGroupGone(pgid) {
 			return ClaimLiveness{Reason: fmt.Sprintf("recorded process group %d still has members", pgid)}
 		}
+	}
+	// The supervisor died between announcing a launch and recording its
+	// group: a child may or may not exist, so only a person can decide.
+	if e.Launching > 0 {
+		return ClaimLiveness{NeedsOperator: true, Reason: fmt.Sprintf("supervisor died with %d process launch(es) unrecorded; operator confirmation required", e.Launching)}
 	}
 	return ClaimLiveness{Ended: true, Reason: fmt.Sprintf("supervisor pid %d and recorded process groups %v have exited", e.SupervisorPID, e.PGIDs)}
 }

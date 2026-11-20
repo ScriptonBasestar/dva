@@ -29,7 +29,7 @@ func recoveryNext(id string, verdict resourceadmission.ClaimLiveness) string {
 	switch {
 	case verdict.Ended:
 		return "dva resource recover --claim-id " + id + " --apply"
-	case verdict.Legacy:
+	case verdict.NeedsOperator:
 		return "dva resource recover --claim-id " + id + " --apply  (human terminal: type the claim ID to confirm)"
 	default:
 		return "wait: the workload is still running"
@@ -111,7 +111,7 @@ func newResourceRecoverCommand() *cobra.Command {
 		}
 		human := !verdict.Ended || acceptUnknown
 		if evidence == "" {
-			if !verdict.Ended && !verdict.Legacy {
+			if !verdict.Ended && !verdict.NeedsOperator {
 				return fmt.Errorf("claim %s workload is still present: %s", claim, verdict.Reason)
 			}
 			explanation := "dva recover: " + verdict.Reason

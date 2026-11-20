@@ -126,7 +126,7 @@ func TestLiveTrackedGroupKeepsQuarantineAndFailsFast(t *testing.T) {
 		t.Fatalf("quarantine block waited %s", time.Since(start))
 	}
 	verdict, err := Liveness(dir, blocked.ClaimIDs[0])
-	if err != nil || verdict.Ended || verdict.Legacy {
+	if err != nil || verdict.Ended || verdict.NeedsOperator {
 		t.Fatalf("live group verdict: %+v %v", verdict, err)
 	}
 	if err := syscall.Kill(-pgid, syscall.SIGKILL); err != nil {
@@ -146,7 +146,7 @@ func TestLiveTrackedGroupKeepsQuarantineAndFailsFast(t *testing.T) {
 func TestLegacyClaimIsNeverAutoReleased(t *testing.T) {
 	f := newRecoveryFixture(t)
 	verdict, err := Liveness(f.dir, f.id)
-	if err != nil || verdict.Ended || !verdict.Legacy {
+	if err != nil || verdict.Ended || !verdict.NeedsOperator {
 		t.Fatalf("legacy verdict: %+v %v", verdict, err)
 	}
 	_, policy, err := ReadPolicy(f.policyPath)
@@ -175,11 +175,11 @@ func exitedPID(t *testing.T) int {
 }
 
 // A supervisor that crashed after announcing a launch but before recording
-// its process group must not look ended: the child may still be running.
+// its process group must not look ended, and must be handed to a person.
 func TestUnrecordedLaunchIsNeverProvenEnded(t *testing.T) {
 	v := claimLiveness(entry{SupervisorPID: exitedPID(t), Boot: bootID(), Launching: 1})
-	if v.Ended || v.Legacy {
-		t.Fatalf("unrecorded launch proven ended: %+v", v)
+	if v.Ended || !v.NeedsOperator {
+		t.Fatalf("unrecorded launch not handed to an operator: %+v", v)
 	}
 	if v := claimLiveness(entry{SupervisorPID: exitedPID(t), Boot: bootID()}); !v.Ended {
 		t.Fatalf("settled claim with dead supervisor not ended: %+v", v)
