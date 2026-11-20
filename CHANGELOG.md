@@ -46,7 +46,7 @@ All notable changes to DVA are documented here.
 ### Changed
 
 - `reuse.scope: repository`가 존재하지 않거나 디렉터리가 아닌 PATH 항목에서 실패하지 않고
-  그 상태를 PATH 순서대로 key에 기록합니다. 기본 macOS PATH에서도 opt-in이 동작하며, 항목이
+  항목 문자열과 상태(존재 항목은 정규 경로 포함, 부재 항목은 부재 표시)를 PATH 순서대로 key에 기록합니다. 기본 macOS PATH에서도 opt-in이 동작하며, 항목이
   생기거나 종류가 바뀌면 재사용하지 않습니다. 도구 조회도 execvp처럼 비디렉터리 하위 항목을 건너뜁니다.
 
 - CI 결과 재사용 키에서 `DVA_CI_JOBS`를 제외합니다. 단계 환경의 이 값은 항상

@@ -18,8 +18,9 @@ import (
 // It returns one key entry per PATH element, in PATH order. The checkout-local
 // rule needs each element canonicalized, but an element that does not exist
 // (macOS ships such entries in /etc/paths.d) or is not a directory cannot hold
-// a tool now; it is keyed by its state instead, so the key changes if that
-// element later appears or changes kind.
+// a tool now; it is keyed by its state instead (an existing element also by
+// its canonical path, an absent one by the marker alone), so the key changes
+// if that element later appears or changes kind.
 func validateRepositoryReuse(root string, step config.CIStep, env []string) ([]string, error) {
 	if filepath.IsAbs(step.Workdir) || strings.Contains(step.Workdir, root) || strings.Contains(step.Run, root) {
 		return nil, errors.New("repository reuse forbids absolute workdir and checkout-root paths")
@@ -50,7 +51,7 @@ func repositoryPathEntry(root, dir string) (string, error) {
 	if errors.Is(err, fs.ErrNotExist) || errors.Is(err, syscall.ENOTDIR) {
 		// A missing element may sit under a checkout-local symlink; refuse it
 		// when its nearest existing ancestor resolves inside the checkout.
-		if pathInside(root, resolveMissingPath(filepath.Clean(dir))) {
+		if pathInside(root, resolveMissingPath(dir)) {
 			return "", errors.New("repository reuse forbids checkout-local PATH entries")
 		}
 		return "absent", nil
@@ -71,19 +72,27 @@ func repositoryPathEntry(root, dir string) (string, error) {
 	return "directory\x00" + resolved, nil
 }
 
-// resolveMissingPath canonicalizes the nearest existing ancestor of path and
-// appends the missing remainder, so symlinked parents are seen.
+// resolveMissingPath resolves an absolute path one component at a time, so a
+// symlink is followed before a following ".." applies to it, as the kernel
+// does. It stops at the first missing component and appends the remainder.
 func resolveMissingPath(path string) string {
-	rest := ""
-	for current := path; ; current = filepath.Dir(current) {
-		if resolved, err := filepath.EvalSymlinks(current); err == nil {
-			return filepath.Join(resolved, rest)
+	current := string(filepath.Separator)
+	parts := strings.Split(path, string(filepath.Separator))
+	for i, part := range parts {
+		if part == "" || part == "." {
+			continue
 		}
-		if filepath.Dir(current) == current {
-			return path
+		if part == ".." {
+			current = filepath.Dir(current)
+			continue
 		}
-		rest = filepath.Join(filepath.Base(current), rest)
+		resolved, err := filepath.EvalSymlinks(filepath.Join(current, part))
+		if err != nil {
+			return filepath.Join(append([]string{current}, parts[i:]...)...)
+		}
+		current = resolved
 	}
+	return current
 }
 
 func pathInside(root, path string) bool {

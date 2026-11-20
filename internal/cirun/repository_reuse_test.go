@@ -413,6 +413,10 @@ func TestRepositoryReuseKeysMissingAndNonDirectoryPathEntries(t *testing.T) {
 
 func TestRepositoryReuseRejectsMissingCheckoutLocalPathEntries(t *testing.T) {
 	root, _, step, opts := repositoryFixture(t)
+	into := filepath.Join(t.TempDir(), "into-source")
+	if err := os.Symlink(filepath.Join(root, "source"), into); err != nil {
+		t.Fatal(err)
+	}
 	link := filepath.Join(t.TempDir(), "link")
 	if err := os.Symlink(root, link); err != nil {
 		t.Fatal(err)
@@ -420,6 +424,9 @@ func TestRepositoryReuseRejectsMissingCheckoutLocalPathEntries(t *testing.T) {
 	for name, dir := range map[string]string{
 		"lexical":   filepath.Join(root, "not-yet", "bin"),
 		"symlinked": filepath.Join(link, "not-yet", "bin"),
+		// outside/into-source -> root/source; the ".." applies to the real
+		// target (root), while a lexical fold would land outside the checkout.
+		"dotdot-after-symlink": into + string(filepath.Separator) + ".." + string(filepath.Separator) + filepath.Join("not-yet", "bin"),
 	} {
 		t.Run(name, func(t *testing.T) {
 			env := append([]string{}, opts.Env...)
@@ -428,5 +435,22 @@ func TestRepositoryReuseRejectsMissingCheckoutLocalPathEntries(t *testing.T) {
 				t.Fatalf("missing checkout-local PATH entry accepted: %v", err)
 			}
 		})
+	}
+}
+
+// ".." in a missing entry still applies: into-source -> root/source, then
+// "../.." leaves the checkout.
+func TestRepositoryReuseAcceptsMissingEntryThatLeavesCheckout(t *testing.T) {
+	root, _, step, opts := repositoryFixture(t)
+	sep := string(filepath.Separator)
+	into := filepath.Join(t.TempDir(), "into-source")
+	if err := os.Symlink(filepath.Join(root, "source"), into); err != nil {
+		t.Fatal(err)
+	}
+	dir := into + sep + ".." + sep + ".." + sep + filepath.Join("dva-missing-outside", "bin")
+	env := append([]string{}, opts.Env...)
+	env[0] = "PATH=" + dir + ":/usr/bin:/bin"
+	if _, err := reuseFor(context.Background(), root, step, env); err != nil {
+		t.Fatalf("missing PATH entry outside the checkout refused: %v", err)
 	}
 }
