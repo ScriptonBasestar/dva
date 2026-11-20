@@ -4,6 +4,20 @@
 `not-held`는 감독자 lease 락이 없다는 뜻이며 작업·자손의 종료 증명이 아니다.
 복구는 프로세스를 종료하거나 기존 CI의 `running`·실패·미완료 결과를 바꾸지 않는다.
 
+## 자동 판정과 목록
+
+claim은 감독자 PID, boot ID, 시작한 프로세스 그룹, 기록 전 launch 수를 남긴다.
+재부팅이 확인되거나 감독자와 기록된 그룹이 모두 사라졌으면 입장(admission)이 해당
+claim을 스스로 해제하고 DVA가 작성한 근거를 영수증에 남긴다. 격리 claim만 입장을 막으면
+제한 시간을 기다리지 않고 claim ID와 함께 즉시 실패한다.
+
+`dva resource recover`를 flag 없이 실행하면 격리 claim마다 판정(`liveness`)과 실행할
+명령(`next`)을 그대로 출력한다. `--claim-id`만 주면 digest와 fingerprint를 DVA가 직접
+계산한다. 종료가 증명된 claim은 `--apply`만으로 해제된다. 증거 필드가 없는 기존 claim,
+launch 기록 전에 감독자가 죽은 claim(`needs_operator`)은 사람이 터미널에서 claim ID를
+입력해야 한다. 작업이 아직 남아 있으면 거부한다. 아래 근거 파일 경로는 이 자동 판정을
+쓰지 않을 때만 필요하며, 근거 파일이 있어도 종료가 증명되지 않은 claim은 터미널 확인을 거친다.
+
 ## 공통 결속과 실행
 
 근거는 현재 사용자 소유 0600 일반 JSON 파일로 준비한다. 절대 경로, 정확한 claim ID,
