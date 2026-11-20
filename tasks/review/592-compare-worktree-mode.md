@@ -7,7 +7,7 @@ effort: L
 exec-tier: strong
 status: review
 created: 2026-11-06
-depends-on: [TASK-591, TASK-587]
+depends-on: []
 allowed-paths: [internal/compare/, internal/cli/, USAGE.md, docs/75-variant-comparison-design.md]
 ---
 

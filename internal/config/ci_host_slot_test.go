@@ -34,6 +34,17 @@ func TestResolveCIProfileRejectsHostSlotOnOCIStep(t *testing.T) {
 	}
 }
 
+func TestResolveCIProfileRejectsHostSlotWithAdmission(t *testing.T) {
+	cfg := &Config{CI: &CIConfig{Profiles: map[string]CIProfile{
+		"full": {Timeout: "30m", MaxParallel: 1, Admission: &CIAdmission{Class: "heavy", Priority: "normal", WaitTimeout: "1m"},
+			Steps: []CIStep{{Name: "suite", Run: "make test", HostSlot: true}}},
+	}}}
+	_, err := cfg.ResolveCIProfile("full")
+	if err == nil || !strings.Contains(err.Error(), "profile admission and host_slot cannot be combined") {
+		t.Fatalf("error = %v, want admission/host_slot rejection", err)
+	}
+}
+
 func TestLoadAcceptsBooleanHostSlot(t *testing.T) {
 	dir := t.TempDir()
 	content := `ci:

@@ -234,6 +234,10 @@ func validateCIProfile(name string, profile CIProfile) error {
 		if step.HostSlot && step.OCI != nil {
 			return fmt.Errorf("ci profile %q step %q: host_slot is only supported by native run steps", name, step.Name)
 		}
+		if step.HostSlot && profile.Admission != nil {
+			// Mirrors the run-time refusal in cirun.resolveHostSlotBridge (ISSUE-626).
+			return fmt.Errorf("ci profile %q step %q: profile admission and host_slot cannot be combined", name, step.Name)
+		}
 		if step.Condition != nil {
 			if step.OCI != nil || step.ChildCI != "" {
 				return fmt.Errorf("ci profile %q step %q: condition requires a native step without child_ci", name, step.Name)
