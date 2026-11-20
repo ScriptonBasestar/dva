@@ -51,6 +51,11 @@ func repositoryPathEntry(root, dir string) (string, error) {
 	if errors.Is(err, fs.ErrNotExist) || errors.Is(err, syscall.ENOTDIR) {
 		// A missing element may sit under a checkout-local symlink; refuse it
 		// when its nearest existing ancestor resolves inside the checkout.
+		// The kernel never walks past a missing component, so a "." or ".."
+		// after one has no defined target; real PATH entries never need them.
+		if hasDotComponent(dir) {
+			return "", fmt.Errorf("repository reuse forbids missing PATH entry %q with . or .. components", dir)
+		}
 		if pathInside(root, resolveMissingPath(dir)) {
 			return "", errors.New("repository reuse forbids checkout-local PATH entries")
 		}
@@ -93,6 +98,15 @@ func resolveMissingPath(path string) string {
 		current = resolved
 	}
 	return current
+}
+
+func hasDotComponent(path string) bool {
+	for _, part := range strings.Split(path, string(filepath.Separator)) {
+		if part == "." || part == ".." {
+			return true
+		}
+	}
+	return false
 }
 
 func pathInside(root, path string) bool {
