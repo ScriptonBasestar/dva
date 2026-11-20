@@ -350,3 +350,83 @@ func TestLookupFreshDoesNotReadMalformedCache(t *testing.T) {
 		t.Fatalf("future: %+v %v", r, err)
 	}
 }
+
+// macOS ships PATH entries that do not exist (/etc/paths.d/10-cryptex). Such an
+// entry holds no tool, so repository scope keys its state instead of failing,
+// and the key moves when the entry appears or changes kind.
+func TestRepositoryReuseKeysMissingAndNonDirectoryPathEntries(t *testing.T) {
+	root, other, step, opts := repositoryFixture(t)
+	base, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	missing := filepath.Join(base, "missing", "bin")
+	file := filepath.Join(base, "file")
+	writeTestFile(t, file, "x")
+	underFile := filepath.Join(file, "bin")
+	opts.Env = []string{"PATH=" + missing + ":" + underFile + ":" + file + ":/usr/bin:/bin"}
+	opts.Profile = profile(step)
+	jobs, _ := toolWorkerBudget(opts.Profile, availableCPUs())
+	keyOf := func(env []string) string {
+		t.Helper()
+		plan, err := reuseFor(context.Background(), root, step, ciEnv(env, nil, jobs))
+		if err != nil {
+			t.Fatalf("repository reuse rejected PATH: %v", err)
+		}
+		return plan.key
+	}
+	first, err := Run(context.Background(), opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeTestFile(t, filepath.Join(other, "artifact"), "ok")
+	crossOpts := opts
+	crossOpts.Root = other
+	r, err := Lookup(context.Background(), crossOpts)
+	if err != nil || !r.Covered || r.Steps[0].OriginalRunID != first.ID {
+		t.Fatalf("missing PATH entry blocked cross-worktree reuse: %+v %v", r, err)
+	}
+	original := keyOf(opts.Env)
+	if err := os.MkdirAll(missing, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	appeared := keyOf(opts.Env)
+	if appeared == original {
+		t.Fatal("key ignored a PATH entry that appeared")
+	}
+	if err := os.RemoveAll(filepath.Join(base, "missing")); err != nil {
+		t.Fatal(err)
+	}
+	if keyOf(opts.Env) != original {
+		t.Fatal("key is not a function of PATH entry state")
+	}
+	if err := os.Remove(file); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Mkdir(file, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if keyOf(opts.Env) == original {
+		t.Fatal("key ignored a PATH entry that changed from file to directory")
+	}
+}
+
+func TestRepositoryReuseRejectsMissingCheckoutLocalPathEntries(t *testing.T) {
+	root, _, step, opts := repositoryFixture(t)
+	link := filepath.Join(t.TempDir(), "link")
+	if err := os.Symlink(root, link); err != nil {
+		t.Fatal(err)
+	}
+	for name, dir := range map[string]string{
+		"lexical":   filepath.Join(root, "not-yet", "bin"),
+		"symlinked": filepath.Join(link, "not-yet", "bin"),
+	} {
+		t.Run(name, func(t *testing.T) {
+			env := append([]string{}, opts.Env...)
+			env[0] = "PATH=" + dir + ":/usr/bin:/bin"
+			if _, err := reuseFor(context.Background(), root, step, env); err == nil || !strings.Contains(err.Error(), "checkout-local") {
+				t.Fatalf("missing checkout-local PATH entry accepted: %v", err)
+			}
+		})
+	}
+}

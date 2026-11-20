@@ -45,6 +45,10 @@ All notable changes to DVA are documented here.
 
 ### Changed
 
+- `reuse.scope: repository`가 존재하지 않거나 디렉터리가 아닌 PATH 항목에서 실패하지 않고
+  그 상태를 PATH 순서대로 key에 기록합니다. 기본 macOS PATH에서도 opt-in이 동작하며, 항목이
+  생기거나 종류가 바뀌면 재사용하지 않습니다. 도구 조회도 execvp처럼 비디렉터리 하위 항목을 건너뜁니다.
+
 - CI 결과 재사용 키에서 `DVA_CI_JOBS`를 제외합니다. 단계 환경의 이 값은 항상
   DVA가 계산한 worker 예산이며(앰비언트 값은 실행·키 산정 전에 덮어쓴다), 그
   예산이 실제로 반영되는 도구 변수(`CARGO_BUILD_JOBS` 기본값, `GOMAXPROCS`,

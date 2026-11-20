@@ -59,7 +59,10 @@ ci:
 repository scope는 별도 key domain과 cache namespace를 쓴다. 기존 checkout cache의
 root hash를 단순 제거하거나 과거 checkout 증거를 공유 증거로 승격하지 않는다.
 절대 workdir·probe와 checkout 경로에 묶인 명령·도구·PATH·선언 환경은 거부한다.
-이 초기 opt-in은 PATH의 각 절대 디렉터리도 존재하고 읽을 수 있어야 한다.
+PATH 각 항목은 순서대로 상태(디렉터리·비디렉터리·부재)와 정규 경로를 key에 기록한다.
+존재하지 않는 항목(macOS `/etc/paths.d/10-cryptex` 등)은 도구를 담을 수 없으므로 거부하지
+않고 부재로 기록하며, 나중에 생기거나 종류가 바뀌면 key가 달라진다. 부재 항목도 가장 가까운
+기존 상위 경로를 정규화해 checkout 내부이면 거부한다.
 산출물은 현재 worktree에 실제로 존재하고 원래 해시와 같아야 하며 복원하지 않는다.
 모든 기존 입력·도구·환경·시간 제한과 fresh 조건을 유지한다.
 

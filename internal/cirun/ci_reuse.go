@@ -18,6 +18,7 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/ScriptonBasestar/dva/internal/config"
@@ -77,15 +78,21 @@ func reuseFor(ctx context.Context, root string, step config.CIStep, env []string
 		return reusePlan{}, fmt.Errorf("ci step %q: reuse.inputs must not be empty", step.Name)
 	}
 	repository := step.Reuse.Scope == "repository"
+	var pathEntries []string
 	if repository {
-		if err := validateRepositoryReuse(root, step, env); err != nil {
+		entries, err := validateRepositoryReuse(root, step, env)
+		if err != nil {
 			return reusePlan{}, err
 		}
+		pathEntries = entries
 	}
 	h := sha256.New()
 	writeReuseField(h, "schema", fmt.Sprint(reuseSchema))
 	if repository {
 		writeReuseField(h, "scope", "repository-v2")
+		for _, entry := range pathEntries {
+			writeReuseField(h, "path_entry", entry)
+		}
 	}
 	writeReuseField(h, "step", step.Name)
 	writeReuseField(h, "run", step.Run)
@@ -387,7 +394,8 @@ func lookupReuseTool(name, searchPath, workdir string) (string, error) {
 		if err == nil && info.Mode().IsRegular() && info.Mode().Perm()&0o111 != 0 {
 			return candidate, nil
 		}
-		if err != nil && !os.IsNotExist(err) {
+		// Like execvp, an entry under a non-directory holds no command.
+		if err != nil && !os.IsNotExist(err) && !errors.Is(err, syscall.ENOTDIR) {
 			return "", err
 		}
 	}
