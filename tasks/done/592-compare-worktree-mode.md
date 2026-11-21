@@ -5,7 +5,10 @@ type: feature
 priority: P2
 effort: L
 exec-tier: strong
-status: review
+status: done
+delivered-by: d9a8313f
+quality-review: pass
+quality-review-evidence: "ce review-evidence f7264dce25a31824a50935807f22bb8de7d6e980ae82bcf5e03313f3f0f2671d"
 created: 2026-11-06
 depends-on: []
 allowed-paths: [internal/compare/, internal/cli/, USAGE.md, docs/75-variant-comparison-design.md]
@@ -73,3 +76,10 @@ allowed-paths: [internal/compare/, internal/cli/, USAGE.md, docs/75-variant-comp
 - 수정(이 실행): `probeTarget`이 http `url`과 tcp `address`를 엔트리 환경으로 치환한다. 가이드를 "러너와 같은 포트"로 바꿨다.
 - 2차(수정한 바이너리): status JSON에서 a는 snapshot, WEB_PORT 14341, URL `http://127.0.0.1:14341/`, ready true로 나왔다. b는 worktree, WEB_PORT 14342, URL `http://127.0.0.1:14342/`, ready true로 나왔다. pid는 각 포트의 `pnpm exec astro dev --port <포트>` 프로세스와 일치했다. hot reload는 다시 2초였다. down 뒤 두 포트의 리스너가 모두 사라졌고, snapshot은 회수되고 worktree(커밋 32eda82)는 남았다.
 - 관측(비차단): `compare up` 직후의 표는 Astro 첫 컴파일 전이라 `not ready`로 나오고, 몇 초 뒤 status에서는 ready다. compare up은 readiness를 기다리지 않는다. 또 snapshot 체크아웃(`.sb/dva/variants/…`)에는 node_modules가 없다. 이번에는 Node가 상위 디렉터리의 node_modules를 찾아 실행됐을 뿐이다. 프로젝트 쪽에서는 `.gitignore`에 `.sb/dva/*`가 없어 첫 up이 아무것도 시작하지 않고 거부됐다(올바른 동작).
+
+### 2. 2026-11-22 — reviewer: 독립 opus 서브에이전트(읽기 전용), executor: health 변수 치환 실행(ce49c22e, 통합 d9a8313f)
+
+- 기준 1: pass(기존 바인딩 유지). 기준 2: pass. 파일럿 근거로 hot reload, 비교안별 URL·readiness·pid, down 뒤 snapshot만 회수·worktree 잔존이 모두 확인됐다.
+- 기준 2의 `verify: human`은 사용자가 에이전트 파일럿을 사람 확인으로 받아들이고 종결하기로 결정했다(2026-11-22). 사람이 직접 관찰한 것은 아니다.
+- 비차단: URL에 글자 그대로 쓴 `$NAME`도 이제 치환된다. compare up은 readiness를 기다리지 않는다. snapshot 체크아웃에 node_modules가 없다.
+- 다음 전환: done.
