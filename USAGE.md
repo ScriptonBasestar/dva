@@ -1963,6 +1963,10 @@ health_checks:
     ready_timeout: 30    # 시작 후 대기 (초)
 ```
 
+`url:`·`address:`는 확인할 때마다 엔트리 vars(plan vars, 그다음 OS 환경)로 치환됩니다. 러너가 포트를
+변수로 받으면 같은 변수와 기본값을 쓰세요(`url: http://127.0.0.1:${WEB_PORT:-3000}/`). 그래야 compare
+비교안마다 자기 포트를 확인합니다.
+
 ### interaction (예약어와 훅)
 
 `interaction:` 키는 `dva run <name>`으로 실행할 커맨드를 정의합니다. 이름이 내장

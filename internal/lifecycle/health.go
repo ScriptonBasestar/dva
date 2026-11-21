@@ -94,9 +94,9 @@ func (hc *HealthChecker) checkPass(ctx context.Context, checks map[string]config
 
 			switch check.Type {
 			case "http":
-				result.Ready = checkHTTPWithContext(probeCtx, check.URL)
+				result.Ready = checkHTTPWithContext(probeCtx, probeTarget(check.URL, env))
 			case "tcp":
-				result.Ready = checkTCPWithContext(probeCtx, check.Address)
+				result.Ready = checkTCPWithContext(probeCtx, probeTarget(check.Address, env))
 			case "command":
 				if omitCancelled {
 					result.Ready = checkStatusCommandWithContext(probeCtx, check.Command, dir, env)
@@ -123,6 +123,18 @@ func (hc *HealthChecker) checkPass(ctx context.Context, checks map[string]config
 	})
 
 	return results
+}
+
+// probeTarget expands vars in a health check url or address against the entry's environment,
+// the same merged vars (plan vars, then OS environment) its command sees. A compare variant
+// gets its own port this way: `http://127.0.0.1:${WEB_PORT}/` probes 14341 for one variant and
+// 14342 for the next, where a literal port would probe one server for both. Without an
+// environment (legacy callers) the value is used as written.
+func probeTarget(value string, env *config.Environment) string {
+	if env == nil {
+		return value
+	}
+	return env.Interpolate(value)
 }
 
 // WaitUntilReady polls health checks until all pass or context is cancelled.

@@ -2,8 +2,10 @@ package lifecycle
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 
 	"github.com/ScriptonBasestar/dva/internal/config"
@@ -195,5 +197,52 @@ func TestWaitUntilReady_ContextCancel(t *testing.T) {
 	// Should return not-ready results when context is cancelled
 	if results[0].Ready {
 		t.Error("expected not ready after context cancel")
+	}
+}
+
+// TestHealthCheckerExpandsEntryVarsPerVariant binds the compare readiness fix (TASK-592 pilot):
+// a url or address written with the runner's port var is probed on the port the entry's vars
+// give it, so two compare variants with different WEB_PORT values each probe their own server.
+func TestHealthCheckerExpandsEntryVarsPerVariant(t *testing.T) {
+	up := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer up.Close()
+	port := up.Listener.Addr().(*net.TCPAddr).Port
+
+	down, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	downPort := down.Addr().(*net.TCPAddr).Port
+	if err := down.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	checks := map[string]config.HealthCheckConfig{
+		"http": {Type: "http", URL: "http://127.0.0.1:${WEB_PORT:-1}/", Timeout: 2},
+		"tcp":  {Type: "tcp", Address: "127.0.0.1:${WEB_PORT:-1}", Timeout: 2},
+	}
+	hc := &HealthChecker{}
+	for _, tc := range []struct {
+		name string
+		port int
+		want bool
+	}{
+		{"variant with the running server", port, true},
+		{"variant whose server is down", downPort, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			env := &config.Environment{Vars: map[string]string{"WEB_PORT": strconv.Itoa(tc.port)}}
+			results := hc.CheckContext(context.Background(), checks, "", env)
+			if len(results) != 2 {
+				t.Fatalf("results = %+v, want 2", results)
+			}
+			for _, r := range results {
+				if r.Ready != tc.want {
+					t.Errorf("%s ready = %v, want %v (WEB_PORT=%d)", r.Name, r.Ready, tc.want, tc.port)
+				}
+			}
+		})
 	}
 }

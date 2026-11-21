@@ -34,7 +34,7 @@ allowed-paths: [internal/compare/, internal/cli/, USAGE.md, docs/75-variant-comp
 ## Completion Criteria
 
 - [x] worktree 출처의 해석, 조회 실패 시 미시작, stale 판정, down의 worktree 보존이 임시 저장소 테스트로 고정되고 전체 테스트가 통과한다 | verify: `go test ./internal/cli/ -run 'TestCompare(UpMixesSnapshotAndWorktreeVariants|UpWorktreeLookupFailureStartsNothing|DownStopsWorktreeProcessesAndKeepsTheWorktree|StatusWorktree)' -count=1 && go test ./internal/compare/ -run 'TestTargetID|TestResolveTarget' -count=1` (observed: 2026-11-17)
-- [ ] 미리보기 워크플로우 형태의 파일럿에서 a=main snapshot과 b=worktree:<현재 작업>이 함께 뜬다 | verify: human — 실제 웹 프로젝트에서 b를 편집해 hot reload를 확인하고, status의 비교안별 URL·readiness·pid가 맞으며, down 뒤 snapshot만 회수되고 작업 worktree가 남는지 확인한다
+- [x] 미리보기 워크플로우 형태의 파일럿에서 a=main snapshot과 b=worktree:<현재 작업>이 함께 뜬다 | verify: human — 실제 웹 프로젝트에서 b를 편집해 hot reload를 확인하고, status의 비교안별 URL·readiness·pid가 맞으며, down 뒤 snapshot만 회수되고 작업 worktree가 남는지 확인한다
 
 ## Scope Notes
 
@@ -64,3 +64,12 @@ allowed-paths: [internal/compare/, internal/cli/, USAGE.md, docs/75-variant-comp
 - 범위 준수 전 항목 확인: worktree 미생성·미삭제(EnsureSnapshot 우회, OwnsCheckout 가드), 레지스트리·마지막 선택 영속 없음, 모르는 provider 접두사 up 전 거부, 조회 실패·알 수 없는 ID·후보 여럿·경로 소실은 preflight 실패로 호출 체크아웃 대체 없음, stale는 경로 변경·소실·branch 상실만(head 미비교), 동일성은 모드+출처+경로, down은 기록된 ConfigDir의 per_variant만 정지.
 - 기준 2: human-pending — 실제 웹 프로젝트 파일럿(hot reload, status의 URL·readiness·pid, down 후 snapshot만 회수·worktree 잔존) 전까지 클로저 불가.
 - 비차단 발견: down의 provider 미재조회(Observations에 신규 기록), 후보 여럿 경로의 직접 테스트 부재(희귀 경로). 다음 전환: 기준 2 사람 확인 후 클로저.
+
+## Pilot (2026-11-21)
+
+사용자 지시("592를 해줘")로 에이전트가 수행했다. 대상은 실제 Astro 프로젝트 homepage-scriptonbasestar의 로컬 클론(scratchpad; 원본 저장소는 건드리지 않음)이다. 클론의 dva.yml에서 러너 포트를 `${WEB_PORT:-14323}`로 바꾸고, `compare.pilot`(per_variant web, WEB_PORT 14341/14342)과 `endpoints.web`을 더했다. 작업 worktree는 `pilot/edit`이다.
+
+- 1차(설치된 dva 192bd8c9): a=master snapshot과 b=worktree:pilot/edit가 함께 떴고 두 포트 모두 HTTP 200이었다. b의 `src/pages/index.astro`를 고치면 약 2초 만에 b에 반영됐고 a는 바뀌지 않았다. down은 snapshot 체크아웃만 지우고 작업 worktree와 커밋하지 않은 수정을 남겼다. **결함**: READY가 항상 `not ready`였다. health check의 `url:`을 치환하지 않아 `${WEB_PORT:-14323}`가 글자 그대로 확인됐다. library reference도 "literal values only"로 이 한계를 굳혀 두고 있었다.
+- 수정(이 실행): `probeTarget`이 http `url`과 tcp `address`를 엔트리 환경으로 치환한다. 가이드를 "러너와 같은 포트"로 바꿨다.
+- 2차(수정한 바이너리): status JSON에서 a는 snapshot, WEB_PORT 14341, URL `http://127.0.0.1:14341/`, ready true로 나왔다. b는 worktree, WEB_PORT 14342, URL `http://127.0.0.1:14342/`, ready true로 나왔다. pid는 각 포트의 `pnpm exec astro dev --port <포트>` 프로세스와 일치했다. hot reload는 다시 2초였다. down 뒤 두 포트의 리스너가 모두 사라졌고, snapshot은 회수되고 worktree(커밋 32eda82)는 남았다.
+- 관측(비차단): `compare up` 직후의 표는 Astro 첫 컴파일 전이라 `not ready`로 나오고, 몇 초 뒤 status에서는 ready다. compare up은 readiness를 기다리지 않는다. 또 snapshot 체크아웃(`.sb/dva/variants/…`)에는 node_modules가 없다. 이번에는 Node가 상위 디렉터리의 node_modules를 찾아 실행됐을 뿐이다. 프로젝트 쪽에서는 `.gitignore`에 `.sb/dva/*`가 없어 첫 up이 아무것도 시작하지 않고 거부됐다(올바른 동작).

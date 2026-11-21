@@ -33,7 +33,7 @@
 
 ### Health Checks
 - [ ] All `health_checks` have `start:` and/or `start_hint:` (not both with identical values)
-- [ ] Health check URLs use literal values (no `${VAR:-DEFAULT}`)
+- [ ] Health check URLs use the same port as the runner (literal, or the same `${VAR:-DEFAULT}` the runner reads)
 
 ### Lifecycle ownership
 - [ ] Each Compose service has one lifecycle owner: compose stack + plan
