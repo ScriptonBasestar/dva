@@ -17,7 +17,7 @@ func resolveResourcePolicyPath(flag string) (string, error) {
 		return "", errors.New("no resource policy: pass --policy ABSOLUTE_PATH or set DVA_RESOURCE_POLICY")
 	}
 	if path == "" {
-		return "", errors.New("DVA_RESOURCE_POLICY is explicitly empty: unset it or set an absolute policy path")
+		return "", errors.New("DVA_RESOURCE_POLICY is explicitly empty: set it to an absolute policy path, or unset it and pass --policy ABSOLUTE_PATH")
 	}
 	return path, nil
 }

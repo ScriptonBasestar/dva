@@ -123,8 +123,11 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 			if rootErr = writeReport(admissionState, report); rootErr != nil {
 				return report, fmt.Errorf("record waiting admission: %w", rootErr)
 			}
-			if present && policyPath == "" {
-				return report, errors.New("DVA_RESOURCE_POLICY is explicitly empty")
+			if !present {
+				return report, errors.New("no resource policy: this profile requires admission; set DVA_RESOURCE_POLICY to an absolute policy path")
+			}
+			if policyPath == "" {
+				return report, errors.New("DVA_RESOURCE_POLICY is explicitly empty: set it to an absolute policy path")
 			}
 			p, digest, err := resourceadmission.ReadPolicy(policyPath)
 			if err != nil {

@@ -84,6 +84,10 @@ All notable changes to DVA are documented here.
 
 ### Fixed
 
+- 정책을 지정하지 않으면 `dva resource run`·`status`·`recover`와 admission이 필수인 `dva ci`가
+  "resource policy path must be absolute" 대신 정책이 없다는 원인과 지정 방법을 알립니다.
+  `DVA_RESOURCE_POLICY`가 빈 값으로 설정된 경우는 따로 구분해 알립니다.
+
 - 활성 claim이 없는 기존 상태 디렉터리에서도 `resource status --json`이 `null` 대신
   빈 배열을 반환하도록 수정합니다.
 
