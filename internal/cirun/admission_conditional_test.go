@@ -66,8 +66,12 @@ func TestEmptyPolicyRequired(t *testing.T) {
 	p := config.CIProfile{Timeout: "5s", MaxParallel: 1, Admission: &config.CIAdmission{Class: "heavy", Priority: "normal", WaitTimeout: "1s"}, Steps: []config.CIStep{{Name: "one", Run: "touch ran"}}}
 	opts := Options{Root: root, ProfileName: "full", StateDir: state, lockDirectory: state, Profile: p}
 	report, err := Run(context.Background(), opts)
-	if err == nil || !strings.Contains(err.Error(), "DVA_RESOURCE_POLICY is explicitly empty") || report.Status != "failed" {
+	if err == nil || !strings.Contains(err.Error(), "explicitly empty: set it to an absolute policy path") || report.ID == "" || report.Status != "failed" || report.Admission == nil || report.Admission.Outcome != "failed" {
 		t.Fatalf("report=%+v err=%v", report, err)
+	}
+	receipts, err := Status(state)
+	if err != nil || len(receipts) != 1 || receipts[0].ID != report.ID || receipts[0].Status != "failed" {
+		t.Fatalf("receipts=%+v err=%v", receipts, err)
 	}
 	if _, err := os.Stat(filepath.Join(root, "ran")); !os.IsNotExist(err) {
 		t.Fatalf("step ran: %v", err)

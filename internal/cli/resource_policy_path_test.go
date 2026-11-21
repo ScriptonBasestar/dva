@@ -25,7 +25,7 @@ func TestResolveResourcePolicyPath(t *testing.T) {
 	t.Run("explicitly empty environment", func(t *testing.T) {
 		t.Setenv("DVA_RESOURCE_POLICY", "")
 		_, err := resolveResourcePolicyPath("")
-		if err == nil || !strings.Contains(err.Error(), "explicitly empty") {
+		if err == nil || !strings.Contains(err.Error(), "explicitly empty: set it to an absolute policy path, or unset it and pass --policy") {
 			t.Fatalf("err = %v", err)
 		}
 	})
