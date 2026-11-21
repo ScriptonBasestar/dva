@@ -5,7 +5,10 @@ type: feature
 priority: P3
 effort: XS
 exec-tier: standard
-status: todo
+status: done
+delivered-by: b39f7ea4
+quality-review: pass
+quality-review-evidence: "ce review-evidence 6b7a8fbba4ebbf8a9a72fb0ea72cb58d561c6c8ddbc63a2c15e017b061182f7c"
 created: 2026-11-20
 allowed-paths: [internal/lifecycle/]
 ---
@@ -25,5 +28,9 @@ These are non-blocking follow-ups left after TASK-606 shipped podman-compose ser
 
 ## Completion Criteria
 
-- [ ] An unknown `Labels` shape writes one stderr `[warn]` and does not fail status. | verify: `go test ./internal/lifecycle -run ServiceName -count=1`
-- [ ] The `Names[0]` fallback decision is recorded in the `serviceNameOf` comment and covered by a test. | verify: `go test ./internal/lifecycle -run ServiceName -count=1`
+- [x] An unknown `Labels` shape writes one stderr `[warn]` and does not fail status. | verify: `go test ./internal/lifecycle -run ServiceName -count=1`
+- [x] The `Names[0]` fallback decision is recorded in the `serviceNameOf` comment and covered by a test. | verify: `go test ./internal/lifecycle -run ServiceName -count=1`
+
+## Outcome
+
+Delivered in b39f7ea4: unknown Labels shapes warn once on stderr by shape; Names[0] fallback kept with the reason in the serviceNameOf comment. Independent opus review: PASS (evidence 6b7a8fbb).
