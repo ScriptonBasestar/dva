@@ -462,3 +462,107 @@ func TestRepositoryReuseRejectsMissingEntryWithDotComponents(t *testing.T) {
 		t.Fatalf("existing PATH entry with .. refused: %v", err)
 	}
 }
+
+// The dot refusal happens in repositoryPathEntry, before any path resolution,
+// so resolveMissingPath never sees a ".." component.
+func TestRepositoryReuseRefusesMissingDotDotUpstream(t *testing.T) {
+	root, _, step, opts := repositoryFixture(t)
+	dir := filepath.Join(t.TempDir(), "missing") + string(filepath.Separator) + ".." + string(filepath.Separator) + "bin"
+	env := append([]string{}, opts.Env...)
+	env[0] = "PATH=" + dir + ":/usr/bin:/bin"
+	_, err := reuseFor(context.Background(), root, step, env)
+	if err == nil || !strings.Contains(err.Error(), "with . or .. components") {
+		t.Fatalf("missing PATH entry with .. not refused upstream: %v", err)
+	}
+}
+
+// caseVariant returns path with its letters' case swapped when the volume
+// resolves that spelling to the same file, and skips otherwise.
+func caseVariant(t *testing.T, path string) string {
+	t.Helper()
+	variant := strings.Map(func(r rune) rune {
+		switch {
+		case r >= 'a' && r <= 'z':
+			return r - 'a' + 'A'
+		case r >= 'A' && r <= 'Z':
+			return r - 'A' + 'a'
+		}
+		return r
+	}, path)
+	a, errA := os.Stat(path)
+	b, errB := os.Stat(variant)
+	if variant == path || errA != nil || errB != nil || !os.SameFile(a, b) {
+		t.Skip("volume is case-sensitive")
+	}
+	return variant
+}
+
+func TestPathInsideCaseVariantOnCaseInsensitiveVolume(t *testing.T) {
+	root, _, step, opts := repositoryFixture(t)
+	tools := filepath.Join(root, "tools")
+	if err := os.Mkdir(tools, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	variant := caseVariant(t, root)
+	for name, path := range map[string]string{
+		"root":         variant,
+		"existing":     filepath.Join(variant, "tools"),
+		"missing-tail": filepath.Join(variant, "not-yet", "bin"),
+	} {
+		t.Run(name, func(t *testing.T) {
+			if !pathInside(root, path) {
+				t.Fatalf("case variant %s judged outside %s", path, root)
+			}
+			env := append([]string{}, opts.Env...)
+			env[0] = "PATH=" + path + ":/usr/bin:/bin"
+			if _, err := reuseFor(context.Background(), root, step, env); err == nil || !strings.Contains(err.Error(), "checkout-local") {
+				t.Fatalf("case-variant checkout PATH entry accepted: %v", err)
+			}
+		})
+	}
+}
+
+func TestPathInsideDecidesByIdentity(t *testing.T) {
+	base, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	root := filepath.Join(base, "repo")
+	sibling := filepath.Join(base, "repo2")
+	outside := filepath.Join(base, "outside")
+	sameName := filepath.Join(outside, "repo")
+	for _, dir := range []string{filepath.Join(root, "sub"), sibling, sameName} {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.Symlink(outside, filepath.Join(root, "escape")); err != nil {
+		t.Fatal(err)
+	}
+	sep := string(filepath.Separator)
+	for _, tc := range []struct {
+		name   string
+		path   string
+		inside bool
+	}{
+		{"root", root, true},
+		{"child", filepath.Join(root, "sub"), true},
+		{"missing-child", filepath.Join(root, "sub", "a", "b"), true},
+		{"prefix-sibling", sibling, false},
+		{"prefix-sibling-missing", filepath.Join(sibling, "bin"), false},
+		{"parent", base, false},
+		{"same-name-elsewhere", filepath.Join(sameName, "bin"), false},
+		{"symlink-outside", filepath.Join(root, "escape"), false},
+		{"symlink-outside-missing", filepath.Join(root, "escape", "bin"), false},
+		{"missing-dotdot", root + sep + "gone" + sep + ".." + sep + ".." + sep + "repo2", true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := pathInside(root, tc.path); got != tc.inside {
+				t.Fatalf("pathInside(%s, %s) = %v, want %v", root, tc.path, got, tc.inside)
+			}
+		})
+	}
+	if pathInside(filepath.Join(base, "no-root"), root) {
+		t.Fatal("missing root judged to contain a path")
+	}
+}

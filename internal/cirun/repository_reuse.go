@@ -77,27 +77,51 @@ func repositoryPathEntry(root, dir string) (string, error) {
 	return "directory\x00" + resolved, nil
 }
 
-// resolveMissingPath resolves an absolute path one component at a time, so a
-// symlink is followed before a following ".." applies to it, as the kernel
-// does. It stops at the first missing component and appends the remainder.
+// resolveMissingPath returns the canonical form of path's deepest existing
+// ancestor joined with the missing remainder. The caller refuses "." and ".."
+// components first (repositoryPathEntry), so the plain parent walk in
+// splitExisting never folds one lexically; it refuses them itself as well.
 func resolveMissingPath(path string) string {
-	current := string(filepath.Separator)
-	parts := strings.Split(path, string(filepath.Separator))
-	for i, part := range parts {
-		if part == "" || part == "." {
-			continue
-		}
-		if part == ".." {
-			current = filepath.Dir(current)
-			continue
-		}
-		resolved, err := filepath.EvalSymlinks(filepath.Join(current, part))
-		if err != nil {
-			return filepath.Join(append([]string{current}, parts[i:]...)...)
-		}
-		current = resolved
+	ancestor, missing, err := splitExisting(path)
+	if err != nil {
+		return path
 	}
-	return current
+	return filepath.Join(ancestor, missing)
+}
+
+var errDotComponent = errors.New("missing path with . or .. components")
+
+// splitExisting canonicalizes the deepest existing ancestor of an absolute
+// path and returns it with the lexical remainder below it. Past a missing
+// component the kernel defines no target for "." or "..", so a missing path
+// spelled with them is refused rather than folded.
+func splitExisting(path string) (string, string, error) {
+	resolved, err := filepath.EvalSymlinks(path)
+	if err == nil {
+		return resolved, "", nil
+	}
+	if !errors.Is(err, fs.ErrNotExist) && !errors.Is(err, syscall.ENOTDIR) {
+		return "", "", err
+	}
+	if hasDotComponent(path) {
+		return "", "", errDotComponent
+	}
+	missing := ""
+	for current := filepath.Clean(path); ; {
+		parent := filepath.Dir(current)
+		if parent == current {
+			return "", "", err
+		}
+		missing = filepath.Join(filepath.Base(current), missing)
+		current = parent
+		resolved, err = filepath.EvalSymlinks(current)
+		if err == nil {
+			return resolved, missing, nil
+		}
+		if !errors.Is(err, fs.ErrNotExist) && !errors.Is(err, syscall.ENOTDIR) {
+			return "", "", err
+		}
+	}
 }
 
 func hasDotComponent(path string) bool {
@@ -109,7 +133,34 @@ func hasDotComponent(path string) bool {
 	return false
 }
 
+// pathInside reports whether path is root or lies below it, deciding by file
+// identity rather than spelling: on a case-insensitive volume two spellings
+// name one directory. The canonical existing ancestor of path is walked upward
+// and each directory compared with root by os.SameFile; a missing remainder
+// below that ancestor is lexical and cannot leave it. A stat error counts as
+// not inside. A missing path with "." or ".." counts as inside, so callers
+// that refuse checkout-local paths refuse it too.
 func pathInside(root, path string) bool {
-	rel, err := filepath.Rel(root, path)
-	return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
+	rootInfo, err := os.Stat(root)
+	if err != nil {
+		return false
+	}
+	ancestor, _, err := splitExisting(path)
+	if err != nil {
+		return errors.Is(err, errDotComponent)
+	}
+	for current := ancestor; ; {
+		info, err := os.Stat(current)
+		if err != nil {
+			return false
+		}
+		if os.SameFile(info, rootInfo) {
+			return true
+		}
+		parent := filepath.Dir(current)
+		if parent == current {
+			return false
+		}
+		current = parent
+	}
 }
