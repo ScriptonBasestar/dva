@@ -29,8 +29,7 @@ func TestAdmissionPerStepWorkerCeiling(t *testing.T) {
 	}
 }
 
-// Admitted steps run one at a time, so each step receives the whole class limit.
-func TestAdmissionStepsReceiveClassWorkersAndReleaseLeases(t *testing.T) {
+func TestAdmissionProfileSharesWorkersAndReleasesLease(t *testing.T) {
 	t.Setenv("DVA_RESOURCE_SUPERVISED", "")
 	t.Setenv("DVA_CI_PARENT_RUN", "")
 	root, state, resource := t.TempDir(), t.TempDir(), filepath.Join(t.TempDir(), "resource")
@@ -41,12 +40,12 @@ func TestAdmissionStepsReceiveClassWorkersAndReleaseLeases(t *testing.T) {
 	}
 	jobs := 4
 	p := config.CIProfile{Timeout: "5s", MaxParallel: 2, ToolJobs: &jobs, Admission: &config.CIAdmission{Class: "heavy", Priority: "normal", WaitTimeout: "1s"}, Steps: []config.CIStep{{Name: "one", Run: "true"}, {Name: "two", Run: "true"}}}
-	r, err := Run(context.Background(), Options{Root: root, ProfileName: "full", StateDir: state, lockDirectory: state, resourceDirectory: resource, Env: []string{"DVA_RESOURCE_POLICY=" + policy, "CARGO_BUILD_JOBS=8", "RUST_TEST_THREADS=8"}, Profile: p})
+	r, err := Run(context.Background(), Options{Root: root, ProfileName: "full", StateDir: state, lockDirectory: state, resourceDirectory: resource, Env: []string{"DVA_RESOURCE_POLICY=" + policy, "CARGO_BUILD_JOBS=4", "RUST_TEST_THREADS=4"}, Profile: p})
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, s := range r.Steps {
-		if s.WorkerBudget == nil || s.WorkerBudget.DVAJobs != 4 || s.WorkerBudget.CargoBuildJobs != 4 || s.WorkerBudget.RustTestThreads != 4 || s.Admission == nil || s.Admission.Outcome != "completed" {
+		if s.WorkerBudget == nil || s.WorkerBudget.DVAJobs != 2 || s.WorkerBudget.CargoBuildJobs != 2 || s.WorkerBudget.RustTestThreads != 2 {
 			t.Fatalf("bad budget %+v", s.WorkerBudget)
 		}
 	}

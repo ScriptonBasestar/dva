@@ -18,9 +18,8 @@ type AdmissionObservation struct {
 	WaitDuration      *string `json:"wait_duration"`
 	ExecutionDuration *string `json:"execution_duration"`
 	ClaimID           string  `json:"claim_id,omitempty"`
-	// Granularity is "step" when every step takes its own claim; ClaimID and
-	// WaitDuration then describe the initial claim only.
-	Granularity string `json:"granularity,omitempty"`
+	// Yields lists each step-boundary release and re-admission of this run.
+	Yields []AdmissionYield `json:"yields,omitempty"`
 }
 
 func admissionWait(ctx context.Context, dir string, p resourceadmission.Policy, digest, class, priority, label string, out io.Writer) (*resourceadmission.Lease, *AdmissionObservation, error) {

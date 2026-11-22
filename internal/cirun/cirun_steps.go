@@ -43,6 +43,9 @@ type lockedWriter struct {
 
 type progressIntervalKey struct{}
 
+// stepStartHookKey lets tests run code inside a step goroutine.
+type stepStartHookKey struct{}
+
 func (w *lockedWriter) Write(p []byte) (int, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -104,6 +107,8 @@ func execute(ctx context.Context, root string, p config.CIProfile, inherited []s
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	started := time.Now()
+	admission, _ := ctx.Value(profileAdmissionKey{}).(*profileAdmission)
+	yieldPending := false
 	running := 0
 	complete := 0
 	failed := false
@@ -157,8 +162,23 @@ func execute(ctx context.Context, root string, p config.CIProfile, inherited []s
 		_, _ = fmt.Fprintf(out, "ci dispatch step=%s completed=%d/%d\n", p.Steps[i].Name, complete, n)
 		startedAt := reports[i].StartedAt
 		go func() {
-			r, e := runAdmittedStep(ctx, root, p.Steps[i], stepEnv, stepWorkers, stepSource, out, startedAt)
-			done <- result{i, r, e}
+			var r StepReport
+			var e error
+			// A panicking step still reports, so the run reaches its claim
+			// release instead of the process dying with the claim recorded.
+			defer func() {
+				if v := recover(); v != nil {
+					r = StepReport{Name: p.Steps[i].Name, Status: "failed", StartedAt: startedAt, FinishedAt: time.Now()}
+					r.Duration = r.FinishedAt.Sub(startedAt)
+					e = fmt.Errorf("step panicked: %v", v)
+					r.Error = e.Error()
+				}
+				done <- result{i, r, e}
+			}()
+			if hook, ok := ctx.Value(stepStartHookKey{}).(func(string)); ok {
+				hook(p.Steps[i].Name)
+			}
+			r, e = runConditionedStep(ctx, root, p.Steps[i], stepEnv, stepWorkers, stepSource, out, startedAt)
 		}()
 		return nil
 	}
@@ -192,7 +212,7 @@ func execute(ctx context.Context, root string, p config.CIProfile, inherited []s
 				break
 			}
 		}
-		for !fatal && running < max {
+		for !fatal && !yieldPending && running < max {
 			next := -1
 			for i := range p.Steps {
 				ready, blocked := dependencyState(i)
@@ -204,12 +224,30 @@ func execute(ctx context.Context, root string, p config.CIProfile, inherited []s
 			if next < 0 {
 				break
 			}
+			// Dispatch boundary: hand the claim to a request the ordering
+			// ranks at least as high, after the running steps finish.
+			if admission != nil && admission.contended(ctx) {
+				yieldPending = true
+				_, _ = fmt.Fprintf(out, "ci admission yielding before step=%s running=%d\n", p.Steps[next].Name, running)
+				break
+			}
 			if err := start(next); err != nil {
 				stepErr = errors.Join(stepErr, err)
 				fatal = true
 				cancel()
 				break
 			}
+		}
+		if yieldPending && running == 0 {
+			yieldPending = false
+			if !fatal {
+				if err := admission.yield(ctx); err != nil {
+					stepErr = errors.Join(stepErr, fmt.Errorf("resource admission yield: %w", err))
+					fatal = true
+					cancel()
+				}
+			}
+			continue
 		}
 		if running == 0 {
 			if !fatal && complete < n {

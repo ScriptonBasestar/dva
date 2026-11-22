@@ -175,8 +175,7 @@ func Acquire(ctx context.Context, dir string, p Policy, digest, class, priority 
 	if weight < 1 {
 		return nil, errors.New("unknown resource class")
 	}
-	rank := map[string]int{"background": 0, "normal": 1, "interactive": 2}
-	if _, ok := rank[priority]; !ok {
+	if _, ok := priorityRank[priority]; !ok {
 		return nil, errors.New("unknown resource priority")
 	}
 	age, err := time.ParseDuration(p.AgingInterval)
@@ -283,73 +282,7 @@ func Acquire(ctx context.Context, dir string, p Policy, digest, class, priority 
 				entries = append(entries, request)
 			}
 			pick := func(excluded map[string]bool) (string, error) {
-				var waiting []entry
-				used, running, heavy := 0, 0, 0
-				for _, e := range entries {
-					if excluded[e.ID] {
-						continue
-					}
-					switch e.State {
-					case "running":
-						w := p.Weights[e.Class]
-						if w < 1 {
-							return "", errors.New("invalid active resource class")
-						}
-						used += w
-						running++
-						if e.Class == "heavy" {
-							heavy++
-						}
-					case "waiting":
-						if _, ok := rank[e.Priority]; !ok || e.QueuedAt.IsZero() {
-							return "", errors.New("invalid waiting resource priority or timestamp")
-						}
-						waiting = append(waiting, e)
-					default:
-						return "", errors.New("invalid resource state")
-					}
-				}
-				now := time.Now()
-				score := func(e entry) int {
-					v, ok := rank[e.Priority]
-					if !ok {
-						return -1
-					}
-					boost := now.Sub(e.QueuedAt) / age
-					boost = max(0, boost)
-					if boost >= 2 {
-						return 2
-					}
-					return min(2, v+int(boost))
-				}
-				sort.SliceStable(waiting, func(i, j int) bool {
-					a, b := score(waiting[i]), score(waiting[j])
-					if a != b {
-						return a > b
-					}
-					if waiting[i].QueuedAt.Equal(waiting[j].QueuedAt) {
-						return waiting[i].ID < waiting[j].ID
-					}
-					return waiting[i].QueuedAt.Before(waiting[j].QueuedAt)
-				})
-				selected := ""
-				for _, candidate := range waiting {
-					w := p.Weights[candidate.Class]
-					if w < 1 {
-						return "", errors.New("invalid waiting resource class")
-					}
-					// Reserve free capacity for an aged heavy request when only
-					// other work's capacity prevents it from starting. A heavy
-					// already occupying the heavy lane permits light backfill.
-					if candidate.Class == "heavy" && now.Sub(candidate.QueuedAt) >= age && heavy < p.MaxHeavy && used+w > p.Capacity {
-						break
-					}
-					if used+w <= p.Capacity && running < p.MaxRunning && (candidate.Class != "heavy" || heavy < p.MaxHeavy) {
-						selected = candidate.ID
-						break
-					}
-				}
-				return selected, nil
+				return selectNext(entries, p, excluded, time.Now(), age)
 			}
 			selected, err := pick(nil)
 			if err != nil {
@@ -388,6 +321,82 @@ func Acquire(ctx context.Context, dir string, p Policy, digest, class, priority 
 		case <-time.After(100 * time.Millisecond):
 		}
 	}
+}
+
+var priorityRank = map[string]int{"background": 0, "normal": 1, "interactive": 2}
+
+// admissionScore is a waiting request's priority rank raised by its queue age.
+func admissionScore(e entry, now time.Time, age time.Duration) int {
+	v, ok := priorityRank[e.Priority]
+	if !ok {
+		return -1
+	}
+	boost := now.Sub(e.QueuedAt) / age
+	boost = max(0, boost)
+	if boost >= 2 {
+		return 2
+	}
+	return min(2, v+int(boost))
+}
+
+// selectNext returns the waiting request the ordering admits next, ignoring
+// excluded claims, or "" when none fits. Acquire and YieldWanted share it.
+func selectNext(entries []entry, p Policy, excluded map[string]bool, now time.Time, age time.Duration) (string, error) {
+	var waiting []entry
+	used, running, heavy := 0, 0, 0
+	for _, e := range entries {
+		if excluded[e.ID] {
+			continue
+		}
+		switch e.State {
+		case "running":
+			w := p.Weights[e.Class]
+			if w < 1 {
+				return "", errors.New("invalid active resource class")
+			}
+			used += w
+			running++
+			if e.Class == "heavy" {
+				heavy++
+			}
+		case "waiting":
+			if _, ok := priorityRank[e.Priority]; !ok || e.QueuedAt.IsZero() {
+				return "", errors.New("invalid waiting resource priority or timestamp")
+			}
+			waiting = append(waiting, e)
+		default:
+			return "", errors.New("invalid resource state")
+		}
+	}
+	score := func(e entry) int { return admissionScore(e, now, age) }
+	sort.SliceStable(waiting, func(i, j int) bool {
+		a, b := score(waiting[i]), score(waiting[j])
+		if a != b {
+			return a > b
+		}
+		if waiting[i].QueuedAt.Equal(waiting[j].QueuedAt) {
+			return waiting[i].ID < waiting[j].ID
+		}
+		return waiting[i].QueuedAt.Before(waiting[j].QueuedAt)
+	})
+	selected := ""
+	for _, candidate := range waiting {
+		w := p.Weights[candidate.Class]
+		if w < 1 {
+			return "", errors.New("invalid waiting resource class")
+		}
+		// Reserve free capacity for an aged heavy request when only
+		// other work's capacity prevents it from starting. A heavy
+		// already occupying the heavy lane permits light backfill.
+		if candidate.Class == "heavy" && now.Sub(candidate.QueuedAt) >= age && heavy < p.MaxHeavy && used+w > p.Capacity {
+			break
+		}
+		if used+w <= p.Capacity && running < p.MaxRunning && (candidate.Class != "heavy" || heavy < p.MaxHeavy) {
+			selected = candidate.ID
+			break
+		}
+	}
+	return selected, nil
 }
 
 // Complete releases a lease only after the owning supervisor has observed child

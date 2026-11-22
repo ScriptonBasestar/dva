@@ -42,27 +42,8 @@ null이다. 비어 있는 보고 파일은 완료 증거가 아니다.
 
 CI profile의 `admission`은 `class`, `priority`, `wait_timeout`을 명시한 경우에만
 같은 host 정책에 참가한다. 선언하지 않은 기존 프로필은 바뀌지 않는다. OCI 단계와
-child CI 선언은 지원하지 않는다. 첫 입장 대기 때 중첩 resource admission은 거부한다.
-
-입장 단위는 단계다. 실행 시작 전 첫 claim을 기다려 받고(아래 `waiting` receipt), 그
-claim을 처음 시작하는 단계에 넘긴다. 이후 각 단계는 시작 전에 프로필의 class·priority로
-새 claim을 기다려 받고, 단계가 끝나면(성공·실패·취소·시간 초과 모두) 반납한다. 따라서
-다른 세션이 기다리는 claim은 실행 끝이 아니라 다음 단계 경계에서 기존 우선순위·대기
-순서로 경쟁한다. 선점·강제 종료는 없다. 감독자는 claim을 동시에 둘 이상 갖지 않는다.
-이를 위해 admission이 활성인 실행은 `max_parallel` 선언과 무관하게 단계를 하나씩
-실행하고, 각 단계는 class의 `worker_limits` 전체를 받는다. claim마다 그 단계가 시작한
-프로세스 그룹만 기록하므로 감독자 비정상 종료 시 회수·격리 판단은 해당 단계 claim
-단위다. 정리 확인이 안 된 단계의 claim은 격리되고 그 단계와 실행은 실패한다. 단계의
-입장 대기는 단계 timeout에는 포함되지 않지만 profile timeout에는 포함된다. 단계 대기가
-`wait_timeout`을 넘으면 그 단계는 `timed_out`, 실행은 실패한다. 단계 receipt의
-`admission`은 그 단계 claim의 대기·실행 시간과 결과를, 실행 receipt의 `admission`은
-`granularity: step`, 첫 claim의 ID·대기 시간, 전체 실행 시간과 종합 결과를 기록한다.
-실행 전체를 독점해야 하는 프로필을 위한 별도 모드는 없다.
-
-남은 한계: 한 단계가 오래 걸리면 그 단계가 끝날 때까지 자리를 비우지 않는다. 대기
-제한(기본 5분)보다 긴 단일 단계는 그 뒤의 interactive 대기를 여전히 시간 초과시킬 수
-있다. sigdock의 `workspace-release-gate`처럼 긴 gate는 여러 dva 단계로 나눠야 경계가
-생긴다(해당 저장소의 별도 변경). 조건부 모드에서 정책이 없으면 외부 감독 마커가 있어도 새 profile lease를
+child CI 선언은 지원하지 않는다. profile lease를 획득할 때 중첩 resource admission은
+거부한다. 조건부 모드에서 정책이 없으면 외부 감독 마커가 있어도 새 profile lease를
 획득하지 않고 기존 root·parent·child CI 검사를 따른다. 환경 마커는 중첩을 감지하기
 위한 값일 뿐 권한이나 신뢰할 수 있는 lease 증거가 아니다.
 
@@ -78,10 +59,29 @@ lease 없이 실행하고 admission 결과를 `not_configured`로 기록한다. 
 
 DVA 자체 프로필은 모두 heavy로 분류한다. dev·commit은 interactive, core·full·audit·
 macos-platform은 background 우선순위를 사용한다. class는 자원량의 협력적 분류이고
-priority는 단계 경계마다 적용되는 대기 순서다. host 정책을 지정한 경우에만 참가하므로 공개 CLI와 hosted CI는
-정책 없이도 실행된다. 5분은 측정된 최적값이 아닌 초기 입장 대기 예산이며 5분보다 긴
-단일 단계 뒤에서 시간 초과할 수 있다. 초기 host 운영은 heavy 1개와 light 2개 동시 용량을 기준으로 하되
+priority는 대기 순서다. host 정책을 지정한 경우에만 참가하므로 공개 CLI와 hosted CI는
+정책 없이도 실행된다. 5분은 측정된 최적값이 아닌 초기 입장 대기 예산이며 긴 gate 뒤에서
+시간 초과할 수 있다. 초기 host 운영은 heavy 1개와 light 2개 동시 용량을 기준으로 하되
 자동 조정하지 않는다. 이 분류는 CPU 사용량 측정이나 강제 제한이 아니다.
+
+## 단계 경계 양보
+
+profile admission run은 claim 하나를 쥐고 선언된 병렬 단계를 그 아래에서 그대로 실행한다.
+다음 단계를 띄우기 직전마다 큐를 읽기 전용으로 확인한다. 같은 이상의 순위(나이 보정 포함)인
+대기 요청이 이 run의 claim이 풀려야만 입장할 수 있으면, run은 새 단계 띄우기를 멈추고 실행 중인
+단계가 끝나기를 기다린 뒤 claim을 반납하고 같은 class·priority로 다시 줄을 선다. 재입장 후
+남은 단계를 이어 실행한다. 경쟁이 없는 run은 반납하지 않으며 병렬성도 그대로다. 선점, 시간
+제한 변경, 정책 숫자 변경은 없다. run은 반납이 끝난 뒤에만 다시 줄을 서므로 동시에 claim 두
+개를 쥐지 않는다. cleanup 불확실 claim은 일찍 반납하지 않고, 큐 조회가 실패하면 claim을 유지한다.
+
+비용: 양보할 때마다 양보한 run은 재입장 대기를 한 번 더 치르며, 그 시간은 profile의 전체
+timeout에 포함된다. 재입장이 wait-timeout 안에 실패하면 run은 claim 없이 실패한다. 단계 하나가
+대기자의 입장 예산보다 길면 그 단계가 끝날 때까지 대기자는 여전히 막힌다. 경계는 단계 사이에만
+있으므로, 긴 단일 gate(예: sigdock의 workspace-release-gate)는 별도로 단계를 나눠야 효과가 있다.
+
+receipt의 `admission.yields`(추가 필드, 양보가 없으면 생략)는 양보마다 `released_claim_id`,
+새 `claim_id`, `outcome`, 재입장 `wait_duration`을 기록한다. 단계 goroutine의 panic은 단계
+실패로 바뀌어 claim 반납 경로를 그대로 지난다.
 
 ## CI 대기 관측
 
