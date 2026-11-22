@@ -105,7 +105,9 @@ config의 상수와 lifecycle의 프로세스 생존 확인만 쓰며, plan을 �
 `internal/worktarget/`는 작업 worktree 조회만 소유한다. `git worktree list` 파서와
 target provider 인터페이스(`Provider`, 기본 `Git`: 대상 ID는 branch)가 여기 있다.
 compare의 `worktree:<id>` 비교안과 `dva target`(TASK-538)이 같은 provider를 쓰며, 이
-패키지는 아무것도 시작하거나 지우지 않는다.
+패키지는 아무것도 시작하거나 지우지 않는다. CLI는 이 패키지를 직접 import하지 않고
+`internal/compare`의 target 함수(`TargetCandidates`·`SelectTarget`·`TargetConfigDir`·`VerifyTarget`)로만
+읽는다(`tools/archcheck`가 이 방향을 강제한다).
 
 ### Skill distribution
 

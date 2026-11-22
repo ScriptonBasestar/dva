@@ -12,9 +12,9 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/ScriptonBasestar/dva/internal/compare"
 	"github.com/ScriptonBasestar/dva/internal/lifecycle"
 	"github.com/ScriptonBasestar/dva/internal/output"
-	"github.com/ScriptonBasestar/dva/internal/worktarget"
 )
 
 // targetVerbs are the lifecycle verbs `dva target <id>` runs in a target (TASK-587 contract).
@@ -53,7 +53,7 @@ where they are passed through; the verb's exit status is dva target's exit statu
 		if len(args) > 0 {
 			return runTarget(cmd, dir, args)
 		}
-		repo, list, err := worktarget.Candidates(compareContext(cmd), dir)
+		repo, list, err := compare.TargetCandidates(compareContext(cmd), dir)
 		if err != nil {
 			return err
 		}
@@ -65,11 +65,11 @@ where they are passed through; the verb's exit status is dva target's exit statu
 }
 
 type targetListing struct {
-	Repository string                 `json:"repository"`
-	Candidates []worktarget.Candidate `json:"candidates"`
+	Repository string                    `json:"repository"`
+	Candidates []compare.TargetCandidate `json:"candidates"`
 }
 
-func writeTargetTable(w io.Writer, list []worktarget.Candidate) error {
+func writeTargetTable(w io.Writer, list []compare.TargetCandidate) error {
 	tw := tabwriter.NewWriter(w, 0, 4, 2, ' ', 0)
 	if _, err := fmt.Fprintln(tw, "ID\tKIND\tHEAD\tDIRTY\tLOCKED\tPATH"); err != nil {
 		return err
@@ -149,11 +149,11 @@ func runTarget(cmd *cobra.Command, dir string, args []string) error {
 		}
 	}
 	ctx := compareContext(cmd)
-	sel, err := worktarget.Select(ctx, dir, args[0])
+	sel, err := compare.SelectTarget(ctx, dir, args[0])
 	if err != nil {
 		return err
 	}
-	runDir, err := worktarget.ConfigDir(ctx, dir, sel)
+	runDir, err := compare.TargetConfigDir(ctx, dir, sel)
 	if err != nil {
 		return err
 	}
@@ -165,7 +165,7 @@ func runTarget(cmd *cobra.Command, dir string, args []string) error {
 		sel.ID, sel.Kind, runDir, sel.Branch, head, yesNo(sel.Dirty)); err != nil {
 		return err
 	}
-	if err := worktarget.Verify(ctx, sel); err != nil {
+	if err := compare.VerifyTarget(ctx, sel); err != nil {
 		return err
 	}
 	return runTargetIn(ctx, runDir, sel.ID, args[1:])

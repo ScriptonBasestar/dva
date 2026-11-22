@@ -148,15 +148,25 @@ ci:
         - &ci-docs
           name: docs
           run: go run ./tools/doccheck && go run ./tools/cilabels && go run ./tools/flowcheck && go run ./tools/planprogress && go run ./tools/yamlcheck && go run ./tools/changelogcheck
+          depends_on: [check-generate]
+        # check-generate rewrites generated files before comparing them, so the steps that read
+        # those files (docs, vet) wait for it instead of racing it.
+        - &ci-check-generate
+          name: check-generate
+          run: make check-generate
           depends_on: [format]
         - &ci-vet
           name: vet
           run: go vet ./...
-          depends_on: [format]
+          depends_on: [check-generate]
+        - &ci-archcheck
+          name: archcheck
+          run: go run ./tools/archcheck
+          depends_on: [vet]
         - &ci-lint-preflight
           name: lint-preflight
           run: sh scripts/ci-lint.sh preflight
-          depends_on: [vet]
+          depends_on: [archcheck]
         - &ci-lint-golangci
           name: lint-golangci
           run: sh scripts/ci-lint.sh golangci
@@ -185,7 +195,9 @@ ci:
       steps: &full-steps
         - *ci-format
         - *ci-docs
+        - *ci-check-generate
         - *ci-vet
+        - *ci-archcheck
         - *ci-lint-preflight
         - *ci-lint-golangci
         - *ci-lint-gopls
