@@ -5,7 +5,10 @@ type: feature
 priority: P3
 effort: S
 exec-tier: standard
-status: todo
+status: done
+delivered-by: 3a3c64a6
+quality-review: pass
+quality-review-evidence: "ce review-evidence 8ade547761a5ca2d6c6bc47a9c526a24f9d66f5e2693ddfa5afdb7a97364e408"
 created: 2026-11-22
 allowed-paths: [internal/lifecycle/, USAGE.md, CHANGELOG.md, tasks/]
 ---
@@ -39,3 +42,11 @@ stopped or failed.
   limit) into composition_wait_ready.go unchanged apart from the new check.
 - Limit: a server that daemonizes only after the probes pass while its parent is still alive
   is not caught by `up`; the next `status` reports it.
+
+## Review Attempts
+
+### 1. 2026-11-22 — reviewer: 독립 opus 서브에이전트(읽기 전용), executor: 구현 실행(3a3c64a6)
+
+- 기준 전부 pass. 근거: `ce review-evidence 8ade5477…`.
+- 대기 함수 이동은 동작 보존, error 상태는 소비자를 깨지 않는다. 비차단: dva stop 뒤 무관한 프로세스가 포트를 잡으면 status가 escaped로 오보 — TASK-632로 이관.
+- 다음 전환: done.

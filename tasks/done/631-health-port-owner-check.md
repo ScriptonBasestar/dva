@@ -5,7 +5,10 @@ type: feature
 priority: P3
 effort: M
 exec-tier: standard
-status: todo
+status: done
+delivered-by: bc76a5be
+quality-review: pass
+quality-review-evidence: "ce review-evidence c1b5bc5f3d46c4708ca2f96b7e9f364b97f056d5fd0187420d2215c5ba1cf0e6"
 created: 2026-11-22
 allowed-paths: [internal/lifecycle/, USAGE.md, CHANGELOG.md, tasks/]
 ---
@@ -44,3 +47,11 @@ Otherwise state explicitly that ownership was not verified.
   group comparison fails the mismatch and real-lookup tests.
 - Limit: a listener inside the group is accepted even if it is a different child than
   intended; `up`/`status` wiring is covered by the shared helper's tests, not end to end.
+
+## Review Attempts
+
+### 1. 2026-11-22 — reviewer: 독립 opus 서브에이전트(읽기 전용), executor: 구현 실행(bc76a5be)
+
+- 기준 전부 pass. 근거: `ce review-evidence c1b5bc5f…`.
+- Linux /proc 파싱·darwin lsof 처리 정확, 읽을 수 없는 소유자는 mismatch가 아닌 unverified. 비차단: 포그라운드 docker run -p native 엔트리가 macOS에서 up 실패(opt-out 없음), 원격 호스트 경고 소음 — TASK-633으로 이관.
+- 다음 전환: done.

@@ -5,7 +5,10 @@ type: feature
 priority: P3
 effort: S
 exec-tier: standard
-status: todo
+status: done
+delivered-by: 401225f1
+quality-review: pass
+quality-review-evidence: "ce review-evidence 922c35a55e08d2ba118be64201e82f81720215e679824780a1cd715d4e480695"
 created: 2026-11-22
 allowed-paths: [internal/config/, internal/cli/, internal/lifecycle/port_guard.go, USAGE.md, CHANGELOG.md, tasks/]
 ---
@@ -37,3 +40,11 @@ before then.
   agree on the port. That is why `internal/lifecycle/port_guard.go` joined `allowed-paths`.
 - Ports are compared by number only, so `localhost:8080` and `127.0.0.1:8080` collide.
 - No warning fires on the repository's own dva.yml or the 11 example/fixture yml files.
+
+## Review Attempts
+
+### 1. 2026-11-22 — reviewer: 독립 opus 서브에이전트(읽기 전용), executor: 구현 실행(401225f1)
+
+- 기준 전부 pass. 근거: `ce review-evidence 922c35a5…`.
+- 포트 가드 리팩터는 동작 보존. 비차단: 포트 번호만 비교, 플랜 간 경고 소음, native·legacy docker 테스트 공백.
+- 다음 전환: done.

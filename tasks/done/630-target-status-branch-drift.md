@@ -5,7 +5,10 @@ type: feature
 priority: P3
 effort: XS
 exec-tier: standard
-status: todo
+status: done
+delivered-by: 03d693ae
+quality-review: pass
+quality-review-evidence: "ce review-evidence b6c03defdba2a21ecd0ffb86b304447109948c3fda24cdcf514f36670c366f65"
 created: 2026-11-22
 allowed-paths: [internal/cli/, internal/lifecycle/, USAGE.md, CHANGELOG.md]
 ---
@@ -32,3 +35,11 @@ silent. Status should compare the identity file with the current worktree and fl
 같은 표시를 받는다. 텍스트는 서비스 표 아래 `!` 줄, JSON은 `drift`. 기록 identity가 없거나 git 밖이면 표시하지
 않는다. 테스트는 `drift_unix_test.go`(변경 없음·브랜치+커밋·커밋만·텍스트/JSON). Status 연결을 끄면
 변경 케이스 2개가 실패하는 것을 확인했다.
+
+## Review Attempts
+
+### 1. 2026-11-22 — reviewer: 독립 opus 서브에이전트(읽기 전용), executor: 구현 실행(03d693ae)
+
+- 기준 전부 pass. 근거: `ce review-evidence b6c03def…`.
+- dva target status와 dva status(text·--json)가 같은 ProcessPlugin.Status를 거친다. 비차단: end-to-end target status 테스트 없음.
+- 다음 전환: done.
