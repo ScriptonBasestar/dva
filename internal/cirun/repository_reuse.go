@@ -56,16 +56,16 @@ func repositoryPathEntry(root, dir string) (string, error) {
 		if hasDotComponent(dir) {
 			return "", fmt.Errorf("repository reuse forbids missing PATH entry %q with . or .. components", dir)
 		}
-		if pathInside(root, resolveMissingPath(dir)) {
-			return "", errors.New("repository reuse forbids checkout-local PATH entries")
+		if err := refuseCheckoutLocal(root, dir, "PATH entries"); err != nil {
+			return "", err
 		}
 		return "absent", nil
 	}
 	if err != nil {
 		return "", fmt.Errorf("repository reuse PATH %q: %w", dir, err)
 	}
-	if pathInside(root, resolved) {
-		return "", errors.New("repository reuse forbids checkout-local PATH entries")
+	if err := refuseCheckoutLocal(root, resolved, "PATH entries"); err != nil {
+		return "", err
 	}
 	info, err := os.Stat(resolved)
 	if err != nil {
@@ -77,24 +77,27 @@ func repositoryPathEntry(root, dir string) (string, error) {
 	return "directory\x00" + resolved, nil
 }
 
-// resolveMissingPath returns the canonical form of path's deepest existing
-// ancestor joined with the missing remainder. The caller refuses "." and ".."
-// components first (repositoryPathEntry), so the plain parent walk in
-// splitExisting never folds one lexically; it refuses them itself as well.
-func resolveMissingPath(path string) string {
-	ancestor, missing, err := splitExisting(path)
+// refuseCheckoutLocal refuses path when it lies inside root, and also when
+// containment cannot be decided: an error is a refusal that names its cause.
+func refuseCheckoutLocal(root, path, what string) error {
+	inside, err := pathInside(root, path)
 	if err != nil {
-		return path
+		return fmt.Errorf("repository reuse cannot decide whether %q is checkout-local: %w", path, err)
 	}
-	return filepath.Join(ancestor, missing)
+	if inside {
+		return fmt.Errorf("repository reuse forbids checkout-local %s", what)
+	}
+	return nil
 }
 
-var errDotComponent = errors.New("missing path with . or .. components")
+// statPath is os.Stat; tests replace it to make identity checks fail.
+var statPath = os.Stat
 
 // splitExisting canonicalizes the deepest existing ancestor of an absolute
-// path and returns it with the lexical remainder below it. Past a missing
-// component the kernel defines no target for "." or "..", so a missing path
-// spelled with them is refused rather than folded.
+// path and returns it with the lexical remainder below it, walking plain
+// parents. The "." / ".." policy is enforced once, upstream in
+// repositoryPathEntry; a dotted missing path here is a violated precondition
+// (filepath.Dir would fold it lexically), so it is an error, never a verdict.
 func splitExisting(path string) (string, string, error) {
 	resolved, err := filepath.EvalSymlinks(path)
 	if err == nil {
@@ -104,7 +107,7 @@ func splitExisting(path string) (string, string, error) {
 		return "", "", err
 	}
 	if hasDotComponent(path) {
-		return "", "", errDotComponent
+		return "", "", fmt.Errorf("missing path %q has . or .. components", path)
 	}
 	missing := ""
 	for current := filepath.Clean(path); ; {
@@ -137,29 +140,28 @@ func hasDotComponent(path string) bool {
 // identity rather than spelling: on a case-insensitive volume two spellings
 // name one directory. The canonical existing ancestor of path is walked upward
 // and each directory compared with root by os.SameFile; a missing remainder
-// below that ancestor is lexical and cannot leave it. A stat error counts as
-// not inside. A missing path with "." or ".." counts as inside, so callers
-// that refuse checkout-local paths refuse it too.
-func pathInside(root, path string) bool {
-	rootInfo, err := os.Stat(root)
+// below that ancestor is lexical and cannot leave it. Any failure to decide
+// is returned as an error; callers must treat it as a refusal.
+func pathInside(root, path string) (bool, error) {
+	rootInfo, err := statPath(root)
 	if err != nil {
-		return false
+		return false, fmt.Errorf("stat checkout root: %w", err)
 	}
 	ancestor, _, err := splitExisting(path)
 	if err != nil {
-		return errors.Is(err, errDotComponent)
+		return false, fmt.Errorf("resolve %q: %w", path, err)
 	}
 	for current := ancestor; ; {
-		info, err := os.Stat(current)
+		info, err := statPath(current)
 		if err != nil {
-			return false
+			return false, fmt.Errorf("stat ancestor: %w", err)
 		}
 		if os.SameFile(info, rootInfo) {
-			return true
+			return true, nil
 		}
 		parent := filepath.Dir(current)
 		if parent == current {
-			return false
+			return false, nil
 		}
 		current = parent
 	}

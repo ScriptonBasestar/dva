@@ -81,7 +81,7 @@ All notable changes to DVA are documented here.
   생기거나 종류가 바뀌면 재사용하지 않습니다. 도구 조회도 execvp처럼 비디렉터리 하위 항목을 건너뜁니다.
   `.`·`..` 구성 요소가 있는 부재 항목은 거부합니다.
   checkout 내부 여부는 경로 문자열이 아니라 파일 식별자(`os.SameFile`)로 판정해, 대소문자만 다른
-  경로(macOS 기본 APFS)도 checkout 내부로 거부합니다.
+  경로(macOS 기본 APFS)도 checkout 내부로 거부합니다. 판정 중 stat이 실패하면 원인을 담아 재사용을 거부합니다.
 
 - CI 결과 재사용 키에서 `DVA_CI_JOBS`를 제외합니다. 단계 환경의 이 값은 항상
   DVA가 계산한 worker 예산이며(앰비언트 값은 실행·키 산정 전에 덮어쓴다), 그

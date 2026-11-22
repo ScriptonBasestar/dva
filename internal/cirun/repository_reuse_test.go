@@ -3,6 +3,7 @@ package cirun
 import (
 	"bytes"
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -510,8 +511,8 @@ func TestPathInsideCaseVariantOnCaseInsensitiveVolume(t *testing.T) {
 		"missing-tail": filepath.Join(variant, "not-yet", "bin"),
 	} {
 		t.Run(name, func(t *testing.T) {
-			if !pathInside(root, path) {
-				t.Fatalf("case variant %s judged outside %s", path, root)
+			if inside, err := pathInside(root, path); err != nil || !inside {
+				t.Fatalf("case variant %s judged outside %s: %v", path, root, err)
 			}
 			env := append([]string{}, opts.Env...)
 			env[0] = "PATH=" + path + ":/usr/bin:/bin"
@@ -554,15 +555,64 @@ func TestPathInsideDecidesByIdentity(t *testing.T) {
 		{"same-name-elsewhere", filepath.Join(sameName, "bin"), false},
 		{"symlink-outside", filepath.Join(root, "escape"), false},
 		{"symlink-outside-missing", filepath.Join(root, "escape", "bin"), false},
-		{"missing-dotdot", root + sep + "gone" + sep + ".." + sep + ".." + sep + "repo2", true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			if got := pathInside(root, tc.path); got != tc.inside {
-				t.Fatalf("pathInside(%s, %s) = %v, want %v", root, tc.path, got, tc.inside)
+			got, err := pathInside(root, tc.path)
+			if err != nil || got != tc.inside {
+				t.Fatalf("pathInside(%s, %s) = %v, %v; want %v", root, tc.path, got, err, tc.inside)
 			}
 		})
 	}
-	if pathInside(filepath.Join(base, "no-root"), root) {
-		t.Fatal("missing root judged to contain a path")
+	for name, tc := range map[string][2]string{
+		"missing-root":   {filepath.Join(base, "no-root"), root},
+		"missing-dotdot": {root, root + sep + "gone" + sep + ".." + sep + ".." + sep + "repo2"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if _, err := pathInside(tc[0], tc[1]); err == nil {
+				t.Fatalf("pathInside(%s, %s) decided instead of failing", tc[0], tc[1])
+			}
+		})
+	}
+}
+
+// A stat failure while deciding containment must refuse reuse and name the
+// cause, for the PATH caller and the tool caller alike.
+func TestRepositoryReuseRefusesWhenContainmentStatFails(t *testing.T) {
+	root, _, step, opts := repositoryFixture(t)
+	outsideDir, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	injected := errors.New("injected stat failure")
+	for name, failOn := range map[string]func(string) bool{
+		"root":     func(p string) bool { return p == root },
+		"ancestor": func(p string) bool { return p != root },
+	} {
+		t.Run(name, func(t *testing.T) {
+			statPath = func(p string) (os.FileInfo, error) {
+				if failOn(p) {
+					return nil, injected
+				}
+				return os.Stat(p)
+			}
+			t.Cleanup(func() { statPath = os.Stat })
+			if _, err := pathInside(root, outsideDir); !errors.Is(err, injected) {
+				t.Fatalf("pathInside swallowed the stat error: %v", err)
+			}
+			for entry, dir := range map[string]string{
+				"existing": outsideDir,
+				"missing":  filepath.Join(outsideDir, "not-yet", "bin"),
+			} {
+				env := append([]string{}, opts.Env...)
+				env[0] = "PATH=" + dir + ":/usr/bin:/bin"
+				_, err := reuseFor(context.Background(), root, step, env)
+				if err == nil || !strings.Contains(err.Error(), "cannot decide") || !strings.Contains(err.Error(), injected.Error()) {
+					t.Fatalf("%s PATH entry not refused with cause: %v", entry, err)
+				}
+			}
+			if err := refuseCheckoutLocal(root, outsideDir, "tools"); err == nil || !errors.Is(err, injected) {
+				t.Fatalf("tool caller not refused with cause: %v", err)
+			}
+		})
 	}
 }

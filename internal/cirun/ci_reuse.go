@@ -146,8 +146,10 @@ func reuseFor(ctx context.Context, root string, step config.CIStep, env []string
 		if err != nil {
 			return reusePlan{}, fmt.Errorf("ci step %q reuse tool %q: %w", step.Name, name, err)
 		}
-		if repository && pathInside(root, strings.SplitN(resolved, "\x00", 2)[0]) {
-			return reusePlan{}, errors.New("repository reuse forbids checkout-local tools")
+		if repository {
+			if err := refuseCheckoutLocal(root, strings.SplitN(resolved, "\x00", 2)[0], "tools"); err != nil {
+				return reusePlan{}, err
+			}
 		}
 		writeReuseField(h, "tool", name+"\x00"+resolved)
 	}
