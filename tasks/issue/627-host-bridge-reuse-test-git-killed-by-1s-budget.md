@@ -7,6 +7,7 @@ effort: S
 exec-tier: standard
 status: todo
 severity: medium
+ownership: local
 discovered-in: "test: TestHostBridgeReuseHitDoesNotClaim git index listing killed by 1s run budget under load"
 discovered-at: 2026-11-22
 created: 2026-11-22
