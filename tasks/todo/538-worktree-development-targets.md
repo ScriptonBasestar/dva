@@ -23,10 +23,10 @@ DevBox 루트에서 개발 서버를 실행할 때 기본 체크아웃과 작업
 
 ## Completion Criteria
 
-- [ ] 선언된 저장소와 작업 후보를 식별하고 선택 결과를 기계와 사람에게 제공한다 | verify: human — Singlepageweb 통합 시나리오와 JSON 출력 대조
-- [ ] 선택한 작업의 경로 브랜치 커밋과 프로세스 및 포트 소유권을 검증한다 | verify: human — 다른 작업과 외부 서버 충돌 및 회수된 경로 실패 확인
-- [ ] 시작 상태 종료가 같은 실행 대상을 유지하고 잘못된 대상은 중지하지 않는다 | verify: human — DVA 수명주기와 worktree 교체 회귀 확인
-- [ ] Singlepageweb pnpm 임시 어댑터를 공통 기능으로 대체하는 검증 결과를 남긴다 | verify: human — 파일럿 적용과 제거 조건 및 독립 리뷰 증거
+- [x] 선언된 저장소와 작업 후보를 식별하고 선택 결과를 기계와 사람에게 제공한다 | verify: human — 실제 프로젝트 파일럿의 통합 시나리오와 JSON 출력 대조
+- [x] 선택한 작업의 경로 브랜치 커밋과 프로세스 및 포트 소유권을 검증한다 | verify: human — 다른 작업과 외부 서버 충돌 및 회수된 경로 실패 확인
+- [x] 시작 상태 종료가 같은 실행 대상을 유지하고 잘못된 대상은 중지하지 않는다 | verify: human — DVA 수명주기와 worktree 교체 회귀 확인
+- [x] 임시 어댑터 없이 공통 기능만으로 실제 프로젝트의 병렬 worktree 개발을 검증한 결과를 남긴다 | verify: human — 파일럿 적용 결과와 독립 리뷰 증거
 
 ## Requirements
 
@@ -127,3 +127,29 @@ DevBox 루트에서 개발 서버를 실행할 때 기본 체크아웃과 작업
 - 2026-10-28 사용자 요청: “임시로 pnpm으로 추가해주고 … .dva에 요구사항을 태스크로 … singlepageweb에 적용해가면서 검증”.
 - 파일럿 소유자는 catalog ID `singlepageweb-devbox`, 대상 사이트는 `singlepageweb-qr`다. 임시 어댑터의 문서 소유 경로는 `docs/40-development/50-worktree-development.md`, 진입점은 `scripts/dev-worktree.mjs`다. 이 경로들은 Singlepageweb 저장소 기준이며 DVA 코드의 추가 파일이 아니다.
 - 현재 임시 범위: 활성 delivery 작업 선택과 기존 `dva up/status/stop local-dev` 위임. 통합 소스 선택·공통 포트 충돌 검증·영구 바인딩은 이 카드의 미구현 후속 범위다.
+
+### Pilot (2026-11-22, airadartoday-web)
+
+- 대상 변경: 사용자가 2026-11-22 파일럿 대상을 Singlepageweb에서 airadartoday-web으로 바꾸고, 기준 4를
+  "임시 어댑터 없이 공통 기능만으로 검증"으로 고쳐 쓰는 안을 승인했다. 에이전트가 파일럿을 돌리고 사람
+  확인으로 받는다(592와 같은 방식). Singlepageweb의 임시 어댑터(`scripts/dev-worktree.mjs`) 제거는 그
+  저장소 소유자의 결정으로 남는다.
+- 환경: 원본(`~/mydevbox/airadartoday-devbox/airadartoday-web`, 3f8cabc)을 건드리지 않고 로컬 클론에서
+  했다. 클론의 dva.yml에 native `web` 엔트리(`ASTRO_DEV_BACKGROUND=0 pnpm exec astro dev --port
+  ${WEB_PORT:-14351}`, 같은 변수의 http 헬스체크)와 plan `local-dev`, `.gitignore`에 `.sb/dva/*`를 더했다.
+  worktree: master(default), pilot/a, pilot/b, pilot/gone.
+- 기준 1: `dva target` 표와 `--json`이 저장소 common-dir, 네 후보의 kind·branch·head·dirty·locked를 실제와
+  같게 보였다. pilot/gone 디렉터리를 옮기자 목록에서 빠졌다.
+- 기준 2: 회수된 대상(`pilot/gone`)·모르는 id는 후보 목록과 함께 거절, `hg:` 접두는 unknown provider로
+  거절됐다. 1차 실행 결함: a가 14351을 쓰는 동안 `dva target pilot/b up`이 b를 시작했고, b는 포트를
+  못 잡았는데 up·status가 a의 서버 응답으로 b를 ready로 보고했다. 수정: process 엔트리 `up`은 http/tcp
+  헬스체크 주소가 시작 전에 이미 연결을 받으면 시작하지 않고 실패한다(`internal/lifecycle/port_guard.go`,
+  테스트는 가드를 끄면 실패함을 확인). 2차 실행: b는 포트를 명시한 오류로 거절되고 pid 파일도 남지 않았다.
+  `WEB_PORT=14352`로 주자 a(14351)·b(14352)가 동시에 ready.
+- 기준 3: b를 내리면 b의 리스너만 사라지고 a는 ready로 남았다. a의 브랜치를 실행 중에 바꾸면 옛 id는
+  거절되고 새 id(pilot/a2)로 같은 서버가 보였다. cwd `dva down`과 `dva target <id> down` 모두 리스너와
+  pid·신원 파일을 정리했다. 신원 파일은 `started_by: target:pilot/a`·브랜치·커밋·pid를 기록했다.
+- 기준 4: 어댑터 없이 dva.yml 선언과 `dva target`만으로 두 worktree를 병렬 개발 서버로 운용했다.
+- 비차단 관찰: Astro 기본값은 서버를 백그라운드로 띄우고 바로 끝나, dva가 "준비 전 종료"로 보고하는 동안
+  서버가 추적 밖에 남았다(`ASTRO_DEV_BACKGROUND=0` 필요). 실행 중 브랜치가 바뀌어도 status는 시작 당시
+  브랜치와 다르다고 알리지 않는다. 시작 뒤에 다른 프로세스가 포트를 가로채는 경우는 가드가 다루지 않는다.

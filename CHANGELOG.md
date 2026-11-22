@@ -7,6 +7,8 @@ All notable changes to DVA are documented here.
 
 ### Changed
 
+- process 엔트리 `up`은 `http`/`tcp` 헬스체크 주소가 시작 전에 이미 연결을 받으면 시작하지 않고
+  실패합니다. 다른 worktree가 같은 포트를 쓰는 동안 못 뜬 프로세스가 남의 서버로 ready 보고되던 문제(TASK-538).
 - DVA 상태 루트를 ScriptonBasestar 그룹 경로 `<state>/sb/dva`로 옮깁니다
   (`<state>` = `$XDG_STATE_HOME` 또는 `~/.local/state`, ci·resource-admission은 UID 홈 고정).
   첫 실행 때 기존 `<state>/dva`를 자동 이전하고 그 자리에 `sb/dva` 상대 symlink를 남겨 이전

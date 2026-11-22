@@ -106,6 +106,10 @@ func (p *ProcessPlugin) Up(ctx context.Context, pctx *PluginContext) (*Result, e
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
+	if held := heldHealthEndpoints(ctx, pctx.Entry.HealthChecks, pctx.Env); len(held) > 0 {
+		return nil, fmt.Errorf("process up %s: %s already accepts connections before start — another process owns the port this entry's health check probes; stop it or give this entry a different port (e.g. ${WEB_PORT:-...})",
+			name, strings.Join(held, ", "))
+	}
 	if err := startLocalProcess(name, cfg.Command, dir, pctx); err != nil {
 		return nil, fmt.Errorf("process up %s: %w", name, err)
 	}
