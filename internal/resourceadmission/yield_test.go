@@ -9,10 +9,14 @@ import (
 )
 
 func yieldFixture(t *testing.T) (string, Policy, string) {
+	return yieldFixtureAging(t, "5m")
+}
+
+func yieldFixtureAging(t *testing.T, aging string) (string, Policy, string) {
 	t.Helper()
 	dir := filepath.Join(t.TempDir(), "resource")
 	path := filepath.Join(t.TempDir(), "policy.json")
-	if err := os.WriteFile(path, []byte(`{"capacity":4,"max_running":3,"max_heavy":1,"weights":{"heavy":2,"light":1},"aging_interval":"5m"}`), 0600); err != nil {
+	if err := os.WriteFile(path, []byte(`{"capacity":4,"max_running":3,"max_heavy":1,"weights":{"heavy":2,"light":1},"aging_interval":"`+aging+`"}`), 0600); err != nil {
 		t.Fatal(err)
 	}
 	p, digest, err := ReadPolicy(path)
@@ -54,7 +58,7 @@ func TestYieldWanted(t *testing.T) {
 	}{
 		{"no waiter", "normal", "", "", false, false},
 		{"higher heavy waiter blocked by own claim", "background", "heavy", "interactive", true, false},
-		{"equal priority heavy waiter", "normal", "heavy", "normal", true, false},
+		{"equal priority heavy waiter", "normal", "heavy", "normal", false, false},
 		{"lower priority heavy waiter", "normal", "heavy", "background", false, false},
 		{"release would not admit the waiter", "background", "heavy", "interactive", false, true},
 	} {
@@ -112,5 +116,32 @@ func TestYieldWantedIsReadOnlyAndIgnoresAbandonedWaiters(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(dir, abandoned.ID+".json")); err != nil {
 		t.Fatalf("query changed state: %v", err)
+	}
+}
+
+// Aging orders waiters only: an aged waiter of the same or a lower base
+// priority never displaces a running claim.
+func TestYieldWantedIgnoresAging(t *testing.T) {
+	for _, tc := range []struct{ own, waiter string }{
+		{"background", "background"},
+		{"normal", "normal"},
+		{"normal", "background"},
+	} {
+		t.Run(tc.own+"_holder_"+tc.waiter+"_waiter", func(t *testing.T) {
+			dir, p, digest := yieldFixtureAging(t, "10ms")
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			own, err := Acquire(ctx, dir, p, digest, "heavy", tc.own)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer func() { _ = own.Complete(context.Background()) }()
+			queueWaiter(t, dir, p, digest, "heavy", tc.waiter)
+			time.Sleep(200 * time.Millisecond) // 20 aging intervals
+			got, err := YieldWanted(ctx, dir, p, digest, own.ID(), tc.own)
+			if err != nil || got {
+				t.Fatalf("aged waiter caused yield: %v %v", got, err)
+			}
+		})
 	}
 }

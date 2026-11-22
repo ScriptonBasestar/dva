@@ -67,10 +67,15 @@ priority는 대기 순서다. host 정책을 지정한 경우에만 참가하므
 ## 단계 경계 양보
 
 profile admission run은 claim 하나를 쥐고 선언된 병렬 단계를 그 아래에서 그대로 실행한다.
-다음 단계를 띄우기 직전마다 큐를 읽기 전용으로 확인한다. 같은 이상의 순위(나이 보정 포함)인
-대기 요청이 이 run의 claim이 풀려야만 입장할 수 있으면, run은 새 단계 띄우기를 멈추고 실행 중인
-단계가 끝나기를 기다린 뒤 claim을 반납하고 같은 class·priority로 다시 줄을 선다. 재입장 후
-남은 단계를 이어 실행한다. 경쟁이 없는 run은 반납하지 않으며 병렬성도 그대로다. 선점, 시간
+다음 단계를 띄우기 직전마다 큐를 읽기 전용으로 확인한다. 기본 우선순위가 이 run보다
+엄격히 높은 대기 요청(background보다 normal·interactive, normal보다 interactive)이 이 run의 claim이
+풀려야만 입장할 수 있으면, run은 새 단계 띄우기를 멈추고 실행 중인 단계가 끝나기를 기다린 뒤
+claim을 반납하고 같은 class·priority로 다시 줄을 선다. 재입장 후 남은 단계를 이어 실행한다.
+나이 보정은 대기 요청 사이의 순서에만 쓰이며 양보를 일으키지 않는다. 오래 기다린 background가
+실행 중인 background를, 오래 기다린 normal이 실행 중인 normal을 밀어내지 않는다. 같은 순위
+안에서는 먼저 입장한 run이 끝까지 실행하므로 FIFO가 유지된다. 양보는 엄격히 높은 순위로만
+가므로, 양보한 run이 다시 입장한 뒤 같은 순위의 다른 run에게 또 밀려날 수 없고 같은 순위끼리
+claim을 주고받는 반복(ping-pong)은 생기지 않는다. 경쟁이 없는 run은 반납하지 않으며 병렬성도 그대로다. 선점, 시간
 제한 변경, 정책 숫자 변경은 없다. run은 반납이 끝난 뒤에만 다시 줄을 서므로 동시에 claim 두
 개를 쥐지 않는다. cleanup 불확실 claim은 일찍 반납하지 않고, 큐 조회가 실패하면 claim을 유지한다.
 
@@ -81,7 +86,7 @@ timeout에 포함된다. 재입장이 wait-timeout 안에 실패하면 run은 cl
 
 receipt의 `admission.yields`(추가 필드, 양보가 없으면 생략)는 양보마다 `released_claim_id`,
 새 `claim_id`, `outcome`, 재입장 `wait_duration`을 기록한다. 단계 goroutine의 panic은 단계
-실패로 바뀌어 claim 반납 경로를 그대로 지난다.
+실패로 바뀌고, 남은 프로세스를 확인할 수 없으므로 claim은 완료가 아니라 격리(quarantine)된다.
 
 ## CI 대기 관측
 

@@ -7,11 +7,12 @@ All notable changes to DVA are documented here.
 
 ### Changed
 
-- profile admission run은 단계 경계마다 큐를 확인해, 같은 이상 순위의 대기 요청이 이 run의 claim
-  반납으로만 입장할 수 있으면 실행 중 단계를 마친 뒤 claim을 반납하고 다시 줄을 섭니다. 경쟁이 없으면
-  병렬성과 claim을 그대로 유지합니다. 양보마다 재입장 대기가 한 번씩 추가되어 profile timeout에
+- profile admission run은 단계 경계마다 큐를 확인해, 기본 우선순위가 엄격히 높은 대기 요청이 이 run의
+  claim 반납으로만 입장할 수 있으면 실행 중 단계를 마친 뒤 claim을 반납하고 다시 줄을 섭니다. 나이
+  보정은 양보를 일으키지 않으며 같은 순위끼리는 양보하지 않습니다(FIFO 유지, ping-pong 없음). 경쟁이
+  없으면 병렬성과 claim을 그대로 유지합니다. 양보마다 재입장 대기가 한 번씩 추가되어 profile timeout에
   포함되며, 대기자의 예산보다 긴 단일 단계는 여전히 대기자를 막습니다. receipt에 추가 필드
-  `admission.yields`(양보별 claim과 재입장 대기 시간)를 기록하고, 단계 panic도 claim을 반납합니다.
+  `admission.yields`(양보별 claim과 재입장 대기 시간)를 기록하고, 단계 panic은 claim을 격리합니다.
 - 실행 중인 process 엔트리의 로컬 헬스 포트를 다른 프로세스 그룹이 listen하면(macOS `lsof`, Linux `/proc`로
   확인) `up`은 "health port owner mismatch"로 실패하고 `status`는 `error`와 주소·pid를 표시합니다. 조회할 수
   없으면 "owner unverified"로 알립니다(TASK-631).

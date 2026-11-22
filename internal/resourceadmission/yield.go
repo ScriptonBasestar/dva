@@ -65,7 +65,9 @@ func YieldWanted(ctx context.Context, dir string, p Policy, digest, id, priority
 		}
 		for _, e := range live {
 			if e.ID == without {
-				wanted = admissionScore(e, now, age) >= own
+				// Base rank only, strictly higher: aging orders waiters but never
+				// displaces a running claim, so a yield goes to a higher class.
+				wanted = priorityRank[e.Priority] > own
 			}
 		}
 		return nil

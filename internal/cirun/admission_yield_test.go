@@ -268,6 +268,53 @@ func TestAdmissionNoClaimLeakOnFailureCancelOrPanic(t *testing.T) {
 		if err == nil || r.Status != "failed" || r.Steps[0].Status != "failed" {
 			t.Fatalf("panic accepted: %s %v", r.Status, err)
 		}
-		assertNoClaims(t, resource, digest)
+		// A panic may leave processes behind, so the claim is quarantined.
+		if r.Admission == nil || r.Admission.Outcome != "quarantined" {
+			t.Fatalf("admission=%+v", r.Admission)
+		}
+		entries, err := resourceadmission.Status(context.Background(), resource, digest)
+		if err != nil || len(entries) != 1 || entries[0].State != "quarantined" {
+			t.Fatalf("claims=%+v err=%v", entries, err)
+		}
 	})
+}
+
+// Two equal-priority runs that each do real work must not hand the claim back
+// and forth: they run one after the other in about the sum of their work.
+func TestAdmissionEqualPriorityRunsDoNotPingPong(t *testing.T) {
+	root, state, resource, _, digest := bridgeFixture(t)
+	steps := func(prefix string) []config.CIStep {
+		var out []config.CIStep
+		for i := 0; i < 5; i++ {
+			s := config.CIStep{Name: prefix + string(rune('a'+i)), Run: "sleep 0.4"}
+			if i > 0 {
+				s.DependsOn = []string{out[i-1].Name}
+			}
+			out = append(out, s)
+		}
+		return out
+	}
+	start := time.Now()
+	var wg sync.WaitGroup
+	reports := make([]Report, 2)
+	for i, name := range []string{"x", "y"} {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			p := config.CIProfile{Timeout: "15s", MaxParallel: 2, Admission: &config.CIAdmission{Class: "heavy", Priority: "background", WaitTimeout: "15s"}, Steps: steps(name)}
+			reports[i], _ = Run(context.Background(), Options{Root: root, ProfileName: "full", StateDir: filepath.Join(state, name), lockDirectory: filepath.Join(state, name), resourceDirectory: resource, Env: []string{"DVA_RESOURCE_POLICY=" + filepath.Join(root, "policy.json")}, Profile: p})
+		}()
+	}
+	wg.Wait()
+	elapsed := time.Since(start)
+	for i, r := range reports {
+		if r.Status != "succeeded" || r.Admission == nil || len(r.Admission.Yields) != 0 {
+			t.Fatalf("run %d: status=%s admission=%+v err=%s", i, r.Status, r.Admission, r.Error)
+		}
+	}
+	// Work is 2 x 5 x 0.4s = 4s run back to back; allow scheduling slack.
+	if elapsed > 9*time.Second {
+		t.Fatalf("equal-priority runs took %s for 4s of work", elapsed)
+	}
+	assertNoClaims(t, resource, digest)
 }

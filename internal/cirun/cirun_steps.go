@@ -170,6 +170,12 @@ func execute(ctx context.Context, root string, p config.CIProfile, inherited []s
 				if v := recover(); v != nil {
 					r = StepReport{Name: p.Steps[i].Name, Status: "failed", StartedAt: startedAt, FinishedAt: time.Now()}
 					r.Duration = r.FinishedAt.Sub(startedAt)
+					// A panic may have left processes behind: quarantine, not complete.
+					if tr, ok := ctx.Value(resourceCleanupKey{}).(*resourceCleanupTracker); ok {
+						tr.mu.Lock()
+						tr.uncertain = true
+						tr.mu.Unlock()
+					}
 					e = fmt.Errorf("step panicked: %v", v)
 					r.Error = e.Error()
 				}
