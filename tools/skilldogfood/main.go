@@ -185,7 +185,10 @@ func run(binaryArg, expectedSHA, flowArg string, out io.Writer) (err error) {
 		"XDG_CACHE_HOME":  filepath.Join(fixture, "cache"),
 	})
 	isolated := invocation{binary: executed, env: fixtureEnv}
-	if err := verifyFixtureRoundTrip(isolated, project, filepath.Join(fixture, "state", "dva")); err != nil {
+	stateBase := filepath.Join(fixture, "state")
+	// The DVA receipt is under the ScriptonBasestar group; shared claims
+	// remain under the producer-neutral XDG state base.
+	if err := verifyFixtureRoundTrip(isolated, project, filepath.Join(stateBase, "sb", "dva"), stateBase); err != nil {
 		return err
 	}
 	if err := verifyTakeoverLifecycle(isolated, filepath.Join(project, "takeover")); err != nil {

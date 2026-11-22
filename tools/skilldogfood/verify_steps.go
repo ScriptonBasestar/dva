@@ -68,7 +68,7 @@ func verifyFlowDryRun(inv invocation, flowRoot string) (err error) {
 	return nil
 }
 
-func verifyFixtureRoundTrip(inv invocation, project, stateRoot string) error {
+func verifyFixtureRoundTrip(inv invocation, project, stateRoot, claimRoot string) error {
 	installed, err := inv.json(project, "skill", "install", "--scope", "project", "--runtime", allSkillRuntimes)
 	if err != nil {
 		return fmt.Errorf("install isolated fixture: %w", err)
@@ -90,7 +90,7 @@ func verifyFixtureRoundTrip(inv invocation, project, stateRoot string) error {
 	if err := requireDestinations(project, status, "installed"); err != nil {
 		return fmt.Errorf("installed status: %w", err)
 	}
-	if err := verifyOwnedArtifacts(project, stateRoot); err != nil {
+	if err := verifyOwnedArtifacts(project, stateRoot, claimRoot); err != nil {
 		return fmt.Errorf("installed artifacts: %w", err)
 	}
 	sharedBefore, sharedFilesBefore, err := sharedReceiptSnapshot(project, stateRoot)
@@ -125,7 +125,7 @@ func verifyFixtureRoundTrip(inv invocation, project, stateRoot string) error {
 	if err := requireRuntimeStatuses(partial.Results[0], map[string]string{"codex": "absent", "antigravity": "installed"}); err != nil {
 		return fmt.Errorf("shared destination membership: %w", err)
 	}
-	if err := verifySharedUnlink(project, stateRoot, sharedBefore, sharedFilesBefore); err != nil {
+	if err := verifySharedUnlink(project, stateRoot, claimRoot, sharedBefore, sharedFilesBefore); err != nil {
 		return fmt.Errorf("shared runtime unlink artifacts: %w", err)
 	}
 
@@ -152,7 +152,7 @@ func verifyFixtureRoundTrip(inv invocation, project, stateRoot string) error {
 	if err := requireDestinations(project, absent, "absent"); err != nil {
 		return fmt.Errorf("final status: %w", err)
 	}
-	if err := verifyArtifactsAbsent(project, stateRoot); err != nil {
+	if err := verifyArtifactsAbsent(project, stateRoot, claimRoot); err != nil {
 		return fmt.Errorf("final artifacts: %w", err)
 	}
 	return nil

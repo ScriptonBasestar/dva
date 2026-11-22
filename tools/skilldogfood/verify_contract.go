@@ -15,7 +15,7 @@ import (
 	"strings"
 )
 
-func verifyOwnedArtifacts(project, stateRoot string) error {
+func verifyOwnedArtifacts(project, stateRoot, claimRoot string) error {
 	for suffix, runtimes := range runtimeDestinations {
 		destination := filepath.Join(project, filepath.FromSlash(suffix))
 		files, err := installedFilesFor(destination, suffix == ".agent-mesh/skills/dva")
@@ -29,7 +29,7 @@ func verifyOwnedArtifacts(project, stateRoot string) error {
 		if err := requireReceiptContract(destination, record, runtimes, files, receiptFormatForSuffix(suffix)); err != nil {
 			return err
 		}
-		if err := requireClaimContract(filepath.Dir(stateRoot), destination, runtimes, files, receiptFormatForSuffix(suffix)); err != nil {
+		if err := requireClaimContract(claimRoot, destination, runtimes, files, receiptFormatForSuffix(suffix)); err != nil {
 			return err
 		}
 	}
@@ -52,7 +52,7 @@ func sharedReceiptSnapshot(project, stateRoot string) (receiptRecord, []fileHash
 	return record, files, nil
 }
 
-func verifySharedUnlink(project, stateRoot string, before receiptRecord, beforeFiles []fileHash) error {
+func verifySharedUnlink(project, stateRoot, claimRoot string, before receiptRecord, beforeFiles []fileHash) error {
 	destination := filepath.Join(project, ".agents", "skills")
 	files, err := installedSkillFiles(destination)
 	if err != nil {
@@ -68,7 +68,7 @@ func verifySharedUnlink(project, stateRoot string, before receiptRecord, beforeF
 	if err := requireSharedUnlinkPreservation(destination, before, record, beforeFiles, files); err != nil {
 		return err
 	}
-	return requireClaimContract(filepath.Dir(stateRoot), destination, []string{"antigravity"}, files, "agent-skills-directory")
+	return requireClaimContract(claimRoot, destination, []string{"antigravity"}, files, "agent-skills-directory")
 }
 
 // requireSharedUnlinkPreservation pins the uninstall contract: removing one
@@ -187,7 +187,7 @@ func requireClaimContract(neutralRoot, destination string, runtimes []string, in
 	return nil
 }
 
-func verifyArtifactsAbsent(project, stateRoot string) error {
+func verifyArtifactsAbsent(project, stateRoot, claimRoot string) error {
 	for suffix := range runtimeDestinations {
 		if suffix == ".agent-mesh/skills/dva" {
 			for _, skill := range bundled.Names {
@@ -207,7 +207,7 @@ func verifyArtifactsAbsent(project, stateRoot string) error {
 	if err := requireEmptyOrMissingDirectory(filepath.Join(stateRoot, "skill-installs")); err != nil {
 		return err
 	}
-	return requireEmptyOrMissingDirectory(filepath.Join(filepath.Dir(stateRoot), "agent-skills", "claims", "v1"))
+	return requireEmptyOrMissingDirectory(filepath.Join(claimRoot, "agent-skills", "claims", "v1"))
 }
 
 func readReceipt(stateRoot, destination string) (receiptRecord, error) {
