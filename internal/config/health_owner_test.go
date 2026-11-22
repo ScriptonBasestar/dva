@@ -35,9 +35,16 @@ stack:
 		t.Fatalf("stack owner = %q", got)
 	}
 
-	invalid := strings.Replace(valid, "owner: external\nstack", "owner: docker\nstack", 1)
-	if _, _, err := ValidateConfigBytes([]byte(invalid)); err == nil {
-		t.Fatal("owner: docker accepted, want a schema error")
+	topInvalid := strings.Replace(valid, "owner: external\nstack", "owner: docker\nstack", 1)
+	if _, _, err := ValidateConfigBytes([]byte(topInvalid)); err == nil {
+		t.Fatal("top-level owner: docker accepted, want a schema error")
+	}
+	stackInvalid := strings.TrimSuffix(valid, "owner: external\n") + "owner: docker\n"
+	if stackInvalid == valid+"owner: docker\n" {
+		t.Fatal("fixture did not end with the stack owner line")
+	}
+	if _, _, err := ValidateConfigBytes([]byte(stackInvalid)); err == nil {
+		t.Fatal("stack entry owner: docker accepted, want a schema error")
 	}
 }
 
