@@ -35,7 +35,7 @@ worktrunk·CE provider와 `dva target`은 아직), config 모드(TASK-593), 사�
   `.sb/dva/variants/<compare>/<variant>/`에 detached worktree를 만든다. 브랜치를 만들지 않는다.
   `down`은 DVA가 만든 경로만 `git worktree remove`(force 없음)로 회수한다. dirty하면
   회수를 거부하고 경로를 보고한다.
-- **worktree**: 후보 조회와 재검증은 [TASK-538](../tasks/todo/538-worktree-development-targets.md)의
+- **worktree**: 후보 조회와 재검증은 [TASK-538](../tasks/done/538-worktree-development-targets.md)의
   provider 계약을 따른다. DVA는 그 경로를 만들거나 지우지 않는다.
 
 한 비교 실행 안에서 모드를 섞을 수 있다(예: `a`는 snapshot, `b`는 작업 worktree). config 모드는 결정 기록을 따른다.

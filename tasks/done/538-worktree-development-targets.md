@@ -5,7 +5,10 @@ type: feature
 priority: P1
 effort: L
 exec-tier: strong
-status: todo
+status: done
+delivered-by: 3e2d3927
+quality-review: pass
+quality-review-evidence: "ce review-evidence bd7ae88624273a4f29cf697c885faab4f8a5858bc1ac7512466e9b8341e774f9"
 created: 2026-10-28
 ---
 
@@ -153,3 +156,15 @@ DevBox 루트에서 개발 서버를 실행할 때 기본 체크아웃과 작업
 - 비차단 관찰: Astro 기본값은 서버를 백그라운드로 띄우고 바로 끝나, dva가 "준비 전 종료"로 보고하는 동안
   서버가 추적 밖에 남았다(`ASTRO_DEV_BACKGROUND=0` 필요). 실행 중 브랜치가 바뀌어도 status는 시작 당시
   브랜치와 다르다고 알리지 않는다. 시작 뒤에 다른 프로세스가 포트를 가로채는 경우는 가드가 다루지 않는다.
+
+## Review Attempts
+
+### 1. 2026-11-22 — reviewer: 독립 opus 서브에이전트(읽기 전용), executor: 포트 가드 실행(3e2d3927)
+
+- 기준 1~4: pass. 근거는 위 Pilot 절과 `ce review-evidence bd7ae886…`.
+- 가드는 살아 있는 pid 확인 뒤에 돌아 재시작·compare 비교안에 영향이 없다. `localhost`·`0.0.0.0`
+  다이얼은 헬스 프로브와 같은 대상을 본다. 새 테스트는 가드를 끄면 실패한다(추론).
+- 동작 변경(비차단): process 엔트리의 헬스체크가 의존 서비스 포트를 가리키면 그 서비스가 떠 있을 때
+  `up`이 실패한다. 저장소 안에는 해당 구성이 없고 USAGE·CHANGELOG에 적었다. validate 경고는 후속 후보다.
+- 기준 4 재작성과 에이전트 파일럿 수용은 2026-11-22 사용자 결정으로 기록됐다.
+- 다음 전환: done.
