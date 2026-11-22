@@ -33,6 +33,11 @@ defect. It makes the integration gate flaky for every dva change.
   from a reuse-claim failure.
 - Actual: `signal: killed` from the git index listing under the 1s budget fails the test.
 
+## 소유권 — 이 저장소다 (2026-11-23 명시)
+
+실패하는 것은 dva 자체 테스트 `TestHostBridgeReuseHitDoesNotClaim`의 1초 실행 예산이고, 고칠 곳도
+이 저장소의 테스트 또는 예산 처리다. 상류 도구에 넘길 몫은 없다.
+
 ## Completion Criteria
 
 - [ ] TestHostBridgeReuseHitDoesNotClaim passes repeatedly under a loaded full make test run. | verify: human — 부하 중 make test 반복 결과를 독립 리뷰가 확인
