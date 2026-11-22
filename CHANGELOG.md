@@ -7,6 +7,9 @@ All notable changes to DVA are documented here.
 
 ### Changed
 
+- 헬스체크에 `owner: external`을 선언하면 그 주소의 소유자 확인을 건너뛰고 `status`에 선언 사실을
+  표시합니다. 포그라운드 `docker run -p` 엔트리처럼 다른 프로세스가 포트를 여는 경우에 씁니다. 원격 호스트
+  주소는 더 이상 `up`마다 "owner unverified" 경고를 내지 않습니다(`status`에는 남음)(TASK-633).
 - 실행 중인 process 엔트리의 로컬 헬스 포트를 다른 프로세스 그룹이 listen하면(macOS `lsof`, Linux `/proc`로
   확인) `up`은 "health port owner mismatch"로 실패하고 `status`는 `error`와 주소·pid를 표시합니다. 조회할 수
   없으면 "owner unverified"로 알립니다(TASK-631).

@@ -70,6 +70,16 @@ func (o *Orchestrator) waitEntryReady(ctx context.Context, entry config.Lifecycl
 					slog.Default().Warn("health port owner unverified", "entry", entry.Name,
 						"addresses", strings.Join(report.Unverified, ", "))
 				}
+				// Remote hosts can never be checked and external ports were declared; a
+				// warning on every up would only be noise (TASK-633).
+				if len(report.Remote) > 0 {
+					slog.Default().Debug("health port owner not checked on remote host", "entry", entry.Name,
+						"addresses", strings.Join(report.Remote, ", "))
+				}
+				if len(report.External) > 0 {
+					slog.Default().Debug("health port owner check skipped (declared external)", "entry", entry.Name,
+						"addresses", strings.Join(report.External, ", "))
+				}
 			}
 			return nil
 		case <-waitCtx.Done():

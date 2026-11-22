@@ -63,12 +63,57 @@ func TestPortOwnerUnverifiedWhenGroupUnknown(t *testing.T) {
 	}
 }
 
-func TestPortOwnerRemoteHostUnverified(t *testing.T) {
+// A remote host is never compared and never warned about on up, but status still lists it as
+// unverified (TASK-633).
+func TestPortOwnerRemoteHostSeparateFromUnverified(t *testing.T) {
 	stubPortOwner(t, []int{4242}, true, map[int]int{4242: 4242})
 	checks := map[string]config.HealthCheckConfig{"db": {Type: "tcp", Address: "db.example.com:5432"}}
 	report := checkHealthPortOwners(checks, nil, 100)
-	if len(report.Mismatched) != 0 || len(report.Unverified) != 1 {
-		t.Fatalf("report = %+v, want remote unverified", report)
+	if len(report.Mismatched) != 0 || len(report.Unverified) != 0 || len(report.Remote) != 1 {
+		t.Fatalf("report = %+v, want one remote and no unverified", report)
+	}
+	if got := report.extra()[portOwnerUnverifiedExtraKey]; got != "db.example.com:5432" {
+		t.Fatalf("extra unverified = %q, want the remote address kept for status", got)
+	}
+}
+
+// owner: external skips the comparison even when a foreign group holds the port.
+func TestPortOwnerExternalSkipsMismatch(t *testing.T) {
+	stubPortOwner(t, []int{4242}, true, map[int]int{4242: 4242})
+	checks := tcpCheck(3000)
+	web := checks["web"]
+	web.Owner = config.HealthOwnerExternal
+	checks["web"] = web
+	report := checkHealthPortOwners(checks, nil, 100)
+	if len(report.Mismatched) != 0 || len(report.Unverified) != 0 || len(report.External) != 1 {
+		t.Fatalf("report = %+v, want one external and nothing else", report)
+	}
+}
+
+// The declaration is about the port: another undeclared check on the same address must not
+// bring the mismatch back, whichever map order Go picks.
+func TestPortOwnerExternalWinsOnSharedAddress(t *testing.T) {
+	stubPortOwner(t, []int{4242}, true, map[int]int{4242: 4242})
+	checks := map[string]config.HealthCheckConfig{
+		"a-plain": {Type: "tcp", Address: "127.0.0.1:3000"},
+		"z-ext":   {Type: "http", URL: "http://127.0.0.1:3000/health", Owner: config.HealthOwnerExternal},
+	}
+	for range 20 {
+		report := checkHealthPortOwners(checks, nil, 100)
+		if len(report.Mismatched) != 0 || len(report.External) != 1 {
+			t.Fatalf("report = %+v, want the shared address external", report)
+		}
+	}
+}
+
+func TestStatusPortOwnerExternalLine(t *testing.T) {
+	out := captureStdout(func() {
+		printServiceTable([]ServiceStatus{
+			{Name: "c", State: "running", Extra: map[string]string{portOwnerExternalExtraKey: "127.0.0.1:5000"}},
+		})
+	})
+	if !strings.Contains(out, "c: health port owner check skipped for 127.0.0.1:5000 (declared external)") {
+		t.Fatalf("table = %q", out)
 	}
 }
 

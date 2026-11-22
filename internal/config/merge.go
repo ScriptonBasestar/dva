@@ -45,6 +45,9 @@ func mergeHealthCheckConfig(base, other HealthCheckConfig) HealthCheckConfig {
 	if other.ReadyTimeout != 0 {
 		base.ReadyTimeout = other.ReadyTimeout
 	}
+	if other.Owner != "" {
+		base.Owner = other.Owner
+	}
 	return base
 }
 

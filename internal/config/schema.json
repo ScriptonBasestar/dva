@@ -1114,7 +1114,8 @@
                   "start": { "type": "string" },
                   "start_hint": { "type": "string" },
                   "timeout": { "type": "integer" },
-                  "ready_timeout": { "type": "integer" }
+                  "ready_timeout": { "type": "integer" },
+                  "owner": { "type": "string", "enum": ["external"], "description": "external: another process (e.g. Docker) serves this port; skip the owner check" }
                 },
                 "required": ["type"]
               }
@@ -1818,6 +1819,11 @@
               "description": "Maximum time in seconds to wait for a service to become ready after auto-start (default: 30)",
               "default": 30,
               "examples": [60]
+            },
+            "owner": {
+              "type": "string",
+              "enum": ["external"],
+              "description": "Who serves the probed port. Omit to require the entry's own process group; external skips the owner check (e.g. Docker forwarding a foreground docker run -p)"
             }
           },
           "required": ["type"]

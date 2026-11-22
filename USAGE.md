@@ -1988,9 +1988,28 @@ PID로 직접 멈추고 서버를 포그라운드로 실행하세요. 예: Astro
 헬스체크가 통과해도 응답한 쪽이 그 엔트리라는 보장은 없습니다. 그래서 프로세스가 살아 있으면 dva는
 로컬 `http`/`tcp` 헬스 주소에서 listen 중인 소켓의 소유 pid를 조회해(macOS `lsof`, Linux `/proc`),
 dva가 시작한 프로세스 그룹 밖이면 `up`을 "health port owner mismatch"로 실패시키고 `status`를 `error`로
-표시합니다(`--json`은 `extra.port_owner`에 주소와 pid). 조회할 수 없으면(그 밖의 OS, `lsof` 없음, 권한 부족,
-원격 호스트) 통과나 실패로 치지 않고 "owner unverified"로 알립니다 — `up`은 경고 로그, `status`는 `?` 줄과
-`extra.port_owner_unverified`.
+표시합니다(`--json`은 `extra.port_owner`에 주소와 pid). 로컬 주소인데 조회할 수 없으면(그 밖의 OS, `lsof`
+없음, 권한 부족) 통과나 실패로 치지 않고 "owner unverified"로 알립니다 — `up`은 경고 로그, `status`는 `?` 줄과
+`extra.port_owner_unverified`. 원격 호스트 주소는 이 머신에서 확인할 수 없으므로 `up`에서는 경고하지 않고(debug
+로그) `status`의 같은 `?` 줄에만 남깁니다.
+
+다른 프로세스가 의도적으로 포트를 여는 엔트리는 헬스체크에 `owner: external`을 선언합니다. 대표적으로
+`docker run -p`나 `docker compose up`을 포그라운드로 실행하는 엔트리는 macOS에서 Docker Desktop이 포트를
+대신 열기 때문에 선언이 없으면 owner mismatch로 실패합니다. 선언된 주소는 소유자를 비교하지 않고, `status`에
+`- … owner check skipped (declared external)` 줄(`extra.port_owner_external`)로 선언 사실을 보여 줍니다.
+허용값은 `external` 하나이며 다른 값은 `dva validate`가 거부합니다.
+
+```yaml
+stack:
+  web:
+    process:
+      command: docker run --rm -p 8080:80 nginx
+    health_checks:
+      ready:
+        type: tcp
+        address: localhost:8080
+        owner: external   # Docker가 포트를 연다
+```
 
 ### interaction (예약어와 훅)
 

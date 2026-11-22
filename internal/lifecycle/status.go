@@ -132,6 +132,9 @@ func printServiceTable(services []ServiceStatus) {
 		if addr := s.Extra[portOwnerUnverifiedExtraKey]; addr != "" {
 			fmt.Fprintf(&buf, "  ? %s: health port owner unverified for %s\n", s.Name, addr)
 		}
+		if addr := s.Extra[portOwnerExternalExtraKey]; addr != "" {
+			fmt.Fprintf(&buf, "  - %s: health port owner check skipped for %s (declared external)\n", s.Name, addr)
+		}
 	}
 	fmt.Print(buf.String())
 }

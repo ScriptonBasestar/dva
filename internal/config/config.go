@@ -243,6 +243,11 @@ type HealthCheckConfig struct {
 	StartHint    string `yaml:"start_hint"`    // human-readable start instructions
 	Timeout      int    `yaml:"timeout"`       // health check timeout in seconds (default: 2)
 	ReadyTimeout int    `yaml:"ready_timeout"` // max wait after start in seconds (default: 30)
+	// Owner declares who serves the probed port. Empty (default) means the entry's own
+	// process group must hold the listening socket (TASK-631). HealthOwnerExternal means
+	// another process serves it on purpose — e.g. Docker Desktop forwarding a foreground
+	// `docker run -p` — so the owner comparison is skipped and reported as declared (TASK-633).
+	Owner string `yaml:"owner"`
 	// `required` (TASK-118 opt-in strict readiness) is gone with the field. Its only
 	// schema home was applications.<app>.health, and its only reader was
 	// AppManager.startApp; docs/43 removed both. Top-level health_checks has always
@@ -250,6 +255,9 @@ type HealthCheckConfig struct {
 	// keeping the struct field would leave a strictness knob nothing can turn.
 	// The capability itself did not move to the plan path — see docs/43.
 }
+
+// HealthOwnerExternal is the HealthCheckConfig.Owner value for a port served by another process.
+const HealthOwnerExternal = "external"
 
 // ServiceTagConfig defines per-service tag configuration.
 type ServiceTagConfig struct {

@@ -20,8 +20,16 @@ Found by the TASK-631 independent review.
 
 ## Completion Criteria
 
-- [ ] An entry can declare that its health port is served by another process and skip the owner mismatch, documented in USAGE.md. | verify: human — 설정 테스트와 USAGE 설명을 독립 리뷰가 확인
-- [ ] Remote health hosts do not emit an owner-unverified warning on every `up`. | verify: human — internal/lifecycle 테스트를 독립 리뷰가 확인
+- [x] A health check can declare `owner: external` (the only accepted value; others fail `dva validate`), which skips the owner comparison and is shown in `status` as declared, documented in USAGE.md. | verify: `go test ./internal/config -run HealthCheckOwner -count=1`
+- [x] With `owner: external`, a foreign listener no longer fails `up` or marks `status` error, end to end. | verify: `go test ./internal/lifecycle -run PortOwner -count=1`
+- [x] Remote health hosts do not emit an owner-unverified warning on every `up` (debug log) but stay listed as unverified in `status`. | verify: `go test ./internal/lifecycle -run PortOwnerRemote -count=1`
+- [x] The Linux `/proc/net/tcp` parser has a fixture test. | verify: human — linux 빌드 태그 테스트, macOS에서는 `GOOS=linux go vet`로 컴파일만 확인
+
+## Outcome
+
+- `HealthCheckConfig.Owner` + schema enum `["external"]` (top-level and stack entries), merged like other fields.
+- `portOwnerReport` gains `External` and `Remote`; `extra()` builds status keys (`port_owner_external` new).
+- Mutation check: removing the external skip, the remote split, the external-first ordering, or remote in status extra each fails a test.
 
 ## Notes
 
