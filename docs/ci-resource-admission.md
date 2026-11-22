@@ -80,7 +80,7 @@ claim을 주고받는 반복(ping-pong)은 생기지 않는다. 경쟁이 없는
 개를 쥐지 않는다. cleanup 불확실 claim은 일찍 반납하지 않고, 큐 조회가 실패하면 claim을 유지한다.
 
 비용: 양보할 때마다 양보한 run은 재입장 대기를 한 번 더 치르며, 그 시간은 profile의 전체
-timeout에 포함된다. 재입장이 wait-timeout 안에 실패하면 run은 claim 없이 실패한다. 단계 하나가
+timeout에 포함된다. 재입장이 wait-timeout 안에 실패하면 run은 claim 없이 실패한다. interactive 요청이 계속 이어지면 양보한 background run은 앞 단계 작업을 이미 마친 뒤에도 wait_timeout으로 중간에 실패할 수 있으며, interactive 순위에 닿으려면 5m aging 간격이 두 번 필요하므로 5m wait_timeout 안에서는 나이 보정이 이를 막지 못한다. 단계 하나가
 대기자의 입장 예산보다 길면 그 단계가 끝날 때까지 대기자는 여전히 막힌다. 경계는 단계 사이에만
 있으므로, 긴 단일 gate(예: sigdock의 workspace-release-gate)는 별도로 단계를 나눠야 효과가 있다.
 
