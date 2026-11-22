@@ -126,6 +126,12 @@ func printServiceTable(services []ServiceStatus) {
 		if addr := s.Extra[escapedExtraKey]; addr != "" {
 			fmt.Fprintf(&buf, "  ! %s: escaped from tracking — its process exited but %s still answers; dva will not stop it, stop it by PID and run it in the foreground\n", s.Name, addr)
 		}
+		if owner := s.Extra[portOwnerExtraKey]; owner != "" {
+			fmt.Fprintf(&buf, "  ! %s: health port owner mismatch — %s is served outside its process group\n", s.Name, owner)
+		}
+		if addr := s.Extra[portOwnerUnverifiedExtraKey]; addr != "" {
+			fmt.Fprintf(&buf, "  ? %s: health port owner unverified for %s\n", s.Name, addr)
+		}
 	}
 	fmt.Print(buf.String())
 }

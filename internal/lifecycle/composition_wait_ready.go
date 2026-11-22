@@ -3,6 +3,7 @@ package lifecycle
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"strconv"
 	"strings"
@@ -53,9 +54,21 @@ func (o *Orchestrator) waitEntryReady(ctx context.Context, entry config.Lifecycl
 			}
 			// Ready, but served by whom? A server that daemonized answers the probe after
 			// the tracked pid already exited (TASK-629).
-			if pid, known := o.entryPid(entry); known && !IsProcessRunning(pid) {
-				if err := escapedCheck(ctx, entry, entryEnv, pid); err != nil {
-					return err
+			if pid, known := o.entryPid(entry); known {
+				if !IsProcessRunning(pid) {
+					if err := escapedCheck(ctx, entry, entryEnv, pid); err != nil {
+						return err
+					}
+					return nil
+				}
+				// Alive, but does the probed socket belong to it (TASK-631)?
+				report := checkHealthPortOwners(entry.HealthChecks, entryEnv, pid)
+				if len(report.Mismatched) > 0 {
+					return portOwnerError(entry.Name, pid, report.Mismatched)
+				}
+				if len(report.Unverified) > 0 {
+					slog.Default().Warn("health port owner unverified", "entry", entry.Name,
+						"addresses", strings.Join(report.Unverified, ", "))
 				}
 			}
 			return nil

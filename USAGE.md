@@ -1985,6 +1985,13 @@ dva는 그 프로세스를 멈추지 않습니다 — 남은 단서가 포트뿐
 PID로 직접 멈추고 서버를 포그라운드로 실행하세요. 예: Astro dev 서버는 기본으로 백그라운드로 가므로
 `ASTRO_DEV_BACKGROUND=0`을 엔트리 환경에 둡니다.
 
+헬스체크가 통과해도 응답한 쪽이 그 엔트리라는 보장은 없습니다. 그래서 프로세스가 살아 있으면 dva는
+로컬 `http`/`tcp` 헬스 주소에서 listen 중인 소켓의 소유 pid를 조회해(macOS `lsof`, Linux `/proc`),
+dva가 시작한 프로세스 그룹 밖이면 `up`을 "health port owner mismatch"로 실패시키고 `status`를 `error`로
+표시합니다(`--json`은 `extra.port_owner`에 주소와 pid). 조회할 수 없으면(그 밖의 OS, `lsof` 없음, 권한 부족,
+원격 호스트) 통과나 실패로 치지 않고 "owner unverified"로 알립니다 — `up`은 경고 로그, `status`는 `?` 줄과
+`extra.port_owner_unverified`.
+
 ### interaction (예약어와 훅)
 
 `interaction:` 키는 `dva run <name>`으로 실행할 커맨드를 정의합니다. 이름이 내장

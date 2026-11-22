@@ -155,6 +155,14 @@ func (p *ProcessPlugin) Status(ctx context.Context, pctx *PluginContext) ([]Serv
 		switch statuses[0].State {
 		case "running":
 			statuses[0].Drift = checkoutDrift(pctx, name)
+			// Running, but is the health port its own (TASK-631)?
+			report := checkHealthPortOwners(pctx.Entry.HealthChecks, pctx.Env, pid)
+			if len(report.Mismatched) > 0 {
+				statuses[0].State = "error"
+				statuses[0].Extra = map[string]string{portOwnerExtraKey: strings.Join(report.Mismatched, "; ")}
+			} else if len(report.Unverified) > 0 {
+				statuses[0].Extra = map[string]string{portOwnerUnverifiedExtraKey: strings.Join(report.Unverified, ", ")}
+			}
 		case "stopped":
 			// The pid file says dva started it; if its health port still answers, the server
 			// escaped tracking rather than stopped (TASK-629).

@@ -7,6 +7,9 @@ All notable changes to DVA are documented here.
 
 ### Changed
 
+- 실행 중인 process 엔트리의 로컬 헬스 포트를 다른 프로세스 그룹이 listen하면(macOS `lsof`, Linux `/proc`로
+  확인) `up`은 "health port owner mismatch"로 실패하고 `status`는 `error`와 주소·pid를 표시합니다. 조회할 수
+  없으면 "owner unverified"로 알립니다(TASK-631).
 - process 엔트리의 추적 pid가 끝났는데 헬스체크 주소가 계속 응답하면(스스로 daemonize한 dev 서버),
   `up`은 ready 대신 "escaped from tracking" 오류로 실패하고 `status`는 `error`와 주소를 표시합니다.
   dva는 그 프로세스를 멈추지 않습니다(TASK-629).
