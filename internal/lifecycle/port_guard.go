@@ -3,7 +3,6 @@ package lifecycle
 import (
 	"context"
 	"net"
-	"net/url"
 	"sort"
 	"time"
 
@@ -46,30 +45,5 @@ func heldHealthEndpoints(ctx context.Context, checks map[string]config.HealthChe
 // healthCheckAddress resolves the host:port a http or tcp check probes, after the same var
 // expansion the probe applies. Command checks and unparsable values have no address.
 func healthCheckAddress(check config.HealthCheckConfig, env *config.Environment) string {
-	switch check.Type {
-	case "tcp":
-		address := probeTarget(check.Address, env)
-		if _, _, err := net.SplitHostPort(address); err != nil {
-			return ""
-		}
-		return address
-	case "http":
-		u, err := url.Parse(probeTarget(check.URL, env))
-		if err != nil || u.Hostname() == "" {
-			return ""
-		}
-		port := u.Port()
-		if port == "" {
-			switch u.Scheme {
-			case "http":
-				port = "80"
-			case "https":
-				port = "443"
-			default:
-				return ""
-			}
-		}
-		return net.JoinHostPort(u.Hostname(), port)
-	}
-	return ""
+	return check.Endpoint(env)
 }

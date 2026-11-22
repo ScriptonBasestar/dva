@@ -7,7 +7,7 @@ effort: S
 exec-tier: standard
 status: todo
 created: 2026-11-22
-allowed-paths: [internal/config/, internal/cli/, USAGE.md, CHANGELOG.md]
+allowed-paths: [internal/config/, internal/cli/, internal/lifecycle/port_guard.go, USAGE.md, CHANGELOG.md, tasks/]
 ---
 
 ## Summary
@@ -20,5 +20,20 @@ before then.
 
 ## Completion Criteria
 
-- [ ] `dva validate` emits a warning naming the entry and address when a process/native entry's http/tcp health check resolves to a port that another stack entry declares or probes. | verify: human — internal/config 또는 internal/cli에 추가한 HealthPort 테스트 통과를 독립 리뷰가 확인
-- [ ] Entries whose health check targets their own port produce no warning. | verify: human — internal/config 또는 internal/cli에 추가한 HealthPort 테스트 통과를 독립 리뷰가 확인
+- [x] `dva validate` emits a warning naming the entry and address when a process/native entry's http/tcp health check resolves to a port that another stack entry declares or probes. | verify: `go test ./internal/config -run HealthPortShared -count=1`
+- [x] Entries whose health check targets their own port produce no warning. | verify: `go test ./internal/config -run HealthPortNoWarning -count=1`
+
+## Decision (2026-11-22, user)
+
+- A1: use only information already in dva.yml — other entries' http/tcp health check addresses
+  and docker `ports:` host ports (legacy `docker:` block or `runners.docker`). No new port field.
+- Compose file `ports:` are out of scope: validation does no file I/O (TASK-248) and dva has no
+  static compose parser. Asked and confirmed by the user.
+
+## Outcome
+
+- `HealthCheckConfig.Endpoint` (internal/config/health_endpoint.go) now owns the host:port
+  resolution; `lifecycle.healthCheckAddress` delegates to it so the `up` guard and `validate`
+  agree on the port. That is why `internal/lifecycle/port_guard.go` joined `allowed-paths`.
+- Ports are compared by number only, so `localhost:8080` and `127.0.0.1:8080` collide.
+- No warning fires on the repository's own dva.yml or the 11 example/fixture yml files.

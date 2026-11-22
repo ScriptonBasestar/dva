@@ -7,6 +7,8 @@ All notable changes to DVA are documented here.
 
 ### Changed
 
+- `dva validate`는 process 엔트리의 `http`/`tcp` 헬스체크 포트가 다른 엔트리의 헬스체크나 dva.yml docker
+  `ports:` host 포트와 겹치면 경고합니다. 그런 엔트리는 상대가 실행 중일 때 `up`이 거부됩니다(TASK-628).
 - `status`(`dva target <id> status` 포함)는 실행 중인 process 엔트리의 브랜치·커밋이 시작 때와 달라지면
   표시합니다. 텍스트는 `!` 줄, `--json`은 서비스 행 `drift`(TASK-630).
 - process 엔트리 `up`은 `http`/`tcp` 헬스체크 주소가 시작 전에 이미 연결을 받으면 시작하지 않고

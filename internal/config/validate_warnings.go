@@ -61,6 +61,7 @@ func (c *Config) ValidateDiagnostics() []ValidationDiagnostic {
 	add(SeverityWarning, c.warnUnresolvedEnvVars(env, c.EnvFile != nil))
 	add(SeverityWarning, c.warnUnresolvedEnvFilePaths())
 	add(SeverityWarning, c.warnSuspiciousEnvPatterns())
+	add(SeverityWarning, c.warnHealthPortOwnedByOther(env))
 
 	if c.filePath != "" {
 		add(SeverityWarning, validateCanonicalOrder(c.filePath))
