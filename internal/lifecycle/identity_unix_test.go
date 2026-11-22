@@ -29,9 +29,10 @@ func identityPctx(dir, startedBy string) *PluginContext {
 	}
 }
 
-func readPid(t *testing.T, pctx *PluginContext, name string) int {
+// readPid reads the pid file of the "api" entry identityPctx describes.
+func readPid(t *testing.T, pctx *PluginContext) int {
 	t.Helper()
-	data, err := os.ReadFile(pctx.PidFile(name))
+	data, err := os.ReadFile(pctx.PidFile("api"))
 	if err != nil {
 		t.Fatalf("read pid file: %v", err)
 	}
@@ -51,7 +52,7 @@ func TestIdentityFollowsThePidFile(t *testing.T) {
 	if _, err := p.Up(context.Background(), pctx); err != nil {
 		t.Fatalf("up: %v", err)
 	}
-	pid := readPid(t, pctx, "api")
+	pid := readPid(t, pctx)
 	killProcessGroupInCleanup(t, pid)
 
 	id, err := ReadIdentity(dir, "", "api")
@@ -82,7 +83,7 @@ func TestIdentityEmptyStarterIsCwd(t *testing.T) {
 	if _, err := (&ProcessPlugin{}).Up(context.Background(), pctx); err != nil {
 		t.Fatalf("up: %v", err)
 	}
-	killProcessGroupInCleanup(t, readPid(t, pctx, "api"))
+	killProcessGroupInCleanup(t, readPid(t, pctx))
 	id, err := ReadIdentity(dir, "", "api")
 	if err != nil {
 		t.Fatalf("ReadIdentity: %v", err)
@@ -157,7 +158,7 @@ func TestStartedProcessOutlivesTheCallingSession(t *testing.T) {
 	deadline := time.Now().Add(10 * time.Second)
 	for pid == 0 {
 		if _, err := ReadIdentity(dir, "", "api"); err == nil {
-			pid = readPid(t, pctx, "api")
+			pid = readPid(t, pctx)
 			break
 		}
 		if time.Now().After(deadline) {

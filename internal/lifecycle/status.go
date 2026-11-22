@@ -119,6 +119,11 @@ func printServiceTable(services []ServiceStatus) {
 		_, _ = fmt.Fprintf(tw, "  %s\t%s\t%s\n", s.Name, s.State, health)
 	}
 	_ = tw.Flush()
+	for _, s := range services {
+		if s.Drift != nil {
+			fmt.Fprintf(&buf, "  ! %s: checkout changed since it started (%s)\n", s.Name, s.Drift)
+		}
+	}
 	fmt.Print(buf.String())
 }
 

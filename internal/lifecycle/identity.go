@@ -87,6 +87,63 @@ func checkoutOf(dir string) (repository, branch, commit string) {
 	return repository, branch, commit
 }
 
+// CheckoutDrift records the branch and commit a running entry started on and what its
+// checkout holds now. A field pair is left empty when that part did not change.
+type CheckoutDrift struct {
+	StartedBranch string `json:"started_branch,omitempty"`
+	CurrentBranch string `json:"current_branch,omitempty"`
+	StartedCommit string `json:"started_commit,omitempty"`
+	CurrentCommit string `json:"current_commit,omitempty"`
+}
+
+// String describes the drift for status text, for example
+// "branch pilot/a → pilot/b, commit 1a2b3c4 → 5d6e7f8".
+func (d *CheckoutDrift) String() string {
+	var parts []string
+	if d.StartedBranch != d.CurrentBranch {
+		parts = append(parts, fmt.Sprintf("branch %s → %s", orDetached(d.StartedBranch), orDetached(d.CurrentBranch)))
+	}
+	if d.StartedCommit != d.CurrentCommit {
+		parts = append(parts, fmt.Sprintf("commit %s → %s", shortCommit(d.StartedCommit), shortCommit(d.CurrentCommit)))
+	}
+	return strings.Join(parts, ", ")
+}
+
+func orDetached(branch string) string {
+	if branch == "" {
+		return "(detached)"
+	}
+	return branch
+}
+
+func shortCommit(commit string) string {
+	if len(commit) > 7 {
+		return commit[:7]
+	}
+	return commit
+}
+
+// checkoutDrift compares a running entry's identity with its checkout now. It returns nil when
+// the entry has no trustworthy identity, was started outside git, or nothing changed.
+func checkoutDrift(pctx *PluginContext, name string) *CheckoutDrift {
+	id, err := ReadIdentity(pctx.ConfigDir, pctx.Instance, name)
+	if err != nil || id.Repository == "" {
+		return nil
+	}
+	_, branch, commit := checkoutOf(pctx.ConfigDir)
+	if commit == "" || (branch == id.Branch && commit == id.Commit) {
+		return nil
+	}
+	d := &CheckoutDrift{}
+	if branch != id.Branch {
+		d.StartedBranch, d.CurrentBranch = id.Branch, branch
+	}
+	if commit != id.Commit {
+		d.StartedCommit, d.CurrentCommit = id.Commit, commit
+	}
+	return d
+}
+
 // ReadIdentity reads the identity of the named entry in configDir and checks it against the
 // pid file beside it. A missing identity file returns an error wrapping fs.ErrNotExist; one
 // whose pid or directory no longer matches returns ErrIdentityStale.

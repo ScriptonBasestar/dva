@@ -63,6 +63,9 @@ type ServiceStatus struct {
 	Health string            `json:"health,omitempty"` // healthy, unhealthy, unknown
 	Ports  map[int]int       `json:"ports,omitempty"`  // host:container port mappings
 	Extra  map[string]string `json:"extra,omitempty"`  // plugin-specific metadata
+	// Drift says how the checkout a running entry was started from changed since it started
+	// (TASK-630); nil when the identity still matches or the entry has none.
+	Drift *CheckoutDrift `json:"drift,omitempty"`
 }
 
 // StateDir is the directory DVA keeps kind files (pids, logs) in for this run. An instance

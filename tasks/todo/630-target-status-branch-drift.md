@@ -18,5 +18,17 @@ silent. Status should compare the identity file with the current worktree and fl
 
 ## Completion Criteria
 
-- [ ] `dva target <id> status` shows a drift marker with recorded vs current branch/commit when they differ, in text and `--json`. | verify: human — internal/cli 또는 internal/lifecycle에 추가한 TargetDrift 테스트 통과를 독립 리뷰가 확인
-- [ ] No marker when branch and commit match. | verify: human — internal/cli 또는 internal/lifecycle에 추가한 TargetDrift 테스트 통과를 독립 리뷰가 확인
+- [x] `dva target <id> status` shows a drift marker with recorded vs current branch/commit when they differ, in text and `--json`. | verify: `go test ./internal/lifecycle -run TargetDrift -count=1`
+- [x] No marker when branch and commit match. | verify: `go test ./internal/lifecycle -run TargetDriftNone -count=1`
+
+## Decision (2026-11-22, user)
+
+표시만 하고 `down`·`stop`은 막지 않는다(작업 계획 1번, 추천안 승인).
+
+## Outcome
+
+`ProcessPlugin.Status`가 실행 중인 엔트리의 identity(branch·commit)를 현재 checkout과 비교해
+`ServiceStatus.Drift`를 채운다. `dva target <id> status`는 그 디렉터리에서 `dva status`를 실행하므로
+같은 표시를 받는다. 텍스트는 서비스 표 아래 `!` 줄, JSON은 `drift`. 기록 identity가 없거나 git 밖이면 표시하지
+않는다. 테스트는 `drift_unix_test.go`(변경 없음·브랜치+커밋·커밋만·텍스트/JSON). Status 연결을 끄면
+변경 케이스 2개가 실패하는 것을 확인했다.

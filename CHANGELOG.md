@@ -7,6 +7,8 @@ All notable changes to DVA are documented here.
 
 ### Changed
 
+- `status`(`dva target <id> status` 포함)는 실행 중인 process 엔트리의 브랜치·커밋이 시작 때와 달라지면
+  표시합니다. 텍스트는 `!` 줄, `--json`은 서비스 행 `drift`(TASK-630).
 - process 엔트리 `up`은 `http`/`tcp` 헬스체크 주소가 시작 전에 이미 연결을 받으면 시작하지 않고
   실패합니다. 다른 worktree가 같은 포트를 쓰는 동안 못 뜬 프로세스가 남의 서버로 ready 보고되던 문제(TASK-538).
 - DVA 상태 루트를 ScriptonBasestar 그룹 경로 `<state>/sb/dva`로 옮깁니다

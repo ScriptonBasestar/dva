@@ -150,7 +150,11 @@ func (p *ProcessPlugin) Status(ctx context.Context, pctx *PluginContext) ([]Serv
 	}
 
 	pid, _ := strconv.Atoi(strings.TrimSpace(string(data)))
-	return managedProcessStatus(name, pidFile, pid)
+	statuses, err := managedProcessStatus(name, pidFile, pid)
+	if err == nil && len(statuses) == 1 && statuses[0].State == "running" {
+		statuses[0].Drift = checkoutDrift(pctx, name)
+	}
+	return statuses, err
 }
 
 // haltProcess sends SIGTERM but preserves the PID file so the process

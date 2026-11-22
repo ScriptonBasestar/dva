@@ -763,6 +763,9 @@ dva target main status dev --json   # 기본 체크아웃은 이름으로 지정
   그 동사를 실행합니다. 모르는 ID·`git:` 외 접두·조회 실패는 실행 없이 실패하며 `--json` 등은 동사 뒤에 둡니다.
 - 백그라운드 엔트리는 pid 옆 `<name>.identity.json`에 시작 주체(`started_by`: `cwd`·`target:<id>`·`compare:<name>`)와
   경로·저장소·브랜치·커밋을 남기고, 읽을 때마다 pid·경로와 대조합니다. 세션이 끝나도 멈추지 않습니다(자기 프로세스 그룹).
+- `status`는 실행 중인 엔트리의 checkout이 시작 때와 다르면 `! <name>: checkout changed since it started
+  (branch a → b, commit 1a2b3c4 → 5d6e7f8)` 줄을, `--json`에는 서비스 행의 `drift`를 보입니다. 표시만 하고
+  `down`·`stop`은 막지 않습니다. 반영하려면 그 엔트리를 다시 시작합니다.
 - Git 2.36 이상이 필요합니다(`worktree list -z`).
 
 ### 비교안 동시 실행 (`dva compare`)
