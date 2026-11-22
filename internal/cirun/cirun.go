@@ -379,6 +379,14 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 			report.NativeStages = collectNativeStages(report.Observability.EventsDir, report.ID, ciProfileStepNames(opts.Profile))
 			return writeReport(state, report)
 		}
+		snapshot := func(steps []StepReport) error {
+			report.Steps = append([]StepReport(nil), steps...)
+			report.NativeStages = collectNativeStages(report.Observability.EventsDir, report.ID, ciProfileStepNames(opts.Profile))
+			if report.NativeStages.CollectionStatus != "available" {
+				_, _ = fmt.Fprintf(writer, "ci native snapshot warning: collection status=%s\n", report.NativeStages.CollectionStatus)
+			}
+			return writeReport(state, report)
+		}
 		executionCtx := context.WithValue(ctx, ociScopeKey{}, ociScope{state: state, runID: id})
 		executionCtx = context.WithValue(executionCtx, reuseRuntimeKey{}, reuseRuntime{runID: id, fresh: fresh})
 		runtime := compositionRuntime{id: id, root: root, state: lockState, profile: opts.ProfileName, workers: boundedWorkers, fresh: fresh}
@@ -386,7 +394,7 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 			runtime.ancestry = append([]compositionFrame(nil), grant.Ancestry...)
 		}
 		executionCtx = context.WithValue(executionCtx, compositionRuntimeKey{}, runtime)
-		report.Steps, retErr = execute(executionCtx, root, opts.Profile, env, writer, checkpoint)
+		report.Steps, retErr = execute(executionCtx, root, opts.Profile, env, writer, checkpoint, snapshot)
 	}
 	// Capture a terminal snapshot even when execute returned an error or context
 	// cancellation. This observation is diagnostic and does not affect retErr.

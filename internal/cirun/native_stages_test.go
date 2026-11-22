@@ -94,6 +94,67 @@ func TestNativeStageStartOnlyIsUnknownAndLegacyReceiptStaysAbsent(t *testing.T) 
 	}
 }
 
+func TestNativeStagesVisibleInHistoryDuringRun(t *testing.T) {
+	root, state := t.TempDir(), t.TempDir()
+	if err := os.Chmod(state, 0700); err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(context.WithValue(context.Background(), progressIntervalKey{}, 10*time.Millisecond))
+	defer cancel()
+	step := config.CIStep{Name: "rust-test", Run: `
+umask 077
+start="$DVA_CI_EVENTS_DIR/native-abcdef0123456789abcdef0123456789-start.json"
+finish="$DVA_CI_EVENTS_DIR/native-abcdef0123456789abcdef0123456789-finish.json"
+printf '{"schema":"dva-ci-native-stage/1","run_id":"%s","parent_step":"%s","invocation_id":"abcdef0123456789abcdef0123456789","stage_name":"workspace_tests","event":"start","started_at":"2026-11-18T10:00:00Z","plan_ordinal":1,"plan_total":2}\n' "$DVA_CI_RUN_ID" "$DVA_CI_STEP_NAME" > "$start"
+while [ ! -f release ]; do sleep 0.02; done
+printf '{"schema":"dva-ci-native-stage/1","run_id":"%s","parent_step":"%s","invocation_id":"abcdef0123456789abcdef0123456789","stage_name":"workspace_tests","event":"finish","started_at":"2026-11-18T10:00:00Z","finished_at":"2026-11-18T10:00:02Z","status":"succeeded","plan_ordinal":1,"plan_total":2}\n' "$DVA_CI_RUN_ID" "$DVA_CI_STEP_NAME" > "$finish"
+`}
+	type result struct {
+		report Report
+		err    error
+	}
+	done := make(chan result, 1)
+	go func() {
+		r, err := Run(ctx, Options{Root: root, ProfileName: "native-live", StateDir: state, lockDirectory: state, Env: os.Environ(), Profile: profile(step)})
+		done <- result{r, err}
+	}()
+	deadline := time.Now().Add(4 * time.Second)
+	var live Report
+	for time.Now().Before(deadline) {
+		reports, _, err := ReadSummaryReceipts(state)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(reports) == 1 && reports[0].NativeStages != nil && len(reports[0].NativeStages.Stages) == 1 {
+			live = reports[0]
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	if live.Status != "running" || live.NativeStages == nil || live.NativeStages.ObservedAt == nil {
+		t.Fatalf("live receipt not observed: %+v", live)
+	}
+	stage := live.NativeStages.Stages[0]
+	if stage.Status != "unknown" || stage.PlanOrdinal == nil || *stage.PlanOrdinal != 1 || stage.PlanTotal == nil || *stage.PlanTotal != 2 {
+		t.Fatalf("live stage: %+v", stage)
+	}
+	analysis := AnalyzeHistory([]Report{live}, live.Root, live.Profile)
+	if len(analysis.Observations) != 1 || analysis.Observations[0].NativeStages == nil || len(analysis.Observations[0].NativeStages.Stages) != 1 {
+		t.Fatalf("live history: %+v", analysis.Observations)
+	}
+	if err := os.WriteFile(filepath.Join(root, "release"), nil, 0600); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case result := <-done:
+		if result.err != nil || result.report.Status != "succeeded" || result.report.NativeStages == nil || len(result.report.NativeStages.Stages) != 1 || result.report.NativeStages.Stages[0].Status != "succeeded" {
+			t.Fatalf("terminal receipt=%+v err=%v", result.report, result.err)
+		}
+	case <-time.After(4 * time.Second):
+		t.Fatal("run did not finish")
+	}
+}
+
 func TestNativeStageFinalSnapshotIsPreservedWhenStepFails(t *testing.T) {
 	root, state := t.TempDir(), t.TempDir()
 	step := config.CIStep{Name: "rust-test", Run: `

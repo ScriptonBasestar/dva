@@ -25,6 +25,7 @@ const (
 // NativeStageObservation contains bounded, diagnostic observations from native
 // CI producers. It is not evidence that a gate passed or that a command ran.
 type NativeStageObservation struct {
+	ObservedAt       *time.Time           `json:"observed_at,omitempty"`
 	CollectionStatus string               `json:"collection_status"`
 	EventsSeen       int                  `json:"events_seen"`
 	EventsRead       int                  `json:"events_read"`
@@ -80,6 +81,10 @@ var nativeInvocationPattern = regexp.MustCompile(`^[0-9a-f]{32}$`)
 var nativeStageNamePattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$`)
 
 func collectNativeStages(eventsDir, runID string, steps []string) (result *NativeStageObservation) {
+	defer func() {
+		observedAt := time.Now().UTC()
+		result.ObservedAt = &observedAt
+	}()
 	if eventsDir == "" {
 		return &NativeStageObservation{CollectionStatus: "unavailable", Stages: []NativeStageSummary{}}
 	}

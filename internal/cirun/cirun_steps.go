@@ -51,7 +51,7 @@ func (w *lockedWriter) Write(p []byte) (int, error) {
 	return n, err
 }
 
-func execute(ctx context.Context, root string, p config.CIProfile, inherited []string, out io.Writer, checkpoint func([]StepReport) error) ([]StepReport, error) {
+func execute(ctx context.Context, root string, p config.CIProfile, inherited []string, out io.Writer, checkpoint func([]StepReport) error, snapshots ...func([]StepReport) error) ([]StepReport, error) {
 	n := len(p.Steps)
 	reports := make([]StepReport, n)
 	byName := map[string]int{}
@@ -227,6 +227,11 @@ func execute(ctx context.Context, root string, p config.CIProfile, inherited []s
 		select {
 		case r = <-done:
 		case <-ticker.C:
+			for _, snapshot := range snapshots {
+				if err := snapshot(reports); err != nil {
+					_, _ = fmt.Fprintf(out, "ci native snapshot warning: %v\n", err)
+				}
+			}
 			var active []string
 			for _, report := range reports {
 				if report.Status == "running" {

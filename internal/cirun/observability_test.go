@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -40,6 +41,22 @@ func TestObservabilityUsesPrivateDirectoryAndCanonicalEnvironment(t *testing.T) 
 	}
 	if strings.Contains(string(b), "forged") {
 		t.Fatal("command/environment leaked")
+	}
+}
+
+func TestSnapshotFailureIsDiagnosticOnly(t *testing.T) {
+	ctx := context.WithValue(context.Background(), progressIntervalKey{}, 5*time.Millisecond)
+	root, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	var output bytes.Buffer
+	observed := 0
+	reports, err := execute(ctx, root, profile(config.CIStep{Name: "slow", Run: "sleep 0.1"}), os.Environ(), &lockedWriter{w: &output},
+		func([]StepReport) error { return nil },
+		func([]StepReport) error { observed++; return errors.New("snapshot unavailable") })
+	if err != nil || len(reports) != 1 || reports[0].Status != "succeeded" || observed == 0 || !strings.Contains(output.String(), "ci native snapshot warning: snapshot unavailable") {
+		t.Fatalf("reports=%+v calls=%d err=%v output=%s", reports, observed, err, output.String())
 	}
 }
 
