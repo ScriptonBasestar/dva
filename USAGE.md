@@ -1978,6 +1978,13 @@ process(native) 엔트리를 시작하기 직전, `http`/`tcp` 헬스체크 주�
 `dva validate`는 process 엔트리의 헬스체크 포트가 다른 엔트리의 헬스체크나 dva.yml의 docker `ports:`
 host 포트와 겹치면 미리 경고합니다. compose 파일의 포트는 읽지 않습니다(validate는 파일 I/O 없음).
 
+dva가 시작한 프로세스가 끝났는데 헬스체크 주소가 계속 응답하면, 서버가 스스로 백그라운드로 빠져나가
+(daemonize) dva의 추적을 벗어난 것입니다. `up`은 ready로 보고하지 않고 "escaped from tracking" 오류로
+실패하며, `status`는 그 엔트리를 `error`로 표시하고 `!` 줄(`--json`은 `extra.escaped`)에 주소를 적습니다.
+dva는 그 프로세스를 멈추지 않습니다 — 남은 단서가 포트뿐이고 포트는 소유의 증거가 아니기 때문입니다.
+PID로 직접 멈추고 서버를 포그라운드로 실행하세요. 예: Astro dev 서버는 기본으로 백그라운드로 가므로
+`ASTRO_DEV_BACKGROUND=0`을 엔트리 환경에 둡니다.
+
 ### interaction (예약어와 훅)
 
 `interaction:` 키는 `dva run <name>`으로 실행할 커맨드를 정의합니다. 이름이 내장

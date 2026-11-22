@@ -123,6 +123,9 @@ func printServiceTable(services []ServiceStatus) {
 		if s.Drift != nil {
 			fmt.Fprintf(&buf, "  ! %s: checkout changed since it started (%s)\n", s.Name, s.Drift)
 		}
+		if addr := s.Extra[escapedExtraKey]; addr != "" {
+			fmt.Fprintf(&buf, "  ! %s: escaped from tracking — its process exited but %s still answers; dva will not stop it, stop it by PID and run it in the foreground\n", s.Name, addr)
+		}
 	}
 	fmt.Print(buf.String())
 }

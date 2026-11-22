@@ -7,6 +7,9 @@ All notable changes to DVA are documented here.
 
 ### Changed
 
+- process 엔트리의 추적 pid가 끝났는데 헬스체크 주소가 계속 응답하면(스스로 daemonize한 dev 서버),
+  `up`은 ready 대신 "escaped from tracking" 오류로 실패하고 `status`는 `error`와 주소를 표시합니다.
+  dva는 그 프로세스를 멈추지 않습니다(TASK-629).
 - `dva validate`는 process 엔트리의 `http`/`tcp` 헬스체크 포트가 다른 엔트리의 헬스체크나 dva.yml docker
   `ports:` host 포트와 겹치면 경고합니다. 그런 엔트리는 상대가 실행 중일 때 `up`이 거부됩니다(TASK-628).
 - `status`(`dva target <id> status` 포함)는 실행 중인 process 엔트리의 브랜치·커밋이 시작 때와 달라지면

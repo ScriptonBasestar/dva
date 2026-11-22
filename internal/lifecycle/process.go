@@ -151,8 +151,18 @@ func (p *ProcessPlugin) Status(ctx context.Context, pctx *PluginContext) ([]Serv
 
 	pid, _ := strconv.Atoi(strings.TrimSpace(string(data)))
 	statuses, err := managedProcessStatus(name, pidFile, pid)
-	if err == nil && len(statuses) == 1 && statuses[0].State == "running" {
-		statuses[0].Drift = checkoutDrift(pctx, name)
+	if err == nil && len(statuses) == 1 {
+		switch statuses[0].State {
+		case "running":
+			statuses[0].Drift = checkoutDrift(pctx, name)
+		case "stopped":
+			// The pid file says dva started it; if its health port still answers, the server
+			// escaped tracking rather than stopped (TASK-629).
+			if held := heldHealthEndpoints(ctx, pctx.Entry.HealthChecks, pctx.Env); len(held) > 0 {
+				statuses[0].State = "error"
+				statuses[0].Extra = map[string]string{escapedExtraKey: strings.Join(held, ", ")}
+			}
+		}
 	}
 	return statuses, err
 }

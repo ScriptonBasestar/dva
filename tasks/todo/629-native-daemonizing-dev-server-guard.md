@@ -7,7 +7,7 @@ effort: S
 exec-tier: standard
 status: todo
 created: 2026-11-22
-allowed-paths: [internal/lifecycle/, USAGE.md, CHANGELOG.md]
+allowed-paths: [internal/lifecycle/, USAGE.md, CHANGELOG.md, tasks/]
 ---
 
 ## Summary
@@ -20,5 +20,22 @@ stopped or failed.
 
 ## Completion Criteria
 
-- [ ] When the tracked process exits but the entry's health endpoint keeps answering, `up`/`status` report an "escaped from tracking" error naming the address. | verify: human — internal/lifecycle에 추가한 Escaped 테스트 통과를 독립 리뷰가 확인
-- [ ] USAGE.md documents the case and the foreground setting for known dev servers (Astro `ASTRO_DEV_BACKGROUND=0`). | verify: human — USAGE.md의 해당 설명을 독립 리뷰가 확인
+- [x] When the tracked process exits but the entry's health endpoint keeps answering, `up`/`status` report an "escaped from tracking" error naming the address. | verify: `go test ./internal/lifecycle -run Escaped -count=1`
+- [x] USAGE.md documents the case and the foreground setting for known dev servers (Astro `ASTRO_DEV_BACKGROUND=0`). | verify: human — USAGE.md의 해당 설명을 독립 리뷰가 확인
+
+## Decision (2026-11-22, user)
+
+- B1: an escaped server is reported as an error and never killed. The only identity left is
+  the port, and a port is not proof of ownership; no name- or pattern-based kills.
+
+## Outcome
+
+- `up` (composition readiness wait, internal/lifecycle/composition_wait_ready.go): when the
+  tracked pid is dead and a http/tcp health address answers — either on the liveness tick or
+  right after the probes pass — the wait fails with `escapedError` naming pid and address.
+- `status` (ProcessPlugin.Status): a pidfile whose pid is dead while a health address answers
+  reports state `error` with `extra.escaped`; the text table prints a `!` line.
+- The readiness wait functions moved out of composition_orchestrator.go (over the 500-line
+  limit) into composition_wait_ready.go unchanged apart from the new check.
+- Limit: a server that daemonizes only after the probes pass while its parent is still alive
+  is not caught by `up`; the next `status` reports it.
