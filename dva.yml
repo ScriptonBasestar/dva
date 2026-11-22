@@ -212,7 +212,9 @@ ci:
           reuse:
             inputs: [cmd, internal, skills, tools, "*.go", go.mod, go.sum, go.work, go.work.sum, .mise.toml, .golangci.yml, scripts/ci-lint.sh]
             tools: [sh, go, golangci-lint]
-            environment: *go-env
+            # GOLANGCI_LINT_CACHE is in the key so pointing it at an empty dir to force a cold
+            # run never gets a hit recorded under the warm cache.
+            environment: [GOFLAGS, GOTOOLCHAIN, GOROOT, GOOS, GOARCH, CGO_ENABLED, GOEXPERIMENT, GOWORK, GOPROXY, GOSUMDB, GOLANGCI_LINT_CACHE]
             max_age: 12h
         - &ci-lint-gopls
           name: lint-gopls
