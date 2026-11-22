@@ -80,7 +80,7 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 			retErr = errors.Join(retErr, fmt.Errorf("record admission attempt: %w", err))
 		}
 	}()
-	var cleanupTracker *resourceCleanupTracker
+	var steps *stepAdmission
 	var finishAdmission func() error
 	var unconfiguredAdmission *AdmissionObservation
 	if admission := opts.Profile.Admission; admission != nil {
@@ -152,21 +152,25 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 			if err != nil {
 				return report, err
 			}
+			// Each step takes and returns its own claim (step granularity); the
+			// claim acquired here is handed to the first dispatched step.
+			observation.Granularity = "step"
 			admissionExecutionStart := time.Now()
-			cleanupTracker = &resourceCleanupTracker{lease: lease}
+			steps = &stepAdmission{dir: dir, digest: digest, class: admission.Class, priority: admission.Priority, policy: p, wait: wait, pending: lease, pendingObs: observation}
 			finishAdmission = func() error {
+				err := steps.close()
 				duration := time.Since(admissionExecutionStart).String()
 				observation.ExecutionDuration = &duration
-				if cleanupTracker.isUncertain() {
+				steps.mu.Lock()
+				defer steps.mu.Unlock()
+				switch {
+				case steps.quarantined:
 					observation.Outcome = "quarantined"
-					return errors.Join(fmt.Errorf("resource lease %s quarantined: process group cleanup unconfirmed", lease.ID()), lease.Quarantine())
-				}
-				releaseCtx, cancelRelease := context.WithTimeout(context.Background(), time.Second)
-				defer cancelRelease()
-				err := lease.Complete(releaseCtx)
-				if err != nil {
+				case steps.failure != "":
+					observation.Outcome = steps.failure
+				case err != nil:
 					observation.Outcome = "failed"
-				} else {
+				default:
 					observation.Outcome = "completed"
 				}
 				return err
@@ -180,10 +184,11 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 				return report, fmt.Errorf("record acquired admission: %w", err)
 			}
 			opts.Env = setCIEnvironment(opts.Env, "DVA_RESOURCE_SUPERVISED", "1")
+			// One claim at a time: admitted steps run sequentially, and each
+			// step may use the whole class worker limit.
+			opts.Profile.MaxParallel = 1
 			if total := p.WorkerLimits[admission.Class]; total > 0 {
-				opts.Profile.MaxParallel = min(opts.Profile.MaxParallel, total)
-				perStep := max(1, total/min(opts.Profile.MaxParallel, len(opts.Profile.Steps)))
-				opts.Env = setCIEnvironment(opts.Env, "DVA_RESOURCE_WORKER_LIMIT", fmt.Sprint(perStep))
+				opts.Env = setCIEnvironment(opts.Env, "DVA_RESOURCE_WORKER_LIMIT", fmt.Sprint(total))
 			}
 		}
 	}
@@ -191,8 +196,8 @@ func Run(parent context.Context, opts Options) (report Report, retErr error) {
 	if bridge != nil {
 		ctx = context.WithValue(ctx, hostSlotBridgeKey{}, bridge)
 	}
-	if cleanupTracker != nil {
-		ctx = context.WithValue(ctx, resourceCleanupKey{}, cleanupTracker)
+	if steps != nil {
+		ctx = context.WithValue(ctx, stepAdmissionKey{}, steps)
 	}
 	if opts.Profile.Timeout != "" {
 		d, err := time.ParseDuration(opts.Profile.Timeout)

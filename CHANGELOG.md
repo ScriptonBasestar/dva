@@ -7,6 +7,12 @@ All notable changes to DVA are documented here.
 
 ### Changed
 
+- CI profile `admission`이 실행 전체가 아니라 단계마다 claim을 받고 반납합니다. background `ci full`이
+  heavy 자리를 몇 시간 붙잡아 interactive 대기가 5분 뒤 시간 초과하던 문제를, 다음 단계 경계에서 기존
+  우선순위 순서로 양보하게 고칩니다. admission이 활성인 실행은 claim을 하나만 갖도록 단계를 순차 실행하고
+  각 단계가 class worker 한도 전체를 받습니다. 단계 대기는 profile timeout에 포함되며, 5분보다 긴 단일
+  단계는 여전히 대기를 막습니다.
+
 - 실행 중인 process 엔트리의 로컬 헬스 포트를 다른 프로세스 그룹이 listen하면(macOS `lsof`, Linux `/proc`로
   확인) `up`은 "health port owner mismatch"로 실패하고 `status`는 `error`와 주소·pid를 표시합니다. 조회할 수
   없으면 "owner unverified"로 알립니다(TASK-631).

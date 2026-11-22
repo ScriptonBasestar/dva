@@ -157,7 +157,7 @@ func execute(ctx context.Context, root string, p config.CIProfile, inherited []s
 		_, _ = fmt.Fprintf(out, "ci dispatch step=%s completed=%d/%d\n", p.Steps[i].Name, complete, n)
 		startedAt := reports[i].StartedAt
 		go func() {
-			r, e := runConditionedStep(ctx, root, p.Steps[i], stepEnv, stepWorkers, stepSource, out, startedAt)
+			r, e := runAdmittedStep(ctx, root, p.Steps[i], stepEnv, stepWorkers, stepSource, out, startedAt)
 			done <- result{i, r, e}
 		}()
 		return nil
