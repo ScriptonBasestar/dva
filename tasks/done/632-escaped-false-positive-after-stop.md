@@ -5,7 +5,10 @@ type: bug
 priority: P3
 effort: S
 exec-tier: standard
-status: todo
+status: done
+delivered-by: 5f249f27
+quality-review: pass
+quality-review-evidence: "ce review-evidence 061dd6064a592c71233b63b9558d6bec4aeb5c6dc8b20b6118c620033590f0b5"
 created: 2026-11-22
 allowed-paths: [internal/lifecycle/, USAGE.md, CHANGELOG.md, tasks/]
 ---
@@ -37,3 +40,12 @@ independent review.
 - 테스트: `TestStatusNotEscapedAfterStop`, `TestStatusEscapedAfterRestartClearsHalted`,
   `TestStopOfDeadPidDoesNotMarkHalted`(기존 Escaped 테스트 유지). 변이 4종(skip 제거, mark 제거,
   start에서 clear 제거, 죽은 pid에도 mark) 모두 테스트가 실패했다.
+
+## Review Attempts
+
+### 1. 2026-11-24 — reviewer: 독립 opus 서브에이전트(읽기 전용), executor: 구현 실행(5f249f27)
+
+- 기준 전부 pass. 근거: `ce review-evidence 061dd606…`.
+- 리뷰어가 stop 시간 초과·죽은 pid·Restart·다른 starter(tilt, sam, serverless)·instance 경로를 확인하고, 자체 변이 3종이 모두 테스트에 잡힘을 확인했다.
+- 비차단 지적: stop 뒤 `startLocalProcess`가 실패하면 표식이 남는다(dva가 시작하지 않은 프로세스의 escaped 보고만 가려 무해). stop 시간 초과 경로는 테스트가 없다(단순 조기 반환).
+- 다음 전환: done.
