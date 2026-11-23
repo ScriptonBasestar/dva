@@ -51,6 +51,7 @@ func (p *PluginContext) IdentityFile(name string) string {
 func removeEntryState(pctx *PluginContext, name string) {
 	_ = os.Remove(pctx.PidFile(name))
 	_ = os.Remove(pctx.IdentityFile(name))
+	clearHalted(pctx, name)
 }
 
 func writeIdentity(pctx *PluginContext, name string, pid int) error {

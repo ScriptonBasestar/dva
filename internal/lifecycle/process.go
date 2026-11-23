@@ -163,7 +163,11 @@ func (p *ProcessPlugin) Status(ctx context.Context, pctx *PluginContext) ([]Serv
 			statuses[0].Extra = report.extra()
 		case "stopped":
 			// The pid file says dva started it; if its health port still answers, the server
-			// escaped tracking rather than stopped (TASK-629).
+			// escaped tracking rather than stopped (TASK-629) — unless `dva stop` ended that
+			// process itself, so whatever answers now is not it (TASK-632).
+			if wasHalted(pctx, name) {
+				break
+			}
 			if held := heldHealthEndpoints(ctx, pctx.Entry.HealthChecks, pctx.Env); len(held) > 0 {
 				statuses[0].State = "error"
 				statuses[0].Extra = map[string]string{escapedExtraKey: strings.Join(held, ", ")}
@@ -213,6 +217,9 @@ func (p *ProcessPlugin) haltProcess(ctx context.Context, pctx *PluginContext) er
 				// alive and no replacement was started.
 				return fmt.Errorf("stop %s: pid %d did not exit within %s", name, pid, haltExitTimeout)
 			}
+			// Only a stop that ended the process itself is marked: a pid already dead
+			// here may have left an escaped server behind, which status keeps reporting.
+			markHalted(pctx, name)
 		} else if errors.Is(err, errProcessGroupsUnsupported) {
 			return fmt.Errorf("stop %s: %w", name, err)
 		}
@@ -315,6 +322,9 @@ func startLocalProcess(name, command, dir string, pctx *PluginContext) error {
 		_ = os.Remove(filepath.Join(logDir, name+".log"))
 		return fmt.Errorf("save identity: %w", err)
 	}
+	// A new process is tracked now, so an earlier deliberate stop no longer explains a
+	// dead pid with an answering port (TASK-632).
+	clearHalted(pctx, name)
 
 	_ = logFile.Close()
 

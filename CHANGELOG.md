@@ -7,6 +7,9 @@ All notable changes to DVA are documented here.
 
 ### Changed
 
+- `dva stop`으로 멈춘 process 엔트리의 헬스 포트를 다른 프로세스가 쓰면, `status`가 더 이상 "escaped"로
+  잘못 보고하지 않고 `stopped`로 표시합니다. stop 없이 스스로 백그라운드로 빠져나간 서버는 그대로
+  `error`/escaped로 보고합니다(TASK-632).
 - 헬스체크에 `owner: external`을 선언하면 그 주소의 소유자 확인을 건너뛰고 `status`에 선언 사실을
   표시합니다. 포그라운드 `docker run -p` 엔트리처럼 다른 프로세스가 포트를 여는 경우에 씁니다. 원격 호스트
   주소는 더 이상 `up`마다 "owner unverified" 경고를 내지 않습니다(`status`에는 남음)(TASK-633).
