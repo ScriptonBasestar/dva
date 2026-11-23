@@ -40,4 +40,15 @@ defect. It makes the integration gate flaky for every dva change.
 
 ## Completion Criteria
 
-- [ ] TestHostBridgeReuseHitDoesNotClaim passes repeatedly under a loaded full make test run. | verify: human — 부하 중 make test 반복 결과를 독립 리뷰가 확인
+- [x] TestHostBridgeReuseHitDoesNotClaim passes repeatedly under a loaded full make test run. | verify: human — 부하 중 make test 반복 결과를 독립 리뷰가 확인
+
+## Outcome
+
+- 원인: 두 "does not claim" 테스트(`ReuseHitDoesNotClaim`, `ConditionFalseDoesNotClaim`)가 1초
+  `context` 마감을 "슬롯을 잡지 않았다"의 탐지기로 썼다. 슬롯 점유는 이미 step 단언(`reused`/
+  `condition-false`가 아니라 admission 대기 후 `timed_out`)이 잡으므로, 1초는 탐지에 필요 없는 속도
+  예산이 되어 부하 중 `git` 자식을 죽였다.
+- 수정: 두 테스트의 마감을 30초 hang guard(`noClaimDeadline`)로 바꾸고, 실패 메시지가 hang guard와
+  admission 대기를 구분해 말하게 했다. 고정 슬롯 획득 마감도 다른 테스트와 같은 3초로 맞췄다.
+- 검증: `go test ./... -count=1`를 동시에 돌리는 부하 중 두 테스트를 `-count=20`(40회) 실행해 전부
+  통과. reuse hit를 끈 변이에서는 테스트가 `timed_out` 보고로 실패해 회귀를 여전히 잡는다.

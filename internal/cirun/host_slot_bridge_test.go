@@ -14,6 +14,30 @@ import (
 	"github.com/ScriptonBasestar/dva/internal/resourceadmission"
 )
 
+// noClaimDeadline bounds a Run that must finish without claiming the heavy slot
+// the test holds. It is only a hang guard, not a speed budget: a claim is caught
+// by the step's assertion (it waits on admission and reports timed_out, not
+// reused or condition-false), so the deadline must leave room for git and sh
+// children on a loaded host (ISSUE-627: a 1s deadline killed `git` under load).
+const noClaimDeadline = 30 * time.Second
+
+// noClaimContext returns a context for a Run that must not claim the held slot.
+func noClaimContext(t *testing.T) context.Context {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.Background(), noClaimDeadline)
+	t.Cleanup(cancel)
+	return ctx
+}
+
+// failNoClaim reports a no-claim Run failure and names the likely cause.
+func failNoClaim(t *testing.T, ctx context.Context, report any, err error) {
+	t.Helper()
+	if ctx.Err() != nil {
+		t.Fatalf("run hit the %s hang guard while the heavy slot was held: report=%+v err=%v", noClaimDeadline, report, err)
+	}
+	t.Fatalf("run did not skip the held heavy slot (a timed_out status means it waited on admission): report=%+v err=%v", report, err)
+}
+
 func bridgeFixture(t *testing.T) (string, string, string, resourceadmission.Policy, string) {
 	t.Helper()
 	t.Setenv("DVA_RESOURCE_SUPERVISED", "")
@@ -124,12 +148,11 @@ func TestHostBridgeConditionFalseDoesNotClaim(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() { _ = held.Complete(context.Background()) }()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
+	ctx := noClaimContext(t)
 	step := config.CIStep{Name: "one", Run: "exit 1", HostSlot: true, Condition: &config.CICondition{Run: `printf '{"selected":false}'`, Timeout: "1s"}}
 	r, err := Run(ctx, Options{Root: root, ProfileName: "full", StateDir: state, lockDirectory: state, resourceDirectory: resource, Env: []string{"DVA_RESOURCE_POLICY=" + filepath.Join(root, "policy.json")}, Profile: profile(step), Output: io.Discard})
 	if err != nil || r.Steps[0].SkipReason != "condition-false" {
-		t.Fatalf("report=%+v err=%v", r, err)
+		failNoClaim(t, ctx, r, err)
 	}
 }
 
@@ -206,18 +229,17 @@ func TestHostBridgeReuseHitDoesNotClaim(t *testing.T) {
 	if err != nil || r.Steps[0].Reuse == nil || r.Steps[0].Reuse.Disposition != "executed" {
 		t.Fatalf("first=%+v err=%v", r, err)
 	}
-	acquireCtx, cancelAcquire := context.WithTimeout(context.Background(), time.Second)
+	acquireCtx, cancelAcquire := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancelAcquire()
 	held, err := resourceadmission.Acquire(acquireCtx, resource, p, digest, "heavy", "normal")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer func() { _ = held.Complete(context.Background()) }()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
+	ctx := noClaimContext(t)
 	r, err = Run(ctx, opts)
 	if err != nil || r.Steps[0].Reuse == nil || r.Steps[0].Reuse.Disposition != "reused" {
-		t.Fatalf("reuse=%+v err=%v", r, err)
+		failNoClaim(t, ctx, r, err)
 	}
 }
 
