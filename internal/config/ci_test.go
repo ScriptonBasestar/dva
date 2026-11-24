@@ -338,3 +338,39 @@ func TestCIBudgetCustomKind(t *testing.T) {
 		t.Fatal("incomplete custom kind was accepted")
 	}
 }
+
+func TestCIBudgetSnapshotAcrossResolutions(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	if err := os.MkdirAll(filepath.Join(dir, "dva"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	policy := filepath.Join(dir, "dva", "ci-budgets.yml")
+	write := func(value string) {
+		t.Helper()
+		if err := os.WriteFile(policy, []byte("global:\n  test: {timeout: "+value+", warn_after: 1m}\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("3m")
+	if err := os.WriteFile(filepath.Join(dir, "dva.yml"), []byte("ci:\n  family: absent\n  profiles:\n    test:\n      steps: [{name: run, run: 'true'}]\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	write("4m")
+	first, err := cfg.ResolveCIProfile("test")
+	if err != nil || first.Timeout != "3m" {
+		t.Fatalf("first %#v err %v", first, err)
+	}
+	next, err := Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := next.ResolveCIProfile("test")
+	if err != nil || second.Timeout != "4m" {
+		t.Fatalf("second %#v err %v", second, err)
+	}
+}

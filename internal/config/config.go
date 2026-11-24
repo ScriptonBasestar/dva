@@ -43,7 +43,10 @@ type Config struct {
 	Stack            map[string]*LifecycleEntry     `yaml:"stack"`
 
 	// Internal fields
-	filePath string
+	filePath            string
+	ciBudgetSnapshot    *ciBudgetPolicy
+	ciBudgetError       error
+	ciBudgetInitialized bool
 
 	// deferEntryProblems and loadProblems back the CollectEntryProblems load option:
 	// entry-shape errors that a strict load would return are recorded here instead.

@@ -17,6 +17,7 @@ import (
 var ciProject, ciSubproject string
 var ciFresh bool
 var ciLookup bool
+var runCI = cirun.Run
 
 var ciCmd = &cobra.Command{
 	Use:   "ci [profile]",
@@ -83,7 +84,7 @@ var ciCmd = &cobra.Command{
 			writer = cmd.ErrOrStderr()
 		}
 		opts.Output = writer
-		report, runErr := cirun.Run(ctx, opts)
+		report, runErr := runCI(ctx, opts)
 		if jsonOutput {
 			if err := output.PrintJSON(report); err != nil {
 				return err

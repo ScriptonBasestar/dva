@@ -111,7 +111,7 @@ func (c *Config) ResolveCIProfile(name string) (CIProfile, error) {
 		return CIProfile{}, fmt.Errorf("ci profile %q is not defined", name)
 	}
 	var err error
-	profile, err = resolveCIBudget(profile, c.CI.Family, name)
+	profile, err = c.resolveCIBudget(profile, c.CI.Family, name)
 	if err != nil {
 		return CIProfile{}, err
 	}

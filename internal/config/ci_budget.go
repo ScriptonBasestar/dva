@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -77,19 +78,30 @@ func loadCIBudgetPolicy() (ciBudgetPolicy, error) {
 	return policy, nil
 }
 
-func resolveCIBudget(profile CIProfile, family, name string) (CIProfile, error) {
+var ciBudgetInitMutex sync.Mutex
+
+// Each Config snapshots policy on its first resolution. Load validates profiles
+// before returning, while programmatic Config values snapshot on first use.
+func (c *Config) budgetPolicy() (*ciBudgetPolicy, error) {
+	ciBudgetInitMutex.Lock()
+	defer ciBudgetInitMutex.Unlock()
+	if !c.ciBudgetInitialized {
+		policy, err := loadCIBudgetPolicy()
+		c.ciBudgetSnapshot, c.ciBudgetError = &policy, err
+		c.ciBudgetInitialized = true
+	}
+	return c.ciBudgetSnapshot, c.ciBudgetError
+}
+
+func (c *Config) resolveCIBudget(profile CIProfile, family, name string) (CIProfile, error) {
 	if profile.BudgetSources != nil {
 		return profile, nil
 	}
-	policy, err := loadCIBudgetPolicy()
+	policy, err := c.budgetPolicy()
 	if err != nil {
 		return profile, err
 	}
-	if family != "" {
-		if _, ok := policy.Families[family]; !ok {
-			return profile, fmt.Errorf("CI budget family %q is not configured", family)
-		}
-	}
+
 	sources := map[string]string{}
 	if profile.Timeout != "" {
 		sources["timeout"] = "project"
@@ -107,10 +119,20 @@ func resolveCIBudget(profile CIProfile, family, name string) (CIProfile, error) 
 			sources["warn_after"] = source
 		}
 	}
-	if family != "" {
-		apply(policy.Families[family][profile.Kind], "family:"+family)
+	kind := profile.Kind
+	if kind == "" {
+		switch name {
+		case "dev", "unit", "integration", "test", "e2e", "full":
+			kind = name
+		case "audit":
+			kind = "full"
+		}
 	}
-	apply(policy.Global[profile.Kind], "global")
+	if family != "" {
+		apply(policy.Families[family][kind], "family:"+family)
+	}
+	apply(policy.Global[kind], "global")
+
 	builtins := map[string]ciBudget{
 		"dev": {"2m", "1m"}, "unit": {"5m", "2m"},
 		"integration": {"5m", "3m"}, "test": {"5m", "3m"},
@@ -118,12 +140,12 @@ func resolveCIBudget(profile CIProfile, family, name string) (CIProfile, error) 
 		"lint": {"30s", "15s"}, "compile": {"60s", "30s"},
 		"build": {"5m", "3m"},
 	}
-	if profile.Kind != "" {
-		budget, ok := builtins[profile.Kind]
+	if kind != "" {
+		budget, ok := builtins[kind]
 		if ok {
 			apply(budget, "builtin")
 		} else if profile.Timeout == "" || profile.WarnAfter == "" {
-			return profile, fmt.Errorf("custom CI budget kind %q needs timeout and warn_after from policy or project", profile.Kind)
+			return profile, fmt.Errorf("custom CI budget kind %q needs timeout and warn_after from policy or project", kind)
 		}
 	}
 	if name == defaultCIProfileName {

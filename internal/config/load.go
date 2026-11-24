@@ -154,6 +154,11 @@ func Load(workDir string, opts ...LoadOption) (*Config, error) {
 
 	applyConfigDefaults(cfg)
 
+	if cfg.CI != nil && !o.envInspectionOnly {
+		if _, err := cfg.budgetPolicy(); err != nil {
+			return nil, err
+		}
+	}
 	if len(cfg.Subprojects) > 0 && !o.ciProfileOnly && !o.envInspectionOnly {
 		if err := resolveSubprojectImports(cfg, opts...); err != nil {
 			return nil, fmt.Errorf("resolving subprojects: %w", err)

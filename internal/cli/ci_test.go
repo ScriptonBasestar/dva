@@ -185,10 +185,9 @@ func TestCIChildDryRunUsesOwningWorkerEnvironment(t *testing.T) {
 	}
 }
 
-// Both routes must pass the child's owning configuration directory to cirun.
-// Holding that directory's OS root lock makes this an admission test: neither
-// invocation can reach its step command.
-func TestCIProjectAndDirectChildShareRootLock(t *testing.T) {
+// Both routes pass the child's owning configuration directory to cirun.
+// Shared OS lock behavior is covered by cirun's isolated lock tests.
+func TestCIProjectAndDirectChildShareRoot(t *testing.T) {
 	// A surrounding dva ci run deliberately sets this for its steps. This test
 	// is a separate top-level invocation, so it must exercise root admission.
 	t.Setenv(config.CIParentRunEnv, "")
@@ -227,8 +226,18 @@ func TestCIProjectAndDirectChildShareRootLock(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	holder := holdCIRootLock(t, child.FileDir())
-	defer holder.release()
+	oldRun := runCI
+	runCI = func(_ context.Context, options cirun.Options) (cirun.Report, error) {
+		root, err := filepath.EvalSymlinks(options.Root)
+		if err != nil || root != canonicalChildDir {
+			t.Errorf("CI root = %q, want %q: %v", root, canonicalChildDir, err)
+		}
+		return cirun.Report{
+			Status:   "busy",
+			Conflict: &cirun.Conflict{Kind: "root", Key: canonicalChildDir, RunID: "fixture"},
+		}, cirun.ErrBusy
+	}
+	t.Cleanup(func() { runCI = oldRun })
 
 	for _, route := range []struct {
 		name    string
@@ -253,7 +262,7 @@ func TestCIProjectAndDirectChildShareRootLock(t *testing.T) {
 			if err := json.Unmarshal([]byte(data), &report); err != nil {
 				t.Fatalf("busy output is not a report: %v; output=%s", err, data)
 			}
-			if report.Status != "busy" || report.Conflict == nil || report.Conflict.Kind != "root" || report.Conflict.Key != canonicalChildDir || report.Conflict.RunID != holder.id {
+			if report.Status != "busy" || report.Conflict == nil || report.Conflict.Kind != "root" || report.Conflict.Key != canonicalChildDir || report.Conflict.RunID != "fixture" {
 				t.Fatalf("report = %#v, want child root conflict", report)
 			}
 			if _, err := os.Stat(filepath.Join(childDir, "executed")); !os.IsNotExist(err) {

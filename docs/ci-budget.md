@@ -15,6 +15,5 @@ families:
 Each field is selected in project, family, global, built-in order. An inherited
 warning that would reach or exceed the effective timeout is reduced to 80% of
 the timeout. A project warning is validated against the effective timeout.
-The dry-run profile exposes `budget_sources`. Families must exist in the policy
-file when declared. The built-in kinds are dev, unit, integration, test, e2e,
+The dry-run profile exposes `budget_sources`. A family absent from the policy inherits global and built-in values. Policy is snapshotted once per configuration load. Known profile names receive built-in defaults when kind is omitted. The built-in kinds are dev, unit, integration, test, e2e,
 full, lint, compile, and build. A custom kind is supported when policy or the project supplies both budget fields. Uncategorized custom profiles retain the existing requirement for an explicit timeout. Commit retains its established hard maximum.
