@@ -120,10 +120,11 @@ func resolveCIBudget(profile CIProfile, family, name string) (CIProfile, error) 
 	}
 	if profile.Kind != "" {
 		budget, ok := builtins[profile.Kind]
-		if !ok {
-			return profile, fmt.Errorf("unknown CI budget kind %q", profile.Kind)
+		if ok {
+			apply(budget, "builtin")
+		} else if profile.Timeout == "" || profile.WarnAfter == "" {
+			return profile, fmt.Errorf("custom CI budget kind %q needs timeout and warn_after from policy or project", profile.Kind)
 		}
-		apply(budget, "builtin")
 	}
 	if name == defaultCIProfileName {
 		apply(ciBudget{Timeout: "10m0s", WarnAfter: "5m0s"}, "builtin")

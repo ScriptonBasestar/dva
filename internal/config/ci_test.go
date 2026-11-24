@@ -306,3 +306,35 @@ func TestCIBudgetResolutionPreservesSources(t *testing.T) {
 		t.Fatalf("second resolution %#v error %v", resolved, err)
 	}
 }
+
+func TestCIBudgetCustomKind(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	if err := os.MkdirAll(filepath.Join(dir, "dva"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	policy := "global:\n  smoke: {timeout: 40s, warn_after: 20s}\n"
+	if err := os.WriteFile(filepath.Join(dir, "dva", "ci-budgets.yml"), []byte(policy), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	manifest := "ci:\n  profiles:\n    smoke:\n      kind: smoke\n      steps:\n        - name: run\n          run: 'true'\n"
+	if err := os.WriteFile(filepath.Join(dir, "dva.yml"), []byte(manifest), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := cfg.ResolveCIProfile("smoke")
+	if err != nil || got.Timeout != "40s" || got.WarnAfter != "20s" || got.BudgetSources["timeout"] != "global" {
+		t.Fatalf("got %#v, error %v", got, err)
+	}
+	cfg.CI.Profiles["local"] = CIProfile{Kind: "custom", Timeout: "10s", WarnAfter: "5s", Steps: []CIStep{{Name: "run", Run: "true"}}}
+	if _, err := cfg.ResolveCIProfile("local"); err != nil {
+		t.Fatal(err)
+	}
+	cfg.CI.Profiles["bad"] = CIProfile{Kind: "undefined", Timeout: "10s", Steps: []CIStep{{Name: "run", Run: "true"}}}
+	if _, err := cfg.ResolveCIProfile("bad"); err == nil {
+		t.Fatal("incomplete custom kind was accepted")
+	}
+}

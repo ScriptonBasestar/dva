@@ -17,4 +17,4 @@ warning that would reach or exceed the effective timeout is reduced to 80% of
 the timeout. A project warning is validated against the effective timeout.
 The dry-run profile exposes `budget_sources`. Families must exist in the policy
 file when declared. The built-in kinds are dev, unit, integration, test, e2e,
-full, lint, compile, and build. Uncategorized custom profiles retain the existing requirement for an explicit timeout. Commit retains its established hard maximum.
+full, lint, compile, and build. A custom kind is supported when policy or the project supplies both budget fields. Uncategorized custom profiles retain the existing requirement for an explicit timeout. Commit retains its established hard maximum.

@@ -10,12 +10,13 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"os/user"
 	"path/filepath"
 	"strings"
 	"syscall"
 	"testing"
 	"time"
+
+	"github.com/ScriptonBasestar/dva/internal/statedir"
 )
 
 const ciLockHelperEnv = "DVA_CLI_CI_LOCK_HELPER"
@@ -92,27 +93,40 @@ func holdCIRootLock(t *testing.T, root string) *ciRootLockHolder {
 		if h.cmd != nil {
 			_ = h.cmd.Wait()
 			h.cmd = nil
+			path, err := ciRootLockPath(root)
+			if err != nil {
+				t.Errorf("resolve owned lock path: %v", err)
+			} else if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+				t.Errorf("remove owned lock file: %v", err)
+			}
 		}
 	}
 	t.Cleanup(h.release)
 	return h
 }
 
-func openAndLockCIRoot(root string) (*os.File, error) {
-	u, err := user.Current()
+func ciRootLockPath(root string) (string, error) {
+	state, err := statedir.HostRoot()
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	canonical, err := filepath.EvalSymlinks(root)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	canonical, err = filepath.Abs(canonical)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	hash := sha256.Sum256([]byte(canonical))
-	path := filepath.Join(u.HomeDir, ".local", "state", "dva", "ci", "locks", "root-"+hex.EncodeToString(hash[:])+".lock")
+	return filepath.Join(state, "ci", "locks", "root-"+hex.EncodeToString(hash[:])+".lock"), nil
+}
+
+func openAndLockCIRoot(root string) (*os.File, error) {
+	path, err := ciRootLockPath(root)
+	if err != nil {
+		return nil, err
+	}
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return nil, err
 	}

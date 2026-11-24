@@ -483,3 +483,39 @@ func withCIWorkingDirectory(t *testing.T, dir string) {
 		}
 	})
 }
+
+func TestCICustomBudgetDryRun(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	if err := os.MkdirAll(filepath.Join(dir, "dva"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "dva", "ci-budgets.yml"), []byte("global:\n  smoke: {timeout: 40s, warn_after: 20s}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	manifest := "ci:\n  profiles:\n    smoke:\n      kind: smoke\n      steps:\n        - name: run\n          run: 'true'\n"
+	if err := os.WriteFile(filepath.Join(dir, "dva.yml"), []byte(manifest), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := config.Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	withEnvPolicyGlobals(t, cfg, true)
+	oldDryRun, oldProject, oldSubproject := dryRun, ciProject, ciSubproject
+	dryRun, ciProject, ciSubproject = true, "", ""
+	t.Cleanup(func() { dryRun, ciProject, ciSubproject = oldDryRun, oldProject, oldSubproject })
+	output.ResetStdoutDocument()
+	var runErr error
+	data := captureStdout(t, func() { runErr = ciCmd.RunE(ciCmd, []string{"smoke"}) })
+	if runErr != nil {
+		t.Fatal(runErr)
+	}
+	var got config.CIProfile
+	if err := json.Unmarshal([]byte(data), &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.Timeout != "40s" || got.WarnAfter != "20s" || got.BudgetSources["timeout"] != "global" {
+		t.Fatalf("dry-run budget = %#v", got)
+	}
+}
