@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"strings"
 	"syscall"
 
 	"github.com/spf13/cobra"
 
 	"github.com/ScriptonBasestar/dva/internal/cirun"
 	"github.com/ScriptonBasestar/dva/internal/config"
+	dvaexec "github.com/ScriptonBasestar/dva/internal/exec"
 	"github.com/ScriptonBasestar/dva/internal/output"
 )
 
@@ -18,6 +21,9 @@ var ciProject, ciSubproject string
 var ciFresh bool
 var ciLookup bool
 var runCI = cirun.Run
+var replaceCIProcess = dvaexec.ExecReplaceArgv
+
+const ciSupervisorEnv = "DVA_CI_SUPERVISOR"
 
 var ciCmd = &cobra.Command{
 	Use:   "ci [profile]",
@@ -27,6 +33,24 @@ var ciCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if ciLookup && dryRun {
 			return errors.New("--lookup and --dry-run are separate read-only operations")
+		}
+		if supervisor, configured := os.LookupEnv(ciSupervisorEnv); configured && !dryRun && !ciLookup {
+			if !filepath.IsAbs(supervisor) {
+				return fmt.Errorf("%s requires an absolute executable path", ciSupervisorEnv)
+			}
+			self, err := os.Executable()
+			if err != nil {
+				return err
+			}
+			// The supervisor owns this process tree. Its DVA child must not
+			// delegate the same invocation back to the supervisor.
+			var environ []string
+			for _, item := range os.Environ() {
+				if !strings.HasPrefix(item, ciSupervisorEnv+"=") {
+					environ = append(environ, item)
+				}
+			}
+			return replaceCIProcess(append([]string{supervisor, self}, os.Args[1:]...), environ)
 		}
 		c, err := loadConfig(config.ForCI())
 		if err != nil {

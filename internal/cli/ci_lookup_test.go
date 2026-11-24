@@ -11,6 +11,7 @@ import (
 )
 
 func TestCILookupDoesNotExecuteOrCreateState(t *testing.T) {
+	t.Setenv(ciSupervisorEnv, "invalid-for-execution")
 	dir := t.TempDir()
 	state := filepath.Join(t.TempDir(), "absent-state")
 	t.Setenv("XDG_STATE_HOME", state)

@@ -1,5 +1,12 @@
 # 로컬 자원 입장
 
+POSIX 호스트는 자동 검증을 시작하는 환경에 `DVA_CI_SUPERVISOR`를 설정할 수 있다.
+값은 호스트가 관리하는 실행 파일의 절대 경로다. 실제 `dva ci`는 설정을 읽기 전에
+그 프로그램으로 자신을 교체하고 DVA 실행 파일과 원래 인자를 그대로 전달한다.
+호스트 프로그램은 작업별 남은 시간 안에서 인자로 받은 명령을 실행하고 종료 코드를 전달한다.
+자식 환경에서 이 변수는 제거된다. `--dry-run`, `--lookup`, 로그와 실행 기록 조회는
+예산을 사용하지 않는다. 변수를 생략하면 DVA가 직접 프로파일을 실행한다.
+
 `dva resource run --policy <절대경로> --class heavy --priority normal
 --wait-timeout 5m --execution-timeout 20m -- <명령> ...`은 분류된 명령이
 공유 예산에 들어갈 때까지 기다린다. `DVA_RESOURCE_POLICY`로 정책을 전달할 수도 있다.

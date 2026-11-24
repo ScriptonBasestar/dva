@@ -22,6 +22,14 @@ func ExecReplace(env *config.Environment, cmd string, args []string, shell bool)
 		slog.Debug("exec replacing process", "command", strings.Join(cmdLine, " "))
 	}
 
+	return ExecReplaceArgv(cmdLine, env.EnvSlice())
+}
+
+// ExecReplaceArgv preserves already-parsed arguments, without shell or config interpolation.
+func ExecReplaceArgv(cmdLine, environ []string) error {
+	if len(cmdLine) == 0 {
+		return fmt.Errorf("empty command")
+	}
 	binary, err := exec.LookPath(cmdLine[0])
 	if err != nil {
 		return fmt.Errorf("command not found: %s", cmdLine[0])
@@ -51,8 +59,7 @@ func ExecReplace(env *config.Environment, cmd string, args []string, shell bool)
 			"genuinely intends the replacement.")
 	}
 
-	envSlice := env.EnvSlice()
-	return syscall.Exec(binary, cmdLine, envSlice)
+	return syscall.Exec(binary, cmdLine, environ)
 }
 
 // ExecSubprocess runs a command as a subprocess and waits for it.

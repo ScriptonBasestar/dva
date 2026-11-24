@@ -16,6 +16,7 @@ import (
 )
 
 func TestCIDiscoveryAndDryRunDoNotExecute(t *testing.T) {
+	t.Setenv(ciSupervisorEnv, "invalid-for-execution")
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, "dva.yml"), []byte("ci:\n  profiles:\n    commit:\n      steps:\n        - name: forbidden\n          run: touch executed\n"), 0o600); err != nil {
 		t.Fatal(err)
