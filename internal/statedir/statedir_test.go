@@ -20,7 +20,7 @@ func TestRootUnderFreshBase(t *testing.T) {
 	}
 }
 
-func TestRootUnderMigratesLegacyAndLinksIt(t *testing.T) {
+func TestRootUnderMigratesWithoutLegacyAlias(t *testing.T) {
 	base := t.TempDir()
 	legacyFile := filepath.Join(base, "dva", "ci", "receipt.json")
 	if err := os.MkdirAll(filepath.Dir(legacyFile), 0o700); err != nil {
@@ -36,13 +36,8 @@ func TestRootUnderMigratesLegacyAndLinksIt(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(root, "ci", "receipt.json")); err != nil {
 		t.Fatalf("migrated data missing: %v", err)
 	}
-	link, err := os.Readlink(filepath.Join(base, "dva"))
-	if err != nil || link != filepath.Join("sb", "dva") {
-		t.Fatalf("legacy link = %q, %v", link, err)
-	}
-	// Legacy path keeps resolving to the same data for older binaries.
-	if _, err := os.Stat(legacyFile); err != nil {
-		t.Fatalf("legacy path no longer resolves: %v", err)
+	if _, err := os.Lstat(filepath.Join(base, Tool)); !os.IsNotExist(err) {
+		t.Fatalf("migrated root must not gain a legacy alias: %v", err)
 	}
 	// Second call is a no-op.
 	if again, err := RootUnder(base); err != nil || again != root {

@@ -69,8 +69,7 @@ func GroupDir(base, name string) (string, error) {
 }
 
 // migrateLegacy moves <base>/<name> to <base>/sb/<name> once and leaves a
-// relative symlink at the legacy path so older binaries keep sharing the same
-// data. An existing target is never merged or overwritten.
+// relative symlink only for other named state directories. DVA uses its canonical path. An existing target is never merged or overwritten.
 func migrateLegacy(base, name string) error {
 	legacy := filepath.Join(base, name)
 	target := filepath.Join(base, Group, name)
@@ -97,6 +96,9 @@ func migrateLegacy(base, name string) error {
 		if _, statErr := os.Lstat(target); statErr != nil {
 			return fmt.Errorf("migrate state %s -> %s: %w", legacy, target, err)
 		}
+	}
+	if name == Tool {
+		return nil
 	}
 	if err := os.Symlink(filepath.Join(Group, name), legacy); err != nil && !errors.Is(err, fs.ErrExist) {
 		return fmt.Errorf("link legacy state path %s: %w", legacy, err)

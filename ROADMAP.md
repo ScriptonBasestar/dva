@@ -248,7 +248,7 @@ Release만 만들도록 바꿨다(TASK-532). 공개된 tag는 이동하지 않�
 - 로컬: `dva ci full` run `084cfecbf713bb6d1b12f6222f571b5f`가 9단계(format·docs·vet·lint·
   test·build·integration·skill-dogfood·commit-subjects) 모두 성공했다(2m15s, macOS arm64).
   receipt attestation은 시작·종료 입력이 같고 commit이 후보와 같으며 `dirty: false`다.
-  receipt는 실행 장비의 `~/.local/state/dva/ci/084cfecbf713bb6d1b12f6222f571b5f.json`에만 있고
+  receipt는 실행 장비의 `~/.local/state/sb/dva/ci/084cfecbf713bb6d1b12f6222f571b5f.json`에만 있고
   저장소에 보존하지 않았다. 실행 root였던 release-prep worktree는 정리됐다.
 - 호스팅 CI: 같은 commit의 master push run `39912353702`가 성공했다. lint·test·commit-subjects,
   ubuntu·macOS의 config-env-platform 네 job, `goreleaser-snapshot`이 모두 성공이다.
@@ -282,7 +282,7 @@ ISSUE-534(`ci --subproject`의 무관한 import 해석)는 고쳐지지 않아 �
 - 로컬: `dva ci full` run `a87ce3ad604507a15b371b168d76d901`이 9단계(format·docs·vet·lint·
   test·build·integration·skill-dogfood·commit-subjects) 모두 성공했다(2m20s, macOS arm64).
   receipt attestation은 시작·종료 입력이 같고 commit이 후보와 같으며 `dirty: false`다.
-  receipt는 실행 장비의 `~/.local/state/dva/ci/a87ce3ad604507a15b371b168d76d901.json`에만 있고
+  receipt는 실행 장비의 `~/.local/state/sb/dva/ci/a87ce3ad604507a15b371b168d76d901.json`에만 있고
   저장소에 보존하지 않았다. 실행 root였던 release-prep worktree는 정리됐다.
 - 호스팅 CI: 같은 commit의 master push run `39978102999`가 성공했다. lint·test·commit-subjects,
   ubuntu·macOS의 config-env-platform 네 job, `goreleaser-snapshot`이 모두 성공이다.
