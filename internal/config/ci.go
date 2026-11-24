@@ -111,9 +111,26 @@ func (c *Config) ResolveCIProfile(name string) (CIProfile, error) {
 		if profile.Timeout == "" {
 			profile.Timeout = defaultCICommitTimeout.String()
 		}
-		if profile.WarnAfter == "" {
-			profile.WarnAfter = defaultCICommitWarnAfter.String()
+	}
+	if profile.WarnAfter == "" {
+		budget := time.Minute
+		switch name {
+		case "commit":
+			budget = defaultCICommitWarnAfter
+		case "full", "audit":
+			budget = 7 * time.Minute
+		case "lint", "docs":
+			budget = 15 * time.Second
+		case "compile", "test", "shell-tests":
+			budget = 30 * time.Second
+		case "build", "pytest-contract":
+			budget = 3 * time.Minute
 		}
+		// Keep the warning actionable even with a shorter project deadline.
+		if limit, err := time.ParseDuration(profile.Timeout); err == nil && limit > 0 {
+			budget = min(budget, limit-limit/5)
+		}
+		profile.WarnAfter = budget.String()
 	}
 	if profile.MaxParallel == 0 {
 		profile.MaxParallel = defaultCIMaxParallel

@@ -24,6 +24,23 @@ func TestResolveCIProfileCommitDefaults(t *testing.T) {
 	}
 }
 
+func TestResolveCIProfileWarningPrecedence(t *testing.T) {
+	for _, tc := range []struct{ name, timeout, local, want string }{
+		{"dev", "2m", "", "1m0s"},
+		{"custom", "10s", "", "8s"},
+		{"audit", "3m", "", "2m24s"},
+		{"shell-tests", "2m", "", "30s"},
+		{"commit", "2m30s", "2m", "2m"},
+	} {
+		profile := CIProfile{Timeout: tc.timeout, WarnAfter: tc.local, Steps: []CIStep{{Name: "unit", Run: "true"}}}
+		cfg := Config{CI: &CIConfig{Profiles: map[string]CIProfile{tc.name: profile}}}
+		got, err := cfg.ResolveCIProfile(tc.name)
+		if err != nil || got.WarnAfter != tc.want {
+			t.Errorf("%s: warning %q, want %q, err %v", tc.name, got.WarnAfter, tc.want, err)
+		}
+	}
+}
+
 func TestLoadMergesCIProfileToolJobs(t *testing.T) {
 	root := `ci:
   profiles:
