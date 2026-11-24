@@ -73,6 +73,9 @@ func (c *Config) mergeFrom(other *Config) error {
 		if c.CI == nil {
 			c.CI = &CIConfig{Profiles: make(map[string]CIProfile)}
 		}
+		if other.CI.Family != "" {
+			c.CI.Family = other.CI.Family
+		}
 		if other.CI.Profiles != nil {
 			if c.CI.Profiles == nil {
 				c.CI.Profiles = make(map[string]CIProfile)

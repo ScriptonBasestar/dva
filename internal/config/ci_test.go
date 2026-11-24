@@ -24,20 +24,20 @@ func TestResolveCIProfileCommitDefaults(t *testing.T) {
 	}
 }
 
-func TestResolveCIProfileWarningPrecedence(t *testing.T) {
-	for _, tc := range []struct{ name, timeout, local, want string }{
-		{"dev", "2m", "", "1m0s"},
-		{"custom", "10s", "", "8s"},
-		{"audit", "3m", "", "2m24s"},
-		{"shell-tests", "2m", "", "30s"},
-		{"commit", "2m30s", "2m", "2m"},
-	} {
-		profile := CIProfile{Timeout: tc.timeout, WarnAfter: tc.local, Steps: []CIStep{{Name: "unit", Run: "true"}}}
-		cfg := Config{CI: &CIConfig{Profiles: map[string]CIProfile{tc.name: profile}}}
-		got, err := cfg.ResolveCIProfile(tc.name)
-		if err != nil || got.WarnAfter != tc.want {
-			t.Errorf("%s: warning %q, want %q, err %v", tc.name, got.WarnAfter, tc.want, err)
-		}
+func TestCIBudgetInheritance(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	if err := os.MkdirAll(filepath.Join(dir, "dva"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	policy := "global:\n  test: {timeout: 5m, warn_after: 3m}\nfamilies:\n  cli:\n    test: {timeout: 3m}\n"
+	if err := os.WriteFile(filepath.Join(dir, "dva", "ci-budgets.yml"), []byte(policy), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	cfg := Config{CI: &CIConfig{Family: "cli", Profiles: map[string]CIProfile{"quick": {Kind: "test", Steps: []CIStep{{Name: "run", Run: "true"}}}}}}
+	got, err := cfg.ResolveCIProfile("quick")
+	if err != nil || got.Timeout != "3m" || got.WarnAfter != "2m24s" || got.BudgetSources["timeout"] != "family:cli" {
+		t.Fatalf("got %#v, error %v", got, err)
 	}
 }
 
@@ -266,4 +266,43 @@ func loadCIConfig(t *testing.T, content string) error {
 	}
 	_, err := Load(dir)
 	return err
+}
+
+func TestCIBudgetRejectsInvalidPolicy(t *testing.T) {
+	for _, text := range []string{
+		"global:\n  test: {timeout: invalid}\n",
+		"global:\n  test: {unexpected: 3m}\n",
+		"global: {}\n---\nglobal: {}\n",
+	} {
+		t.Run(text, func(t *testing.T) {
+			dir := t.TempDir()
+			t.Setenv("XDG_CONFIG_HOME", dir)
+			if err := os.MkdirAll(filepath.Join(dir, "dva"), 0o755); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(dir, "dva", "ci-budgets.yml"), []byte(text), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			_, err := loadCIBudgetPolicy()
+			if err == nil {
+				t.Fatal("invalid policy accepted")
+			}
+		})
+	}
+}
+
+func TestCIBudgetResolutionPreservesSources(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	cfg := Config{CI: &CIConfig{Profiles: map[string]CIProfile{
+		"test": {Kind: "test", Timeout: "2m", Steps: []CIStep{{Name: "run", Run: "true"}}},
+	}}}
+	got, err := cfg.ResolveCIProfile("test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	second := Config{CI: &CIConfig{Profiles: map[string]CIProfile{"test": got}}}
+	resolved, err := second.ResolveCIProfile("test")
+	if err != nil || resolved.BudgetSources["warn_after"] != "builtin:capped" || resolved.WarnAfter != "1m36s" {
+		t.Fatalf("second resolution %#v error %v", resolved, err)
+	}
 }

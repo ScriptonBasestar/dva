@@ -35,21 +35,24 @@ const CISubprojectEnv = "DVA_CI_SUBPROJECT"
 
 // CIConfig declares named CI gate profiles.
 type CIConfig struct {
+	Family   string               `yaml:"family,omitempty" json:"family,omitempty"`
 	Profiles map[string]CIProfile `yaml:"profiles" json:"profiles"`
 }
 
 // CIProfile declares the ordered gates and shared budget for a CI invocation.
 type CIProfile struct {
-	Admission   *CIAdmission `yaml:"admission,omitempty" json:"admission,omitempty"`
-	Fresh       bool         `yaml:"fresh,omitempty" json:"fresh,omitempty"`
-	Description string       `yaml:"description" json:"description"`
-	Timeout     string       `yaml:"timeout" json:"timeout"`
-	WarnAfter   string       `yaml:"warn_after" json:"warn_after"`
-	MaxParallel int          `yaml:"max_parallel" json:"max_parallel"`
-	FailFast    *bool        `yaml:"fail_fast,omitempty" json:"fail_fast,omitempty"`
-	ToolJobs    *int         `yaml:"tool_jobs,omitempty" json:"tool_jobs,omitempty"`
-	Locks       []string     `yaml:"locks" json:"locks"`
-	Steps       []CIStep     `yaml:"steps" json:"steps"`
+	Kind          string            `yaml:"kind,omitempty" json:"kind,omitempty"`
+	BudgetSources map[string]string `yaml:"-" json:"budget_sources,omitempty"`
+	Admission     *CIAdmission      `yaml:"admission,omitempty" json:"admission,omitempty"`
+	Fresh         bool              `yaml:"fresh,omitempty" json:"fresh,omitempty"`
+	Description   string            `yaml:"description" json:"description"`
+	Timeout       string            `yaml:"timeout" json:"timeout"`
+	WarnAfter     string            `yaml:"warn_after" json:"warn_after"`
+	MaxParallel   int               `yaml:"max_parallel" json:"max_parallel"`
+	FailFast      *bool             `yaml:"fail_fast,omitempty" json:"fail_fast,omitempty"`
+	ToolJobs      *int              `yaml:"tool_jobs,omitempty" json:"tool_jobs,omitempty"`
+	Locks         []string          `yaml:"locks" json:"locks"`
+	Steps         []CIStep          `yaml:"steps" json:"steps"`
 }
 
 // CIAdmission opts a profile into the host-wide cooperative resource budget.
@@ -107,30 +110,10 @@ func (c *Config) ResolveCIProfile(name string) (CIProfile, error) {
 	if !ok {
 		return CIProfile{}, fmt.Errorf("ci profile %q is not defined", name)
 	}
-	if name == defaultCIProfileName {
-		if profile.Timeout == "" {
-			profile.Timeout = defaultCICommitTimeout.String()
-		}
-	}
-	if profile.WarnAfter == "" {
-		budget := time.Minute
-		switch name {
-		case "commit":
-			budget = defaultCICommitWarnAfter
-		case "full", "audit":
-			budget = 7 * time.Minute
-		case "lint", "docs":
-			budget = 15 * time.Second
-		case "compile", "test", "shell-tests":
-			budget = 30 * time.Second
-		case "build", "pytest-contract":
-			budget = 3 * time.Minute
-		}
-		// Keep the warning actionable even with a shorter project deadline.
-		if limit, err := time.ParseDuration(profile.Timeout); err == nil && limit > 0 {
-			budget = min(budget, limit-limit/5)
-		}
-		profile.WarnAfter = budget.String()
+	var err error
+	profile, err = resolveCIBudget(profile, c.CI.Family, name)
+	if err != nil {
+		return CIProfile{}, err
 	}
 	if profile.MaxParallel == 0 {
 		profile.MaxParallel = defaultCIMaxParallel
@@ -374,6 +357,9 @@ func hasCIStepCycle(steps map[string]CIStep) bool {
 }
 
 func mergeCIProfile(base, other CIProfile) CIProfile {
+	if other.Kind != "" {
+		base.Kind = other.Kind
+	}
 	if other.Admission != nil {
 		base.Admission = other.Admission
 	}
