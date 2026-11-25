@@ -46,8 +46,8 @@ before adopting explicit repository-scope reuse; checkout isolation remains the 
    `ci_profiles` (both apply DVA defaults, such as 10m for a `commit` that
    declares none); never trust the profile name or a raw `dva.yml` read. An
    effective timeout over 10 minutes, or none, counts as long. Agents never run
-   `full`, `audit`, or any other profile over 10 minutes, in development or in integration sessions, and never offer
-   to. The project's full gate stays required: only a receipt from an idle-gated
+   `full`, `audit`, or any other profile over 10 minutes, in development or
+   in integration sessions, and never offer to. The project's full gate stays required: only a receipt from an idle-gated
    scheduled run, CI, or the user satisfies it, and while it is unrun report it
    as "not verified (long run, deferred to idle/CI)", never as passed. A project
    `dev-check` is a separate narrow edit-loop command. Do not repeat a gate that
