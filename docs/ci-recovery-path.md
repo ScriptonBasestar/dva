@@ -6,8 +6,11 @@ DVA 저장소는 설치된 DVA CLI가 실행되지 않아도 수정·빌드·필
 감독 진입점이며, 복구 중에는 사용하지 않는다.
 
 ```bash
-make recovery-check
+make recovery-check   # long run: agents do not run; idle/CI/user only
 ```
+
+전체 경계가 없고 `make test`는 race 전체 스위트(5분 제한은 테스트 바이너리별)이므로
+긴 실행이다(long run: agents do not run; idle/CI/user only).
 
 이 타깃은 위 네 검사를 순서대로 실행한다. 임시 `dva` 실행 파일을 PATH 앞에
 두고 Make의 `DVA`도 같은 파일로 지정해, 호출하면 명확히 실패하도록 한다.

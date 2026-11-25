@@ -40,12 +40,13 @@ before adopting explicit repository-scope reuse; checkout isolation remains the 
    a run ID, inspect it with `dva ci logs <run-id>`. Independent roots and different
    declared resource locks may run concurrently. Do not launch a second
    invocation to evade `busy`.
-3. As an agent, run only a profile whose declared `timeout` is 10 minutes or
-   less, such as a conforming `commit`. Read the timeout from the profile's
-   `timeout` in `dva.yml`, shown by `dva ci --dry-run <profile>` or the manifest's
-   `ci_profiles`; never trust the profile name. A profile without a declared
-   timeout counts as long. Agents never run `full`, `audit`, or any other profile
-   over 10 minutes, in development or in integration sessions, and never offer
+3. As an agent, run only a profile whose effective `timeout` is 10 minutes or
+   less, such as a conforming `commit`. The single source for that value is the
+   resolved profile's `timeout` in `dva ci --dry-run <profile>` or the manifest's
+   `ci_profiles` (both apply DVA defaults, such as 10m for a `commit` that
+   declares none); never trust the profile name or a raw `dva.yml` read. An
+   effective timeout over 10 minutes, or none, counts as long. Agents never run
+   `full`, `audit`, or any other profile over 10 minutes, in development or in integration sessions, and never offer
    to. The project's full gate stays required: only a receipt from an idle-gated
    scheduled run, CI, or the user satisfies it, and while it is unrun report it
    as "not verified (long run, deferred to idle/CI)", never as passed. A project

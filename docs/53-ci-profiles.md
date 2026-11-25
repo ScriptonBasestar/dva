@@ -39,8 +39,8 @@ CI는 root 환경·CI 프로필만 검증하고 child import와 stack·remote·p
 ## 시간과 동시 실행
 
 `commit` 기본 권장은 5분, 하드 제한은 10분이다. 더 짧게 지정할 수 있지만 상한을
-늘릴 수 없다. 다른 프로필은 양의 유한 `timeout`을 명시한다. 에이전트는 프로필 이름이 아니라 `dva.yml`에
-선언된 `timeout`이 10분 이하인 프로필만 실행하며, `full`·`audit`처럼 더 긴 프로필은
+늘릴 수 없다. 다른 프로필은 양의 유한 `timeout`을 명시한다. 에이전트는 프로필 이름이 아니라 `dva ci --dry-run`·manifest가
+보여 주는 유효 `timeout`이 10분 이하인 프로필만 실행하며, `full`·`audit`처럼 더 긴 프로필은
 idle 예약 실행·CI·사용자만 실행한다(long run: agents do not run; idle/CI/user only). 경고는 실패가 아니며
 deadline 도달은 실패다. 종료 신호와 강제 종료 사이 짧은 정리 시간이 필요할 수
 있다. 제한을 맞추려고 검사를 생략하지 않는다.

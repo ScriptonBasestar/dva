@@ -8,8 +8,9 @@
   installation. Every operation inside the profile shares the deadline.
 - `full`: project-declared finite timeout, covering the complete required gate
   set. Release publishing and production operations remain outside CI.
-- Agents run only profiles whose declared `timeout` (read from `dva.yml`, not
-  the profile name) is 10 minutes or less. Longer or unbounded profiles such as
+- Agents run only profiles whose effective `timeout` (the resolved value from
+  `dva ci --dry-run <profile>` or the manifest, not the profile name) is 10
+  minutes or less. Longer or unbounded profiles such as
   a 30-minute `full`/`audit` run only in idle-gated scheduled runs, CI, or by
   the user; an agent reports them as "not verified (long run, deferred to
   idle/CI)" while unrun.
