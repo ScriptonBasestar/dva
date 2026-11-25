@@ -13,7 +13,7 @@ DVA는 `ci.profiles`의 검사와 시간 예산을 감독한다. 서비스 수�
 dva manifest -f json          # ci_profiles 확인
 dva ci                       # commit 프로필
 dva ci commit
-dva ci full
+dva ci full                  # long run: agents do not run; idle/CI/user only
 dva ci --project api commit   # child 설정·환경·디렉터리 사용
 dva ci --subproject api predeploy  # root 프로필, 단계에 DVA_CI_SUBPROJECT=api
 dva ci --dry-run full         # 실행 없이 해석한 프로필 출력
@@ -39,7 +39,9 @@ CI는 root 환경·CI 프로필만 검증하고 child import와 stack·remote·p
 ## 시간과 동시 실행
 
 `commit` 기본 권장은 5분, 하드 제한은 10분이다. 더 짧게 지정할 수 있지만 상한을
-늘릴 수 없다. 다른 프로필은 양의 유한 `timeout`을 명시한다. 경고는 실패가 아니며
+늘릴 수 없다. 다른 프로필은 양의 유한 `timeout`을 명시한다. 에이전트는 프로필 이름이 아니라 `dva.yml`에
+선언된 `timeout`이 10분 이하인 프로필만 실행하며, `full`·`audit`처럼 더 긴 프로필은
+idle 예약 실행·CI·사용자만 실행한다(long run: agents do not run; idle/CI/user only). 경고는 실패가 아니며
 deadline 도달은 실패다. 종료 신호와 강제 종료 사이 짧은 정리 시간이 필요할 수
 있다. 제한을 맞추려고 검사를 생략하지 않는다.
 
@@ -127,28 +129,4 @@ adapter로 보존한다. Make 전체 pipeline을 감싼 상태는 감독 기능 
 
 ## DVA 자체 개발의 복구 경로
 
-DVA 저장소는 설치된 DVA CLI가 실행되지 않아도 수정·빌드·필수 검증을 할 수
-있어야 한다. `make build`, `make test`, `make lint`, `make doc-check`는 native
-도구를 직접 실행하는 경로로 유지한다. `make ci`와 `make ci-full`은 평상시의
-감독 진입점이며, 복구 중에는 사용하지 않는다.
-
-```bash
-make recovery-check
-```
-
-이 타깃은 위 네 검사를 순서대로 실행한다. 임시 `dva` 실행 파일을 PATH 앞에
-두고 Make의 `DVA`도 같은 파일로 지정해, 호출하면 명확히 실패하도록 한다.
-호출자가 오류를 무시해도 호출 흔적을 확인해 실패한다. 임시 파일은 저장소의
-`tmp/`에 만들고 종료 시 제거한다. GitHub Actions의 native 빌드·테스트·문서·
-형식 검사도 같은 래퍼를 사용해 설치된 CLI에 대한 의존을 감지한다.
-
-이 보장은 설치된 CLI 없이 개발할 수 있다는 뜻이다. 소스의 컴파일 오류나
-검사 도구의 결함까지 성공으로 처리하지 않는다. 특히 `doc-check`의 CI 일치
-검사는 소스의 설정 패키지를 사용하므로 설정 로더 결함이 있으면 실패할 수
-있다. 이 경우 `make build` 또는 해당 패키지의 `go test`로 결함을 수정한 뒤
-전체 검사를 다시 실행한다. 절대 경로로 설치된 DVA를 호출하면 PATH 차단을
-우회하므로 native 검사에 그런 호출을 추가하지 않는다.
-
-GitHub CI 실패의 수동 조사와 진행 기록 보존은
-[CI 실패 분석](ci-failure-analysis.md)을 따른다. 조사 보고서는 필수 gate 결과를
-대체하지 않는다.
+설치된 DVA CLI 없이 개발·검증하는 절차는 [복구 경로](ci-recovery-path.md)를 따른다.

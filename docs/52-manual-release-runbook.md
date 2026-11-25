@@ -24,7 +24,7 @@ GitHub tag와 Release 생성은 승인된 commit의 clean detached worktree에�
    권한만 가지며 Workflows 권한은 받지 않습니다. 명령 환경에만 주입합니다.
 
 공개 tag를 push하기 전에 release commit의 [로컬 macOS 플랫폼 검증](ci-macos-local.md)을
-완료하고 SHA·도구 준비 기록·DVA 결과를 보존합니다. 원격 Linux CI와 crossbuild 성공만으로
+(long run: agents do not run; idle/CI/user only) 완료하고 SHA·도구 준비 기록·DVA 결과를 보존합니다. 원격 Linux CI와 crossbuild 성공만으로
 macOS 실행을 대신하지 않습니다. 준비·검사 절차는 해당 정본을 따릅니다.
 
 아래 값은 해당 릴리스에 맞게 바꿉니다.

@@ -28,6 +28,7 @@ self-hosted runner를 등록하거나 로컬 Mac을 GitHub job에 연결하지 �
 
 1. `make prepare-macos-platform`: project `tmp/`에 검증된 도구를 준비한다.
 2. `make ci-macos` 또는 `dva ci macos-platform`: 준비된 도구로 검사만 실행한다.
+   `dva.yml`의 `macos-platform` `timeout`은 20m이다(long run: agents do not run; idle/CI/user only).
 
 준비는 네트워크를 사용한다. 공용 [설치 스크립트](../scripts/ci-install-sops-age.sh)의
 고정 checksum과 latest checksum 파일의 Sigstore 검증을 재사용한다. 기존 SOPS floor

@@ -11,8 +11,8 @@
 | commit | T1 무결성·형식·구문 검사; 필요하면 `make ci` | `make ci`는 아래 staged fast 검사, 자동 hook 아님 |
 | task branch push | `DVA_BASE=<source-ref> dva ci dev` | 변경·역방향 의존 테스트와 빌드(T2) |
 | 전체 core 확인 | `make ci-core` | 이전 commit 프로필의 전체 core 검사 |
-| 통합 직전 | `make ci-full`과 독립 리뷰 | 기존 full 필수 범위, 보드 판정은 CE 소유 |
-| 전체 fresh | `dva ci audit` | full과 같은 범위, 결과 재사용 우회 |
+| 통합 직전 | 독립 리뷰; 필수 `full` 게이트(`make ci-full`, long run: agents do not run; idle/CI/user only)는 idle·CI·사용자 실행 영수증으로 충족 | 기존 full 필수 범위, 미실행이면 "not verified (long run, deferred to idle/CI)", 보드 판정은 CE 소유 |
+| 전체 fresh | `dva ci audit` (long run: agents do not run; idle/CI/user only) | full과 같은 범위, 결과 재사용 우회 |
 
 `make ci`가 과거의 전체 core 검사였던 계약을 명시적으로 바꾼다. 해당 범위가 필요한
 호출자는 `make ci-core` 또는 최종 `full`을 선택한다. 기존 full·audit의 검사 목록과
@@ -55,7 +55,7 @@ native 복구 경로는 유지한다. 새 프로필 이름이나 hook을 모든 
 
 컴파일 성공은 테스트 통과와 구분한다. 빠른 경로는 일반 Go 변경과 문서 변경을 지원한다.
 삭제·rename·공유 설정·도구·embed 입력이나 미확인 Go 디렉터리처럼 전체 범위가 필요한
-변경은 즉시 실패하고 `make ci-core` 또는 `make ci-full`을 안내한다. 전체 검사를 빠른
+변경은 즉시 실패하고 `make ci-core` 또는 `make ci-full`(long run: agents do not run; idle/CI/user only)을 안내한다. 전체 검사를 빠른
 범위로 축소하거나 검사 비대상으로 보고하지 않는다. Go 검사 비대상은 이유를 출력한다.
 
 준비된 warm 실행의 목표는 30초이고, 경고 60초·전체 제한 2분을 프로필에 적용한다.

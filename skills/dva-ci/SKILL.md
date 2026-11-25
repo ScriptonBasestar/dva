@@ -40,10 +40,17 @@ before adopting explicit repository-scope reuse; checkout isolation remains the 
    a run ID, inspect it with `dva ci logs <run-id>`. Independent roots and different
    declared resource locks may run concurrently. Do not launch a second
    invocation to evade `busy`.
-3. Select the project-declared `commit` or `full` profile for the required gate.
-   A project `dev-check` is a separate narrow edit-loop command. Do not run all
-   three sequentially or repeat the full gate before an integrator that runs it.
-   Neither profile authorizes deployment.
+3. As an agent, run only a profile whose declared `timeout` is 10 minutes or
+   less, such as a conforming `commit`. Read the timeout from the profile's
+   `timeout` in `dva.yml`, shown by `dva ci --dry-run <profile>` or the manifest's
+   `ci_profiles`; never trust the profile name. A profile without a declared
+   timeout counts as long. Agents never run `full`, `audit`, or any other profile
+   over 10 minutes, in development or in integration sessions, and never offer
+   to. The project's full gate stays required: only a receipt from an idle-gated
+   scheduled run, CI, or the user satisfies it, and while it is unrun report it
+   as "not verified (long run, deferred to idle/CI)", never as passed. A project
+   `dev-check` is a separate narrow edit-loop command. Do not repeat a gate that
+   already passed for the same input. No profile authorizes deployment.
 4. `dva ci --dry-run <profile>` shows the resolved profile without running checks.
    `dva ci --project <child> <profile>` uses that child's config and environment.
    `dva ci --subproject <child> <profile>` keeps the root's profile and exports

@@ -10,6 +10,10 @@ All notable changes to DVA are documented here.
 - `dva stop`으로 멈춘 process 엔트리의 헬스 포트를 다른 프로세스가 쓰면, `status`가 더 이상 "escaped"로
   잘못 보고하지 않고 `stopped`로 표시합니다. stop 없이 스스로 백그라운드로 빠져나간 서버는 그대로
   `error`/escaped로 보고합니다(TASK-632).
+- `dva-ci` 스킬은 에이전트가 `dva.yml`에 선언된 `timeout`이 10분 이하인 프로필(예: `commit`)만
+  실행하도록 안내합니다. `full`·`audit`처럼 더 긴 프로필은 idle 예약 실행·CI·사용자만 실행하며,
+  필수 full 게이트는 그 영수증으로 충족하고 미실행이면 "not verified (long run, deferred to idle/CI)"로
+  보고합니다. 관련 문서의 긴 실행 줄에 표시를 붙였습니다.
 - 헬스체크에 `owner: external`을 선언하면 그 주소의 소유자 확인을 건너뛰고 `status`에 선언 사실을
   표시합니다. 포그라운드 `docker run -p` 엔트리처럼 다른 프로세스가 포트를 여는 경우에 씁니다. 원격 호스트
   주소는 더 이상 `up`마다 "owner unverified" 경고를 내지 않습니다(`status`에는 남음)(TASK-633).

@@ -86,7 +86,7 @@ TASK-585·TASK-575의 수정·독립 리뷰를 거쳐 위 갱신 범위에 포�
 2. CI verifier·공통 evidence 강화·doctor 부하 플레이크는 별도 후보로 유지한다.
    현재 실패가 재현됐다는 의미가 아니며 근거는 [CI 실패 분석](docs/ci-failure-analysis.md)에 둔다.
 3. 선택된 버전·포함/이월을 확정한 뒤 Version·CHANGELOG 후보 섹션·릴리스 노트를 함께 고정한다.
-4. 독립 리뷰 후 동일 후보의 `dva ci full`, hosted CI와 비게시 `make release-check` 결과를
+4. 독립 리뷰 후 동일 후보의 `dva ci full`(long run: agents do not run; idle/CI/user only), hosted CI와 비게시 `make release-check` 결과를
    연결한다. 기존 소스 CI 성공은 새 후보의 산출물·설치·공개 검증을 대신하지 않는다.
 5. 후보 검증과 공개 인가가 갖춰지면 [수동 공개 런북](docs/52-manual-release-runbook.md)의
    preflight·공개·postflight를 따른다. 이 검토에서는 tag·Release를 만들지 않는다.
