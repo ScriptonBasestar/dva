@@ -24,7 +24,7 @@
 # acts only on the branch being integrated; it never sweeps.
 branch:
   integrationBranch:
-    - master
+    - develop
   taskPattern:
     - dev/*/*/*
 
